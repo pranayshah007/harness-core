@@ -143,8 +143,8 @@ public class HelmCommandTask extends AbstractDelegateRunnableTask {
   private void init(HelmCommandRequest helmCommandRequest, LogCallback executionLogCallback) throws Exception {
     helmCommandRequest.setExecutionLogCallback(executionLogCallback);
     executionLogCallback.saveExecutionLog("Creating KubeConfig", LogLevel.INFO, CommandExecutionStatus.RUNNING);
-    KubernetesConfig kubernetesConfig =
-        containerDeploymentDelegateHelper.getKubernetesConfig(helmCommandRequest.getContainerServiceParams());
+    KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(
+        helmCommandRequest.getContainerServiceParams(), helmCommandRequest.getWorkingDir());
     String configLocation = containerDeploymentDelegateHelper.createKubeConfig(kubernetesConfig);
     helmCommandRequest.setKubeConfigLocation(configLocation);
     executionLogCallback.saveExecutionLog(

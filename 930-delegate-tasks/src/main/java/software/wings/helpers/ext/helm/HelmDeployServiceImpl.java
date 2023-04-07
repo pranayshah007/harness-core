@@ -215,9 +215,9 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       executionLogCallback.saveExecutionLog(commandResponse.getOutput());
       commandResponse.setHelmChartInfo(helmChartInfo);
 
-      boolean useK8sSteadyStateCheck =
-          containerDeploymentDelegateHelper.useK8sSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(),
-              commandRequest.getContainerServiceParams(), commandRequest.getExecutionLogCallback());
+      boolean useK8sSteadyStateCheck = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
+          commandRequest.isK8SteadyStateCheckEnabled(), commandRequest.getContainerServiceParams(),
+          commandRequest.getExecutionLogCallback(), commandRequest.getWorkingDir());
       List<KubernetesResourceId> k8sWorkloads = Collections.emptyList();
       if (useK8sSteadyStateCheck) {
         k8sWorkloads = readKubernetesResourcesIds(commandRequest, commandRequest.getVariableOverridesYamlFiles(),
@@ -318,8 +318,8 @@ public class HelmDeployServiceImpl implements HelmDeployService {
                 (ExecutionLogCallback) executionLogCallback, commandRequest.getGcpKeyPath());
         executionLogCallback.saveExecutionLog(
             format("Status check done with success [%s] for resources in namespace: [%s]", success, namespace));
-        KubernetesConfig kubernetesConfig =
-            containerDeploymentDelegateHelper.getKubernetesConfig(commandRequest.getContainerServiceParams());
+        KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(
+            commandRequest.getContainerServiceParams(), commandRequest.getWorkingDir());
         String releaseName = commandRequest.getReleaseName();
         List<ContainerInfo> containerInfos =
             k8sTaskHelperBase.getContainerInfos(kubernetesConfig, releaseName, namespace, timeoutInMillis);
@@ -382,9 +382,9 @@ public class HelmDeployServiceImpl implements HelmDeployService {
         commandRequest.getExecutionLogCallback().saveExecutionLog(msg);
         throw new InvalidRequestException(msg, USER);
       }
-      boolean useK8sSteadyStateCheck =
-          containerDeploymentDelegateHelper.useK8sSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(),
-              commandRequest.getContainerServiceParams(), commandRequest.getExecutionLogCallback());
+      boolean useK8sSteadyStateCheck = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
+          commandRequest.isK8SteadyStateCheckEnabled(), commandRequest.getContainerServiceParams(),
+          commandRequest.getExecutionLogCallback(), commandRequest.getWorkingDir());
       if (useK8sSteadyStateCheck) {
         fetchInlineChartUrl(commandRequest, timeoutInMillis);
       }
@@ -587,7 +587,8 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       HelmCommandRequest commandRequest, LogCallback executionLogCallback, List<Pod> existingPods) {
     ContainerServiceParams containerServiceParams = commandRequest.getContainerServiceParams();
 
-    KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(containerServiceParams);
+    KubernetesConfig kubernetesConfig =
+        containerDeploymentDelegateHelper.getKubernetesConfig(containerServiceParams, commandRequest.getWorkingDir());
 
     return containerDeploymentDelegateBaseHelper.getContainerInfosWhenReadyByLabels(kubernetesConfig,
         executionLogCallback, ImmutableMap.of("release", commandRequest.getReleaseName()), existingPods);
@@ -604,8 +605,8 @@ public class HelmDeployServiceImpl implements HelmDeployService {
 
   private ReleaseHistory createK8sNewRelease(
       HelmCommandRequest request, List<KubernetesResourceId> resourceList, Integer releaseVersion) throws IOException {
-    KubernetesConfig kubernetesConfig =
-        containerDeploymentDelegateHelper.getKubernetesConfig(request.getContainerServiceParams());
+    KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(
+        request.getContainerServiceParams(), request.getWorkingDir());
     ReleaseHistory releaseHistory = fetchK8sReleaseHistory(request, kubernetesConfig);
     // Need to keep only latest successful releases, older releases can be removed
     releaseHistory.cleanup();
@@ -619,8 +620,8 @@ public class HelmDeployServiceImpl implements HelmDeployService {
 
   private void saveK8sReleaseHistory(
       HelmCommandRequest request, HelmCommandResponse response, ReleaseHistory releaseHistory) throws IOException {
-    KubernetesConfig kubernetesConfig =
-        containerDeploymentDelegateHelper.getKubernetesConfig(request.getContainerServiceParams());
+    KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(
+        request.getContainerServiceParams(), request.getWorkingDir());
     releaseHistory.setReleaseStatus(CommandExecutionStatus.SUCCESS == response.getCommandExecutionStatus()
             ? IK8sRelease.Status.Succeeded
             : IK8sRelease.Status.Failed);
@@ -643,7 +644,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       List<KubernetesResourceId> k8sRollbackWorkloads = Collections.emptyList();
       boolean useK8sSteadyStateCheck =
           containerDeploymentDelegateHelper.useK8sSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(),
-              commandRequest.getContainerServiceParams(), executionLogCallback);
+              commandRequest.getContainerServiceParams(), executionLogCallback, commandRequest.getWorkingDir());
 
       if (useK8sSteadyStateCheck) {
         prepareWorkingDirectoryForK8sRollout(commandRequest);
@@ -699,8 +700,8 @@ public class HelmDeployServiceImpl implements HelmDeployService {
 
   private List<KubernetesResourceId> getKubernetesResourcesIdsForRollback(HelmRollbackCommandRequest request)
       throws IOException {
-    KubernetesConfig kubernetesConfig =
-        containerDeploymentDelegateHelper.getKubernetesConfig(request.getContainerServiceParams());
+    KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(
+        request.getContainerServiceParams(), request.getWorkingDir());
     ReleaseHistory releaseHistory = fetchK8sReleaseHistory(request, kubernetesConfig);
     K8sLegacyRelease rollbackRelease = releaseHistory.getRelease(request.getPrevReleaseVersion());
     notNullCheck("Unable to find release " + request.getPrevReleaseVersion(), rollbackRelease);

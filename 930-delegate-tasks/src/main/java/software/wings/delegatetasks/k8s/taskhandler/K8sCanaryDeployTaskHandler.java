@@ -244,7 +244,7 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
     executionLogCallback.saveExecutionLog("Initializing..\n");
 
     KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(
-        k8sCanaryDeployTaskParameters.getK8sClusterConfig(), false);
+        k8sCanaryDeployTaskParameters.getK8sClusterConfig(), k8sDelegateTaskParams.getWorkingDirectory(), false);
 
     Kubectl client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
 

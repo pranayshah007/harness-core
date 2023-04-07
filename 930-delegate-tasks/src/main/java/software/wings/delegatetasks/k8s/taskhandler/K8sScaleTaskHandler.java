@@ -88,8 +88,8 @@ public class K8sScaleTaskHandler extends K8sTaskHandler {
 
     k8sScaleResponse = K8sScaleResponse.builder().build();
 
-    KubernetesConfig kubernetesConfig =
-        containerDeploymentDelegateHelper.getKubernetesConfig(k8sScaleTaskParameters.getK8sClusterConfig(), false);
+    KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(
+        k8sScaleTaskParameters.getK8sClusterConfig(), k8sDelegateTaskParams.getWorkingDirectory(), false);
 
     boolean success = init(k8sScaleTaskParameters, k8sDelegateTaskParams, kubernetesConfig.getNamespace(),
         new ExecutionLogCallback(delegateLogService, k8sScaleTaskParameters.getAccountId(),

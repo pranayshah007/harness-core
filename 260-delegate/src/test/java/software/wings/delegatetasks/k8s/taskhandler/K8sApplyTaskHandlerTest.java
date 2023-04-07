@@ -27,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
@@ -106,10 +107,11 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
   public void testDryRunIsSkipped() throws Exception {
     K8sApplyTaskParameters k8sApplyTaskParameters =
         K8sApplyTaskParameters.builder().skipDryRun(true).filePaths("abc/xyz.yaml").build();
-    K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
+    K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().workingDirectory("workingDir").build();
     ExecutionLogCallback executionLogCallback = new ExecutionLogCallback();
 
-    when(containerDeploymentDelegateHelper.getKubernetesConfig(nullable(K8sClusterConfig.class), eq(false)))
+    when(
+        containerDeploymentDelegateHelper.getKubernetesConfig(nullable(K8sClusterConfig.class), anyString(), eq(false)))
         .thenReturn(KubernetesConfig.builder().build());
     when(k8sTaskHelper.renderTemplateForGivenFiles(
              any(), any(), any(), any(), any(), any(), any(), any(), any(), anyBoolean()))
@@ -122,7 +124,7 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
     verify(k8sTaskHelper, times(1))
         .getResourcesFromManifests(any(), any(), any(), any(), any(), any(), any(), any(), any(), anyBoolean());
     verify(containerDeploymentDelegateHelper, times(1))
-        .getKubernetesConfig(nullable(K8sClusterConfig.class), eq(false));
+        .getKubernetesConfig(nullable(K8sClusterConfig.class), anyString(), eq(false));
   }
 
   @Test
@@ -131,10 +133,11 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
   public void testDryRunIsNotSkipped() throws Exception {
     K8sApplyTaskParameters k8sApplyTaskParameters =
         K8sApplyTaskParameters.builder().skipDryRun(false).filePaths("abc/xyz.yaml").build();
-    K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
+    K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().workingDirectory("workingDir").build();
     ExecutionLogCallback executionLogCallback = new ExecutionLogCallback();
 
-    when(containerDeploymentDelegateHelper.getKubernetesConfig(nullable(K8sClusterConfig.class), eq(false)))
+    when(
+        containerDeploymentDelegateHelper.getKubernetesConfig(nullable(K8sClusterConfig.class), anyString(), eq(false)))
         .thenReturn(KubernetesConfig.builder().build());
     when(k8sTaskHelper.renderTemplateForGivenFiles(
              any(), any(), any(), any(), any(), any(), any(), any(), any(), anyBoolean()))
@@ -147,7 +150,7 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
     verify(k8sTaskHelper, times(1))
         .getResourcesFromManifests(any(), any(), any(), any(), any(), any(), any(), any(), any(), anyBoolean());
     verify(containerDeploymentDelegateHelper, times(1))
-        .getKubernetesConfig(nullable(K8sClusterConfig.class), eq(false));
+        .getKubernetesConfig(nullable(K8sClusterConfig.class), anyString(), eq(false));
   }
 
   @Test
@@ -196,10 +199,11 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
   public void readAllFilesSpecifiedInApply() throws Exception {
     doReturn(KubernetesConfig.builder().build())
         .when(containerDeploymentDelegateHelper)
-        .getKubernetesConfig(nullable(K8sClusterConfig.class), eq(false));
+        .getKubernetesConfig(nullable(K8sClusterConfig.class), anyString(), eq(false));
 
     k8sApplyTaskHandler.init(K8sApplyTaskParameters.builder().skipRendering(true).filePaths("a,b,c").build(),
-        K8sDelegateTaskParams.builder().build(), Mockito.mock(ExecutionLogCallback.class));
+        K8sDelegateTaskParams.builder().workingDirectory("workingDir").build(),
+        Mockito.mock(ExecutionLogCallback.class));
 
     verify(k8sTaskHelper, times(1))
         .getResourcesFromManifests(nullable(K8sDelegateTaskParams.class), nullable(K8sDelegateManifestConfig.class),
@@ -207,7 +211,8 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
             any(ExecutionLogCallback.class), any(K8sTaskParameters.class), eq(true));
 
     k8sApplyTaskHandler.init(K8sApplyTaskParameters.builder().filePaths("a").build(),
-        K8sDelegateTaskParams.builder().build(), Mockito.mock(ExecutionLogCallback.class));
+        K8sDelegateTaskParams.builder().workingDirectory("workingDir").build(),
+        Mockito.mock(ExecutionLogCallback.class));
 
     verify(k8sTaskHelper, times(1))
         .getResourcesFromManifests(nullable(K8sDelegateTaskParams.class), nullable(K8sDelegateManifestConfig.class),
@@ -215,7 +220,8 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
             any(ExecutionLogCallback.class), any(K8sTaskParameters.class), anyBoolean());
 
     k8sApplyTaskHandler.init(K8sApplyTaskParameters.builder().filePaths("b ,").build(),
-        K8sDelegateTaskParams.builder().build(), Mockito.mock(ExecutionLogCallback.class));
+        K8sDelegateTaskParams.builder().workingDirectory("workingDir").build(),
+        Mockito.mock(ExecutionLogCallback.class));
 
     verify(k8sTaskHelper, times(1))
         .getResourcesFromManifests(nullable(K8sDelegateTaskParams.class), nullable(K8sDelegateManifestConfig.class),
@@ -229,7 +235,7 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
   public void invalidManifestFiles() throws Exception {
     doReturn(KubernetesConfig.builder().build())
         .when(containerDeploymentDelegateHelper)
-        .getKubernetesConfig(any(K8sClusterConfig.class), eq(false));
+        .getKubernetesConfig(any(K8sClusterConfig.class), anyString(), eq(false));
 
     doReturn(asList(ManifestFile.builder().build()))
         .when(k8sTaskHelper)

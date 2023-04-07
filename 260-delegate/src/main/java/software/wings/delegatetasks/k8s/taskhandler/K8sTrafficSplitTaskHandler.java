@@ -87,7 +87,8 @@ public class K8sTrafficSplitTaskHandler extends K8sTaskHandler {
 
     boolean success = init(k8sTrafficSplitTaskParameters,
         new ExecutionLogCallback(delegateLogService, k8sTrafficSplitTaskParameters.getAccountId(),
-            k8sTrafficSplitTaskParameters.getAppId(), k8sTrafficSplitTaskParameters.getActivityId(), Init));
+            k8sTrafficSplitTaskParameters.getAppId(), k8sTrafficSplitTaskParameters.getActivityId(), Init),
+        k8sDelegateTaskParams.getWorkingDirectory());
 
     if (!success) {
       return k8sTaskHelper.getK8sTaskExecutionResponse(k8sTrafficSplitResponse, CommandExecutionStatus.FAILURE);
@@ -95,7 +96,8 @@ public class K8sTrafficSplitTaskHandler extends K8sTaskHandler {
 
     success = apply(k8sTrafficSplitTaskParameters,
         new ExecutionLogCallback(delegateLogService, k8sTrafficSplitTaskParameters.getAccountId(),
-            k8sTrafficSplitTaskParameters.getAppId(), k8sTrafficSplitTaskParameters.getActivityId(), TrafficSplit));
+            k8sTrafficSplitTaskParameters.getAppId(), k8sTrafficSplitTaskParameters.getActivityId(), TrafficSplit),
+        k8sDelegateTaskParams.getWorkingDirectory());
 
     if (!success) {
       return k8sTaskHelper.getK8sTaskExecutionResponse(k8sTrafficSplitResponse, CommandExecutionStatus.FAILURE);
@@ -105,11 +107,12 @@ public class K8sTrafficSplitTaskHandler extends K8sTaskHandler {
   }
 
   @VisibleForTesting
-  boolean init(K8sTrafficSplitTaskParameters k8sTrafficSplitTaskParameters, ExecutionLogCallback executionLogCallback) {
+  boolean init(K8sTrafficSplitTaskParameters k8sTrafficSplitTaskParameters, ExecutionLogCallback executionLogCallback,
+      String workingDirectory) {
     executionLogCallback.saveExecutionLog("Initializing..");
 
     kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(
-        k8sTrafficSplitTaskParameters.getK8sClusterConfig(), false);
+        k8sTrafficSplitTaskParameters.getK8sClusterConfig(), workingDirectory, false);
 
     try {
       boolean success;
@@ -195,12 +198,12 @@ public class K8sTrafficSplitTaskHandler extends K8sTaskHandler {
     return findVirtualServiceByName(virtualServiceResourceIds.get(0).getName(), executionLogCallback);
   }
 
-  private boolean apply(
-      K8sTrafficSplitTaskParameters k8sTrafficSplitTaskParameters, ExecutionLogCallback executionLogCallback) {
+  private boolean apply(K8sTrafficSplitTaskParameters k8sTrafficSplitTaskParameters,
+      ExecutionLogCallback executionLogCallback, String workingDirectory) {
     executionLogCallback.saveExecutionLog("Applying..");
 
     kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(
-        k8sTrafficSplitTaskParameters.getK8sClusterConfig(), false);
+        k8sTrafficSplitTaskParameters.getK8sClusterConfig(), workingDirectory, false);
 
     try {
       updateVirtualServiceWithDestinationWeights(k8sTrafficSplitTaskParameters, executionLogCallback);

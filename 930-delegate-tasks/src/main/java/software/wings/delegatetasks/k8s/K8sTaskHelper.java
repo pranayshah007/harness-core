@@ -542,7 +542,8 @@ public class K8sTaskHelper {
     try {
       executionLogCallback.saveExecutionLog("Restoring inherited resources: \n");
       executionLogCallback.saveExecutionLog(ManifestHelper.toYamlForLogs(kubernetesResources));
-      k8sHandlerConfig.setKubernetesConfig(containerDeploymentDelegateHelper.getKubernetesConfig(clusterConfig, false));
+      k8sHandlerConfig.setKubernetesConfig(containerDeploymentDelegateHelper.getKubernetesConfig(
+          clusterConfig, k8sDelegateTaskParams.getWorkingDirectory(), false));
       k8sHandlerConfig.setClient(
           Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath()));
       k8sHandlerConfig.setResources(kubernetesResources);

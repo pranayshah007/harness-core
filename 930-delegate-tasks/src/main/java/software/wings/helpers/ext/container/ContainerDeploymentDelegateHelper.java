@@ -75,7 +75,8 @@ public class ContainerDeploymentDelegateHelper {
   }
 
   public void persistKubernetesConfig(K8sClusterConfig k8sClusterConfig, String workingDir) throws IOException {
-    kubernetesContainerService.persistKubernetesConfig(getKubernetesConfig(k8sClusterConfig, false), workingDir);
+    kubernetesContainerService.persistKubernetesConfig(
+        getKubernetesConfig(k8sClusterConfig, workingDir, false), workingDir);
   }
 
   public String createKubeConfig(KubernetesConfig kubernetesConfig) {
@@ -109,6 +110,10 @@ public class ContainerDeploymentDelegateHelper {
   }
 
   public KubernetesConfig getKubernetesConfig(ContainerServiceParams containerServiceParam) {
+    return getKubernetesConfig(containerServiceParam, null);
+  }
+
+  public KubernetesConfig getKubernetesConfig(ContainerServiceParams containerServiceParam, String workingDirectory) {
     SettingAttribute settingAttribute = containerServiceParam.getSettingAttribute();
     List<EncryptedDataDetail> encryptedDataDetails = containerServiceParam.getEncryptionDetails();
     String clusterName = containerServiceParam.getClusterName();
@@ -132,8 +137,8 @@ public class ContainerDeploymentDelegateHelper {
 
       kubernetesConfig = kubernetesClusterConfig.createKubernetesConfig(namespace);
     } else if (settingAttribute.getValue() instanceof GcpConfig) {
-      kubernetesConfig =
-          gkeClusterService.getCluster(settingAttribute, encryptedDataDetails, clusterName, namespace, false);
+      kubernetesConfig = gkeClusterService.getCluster(
+          settingAttribute, encryptedDataDetails, clusterName, namespace, workingDirectory, false);
     } else if (settingAttribute.getValue() instanceof AzureConfig) {
       AzureConfig azureConfig = (AzureConfig) settingAttribute.getValue();
       kubernetesConfig = azureDelegateHelperService.getKubernetesClusterConfig(azureConfig, encryptedDataDetails,
@@ -149,6 +154,11 @@ public class ContainerDeploymentDelegateHelper {
   }
 
   public KubernetesConfig getKubernetesConfig(K8sClusterConfig k8sClusterConfig, boolean isInstanceSync) {
+    return getKubernetesConfig(k8sClusterConfig, null, isInstanceSync);
+  }
+
+  public KubernetesConfig getKubernetesConfig(
+      K8sClusterConfig k8sClusterConfig, String workingDirectory, boolean isInstanceSync) {
     SettingValue cloudProvider = k8sClusterConfig.getCloudProvider();
     List<EncryptedDataDetail> encryptedDataDetails = k8sClusterConfig.getCloudProviderEncryptionDetails();
     String namespace = k8sClusterConfig.getNamespace();
@@ -169,7 +179,7 @@ public class ContainerDeploymentDelegateHelper {
       kubernetesConfig = kubernetesClusterConfig.createKubernetesConfig(namespace);
     } else if (cloudProvider instanceof GcpConfig) {
       kubernetesConfig = gkeClusterService.getCluster((GcpConfig) cloudProvider, encryptedDataDetails,
-          k8sClusterConfig.getGcpKubernetesCluster().getClusterName(), namespace, isInstanceSync);
+          k8sClusterConfig.getGcpKubernetesCluster().getClusterName(), namespace, workingDirectory, isInstanceSync);
     } else if (cloudProvider instanceof AzureConfig) {
       AzureConfig azureConfig = (AzureConfig) cloudProvider;
       kubernetesConfig = azureDelegateHelperService.getKubernetesClusterConfig(
@@ -182,13 +192,13 @@ public class ContainerDeploymentDelegateHelper {
     return kubernetesConfig;
   }
 
-  public boolean useK8sSteadyStateCheck(
-      boolean isK8sSteadyStateCheckEnabled, ContainerServiceParams containerServiceParams, LogCallback logCallback) {
+  public boolean useK8sSteadyStateCheck(boolean isK8sSteadyStateCheckEnabled,
+      ContainerServiceParams containerServiceParams, LogCallback logCallback, String workingDirectory) {
     if (!isK8sSteadyStateCheckEnabled) {
       return false;
     }
 
-    KubernetesConfig kubernetesConfig = getKubernetesConfig(containerServiceParams);
+    KubernetesConfig kubernetesConfig = getKubernetesConfig(containerServiceParams, workingDirectory);
     String versionAsString = kubernetesContainerService.getVersionAsString(kubernetesConfig);
 
     logCallback.saveExecutionLog(format("Kubernetes version [%s]", versionAsString));

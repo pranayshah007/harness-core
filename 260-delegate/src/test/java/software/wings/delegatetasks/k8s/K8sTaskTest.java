@@ -105,7 +105,7 @@ public class K8sTaskTest extends WingsBaseTest {
   public void testRun() throws IOException {
     // given
     k8sTaskParameters.setCommandType(K8sTaskType.APPLY);
-    when(containerDeploymentDelegateHelper.getKubernetesConfig(any(K8sClusterConfig.class), eq(false)))
+    when(containerDeploymentDelegateHelper.getKubernetesConfig(any(K8sClusterConfig.class), any(), eq(false)))
         .thenReturn(KubernetesConfig.builder().build());
     when(k8sCommandTaskTypeToTaskHandlerMap.get(K8sTaskType.APPLY.name())).thenReturn(k8sTaskHandler);
 

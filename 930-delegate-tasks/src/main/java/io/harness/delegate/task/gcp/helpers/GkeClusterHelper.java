@@ -15,6 +15,8 @@ import static io.harness.eraro.ErrorCode.CLUSTER_NOT_FOUND;
 import static io.harness.k8s.K8sConstants.API_VERSION;
 import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_BINARY;
 import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_INSTALL_HINT;
+import static io.harness.k8s.K8sConstants.GOOGLE_APPLICATION_CREDENTIALS;
+import static io.harness.k8s.K8sConstants.USE_GKE_GCLOUD_AUTH_PLUGIN;
 import static io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable;
 import static io.harness.threading.Morpheus.sleep;
 
@@ -31,14 +33,18 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.GcpServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.filesystem.FileIo;
 import io.harness.gcp.helpers.GcpCredentialsHelperService;
+import io.harness.k8s.K8sConstants;
 import io.harness.k8s.model.GcpAccessTokenSupplier;
 import io.harness.k8s.model.KubernetesClusterAuthType;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesConfig.KubernetesConfigBuilder;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.k8s.model.kubeconfig.Exec;
 import io.harness.k8s.model.kubeconfig.InteractiveMode;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.TaskType;
@@ -61,8 +67,10 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -133,13 +141,13 @@ public class GkeClusterHelper {
     return null;
   }
 
-  public KubernetesConfig getCluster(
-      char[] serviceAccountKeyFileContent, boolean useDelegate, String locationClusterName, String namespace) {
-    return getCluster(serviceAccountKeyFileContent, useDelegate, locationClusterName, namespace, null);
+  public KubernetesConfig getCluster(char[] serviceAccountKeyFileContent, boolean useDelegate,
+      String locationClusterName, String namespace, String workingDir) {
+    return getCluster(serviceAccountKeyFileContent, useDelegate, locationClusterName, namespace, null, workingDir);
   }
 
   public KubernetesConfig getCluster(char[] serviceAccountKeyFileContent, boolean useDelegate,
-      String locationClusterName, String namespace, LogCallback logCallback) {
+      String locationClusterName, String namespace, LogCallback logCallback, String workingDir) {
     Container gkeContainerService = gcpHelperService.getGkeContainerService(serviceAccountKeyFileContent, useDelegate);
     String projectId = getProjectIdFromCredentials(serviceAccountKeyFileContent, useDelegate);
     if (EmptyPredicate.isEmpty(locationClusterName)) {
@@ -163,7 +171,7 @@ public class GkeClusterHelper {
       log.info("Cluster status: {}", cluster.getStatus());
       log.debug("Master endpoint: {}", cluster.getEndpoint());
 
-      return configFromCluster(cluster, namespace, serviceAccountKeyFileContent, useDelegate, logCallback);
+      return configFromCluster(cluster, namespace, serviceAccountKeyFileContent, useDelegate, logCallback, workingDir);
     } catch (IOException e) {
       // PL-1118: In case the cluster is being destroyed/torn down. Return null will immediately reclaim the service
       // instances
@@ -214,11 +222,11 @@ public class GkeClusterHelper {
 
   private KubernetesConfig configFromCluster(
       Cluster cluster, String namespace, char[] serviceAccountKeyFileContent, boolean useDelegate) {
-    return configFromCluster(cluster, namespace, serviceAccountKeyFileContent, useDelegate, null);
+    return configFromCluster(cluster, namespace, serviceAccountKeyFileContent, useDelegate, null, null);
   }
 
   private KubernetesConfig configFromCluster(Cluster cluster, String namespace, char[] serviceAccountKeyFileContent,
-      boolean useDelegate, LogCallback logCallback) {
+      boolean useDelegate, LogCallback logCallback, String workingDirectory) {
     MasterAuth masterAuth = cluster.getMasterAuth();
     KubernetesConfigBuilder kubernetesConfigBuilder = KubernetesConfig.builder()
                                                           .masterUrl("https://" + cluster.getEndpoint() + "/")
@@ -250,7 +258,7 @@ public class GkeClusterHelper {
     }
     if (isExecAuthPluginBinaryAvailable(GCP_AUTH_PLUGIN_BINARY, logCallback)) {
       kubernetesConfigBuilder.authType(KubernetesClusterAuthType.EXEC_OAUTH);
-      kubernetesConfigBuilder.exec(getGkeUserExecConfig());
+      kubernetesConfigBuilder.exec(getGkeUserExecConfig(serviceAccountKeyFileContent, workingDirectory, logCallback));
     }
     return kubernetesConfigBuilder.build();
   }
@@ -327,13 +335,47 @@ public class GkeClusterHelper {
     }
   }
 
-  private Exec getGkeUserExecConfig() {
+  private Exec getGkeUserExecConfig(
+      char[] serviceAccountKeyFileContent, String workingDirectory, LogCallback logCallback) {
     return Exec.builder()
         .apiVersion(API_VERSION)
         .command(GCP_AUTH_PLUGIN_BINARY)
         .interactiveMode(InteractiveMode.NEVER)
+        .env(getEnvVariablesForGkeKubeconfig(serviceAccountKeyFileContent, workingDirectory, logCallback))
         .provideClusterInfo(true)
         .installHint(GCP_AUTH_PLUGIN_INSTALL_HINT)
         .build();
+  }
+
+  private List<EnvVariable> getEnvVariablesForGkeKubeconfig(
+      char[] serviceAccountKeyFileContent, String workingDirectory, LogCallback logCallback) {
+    List<EnvVariable> envVariableList = new ArrayList<>();
+    try {
+      if (serviceAccountKeyFileContent != null && workingDirectory != null) {
+        FileIo.writeUtf8StringToFile(
+            Paths.get(workingDirectory, K8sConstants.GCP_JSON_KEY_FILE_NAME).normalize().toAbsolutePath().toString(),
+            String.valueOf(serviceAccountKeyFileContent));
+        envVariableList.add(new EnvVariable(
+            GOOGLE_APPLICATION_CREDENTIALS, Paths.get(workingDirectory).normalize().toAbsolutePath().toString()));
+        envVariableList.add(new EnvVariable(USE_GKE_GCLOUD_AUTH_PLUGIN, "true"));
+      }
+    } catch (IOException ex) {
+      saveLogs(
+          String.format("Unable to store SA key file to the directory %s for cluster authentication", workingDirectory),
+          logCallback, LogLevel.WARN);
+    }
+    return envVariableList;
+  }
+
+  private void saveLogs(String errorMsg, LogCallback logCallback, LogLevel logLevel) {
+    if (logCallback != null) {
+      logCallback.saveExecutionLog(errorMsg, logLevel);
+    } else {
+      if (logLevel == LogLevel.INFO) {
+        log.info(errorMsg);
+      } else {
+        log.warn(errorMsg);
+      }
+    }
   }
 }

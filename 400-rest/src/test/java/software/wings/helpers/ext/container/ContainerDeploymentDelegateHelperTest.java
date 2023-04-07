@@ -69,6 +69,8 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
   @Spy @InjectMocks ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
   @Spy @InjectMocks ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper;
 
+  private final String WORK_DIR = "k8s/repo";
+
   @Before
   public void setup() {
     doNothing().when(logCallback).saveExecutionLog(anyString());
@@ -129,11 +131,13 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
             .build();
     String version = "1.16";
 
-    doReturn(kubernetesConfig).when(containerDeploymentDelegateHelper).getKubernetesConfig(containerServiceParams);
+    doReturn(kubernetesConfig)
+        .when(containerDeploymentDelegateHelper)
+        .getKubernetesConfig(containerServiceParams, WORK_DIR);
     doReturn(version).when(kubernetesContainerService).getVersionAsString(kubernetesConfig);
 
     boolean result = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
-        true, containerServiceParams, new ExecutionLogCallback());
+        true, containerServiceParams, new ExecutionLogCallback(), WORK_DIR);
     assertThat(result).isTrue();
   }
 
@@ -152,11 +156,13 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
             .build();
     String version = "1.16+144";
 
-    doReturn(kubernetesConfig).when(containerDeploymentDelegateHelper).getKubernetesConfig(containerServiceParams);
+    doReturn(kubernetesConfig)
+        .when(containerDeploymentDelegateHelper)
+        .getKubernetesConfig(containerServiceParams, WORK_DIR);
     doReturn(version).when(kubernetesContainerService).getVersionAsString(kubernetesConfig);
 
     boolean result = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
-        true, containerServiceParams, new ExecutionLogCallback());
+        true, containerServiceParams, new ExecutionLogCallback(), WORK_DIR);
     assertThat(result).isTrue();
   }
 
@@ -175,11 +181,13 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
             .build();
     String version = "1.15";
 
-    doReturn(kubernetesConfig).when(containerDeploymentDelegateHelper).getKubernetesConfig(containerServiceParams);
+    doReturn(kubernetesConfig)
+        .when(containerDeploymentDelegateHelper)
+        .getKubernetesConfig(containerServiceParams, WORK_DIR);
     doReturn(version).when(kubernetesContainerService).getVersionAsString(kubernetesConfig);
 
     boolean result = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
-        true, containerServiceParams, new ExecutionLogCallback());
+        true, containerServiceParams, new ExecutionLogCallback(), WORK_DIR);
     assertThat(result).isFalse();
   }
 
@@ -188,7 +196,7 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testIsK8sVersion116OrAboveWithFeatureFlagDisabled() {
     boolean result = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
-        false, ContainerServiceParams.builder().build(), new ExecutionLogCallback());
+        false, ContainerServiceParams.builder().build(), new ExecutionLogCallback(), WORK_DIR);
     assertThat(result).isFalse();
   }
 
@@ -260,7 +268,7 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
     doThrow(new RuntimeException("some exception message"))
         .when(rancherTaskHelper)
         .createKubeconfig(any(RancherConfig.class), nullable(List.class), anyString(), anyString());
-    KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(params);
+    KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(params, WORK_DIR);
   }
 
   @Test
@@ -279,7 +287,7 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
     doReturn(mock(KubernetesConfig.class))
         .when(rancherTaskHelper)
         .createKubeconfig(any(RancherConfig.class), anyList(), anyString(), anyString());
-    KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(params);
+    KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(params, WORK_DIR);
     verify(rancherTaskHelper, times(1)).createKubeconfig(rancherConfig, null, "sampleCluster", "sampleNamespace");
   }
 }

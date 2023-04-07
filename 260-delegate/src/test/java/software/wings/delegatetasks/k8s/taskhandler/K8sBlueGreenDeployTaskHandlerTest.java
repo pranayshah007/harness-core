@@ -411,7 +411,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
     ExecutionLogCallback executionLogCallback = new ExecutionLogCallback();
 
-    when(containerDeploymentDelegateHelper.getKubernetesConfig(any(), eq(false)))
+    when(containerDeploymentDelegateHelper.getKubernetesConfig(any(), any(), eq(false)))
         .thenReturn(KubernetesConfig.builder().build());
     doNothing().when(k8sTaskHelperBase).deleteSkippedManifestFiles(any(), any());
     when(k8sTaskHelper.renderTemplate(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(emptyList());
@@ -424,7 +424,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     verify(k8sTaskHelper, times(1)).renderTemplate(any(), any(), any(), any(), any(), any(), any(), any());
     verify(k8sTaskHelperBase, times(1)).setNamespaceToKubernetesResourcesIfRequired(any(), any());
     verify(k8sTaskHelperBase, times(1)).deleteSkippedManifestFiles(any(), any());
-    verify(containerDeploymentDelegateHelper, times(1)).getKubernetesConfig(any(), eq(false));
+    verify(containerDeploymentDelegateHelper, times(1)).getKubernetesConfig(any(), any(), eq(false));
   }
 
   @Test
@@ -436,7 +436,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     ExecutionLogCallback executionLogCallback = new ExecutionLogCallback();
     K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
 
-    when(containerDeploymentDelegateHelper.getKubernetesConfig(any(), eq(false)))
+    when(containerDeploymentDelegateHelper.getKubernetesConfig(any(), any(), eq(false)))
         .thenReturn(KubernetesConfig.builder().build());
     doNothing().when(k8sTaskHelperBase).deleteSkippedManifestFiles(any(), any());
     doNothing().when(k8sTaskHelperBase).setNamespaceToKubernetesResourcesIfRequired(any(), any());
@@ -449,7 +449,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     verify(k8sTaskHelper, times(1)).renderTemplate(any(), any(), any(), any(), any(), any(), any(), any());
     verify(k8sTaskHelperBase, times(1)).setNamespaceToKubernetesResourcesIfRequired(any(), any());
     verify(k8sTaskHelperBase, times(1)).deleteSkippedManifestFiles(any(), any());
-    verify(containerDeploymentDelegateHelper, times(1)).getKubernetesConfig(any(), eq(false));
+    verify(containerDeploymentDelegateHelper, times(1)).getKubernetesConfig(any(), any(), eq(false));
   }
 
   @Test

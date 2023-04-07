@@ -155,8 +155,8 @@ public class K8sApplyTaskHandler extends K8sTaskHandler {
       ExecutionLogCallback executionLogCallback) {
     executionLogCallback.saveExecutionLog("Initializing..\n");
 
-    k8sApplyHandlerConfig.setKubernetesConfig(
-        containerDeploymentDelegateHelper.getKubernetesConfig(k8sApplyTaskParameters.getK8sClusterConfig(), false));
+    k8sApplyHandlerConfig.setKubernetesConfig(containerDeploymentDelegateHelper.getKubernetesConfig(
+        k8sApplyTaskParameters.getK8sClusterConfig(), k8sDelegateTaskParams.getWorkingDirectory(), false));
 
     k8sApplyHandlerConfig.setClient(
         Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath()));

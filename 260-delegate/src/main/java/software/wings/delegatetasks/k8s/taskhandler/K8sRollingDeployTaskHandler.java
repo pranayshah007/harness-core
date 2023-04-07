@@ -344,8 +344,8 @@ public class K8sRollingDeployTaskHandler extends K8sTaskHandler {
   boolean init(K8sRollingDeployTaskParameters request, K8sDelegateTaskParams k8sDelegateTaskParams,
       ExecutionLogCallback executionLogCallback) {
     executionLogCallback.saveExecutionLog("Initializing..\n");
-    KubernetesConfig kubernetesConfig =
-        containerDeploymentDelegateHelper.getKubernetesConfig(request.getK8sClusterConfig(), false);
+    KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(
+        request.getK8sClusterConfig(), k8sDelegateTaskParams.getWorkingDirectory(), false);
     k8sRollingHandlerConfig.setKubernetesConfig(kubernetesConfig);
     Kubectl client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
     k8sRollingHandlerConfig.setClient(client);

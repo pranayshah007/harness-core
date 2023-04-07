@@ -55,17 +55,26 @@ public class GkeClusterServiceImpl implements GkeClusterService {
   public KubernetesConfig getCluster(SettingAttribute computeProviderSetting,
       List<EncryptedDataDetail> encryptedDataDetails, String locationClusterName, String namespace,
       boolean isInstanceSync) {
+    return getCluster(
+        computeProviderSetting, encryptedDataDetails, locationClusterName, namespace, null, isInstanceSync);
+  }
+
+  @Override
+  public KubernetesConfig getCluster(SettingAttribute computeProviderSetting,
+      List<EncryptedDataDetail> encryptedDataDetails, String locationClusterName, String namespace,
+      String workingDirectory, boolean isInstanceSync) {
     GcpConfig gcpConfig = validateAndGetCredentials(computeProviderSetting);
-    return getCluster(gcpConfig, encryptedDataDetails, locationClusterName, namespace, isInstanceSync);
+    return getCluster(
+        gcpConfig, encryptedDataDetails, locationClusterName, namespace, workingDirectory, isInstanceSync);
   }
 
   @Override
   public KubernetesConfig getCluster(GcpConfig gcpConfig, List<EncryptedDataDetail> encryptedDataDetails,
-      String locationClusterName, String namespace, boolean isInstanceSync) {
+      String locationClusterName, String namespace, String workingDirectory, boolean isInstanceSync) {
     // Decrypt gcpConfig
     encryptionService.decrypt(gcpConfig, encryptedDataDetails, isInstanceSync);
     return gkeClusterHelper.getCluster(gcpConfig.getServiceAccountKeyFileContent(), gcpConfig.isUseDelegateSelectors(),
-        locationClusterName, namespace);
+        locationClusterName, namespace, workingDirectory);
   }
 
   @Override

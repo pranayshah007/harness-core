@@ -80,7 +80,7 @@ public class K8sDeleteTaskHandlerTest extends WingsBaseTest {
 
   @Before
   public void setUp() throws Exception {
-    doReturn(kubernetesConfig).when(deploymentDelegateHelper).getKubernetesConfig(any(), eq(false));
+    doReturn(kubernetesConfig).when(deploymentDelegateHelper).getKubernetesConfig(any(), any(), eq(false));
     doReturn(mock(ExecutionLogCallback.class))
         .when(k8sTaskHelper)
         .getExecutionLogCallback(any(K8sDeleteTaskParameters.class), eq(FetchFiles));
@@ -167,7 +167,9 @@ public class K8sDeleteTaskHandlerTest extends WingsBaseTest {
   @Owner(developers = OwnerRule.SAHIL)
   @Category(UnitTests.class)
   public void deleteGivenFiles() throws Exception {
-    doReturn(KubernetesConfig.builder().build()).when(deploymentDelegateHelper).getKubernetesConfig(any(), eq(false));
+    doReturn(KubernetesConfig.builder().build())
+        .when(deploymentDelegateHelper)
+        .getKubernetesConfig(any(), any(), eq(false));
     doReturn(true).when(k8sTaskHelper).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong());
 
     K8sDeleteTaskParameters deleteAllParams = K8sDeleteTaskParameters.builder().filePaths("a,b,c").build();
@@ -175,7 +177,7 @@ public class K8sDeleteTaskHandlerTest extends WingsBaseTest {
     final K8sTaskExecutionResponse taskResponse = handler.executeTaskInternal(deleteAllParams, taskParams);
 
     verify(k8sTaskHelper, times(1)).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong());
-    verify(deploymentDelegateHelper, times(1)).getKubernetesConfig(any(), eq(false));
+    verify(deploymentDelegateHelper, times(1)).getKubernetesConfig(any(), any(), eq(false));
     verify(k8sTaskHelper)
         .getResourcesFromManifests(any(), any(), any(), eq(ImmutableList.of("a", "b", "c")), any(), any(), any(), any(),
             eq(deleteAllParams), eq(false));
@@ -187,7 +189,7 @@ public class K8sDeleteTaskHandlerTest extends WingsBaseTest {
   public void deleteFilesGivenNoFilePaths() throws Exception {
     doReturn(KubernetesConfig.builder().build())
         .when(deploymentDelegateHelper)
-        .getKubernetesConfig(any(K8sClusterConfig.class), eq(false));
+        .getKubernetesConfig(any(K8sClusterConfig.class), any(), eq(false));
     doReturn(true).when(k8sTaskHelper).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong());
 
     K8sDeleteTaskParameters deleteAllParams = K8sDeleteTaskParameters.builder().filePaths("").build();
@@ -195,7 +197,7 @@ public class K8sDeleteTaskHandlerTest extends WingsBaseTest {
 
     verify(k8sTaskHelper)
         .getK8sTaskExecutionResponse(K8sDeleteResponse.builder().build(), CommandExecutionStatus.SUCCESS);
-    verify(deploymentDelegateHelper, times(1)).getKubernetesConfig(any(), eq(false));
+    verify(deploymentDelegateHelper, times(1)).getKubernetesConfig(any(), any(), eq(false));
   }
 
   @Test
@@ -227,7 +229,7 @@ public class K8sDeleteTaskHandlerTest extends WingsBaseTest {
     doReturn(releaseHandler).when(k8sTaskHelperBase).getReleaseHandler(anyBoolean());
     doReturn(KubernetesConfig.builder().build())
         .when(deploymentDelegateHelper)
-        .getKubernetesConfig(any(K8sClusterConfig.class), eq(false));
+        .getKubernetesConfig(any(K8sClusterConfig.class), any(), eq(false));
     doReturn(true).when(k8sTaskHelper).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong());
 
     K8sDeleteTaskParameters deleteAllResources =

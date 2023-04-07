@@ -1060,7 +1060,7 @@ public class K8sTaskHelperTest extends CategoryTest {
     K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder().build();
     K8sHandlerConfig k8sHandlerConfig = new K8sHandlerConfig();
     ExecutionLogCallback executionLogCallback = mock(ExecutionLogCallback.class);
-    doReturn(kubernetesConfig).when(containerDeploymentDelegateHelper).getKubernetesConfig(any(), anyBoolean());
+    doReturn(kubernetesConfig).when(containerDeploymentDelegateHelper).getKubernetesConfig(any(), any(), anyBoolean());
     boolean result = helper.restore(
         kubernetesResources, clusterConfig, k8sDelegateTaskParams, k8sHandlerConfig, executionLogCallback);
     assertThat(result).isTrue();
@@ -1080,7 +1080,7 @@ public class K8sTaskHelperTest extends CategoryTest {
     ExecutionLogCallback executionLogCallback = mock(ExecutionLogCallback.class);
     doThrow(new InvalidRequestException(""))
         .when(containerDeploymentDelegateHelper)
-        .getKubernetesConfig(any(), anyBoolean());
+        .getKubernetesConfig(any(), any(), anyBoolean());
     boolean result = helper.restore(
         kubernetesResources, clusterConfig, k8sDelegateTaskParams, k8sHandlerConfig, executionLogCallback);
     assertThat(result).isFalse();

@@ -128,7 +128,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
     doReturn(executionLogCallback).when(k8sTaskHelper).getExecutionLogCallback(any(), any());
     doReturn(KubernetesConfig.builder().build())
         .when(containerDeploymentDelegateHelper)
-        .getKubernetesConfig(any(), anyBoolean());
+        .getKubernetesConfig(any(), any(), anyBoolean());
 
     List<KubernetesResource> kubernetesResources = getResources();
     doReturn(true).when(k8sTaskHelper).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong());
@@ -171,7 +171,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
     verify(k8sTaskHelper, times(1)).renderTemplate(any(), any(), any(), any(), any(), any(), any(), any());
     verify(k8sTaskHelperBase, times(1)).setNamespaceToKubernetesResourcesIfRequired(any(), any());
     verify(k8sTaskHelperBase, times(1)).deleteSkippedManifestFiles(any(), any());
-    verify(containerDeploymentDelegateHelper, times(1)).getKubernetesConfig(any(), anyBoolean());
+    verify(containerDeploymentDelegateHelper, times(1)).getKubernetesConfig(any(), any(), anyBoolean());
   }
 
   @Test
@@ -196,7 +196,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
     verify(k8sTaskHelperBase, times(1)).readManifestAndOverrideLocalSecrets(any(), any(), anyBoolean());
     verify(k8sTaskHelper, times(1)).renderTemplate(any(), any(), any(), any(), any(), any(), any(), any());
     verify(k8sTaskHelperBase, times(1)).deleteSkippedManifestFiles(any(), any());
-    verify(containerDeploymentDelegateHelper, times(1)).getKubernetesConfig(any(), anyBoolean());
+    verify(containerDeploymentDelegateHelper, times(1)).getKubernetesConfig(any(), any(), anyBoolean());
   }
 
   @Test
@@ -307,7 +307,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
         .fetchManifestFilesAndWriteToDirectory(
             any(K8sDelegateManifestConfig.class), any(), any(ExecutionLogCallback.class), anyLong());
     verify(releaseHandler).getReleaseHistory(any(), any());
-    verify(containerDeploymentDelegateHelper, times(1)).getKubernetesConfig(any(), anyBoolean());
+    verify(containerDeploymentDelegateHelper, times(1)).getKubernetesConfig(any(), any(), anyBoolean());
     verify(k8sTaskHelperBase, times(1))
         .dryRunManifests(
             any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class), anyBoolean());
@@ -355,7 +355,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
         .fetchManifestFilesAndWriteToDirectory(
             any(K8sDelegateManifestConfig.class), any(), any(ExecutionLogCallback.class), anyLong());
     verify(releaseHandler).getReleaseHistory(any(), any());
-    verify(containerDeploymentDelegateHelper, times(1)).getKubernetesConfig(any(), anyBoolean());
+    verify(containerDeploymentDelegateHelper, times(1)).getKubernetesConfig(any(), any(), anyBoolean());
     verify(k8sTaskHelperBase, times(1))
         .dryRunManifests(
             any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class), anyBoolean());

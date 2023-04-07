@@ -74,12 +74,15 @@ public class K8sRollingDeployRollbackTaskHandlerTest extends WingsBaseTest {
   private final Integer releaseNumber = 2;
   private final Integer timeoutIntervalInMin = 10;
   private final String releaseName = "releaseName";
+  private final String workDir = "k8s/repo";
 
   @Before
   public void setUp() throws Exception {
     doReturn(logCallback).when(taskHelper).getExecutionLogCallback(any(), any());
 
-    doReturn(kubernetesConfig).when(containerDeploymentDelegateHelper).getKubernetesConfig(k8sClusterConfig, false);
+    doReturn(kubernetesConfig)
+        .when(containerDeploymentDelegateHelper)
+        .getKubernetesConfig(k8sClusterConfig, workDir, false);
 
     rollbackHandlerConfig = k8sRollingDeployRollbackTaskHandler.getRollbackHandlerConfig();
     k8sRollingDeployRollbackTaskParameters = K8sRollingDeployRollbackTaskParameters.builder()
@@ -88,7 +91,7 @@ public class K8sRollingDeployRollbackTaskHandlerTest extends WingsBaseTest {
                                                  .releaseNumber(releaseNumber)
                                                  .timeoutIntervalInMin(timeoutIntervalInMin)
                                                  .build();
-    k8sDelegateTaskParams = K8sDelegateTaskParams.builder().build();
+    k8sDelegateTaskParams = K8sDelegateTaskParams.builder().workingDirectory(workDir).build();
   }
 
   @Test

@@ -195,6 +195,8 @@ public interface K8sConstants {
   String KUBECFG_VALUE = "value";
 
   String AZURE_AUTH_PLUGIN_BINARY = "kubelogin";
+  String GOOGLE_APPLICATION_CREDENTIALS = "GOOGLE_APPLICATION_CREDENTIALS";
+  String USE_GKE_GCLOUD_AUTH_PLUGIN = "USE_GKE_GCLOUD_AUTH_PLUGIN";
   String GCP_AUTH_PLUGIN_BINARY = "gke-gcloud-auth-plugin";
   String GCP_AUTH_PLUGIN_INSTALL_HINT = "gke-gcloud-auth-plugin is required to authenticate to the current cluster.\n"
       + "It can be installed on the delegate using following command from:\n"

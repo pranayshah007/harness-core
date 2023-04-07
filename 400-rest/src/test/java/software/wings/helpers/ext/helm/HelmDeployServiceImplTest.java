@@ -265,7 +265,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     when(helmClient.releaseHistory(any(), eq(false))).thenReturn(helmCliReleaseHistoryResponse);
     when(helmClient.install(any(), eq(false))).thenReturn(helmCliResponse);
     when(helmClient.listReleases(any(), eq(false))).thenReturn(helmCliListReleasesResponse);
-    when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), any(), any())).thenReturn(true);
+    when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), any(), any(), any())).thenReturn(true);
     when(k8sTaskHelperBase.readManifests(any(), any())).thenReturn(resources);
     when(k8sTaskHelperBase.getContainerInfos(any(), any(), any(), anyLong())).thenReturn(containerInfos);
     when(k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(any(), anyList(), any(), any(), any(), any(), any(), any()))
@@ -315,7 +315,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     when(helmClient.releaseHistory(any(), eq(false))).thenReturn(helmCliReleaseHistoryResponse);
     when(helmClient.install(any(), eq(false))).thenReturn(helmCliResponse);
     when(helmClient.listReleases(any(), eq(false))).thenReturn(helmCliListReleasesResponse);
-    when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), any(), any())).thenReturn(true);
+    when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), any(), any(), any())).thenReturn(true);
     when(k8sTaskHelperBase.readManifests(any(), any())).thenReturn(resources);
     when(k8sTaskHelperBase.getContainerInfos(any(), any(), any(), anyLong())).thenReturn(containerInfos);
     when(k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(
@@ -984,9 +984,9 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     when(helmClient.rollback(any(HelmCommandData.class), eq(false)))
         .thenReturn(
             HelmCliResponse.builder().output("Rollback was a success.").commandExecutionStatus(SUCCESS).build());
-    when(containerDeploymentDelegateHelper.getKubernetesConfig(any(K8sClusterConfig.class), anyBoolean()))
+    when(containerDeploymentDelegateHelper.getKubernetesConfig(any(K8sClusterConfig.class), any(), anyBoolean()))
         .thenReturn(KubernetesConfig.builder().build());
-    when(containerDeploymentDelegateHelper.getKubernetesConfig(any(ContainerServiceParams.class)))
+    when(containerDeploymentDelegateHelper.getKubernetesConfig(any(ContainerServiceParams.class), anyString()))
         .thenReturn(KubernetesConfig.builder().build());
     when(containerDeploymentDelegateBaseHelper.getContainerInfosWhenReadyByLabels(
              any(), any(), any(), eq(Collections.emptyList())))
@@ -1009,7 +1009,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
         KubernetesResourceId.builder().namespace("default-2").name("resource-2").kind(Kind.Deployment.name()).build();
     KubernetesResourceId resource3 =
         KubernetesResourceId.builder().namespace("default-3").name("resource-3").kind(Kind.Deployment.name()).build();
-    when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), any(), any())).thenReturn(true);
+    when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), any(), any(), any())).thenReturn(true);
 
     HelmInstallCommandResponse result = null;
     ReleaseHistory releaseHistory = ReleaseHistory.createNew();
@@ -1315,7 +1315,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     List<KubernetesResourceId> resourceIds =
         resources.stream().map(KubernetesResource::getResourceId).collect(Collectors.toList());
 
-    when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), any(), any())).thenReturn(true);
+    when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), any(), any(), any())).thenReturn(true);
     when(k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(any(Kubectl.class), eq(resourceIds), anyString(),
              anyString(), anyString(), anyString(), any(ExecutionLogCallback.class), any()))
         .thenReturn(false);

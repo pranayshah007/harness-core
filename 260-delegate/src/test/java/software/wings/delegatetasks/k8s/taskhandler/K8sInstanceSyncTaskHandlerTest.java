@@ -68,7 +68,7 @@ public class K8sInstanceSyncTaskHandlerTest extends WingsBaseTest {
   public void executeTaskInternalSuccess() throws Exception {
     doReturn(KubernetesConfig.builder().build())
         .when(containerDeploymentDelegateHelper)
-        .getKubernetesConfig(any(K8sClusterConfig.class), anyBoolean());
+        .getKubernetesConfig(any(K8sClusterConfig.class), any(), anyBoolean());
 
     List<K8sPod> podsList = Arrays.asList(K8sPod.builder().build());
     doReturn(podsList).when(k8sTaskHelperBase).getPodDetails(any(), any(), any(), anyLong());
@@ -85,7 +85,7 @@ public class K8sInstanceSyncTaskHandlerTest extends WingsBaseTest {
   public void executeTaskInternalNoPods() throws Exception {
     doReturn(KubernetesConfig.builder().build())
         .when(containerDeploymentDelegateHelper)
-        .getKubernetesConfig(any(K8sClusterConfig.class), anyBoolean());
+        .getKubernetesConfig(any(K8sClusterConfig.class), any(), anyBoolean());
 
     k8sInstanceSyncTaskHandler.executeTaskInternal(getTaskParameters(), K8sDelegateTaskParams.builder().build());
     verify(k8sTaskHelperBase, times(1)).getPodDetails(any(), any(), any(), anyLong());
@@ -100,7 +100,7 @@ public class K8sInstanceSyncTaskHandlerTest extends WingsBaseTest {
     K8sInstanceSyncTaskParameters taskParameters = getTaskParameters();
     doReturn(KubernetesConfig.builder().build())
         .when(containerDeploymentDelegateHelper)
-        .getKubernetesConfig(any(K8sClusterConfig.class), anyBoolean());
+        .getKubernetesConfig(any(K8sClusterConfig.class), any(), anyBoolean());
 
     List<K8sPod> podsList = Arrays.asList(K8sPod.builder().build());
     doReturn(podsList).when(k8sTaskHelperBase).getPodDetails(any(), any(), any(), anyLong());

@@ -88,13 +88,14 @@ public class K8sTrafficSplitTaskHandlerTest extends WingsBaseTest {
 
   private static final String RELEASE_NAME = "releaseName";
   private static final String VIRTUAL_SERVICE = "virtualService";
+  private static final String WORK_DIR = "k8s/repo";
 
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
     doReturn(KubernetesConfig.builder().build())
         .when(containerDeploymentDelegateHelper)
-        .getKubernetesConfig(any(K8sClusterConfig.class), anyBoolean());
+        .getKubernetesConfig(any(K8sClusterConfig.class), any(), anyBoolean());
     when(k8sTaskHelperBase.getReleaseHandler(anyBoolean())).thenReturn(releaseHandler);
     when(releaseHandler.getReleaseHistory(any(), any())).thenReturn(releaseHistory);
   }
@@ -114,7 +115,7 @@ public class K8sTrafficSplitTaskHandlerTest extends WingsBaseTest {
 
     on(k8sTrafficSplitTaskHandler).set("kubernetesConfig", kubernetesConfig);
 
-    when(containerDeploymentDelegateHelper.getKubernetesConfig(any(K8sClusterConfig.class), anyBoolean()))
+    when(containerDeploymentDelegateHelper.getKubernetesConfig(any(K8sClusterConfig.class), any(), anyBoolean()))
         .thenReturn(KubernetesConfig.builder().build());
     when(releaseHistory.isEmpty()).thenReturn(false);
     when(releaseHistory.getLatestRelease()).thenReturn(latestRelease);
@@ -125,7 +126,7 @@ public class K8sTrafficSplitTaskHandlerTest extends WingsBaseTest {
     when(kubernetesContainerService.getFabric8IstioVirtualService(any(KubernetesConfig.class), anyString()))
         .thenReturn(null);
 
-    boolean status = k8sTrafficSplitTaskHandler.init(k8sTrafficSplitTaskParams, executionLogCallback);
+    boolean status = k8sTrafficSplitTaskHandler.init(k8sTrafficSplitTaskParams, executionLogCallback, WORK_DIR);
     ArgumentCaptor<String> msgCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<LogLevel> logLevelCaptor = ArgumentCaptor.forClass(LogLevel.class);
     ArgumentCaptor<CommandExecutionStatus> commandExecutionStatusCaptor =
@@ -159,8 +160,9 @@ public class K8sTrafficSplitTaskHandlerTest extends WingsBaseTest {
                                                                   .virtualServiceName("customVirtualServiceName")
                                                                   .build();
 
-    boolean status = k8sTrafficSplitTaskHandler.init(k8sTrafficSplitTaskParams, executionLogCallback);
-    verify(containerDeploymentDelegateHelper, times(1)).getKubernetesConfig(any(K8sClusterConfig.class), anyBoolean());
+    boolean status = k8sTrafficSplitTaskHandler.init(k8sTrafficSplitTaskParams, executionLogCallback, WORK_DIR);
+    verify(containerDeploymentDelegateHelper, times(1))
+        .getKubernetesConfig(any(K8sClusterConfig.class), any(), anyBoolean());
     verify(kubernetesContainerService, times(1))
         .getFabric8IstioVirtualService(any(KubernetesConfig.class), anyString());
     assertThat(status).isFalse();
@@ -171,13 +173,16 @@ public class K8sTrafficSplitTaskHandlerTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void applySuccess() {
     K8sTrafficSplitTaskHandler handler = Mockito.spy(k8sTrafficSplitTaskHandler);
-    doReturn(true).when(handler).init(any(K8sTrafficSplitTaskParameters.class), any(ExecutionLogCallback.class));
+    doReturn(true).when(handler).init(
+        any(K8sTrafficSplitTaskParameters.class), any(ExecutionLogCallback.class), anyString());
 
     final K8sTaskExecutionResponse response = handler.executeTaskInternal(
         K8sTrafficSplitTaskParameters.builder().k8sClusterConfig(K8sClusterConfig.builder().build()).build(),
-        K8sDelegateTaskParams.builder().build());
-    verify(handler, times(1)).init(any(K8sTrafficSplitTaskParameters.class), any(ExecutionLogCallback.class));
-    verify(containerDeploymentDelegateHelper, times(1)).getKubernetesConfig(any(K8sClusterConfig.class), anyBoolean());
+        K8sDelegateTaskParams.builder().workingDirectory("workDir").build());
+    verify(handler, times(1))
+        .init(any(K8sTrafficSplitTaskParameters.class), any(ExecutionLogCallback.class), anyString());
+    verify(containerDeploymentDelegateHelper, times(1))
+        .getKubernetesConfig(any(K8sClusterConfig.class), any(), anyBoolean());
     verify(k8sTaskHelper, times(1))
         .getK8sTaskExecutionResponse(any(K8sTaskResponse.class), any(CommandExecutionStatus.class));
   }
@@ -194,7 +199,8 @@ public class K8sTrafficSplitTaskHandlerTest extends WingsBaseTest {
             .build();
     when(releaseHandler.getReleaseHistory(any(), any())).thenReturn(null);
     k8sTrafficSplitTaskHandler.executeTaskInternal(k8sTrafficSplitTaskParams, K8sDelegateTaskParams.builder().build());
-    verify(containerDeploymentDelegateHelper, times(2)).getKubernetesConfig(any(K8sClusterConfig.class), anyBoolean());
+    verify(containerDeploymentDelegateHelper, times(2))
+        .getKubernetesConfig(any(K8sClusterConfig.class), any(), anyBoolean());
     verify(releaseHandler, times(1)).getReleaseHistory(nullable(KubernetesConfig.class), nullable(String.class));
     verify(k8sTaskHelper, times(1))
         .getK8sTaskExecutionResponse(any(K8sTaskResponse.class), any(CommandExecutionStatus.class));
@@ -223,8 +229,9 @@ public class K8sTrafficSplitTaskHandlerTest extends WingsBaseTest {
     when(metadata.getAnnotations()).thenReturn(annotations);
     when(kubernetesContainerService.getFabric8IstioVirtualService(any(KubernetesConfig.class), anyString()))
         .thenReturn(istioVirtualService);
-    boolean status = k8sTrafficSplitTaskHandler.init(k8sTrafficSplitTaskParams, executionLogCallback);
-    verify(containerDeploymentDelegateHelper, times(1)).getKubernetesConfig(any(K8sClusterConfig.class), anyBoolean());
+    boolean status = k8sTrafficSplitTaskHandler.init(k8sTrafficSplitTaskParams, executionLogCallback, WORK_DIR);
+    verify(containerDeploymentDelegateHelper, times(1))
+        .getKubernetesConfig(any(K8sClusterConfig.class), any(), anyBoolean());
     verify(releaseHandler, times(1)).getReleaseHistory(nullable(KubernetesConfig.class), nullable(String.class));
     verify(kubernetesContainerService, times(2))
         .getFabric8IstioVirtualService(any(KubernetesConfig.class), anyString());
@@ -245,14 +252,14 @@ public class K8sTrafficSplitTaskHandlerTest extends WingsBaseTest {
 
     on(k8sTrafficSplitTaskHandler).set("kubernetesConfig", kubernetesConfig);
 
-    when(containerDeploymentDelegateHelper.getKubernetesConfig(any(K8sClusterConfig.class), anyBoolean()))
+    when(containerDeploymentDelegateHelper.getKubernetesConfig(any(K8sClusterConfig.class), any(), anyBoolean()))
         .thenReturn(KubernetesConfig.builder().build());
     when(releaseHistory.isEmpty()).thenReturn(false);
     when(releaseHistory.getLatestRelease()).thenReturn(null);
     when(kubernetesContainerService.getFabric8IstioVirtualService(nullable(KubernetesConfig.class), any()))
         .thenReturn(null);
 
-    boolean status = k8sTrafficSplitTaskHandler.init(k8sTrafficSplitTaskParams, executionLogCallback);
+    boolean status = k8sTrafficSplitTaskHandler.init(k8sTrafficSplitTaskParams, executionLogCallback, WORK_DIR);
     assertThat(status).isTrue();
 
     ArgumentCaptor<String> msgCaptor = ArgumentCaptor.forClass(String.class);
@@ -297,7 +304,7 @@ public class K8sTrafficSplitTaskHandlerTest extends WingsBaseTest {
              nullable(KubernetesConfig.class), nullable(String.class)))
         .thenReturn(istioVirtualService);
 
-    boolean status = k8sTrafficSplitTaskHandler.init(k8sTrafficSplitTaskParams, executionLogCallback);
+    boolean status = k8sTrafficSplitTaskHandler.init(k8sTrafficSplitTaskParams, executionLogCallback, WORK_DIR);
     assertThat(status).isFalse();
 
     ArgumentCaptor<String> msgCaptor = ArgumentCaptor.forClass(String.class);
@@ -337,7 +344,7 @@ public class K8sTrafficSplitTaskHandlerTest extends WingsBaseTest {
     when(kubernetesContainerService.getFabric8IstioVirtualService(any(KubernetesConfig.class), anyString()))
         .thenReturn(istioVirtualService);
 
-    k8sTrafficSplitTaskHandler.init(k8sTrafficSplitTaskParams, executionLogCallback);
+    k8sTrafficSplitTaskHandler.init(k8sTrafficSplitTaskParams, executionLogCallback, WORK_DIR);
     verify(releaseHandler, times(1)).getReleaseHistory(nullable(KubernetesConfig.class), nullable(String.class));
   }
 }

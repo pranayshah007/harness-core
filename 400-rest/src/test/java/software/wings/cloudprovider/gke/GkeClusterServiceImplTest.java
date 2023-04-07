@@ -61,6 +61,7 @@ public class GkeClusterServiceImplTest extends WingsBaseTest {
                                                                                 .put("masterUser", "master")
                                                                                 .put("masterPwd", "password")
                                                                                 .build();
+  private static final String WORK_DIR = "k8s/repo";
   @Test
   @Owner(developers = BRETT)
   @Category(UnitTests.class)
@@ -106,12 +107,13 @@ public class GkeClusterServiceImplTest extends WingsBaseTest {
                                                           .username("master1".toCharArray())
                                                           .password("password1".toCharArray());
     KubernetesConfig config = kubernetesConfigBuilder.build();
-    when(gkeClusterHelper.getCluster(serviceAccountKey, false, ZONE_CLUSTER, "default")).thenReturn(config);
+    when(gkeClusterHelper.getCluster(serviceAccountKey, false, ZONE_CLUSTER, "default", WORK_DIR)).thenReturn(config);
 
     KubernetesConfig result = gkeClusterService.getCluster(
-        COMPUTE_PROVIDER_SETTING.toDTO(), Collections.emptyList(), ZONE_CLUSTER, "default", false);
+        COMPUTE_PROVIDER_SETTING.toDTO(), Collections.emptyList(), ZONE_CLUSTER, "default", WORK_DIR, false);
 
-    verify(gkeClusterHelper, times(1)).getCluster(eq(serviceAccountKey), eq(false), eq(ZONE_CLUSTER), eq("default"));
+    verify(gkeClusterHelper, times(1))
+        .getCluster(eq(serviceAccountKey), eq(false), eq(ZONE_CLUSTER), eq("default"), eq(WORK_DIR));
     assertThat(result).isEqualTo(config);
   }
 
@@ -119,18 +121,19 @@ public class GkeClusterServiceImplTest extends WingsBaseTest {
   @Owner(developers = BRETT)
   @Category(UnitTests.class)
   public void shouldNotGetClusterIfError() {
-    when(gkeClusterHelper.getCluster(serviceAccountKey, false, ZONE_CLUSTER, "default"))
+    when(gkeClusterHelper.getCluster(serviceAccountKey, false, ZONE_CLUSTER, "default", WORK_DIR))
         .thenThrow(WingsException.class);
 
     try {
       gkeClusterService.getCluster(
-          COMPUTE_PROVIDER_SETTING.toDTO(), Collections.emptyList(), ZONE_CLUSTER, "default", false);
+          COMPUTE_PROVIDER_SETTING.toDTO(), Collections.emptyList(), ZONE_CLUSTER, "default", WORK_DIR, false);
       failBecauseExceptionWasNotThrown(WingsException.class);
     } catch (WingsException e) {
       // Expected
     }
 
-    verify(gkeClusterHelper, times(1)).getCluster(eq(serviceAccountKey), eq(false), eq(ZONE_CLUSTER), eq("default"));
+    verify(gkeClusterHelper, times(1))
+        .getCluster(eq(serviceAccountKey), eq(false), eq(ZONE_CLUSTER), eq("default"), eq(WORK_DIR));
   }
 
   @Test
