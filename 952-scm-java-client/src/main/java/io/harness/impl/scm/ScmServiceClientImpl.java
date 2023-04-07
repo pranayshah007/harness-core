@@ -190,7 +190,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     }
 
     final FileModifyRequest.Builder fileModifyRequestBuilder = getFileModifyRequest(scmConnector, gitFileDetails);
-    handleUpdateFileRequestIfBBOnPrem(fileModifyRequestBuilder, scmConnector, gitFileDetails);
+    handleCommitIdInUpdateFileRequest(fileModifyRequestBuilder, scmConnector, gitFileDetails);
     final FileModifyRequest fileModifyRequest =
         fileModifyRequestBuilder.setBlobId(Strings.nullToEmpty(gitFileDetails.getOldFileSha()))
             .setUseGitClient(useGitClient)
@@ -1212,9 +1212,9 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     return Optional.empty();
   }
 
-  private void handleUpdateFileRequestIfBBOnPrem(
+  private void handleCommitIdInUpdateFileRequest(
       FileModifyRequest.Builder fileModifyRequestBuilder, ScmConnector scmConnector, GitFileDetails gitFileDetails) {
-    if (isBitbucketOnPrem(scmConnector)) {
+    if (isBitbucketOnPrem(scmConnector) || isGitlab(scmConnector)) {
       fileModifyRequestBuilder.setCommitId(gitFileDetails.getCommitId());
     }
   }
@@ -1242,6 +1242,9 @@ public class ScmServiceClientImpl implements ScmServiceClient {
 
   private boolean isBitbucket(ScmConnector scmConnector) {
     return ConnectorType.BITBUCKET.equals(scmConnector.getConnectorType());
+  }
+  private boolean isGitlab(ScmConnector scmConnector) {
+    return ConnectorType.GITLAB.equals(scmConnector.getConnectorType());
   }
 
   // Need to not process and rethrow exceptions defined in SCM GRPC Utils so that ScmDelegateClient is able to handle
