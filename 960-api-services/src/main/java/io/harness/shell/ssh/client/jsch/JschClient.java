@@ -32,7 +32,6 @@ import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.emptyMap;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.eraro.ErrorCode;
@@ -54,7 +53,6 @@ import io.harness.shell.ssh.sftp.SftpRequest;
 import io.harness.shell.ssh.sftp.SftpResponse;
 import io.harness.shell.ssh.xfer.ScpRequest;
 import io.harness.shell.ssh.xfer.ScpResponse;
-import io.harness.ssh.SshHelperUtils;
 import io.harness.stream.BoundedInputStream;
 
 import com.google.common.base.Charsets;
@@ -651,18 +649,6 @@ public class JschClient extends SshClient {
     session.connect(config.getSshConnectionTimeout());
 
     return session;
-  }
-
-  private void generateTGTUsingSshConfig(SshSessionConfig config, LogCallback logCallback) throws JSchException {
-    if (config.getKerberosConfig() == null) {
-      return;
-    }
-    log.info("Do we need to generate Ticket Granting Ticket(TGT)? " + config.getKerberosConfig().isGenerateTGT());
-    if (config.getKerberosConfig().isGenerateTGT()) {
-      SshHelperUtils.generateTGT(config.getKerberosConfig().getPrincipalWithRealm(),
-          config.getPassword() != null ? new String(config.getPassword()) : null,
-          config.getKerberosConfig().getKeyTabFilePath(), logCallback, emptyMap());
-    }
   }
 
   private ProxyHTTP getProxy() {

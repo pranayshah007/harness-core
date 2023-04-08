@@ -12,6 +12,8 @@ import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.shell.ssh.SshUtils.getCacheKey;
 
+import static java.util.Collections.emptyMap;
+
 import io.harness.eraro.ErrorCode;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -23,7 +25,9 @@ import io.harness.shell.ssh.sftp.SftpRequest;
 import io.harness.shell.ssh.sftp.SftpResponse;
 import io.harness.shell.ssh.xfer.ScpRequest;
 import io.harness.shell.ssh.xfer.ScpResponse;
+import io.harness.ssh.SshHelperUtils;
 
+import com.jcraft.jsch.JSchException;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -140,6 +144,18 @@ public abstract class SshClient implements AutoCloseable {
   }
   protected void saveExecutionLog(String line, CommandExecutionStatus commandExecutionStatus) {
     logCallback.saveExecutionLog(line, INFO, commandExecutionStatus);
+  }
+
+  protected void generateTGTUsingSshConfig(SshSessionConfig config, LogCallback logCallback) throws JSchException {
+    if (config.getKerberosConfig() == null) {
+      return;
+    }
+    log.info("Do we need to generate Ticket Granting Ticket(TGT)? " + config.getKerberosConfig().isGenerateTGT());
+    if (config.getKerberosConfig().isGenerateTGT()) {
+      SshHelperUtils.generateTGT(config.getKerberosConfig().getPrincipalWithRealm(),
+          config.getPassword() != null ? new String(config.getPassword()) : null,
+          config.getKerberosConfig().getKeyTabFilePath(), logCallback, emptyMap());
+    }
   }
 
   @Override
