@@ -13,6 +13,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.NGEntityName;
 import io.harness.data.validator.Trimmed;
+import io.harness.mongo.collation.CollationCaseLevel;
+import io.harness.mongo.collation.CollationLocale;
+import io.harness.mongo.collation.CollationStrength;
+import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
@@ -24,9 +28,11 @@ import io.harness.persistence.PersistentEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
+import com.mongodb.client.model.CollationCaseFirst;
 import dev.morphia.annotations.Entity;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -67,18 +73,24 @@ public abstract class Variable implements PersistentEntity, NGAccountAccess {
                  .field(VariableKeys.projectIdentifier)
                  .field(VariableKeys.identifier)
                  .unique(true)
+                 .collation(
+                     Collation.builder().locale(CollationLocale.ENGLISH).caseLevel(CollationCaseLevel.TRUE).build())
                  .build())
         .add(SortCompoundMongoIndex.builder()
                  .name("accountId_orgId_projectId_createdAt_decreasing_sort_Index")
                  .fields(Arrays.asList(
                      VariableKeys.accountIdentifier, VariableKeys.orgIdentifier, VariableKeys.projectIdentifier))
                  .descSortField(VariableKeys.createdAt)
+                 .collation(
+                     Collation.builder().locale(CollationLocale.ENGLISH).caseLevel(CollationCaseLevel.TRUE).build())
                  .build())
         .add(SortCompoundMongoIndex.builder()
                  .name("accountId_orgId_projectId_lastModifiedAt_decreasing_sort_Index")
                  .fields(Arrays.asList(
                      VariableKeys.accountIdentifier, VariableKeys.orgIdentifier, VariableKeys.projectIdentifier))
                  .descSortField(VariableKeys.lastModifiedAt)
+                 .collation(
+                     Collation.builder().locale(CollationLocale.ENGLISH).caseLevel(CollationCaseLevel.TRUE).build())
                  .build())
         .build();
   }
