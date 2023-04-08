@@ -103,11 +103,11 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
     assertThat(runtimeIds).hasSize(2);
 
     ArgumentCaptor<EngineResumeCallback> callbackCaptor = ArgumentCaptor.forClass(EngineResumeCallback.class);
-    ArgumentCaptor<String> exIdCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<String[]> exIdCaptor = ArgumentCaptor.forClass(String[].class);
     verify(waitNotifyEngine, times(3)).waitForAllOn(any(), callbackCaptor.capture(), exIdCaptor.capture());
 
     assertThat(callbackCaptor.getValue().getAmbiance()).isEqualTo(ambiance);
-    assertThat(exIdCaptor.getAllValues())
+    assertThat(exIdCaptor.getValue())
         .containsExactlyInAnyOrder(runtimeIds.get(0), runtimeIds.get(1), runtimeIds.get(0), runtimeIds.get(1));
 
     verify(nodeExecutionService).updateV2(eq(nodeExecutionId), any());

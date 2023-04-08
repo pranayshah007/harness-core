@@ -12,8 +12,10 @@ import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.VED;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -23,17 +25,16 @@ import io.harness.rule.Owner;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ScriptSshExecutor.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ScriptSshExecutorTest extends CategoryTest {
   private static final String ENV_VAR_VALUE = "/some/valid/path";
 
@@ -42,6 +43,7 @@ public class ScriptSshExecutorTest extends CategoryTest {
   private ScriptSshExecutor scriptSshExecutor;
 
   @Mock private LogCallback logCallback;
+  MockedStatic<System> aStatic;
 
   String APP_ID = "APP_ID";
   String ACCOUNT_ID = "ACCOUNT_ID";
@@ -50,9 +52,15 @@ public class ScriptSshExecutorTest extends CategoryTest {
   @Before
   public void setup() throws Exception {
     when(sshSessionConfig.getExecutionId()).thenReturn("ID");
-    scriptSshExecutor = PowerMockito.spy(new ScriptSshExecutor(logCallback, true, sshSessionConfig));
-    PowerMockito.doReturn(ENV_VAR_VALUE).when(scriptSshExecutor, "getEnvVarValue", "Path");
-    PowerMockito.doReturn(ENV_VAR_VALUE).when(scriptSshExecutor, "getEnvVarValue", "HOME");
+    scriptSshExecutor = spy(new ScriptSshExecutor(logCallback, true, sshSessionConfig));
+    aStatic = mockStatic(System.class);
+    doReturn(ENV_VAR_VALUE).when(System.getenv("Path"));
+    doReturn(ENV_VAR_VALUE).when(System.getenv("HOME"));
+  }
+
+  @After
+  public void cleanup() {
+    aStatic.close();
   }
 
   @Test
