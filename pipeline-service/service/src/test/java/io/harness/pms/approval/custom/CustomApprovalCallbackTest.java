@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -106,7 +107,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
   @Before
   public void setup() {
     customApprovalCallback = spy(CustomApprovalCallback.builder().approvalInstanceId(APPROVAL_INSTANCE_ID).build());
-    shellScriptHelperServiceMockedStatic = Mockito.mockStatic(ShellScriptHelperService.class);
+    shellScriptHelperServiceMockedStatic = Mockito.mockStatic(ShellScriptHelperService.class, CALLS_REAL_METHODS);
     on(customApprovalCallback).set("logStreamingStepClientFactory", logStreamingStepClientFactory);
     on(customApprovalCallback).set("kryoSerializer", kryoSerializer);
     on(customApprovalCallback).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);

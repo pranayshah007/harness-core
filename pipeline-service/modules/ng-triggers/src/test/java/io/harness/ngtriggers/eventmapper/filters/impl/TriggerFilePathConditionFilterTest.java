@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
@@ -186,7 +187,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     initMocks(this);
-    aStatic = mockStatic(ConditionEvaluator.class);
+    aStatic = mockStatic(ConditionEvaluator.class, CALLS_REAL_METHODS);
     on(filter).set("scmFilePathEvaluatorFactory", scmFilePathEvaluatorFactory);
     on(scmFilePathEvaluatorOnManager).set("secretDecryptor", secretDecryptor);
     on(scmFilePathEvaluatorOnDelegate).set("taskExecutionUtils", taskExecutionUtils);
