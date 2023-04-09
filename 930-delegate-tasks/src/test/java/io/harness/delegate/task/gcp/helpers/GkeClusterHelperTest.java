@@ -11,6 +11,7 @@ import static io.harness.delegate.task.gcp.helpers.GcpHelperService.LOCATION_DEL
 import static io.harness.k8s.K8sConstants.API_VERSION;
 import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_BINARY;
 import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_INSTALL_HINT;
+import static io.harness.k8s.K8sConstants.GCP_JSON_KEY_FILE_NAME;
 import static io.harness.k8s.K8sConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.k8s.K8sConstants.USE_GKE_GCLOUD_AUTH_PLUGIN;
 import static io.harness.rule.OwnerRule.ABHINAV2;
@@ -500,16 +501,17 @@ public class GkeClusterHelperTest extends CategoryTest {
     verify(clusters).get(anyString());
     assertThat(config.getServiceAccountTokenSupplier()).isNull();
     assertThat(config.getExec())
-        .isEqualTo(Exec.builder()
-                       .command(GCP_AUTH_PLUGIN_BINARY)
-                       .apiVersion(API_VERSION)
-                       .installHint(GCP_AUTH_PLUGIN_INSTALL_HINT)
-                       .provideClusterInfo(true)
-                       .env(List.of(new EnvVariable(GOOGLE_APPLICATION_CREDENTIALS,
-                                        Paths.get(WORK_DIR).normalize().toAbsolutePath().toString()),
-                           new EnvVariable(USE_GKE_GCLOUD_AUTH_PLUGIN, "true")))
-                       .interactiveMode(InteractiveMode.NEVER)
-                       .build());
+        .isEqualTo(
+            Exec.builder()
+                .command(GCP_AUTH_PLUGIN_BINARY)
+                .apiVersion(API_VERSION)
+                .installHint(GCP_AUTH_PLUGIN_INSTALL_HINT)
+                .provideClusterInfo(true)
+                .env(List.of(new EnvVariable(GOOGLE_APPLICATION_CREDENTIALS,
+                                 Paths.get(WORK_DIR, GCP_JSON_KEY_FILE_NAME).normalize().toAbsolutePath().toString()),
+                    new EnvVariable(USE_GKE_GCLOUD_AUTH_PLUGIN, "true")))
+                .interactiveMode(InteractiveMode.NEVER)
+                .build());
   }
 
   @Test
@@ -549,15 +551,16 @@ public class GkeClusterHelperTest extends CategoryTest {
     assertThat(config.getServiceAccountTokenSupplier().get()).isEqualTo(accessToken);
     assertThat(config.getGcpAccountKeyFileContent()).hasValue(DUMMY_GCP_KEY);
     assertThat(config.getExec())
-        .isEqualTo(Exec.builder()
-                       .command(GCP_AUTH_PLUGIN_BINARY)
-                       .apiVersion(API_VERSION)
-                       .installHint(GCP_AUTH_PLUGIN_INSTALL_HINT)
-                       .provideClusterInfo(true)
-                       .env(List.of(new EnvVariable(GOOGLE_APPLICATION_CREDENTIALS,
-                                        Paths.get(WORK_DIR).normalize().toAbsolutePath().toString()),
-                           new EnvVariable(USE_GKE_GCLOUD_AUTH_PLUGIN, "true")))
-                       .interactiveMode(InteractiveMode.NEVER)
-                       .build());
+        .isEqualTo(
+            Exec.builder()
+                .command(GCP_AUTH_PLUGIN_BINARY)
+                .apiVersion(API_VERSION)
+                .installHint(GCP_AUTH_PLUGIN_INSTALL_HINT)
+                .provideClusterInfo(true)
+                .env(List.of(new EnvVariable(GOOGLE_APPLICATION_CREDENTIALS,
+                                 Paths.get(WORK_DIR, GCP_JSON_KEY_FILE_NAME).normalize().toAbsolutePath().toString()),
+                    new EnvVariable(USE_GKE_GCLOUD_AUTH_PLUGIN, "true")))
+                .interactiveMode(InteractiveMode.NEVER)
+                .build());
   }
 }

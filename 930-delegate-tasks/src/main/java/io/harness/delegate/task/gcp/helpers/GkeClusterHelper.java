@@ -353,11 +353,10 @@ public class GkeClusterHelper {
     List<EnvVariable> envVariableList = new ArrayList<>();
     try {
       if (serviceAccountKeyFileContent != null && workingDirectory != null) {
-        FileIo.writeUtf8StringToFile(
-            Paths.get(workingDirectory, K8sConstants.GCP_JSON_KEY_FILE_NAME).normalize().toAbsolutePath().toString(),
-            String.valueOf(serviceAccountKeyFileContent));
-        envVariableList.add(new EnvVariable(
-            GOOGLE_APPLICATION_CREDENTIALS, Paths.get(workingDirectory).normalize().toAbsolutePath().toString()));
+        String gcpKeyFilePath =
+            Paths.get(workingDirectory, K8sConstants.GCP_JSON_KEY_FILE_NAME).normalize().toAbsolutePath().toString();
+        FileIo.writeUtf8StringToFile(gcpKeyFilePath, String.valueOf(serviceAccountKeyFileContent));
+        envVariableList.add(new EnvVariable(GOOGLE_APPLICATION_CREDENTIALS, gcpKeyFilePath));
         envVariableList.add(new EnvVariable(USE_GKE_GCLOUD_AUTH_PLUGIN, "true"));
       }
     } catch (IOException ex) {
