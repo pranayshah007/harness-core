@@ -206,7 +206,8 @@ public class PipelineServiceTest extends WingsBaseTest {
     when(updateOperations.unset(any())).thenReturn(updateOperations);
     when(serviceResourceService.fetchServicesByUuids(APP_ID, Arrays.asList(SERVICE_ID)))
         .thenReturn(Arrays.asList(Service.builder().name(SERVICE_NAME).uuid(SERVICE_ID).build()));
-    when(workflowService.fetchDeploymentMetadata(any(), any(Workflow.class), any(), anyList(), anyList(), any()))
+    when(workflowService.fetchDeploymentMetadata(
+             any(), any(Workflow.class), any(), anyList(), anyList(), any(DeploymentMetadata.Include[].class)))
         .thenReturn(DeploymentMetadata.builder()
                         .artifactRequiredServiceIds(asList(SERVICE_ID))
                         .envIds(asList(ENV_ID))
@@ -1668,8 +1669,8 @@ public class PipelineServiceTest extends WingsBaseTest {
     when(workflowService.readWorkflow(eq(APP_ID), anyString()))
         .thenAnswer(invocation -> workflowMap.getOrDefault((String) invocation.getArguments()[1], null));
 
-    when(workflowService.fetchDeploymentMetadata(
-             any(), any(Workflow.class), any(), any(), any(), anyBoolean(), any(), any()))
+    when(workflowService.fetchDeploymentMetadata(any(), any(Workflow.class), any(), any(), any(), anyBoolean(), any(),
+             any(DeploymentMetadata.Include[].class)))
         .thenAnswer(invocation -> {
           Workflow argument = (Workflow) invocation.getArguments()[1];
           switch (argument.getName()) {
