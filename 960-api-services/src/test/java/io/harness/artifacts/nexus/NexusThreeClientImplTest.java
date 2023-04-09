@@ -7,6 +7,7 @@
 
 package io.harness.artifacts.nexus;
 
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.SHIVAM;
 
@@ -21,6 +22,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
+import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
@@ -51,6 +53,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDP)
 public class NexusThreeClientImplTest {
@@ -63,6 +66,14 @@ public class NexusThreeClientImplTest {
 
   private static String url;
   private static String artifactRepoUrl;
+  private static final String USERNAME = "username";
+  private static final String PASSWORD = "password";
+  private static final String VERSION_3 = "3.x";
+  private static final String REPO_KEY = "TestRepoKey1";
+  private static final String ARTIFACT = "test/artifact";
+  private static final String LATEST = "latest";
+  private static final String DOCKER_CONTENT_DIGEST = "Docker-Content-Digest";
+  private static final String SHA = "sha256:12345";
 
   @Before
   public void before() {
@@ -77,11 +88,11 @@ public class NexusThreeClientImplTest {
   public void testGetRepositories() {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(url)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     wireMockRule.stubFor(get(urlEqualTo("/service/rest/v1/repositories"))
@@ -117,11 +128,11 @@ public class NexusThreeClientImplTest {
   public void testIsServerValid() {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(url)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     wireMockRule.stubFor(get(urlEqualTo("/service/rest/v1/repositories"))
@@ -169,11 +180,11 @@ public class NexusThreeClientImplTest {
   public void testGetArtifactsVersionsInvalidPort() {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(url)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     assertThatThrownBy(()
@@ -192,11 +203,11 @@ public class NexusThreeClientImplTest {
   public void testGetArtifactsVersionsSuccess() throws UnsupportedEncodingException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey1";
@@ -304,11 +315,11 @@ public class NexusThreeClientImplTest {
   public void testGetBuildDetails() throws UnsupportedEncodingException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey2";
@@ -394,11 +405,11 @@ public class NexusThreeClientImplTest {
   public void testGetBuildDetailException() throws UnsupportedEncodingException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey2";
@@ -482,11 +493,11 @@ public class NexusThreeClientImplTest {
   public void testGetVersion() throws UnsupportedEncodingException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey2";
@@ -532,11 +543,11 @@ public class NexusThreeClientImplTest {
   public void testGetVersionsSuccess() throws UnsupportedEncodingException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey1";
@@ -644,11 +655,11 @@ public class NexusThreeClientImplTest {
   public void testGetVersionsForClassifierNotFound() throws UnsupportedEncodingException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey1";
@@ -707,11 +718,11 @@ public class NexusThreeClientImplTest {
   public void testGetVersionsNoCredentials() throws UnsupportedEncodingException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(false)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey1";
@@ -818,11 +829,11 @@ public class NexusThreeClientImplTest {
   public void testGetPackageVersionsSuccess() throws IOException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey1";
@@ -927,11 +938,11 @@ public class NexusThreeClientImplTest {
   public void testGetPackageVersionsNoCredentials() throws IOException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(false)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey1";
@@ -1036,11 +1047,11 @@ public class NexusThreeClientImplTest {
   public void testGetPackageVersionsNotFound() throws IOException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey1";
@@ -1142,11 +1153,11 @@ public class NexusThreeClientImplTest {
   public void testGetPackageNameBuildDetails() throws IOException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey1";
@@ -1251,11 +1262,11 @@ public class NexusThreeClientImplTest {
   public void testGetPackageNameBuildDetailsNoCredentials() throws IOException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(false)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey1";
@@ -1360,11 +1371,11 @@ public class NexusThreeClientImplTest {
   public void testGetPackageNameBuildDetailsExceptions() throws IOException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey1";
@@ -1458,5 +1469,37 @@ public class NexusThreeClientImplTest {
     } catch (InvalidArtifactServerException exception) {
       assertThat(exception.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
     }
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testFetchImageManifest() throws IOException {
+    NexusRequest nexusConfig = NexusRequest.builder()
+                                   .nexusUrl(url)
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
+                                   .hasCredentials(false)
+                                   .artifactRepositoryUrl(artifactRepoUrl)
+                                   .version(VERSION_3)
+                                   .build();
+
+    wireMockRule.stubFor(
+        get(urlEqualTo("/repository/TestRepoKey1/v2/test/artifact/manifests/latest"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader(DOCKER_CONTENT_DIGEST, SHA)
+                    .withBody("{\n"
+                        + "    \"name\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/tags/latest10\",\n"
+                        + "    \"version\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/versions/sha256:38cd16441be083f00bf2c3e0e307292531b6d98eb77c09271cf43f2b58ce9f9e\"\n"
+                        + "}")));
+
+    Response<DockerImageManifestResponse> response =
+        nexusThreeService.fetchImageManifest(nexusConfig, REPO_KEY, ARTIFACT, true, LATEST);
+
+    assertThat(response).isNotNull();
+    assertThat(response.code()).isEqualTo(200);
+    assertThat(response.headers().get(DOCKER_CONTENT_DIGEST)).isEqualTo(SHA);
   }
 }

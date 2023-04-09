@@ -7,6 +7,7 @@
 
 package io.harness.azure.client;
 
+import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.azure.context.AzureContainerRegistryClientContext;
 import io.harness.azure.model.AzureConfig;
 
@@ -14,6 +15,7 @@ import com.azure.resourcemanager.containerregistry.models.Registry;
 import com.azure.resourcemanager.containerregistry.models.RegistryCredentials;
 import java.util.List;
 import java.util.Optional;
+import retrofit2.Response;
 
 public interface AzureContainerRegistryClient extends AzureResourceClient {
   /**
@@ -79,4 +81,7 @@ public interface AzureContainerRegistryClient extends AzureResourceClient {
    * @return ACR access token for specific scope
    */
   String getAcrAccessToken(String registryUrl, String azureAccessToken, String scope);
+
+  Response<DockerImageManifestResponse> getImageManifest(
+      AzureConfig azureConfig, String registryHost, String repositoryName, String tag, boolean isV1);
 }

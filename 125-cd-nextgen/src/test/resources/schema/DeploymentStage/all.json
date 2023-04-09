@@ -3297,7 +3297,8 @@
       ],
       "properties": {
         "identifier": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         },
         "spec": {
           "$ref": "#/definitions/ConfigFileAttributes"
@@ -6808,7 +6809,7 @@
             "store": {
               "$ref": "#/definitions/StoreConfigWrapper"
             },
-            "subChartName": {
+            "subChartPath": {
               "type": "string"
             },
             "valuesPaths": {
@@ -7222,7 +7223,8 @@
             "GoogleCloudFunctions",
             "AWS_SAM",
             "AwsLambda",
-            "KubernetesAws"
+            "KubernetesAws",
+            "KubernetesRancher"
           ]
         }
       },
@@ -8920,7 +8922,8 @@
       ],
       "properties": {
         "identifier": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         },
         "type": {
           "type": "string",

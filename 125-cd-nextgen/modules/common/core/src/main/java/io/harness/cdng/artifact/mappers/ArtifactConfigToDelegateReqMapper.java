@@ -27,6 +27,7 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryRawConfig;
 import io.harness.cdng.expressionEvaluator.CustomScriptSecretExpressionEvaluator;
 import io.harness.cdng.expressionEvaluator.NgCustomSecretExpressionEvaluator;
 import io.harness.data.algorithm.HashGenerator;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -92,6 +93,7 @@ public class ArtifactConfigToDelegateReqMapper {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
+
     if (isRegex(tag)) {
       tagRegex = getTagRegex(tag);
     }
@@ -99,6 +101,7 @@ public class ArtifactConfigToDelegateReqMapper {
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
+
     boolean shouldFetchDockerV2DigestSHA256 =
         artifactConfig.getDigest() != null && isNotEmpty(artifactConfig.getDigest().getValue());
     return ArtifactDelegateRequestUtils.getDockerDelegateRequest(artifactConfig.getImagePath().getValue(), tag,
@@ -107,7 +110,7 @@ public class ArtifactConfigToDelegateReqMapper {
   }
 
   public boolean isRegex(String tag) {
-    if (tag.equals(ACCEPT_ALL_REGEX)) {
+    if (EmptyPredicate.isNotEmpty(tag) && tag.equals(ACCEPT_ALL_REGEX)) {
       return true;
     } else {
       return false;

@@ -39,6 +39,8 @@ import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory
 import io.harness.idp.gitintegration.resources.ConnectorInfoApiImpl;
 import io.harness.idp.gitintegration.service.GitIntegrationService;
 import io.harness.idp.gitintegration.service.GitIntegrationServiceImpl;
+import io.harness.idp.health.resources.HealthResource;
+import io.harness.idp.health.service.HealthResourceImpl;
 import io.harness.idp.k8s.client.K8sApiClient;
 import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.resource.AccountInfoApiImpl;
@@ -272,6 +274,7 @@ public class IdpModule extends AbstractModule {
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("userSyncer"))
         .toInstance(new ManagedScheduledExecutorService("UserSyncer"));
+    bind(HealthResource.class).to(HealthResourceImpl.class);
 
     MapBinder<BackstageEnvVariableType, BackstageEnvVariableMapper> backstageEnvVariableMapBinder =
         MapBinder.newMapBinder(binder(), BackstageEnvVariableType.class, BackstageEnvVariableMapper.class);

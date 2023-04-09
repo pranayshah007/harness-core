@@ -61,7 +61,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
   private static final String CONFIG_DATA_NAME = "config";
 
-  private static final String CONFIG_NAME = "app-config";
+  private static final String CONFIG_NAME = "backstage-override-config";
 
   private static final String INVALID_PLUGIN_CONFIG_PROVIDED = "Invalid plugin config provided for Plugin id - %s";
   private static final String MERGED_APP_CONFIG_JSON_SCHEMA_PATH = "configs/json-schemas/merged-app-config-schema.json";

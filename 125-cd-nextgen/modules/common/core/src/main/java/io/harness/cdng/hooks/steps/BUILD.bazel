@@ -1,0 +1,37 @@
+# Copyright 2023 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/hooks/mapper:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/steps/constants:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/steps/helpers:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/steps:module",
+        "//127-cd-nextgen-entities:module",
+        "//878-ng-common-utilities:module",
+        "//953-events-api/src/main/proto:953_events_api_java_proto",
+        "//953-yaml-commons:module",
+        "//970-ng-commons:module",
+        "//979-recaster/src/main/java/io/harness/annotation:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/logging:module",
+        "//980-commons/src/main/java/io/harness/tasks:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "//clients/pipeline-service/pms-sdk-core:module",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_inject_guice",
+        "@maven//:javax_validation_validation_api",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)
+
+run_analysis_per_module()

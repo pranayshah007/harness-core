@@ -8,15 +8,9 @@
 package io.harness.pms.plan.creation;
 
 import static io.harness.cf.pipeline.FeatureFlagStageFilterJsonCreator.FEATURE_FLAG_SUPPORTED_TYPE;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.EXECUTION;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.GROUP;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.PARALLEL;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.SPEC;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 import static io.harness.steps.StepSpecTypeConstants.FLAG_CONFIGURATION;
 import static io.harness.steps.StepSpecTypeConstants.RESOURCE_CONSTRAINT;
 
@@ -25,7 +19,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cf.pipeline.CfExecutionPMSPlanCreator;
 import io.harness.cf.pipeline.FeatureFlagStageFilterJsonCreator;
 import io.harness.cf.pipeline.FeatureFlagStagePlanCreator;
-import io.harness.filters.EmptyAnyFilterJsonCreator;
 import io.harness.filters.EmptyFilterJsonCreator;
 import io.harness.filters.GroupFilterJsonCreator;
 import io.harness.filters.ParallelFilterJsonCreator;
@@ -174,7 +167,6 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     filterJsonCreators.add(new PipelineStageFilterCreator());
     filterJsonCreators.add(new GroupFilterJsonCreator());
     filterJsonCreators.add(new EmptyFilterJsonCreator(STEP, ImmutableSet.of(FLAG_CONFIGURATION)));
-    filterJsonCreators.add(new EmptyAnyFilterJsonCreator(ImmutableSet.of(STAGES, STRATEGY, STEPS, SPEC, EXECUTION)));
     filterJsonCreators.add(new HarnessApprovalStepFilterJsonCreatorV2());
     filterJsonCreators.add(new CdSscaStepFilterJsonCreator());
 
@@ -208,7 +200,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     variableCreators.add(new WaitStepVariableCreator());
     variableCreators.add(new EmptyVariableCreator(STAGE, ImmutableSet.of(FEATURE_FLAG_SUPPORTED_TYPE)));
     variableCreators.add(new EmptyVariableCreator(STEP, ImmutableSet.of(FLAG_CONFIGURATION, RESOURCE_CONSTRAINT)));
-    variableCreators.add(new EmptyAnyVariableCreator(ImmutableSet.of(GROUP, PARALLEL, STEPS, SPEC, STAGES, EXECUTION)));
+    variableCreators.add(new EmptyAnyVariableCreator(ImmutableSet.of(GROUP)));
     variableCreators.add(new ContainerStepVariableCreator());
     variableCreators.add(new BarrierStepVariableCreator());
     variableCreators.add(new CdSscaStepVariableCreator());

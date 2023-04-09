@@ -48,6 +48,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.FileData;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.k8s.K8sCanaryBaseHandler;
 import io.harness.delegate.k8s.beans.K8sCanaryHandlerConfig;
@@ -57,7 +58,9 @@ import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.KubernetesYamlException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
+import io.harness.k8s.K8sConstants;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
@@ -71,6 +74,7 @@ import io.harness.k8s.releasehistory.K8SLegacyReleaseHistory;
 import io.harness.k8s.releasehistory.K8sLegacyRelease;
 import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -82,6 +86,7 @@ import software.wings.delegatetasks.k8s.K8sTestHelper;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
 import software.wings.helpers.ext.k8s.request.K8sCanaryDeployTaskParameters;
+import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 import software.wings.helpers.ext.k8s.request.K8sDelegateManifestConfig;
 import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
 import software.wings.helpers.ext.k8s.response.K8sCanaryDeployResponse;
@@ -92,6 +97,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import lombok.SneakyThrows;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -125,6 +131,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
     doReturn(KubernetesConfig.builder().namespace("default").build())
         .when(containerDeploymentDelegateHelper)
         .getKubernetesConfig(any(), anyBoolean());
+    doReturn(releaseHandler).when(k8sTaskHelperBase).getReleaseHandler(anyBoolean());
     doReturn(releaseHistory).when(releaseHandler).getReleaseHistory(any(), any());
     doReturn(1).when(releaseHistory).getAndIncrementLastReleaseNumber();
     doReturn(release).when(releaseHandler).createRelease(any(), anyInt());
@@ -263,8 +270,6 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
         K8sDelegateTaskParams.builder().workingDirectory(".").build());
 
     assertThat(response.getCommandExecutionStatus()).isEqualTo(FAILURE);
-    assertThat(((K8sCanaryDeployResponse) response.getK8sTaskResponse()).getCanaryWorkload())
-        .isEqualTo("default/Deployment/canary");
   }
 
   @Test
@@ -607,5 +612,73 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
         handler.executeTaskInternal(k8sCanaryDeployTaskParameters, k8sDelegateTaskParams);
     verify(k8sTaskHelper, times(1)).restore(any(), any(), any(), any(), any());
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
+  }
+
+  @Test
+  @SneakyThrows
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testDontPopulateCanaryWorkloadsIfNotUpdated() {
+    final K8sCanaryDeployTaskParameters k8sCanaryDeployTaskParameters =
+        K8sCanaryDeployTaskParameters.builder()
+            .inheritManifests(false)
+            .k8sTaskType(K8sTaskType.CANARY_DEPLOY)
+            .k8sDelegateManifestConfig(K8sDelegateManifestConfig.builder().build())
+            .k8sClusterConfig(K8sClusterConfig.builder().build())
+            .releaseName("test-release")
+            .instanceUnitType(COUNT)
+            .instances(1)
+            .valuesYamlList(Collections.emptyList())
+            .skipVersioningForAllK8sObjects(false)
+            .useDeclarativeRollback(
+                true) // hack to avoid class cast exception at
+                      // software/wings/delegatetasks/k8s/taskhandler/K8sCanaryDeployTaskHandler.java:347
+            .build();
+    final List<FileData> renderedManifestFiles = List.of(FileData.builder().fileName("test1").build());
+    final List<KubernetesResource> renderedResources = ManifestHelper.processYaml(DEPLOYMENT_YAML);
+
+    doReturn(releaseHistory).when(releaseHandler).getReleaseHistory(any(), anyString());
+    doReturn(renderedManifestFiles)
+        .when(k8sTaskHelper)
+        .renderTemplate(any(K8sDelegateTaskParams.class), any(K8sDelegateManifestConfig.class), anyString(), anyList(),
+            anyString(), anyString(), any(ExecutionLogCallback.class), eq(k8sCanaryDeployTaskParameters));
+    doReturn(renderedResources)
+        .when(k8sTaskHelperBase)
+        .readManifests(eq(renderedManifestFiles), any(ExecutionLogCallback.class));
+    doReturn(true)
+        .when(k8sTaskHelper)
+        .fetchManifestFilesAndWriteToDirectory(
+            any(K8sDelegateManifestConfig.class), anyString(), any(ExecutionLogCallback.class), anyLong());
+    doReturn(true)
+        .when(k8sTaskHelperBase)
+        .dryRunManifests(any(Kubectl.class), eq(renderedResources), any(K8sDelegateTaskParams.class),
+            any(ExecutionLogCallback.class), anyBoolean());
+    doAnswer(answer -> {
+      K8sCanaryHandlerConfig canaryHandlerConfig = answer.getArgument(0);
+      // A hacky solution to avoid big test configuration and dependencies
+      canaryHandlerConfig.setCanaryWorkload(canaryHandlerConfig.getResources().get(0));
+      return true;
+    })
+        .when(k8sCanaryBaseHandler)
+        .prepareForCanary(any(K8sCanaryHandlerConfig.class), any(K8sDelegateTaskParams.class), anyBoolean(),
+            any(ExecutionLogCallback.class), anyBoolean());
+    doAnswer(answer -> answer.getArgument(0))
+        .when(k8sCanaryBaseHandler)
+        .appendSecretAndConfigMapNamesToCanaryWorkloads(anyString(), anyList());
+    // This method should update the canary workload name. If this does not happen then workload name will match primary
+    // workload name
+    doThrow(new KubernetesYamlException("Something went wrong"))
+        .when(k8sCanaryBaseHandler)
+        .updateTargetInstances(any(K8sCanaryHandlerConfig.class), anyInt(), any(LogCallback.class));
+
+    K8sTaskExecutionResponse response =
+        k8sCanaryDeployTaskHandler.executeTask(k8sCanaryDeployTaskParameters, K8sDelegateTaskParams.builder().build());
+    K8sCanaryDeployResponse canaryDeployResponse = (K8sCanaryDeployResponse) response.getK8sTaskResponse();
+
+    // Null value is still valid use case. It's an issue only if workload name wasn't updated
+    if (canaryDeployResponse.getCanaryWorkload() != null) {
+      assertThat(canaryDeployResponse.getCanaryWorkload())
+          .endsWith(K8sConstants.CANARY_WORKLOAD_SUFFIX_NAME_WITH_SEPARATOR);
+    }
   }
 }
