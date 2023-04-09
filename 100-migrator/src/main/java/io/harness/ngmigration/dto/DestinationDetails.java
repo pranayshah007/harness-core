@@ -16,6 +16,8 @@ import lombok.Data;
 @OwnedBy(HarnessTeam.CDC)
 @Data
 public class DestinationDetails {
+  private String accountIdentifier;
+  private String authToken;
   @Parameter(description = "Provide the orgId if you wish to migrate the entity to either org or project")
   private String orgIdentifier;
 

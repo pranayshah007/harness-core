@@ -104,6 +104,7 @@ public class ServiceHook implements OverridesApplier<ServiceHook>, Visitable {
             overrideConfig.getStoretype().getDisplayName(), resultantConfig.getStoretype().getDisplayName()));
       }
       resultantConfig = resultantConfig.withStore(store.applyOverrides(overrideConfig.getStore()));
+      resultantConfig.setActions(overrideConfig.getActions());
     }
     return resultantConfig;
   }

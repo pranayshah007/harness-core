@@ -87,6 +87,7 @@ import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerDetailsSweepingOutput;
 import io.harness.steps.container.execution.ContainerExecutionConfig;
 import io.harness.steps.plugin.ContainerStepSpec;
+import io.harness.steps.plugin.InitContainerV2StepInfo;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
 import io.harness.steps.plugin.infrastructure.volumes.ContainerVolume;
@@ -129,6 +130,7 @@ public class K8sPodInitUtils {
   @Inject private LogStreamingServiceConfiguration logStreamingServiceConfiguration;
   @Inject ContainerExecutionConfig containerExecutionConfig;
   @Inject LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Inject ContainerInitCpuMemHelper containerInitCpuMemHelper;
 
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
@@ -520,6 +522,10 @@ public class K8sPodInitUtils {
   }
 
   public Pair<Integer, Integer> getStepRequest(ContainerStepSpec containerStepInfo, String accountId) {
+    if (containerStepInfo instanceof InitContainerV2StepInfo) {
+      return getStepGroupRequest((InitContainerV2StepInfo) containerStepInfo, accountId);
+    }
+
     ContainerResource resources = ((ContainerK8sInfra) containerStepInfo.getInfrastructure()).getSpec().getResources();
     Integer containerCpuLimit =
         getContainerCpuLimit(resources, "Container", containerStepInfo.getIdentifier(), accountId);
@@ -527,6 +533,10 @@ public class K8sPodInitUtils {
         getContainerMemoryLimit(resources, "Container", containerStepInfo.getIdentifier(), accountId);
 
     return Pair.of(containerCpuLimit, containerMemoryLimit);
+  }
+
+  public Pair<Integer, Integer> getStepGroupRequest(InitContainerV2StepInfo initContainerV2StepInfo, String accountId) {
+    return containerInitCpuMemHelper.getStepGroupRequest(initContainerV2StepInfo, accountId);
   }
 
   private Integer getContainerCpuLimit(ContainerResource resource, String stepType, String stepId, String accountID) {

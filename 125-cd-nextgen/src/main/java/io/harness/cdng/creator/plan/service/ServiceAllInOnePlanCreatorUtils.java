@@ -24,6 +24,7 @@ import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterUtils;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
+import io.harness.cdng.hooks.steps.ServiceHooksStep;
 import io.harness.cdng.manifest.steps.ManifestsStepV2;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceUseFromStageV2;
@@ -282,6 +283,25 @@ public class ServiceAllInOnePlanCreatorUtils {
     nodeIds.add(configFilesNode.getUuid());
     planCreationResponseMap.put(
         configFilesNode.getUuid(), PlanCreationResponse.builder().planNode(configFilesNode).build());
+
+    // Add serviceHooks node
+    final PlanNode serviceHooksNode =
+        PlanNode.builder()
+            .uuid("hooks-" + UUIDGenerator.generateUuid())
+            .stepType(ServiceHooksStep.STEP_TYPE)
+            .name(PlanCreatorConstants.SERVICE_HOOKS_NODE_NAME)
+            .identifier(YamlTypes.SERVICE_HOOKS)
+            .stepParameters(new EmptyStepParameters())
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                    .build())
+            .skipExpressionChain(true)
+            .skipGraphType(SkipType.SKIP_TREE)
+            .build();
+    nodeIds.add(serviceHooksNode.getUuid());
+    planCreationResponseMap.put(
+        serviceHooksNode.getUuid(), PlanCreationResponse.builder().planNode(serviceHooksNode).build());
 
     // Add Azure settings node
     if (serviceType == ServiceDefinitionType.AZURE_WEBAPP) {

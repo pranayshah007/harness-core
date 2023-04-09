@@ -8,11 +8,8 @@
 package io.harness.engine.interrupts.handlers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.data.structure.CollectionUtils.isPresent;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.eraro.ErrorCode.USER_MARKED_FAIL_ALL_ALREADY;
-import static io.harness.exception.WingsException.USER;
 import static io.harness.interrupts.Interrupt.State.DISCARDED;
 import static io.harness.interrupts.Interrupt.State.PROCESSED_SUCCESSFULLY;
 import static io.harness.interrupts.Interrupt.State.PROCESSED_UNSUCCESSFULLY;
@@ -29,7 +26,6 @@ import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -81,10 +77,6 @@ public class UserMarkedFailAllInterruptHandler extends InterruptPropagatorHandle
   }
 
   private Interrupt processInterrupt(@Valid @NonNull Interrupt interrupt, List<Interrupt> interrupts) {
-    if (isPresent(interrupts, presentInterrupt -> presentInterrupt.getType() == InterruptType.USER_MARKED_FAIL_ALL)) {
-      throw new InvalidRequestException(
-          "Execution already has USER_MARKED_FAIL_ALL interrupt", USER_MARKED_FAIL_ALL_ALREADY, USER);
-    }
     if (isEmpty(interrupts)) {
       return interruptService.save(interrupt);
     }

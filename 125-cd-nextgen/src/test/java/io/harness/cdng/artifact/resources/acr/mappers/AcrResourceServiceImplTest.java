@@ -84,7 +84,7 @@ public class AcrResourceServiceImplTest extends CategoryTest {
     ArtifactBuildDetailsNG artifactBuildDetailsNG = ArtifactBuildDetailsNG.builder().number("tag").build();
 
     AcrArtifactDelegateResponse ecrArtifactDelegateResponse =
-        new AcrArtifactDelegateResponse(artifactBuildDetailsNG, null, null, null, null, null);
+        new AcrArtifactDelegateResponse(artifactBuildDetailsNG, null, null, null, null, null, null);
 
     when(azureHelperService.executeSyncTask(any(), any(), any()))
         .thenReturn(ArtifactTaskResponse.builder()

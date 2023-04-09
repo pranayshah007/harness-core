@@ -53,7 +53,7 @@ public class OnboardingResourceApiImpl implements OnboardingResourceApi {
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
   public Response getHarnessEntities(@AccountIdentifier String harnessAccount, Integer page, Integer limit, String sort,
-      String order, String searchTerm, List projectsToFilter) {
+      String order, String searchTerm, List<String> projectsToFilter) {
     log.info("Request received to get harness entities for idp import. Account = {}", harnessAccount);
     int pageIndex = page == null ? UI_DEFAULT_PAGE : page;
     int pageLimit = limit == null ? UI_DEFAULT_PAGE_LIMIT : limit;

@@ -105,12 +105,14 @@ public class EntityYamlRootNames {
   public static final String BURP = "Burp";
   public static final String CHECKMARX = "Checkmarx";
   public static final String CLAIR = "Clair";
-
+  public static final String CODEQL = "CodeQL";
   public static final String CUSTOM_INGEST = "CustomIngest";
   public static final String DATA_THEOREM = "DataTheorem";
   public static final String DOCKER_CONTENT_TRUST = "DockerContentTrust";
   public static final String EXTERNAL = "External";
   public static final String FORTIFY_ON_DEMAND = "FortifyOnDemand";
+  public static final String FOSSA = "Fossa";
+  public static final String GIT_LEAKS = "GitLeaks";
   public static final String GRYPE = "Grype";
   public static final String JFROG_XRAY = "JfrogXray";
   public static final String MEND = "Mend";

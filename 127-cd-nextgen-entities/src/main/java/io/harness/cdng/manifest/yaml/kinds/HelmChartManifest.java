@@ -90,7 +90,7 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
 
   @Wither @YamlSchemaTypes({string, bool}) @SkipAutoEvaluation ParameterField<Boolean> enableDeclarativeRollback;
   @Wither List<HelmManifestCommandFlag> commandFlags;
-  @Wither @ApiModelProperty(dataType = STRING_CLASSPATH) @SkipAutoEvaluation ParameterField<String> subChartName;
+  @Wither @ApiModelProperty(dataType = STRING_CLASSPATH) @SkipAutoEvaluation ParameterField<String> subChartPath;
 
   @Override
   public ManifestAttributes applyOverrides(ManifestAttributes overrideConfig) {
@@ -126,8 +126,8 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
       resultantManifest = resultantManifest.withCommandFlags(new ArrayList<>(helmChartManifest.getCommandFlags()));
     }
 
-    if (helmChartManifest.getSubChartName() != null) {
-      resultantManifest = resultantManifest.withSubChartName(helmChartManifest.getSubChartName());
+    if (helmChartManifest.getSubChartPath() != null) {
+      resultantManifest = resultantManifest.withSubChartPath(helmChartManifest.getSubChartPath());
     }
 
     if (helmChartManifest.getEnableDeclarativeRollback() != null) {
@@ -159,7 +159,7 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
   public ManifestAttributeStepParameters getManifestAttributeStepParameters() {
     return new HelmChartManifestStepParameters(identifier,
         StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()), chartName, chartVersion, helmVersion,
-        valuesPaths, skipResourceVersioning, commandFlags, subChartName, enableDeclarativeRollback);
+        valuesPaths, skipResourceVersioning, commandFlags, subChartPath, enableDeclarativeRollback);
   }
 
   @Value
@@ -172,7 +172,7 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
     ParameterField<List<String>> valuesPaths;
     ParameterField<Boolean> skipResourceVersioning;
     List<HelmManifestCommandFlag> commandFlags;
-    ParameterField<String> subChartName;
+    ParameterField<String> subChartPath;
     ParameterField<Boolean> enableDeclarativeRollback;
   }
 }

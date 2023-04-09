@@ -15,5 +15,5 @@ import software.wings.ngmigration.DiscoveryResult;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface ImportService {
-  DiscoveryResult discover(String authToken, ImportDTO importConnectorDTO);
+  DiscoveryResult discover(ImportDTO importConnectorDTO);
 }

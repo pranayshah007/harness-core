@@ -19,6 +19,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -42,6 +43,7 @@ public class ServiceOutcomeHelperTest extends CDNGTestBase {
   ArtifactsOutcome artifactOutcome = ArtifactsOutcome.builder().build();
   ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
   private final ConfigFilesOutcome configFilesOutCm = new ConfigFilesOutcome();
+  private final ServiceHooksOutcome serviceHooksOutcome = new ServiceHooksOutcome();
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
@@ -60,6 +62,9 @@ public class ServiceOutcomeHelperTest extends CDNGTestBase {
     doReturn(OptionalOutcome.builder().found(true).outcome(configFilesOutCm).build())
         .when(outcomeService)
         .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.CONFIG_FILES));
+    doReturn(OptionalOutcome.builder().found(true).outcome(serviceHooksOutcome).build())
+        .when(outcomeService)
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE_HOOKS));
     doReturn(OptionalSweepingOutput.builder().found(false).build())
         .when(executionSweepingOutputService)
         .resolveOptional(any(), any());

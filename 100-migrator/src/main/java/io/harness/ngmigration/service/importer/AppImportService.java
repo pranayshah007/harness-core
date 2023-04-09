@@ -22,7 +22,7 @@ import com.google.inject.Inject;
 public class AppImportService implements ImportService {
   @Inject DiscoveryService discoveryService;
 
-  public DiscoveryResult discover(String authToken, ImportDTO importConnectorDTO) {
+  public DiscoveryResult discover(ImportDTO importConnectorDTO) {
     ApplicationFilter filter = (ApplicationFilter) importConnectorDTO.getFilter();
     String accountId = importConnectorDTO.getAccountIdentifier();
     String appId = filter.getAppId();

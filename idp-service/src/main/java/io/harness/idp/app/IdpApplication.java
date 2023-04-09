@@ -17,6 +17,7 @@ import io.harness.Microservice;
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
+import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
 import io.harness.idp.annotations.IdpServiceAuth;
 import io.harness.idp.annotations.IdpServiceAuthIfHasApiKey;
@@ -73,6 +74,7 @@ import javax.ws.rs.container.ResourceInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.glassfish.jersey.server.ServerProperties;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 /**
  * The main application - entry point for the entire Wings Application.
@@ -137,9 +139,12 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerManagedJobs(environment, injector);
     registerExceptionMappers(environment.jersey());
     registerMigrations(injector);
+    registerHealthCheck(environment, injector);
     //    initMetrics(injector);
     log.info("Starting app done");
     log.info("IDP Service is running on JRE: {}", System.getProperty("java.version"));
+
+    MaintenanceController.forceMaintenance(false);
   }
 
   private void registerManagedJobs(Environment environment, Injector injector) {
@@ -233,5 +238,11 @@ public class IdpApplication extends Application<IdpConfiguration> {
           { add(IdpMigrationProvider.class); }
         })
         .build();
+  }
+
+  private void registerHealthCheck(Environment environment, Injector injector) {
+    final HealthService healthService = injector.getInstance(HealthService.class);
+    environment.healthChecks().register("IDP", healthService);
+    healthService.registerMonitor((HealthMonitor) injector.getInstance(MongoTemplate.class));
   }
 }

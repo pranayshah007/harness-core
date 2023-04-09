@@ -97,6 +97,18 @@ public class SLODashboardWidget {
         return (errorBudgetSpentPercentage()) / days;
       }
     }
+    public static SLOGraphDataBuilder getSloGraphDataBuilder(double errorBudgetRemainingPercentage,
+        long errorBudgetRemaining, List<Point> errorBudgetBurndown, List<Point> sloPerformanceTrend,
+        boolean isRecalculatingSLI, boolean isCalculatingSLI, long totalErrorBudgetFromGraph) {
+      return SLODashboardWidget.SLOGraphData.builder()
+          .errorBudgetBurndown(errorBudgetBurndown)
+          .errorBudgetRemaining(errorBudgetRemaining)
+          .sloPerformanceTrend(sloPerformanceTrend)
+          .isRecalculatingSLI(false)
+          .isCalculatingSLI(isCalculatingSLI)
+          .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
+          .totalErrorBudgetFromGraph(totalErrorBudgetFromGraph);
+    }
   }
 
   public static SLODashboardWidgetBuilder withGraphData(SLOGraphData sloGraphData) {

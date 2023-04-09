@@ -37,7 +37,7 @@ public class ConnectorImportService implements ImportService {
         .collect(Collectors.toList());
   }
 
-  public DiscoveryResult discover(String authToken, ImportDTO importConnectorDTO) {
+  public DiscoveryResult discover(ImportDTO importConnectorDTO) {
     ConnectorFilter filter = (ConnectorFilter) importConnectorDTO.getFilter();
     String accountId = importConnectorDTO.getAccountIdentifier();
     List<String> settingIds;

@@ -20,18 +20,17 @@ import static io.harness.cdng.visitor.YamlTypes.ENVIRONMENT_YAML;
 import static io.harness.cdng.visitor.YamlTypes.K8S_MANIFEST;
 import static io.harness.cdng.visitor.YamlTypes.MANIFEST_CONFIG;
 import static io.harness.cdng.visitor.YamlTypes.MANIFEST_LIST_CONFIG;
+import static io.harness.cdng.visitor.YamlTypes.POST_HOOK;
+import static io.harness.cdng.visitor.YamlTypes.PRE_HOOK;
 import static io.harness.cdng.visitor.YamlTypes.PRIMARY;
 import static io.harness.cdng.visitor.YamlTypes.ROLLBACK_STEPS;
 import static io.harness.cdng.visitor.YamlTypes.SERVICE_CONFIG;
 import static io.harness.cdng.visitor.YamlTypes.SERVICE_DEFINITION;
 import static io.harness.cdng.visitor.YamlTypes.SERVICE_ENTITY;
+import static io.harness.cdng.visitor.YamlTypes.SERVICE_HOOKS;
 import static io.harness.cdng.visitor.YamlTypes.SIDECAR;
 import static io.harness.cdng.visitor.YamlTypes.SIDECARS;
-import static io.harness.cdng.visitor.YamlTypes.SPEC;
 import static io.harness.cdng.visitor.YamlTypes.STARTUP_COMMAND;
-import static io.harness.cdng.visitor.YamlTypes.STEPS;
-import static io.harness.cdng.visitor.YamlTypes.STEP_GROUP;
-import static io.harness.cdng.visitor.YamlTypes.STRATEGY;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ACR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_S3_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMI_ARTIFACTS_NAME;
@@ -256,14 +255,7 @@ import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.filters.EmptyAnyFilterJsonCreator;
 import io.harness.filters.EmptyFilterJsonCreator;
-import io.harness.filters.ExecutionPMSFilterJsonCreator;
-import io.harness.filters.ParallelGenericFilterJsonCreator;
-import io.harness.filters.StepGroupPmsFilterJsonCreator;
 import io.harness.ng.core.k8s.ServiceSpecType;
-import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
-import io.harness.plancreator.steps.SpecNodePlanCreator;
-import io.harness.plancreator.strategy.StrategyConfigPlanCreator;
-import io.harness.plancreator.strategy.v1.StrategyConfigPlanCreatorV1;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
@@ -271,11 +263,8 @@ import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
 import io.harness.pms.sdk.core.variables.EmptyAnyVariableCreator;
 import io.harness.pms.sdk.core.variables.EmptyVariableCreator;
-import io.harness.pms.sdk.core.variables.StrategyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.variables.ExecutionVariableCreator;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -327,12 +316,12 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
   private static final List<String> ASG_CATEGORY = Arrays.asList(ASG);
 
-  private static final Set<String> EMPTY_FILTER_IDENTIFIERS = Sets.newHashSet(SIDECARS, SPEC, SERVICE_CONFIG,
-      CONFIG_FILE, STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, STEPS,
-      CONFIG_FILES, ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG, STEP_GROUP);
-  private static final Set<String> EMPTY_VARIABLE_IDENTIFIERS = Sets.newHashSet(SIDECARS, SPEC, SERVICE_CONFIG,
-      CONFIG_FILE, STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, STEPS,
-      CONFIG_FILES, ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG);
+  private static final Set<String> EMPTY_FILTER_IDENTIFIERS = Sets.newHashSet(SIDECARS, SERVICE_CONFIG, CONFIG_FILE,
+      STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, CONFIG_FILES,
+      ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG, SERVICE_HOOKS, PRE_HOOK, POST_HOOK);
+  private static final Set<String> EMPTY_VARIABLE_IDENTIFIERS = Sets.newHashSet(SIDECARS, SERVICE_CONFIG, CONFIG_FILE,
+      STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, CONFIG_FILES,
+      ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG, SERVICE_HOOKS, PRE_HOOK, POST_HOOK);
   private static final Set<String> EMPTY_SIDECAR_TYPES =
       Sets.newHashSet(CUSTOM_ARTIFACT_NAME, JENKINS_NAME, DOCKER_REGISTRY_NAME, ACR_NAME, AMAZON_S3_NAME,
           ARTIFACTORY_REGISTRY_NAME, ECR_NAME, GOOGLE_ARTIFACT_REGISTRY_NAME, GCR_NAME, NEXUS3_REGISTRY_NAME,
@@ -397,7 +386,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new IndividualManifestPlanCreator());
     planCreators.add(new CDStepsPlanCreator());
     planCreators.add(new CDStepGroupPmsPlanCreator());
-    planCreators.add(new ParallelPlanCreator());
     planCreators.add(new ServerlessAwsLambdaDeployStepPlanCreator());
     planCreators.add(new ServerlessAwsLambdaRollbackStepPlanCreator());
     planCreators.add(new CloudformationCreateStackStepPlanCreator());
@@ -406,9 +394,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new IndividualConfigFilePlanCreator());
     planCreators.add(new ConfigFilesPlanCreator());
     planCreators.add(new CommandStepPlanCreator());
-    planCreators.add(new SpecNodePlanCreator());
-    planCreators.add(new StrategyConfigPlanCreator());
-    planCreators.add(new StrategyConfigPlanCreatorV1());
     planCreators.add(new AzureWebAppRollbackStepPlanCreator());
     planCreators.add(new AzureWebAppSlotDeploymentStepPlanCreator());
     planCreators.add(new AzureWebAppSlotSwapSlotPlanCreator());
@@ -500,18 +485,15 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     filterJsonCreators.add(new DeploymentStageFilterJsonCreatorV2());
     filterJsonCreators.add(new CDPMSStepFilterJsonCreator());
     filterJsonCreators.add(new CDPMSStepFilterJsonCreatorV2());
-    filterJsonCreators.add(new ExecutionPMSFilterJsonCreator());
-    filterJsonCreators.add(new ParallelGenericFilterJsonCreator());
-    filterJsonCreators.add(new StepGroupPmsFilterJsonCreator());
     filterJsonCreators.add(new CDPMSCommandStepFilterJsonCreator());
     filterJsonCreators.add(new ChaosStepFilterJsonCreator());
     filterJsonCreators.add(new EmptyAnyFilterJsonCreator(EMPTY_FILTER_IDENTIFIERS));
-    filterJsonCreators.add(new EmptyAnyFilterJsonCreator(Sets.newHashSet(STRATEGY)));
     filterJsonCreators.add(new EmptyFilterJsonCreator(SIDECAR, EMPTY_SIDECAR_TYPES));
     filterJsonCreators.add(new EmptyFilterJsonCreator(MANIFEST_CONFIG, EMPTY_MANIFEST_TYPES));
     filterJsonCreators.add(new EmptyFilterJsonCreator(ENVIRONMENT_YAML, EMPTY_ENVIRONMENT_TYPES));
     filterJsonCreators.add(new EmptyFilterJsonCreator(PRIMARY, EMPTY_PRIMARY_TYPES));
     filterJsonCreators.add(new EmptyFilterJsonCreator(SERVICE_DEFINITION, EMPTY_SERVICE_DEFINITION_TYPES));
+
     injectorUtils.injectMembers(filterJsonCreators);
 
     return filterJsonCreators;
@@ -519,11 +501,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
   @Override
   public List<VariableCreator> getVariableCreators() {
-    Set<String> emptyVariableIdentifiers = new HashSet<>(EMPTY_VARIABLE_IDENTIFIERS);
-    emptyVariableIdentifiers.add(YAMLFieldNameConstants.PARALLEL);
-
     List<VariableCreator> variableCreators = new ArrayList<>();
-    variableCreators.add(new EmptyAnyVariableCreator(emptyVariableIdentifiers));
+    variableCreators.add(new EmptyAnyVariableCreator(new HashSet<>(EMPTY_VARIABLE_IDENTIFIERS)));
     variableCreators.add(new EmptyVariableCreator(SIDECAR, EMPTY_SIDECAR_TYPES));
     variableCreators.add(new EmptyVariableCreator(MANIFEST_CONFIG, EMPTY_MANIFEST_TYPES));
     variableCreators.add(new EmptyVariableCreator(ENVIRONMENT_YAML, EMPTY_ENVIRONMENT_TYPES));
@@ -535,7 +514,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new GitOpsFetchLinkedAppsStepVariableCreator());
     variableCreators.add(new GitOpsSyncStepVariableCreator());
     variableCreators.add(deploymentStageVariableCreator);
-    variableCreators.add(new ExecutionVariableCreator());
     variableCreators.add(new StepGroupVariableCreator());
     variableCreators.add(new K8sApplyStepVariableCreator());
     variableCreators.add(new K8sBGSwapServicesVariableCreator());
@@ -565,7 +543,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new FetchInstanceScriptStepVariableCreator());
     variableCreators.add(new JenkinsBuildStepVariableCreator());
     variableCreators.add(new BambooBuildStepVariableCreator());
-    variableCreators.add(new StrategyVariableCreator());
     // ECS
     variableCreators.add(new EcsRollingDeployStepVariableCreator());
     variableCreators.add(new EcsRollingRollbackStepVariableCreator());

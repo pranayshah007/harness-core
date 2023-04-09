@@ -6,6 +6,9 @@
  */
 
 package io.harness.cdng.hooks;
+import static io.harness.cdng.hooks.ServiceHookConstants.POST_HOOK;
+import static io.harness.cdng.hooks.ServiceHookConstants.PRE_HOOK;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,6 +20,7 @@ import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.ArrayList;
@@ -54,5 +58,21 @@ public class ServiceHookWrapper implements Visitable {
       children.add(VisitableChild.builder().value(postHook).fieldName("postHook").build());
     }
     return VisitableChildren.builder().visitableChildList(children).build();
+  }
+
+  @JsonIgnore
+  public String getHookType() {
+    if (preHook != null) {
+      return PRE_HOOK;
+    }
+    return POST_HOOK;
+  }
+
+  @JsonIgnore
+  public ServiceHook getHook() {
+    if (preHook != null) {
+      return preHook;
+    }
+    return postHook;
   }
 }

@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.RollbackModeBehaviour;
 import io.harness.pms.plan.creation.PlanCreationBlobResponseUtils;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.pipeline.creators.CreatorResponse;
@@ -20,6 +21,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -145,5 +147,67 @@ public class PlanCreatorServiceHelper {
 
   protected boolean isEmptyDependencies(Dependencies dependencies) {
     return dependencies == null || EmptyPredicate.isEmpty(dependencies.getDependenciesMap());
+  }
+
+  /**
+   * If initialDependencyDetails has rollbackModeBehaviour that is to be propagated, then all the dependencies present
+   * in planForField will also be decorated with this rollbackModeBehaviour
+   * @param initialDependencyDetails details of the dependency for which the created plan is
+   * @param planForField the created plan
+   */
+  public void decorateResponseWithRollbackModeBehaviour(
+      Dependency initialDependencyDetails, PlanCreationResponse planForField) {
+    if (initialDependencyDetails == null) {
+      return;
+    }
+    if (!PlanCreatorServiceHelper.isBehaviourToPropagate(initialDependencyDetails.getRollbackModeBehaviour())) {
+      return;
+    }
+
+    // if rollbackModeBehaviour in initialDependencyDetails is Preserve, add all nodes in planForField to its
+    // preservedNodesInRollbackMode list
+    checkAndAddNodesToBePreservedInRollbackMode(planForField, initialDependencyDetails.getRollbackModeBehaviour());
+
+    // newDependenciesUuids contains all the uuids which will be registered as dependencies
+    Set<String> newDependenciesUuids = planForField.getDependencies().getDependenciesMap().keySet();
+
+    // this map's keys will be a subset of newDependenciesUuids, because not all dependency uuids will have a Dependency
+    // instance attached to them
+    Map<String, Dependency> decoratedDependencyMetadataMap =
+        new HashMap<>(planForField.getDependencies().getDependencyMetadataMap());
+
+    // for every dependency uuid, we will add a Dependency instance which has the rollback mode behaviour from
+    // initialDependencyDetails
+    for (String newDependencyUuid : newDependenciesUuids) {
+      if (decoratedDependencyMetadataMap.containsKey(newDependencyUuid)) {
+        decoratedDependencyMetadataMap.put(newDependencyUuid,
+            decoratedDependencyMetadataMap.get(newDependencyUuid)
+                .toBuilder()
+                .setRollbackModeBehaviour(initialDependencyDetails.getRollbackModeBehaviour())
+                .build());
+      } else {
+        decoratedDependencyMetadataMap.put(newDependencyUuid,
+            Dependency.newBuilder()
+                .setRollbackModeBehaviour(initialDependencyDetails.getRollbackModeBehaviour())
+                .build());
+      }
+    }
+
+    planForField.setDependencies(
+        planForField.getDependencies().toBuilder().putAllDependencyMetadata(decoratedDependencyMetadataMap).build());
+  }
+
+  void checkAndAddNodesToBePreservedInRollbackMode(
+      PlanCreationResponse planForField, RollbackModeBehaviour rollbackModeBehaviour) {
+    if (rollbackModeBehaviour != RollbackModeBehaviour.PRESERVE) {
+      return;
+    }
+    List<String> newNodes = new ArrayList<>(planForField.getNodes().keySet());
+    newNodes.add(planForField.getPlanNode().getUuid());
+    planForField.mergePreservedNodesInRollbackMode(newNodes);
+  }
+
+  boolean isBehaviourToPropagate(RollbackModeBehaviour behaviour) {
+    return behaviour == RollbackModeBehaviour.PRESERVE;
   }
 }

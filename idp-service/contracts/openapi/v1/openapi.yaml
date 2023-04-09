@@ -328,6 +328,8 @@ paths:
         - $ref: '#/components/parameters/SearchTerm'
         - schema:
             type: array
+            items:
+              type: string
           in: query
           name: projects_to_filter
           description: This would be used to filter resources having attributes matching the project filter.
@@ -991,6 +993,8 @@ components:
           enum:
             - Monitoring
             - CI/CD
+            - Discovery
+            - Quality
             - Security
             - Source Control Mgmt
         source:
@@ -1062,10 +1066,24 @@ components:
           $ref: '#/components/schemas/Exports'
           x-stoplight:
             id: ns1ky9089aalt
+        env_variables:
+          x-stoplight:
+            id: 4tj9fofa4b3hn
+          type: array
+          items:
+            $ref: '#/components/schemas/BackstageEnvSecretVariable'
+            x-stoplight:
+              id: v8fluu5h3dt3n
+        saved:
+          type: boolean
+          x-stoplight:
+            id: b06clr6ww9ku0
       required:
         - plugin_details
         - config
         - exports
+        - env_variables
+        - saved
     ManualImportEntityRequest:
       title: ManualImportEntityRequest
       x-stoplight:
@@ -1354,6 +1372,9 @@ components:
           - snyk-security
           - harness-ci-cd
           - github-pull-requests-board
+          - kafka
+          - lighthouse
+          - todo
     PluginName:
       name: PluginId
       in: query

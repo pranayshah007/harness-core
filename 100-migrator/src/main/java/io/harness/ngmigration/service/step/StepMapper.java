@@ -126,8 +126,8 @@ public abstract class StepMapper {
           String.format("The template used for step %s was not migrated", graphNode.getName()));
     }
 
-    JsonNode templateInputs =
-        migrationTemplateUtils.getTemplateInputs(template.getNgEntityDetail(), context.getWorkflow().getAccountId());
+    JsonNode templateInputs = migrationTemplateUtils.getTemplateInputs(
+        template.getNgEntityDetail(), migrationContext.getInputDTO().getDestinationAccountIdentifier());
     if (templateInputs != null) {
       baseOverrideTemplateInputs(phaseStep, graphNode, templateInputs, skipCondition);
       overrideTemplateInputs(migrationContext, context, phase, graphNode, template, templateInputs);
