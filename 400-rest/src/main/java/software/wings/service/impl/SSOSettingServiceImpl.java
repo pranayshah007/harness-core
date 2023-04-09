@@ -428,6 +428,22 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   }
 
   @Override
+  public boolean deleteSamlSettingsWithAudits(SamlSettings samlSettings) {
+    if (samlSettings == null) {
+      throw new InvalidRequestException("No Saml settings found for this account");
+    }
+    if (userGroupService.existsLinkedUserGroup(samlSettings.getAccountId(), samlSettings.getUuid())) {
+      throw new InvalidRequestException(
+          "Deleting Saml provider with linked user groups is not allowed. Unlink the user groups first.");
+    }
+    checkForLinkedSSOGroupsOnNG(samlSettings.getAccountId(), samlSettings.getUuid());
+    log.info("Auditing deletion of SAML Settings for account={}", samlSettings.getAccountId());
+    auditServiceHelper.reportDeleteForAuditingUsingAccountId(samlSettings.getAccountId(), samlSettings);
+    ngAuditLoginSettingsForSAMLDelete(samlSettings);
+    return wingsPersistence.delete(samlSettings);
+  }
+
+  @Override
   public SamlSettings getSamlSettingsByOrigin(String origin) {
     return wingsPersistence.createQuery(SamlSettings.class).field("origin").equal(origin).get();
   }

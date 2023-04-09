@@ -54,6 +54,8 @@ public interface SSOService {
 
   SSOConfig deleteSamlConfiguration(@NotNull String accountId);
 
+  SSOConfig deleteSamlConfiguration(@NotNull String accountId, @NotNull String samlSSOId);
+
   SSOConfig setAuthenticationMechanism(
       @NotNull String accountId, @NotNull AuthenticationMechanism authenticationMechanism);
 
@@ -73,6 +75,8 @@ public interface SSOService {
   LdapSettings deleteLdapSettings(@NotBlank String accountId);
 
   SamlSettings getSamlSettings(@NotBlank String accountId);
+
+  SamlSettings getSamlSettings(@NotBlank String accountId, @NotNull String samlSSOId);
 
   LdapTestResponse validateLdapConnectionSettings(@NotNull LdapSettings ldapSettings, @NotBlank String accountId);
 

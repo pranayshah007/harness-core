@@ -32,6 +32,7 @@ import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 
+import retrofit2.http.Query;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.LdapSettingsMapper;
 import software.wings.beans.sso.OauthSettings;
@@ -141,6 +142,14 @@ public class SSOResourceNG {
     return new RestResponse<>(ssoService.getSamlSettings(accountId));
   }
 
+  @GET
+  @Path("get-saml-settings-sso-id")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<SamlSettings> getSamlSetting(@QueryParam("accountId") String accountId, @QueryParam("samlSSOId") String samlSSOId) {
+    return new RestResponse<>(ssoService.getSamlSettings(accountId));
+  }
+
   @POST
   @Path("saml-idp-metadata-upload")
   @Timed
@@ -205,6 +214,15 @@ public class SSOResourceNG {
   @ExceptionMetered
   public RestResponse<SSOConfig> deleteSamlMetaData(@QueryParam("accountId") String accountId) {
     return new RestResponse<SSOConfig>(ssoService.deleteSamlConfiguration(accountId));
+  }
+
+  @DELETE
+  @Path("delete-saml-idp-metadata-sso-id")
+  @Timed
+  @AuthRule(permissionType = LOGGED_IN)
+  @ExceptionMetered
+  public RestResponse<SSOConfig> deleteSamlMetaData(@QueryParam("accountId") String accountId, @QueryParam("samlSSOId") String samlSSOId) {
+    return new RestResponse<>(ssoService.deleteSamlConfiguration(accountId, samlSSOId));
   }
 
   @GET

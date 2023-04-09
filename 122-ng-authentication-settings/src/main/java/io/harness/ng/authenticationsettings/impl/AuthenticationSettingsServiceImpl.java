@@ -277,6 +277,19 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   }
 
   @Override
+  public SSOConfig deleteSAMLMetadata(@NotNull @AccountIdentifier String accountIdentifier, @NotNull String samlSSOId) {
+    SamlSettings samlSettings = getResponse(managerClient.getSAMLMetadata(accountIdentifier, samlSSOId));
+    if (samlSettings == null) {
+      throw new InvalidRequestException(String.format("No Saml Metadata found for account %s and saml sso id %s", accountIdentifier, samlSSOId));
+    }
+    if (isNotEmpty(userGroupService.getUserGroupsBySsoId(accountIdentifier, samlSSOId))) {
+      throw new InvalidRequestException(
+          String.format("Deleting Saml setting having id %s with linked user groups is not allowed in account %s. Unlink the user groups first", samlSSOId, accountIdentifier));
+    }
+    return getResponse(managerClient.deleteSAMLMetadata(accountIdentifier, samlSSOId));
+  }
+
+  @Override
   @FeatureRestrictionCheck(FeatureRestrictionName.SAML_SUPPORT)
   public LoginTypeResponse getSAMLLoginTest(@NotNull @AccountIdentifier String accountIdentifier) {
     return getResponse(managerClient.getSAMLLoginTest(accountIdentifier));

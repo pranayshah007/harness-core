@@ -46,6 +46,7 @@ public interface AuthenticationSettingsService {
       String entityIdentifier, String samlProviderType, String clientId, String clientSecret,
       String friendlySamlAppName);
   SSOConfig deleteSAMLMetadata(@NotNull String accountIdentifier);
+  SSOConfig deleteSAMLMetadata(@NotNull String accountIdentifier, @NotNull String samlSSOId);
   LoginTypeResponse getSAMLLoginTest(@NotNull String accountIdentifier);
   LoginTypeResponse getSAMLLoginTestV2(@NotNull String accountIdentifier, @NotNull String samlSSOId);
   LDAPSettings getLdapSettings(@NotNull String accountIdentifier);

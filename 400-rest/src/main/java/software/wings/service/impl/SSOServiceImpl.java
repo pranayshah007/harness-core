@@ -190,6 +190,17 @@ public class SSOServiceImpl implements SSOService {
   @Override
   public SSOConfig deleteSamlConfiguration(String accountId) {
     ssoSettingService.deleteSamlSettings(accountId);
+    return setToAuthMechanismAndReturnSsoConfig(accountId);
+  }
+
+  @Override
+  public SSOConfig deleteSamlConfiguration(String accountId, String samlSSOId) {
+    SamlSettings settings = ssoSettingService.getSamlSettingsByAccountIdAndUuid(accountId, samlSSOId);
+    ssoSettingService.deleteSamlSettingsWithAudits(settings);
+    return setToAuthMechanismAndReturnSsoConfig(accountId);
+  }
+
+  private SSOConfig setToAuthMechanismAndReturnSsoConfig(String accountId) {
     SSOConfig ssoConfig = setAuthenticationMechanism(accountId, USER_PASSWORD);
     setOauthIfSetAfterSSODelete(accountId);
     return ssoConfig;
@@ -471,6 +482,11 @@ public class SSOServiceImpl implements SSOService {
   @Override
   public SamlSettings getSamlSettings(@NotBlank String accountId) {
     return ssoSettingService.getSamlSettingsByAccountId(accountId);
+  }
+
+  @Override
+  public SamlSettings getSamlSettings(@NotBlank String accountId, @NotNull String samlSSOId) {
+    return ssoSettingService.getSamlSettingsByAccountIdAndUuid(accountId, samlSSOId);
   }
 
   @Override

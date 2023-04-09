@@ -55,6 +55,8 @@ public interface SSOSettingService extends OwnedByAccount {
 
   boolean deleteSamlSettings(SamlSettings samlSettings);
 
+  boolean deleteSamlSettingsWithAudits(SamlSettings samlSettings);
+
   SamlSettings getSamlSettingsByOrigin(@NotNull String origin);
 
   Iterator<SamlSettings> getSamlSettingsIteratorByOrigin(@NotNull String origin, String accountId);

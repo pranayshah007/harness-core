@@ -426,6 +426,25 @@ public class AuthenticationSettingsResource {
     return new RestResponse<>(response);
   }
 
+  @DELETE
+  @Path("/delete-saml-metadata/{samlSSOId}")
+  @ApiOperation(value = "Delete SAML Config for given SAML sso id", nickname = "deleteSamlMetaDataForSamlSSOId")
+  @Operation(operationId = "deleteSamlMetaDataForSamlSSOId", summary = "Delete SAML meta data for given SAML sso id",
+      description = "Deletes SAML metadata for the given Account and SAML sso id",
+      responses =
+          {
+              @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                  responseCode = "default", description = "Successfully deleted SAML meta associated with a SAML SSO setting id")
+          })
+  public RestResponse<SSOConfig>
+  deleteSamlMetadataForSamlSSOId(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+      "accountIdentifier") @NotNull String accountIdentifier, @Parameter(description = "Saml Settings Identifier") @PathParam("samlSSOId") String samlSSOId) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountIdentifier, null, null), Resource.of(AUTHSETTING, null), DELETE_AUTHSETTING_PERMISSION);
+    SSOConfig response = authenticationSettingsService.deleteSAMLMetadata(accountIdentifier, samlSSOId);
+    return new RestResponse<>(response);
+  }
+
   @GET
   @Path("/saml-login-test")
   @ApiOperation(value = "Get SAML Login Test", nickname = "getSamlLoginTest")
