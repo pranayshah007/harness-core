@@ -49,7 +49,7 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
-import io.harness.gitx.GitXSettingsHandler;
+import io.harness.gitx.GitXSettingsHelper;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.pms.contracts.steps.StepInfo;
@@ -139,7 +139,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final PipelineValidationService pipelineValidationService;
   @Inject @Named("PRIVILEGED") private ProjectClient projectClient;
   @Inject PmsFeatureFlagService pmsFeatureFlagService;
-  @Inject GitXSettingsHandler gitXSettingsHandler;
+  @Inject GitXSettingsHelper gitXSettingsHelper;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
@@ -163,7 +163,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
         pipelineEntity.getIdentifier());
 
-    gitXSettingsHandler.enforceGitExperienceIfApplicable(pipelineEntity.getAccountIdentifier(),
+    gitXSettingsHelper.enforceGitExperienceIfApplicable(pipelineEntity.getAccountIdentifier(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
 
     checkProjectExists(

@@ -45,7 +45,7 @@ import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
-import io.harness.gitx.GitXSettingsHandler;
+import io.harness.gitx.GitXSettingsHelper;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -118,7 +118,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
   @Mock private PipelineAsyncValidationService pipelineAsyncValidationService;
   @Mock private ProjectClient projectClient;
-  @Mock GitXSettingsHandler gitXSettingsHandler;
+  @Mock GitXSettingsHelper gitXSettingsHelper;
 
   StepCategory library;
   StepCategory cv;
@@ -609,7 +609,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pmsPipelineServiceHelper)
         .resolveTemplatesAndValidatePipeline(any(), anyBoolean());
-    doNothing().when(gitXSettingsHandler).enforceGitExperienceIfApplicable(any(), any(), any());
+    doNothing().when(gitXSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
     pmsPipelineRepository.save(pipelineEntity);
     MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);

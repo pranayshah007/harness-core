@@ -19,11 +19,32 @@ import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.remote.client.NGRestUtils;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @OwnedBy(PIPELINE)
-public class GitXSettingsHandler {
+@Singleton
+public class GitXSettingsHelper {
   @Inject private NGSettingsClient ngSettingsClient;
-  public boolean isGitExperienceEnforcedInSettings(
+
+  public void enforceGitExperienceIfApplicable(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+
+    if (gitEntityInfo != null && StoreType.REMOTE.equals(gitEntityInfo.getStoreType())) {
+      return;
+    }
+
+    if (isGitExperienceEnforcedInSettings(accountIdentifier, orgIdentifier, projectIdentifier)
+        && (gitEntityInfo == null || StoreType.INLINE.equals(gitEntityInfo.getStoreType()))) {
+      throw new InvalidRequestException(String.format(
+          "Git Experience is enforced for the current scope with accountId: %s, orgIdentifier: %s and projIdentifier: %s. Hence Interaction with INLINE entities is forbidden.",
+          accountIdentifier, orgIdentifier, projectIdentifier));
+    }
+  }
+
+  private boolean isGitExperienceEnforcedInSettings(
       String accountIdentifier, String orgIdentifier, String projIdentifier) {
     String isGitExperienceEnforced =
         NGRestUtils
@@ -31,18 +52,5 @@ public class GitXSettingsHandler {
                 GitSyncConstants.ENFORCE_GIT_EXPERIENCE, accountIdentifier, orgIdentifier, projIdentifier))
             .getValue();
     return GitSyncConstants.TRUE_VALUE.equals(isGitExperienceEnforced);
-  }
-
-  public void enforceGitExperienceIfApplicable(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    if (isGitExperienceEnforcedInSettings(accountIdentifier, orgIdentifier, projectIdentifier)) {
-      GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-
-      if (gitEntityInfo == null || StoreType.INLINE.equals(gitEntityInfo.getStoreType())) {
-        throw new InvalidRequestException(String.format(
-            "Git Experience is enforced for the current scope with accountId: %s, orgIdentifier: %s and projIdentifier: %s. Hence Inline Entities cannot be created.",
-            accountIdentifier, orgIdentifier, projectIdentifier));
-      }
-    }
   }
 }
