@@ -423,7 +423,6 @@ public class NgGlobalKmsServiceImplTest extends CategoryTest {
       exceptionRule.expectMessage(
           String.format("Secret with identifier %s does not exist in global scope", secretDTOV2.getIdentifier()));
       globalKmsService.updateGlobalKms(connectorDTO, secretDTOV2);
-      ;
       verify(ngSecretService, times(1))
           .get(GLOBAL_ACCOUNT_ID, secretDTOV2.getOrgIdentifier(), secretDTOV2.getProjectIdentifier(),
               secretDTOV2.getIdentifier());
