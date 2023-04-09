@@ -11,6 +11,8 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
+import io.harness.pms.sdk.core.data.Outcome;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -21,7 +23,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("googleFunctionGenOneStepOutcome")
 @JsonTypeName("googleFunctionGenOneStepOutcome")
 @RecasterAlias("io.harness.cdng.googlefunctions.GoogleFunctionGenOneStepOutcome")
-public class GoogleFunctionGenOneStepOutcome {
+public class GoogleFunctionGenOneStepOutcome implements Outcome, ExecutionSweepingOutput {
     String functionName;
     String runtime;
     String state;

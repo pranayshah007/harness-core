@@ -136,13 +136,13 @@ public class GoogleFunctionsGenOneDeployStep
     InfrastructureOutcome infrastructureOutcome = googleFunctionsStepPassThroughData.getInfrastructureOutcome();
     GcpGoogleFunctionInfraConfig gcpGoogleFunctionInfraConfig =
             (GcpGoogleFunctionInfraConfig) googleFunctionsHelper.getInfraConfig(infrastructureOutcome, ambiance);
-    List<ServerInstanceInfo> serverInstanceInfoList = googleFunctionsHelper.getServerInstanceInfo(
+    List<ServerInstanceInfo> serverInstanceInfoList = googleFunctionsHelper.getGenOneServerInstanceInfo(
             googleFunctionGenOneDeployResponse, gcpGoogleFunctionInfraConfig, infrastructureOutcome.getInfrastructureKey());
     instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
     return stepResponseBuilder.status(Status.SUCCEEDED)
             .stepOutcome(StepResponse.StepOutcome.builder()
                     .name(OutcomeExpressionConstants.OUTPUT)
-                    .outcome(googleFunctionDeployOutcome)
+                    .outcome(googleFunctionGenOneStepOutcome)
                     .build())
             .build();
   }

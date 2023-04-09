@@ -9,6 +9,7 @@ package io.harness.delegate.task.googlefunction;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import com.google.cloud.functions.v1.CloudFunction;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.mapper.GoogleFunctionToServerInstanceInfoMapper;
@@ -22,6 +23,8 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import io.harness.logging.LogCallback;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -30,11 +33,26 @@ import lombok.extern.slf4j.Slf4j;
 public class GoogleFunctionTaskHelperBase {
   @Inject private GoogleFunctionInfraConfigHelper googleFunctionInfraConfigHelper;
   @Inject private GoogleFunctionCommandTaskHelper googleFunctionCommandTaskHelper;
+  @Inject private GoogleFunctionGenOneCommandTaskHelper googleFunctionGenOneCommandTaskHelper;
+
   public List<ServerInstanceInfo> getGoogleFunctionServerInstanceInfo(
       GoogleFunctionDeploymentReleaseData deploymentReleaseData) throws InvalidProtocolBufferException {
     GcpGoogleFunctionInfraConfig gcpGoogleFunctionInfraConfig =
         (GcpGoogleFunctionInfraConfig) deploymentReleaseData.getGoogleFunctionInfraConfig();
     googleFunctionInfraConfigHelper.decryptInfraConfig(gcpGoogleFunctionInfraConfig);
+    if(GoogleFunctionUtils.ENVIRONMENT_TYPE_GEN_ONE.equals(deploymentReleaseData.getEnvironmentType())) {
+      Optional<CloudFunction> optionalCloudFunction = googleFunctionGenOneCommandTaskHelper.getFunction(
+              deploymentReleaseData.getFunction(), gcpGoogleFunctionInfraConfig,  null);
+      if(optionalCloudFunction.isPresent()) {
+        CloudFunction cloudFunction = optionalCloudFunction.get();
+        GoogleFunction googleFunction =
+                googleFunctionGenOneCommandTaskHelper.getGoogleFunction(cloudFunction, null);
+        return GoogleFunctionToServerInstanceInfoMapper.toGenOneServerInstanceInfoList(googleFunction,
+                gcpGoogleFunctionInfraConfig.getProject(), gcpGoogleFunctionInfraConfig.getRegion(),
+                gcpGoogleFunctionInfraConfig.getInfraStructureKey());
+      }
+      return new ArrayList<>();
+    }
     Optional<Function> optionalFunction = googleFunctionCommandTaskHelper.getFunction(
         deploymentReleaseData.getFunction(), gcpGoogleFunctionInfraConfig.getGcpConnectorDTO(),
         gcpGoogleFunctionInfraConfig.getProject(), gcpGoogleFunctionInfraConfig.getRegion(), null);

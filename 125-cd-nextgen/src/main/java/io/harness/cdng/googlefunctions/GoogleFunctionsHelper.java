@@ -359,7 +359,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
           ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
       GcpGoogleFunctionInfraConfig gcpGoogleFunctionInfraConfig =
           (GcpGoogleFunctionInfraConfig) getInfraConfig(infrastructureOutcome, ambiance);
-      List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfo(
+      List<ServerInstanceInfo> serverInstanceInfoList = getGenOneServerInstanceInfo(
           googleFunctionCommandResponse, gcpGoogleFunctionInfraConfig, infrastructureOutcome.getInfrastructureKey());
       instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
       GoogleFunctionStepOutcome googleFunctionStepOutcome =
@@ -371,6 +371,30 @@ public class GoogleFunctionsHelper extends CDStepHelper {
                            .outcome(googleFunctionStepOutcome)
                            .build())
           .build();
+    }
+  }
+
+  public StepResponse generateGenOneStepResponse(GoogleFunctionCommandResponse googleFunctionCommandResponse,
+                                           StepResponseBuilder stepResponseBuilder, Ambiance ambiance) {
+    if (googleFunctionCommandResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
+      return getFailureResponseBuilder(googleFunctionCommandResponse, stepResponseBuilder).build();
+    } else {
+      InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
+              ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+      GcpGoogleFunctionInfraConfig gcpGoogleFunctionInfraConfig =
+              (GcpGoogleFunctionInfraConfig) getInfraConfig(infrastructureOutcome, ambiance);
+      List<ServerInstanceInfo> serverInstanceInfoList = getGenOneServerInstanceInfo(
+              googleFunctionCommandResponse, gcpGoogleFunctionInfraConfig, infrastructureOutcome.getInfrastructureKey());
+      instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+      GoogleFunctionGenOneStepOutcome googleFunctionGenOneStepOutcome =
+              getGoogleFunctionGenOneStepOutcome(googleFunctionCommandResponse.getFunction());
+
+      return stepResponseBuilder.status(Status.SUCCEEDED)
+              .stepOutcome(StepResponse.StepOutcome.builder()
+                      .name(OutcomeExpressionConstants.OUTPUT)
+                      .outcome(googleFunctionGenOneStepOutcome)
+                      .build())
+              .build();
     }
   }
 
@@ -653,13 +677,13 @@ public class GoogleFunctionsHelper extends CDStepHelper {
   }
 
   public List<ServerInstanceInfo> getGenOneServerInstanceInfo(GoogleFunctionCommandResponse googleFunctionCommandResponse,
-                                                        GcpGoogleFunctionInfraConfig gcpGoogleFunctionInfraConfig, String infrastructureKey) {
+                                                        GcpGoogleFunctionInfraConfig gcpGoogleFunctionInfraConfig,
+                                                              String infrastructureKey) {
     List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
     GoogleFunction googleFunction = googleFunctionCommandResponse.getFunction();
     if (googleFunction != null) {
-      serverInstanceInfoList.add(GoogleFunctionToServerInstanceInfoMapper.toServerInstanceInfo(googleFunction,
-              googleFunction.getCloudRunService().getRevision(), gcpGoogleFunctionInfraConfig.getProject(),
-              gcpGoogleFunctionInfraConfig.getRegion(), infrastructureKey));
+      serverInstanceInfoList.add(GoogleFunctionToServerInstanceInfoMapper.toGenOneServerInstanceInfo(googleFunction,
+              gcpGoogleFunctionInfraConfig.getProject(), gcpGoogleFunctionInfraConfig.getRegion(), infrastructureKey));
     }
     return serverInstanceInfoList;
   }

@@ -442,6 +442,7 @@ import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactD
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceFetchType;
 import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
@@ -1566,8 +1567,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GoogleCloudStorageArtifactDelegateResponse.class, 19710);
     kryo.register(GoogleCloudSourceArtifactDelegateRequest.class, 19707);
     kryo.register(GoogleCloudSourceArtifactDelegateResponse.class, 19708);
+      kryo.register(GoogleCloudSourceFetchType.class, 1800009);
 
-    kryo.register(SpotValidateTaskResponse.class, 21006);
+      kryo.register(SpotValidateTaskResponse.class, 21006);
     kryo.register(SpotTaskParams.class, 21007);
     kryo.register(SpotTaskType.class, 21008);
     kryo.register(SpotValidationParams.class, 21009);

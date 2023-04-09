@@ -15,21 +15,7 @@ import static software.wings.utils.RepositoryFormat.generic;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig;
-import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
-import io.harness.cdng.artifact.bean.yaml.GoogleCloudSourceArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.GoogleCloudStorageArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.*;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.BambooArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
@@ -67,6 +53,7 @@ import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceFetchType;
 import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
@@ -354,6 +341,9 @@ public class ArtifactConfigToDelegateReqMapper {
     String project = artifactConfig.getProject().getValue();
     String repository = artifactConfig.getRepository().getValue();
     String sourceDirectory = artifactConfig.getSourceDirectory().getValue();
+    String branch = artifactConfig.getBranch().getValue();
+    String commitId = artifactConfig.getCommitId().getValue();
+    String tag = artifactConfig.getTag().getValue();
     if (StringUtils.isBlank(project)) {
       throw new InvalidRequestException("Please input project name.");
     }
@@ -363,8 +353,12 @@ public class ArtifactConfigToDelegateReqMapper {
     if (StringUtils.isBlank(sourceDirectory)) {
       throw new InvalidRequestException("Please input sourceDirectory path.");
     }
+    if(StringUtils.isAllBlank(branch,commitId,tag)) {
+      throw new InvalidRequestException("Please input one of these three, branch, commitId, Tag.");
+    }
     return ArtifactDelegateRequestUtils.getGoogleCloudSourceArtifactDelegateRequest(repository, project,
-        sourceDirectory, gcpConnectorDTO, connectorRef, encryptedDataDetails,
+        sourceDirectory, GoogleCloudSourceFetchType.valueOf(StringUtils.upperCase(artifactConfig.getFetchType().getName())),
+            branch, commitId, tag, gcpConnectorDTO, connectorRef, encryptedDataDetails,
         ArtifactSourceType.GOOGLE_CLOUD_SOURCE_ARTIFACT);
   }
 

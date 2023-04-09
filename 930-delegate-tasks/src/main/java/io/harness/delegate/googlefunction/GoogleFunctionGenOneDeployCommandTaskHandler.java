@@ -69,7 +69,7 @@ public class GoogleFunctionGenOneDeployCommandTaskHandler extends GoogleFunction
       CloudFunction function = googleFunctionGenOneCommandTaskHelper.deployFunction(googleFunctionInfraConfig,
           googleFunctionDeployRequest.getGoogleFunctionDeployManifestContent(),
           googleFunctionDeployRequest.getUpdateFieldMaskContent(),
-          googleFunctionDeployRequest.getGoogleFunctionArtifactConfig(), timeoutInMillis, executionLogCallback);
+          googleFunctionDeployRequest.getGoogleFunctionArtifactConfig(), timeoutInMillis, executionLogCallback, false);
       GoogleFunction googleFunction = googleFunctionGenOneCommandTaskHelper.getGoogleFunction(
           function, executionLogCallback);
       executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);

@@ -83,8 +83,8 @@ public class GoogleFunctionGenOneRollbackCommandTaskHandler extends GoogleFuncti
             .build();
       } else {
         CloudFunction function = googleFunctionGenOneCommandTaskHelper.deployFunction(googleFunctionInfraConfig,
-            googleFunctionRollbackRequest.getCreateFunctionRequestAsString(), "", null, timeoutInMillis,
-            executionLogCallback);
+            googleFunctionRollbackRequest.getCreateFunctionRequestAsString(), "",
+                null, timeoutInMillis, executionLogCallback, true);
         GoogleFunction googleFunction = googleFunctionGenOneCommandTaskHelper.getGoogleFunction(
             function, executionLogCallback);
         executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
