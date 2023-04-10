@@ -11,4 +11,5 @@ import io.harness.ipallowlist.entity.IPAllowlistEntity;
 
 public interface IPAllowlistService {
   IPAllowlistEntity create(IPAllowlistEntity ipAllowlistEntity);
+  IPAllowlistEntity update(String ipConfigIdentifier, IPAllowlistEntity ipAllowlistEntity);
 }

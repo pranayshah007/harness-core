@@ -7,10 +7,16 @@
 
 package io.harness.repositories.ipallowlist.spring;
 
+import static io.harness.annotations.dev.HarnessTeam.PL;
+
+import io.harness.annotation.HarnessRepo;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.ipallowlist.entity.IPAllowlistEntity;
 import io.harness.repositories.ipallowlist.custom.IPAllowlistRepositoryCustom;
 
 import org.springframework.data.repository.PagingAndSortingRepository;
 
+@OwnedBy(PL)
+@HarnessRepo
 public interface IPAllowlistRepository
     extends PagingAndSortingRepository<IPAllowlistEntity, String>, IPAllowlistRepositoryCustom {}

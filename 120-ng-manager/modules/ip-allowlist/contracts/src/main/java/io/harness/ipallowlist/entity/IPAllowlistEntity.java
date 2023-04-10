@@ -12,10 +12,13 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.data.validator.Trimmed;
+import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import java.util.List;
 import javax.validation.constraints.Size;
@@ -24,8 +27,12 @@ import lombok.Data;
 import lombok.Singular;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.springframework.data.annotation.*;
-import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.annotation.Persistent;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
@@ -38,11 +45,26 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Persistent
 @OwnedBy(HarnessTeam.PL)
 public class IPAllowlistEntity {
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_identifier_unique_index")
+                 .field(IPAllowlistConfigKeys.accountIdentifier)
+                 .field(IPAllowlistConfigKeys.identifier)
+                 .unique(true)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_allowedSourceType_index")
+                 .field(IPAllowlistConfigKeys.accountIdentifier)
+                 .field(IPAllowlistConfigKeys.allowedSourceType)
+                 .build())
+        .build();
+  }
   @Id String id;
   @Trimmed @NotEmpty String accountIdentifier;
   @Trimmed @NotEmpty String identifier;
   @Trimmed @NotEmpty String name;
-  @NotEmpty @Indexed(unique = true) String fullyQualifiedIdentifier;
+  String fullyQualifiedIdentifier;
   String description;
   @Singular @Size(max = 128) List<NGTag> tags;
   @Builder.Default Boolean enabled = Boolean.FALSE;
@@ -51,7 +73,7 @@ public class IPAllowlistEntity {
       List.of(io.harness.spec.server.ng.v1.model.AllowedSourceType.API,
           io.harness.spec.server.ng.v1.model.AllowedSourceType.UI);
 
-  String ipAddress;
+  @NotEmpty String ipAddress;
   @CreatedDate Long created;
   @LastModifiedDate Long updated;
   @CreatedBy private EmbeddedUser createdBy;

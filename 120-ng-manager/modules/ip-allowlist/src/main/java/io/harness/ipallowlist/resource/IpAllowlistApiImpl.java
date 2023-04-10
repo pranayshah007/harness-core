@@ -5,10 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ipallowlist.remote;
+package io.harness.ipallowlist.resource;
 
+import static io.harness.ng.accesscontrol.PlatformPermissions.EDIT_AUTHSETTING_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformResourceTypes.AUTHSETTING;
+
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
-import io.harness.ipallowlist.IPAllowlistResourceUtil;
+import io.harness.ipallowlist.IPAllowlistResourceUtils;
 import io.harness.ipallowlist.entity.IPAllowlistEntity;
 import io.harness.ipallowlist.service.IPAllowlistService;
 import io.harness.spec.server.ng.v1.IpAllowlistApi;
@@ -27,13 +32,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class IpAllowlistApiImpl implements IpAllowlistApi {
   @Inject private final IPAllowlistService ipAllowlistService;
-  @Inject private final IPAllowlistResourceUtil ipAllowlistResourceUtil;
+  @Inject private final IPAllowlistResourceUtils ipAllowlistResourceUtil;
   @Inject private final AccessControlClient accessControlClient;
 
-  //  @NGAccessControlCheck(resourceType = ORGANIZATION, permission = CREATE_ORGANIZATION_PERMISSION)
   @Override
   public Response createIpAllowlistConfig(
       @Valid IPAllowlistConfigRequest ipAllowlistConfigRequest, String accountIdentifier) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountIdentifier, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
     IPAllowlistEntity ipAllowlistEntity =
         ipAllowlistResourceUtil.toIPAllowlistEntity(ipAllowlistConfigRequest.getIpAllowlistConfig(), accountIdentifier);
     IPAllowlistEntity createdIpAllowlistEntity = ipAllowlistService.create(ipAllowlistEntity);
@@ -61,8 +67,16 @@ public class IpAllowlistApiImpl implements IpAllowlistApi {
 
   @Override
   public Response updateIpAllowlistConfig(
-      String ipConfigIdentifier, @Valid IPAllowlistConfigRequest body, String harnessAccount) {
-    return null;
+      String ipConfigIdentifier, @Valid IPAllowlistConfigRequest ipAllowlistConfigRequest, String harnessAccount) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(harnessAccount, null, null),
+        Resource.of(AUTHSETTING, ipConfigIdentifier), EDIT_AUTHSETTING_PERMISSION);
+    IPAllowlistEntity ipAllowlistEntity =
+        ipAllowlistResourceUtil.toIPAllowlistEntity(ipAllowlistConfigRequest.getIpAllowlistConfig(), harnessAccount);
+    IPAllowlistEntity createdIpAllowlistEntity = ipAllowlistService.update(ipConfigIdentifier, ipAllowlistEntity);
+
+    return Response.status(Response.Status.OK)
+        .entity(ipAllowlistResourceUtil.toIPAllowlistConfigResponse(createdIpAllowlistEntity))
+        .build();
   }
 
   @Override

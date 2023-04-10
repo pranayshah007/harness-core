@@ -1928,6 +1928,7 @@ components:
       required:
         - name
         - identifier
+        - ip_address
     AllowedSourceType:
       title: AllowedSourceType
       x-stoplight:
