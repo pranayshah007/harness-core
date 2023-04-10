@@ -14,4 +14,6 @@ import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
 @OwnedBy(HarnessTeam.IDP)
 public interface CatalogConnectorRepositoryCustom {
   CatalogConnectorEntity saveOrUpdate(CatalogConnectorEntity catalogConnectorEntity);
+
+  CatalogConnectorEntity findOneByLastUpdatedAt(String accountIdentifier);
 }

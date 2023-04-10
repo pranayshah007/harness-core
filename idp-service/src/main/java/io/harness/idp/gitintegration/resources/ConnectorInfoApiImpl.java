@@ -32,6 +32,16 @@ public class ConnectorInfoApiImpl implements ConnectorInfoApi {
   @Inject GitIntegrationService gitIntegrationService;
 
   @Override
+  public Response getConnectorInfo(String harnessAccount) {
+    CatalogConnectorEntity catalogConnectorEntity = gitIntegrationService.findDefaultConnectorDetails(harnessAccount);
+    if (catalogConnectorEntity == null) {
+      log.warn("Could not fetch connector details for accountId: {}", harnessAccount);
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }
+    return Response.status(Response.Status.OK).entity(ConnectorDetailsMapper.toDTO(catalogConnectorEntity)).build();
+  }
+
+  @Override
   public Response getConnectorInfoByProviderType(String providerType, String harnessAccount) {
     Optional<CatalogConnectorEntity> catalogConnector =
         gitIntegrationService.findByAccountIdAndProviderType(harnessAccount, providerType);
