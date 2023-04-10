@@ -2944,6 +2944,7 @@
 878019:io.harness.pms.sdk.core.execution.AsyncTimeoutResponseData
 878020:io.harness.pms.sdk.core.execution.async.AsyncProgressData
 878021:io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters
+878022:io.harness.advisers.nextstep.NextStageAdviserParameters
 930001:io.harness.licensing.beans.modules.CDModuleLicenseDTO
 930002:io.harness.licensing.beans.modules.CEModuleLicenseDTO
 930003:io.harness.licensing.beans.modules.CFModuleLicenseDTO

@@ -25,6 +25,7 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
+import io.harness.utils.ExecutionModeUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -90,8 +91,8 @@ public class NextStageAdviser implements Adviser {
     return advisingEvent.getToStatus() != ABORTED;
   }
 
-  boolean isRollbackModeExecution(AdvisingEvent advisingEvent) {
+  static boolean isRollbackModeExecution(AdvisingEvent advisingEvent) {
     ExecutionMode executionMode = advisingEvent.getAmbiance().getMetadata().getExecutionMode();
-    return executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK || executionMode == ExecutionMode.PIPELINE_ROLLBACK;
+    return ExecutionModeUtils.isRollbackMode(executionMode);
   }
 }
