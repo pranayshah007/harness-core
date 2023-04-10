@@ -15,36 +15,35 @@ import io.harness.data.validator.Trimmed;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.ng.core.NGAccountAccess;
 import io.harness.ng.core.common.beans.NGTag;
+import io.harness.persistence.PersistentEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import java.util.List;
 import javax.validation.constraints.Size;
-import lombok.Builder;
-import lombok.Data;
-import lombok.Singular;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.annotation.Persistent;
+import org.springframework.data.annotation.*;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @FieldNameConstants(innerTypeName = "IPAllowlistConfigKeys")
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "ipAllowlist", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Document("ipAllowlist")
 @Persistent
+@TypeAlias("IPAllowlistEntity")
 @OwnedBy(HarnessTeam.PL)
-public class IPAllowlistEntity {
+public class IPAllowlistEntity implements PersistentEntity, NGAccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -60,7 +59,7 @@ public class IPAllowlistEntity {
                  .build())
         .build();
   }
-  @Id String id;
+  @Id @dev.morphia.annotations.Id String id;
   @Trimmed @NotEmpty String accountIdentifier;
   @Trimmed @NotEmpty String identifier;
   @Trimmed @NotEmpty String name;

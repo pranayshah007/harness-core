@@ -14,9 +14,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ipallowlist.entity.IPAllowlistEntity;
 import io.harness.repositories.ipallowlist.custom.IPAllowlistRepositoryCustom;
 
+import java.util.Optional;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 @OwnedBy(PL)
 @HarnessRepo
 public interface IPAllowlistRepository
-    extends PagingAndSortingRepository<IPAllowlistEntity, String>, IPAllowlistRepositoryCustom {}
+    extends PagingAndSortingRepository<IPAllowlistEntity, String>, IPAllowlistRepositoryCustom {
+  Optional<IPAllowlistEntity> findByAccountIdentifierAndIdentifier(String accountIdentifier, String identifier);
+
+  long deleteByAccountIdentifierAndIdentifier(String accountIdentifier, String identifier);
+}
