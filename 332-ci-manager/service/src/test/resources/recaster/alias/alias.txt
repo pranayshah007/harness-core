@@ -348,3 +348,4 @@ io.harness.beans.stages.IACMStageNodeV1
 io.harness.advisers.pipelinerollback.OnFailPipelineRollbackOutput
 io.harness.ci.config.ContainerlessPluginConfig
 io.harness.ci.config.VmContainerlessStepConfig
+io.harness.pms.sdk.core.steps.io.EmptyStepParameters

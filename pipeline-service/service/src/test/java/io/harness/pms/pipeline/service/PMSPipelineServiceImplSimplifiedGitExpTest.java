@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.NoopPipelineSettingServiceImpl;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
@@ -43,6 +44,7 @@ import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
@@ -51,6 +53,7 @@ import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationS
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.project.remote.ProjectClient;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
@@ -82,6 +85,9 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Mock private ProjectClient projectClient;
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
 
+  @Mock private AccountClient accountClient;
+  @Mock NGSettingsClient settingsClient;
+
   String accountIdentifier = "acc";
   String orgIdentifier = "org";
   String projectIdentifier = "proj";
@@ -91,10 +97,10 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.openMocks(this);
-    pipelineService =
-        new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper, pmsPipelineTemplateHelper, null,
-            null, gitSyncSdkService, null, null, null, new NoopPipelineSettingServiceImpl(), entitySetupUsageClient,
-            pipelineAsyncValidationService, pipelineValidationService, projectClient, pmsFeatureFlagService);
+    pipelineService = new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper,
+        pmsPipelineTemplateHelper, null, null, gitSyncSdkService, null, null, null,
+        new NoopPipelineSettingServiceImpl(), entitySetupUsageClient, pipelineAsyncValidationService,
+        pipelineValidationService, projectClient, pmsFeatureFlagService, accountClient, settingsClient);
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pipelineServiceHelper)
@@ -532,6 +538,8 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeletePipeline() {
     doReturn(getResponseDTOCall(false)).when(entitySetupUsageClient).isEntityReferenced(any(), any(), any());
+    MockedStatic<CGRestUtils> cgStatic = Mockito.mockStatic(CGRestUtils.class);
+    cgStatic.when(() -> CGRestUtils.getResponse(any())).thenReturn(false);
     boolean delete = pipelineService.delete(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, null);
     assertThat(delete).isTrue();
 

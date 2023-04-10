@@ -34,6 +34,7 @@ import io.harness.beans.steps.nodes.security.DataTheoremScanNode;
 import io.harness.beans.steps.nodes.security.DockerContentTrustScanNode;
 import io.harness.beans.steps.nodes.security.FortifyOnDemandScanNode;
 import io.harness.beans.steps.nodes.security.FossaScanNode;
+import io.harness.beans.steps.nodes.security.GitLeaksScanNode;
 import io.harness.beans.steps.nodes.security.GrypeScanNode;
 import io.harness.beans.steps.nodes.security.JfrogXrayScanNode;
 import io.harness.beans.steps.nodes.security.MendScanNode;
@@ -97,7 +98,7 @@ public enum STOStepType {
       new String[] {SAST, CONTAINER_SECURITY}),
   BRAKEMAN("Brakeman", null, FeatureName.STO_STEP_PALETTE_Q1_2023, BrakemanScanNode.class, EntityType.BRAKEMAN,
       new String[] {SAST}),
-  BURP("Burp", null, FeatureName.DONT_ENABLE_STO_STEP_PALETTE_V3, BurpScanNode.class, EntityType.BURP,
+  BURP("Burp", null, FeatureName.STO_STEP_PALETTE_BURP_ENTERPRISE, BurpScanNode.class, EntityType.BURP,
       new String[] {DAST}),
   CHECKMARX("Checkmarx", null, null, CheckmarxScanNode.class, EntityType.CHECKMARX, new String[] {SAST}),
   CLAIR("Clair", null, FeatureName.DONT_ENABLE_STO_STEP_PALETTE_V3, ClairScanNode.class, EntityType.CLAIR,
@@ -114,7 +115,7 @@ public enum STOStepType {
   FORTIFY_ON_DEMAND("FortifyOnDemand", "Fortify On Demand", FeatureName.DONT_ENABLE_STO_STEP_PALETTE_V3,
       FortifyOnDemandScanNode.class, EntityType.FORTIFY_ON_DEMAND, new String[] {SECURITY}),
 
-  GIT_LEAKS("GitLeaks", null, FeatureName.STO_STEP_PALETTE_GIT_LEAKS, FossaScanNode.class, EntityType.GIT_LEAKS,
+  GIT_LEAKS("GitLeaks", null, FeatureName.STO_STEP_PALETTE_GIT_LEAKS, GitLeaksScanNode.class, EntityType.GIT_LEAKS,
       new String[] {SAST}),
   GRYPE("Grype", null, null, GrypeScanNode.class, EntityType.GRYPE, new String[] {CONTAINER_SECURITY}),
   JFROG_XRAY("JfrogXray", "Jfrog Xray", FeatureName.DONT_ENABLE_STO_STEP_PALETTE_V3, JfrogXrayScanNode.class,

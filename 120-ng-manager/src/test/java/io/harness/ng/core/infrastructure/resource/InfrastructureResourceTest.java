@@ -39,7 +39,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 @OwnedBy(HarnessTeam.CDC)
-public class InfrastructureresourceV2Test extends CategoryTest {
+public class InfrastructureResourceTest extends CategoryTest {
   @InjectMocks InfrastructureResource infrastructureResource;
   @Mock NGFeatureFlagHelperService featureFlagHelperService;
   @Mock InfrastructureYamlSchemaHelper entityYamlSchemaHelper;

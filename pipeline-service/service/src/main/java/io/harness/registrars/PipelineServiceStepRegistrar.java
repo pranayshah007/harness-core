@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.pipelinerollback.PipelineRollbackStageStep;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.pipelinerollback.PipelineRollbackStageStep;
 import io.harness.pms.pipelinestage.step.PipelineStageStep;
 import io.harness.pms.sdk.core.steps.Step;
 
