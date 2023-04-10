@@ -10,8 +10,10 @@ package io.harness.cdng.aws.sam;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.expression.ExpressionResolverUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.container.execution.AbstractContainerStepV2;
 import io.harness.yaml.core.variables.OutputNGVariable;
@@ -27,12 +29,16 @@ public class AwsSamDeployStep extends AbstractContainerStepV2 {
                                                .build();
 
   @Override
-  public ParameterField<Map<String, String>> getEnvironmentVariables() {
-    return null;
+  public Map<String, String> getEnvironmentVariables(StepElementParameters stepElementParameters) {
+    AwsSamDeployStepInfo awsSamDeployStepInfo = (AwsSamDeployStepInfo) stepElementParameters.getSpec();
+    Map<String, String> envvars = ExpressionResolverUtils.resolveMapParameterV2("envVariables", "AwsSamDeployStep",
+        awsSamDeployStepInfo.getUuid(), awsSamDeployStepInfo.getEnvVariables(), false);
+    return envvars;
   }
 
   @Override
-  public ParameterField<List<OutputNGVariable>> getOutputVariables() {
+  public ParameterField<List<OutputNGVariable>> getOutputVariables(StepElementParameters stepElementParameters) {
+    AwsSamDeployStepInfo awsSamDeployStepInfo = (AwsSamDeployStepInfo) stepElementParameters.getSpec();
     return null;
   }
 }

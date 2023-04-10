@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Harness Inc. All rights reserved.
+ * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -24,6 +24,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.Outcome;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.steps.plugin.ContainerStepSpec;
@@ -78,8 +79,10 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
     timeout = Math.max(timeout, 100);
     log.info("Timeout for container step left {}", timeout);
     String parkedTaskId = containerDelegateTaskHelper.queueParkedDelegateTask(ambiance, timeout, accountId);
-    TaskData runStepTaskData = containerRunStepHelper.getRunStepTask(ambiance, containerStepInfo,
-        AmbianceUtils.getAccountId(ambiance), containerStepBaseHelper.getLogPrefix(ambiance), timeout, parkedTaskId);
+    String logPrefix = containerStepBaseHelper.getLogPrefix(ambiance);
+    UnitStep unitStep =
+        containerRunStepHelper.serialiseStep(ambiance, containerStepInfo, accountId, logPrefix, timeout, parkedTaskId);
+    TaskData runStepTaskData = containerStepBaseHelper.getRunStepTask(ambiance, unitStep, timeout);
     String liteEngineTaskId = containerDelegateTaskHelper.queueTask(ambiance, runStepTaskData, accountId);
     log.info("Created parked task {} and lite engine task {} for  step {}", parkedTaskId, liteEngineTaskId,
         containerStepInfo.getIdentifier());

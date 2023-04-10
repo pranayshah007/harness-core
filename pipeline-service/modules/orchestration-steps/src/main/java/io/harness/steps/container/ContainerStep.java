@@ -36,11 +36,13 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerRunStepHelper;
+import io.harness.steps.container.execution.ContainerStepBaseHelper;
 import io.harness.steps.container.execution.ContainerStepCleanupHelper;
 import io.harness.steps.container.execution.ContainerStepExecutionResponseHelper;
 import io.harness.steps.container.execution.ContainerStepRbacHelper;
@@ -72,6 +74,8 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
   private final ContainerStepCleanupHelper containerStepCleanupHelper;
   private final ContainerStepRbacHelper containerStepRbacHelper;
   private final ContainerStepExecutionResponseHelper executionResponseHelper;
+
+  private final ContainerStepBaseHelper containerStepBaseHelper;
 
   public static final StepType STEP_TYPE = StepSpecTypeConstants.CONTAINER_STEP_TYPE;
 
@@ -161,9 +165,9 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
         getPodDetailsOutcome(k8sTaskExecutionResponse.getK8sTaskResponse());
 
     outcomeService.consume(ambiance, POD_DETAILS_OUTCOME, liteEnginePodDetailsOutcome, StepCategory.STEP.name());
-
-    TaskData runStepTaskData = containerRunStepHelper.getRunStepTask(ambiance, containerStepInfo,
+    UnitStep unitStep = containerRunStepHelper.serialiseStep(ambiance, containerStepInfo,
         AmbianceUtils.getAccountId(ambiance), getLogPrefix(ambiance), timeoutForDelegateTask, null);
+    TaskData runStepTaskData = containerStepBaseHelper.getRunStepTask(ambiance, unitStep, timeoutForDelegateTask);
     String stageId = ambiance.getStageExecutionId();
 
     TaskRequest taskRequest = StepUtils.prepareTaskRequest(ambiance, runStepTaskData, kryoSerializer,

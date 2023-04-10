@@ -7,29 +7,17 @@
 
 package io.harness.steps.container.execution;
 
-import static io.harness.beans.sweepingoutputs.ContainerPortDetails.PORT_DETAILS;
-import static io.harness.ci.commonconstants.ContainerExecutionConstants.LITE_ENGINE_PORT;
-import static io.harness.ci.commonconstants.ContainerExecutionConstants.TMP_PATH;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.steps.container.ContainerStepInitHelper.getKubernetesStandardPodName;
-
-import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
-import io.harness.beans.sweepingoutputs.ContainerPortDetails;
 import io.harness.beans.yaml.extended.CIShellType;
 import io.harness.callback.DelegateCallbackToken;
-import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.beans.ci.k8s.CIK8ExecuteStepTaskParams;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.expression.ExpressionResolverUtils;
-import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
-import io.harness.product.ci.engine.proto.ExecuteStepRequest;
 import io.harness.product.ci.engine.proto.RunStep;
 import io.harness.product.ci.engine.proto.ShellType;
 import io.harness.product.ci.engine.proto.StepContext;
@@ -59,33 +47,12 @@ public class ContainerRunStepHelper {
   @Inject ContainerExecutionConfig containerExecutionConfig;
   @Inject PluginStepSerializer pluginStepSerializer;
 
-  public TaskData getRunStepTask(Ambiance ambiance, ContainerStepSpec containerStepInfo, String accountId,
-      String logKey, long timeout, String parkedTaskId) {
-    UnitStep unitStep = serialiseStep(ambiance, containerStepInfo, accountId, logKey, timeout, parkedTaskId);
-    LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome = (LiteEnginePodDetailsOutcome) outcomeService.resolve(
-        ambiance, RefObjectUtils.getOutcomeRefObject(LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME));
-    String ip = liteEnginePodDetailsOutcome.getIpAddress();
+  @Inject private ContainerStepBaseHelper containerStepBaseHelper;
 
-    ExecuteStepRequest executeStepRequest = ExecuteStepRequest.newBuilder()
-                                                .setExecutionId(ambiance.getPlanExecutionId())
-                                                .setStep(unitStep)
-                                                .setTmpFilePath(TMP_PATH)
-                                                .build();
-    CIK8ExecuteStepTaskParams params =
-        CIK8ExecuteStepTaskParams.builder()
-            .ip(ip)
-            .port(LITE_ENGINE_PORT)
-            .serializedStep(executeStepRequest.toByteArray())
-            .isLocal(containerExecutionConfig.isLocal())
-            .delegateSvcEndpoint(containerExecutionConfig.getDelegateServiceEndpointVariableValue())
-            .build();
-    return containerDelegateTaskHelper.getDelegateTaskDataForExecuteStep(ambiance, timeout, params);
-  }
-
-  private UnitStep serialiseStep(Ambiance ambiance, ContainerStepSpec containerStepInfo, String accountId,
-      String logKey, long timeout, String parkedTaskId) {
+  public UnitStep serialiseStep(Ambiance ambiance, ContainerStepSpec containerStepInfo, String accountId, String logKey,
+      long timeout, String parkedTaskId) {
     String identifier = containerStepInfo.getIdentifier();
-    Integer port = getPort(ambiance, identifier);
+    Integer port = containerStepBaseHelper.getPort(ambiance, identifier);
     switch (containerStepInfo.getType()) {
       case RUN_CONTAINER:
         return serializeStepWithStepParameters((ContainerStepInfo) containerStepInfo, port, parkedTaskId, logKey,
@@ -161,19 +128,5 @@ public class ContainerRunStepHelper {
         .setRun(runStepBuilder.build())
         .setLogKey(logKey)
         .build();
-  }
-
-  private Integer getPort(Ambiance ambiance, String stepIdentifier) {
-    // Ports are assigned in lite engine step
-    ContainerPortDetails containerPortDetails = (ContainerPortDetails) executionSweepingOutputService.resolve(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(PORT_DETAILS));
-
-    List<Integer> ports = containerPortDetails.getPortDetails().get(getKubernetesStandardPodName(stepIdentifier));
-
-    if (ports.size() != 1) {
-      throw new ContainerStepExecutionException(format("Step [%s] should map to single port", stepIdentifier));
-    }
-
-    return ports.get(0);
   }
 }

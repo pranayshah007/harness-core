@@ -13,9 +13,10 @@ import static java.util.Collections.singletonList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.TaskData;
+import io.harness.plancreator.steps.AbstractStepNode;
+import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -50,14 +51,15 @@ public abstract class AbstractContainerStepV2 implements AsyncExecutableWithRbac
     // done in last step
   }
 
-  public abstract ParameterField<Map<String, String>> getEnvironmentVariables();
-  public abstract ParameterField<List<OutputNGVariable>> getOutputVariables();
+  public abstract Map<String, String> getEnvironmentVariables(StepElementParameters stepElementParameters);
+  public abstract ParameterField<List<OutputNGVariable>> getOutputVariables(
+      StepElementParameters stepElementParameterse);
 
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     log.info("Starting run in container step");
-    CdAbstractStepNode cdAbstractStepInfo = (CdAbstractStepNode) stepParameters.getSpec();
+    AbstractStepNode abstractStepNode = (AbstractStepNode) stepParameters.getSpec();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     List<Level> levelsList = ambiance.getLevelsList();
     long startTs = System.currentTimeMillis() - Duration.ofMinutes(10).toMillis(); // defaulting to 10 mins.
@@ -75,13 +77,14 @@ public abstract class AbstractContainerStepV2 implements AsyncExecutableWithRbac
 
     String parkedTaskId = containerDelegateTaskHelper.queueParkedDelegateTask(ambiance, timeout, accountId);
 
-    TaskData runStepTaskData = containerV2RunStepHelper.getRunStepTask(ambiance, cdAbstractStepInfo,
+    TaskData runStepTaskData = containerV2RunStepHelper.getRunStepTask(ambiance, abstractStepNode,
         AmbianceUtils.getAccountId(ambiance), containerStepBaseHelper.getLogPrefix(ambiance), timeout, parkedTaskId,
-        getEnvironmentVariables(), getOutputVariables());
+        (ParameterField<Map<String, String>>) getEnvironmentVariables(stepParameters),
+        getOutputVariables(stepParameters));
 
     String liteEngineTaskId = containerDelegateTaskHelper.queueTask(ambiance, runStepTaskData, accountId);
     log.info("Created parked task {} and lite engine task {} for  step {}", parkedTaskId, liteEngineTaskId,
-        cdAbstractStepInfo.getIdentifier());
+        abstractStepNode.getIdentifier());
 
     return AsyncExecutableResponse.newBuilder()
         .addCallbackIds(parkedTaskId)

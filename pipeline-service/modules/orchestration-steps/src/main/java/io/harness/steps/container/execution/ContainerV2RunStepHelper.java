@@ -7,19 +7,14 @@
 
 package io.harness.steps.container.execution;
 
-import static io.harness.beans.sweepingoutputs.ContainerPortDetails.PORT_DETAILS;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.LITE_ENGINE_PORT;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.TMP_PATH;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.steps.container.ContainerStepInitHelper.getKubernetesStandardPodName;
-
-import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
-import io.harness.beans.sweepingoutputs.ContainerPortDetails;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.k8s.CIK8ExecuteStepTaskParams;
@@ -53,6 +48,8 @@ public class ContainerV2RunStepHelper {
   @Inject OutcomeService outcomeService;
   @Inject ContainerExecutionConfig containerExecutionConfig;
 
+  @Inject private ContainerStepBaseHelper containerStepBaseHelper;
+
   public TaskData getRunStepTask(Ambiance ambiance, AbstractStepNode abstractStepNode, String accountId, String logKey,
       long timeout, String parkedTaskId, ParameterField<Map<String, String>> envVariables,
       ParameterField<List<OutputNGVariable>> outputNGVariableList) {
@@ -82,7 +79,7 @@ public class ContainerV2RunStepHelper {
       long timeout, String parkedTaskId, ParameterField<Map<String, String>> envVariables,
       ParameterField<List<OutputNGVariable>> outputNGVariableList) {
     String identifier = abstractStepNode.getIdentifier();
-    Integer port = getPort(ambiance, identifier);
+    Integer port = containerStepBaseHelper.getPort(ambiance, identifier);
     return serializeStepWithStepParameters(port, parkedTaskId, logKey, identifier, accountId,
         abstractStepNode.getName(), timeout, envVariables, outputNGVariableList);
   }
@@ -131,19 +128,5 @@ public class ContainerV2RunStepHelper {
         .setRun(runStepBuilder.build())
         .setLogKey(logKey)
         .build();
-  }
-
-  private Integer getPort(Ambiance ambiance, String stepIdentifier) {
-    // Ports are assigned in lite engine step
-    ContainerPortDetails containerPortDetails = (ContainerPortDetails) executionSweepingOutputService.resolve(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(PORT_DETAILS));
-
-    List<Integer> ports = containerPortDetails.getPortDetails().get(getKubernetesStandardPodName(stepIdentifier));
-
-    if (ports.size() != 1) {
-      throw new ContainerStepExecutionException(format("Step [%s] should map to single port", stepIdentifier));
-    }
-
-    return ports.get(0);
   }
 }
