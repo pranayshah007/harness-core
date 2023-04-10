@@ -102,7 +102,7 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(PIPELINE)
 public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
   public static final int PLAN_CREATOR_NUMBER = 36;
-  public static final int FILTER_JSON_CREATOR_NUMBER = 14;
+  public static final int FILTER_JSON_CREATOR_NUMBER = 13;
   public static final int VARIABLE_CREATOR_NUMBER = 25;
 
   @InjectMocks PipelineServiceInternalInfoProvider pipelineServiceInternalInfoProvider;
