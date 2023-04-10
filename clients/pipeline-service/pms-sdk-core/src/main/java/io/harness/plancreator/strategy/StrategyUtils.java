@@ -23,6 +23,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.strategy.StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX_ESCAPED;
 
+import io.harness.advisers.nextstep.NextStageAdviserParameters;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
@@ -122,7 +123,7 @@ public class StrategyUtils {
             AdviserObtainment.newBuilder()
                 .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
                 .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                    NextStepAdviserParameters.builder()
+                    NextStageAdviserParameters.builder()
                         .nextNodeId(siblingFieldUuid.equals(pipelineRollbackStageId) ? null : siblingFieldUuid)
                         .pipelineRollbackStageId(pipelineRollbackStageId)
                         .build())))

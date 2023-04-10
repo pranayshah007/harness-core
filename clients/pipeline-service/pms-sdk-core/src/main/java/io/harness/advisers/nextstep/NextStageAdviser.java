@@ -8,11 +8,10 @@
 package io.harness.advisers.nextstep;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.pms.contracts.execution.Status.ABORTED;
 
-import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackOutput;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -39,33 +38,51 @@ public class NextStageAdviser implements Adviser {
       AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build();
   @Override
   public AdviserResponse onAdviseEvent(AdvisingEvent advisingEvent) {
-    NextStepAdviserParameters nextStepAdviserParameters = (NextStepAdviserParameters) Preconditions.checkNotNull(
-        kryoSerializer.asObject(advisingEvent.getAdviserParameters()));
-    AdviserResponse goToNextStageAdvise =
+    String siblingStageNodeId = getSiblingStageNodeId(advisingEvent);
+    AdviserResponse goToSiblingAdvise =
         AdviserResponse.newBuilder()
-            .setNextStepAdvise(NextStepAdvise.newBuilder()
-                                   .setNextNodeId(emptyIfNull(nextStepAdviserParameters.getNextNodeId()))
-                                   .build())
+            .setNextStepAdvise(NextStepAdvise.newBuilder().setNextNodeId(siblingStageNodeId).build())
             .setType(AdviseType.NEXT_STEP)
             .build();
-    if (isRollbackMode(advisingEvent)) {
-      return goToNextStageAdvise;
+    if (isRollbackModeExecution(advisingEvent)) {
+      // execution is already in rollback mode, hence no case of starting a pipeline rollback stage will come up
+      return goToSiblingAdvise;
     }
     OptionalSweepingOutput optionalSweepingOutput =
         executionSweepingOutputService.resolveOptional(advisingEvent.getAmbiance(),
             RefObjectUtils.getSweepingOutputRefObject(YAMLFieldNameConstants.USE_PIPELINE_ROLLBACK_STRATEGY));
     if (!optionalSweepingOutput.isFound()) {
-      return goToNextStageAdvise;
+      return goToSiblingAdvise;
     }
-    OnFailPipelineRollbackOutput output = (OnFailPipelineRollbackOutput) optionalSweepingOutput.getOutput();
-    if (output.isShouldStartPipelineRollback()) {
-      return AdviserResponse.newBuilder()
-          .setNextStepAdvise(
-              NextStepAdvise.newBuilder().setNextNodeId(nextStepAdviserParameters.getPipelineRollbackStageId()).build())
-          .setType(AdviseType.NEXT_STEP)
-          .build();
+    return AdviserResponse.newBuilder()
+        .setNextStepAdvise(NextStepAdvise.newBuilder().setNextNodeId(getPipelineRollbackStageId(advisingEvent)).build())
+        .setType(AdviseType.NEXT_STEP)
+        .build();
+  }
+
+  String getSiblingStageNodeId(AdvisingEvent advisingEvent) {
+    Object adviserParams = Preconditions.checkNotNull(kryoSerializer.asObject(advisingEvent.getAdviserParameters()));
+    if (adviserParams instanceof NextStepAdviserParameters) {
+      // todo: remove all usages of NextStepAdviserParameters from Plan Creators for Next Stage advisor.
+      NextStepAdviserParameters nextStepAdviserParameters = (NextStepAdviserParameters) adviserParams;
+      return nextStepAdviserParameters.getNextNodeId();
+    } else if (adviserParams instanceof NextStageAdviserParameters) {
+      NextStageAdviserParameters nextStageAdviserParameters = (NextStageAdviserParameters) adviserParams;
+      return nextStageAdviserParameters.getNextNodeId();
     }
-    return goToNextStageAdvise;
+    throw new InvalidRequestException(
+        "Unsupported class type for Adviser Params found in Next Stage Advisor: " + adviserParams.getClass().getName());
+  }
+
+  String getPipelineRollbackStageId(AdvisingEvent advisingEvent) {
+    Object adviserParams = Preconditions.checkNotNull(kryoSerializer.asObject(advisingEvent.getAdviserParameters()));
+    if (!(adviserParams instanceof NextStageAdviserParameters)) {
+      throw new InvalidRequestException(
+          "Unsupported class type for Adviser Params found in Next Stage Advisor when trying to initiate Pipeline Rollback: "
+          + adviserParams.getClass().getName());
+    }
+    NextStageAdviserParameters nextStageAdviserParameters = (NextStageAdviserParameters) adviserParams;
+    return nextStageAdviserParameters.getPipelineRollbackStageId();
   }
 
   @Override
@@ -73,7 +90,7 @@ public class NextStageAdviser implements Adviser {
     return advisingEvent.getToStatus() != ABORTED;
   }
 
-  boolean isRollbackMode(AdvisingEvent advisingEvent) {
+  boolean isRollbackModeExecution(AdvisingEvent advisingEvent) {
     ExecutionMode executionMode = advisingEvent.getAmbiance().getMetadata().getExecutionMode();
     return executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK || executionMode == ExecutionMode.PIPELINE_ROLLBACK;
   }

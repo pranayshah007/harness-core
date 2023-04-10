@@ -9,7 +9,7 @@ package io.harness.plancreator.stages.parallel;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import io.harness.advisers.nextstep.NextStepAdviserParameters;
+import io.harness.advisers.nextstep.NextStageAdviserParameters;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
@@ -164,7 +164,7 @@ public class ParallelPlanCreator extends ChildrenPlanCreator<YamlField> {
               AdviserObtainment.newBuilder()
                   .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
                   .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                      NextStepAdviserParameters.builder()
+                      NextStageAdviserParameters.builder()
                           .nextNodeId(siblingFieldUuid.equals(pipelineRollbackStageId) ? null : siblingFieldUuid)
                           .pipelineRollbackStageId(pipelineRollbackStageId)
                           .build())))
