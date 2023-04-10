@@ -32,6 +32,7 @@ public class RunInfoUtils {
   String PIPELINE_SUCCESS = "OnPipelineSuccess";
   String PIPELINE_FAILURE = "OnPipelineFailure";
   String ALWAYS = "Always";
+  String ROLLBACK_MODE_EXECUTION = "OnRollbackModeExecution";
 
   // adding == true here because if <+pipeline.rollback.isPipelineRollback> is null, then
   // (<+pipeline.rollback.isPipelineRollback> || <+OnStageFailure>) will equate to (null || true) and this leads to a
@@ -83,8 +84,7 @@ public class RunInfoUtils {
   public String getRunConditionForRollback(
       ParameterField<StepWhenCondition> stepWhenCondition, ExecutionMode executionMode) {
     if (ParameterField.isNull(stepWhenCondition) || stepWhenCondition.getValue() == null) {
-      return "(<+ambiance.metadata.executionMode> == \"POST_EXECUTION_ROLLBACK\") || (<+ambiance.metadata.executionMode> == \"PIPELINE_ROLLBACK\") || ("
-          + getStatusExpression(STAGE_FAILURE) + ")";
+      return ROLLBACK_MODE_EXECUTION + " || " + getStatusExpression(STAGE_FAILURE);
     }
     if (stepWhenCondition.getValue().getStageStatus() == null) {
       throw new InvalidRequestException("Stage Status in step when condition cannot be empty.");
