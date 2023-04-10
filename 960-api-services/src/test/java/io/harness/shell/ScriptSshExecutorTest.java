@@ -33,6 +33,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ScriptSshExecutorTest extends CategoryTest {
@@ -43,35 +44,29 @@ public class ScriptSshExecutorTest extends CategoryTest {
   private ScriptSshExecutor scriptSshExecutor;
 
   @Mock private LogCallback logCallback;
-  MockedStatic<System> aStatic;
 
   String APP_ID = "APP_ID";
   String ACCOUNT_ID = "ACCOUNT_ID";
   String ACTIVITY_ID = "ACTIVITY_ID";
+  Map<String, String> ENV_VARS = Map.ofEntries(Map.entry("Path", ENV_VAR_VALUE), Map.entry("HOME", ENV_VAR_VALUE));
 
   @Before
   public void setup() throws Exception {
     when(sshSessionConfig.getExecutionId()).thenReturn("ID");
     scriptSshExecutor = spy(new ScriptSshExecutor(logCallback, true, sshSessionConfig));
-    aStatic = mockStatic(System.class);
-    doReturn(ENV_VAR_VALUE).when(System.getenv("Path"));
-    doReturn(ENV_VAR_VALUE).when(System.getenv("HOME"));
-  }
-
-  @After
-  public void cleanup() {
-    aStatic.close();
   }
 
   @Test
   @Owner(developers = VED)
   @Category(UnitTests.class)
-  public void shouldRecognizeEnvVarsInPathAndReplaceWithValuesExtractedFromSystem() {
-    assertThat(scriptSshExecutor.resolveEnvVarsInPath("$HOME")).isEqualTo(ENV_VAR_VALUE);
-    assertThat(scriptSshExecutor.resolveEnvVarsInPath("$HOME/abc/$Path"))
-        .isEqualTo(ENV_VAR_VALUE + "/abc" + ENV_VAR_VALUE);
-    assertThat(scriptSshExecutor.resolveEnvVarsInPath("$HOME/work$Path/abc"))
-        .isEqualTo(ENV_VAR_VALUE + "/work" + ENV_VAR_VALUE + "/abc");
+  public void shouldRecognizeEnvVarsInPathAndReplaceWithValuesExtractedFromSystem() throws Exception {
+    new EnvironmentVariables(ENV_VARS).execute(() -> {
+      assertThat(scriptSshExecutor.resolveEnvVarsInPath("$HOME")).isEqualTo(ENV_VAR_VALUE);
+      assertThat(scriptSshExecutor.resolveEnvVarsInPath("$HOME/abc/$Path"))
+          .isEqualTo(ENV_VAR_VALUE + "/abc" + ENV_VAR_VALUE);
+      assertThat(scriptSshExecutor.resolveEnvVarsInPath("$HOME/work$Path/abc"))
+          .isEqualTo(ENV_VAR_VALUE + "/work" + ENV_VAR_VALUE + "/abc");
+    });
   }
 
   @Test
