@@ -5726,7 +5726,10 @@ filegroup(
     urls = ["https://www.python.org/ftp/python/3.9.10/Python-3.9.10.tar.xz"],
 )
 
-register_toolchains("//:harness_no_fdLimit_jdk11_toolchain_definition")
+register_toolchains(
+    "//:harness_no_fdLimit_jdk11_toolchain_definition",
+    "//:harness_no_fdLimit_jdk17_toolchain_definition",
+)
 
 register_toolchains("//:py_toolchain")
 
