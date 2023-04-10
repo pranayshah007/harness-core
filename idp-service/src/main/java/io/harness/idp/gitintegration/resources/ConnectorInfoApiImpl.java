@@ -45,7 +45,9 @@ public class ConnectorInfoApiImpl implements ConnectorInfoApi {
       log.warn("Could not fetch connector details for accountId: {}", harnessAccount);
       return Response.status(Response.Status.NOT_FOUND).build();
     }
-    return Response.status(Response.Status.OK).entity(ConnectorDetailsMapper.toDTO(catalogConnectorEntity)).build();
+    return Response.status(Response.Status.OK)
+        .entity(ConnectorDetailsMapper.toResponse(catalogConnectorEntity))
+        .build();
   }
 
   @Override
@@ -57,7 +59,9 @@ public class ConnectorInfoApiImpl implements ConnectorInfoApi {
       log.warn("Could not fetch connector details for accountId: {}, providerType: {}", harnessAccount, providerType);
       return Response.status(Response.Status.NOT_FOUND).build();
     }
-    return Response.status(Response.Status.OK).entity(ConnectorDetailsMapper.toDTO(catalogConnector.get())).build();
+    return Response.status(Response.Status.OK)
+        .entity(ConnectorDetailsMapper.toResponse(catalogConnector.get()))
+        .build();
   }
 
   @Override
@@ -77,7 +81,7 @@ public class ConnectorInfoApiImpl implements ConnectorInfoApi {
       CatalogConnectorEntity catalogConnectorEntity =
           gitIntegrationService.saveConnectorDetails(harnessAccount, body.getConnectorDetails());
       return Response.status(Response.Status.CREATED)
-          .entity(ConnectorDetailsMapper.toDTO(catalogConnectorEntity))
+          .entity(ConnectorDetailsMapper.toResponse(catalogConnectorEntity))
           .build();
     } catch (Exception e) {
       String errorMessage =
