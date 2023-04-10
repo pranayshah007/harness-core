@@ -294,12 +294,12 @@ public enum NGStepType {
       "Route Mapping", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_ROUTE_MAPPING),
   @JsonProperty(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY)
   GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY("Google Cloud Functions Deploy",
-          Arrays.asList(ServiceDefinitionType.GOOGLE_CLOUD_FUNCTIONS), "Google Functions Gen One",
-          StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY),
+      Arrays.asList(ServiceDefinitionType.GOOGLE_CLOUD_FUNCTIONS), "Google Functions Gen One",
+      StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY),
   @JsonProperty(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK)
   GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK("Google Cloud Functions Rollback",
-          Arrays.asList(ServiceDefinitionType.GOOGLE_CLOUD_FUNCTIONS), "Google Functions Gen One",
-          StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK);
+      Arrays.asList(ServiceDefinitionType.GOOGLE_CLOUD_FUNCTIONS), "Google Functions Gen One",
+      StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

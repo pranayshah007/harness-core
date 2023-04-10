@@ -397,9 +397,9 @@ public class ArtifactDelegateRequestUtils {
   }
 
   public static GoogleCloudSourceArtifactDelegateRequest getGoogleCloudSourceArtifactDelegateRequest(String repository,
-       String project, String sourceDirectory, GoogleCloudSourceFetchType googleCloudSourceFetchType,
-       String branch, String commitId, String tag, GcpConnectorDTO gcpConnectorDTO, String connectorRef,
-       List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
+      String project, String sourceDirectory, GoogleCloudSourceFetchType googleCloudSourceFetchType, String branch,
+      String commitId, String tag, GcpConnectorDTO gcpConnectorDTO, String connectorRef,
+      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
     return GoogleCloudSourceArtifactDelegateRequest.builder()
         .repository(repository)
         .project(project)
@@ -408,10 +408,10 @@ public class ArtifactDelegateRequestUtils {
         .connectorRef(connectorRef)
         .encryptedDataDetails(encryptedDataDetails)
         .sourceType(sourceType)
-            .googleCloudSourceFetchType(googleCloudSourceFetchType)
-            .branch(branch)
-            .commitId(commitId)
-            .tag(tag)
+        .googleCloudSourceFetchType(googleCloudSourceFetchType)
+        .branch(branch)
+        .commitId(commitId)
+        .tag(tag)
         .build();
   }
 

@@ -222,7 +222,6 @@ public class EntityYamlRootNames {
   public static final String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY = "DeployCloudFunctionGenOne";
   public static final String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK = "RollbackCloudFunctionGenOne";
 
-
   public static final String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
   public static final String TAS_ROLLING_ROLLBACK = "TasRollingRollback";
   public static final String K8S_DRY_RUN_MANIFEST = "K8sDryRun";

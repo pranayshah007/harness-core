@@ -51,9 +51,7 @@ public class GoogleCloudFunctionsServiceSpec implements ServiceSpec, Visitable {
   ArtifactListConfig artifacts;
   List<ManifestConfigWrapper> manifests;
   List<ConfigFileWrapper> configFiles;
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither
-  ParameterField<String> environmentType;
-
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> environmentType;
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;

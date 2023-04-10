@@ -50,7 +50,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
           value = AwsLambdaAliasDefinitionManifestOutcome.class, name = ManifestType.AwsLambdaFunctionAliasDefinition),
       @JsonSubTypes.Type(value = AwsSamDirectoryManifestOutcome.class, name = ManifestType.AwsSamDirectory),
       @JsonSubTypes.Type(value = GoogleCloudFunctionGenOneDefinitionManifestOutcome.class,
-                name = ManifestType.GoogleCloudFunctionGenOneDefinition)
+          name = ManifestType.GoogleCloudFunctionGenOneDefinition)
 })
 public interface ManifestOutcome extends Outcome, WithIdentifier {
   String getIdentifier();

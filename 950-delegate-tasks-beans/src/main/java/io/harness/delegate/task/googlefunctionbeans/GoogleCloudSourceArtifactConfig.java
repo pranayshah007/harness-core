@@ -35,5 +35,4 @@ public class GoogleCloudSourceArtifactConfig implements GoogleFunctionArtifactCo
   @NonFinal @Expression(ALLOW_SECRETS) String branch;
   @NonFinal @Expression(ALLOW_SECRETS) String tag;
   @NonFinal @Expression(ALLOW_SECRETS) String commitId;
-
 }

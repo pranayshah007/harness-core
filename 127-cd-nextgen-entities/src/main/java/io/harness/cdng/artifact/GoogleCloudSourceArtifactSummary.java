@@ -29,12 +29,12 @@ public class GoogleCloudSourceArtifactSummary implements ArtifactSummary {
   String tag;
   String sourceDirectory;
 
-
   @Override
   public String getDisplayName() {
-    return repository + ":" +
-            branch!=null?branch:commitId!=null?commitId:tag!=null?tag:"" +
-            sourceDirectory;
+    return repository + ":" + branch != null ? branch
+        : commitId != null                   ? commitId
+        : tag != null                        ? tag
+                                             : "" + sourceDirectory;
   }
 
   @Override

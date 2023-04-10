@@ -215,7 +215,6 @@ public interface EntityTypeConstants {
   String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY = "DeployCloudFunctionGenOne";
   String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK = "RollbackCloudFunctionGenOne";
 
-
   String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
   String TAS_ROLLING_ROLLBACK = "TasRollingRollback";
   String K8S_DRY_RUN_MANIFEST = "K8sDryRun";

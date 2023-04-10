@@ -51,24 +51,21 @@ public class GoogleCloudSourceArtifactTaskHelper {
                   .get(0);
           String branchFormat;
           String branchValue;
-          if(artifactDelegateResponse.getBranch()!=null) {
+          if (artifactDelegateResponse.getBranch() != null) {
             branchFormat = "\n  branch: ";
             branchValue = artifactDelegateResponse.getBranch();
-          }
-          else if(artifactDelegateResponse.getCommitId()!=null) {
+          } else if (artifactDelegateResponse.getCommitId() != null) {
             branchFormat = "\n  commitId: ";
             branchValue = artifactDelegateResponse.getCommitId();
-          }
-          else {
+          } else {
             branchFormat = "\n  tag: ";
             branchValue = artifactDelegateResponse.getTag();
           }
           saveLogs(executionLogCallback,
               "Google Cloud Source Artifact details \n  type: GoogleCloudSource\n  projectId: "
                   + artifactDelegateResponse.getProject()
-                  + "\n  repositoryName: " + artifactDelegateResponse.getRepository()
-                      + branchFormat + branchValue
-                      + "\n  sourceDirectory: " + artifactDelegateResponse.getSourceDirectory());
+                  + "\n  repositoryName: " + artifactDelegateResponse.getRepository() + branchFormat + branchValue
+                  + "\n  sourceDirectory: " + artifactDelegateResponse.getSourceDirectory());
           break;
         default:
           saveLogs(executionLogCallback,

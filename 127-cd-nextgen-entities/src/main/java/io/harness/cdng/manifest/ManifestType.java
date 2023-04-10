@@ -30,7 +30,8 @@ public interface ManifestType {
       ManifestType.AsgConfiguration, ManifestType.AsgScalingPolicy, ManifestType.AsgScheduledUpdateGroupAction);
 
   Set<String> GOOGLE_FUNCTIONS_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.GoogleCloudFunctionDefinition);
-  Set<String> GOOGLE_FUNCTIONS_GEN_ONE_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.GoogleCloudFunctionGenOneDefinition);
+  Set<String> GOOGLE_FUNCTIONS_GEN_ONE_SUPPORTED_MANIFEST_TYPES =
+      ImmutableSet.of(ManifestType.GoogleCloudFunctionGenOneDefinition);
   Set<String> AWS_LAMBDA_SUPPORTED_MANIFEST_TYPES =
       ImmutableSet.of(ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsLambdaFunctionAliasDefinition);
   Set<String> AWS_SAM_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.AwsSamDirectory);

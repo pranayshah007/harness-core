@@ -7,8 +7,6 @@
 
 package io.harness.cdng.manifest.yaml.kinds;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -25,8 +23,16 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Value;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.Wither;
 import org.springframework.data.annotation.TypeAlias;
@@ -41,62 +47,62 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("googleCloudFunctionGenOneDefinitionManifest")
 @RecasterAlias("io.harness.cdng.manifest.yaml.kinds.GoogleCloudFunctionGenOneDefinitionManifest")
 public class GoogleCloudFunctionGenOneDefinitionManifest implements ManifestAttributes, Visitable {
-    @JsonProperty(YamlNode.UUID_FIELD_NAME)
-    @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-    @ApiModelProperty(hidden = true)
-    private String uuid;
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private String uuid;
 
-    @EntityIdentifier
+  @EntityIdentifier String identifier;
+
+  @Wither
+  @JsonProperty("store")
+  @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper")
+  @SkipAutoEvaluation
+  ParameterField<StoreConfigWrapper> store;
+
+  // For Visitor Framework Impl
+  String metadata;
+
+  @Override
+  public String getKind() {
+    return ManifestType.GoogleCloudFunctionGenOneDefinition;
+  }
+
+  @Override
+  public StoreConfig getStoreConfig() {
+    return store.getValue().getSpec();
+  }
+
+  @Override
+  public VisitableChildren getChildrenToWalk() {
+    VisitableChildren children = VisitableChildren.builder().build();
+    children.add(YAMLFieldNameConstants.STORE, store.getValue());
+    return children;
+  }
+
+  @Override
+  public ManifestAttributeStepParameters getManifestAttributeStepParameters() {
+    return new GoogleCloudFunctionDefinitionGenOneManifestStepParameters(
+        identifier, StoreConfigWrapper.StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()));
+  }
+
+  @Override
+  public ManifestAttributes applyOverrides(ManifestAttributes overrideConfig) {
+    GoogleCloudFunctionGenOneDefinitionManifest googleCloudFunctionGenOneDefinitionManifest =
+        (GoogleCloudFunctionGenOneDefinitionManifest) overrideConfig;
+    GoogleCloudFunctionGenOneDefinitionManifest resultantManifest = this;
+    if (googleCloudFunctionGenOneDefinitionManifest.getStore() != null
+        && googleCloudFunctionGenOneDefinitionManifest.getStore().getValue() != null) {
+      resultantManifest = resultantManifest.withStore(ParameterField.createValueField(
+          store.getValue().applyOverrides(googleCloudFunctionGenOneDefinitionManifest.getStore().getValue())));
+    }
+    return resultantManifest;
+  }
+
+  @Value
+  public static class GoogleCloudFunctionDefinitionGenOneManifestStepParameters
+      implements ManifestAttributeStepParameters {
     String identifier;
-
-    @Wither
-    @JsonProperty("store")
-    @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper")
-    @SkipAutoEvaluation
-    ParameterField<StoreConfigWrapper> store;
-
-    // For Visitor Framework Impl
-    String metadata;
-
-    @Override
-    public String getKind() {
-        return ManifestType.GoogleCloudFunctionGenOneDefinition;
-    }
-
-    @Override
-    public StoreConfig getStoreConfig() {
-        return store.getValue().getSpec();
-    }
-
-    @Override
-    public VisitableChildren getChildrenToWalk() {
-        VisitableChildren children = VisitableChildren.builder().build();
-        children.add(YAMLFieldNameConstants.STORE, store.getValue());
-        return children;
-    }
-
-    @Override
-    public ManifestAttributeStepParameters getManifestAttributeStepParameters() {
-        return new GoogleCloudFunctionDefinitionGenOneManifestStepParameters(
-                identifier, StoreConfigWrapper.StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()));
-    }
-
-    @Override
-    public ManifestAttributes applyOverrides(ManifestAttributes overrideConfig) {
-        GoogleCloudFunctionGenOneDefinitionManifest googleCloudFunctionGenOneDefinitionManifest =
-                (GoogleCloudFunctionGenOneDefinitionManifest) overrideConfig;
-        GoogleCloudFunctionGenOneDefinitionManifest resultantManifest = this;
-        if (googleCloudFunctionGenOneDefinitionManifest.getStore() != null
-                && googleCloudFunctionGenOneDefinitionManifest.getStore().getValue() != null) {
-            resultantManifest = resultantManifest.withStore(ParameterField.createValueField(
-                    store.getValue().applyOverrides(googleCloudFunctionGenOneDefinitionManifest.getStore().getValue())));
-        }
-        return resultantManifest;
-    }
-
-    @Value
-    public static class GoogleCloudFunctionDefinitionGenOneManifestStepParameters implements ManifestAttributeStepParameters {
-        String identifier;
-        StoreConfigWrapper.StoreConfigWrapperParameters store;
-    }
+    StoreConfigWrapper.StoreConfigWrapperParameters store;
+  }
 }

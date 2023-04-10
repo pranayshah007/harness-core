@@ -7,11 +7,12 @@
 
 package io.harness.cdng.service.steps.sweepingoutput;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
+
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -23,5 +24,5 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("googleFunctionsServiceCustomSweepingOutput")
 @RecasterAlias("io.harness.cdng.service.steps.sweepingoutput.GoogleFunctionsServiceCustomSweepingOutput")
 public class GoogleFunctionsServiceCustomSweepingOutput implements ExecutionSweepingOutput {
-    String environmentType;
+  String environmentType;
 }

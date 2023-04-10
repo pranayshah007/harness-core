@@ -579,10 +579,10 @@ public enum EntityType {
   GIT_LEAKS(ModuleType.STO, EntityTypeConstants.GIT_LEAKS, IdentifierRef.class, EntityYamlRootNames.GIT_LEAKS),
   @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY)
   GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY,
-                                        IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY),
+      IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY),
   @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK)
   GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK,
-                                          IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK);
+      IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK);
 
   private final ModuleType moduleType;
   String yamlName;

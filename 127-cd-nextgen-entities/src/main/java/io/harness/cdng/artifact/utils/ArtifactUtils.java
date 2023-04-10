@@ -244,20 +244,18 @@ public class ArtifactUtils {
             (GoogleCloudSourceArtifactConfig) artifactConfig;
         String branchFormat;
         String branchValue;
-        if(googleCloudSourceArtifactConfig.getBranch().getValue()!=null) {
+        if (googleCloudSourceArtifactConfig.getBranch().getValue() != null) {
           branchFormat = "\nbranch: %s";
           branchValue = googleCloudSourceArtifactConfig.getBranch().getValue();
-        }
-        else if(googleCloudSourceArtifactConfig.getCommitId().getValue()!=null) {
+        } else if (googleCloudSourceArtifactConfig.getCommitId().getValue() != null) {
           branchFormat = "\ncommitId: %s";
           branchValue = googleCloudSourceArtifactConfig.getCommitId().getValue();
-        }
-        else {
+        } else {
           branchFormat = "\ntag: %s";
           branchValue = googleCloudSourceArtifactConfig.getTag().getValue();
         }
-        return String.format("\ntype: %s \nconnectorRef: %s \nproject: %s \nrepository: %s "+branchFormat+" " +
-                        "\nsourceDirectory: %s",
+        return String.format("\ntype: %s \nconnectorRef: %s \nproject: %s \nrepository: %s " + branchFormat + " "
+                + "\nsourceDirectory: %s",
             artifactConfig.getSourceType(), googleCloudSourceArtifactConfig.getConnectorRef().getValue(),
             googleCloudSourceArtifactConfig.getProject().getValue(),
             googleCloudSourceArtifactConfig.getRepository().getValue(), branchValue,

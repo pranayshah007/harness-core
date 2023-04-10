@@ -43,10 +43,9 @@ public class ServiceCustomSweepingOutputHelper {
     if (serviceDefinition.getServiceSpec() instanceof EcsServiceSpec) {
       EcsServiceSpec ecsServiceSpec = (EcsServiceSpec) serviceDefinition.getServiceSpec();
       saveAdditionalEcsServiceFieldsToSweepingOutput(ecsServiceSpec, ambiance);
-    }
-    else if (serviceDefinition.getServiceSpec() instanceof GoogleCloudFunctionsServiceSpec) {
+    } else if (serviceDefinition.getServiceSpec() instanceof GoogleCloudFunctionsServiceSpec) {
       GoogleCloudFunctionsServiceSpec googleCloudFunctionsServiceSpec =
-              (GoogleCloudFunctionsServiceSpec) serviceDefinition.getServiceSpec();
+          (GoogleCloudFunctionsServiceSpec) serviceDefinition.getServiceSpec();
       saveAdditionalGoogleFunctionServiceFieldsToSweepingOutput(googleCloudFunctionsServiceSpec, ambiance);
     }
   }
@@ -65,18 +64,18 @@ public class ServiceCustomSweepingOutputHelper {
         ecsServiceCustomSweepingOutput, StepCategory.STAGE.name());
   }
 
-  private void saveAdditionalGoogleFunctionServiceFieldsToSweepingOutput(GoogleCloudFunctionsServiceSpec
-                                                                                 googleCloudFunctionsServiceSpec, Ambiance ambiance) {
+  private void saveAdditionalGoogleFunctionServiceFieldsToSweepingOutput(
+      GoogleCloudFunctionsServiceSpec googleCloudFunctionsServiceSpec, Ambiance ambiance) {
     if (googleCloudFunctionsServiceSpec.getEnvironmentType() == null
-            || googleCloudFunctionsServiceSpec.getEnvironmentType().fetchFinalValue() == null) {
+        || googleCloudFunctionsServiceSpec.getEnvironmentType().fetchFinalValue() == null) {
       log.info("No env type found in google function service");
       return;
     }
     GoogleFunctionsServiceCustomSweepingOutput googleFunctionsServiceCustomSweepingOutput =
-            GoogleFunctionsServiceCustomSweepingOutput.builder()
-                    .environmentType(googleCloudFunctionsServiceSpec.getEnvironmentType().fetchFinalValue().toString())
-                    .build();
+        GoogleFunctionsServiceCustomSweepingOutput.builder()
+            .environmentType(googleCloudFunctionsServiceSpec.getEnvironmentType().fetchFinalValue().toString())
+            .build();
     sweepingOutputService.consume(ambiance, ServiceStepV3Constants.GOOGLE_FUNCTION_SERVICE_SWEEPING_OUTPUT,
-            googleFunctionsServiceCustomSweepingOutput, StepCategory.STAGE.name());
+        googleFunctionsServiceCustomSweepingOutput, StepCategory.STAGE.name());
   }
 }

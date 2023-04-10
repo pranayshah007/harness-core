@@ -11,24 +11,23 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum GoogleCloudSourceFetchType {
-    @JsonProperty("Branch") BRANCH("Branch"),
-    @JsonProperty("Commit") COMMIT("Commit"),
-    @JsonProperty("Tag") TAG("Tag");
+  @JsonProperty("Branch") BRANCH("Branch"),
+  @JsonProperty("Commit") COMMIT("Commit"),
+  @JsonProperty("Tag") TAG("Tag");
 
+  private final String name;
 
-    private final String name;
+  GoogleCloudSourceFetchType(String name) {
+    this.name = name;
+  }
 
-    GoogleCloudSourceFetchType(String name) {
-        this.name = name;
-    }
+  @JsonValue
+  public String getName() {
+    return name;
+  }
 
-    @JsonValue
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public String toString() {
-        return name;
-    }
+  @Override
+  public String toString() {
+    return name;
+  }
 }

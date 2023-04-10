@@ -143,7 +143,15 @@ import io.harness.delegate.exceptionhandler.handler.SecretExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.SocketExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.TerraformRuntimeExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.TerragruntRuntimeExceptionHandler;
-import io.harness.delegate.googlefunction.*;
+import io.harness.delegate.googlefunction.GoogleFunctionCommandTaskHandler;
+import io.harness.delegate.googlefunction.GoogleFunctionDeployCommandTaskHandler;
+import io.harness.delegate.googlefunction.GoogleFunctionDeployWithoutTrafficCommandTaskHandler;
+import io.harness.delegate.googlefunction.GoogleFunctionGenOneDeployCommandTaskHandler;
+import io.harness.delegate.googlefunction.GoogleFunctionGenOnePrepareRollbackCommandTaskHandler;
+import io.harness.delegate.googlefunction.GoogleFunctionGenOneRollbackCommandTaskHandler;
+import io.harness.delegate.googlefunction.GoogleFunctionPrepareRollbackCommandTaskHandler;
+import io.harness.delegate.googlefunction.GoogleFunctionRollbackCommandTaskHandler;
+import io.harness.delegate.googlefunction.GoogleFunctionTrafficShiftCommandTaskHandler;
 import io.harness.delegate.http.HttpTaskNG;
 import io.harness.delegate.k8s.K8sApplyRequestHandler;
 import io.harness.delegate.k8s.K8sBGRequestHandler;
@@ -321,7 +329,15 @@ import io.harness.delegate.task.gitapi.DecryptGitAPIAccessTask;
 import io.harness.delegate.task.gitapi.GitApiTask;
 import io.harness.delegate.task.gitcommon.GitTaskNG;
 import io.harness.delegate.task.gitops.GitOpsFetchAppTask;
-import io.harness.delegate.task.googlefunction.*;
+import io.harness.delegate.task.googlefunction.GoogleFunctionCommandTask;
+import io.harness.delegate.task.googlefunction.GoogleFunctionDeployTask;
+import io.harness.delegate.task.googlefunction.GoogleFunctionDeployWithoutTrafficTask;
+import io.harness.delegate.task.googlefunction.GoogleFunctionGenOneDeployTask;
+import io.harness.delegate.task.googlefunction.GoogleFunctionGenOnePrepareRollbackTask;
+import io.harness.delegate.task.googlefunction.GoogleFunctionGenOneRollbackTask;
+import io.harness.delegate.task.googlefunction.GoogleFunctionPrepareRollbackTask;
+import io.harness.delegate.task.googlefunction.GoogleFunctionRollbackTask;
+import io.harness.delegate.task.googlefunction.GoogleFunctionTrafficShiftTask;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionCommandTypeNG;
 import io.harness.delegate.task.helm.HelmCommandTaskNG;
 import io.harness.delegate.task.helm.HelmDeployServiceImplNG;
@@ -476,7 +492,12 @@ import io.harness.gcp.client.GcpClient;
 import io.harness.gcp.impl.GcpClientImpl;
 import io.harness.git.GitClientV2;
 import io.harness.git.GitClientV2Impl;
-import io.harness.googlefunctions.*;
+import io.harness.googlefunctions.GoogleCloudFunctionClient;
+import io.harness.googlefunctions.GoogleCloudFunctionClientImpl;
+import io.harness.googlefunctions.GoogleCloudFunctionGenOneClient;
+import io.harness.googlefunctions.GoogleCloudFunctionGenOneClientImpl;
+import io.harness.googlefunctions.GoogleCloudRunClient;
+import io.harness.googlefunctions.GoogleCloudRunClientImpl;
 import io.harness.helm.HelmClient;
 import io.harness.helm.HelmClientImpl;
 import io.harness.helpers.EncryptDecryptHelperImpl;
@@ -2113,12 +2134,15 @@ public class DelegateModule extends AbstractModule {
         .to(GoogleFunctionTrafficShiftCommandTaskHandler.class);
     googleFunctionCommandTaskHandlerMapBinder.addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_ROLLBACK.name())
         .to(GoogleFunctionRollbackCommandTaskHandler.class);
-    googleFunctionCommandTaskHandlerMapBinder.addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_GEN_ONE_PREPARE_ROLLBACK.name())
-              .to(GoogleFunctionGenOnePrepareRollbackCommandTaskHandler.class);
-    googleFunctionCommandTaskHandlerMapBinder.addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_GEN_ONE_DEPLOY.name())
-              .to(GoogleFunctionGenOneDeployCommandTaskHandler.class);
-    googleFunctionCommandTaskHandlerMapBinder.addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_GEN_ONE_ROLLBACK.name())
-              .to(GoogleFunctionGenOneRollbackCommandTaskHandler.class);
+    googleFunctionCommandTaskHandlerMapBinder
+        .addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_GEN_ONE_PREPARE_ROLLBACK.name())
+        .to(GoogleFunctionGenOnePrepareRollbackCommandTaskHandler.class);
+    googleFunctionCommandTaskHandlerMapBinder
+        .addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_GEN_ONE_DEPLOY.name())
+        .to(GoogleFunctionGenOneDeployCommandTaskHandler.class);
+    googleFunctionCommandTaskHandlerMapBinder
+        .addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_GEN_ONE_ROLLBACK.name())
+        .to(GoogleFunctionGenOneRollbackCommandTaskHandler.class);
     // AWS ASG NG
     mapBinder.addBinding(TaskType.AWS_ASG_CANARY_DEPLOY_TASK_NG).toInstance(AsgCanaryDeployTaskNG.class);
     mapBinder.addBinding(TaskType.AWS_ASG_CANARY_DELETE_TASK_NG).toInstance(AsgCanaryDeleteTaskNG.class);
@@ -2190,8 +2214,10 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_ROLLBACK_TASK).toInstance(GoogleFunctionRollbackTask.class);
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK).toInstance(GoogleFunctionTrafficShiftTask.class);
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_GEN_ONE_DEPLOY_TASK).toInstance(GoogleFunctionGenOneDeployTask.class);
-    mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_GEN_ONE_PREPARE_ROLLBACK_TASK).toInstance(GoogleFunctionGenOnePrepareRollbackTask.class);
-    mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_GEN_ONE_ROLLBACK_TASK).toInstance(GoogleFunctionGenOneRollbackTask.class);
+    mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_GEN_ONE_PREPARE_ROLLBACK_TASK)
+        .toInstance(GoogleFunctionGenOnePrepareRollbackTask.class);
+    mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_GEN_ONE_ROLLBACK_TASK)
+        .toInstance(GoogleFunctionGenOneRollbackTask.class);
 
     // AWS Lambda
     mapBinder.addBinding(TaskType.AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG).toInstance(AwsLambdaDeployTask.class);

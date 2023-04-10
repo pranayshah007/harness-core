@@ -7,12 +7,13 @@
 
 package io.harness.cdng.manifest.yaml;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -24,8 +25,8 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(ManifestType.GoogleCloudFunctionGenOneDefinition)
 @RecasterAlias("io.harness.cdng.manifest.yaml.GoogleCloudFunctionGenOneDefinitionManifestOutcome")
 public class GoogleCloudFunctionGenOneDefinitionManifestOutcome implements ManifestOutcome {
-    String identifier;
-    String type = ManifestType.GoogleCloudFunctionGenOneDefinition;
-    StoreConfig store;
-    int order;
+  String identifier;
+  String type = ManifestType.GoogleCloudFunctionGenOneDefinition;
+  StoreConfig store;
+  int order;
 }

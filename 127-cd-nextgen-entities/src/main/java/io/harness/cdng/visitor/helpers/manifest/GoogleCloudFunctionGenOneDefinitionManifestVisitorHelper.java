@@ -12,17 +12,17 @@ import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 
 public class GoogleCloudFunctionGenOneDefinitionManifestVisitorHelper implements ConfigValidator {
-    @Override
-    public Object createDummyVisitableElement(Object originalElement) {
-        GoogleCloudFunctionGenOneDefinitionManifest googleCloudFunctionGenOneDefinitionManifest =
-                (GoogleCloudFunctionGenOneDefinitionManifest) originalElement;
-        return GoogleCloudFunctionGenOneDefinitionManifest.builder()
-                .identifier(googleCloudFunctionGenOneDefinitionManifest.getIdentifier())
-                .build();
-    }
+  @Override
+  public Object createDummyVisitableElement(Object originalElement) {
+    GoogleCloudFunctionGenOneDefinitionManifest googleCloudFunctionGenOneDefinitionManifest =
+        (GoogleCloudFunctionGenOneDefinitionManifest) originalElement;
+    return GoogleCloudFunctionGenOneDefinitionManifest.builder()
+        .identifier(googleCloudFunctionGenOneDefinitionManifest.getIdentifier())
+        .build();
+  }
 
-    @Override
-    public void validate(Object object, ValidationVisitor visitor) {
-        // Nothing to validate.
-    }
+  @Override
+  public void validate(Object object, ValidationVisitor visitor) {
+    // Nothing to validate.
+  }
 }

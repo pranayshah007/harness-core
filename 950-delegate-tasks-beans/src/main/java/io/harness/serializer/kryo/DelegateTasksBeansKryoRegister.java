@@ -721,8 +721,22 @@ import io.harness.delegate.task.googlefunctionbeans.GoogleCloudSourceArtifactCon
 import io.harness.delegate.task.googlefunctionbeans.GoogleCloudStorageArtifactConfig;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunction;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionCommandTypeNG;
-import io.harness.delegate.task.googlefunctionbeans.request.*;
-import io.harness.delegate.task.googlefunctionbeans.response.*;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionDeployRequest;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionDeployWithoutTrafficRequest;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionGenOneDeployRequest;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionGenOnePrepareRollbackRequest;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionGenOneRollbackRequest;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionPrepareRollbackRequest;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionRollbackRequest;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionTrafficShiftRequest;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionDeployResponse;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionDeployWithoutTrafficResponse;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionGenOneDeployResponse;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionGenOnePrepareRollbackResponse;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionGenOneRollbackResponse;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionPrepareRollbackResponse;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionRollbackResponse;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionTrafficShiftResponse;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCmdExecResponseNG;
 import io.harness.delegate.task.helm.HelmCommandFlag;
@@ -1567,9 +1581,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GoogleCloudStorageArtifactDelegateResponse.class, 19710);
     kryo.register(GoogleCloudSourceArtifactDelegateRequest.class, 19707);
     kryo.register(GoogleCloudSourceArtifactDelegateResponse.class, 19708);
-      kryo.register(GoogleCloudSourceFetchType.class, 1800009);
+    kryo.register(GoogleCloudSourceFetchType.class, 1800009);
 
-      kryo.register(SpotValidateTaskResponse.class, 21006);
+    kryo.register(SpotValidateTaskResponse.class, 21006);
     kryo.register(SpotTaskParams.class, 21007);
     kryo.register(SpotTaskType.class, 21008);
     kryo.register(SpotValidationParams.class, 21009);
@@ -2385,7 +2399,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GoogleFunctionTrafficShiftResponse.class, 673596);
     kryo.register(GoogleFunctionException.class, 673597);
     kryo.register(GoogleCloudSourceArtifactConfig.class, 673598);
-
 
     kryo.register(K8sDryRunManifestRequest.class, 573594);
     kryo.register(K8sDryRunManifestResponse.class, 573595);

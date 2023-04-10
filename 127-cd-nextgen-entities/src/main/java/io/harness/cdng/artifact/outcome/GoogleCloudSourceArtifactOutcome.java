@@ -59,8 +59,13 @@ public class GoogleCloudSourceArtifactOutcome implements ArtifactOutcome {
   boolean primaryArtifact;
   @Override
   public ArtifactSummary getArtifactSummary() {
-    return GoogleCloudSourceArtifactSummary.builder().repository(repository).sourceDirectory(sourceDirectory)
-            .tag(tag).branch(branch).commitId(commitId).build();
+    return GoogleCloudSourceArtifactSummary.builder()
+        .repository(repository)
+        .sourceDirectory(sourceDirectory)
+        .tag(tag)
+        .branch(branch)
+        .commitId(commitId)
+        .build();
   }
 
   @Override

@@ -38,7 +38,7 @@ public class GoogleCloudSourceArtifactTaskHandler
     if (StringUtils.isBlank(artifactDelegateRequest.getSourceDirectory())) {
       throw new InvalidRequestException("Please specify the sourceDirectory path for the GCS artifact source.");
     }
-    if(StringUtils.isAllBlank(artifactDelegateRequest.getBranch(),artifactDelegateRequest.getCommitId(),
+    if (StringUtils.isAllBlank(artifactDelegateRequest.getBranch(), artifactDelegateRequest.getCommitId(),
             artifactDelegateRequest.getTag())) {
       throw new InvalidRequestException("Please specify one of these three, branch, commitId, Tag.");
     }

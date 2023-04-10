@@ -22,9 +22,9 @@ public class GoogleCloudSourceRequestResponseMapper {
         .project(request.getProject())
         .repository(request.getRepository())
         .sourceDirectory(request.getSourceDirectory())
-            .branch(request.getBranch())
-            .commitId(request.getCommitId())
-            .tag(request.getTag())
+        .branch(request.getBranch())
+        .commitId(request.getCommitId())
+        .tag(request.getTag())
         .build();
   }
 }

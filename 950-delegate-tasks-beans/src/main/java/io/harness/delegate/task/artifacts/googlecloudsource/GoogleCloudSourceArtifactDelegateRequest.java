@@ -51,7 +51,6 @@ public class GoogleCloudSourceArtifactDelegateRequest implements ArtifactSourceD
   String commitId;
   String tag;
 
-
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilities =
