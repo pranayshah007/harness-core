@@ -5541,6 +5541,7 @@ maven_install(
         maven_test_artifact("org.mockito:mockito-inline:5.2.0"),
         maven_test_artifact("pl.pragmatists:JUnitParams:1.0.4"),
         maven_test_artifact("pl.pragmatists:JUnitParams:1.0.4"),
+        maven_test_artifact("uk.org.webcompere:system-stubs-core:2.0.2"),
     ],
     excluded_artifacts = [],
     maven_install_json = "//project:main_maven_install.json",
