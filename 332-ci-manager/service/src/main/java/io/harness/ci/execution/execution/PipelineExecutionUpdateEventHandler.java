@@ -21,6 +21,7 @@ import io.harness.app.beans.dto.CITaskDetails;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.outcomes.VmDetailsOutcome;
+import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.delegate.TaskSelector;
@@ -74,6 +75,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
   @Inject private OutcomeService outcomeService;
   @Inject private GitBuildStatusUtility gitBuildStatusUtility;
   @Inject private StageCleanupUtility stageCleanupUtility;
+  @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject private CILogServiceUtils ciLogServiceUtils;
   @Inject private CILicenseService ciLicenseService;
   @Inject private CITaskDetailsRepository ciTaskDetailsRepository;
@@ -111,14 +113,15 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
         if (level.getStepType().getStepCategory() == StepCategory.STAGE && isFinalStatus(status)) {
           // TODO: Once Robust Cleanup implementation is done shift this after response from delegate is received.
           try {
+            String topic = ciExecutionServiceConfig.getQueueServiceClientConfig().getTopic();
             CIExecutionMetadata ciExecutionMetadata =
                 queueExecutionUtils.deleteActiveExecutionRecord(ambiance.getStageExecutionId());
             if (ciExecutionMetadata != null && StringUtils.isNotBlank(ciExecutionMetadata.getQueueId())) {
               // ack the request so that its not processed again.
               AckRequest ackRequest = AckRequest.builder()
                                           .itemId(ciExecutionMetadata.getQueueId())
-                                          .consumerName(SERVICE_NAME_CI)
-                                          .topic(SERVICE_NAME_CI)
+                                          .consumerName(topic)
+                                          .topic(topic)
                                           .subTopic(accountId)
                                           .build();
               hsqsClientService.ack(ackRequest);

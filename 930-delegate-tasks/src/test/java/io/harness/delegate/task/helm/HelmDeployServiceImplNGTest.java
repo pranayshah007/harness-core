@@ -252,7 +252,8 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     helmInstallCommandRequestNG = createHelmInstallCommandRequestNG();
     helmRollbackCommandRequestNG = createHelmRollbackCommandRequestNG();
     kubernetesConfig = KubernetesConfig.builder().build();
-    when(containerDeploymentDelegateBaseHelper.createKubernetesConfig(any(), any())).thenReturn(kubernetesConfig);
+    when(containerDeploymentDelegateBaseHelper.createKubernetesConfig(any(), any(), any()))
+        .thenReturn(kubernetesConfig);
     spyHelmDeployService = spy(helmDeployService);
     doNothing()
         .when(helmTaskHelperBase)
@@ -646,7 +647,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
                                  .valueMap(ImmutableMap.of(HelmSubCommandType.TEMPLATE, "--dependency-update"))
                                  .build())
             .storeDelegateConfig(httpHelmStoreDelegateConfig)
-            .subChartName("child-1")
+            .subChartPath("charts/child-1")
             .build();
     helmInstallCommandRequestNG.setManifestDelegateConfig(chartManifestConfig);
 

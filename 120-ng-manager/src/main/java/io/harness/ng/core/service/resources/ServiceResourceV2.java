@@ -81,6 +81,7 @@ import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityManagementService;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -882,6 +883,24 @@ public class ServiceResourceV2 {
     }
     throw new InvalidRequestException(
         format("Service with type: [%s] does not support service hooks", serviceSpecType));
+  }
+
+  @GET
+  @Path("validate-template-inputs")
+  @ApiOperation(value = "This validates inputs for templates like artifact sources for service yaml",
+      nickname = "validateTemplateInputs")
+  @Hidden
+  public ResponseDTO<ValidateTemplateInputsResponseDTO>
+  validateTemplateInputs(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) String serviceIdentifier,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache) {
+    return ResponseDTO.newResponse(
+        serviceEntityService.validateTemplateInputs(accountId, orgId, projectId, serviceIdentifier, loadFromCache));
   }
 
   @Hidden

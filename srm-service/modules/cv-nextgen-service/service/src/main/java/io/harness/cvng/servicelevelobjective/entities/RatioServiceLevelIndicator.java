@@ -68,7 +68,8 @@ public class RatioServiceLevelIndicator extends ServiceLevelIndicator {
           .set(RatioServiceLevelIndicatorKeys.metric1, ratioServiceLevelIndicator.getMetric1())
           .set(RatioServiceLevelIndicatorKeys.metric2, ratioServiceLevelIndicator.getMetric2())
           .set(RatioServiceLevelIndicatorKeys.thresholdValue, ratioServiceLevelIndicator.getThresholdValue())
-          .set(RatioServiceLevelIndicatorKeys.thresholdType, ratioServiceLevelIndicator.getThresholdType());
+          .set(RatioServiceLevelIndicatorKeys.thresholdType, ratioServiceLevelIndicator.getThresholdType())
+          .set(ServiceLevelIndicatorKeys.sliMissingDataType, ratioServiceLevelIndicator.getSliMissingDataType());
       if (ratioServiceLevelIndicator.getConsiderConsecutiveMinutes() != null) {
         updateOperations.set(RatioServiceLevelIndicatorKeys.considerConsecutiveMinutes,
             ratioServiceLevelIndicator.getConsiderConsecutiveMinutes());
@@ -99,6 +100,7 @@ public class RatioServiceLevelIndicator extends ServiceLevelIndicator {
   @Override
   public boolean shouldReAnalysis(ServiceLevelIndicator serviceLevelIndicator) {
     try {
+      Preconditions.checkArgument(this.getSliMissingDataType().equals(serviceLevelIndicator.getSliMissingDataType()));
       RatioServiceLevelIndicator ratioServiceLevelIndicator = (RatioServiceLevelIndicator) serviceLevelIndicator;
       Preconditions.checkArgument(this.getEventType().equals(ratioServiceLevelIndicator.getEventType()));
       Preconditions.checkArgument(this.getThresholdValue().equals(ratioServiceLevelIndicator.getThresholdValue()));

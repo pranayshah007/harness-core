@@ -34,6 +34,9 @@ import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifact.ArtifactUtilities;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
+import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
+import io.harness.artifacts.docker.service.DockerRegistryUtils;
+import io.harness.artifacts.gar.service.GARUtils;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.client.AzureAuthorizationClient;
 import io.harness.azure.client.AzureComputeClient;
@@ -48,9 +51,12 @@ import io.harness.azure.model.kube.AzureKubeConfig;
 import io.harness.azure.model.kube.UserConfig;
 import io.harness.azure.model.tag.TagDetails;
 import io.harness.azure.utility.AzureUtils;
+import io.harness.azurecli.AzureCliClient;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.data.encoding.EncodingUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.azure.AzureConfigContext;
 import io.harness.delegate.beans.azure.ManagementGroupData;
@@ -73,6 +79,7 @@ import io.harness.delegate.task.artifacts.mappers.AcrRequestResponseMapper;
 import io.harness.exception.AzureAKSException;
 import io.harness.exception.AzureAuthenticationException;
 import io.harness.exception.AzureContainerRegistryException;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HintException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
@@ -80,11 +87,11 @@ import io.harness.expression.RegexFunctor;
 import io.harness.k8s.model.KubernetesAzureConfig;
 import io.harness.k8s.model.KubernetesClusterAuthType;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.k8s.model.kubeconfig.Exec;
 import io.harness.k8s.model.kubeconfig.InteractiveMode;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
-import io.harness.logging.LogLevel;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.helpers.ext.azure.AzureIdentityAccessTokenResponse;
@@ -111,6 +118,7 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -122,10 +130,12 @@ public class AzureAsyncTaskHelper {
   @Inject private AzureContainerRegistryClient azureContainerRegistryClient;
   @Inject private AzureKubernetesClient azureKubernetesClient;
   @Inject private AzureManagementClient azureManagementClient;
+  @Inject private DockerRegistryUtils dockerRegistryUtils;
 
   private final String TAG_LABEL = "Tag#";
   private final int ITEM_LOG_LIMIT = 30;
   private final String SCOPE_DEFAULT_SUFFIX = "/.default";
+  private static final String COULD_NOT_FETCH_IMAGE_MANIFEST = "Could not fetch image manifest";
 
   public ConnectorValidationResult getConnectorValidationResult(AzureConfigContext azureConfigContext) {
     String errorMessage;
@@ -400,8 +410,8 @@ public class AzureAsyncTaskHelper {
         .build();
   }
 
-  public KubernetesConfig getClusterConfig(AzureConfigContext azureConfigContext, LogCallback logCallback)
-      throws IOException {
+  public KubernetesConfig getClusterConfig(
+      AzureConfigContext azureConfigContext, String workingDirectory, LogCallback logCallback) throws IOException {
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
         azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
         azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
@@ -410,8 +420,7 @@ public class AzureAsyncTaskHelper {
 
     return getKubernetesConfigK8sCluster(azureConfig, azureConfigContext.getSubscriptionId(),
         azureConfigContext.getResourceGroup(), azureConfigContext.getCluster(), azureConfigContext.getNamespace(),
-        azureConfigContext.isUseClusterAdminCredentials(),
-        getAzureKubeconfigFormat(azureConfig.getAzureAuthenticationType(), logCallback));
+        azureConfigContext.isUseClusterAdminCredentials(), workingDirectory, logCallback);
   }
 
   public AzureRepositoriesResponse listRepositories(AzureConfigContext azureConfigContext) throws IOException {
@@ -494,6 +503,21 @@ public class AzureAsyncTaskHelper {
         .collect(Collectors.toList());
   }
 
+  private String getRegistryUrl(AzureConfig azureConfig, String subscriptionId, String containerRegistry) {
+    Registry registry =
+        azureContainerRegistryClient
+            .findFirstContainerRegistryByNameOnSubscription(azureConfig, subscriptionId, containerRegistry)
+            .orElseThrow(
+                ()
+                    -> NestedExceptionUtils.hintWithExplanationException(
+                        format("Not found Azure container registry by name: %s, subscription id: %s", containerRegistry,
+                            subscriptionId),
+                        "Please check if the container registry and subscription values are properly configured.",
+                        new AzureAuthenticationException("Failed to retrieve container registry")));
+
+    return registry.loginServerUrl().toLowerCase();
+  }
+
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(
       AzureConfig azureConfig, String subscription, String registry, String repository, String tagRegex) {
     log.info(format("Fetching image tag from subscription %s registry %s and repository %s based on regex %s",
@@ -522,46 +546,89 @@ public class AzureAsyncTaskHelper {
           new AzureContainerRegistryException(
               String.format("Could not find an artifact tag that matches tagRegex '%s'", tagRegex)));
     }
-    return builds.get(0);
+    return verifyBuildNumber(azureConfig, subscription, registry, repository, builds.get(0).getNumber());
   }
 
   public BuildDetailsInternal verifyBuildNumber(
       AzureConfig azureConfig, String subscription, String registry, String repository, String tag) {
-    log.info(format("Fetching image tag from subscription %s registry %s and repository %s based on tag %s",
-        subscription, registry, repository, tag));
-    List<BuildDetailsInternal> builds = getImageTags(azureConfig, subscription, registry, repository);
-    builds = builds.stream().filter(build -> build.getNumber().equals(tag)).collect(Collectors.toList());
-
-    if (builds.isEmpty()) {
-      throw NestedExceptionUtils.hintWithExplanationException(
-          "Please check your ACR repository for artifact tag existence.",
-          String.format(
-              "Did not find any artifacts for tag [%s] in ACR repository [%s] for subscription [%s] in registry [%s].",
-              tag, repository, subscription, registry),
-          new AzureContainerRegistryException(String.format("Artifact tag '%s' not found.", tag)));
-    } else if (builds.size() == 1) {
-      return builds.get(0);
+    String registryUrl = getRegistryUrl(azureConfig, subscription, registry);
+    Exception exception = null;
+    ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().build();
+    try {
+      ArtifactMetaInfo artifactMetaInfoSchemaVersion1 =
+          getArtifactMetaInfo(azureConfig, registryUrl, repository, tag, true);
+      if (artifactMetaInfoSchemaVersion1 != null) {
+        artifactMetaInfo.setSha(artifactMetaInfoSchemaVersion1.getSha());
+        artifactMetaInfo.setLabels(artifactMetaInfoSchemaVersion1.getLabels());
+      }
+    } catch (Exception e) {
+      log.error(COULD_NOT_FETCH_IMAGE_MANIFEST, e);
+      exception = e;
+    }
+    try {
+      ArtifactMetaInfo artifactMetaInfoSchemaVersion2 =
+          getArtifactMetaInfo(azureConfig, registryUrl, repository, tag, false);
+      if (artifactMetaInfoSchemaVersion2 != null) {
+        artifactMetaInfo.setShaV2(artifactMetaInfoSchemaVersion2.getSha());
+      }
+    } catch (Exception e) {
+      log.error(COULD_NOT_FETCH_IMAGE_MANIFEST, e);
+      exception = e;
     }
 
-    throw NestedExceptionUtils.hintWithExplanationException(
-        "Please check your ACR repository for artifacts with same tag.",
-        String.format(
-            "Found multiple artifacts for tag [%s] in Artifactory repository [%s] for subscription [%s] in registry [%s].",
-            tag, repository, subscription, registry),
-        new AzureContainerRegistryException(
-            String.format("Found multiple artifact tags '%s', but expected only one.", tag)));
+    if (EmptyPredicate.isEmpty(artifactMetaInfo.getSha()) && EmptyPredicate.isEmpty(artifactMetaInfo.getShaV2())) {
+      if (exception != null) {
+        throw NestedExceptionUtils.hintWithExplanationException(COULD_NOT_FETCH_IMAGE_MANIFEST, exception.getMessage(),
+            new AzureContainerRegistryException(ExceptionUtils.getMessage(exception)));
+      } else {
+        throw NestedExceptionUtils.hintWithExplanationException(COULD_NOT_FETCH_IMAGE_MANIFEST,
+            "Please check your ACR repository for artifact tag existence.",
+            new AzureContainerRegistryException(COULD_NOT_FETCH_IMAGE_MANIFEST));
+      }
+    }
+
+    String imageUrl = getImageUrl(registryUrl, repository);
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put(ArtifactMetadataKeys.IMAGE, getBuildUrl(imageUrl, tag));
+    metadata.put(ArtifactMetadataKeys.TAG, tag);
+    metadata.put(ArtifactMetadataKeys.REGISTRY_HOSTNAME, registryUrl);
+    return BuildDetailsInternal.builder()
+        .number(tag)
+        .buildUrl(getBuildUrl(imageUrl, tag))
+        .metadata(metadata)
+        .uiDisplayName(String.format("%s %s", TAG_LABEL, tag))
+        .artifactMetaInfo(artifactMetaInfo)
+        .build();
+  }
+
+  private String getImageUrl(String registryUrl, String repository) {
+    return registryUrl + "/" + ArtifactUtilities.trimSlashforwardChars(repository);
+  }
+
+  private String getBuildUrl(String imageUrl, String tag) {
+    if (GARUtils.isSHA(tag)) {
+      return String.format("%s@%s", imageUrl, tag);
+    }
+    return String.format("%s:%s", imageUrl, tag);
+  }
+
+  private ArtifactMetaInfo getArtifactMetaInfo(
+      AzureConfig azureConfig, String registryUrl, String repository, String tag, boolean isV1) {
+    Response<DockerImageManifestResponse> response =
+        azureContainerRegistryClient.getImageManifest(azureConfig, registryUrl, repository, tag, isV1);
+    return dockerRegistryUtils.parseArtifactMetaInfoResponse(response, repository);
   }
 
   private KubernetesConfig getKubernetesConfigK8sCluster(AzureConfig azureConfig, String subscriptionId,
       String resourceGroup, String cluster, String namespace, boolean shouldGetAdminCredentials,
-      AzureKubeconfigFormat azureKubeconfigFormat) {
+      String workingDirectory, LogCallback logCallback) {
     try {
       log.info(format(
           "Getting AKS kube config [subscription: %s] [resourceGroup: %s] [cluster: %s] [namespace: %s] [credentials: %s]",
           subscriptionId, resourceGroup, cluster, namespace, shouldGetAdminCredentials ? "admin" : "user"));
 
-      String kubeConfigContent = getKubeConfigContent(
-          azureConfig, subscriptionId, resourceGroup, cluster, shouldGetAdminCredentials, azureKubeconfigFormat);
+      String kubeConfigContent = getKubeConfigContent(azureConfig, subscriptionId, resourceGroup, cluster,
+          shouldGetAdminCredentials, getAzureKubeconfigFormat(logCallback));
 
       log.trace(format("Cluster credentials: \n %s", kubeConfigContent));
 
@@ -575,7 +642,11 @@ public class AzureAsyncTaskHelper {
       } else if (userConfig.getExec() != null) {
         String apiServerId = Exec.getValueFromArgsList(userConfig.getExec().getArgs(), KUBECFG_ARGS_SERVER_ID);
         azureKubeConfig.setAadToken(fetchAksAADToken(azureConfig, apiServerId));
-        userConfig.setExec(updateAzureKubeconfig(userConfig.getExec(), azureConfig, apiServerId));
+        Map<String, String> env = new HashMap<>();
+        if (AzureAuthenticationType.SERVICE_PRINCIPAL_CERT == azureConfig.getAzureAuthenticationType()) {
+          AzureCliClient.loginToAksCluster(azureConfig, env, workingDirectory, logCallback);
+        }
+        userConfig.setExec(updateAzureKubeconfig(userConfig.getExec(), azureConfig, apiServerId, env));
       }
 
       return getKubernetesConfig(azureKubeConfig, namespace);
@@ -826,12 +897,12 @@ public class AzureAsyncTaskHelper {
     return azureLocationsResponse;
   }
 
-  private Exec updateAzureKubeconfig(Exec exec, AzureConfig azureConfig, String serverId) {
+  private Exec updateAzureKubeconfig(Exec exec, AzureConfig azureConfig, String serverId, Map<String, String> env) {
     return Exec.builder()
         .apiVersion(exec.getApiVersion())
         .args(getArgsForAzureKubeconfig(azureConfig, serverId))
         .command(AZURE_AUTH_PLUGIN_BINARY)
-        .env(exec.getEnv())
+        .env(getEnvForAzureKubeconfig(env))
         .installHint(AZURE_AUTH_PLUGIN_INSTALL_HINT)
         .interactiveMode(InteractiveMode.NEVER)
         .provideClusterInfo(false)
@@ -877,34 +948,21 @@ public class AzureAsyncTaskHelper {
     return args;
   }
 
+  private List<EnvVariable> getEnvForAzureKubeconfig(Map<String, String> env) {
+    List<EnvVariable> envVariablesList = new ArrayList<>();
+    for (Map.Entry<String, String> entry : env.entrySet()) {
+      envVariablesList.add(EnvVariable.builder().name(entry.getKey()).value(entry.getValue()).build());
+    }
+    return envVariablesList;
+  }
+
   private List<String> prepareArgsForSpnAuth(AzureConfig azureConfig) {
     return Arrays.asList(KUBECFG_ARGS_ENV, azureConfig.getAzureEnvironmentType().getDisplayName(),
         KUBECFG_ARGS_CLIENT_ID, azureConfig.getClientId(), KUBECFG_ARGS_TENANT_ID, azureConfig.getTenantId());
   }
 
-  private AzureKubeconfigFormat getAzureKubeconfigFormat(
-      AzureAuthenticationType azureAuthenticationType, LogCallback logCallback) {
-    if (isExecAuthPluginBinaryAvailable(AZURE_AUTH_PLUGIN_BINARY, logCallback)) {
-      if (AzureAuthenticationType.SERVICE_PRINCIPAL_CERT == azureAuthenticationType) {
-        saveLogs(
-            "Certificate authentication is not yet supported for kubelogin credentials plugin. Using authentication provider",
-            logCallback, LogLevel.WARN);
-        return AzureKubeconfigFormat.AZURE;
-      }
-      return AzureKubeconfigFormat.EXEC;
-    }
-    return AzureKubeconfigFormat.AZURE;
-  }
-
-  private void saveLogs(String errorMsg, LogCallback logCallback, LogLevel logLevel) {
-    if (logCallback != null) {
-      logCallback.saveExecutionLog(errorMsg, logLevel);
-    } else {
-      if (logLevel == LogLevel.INFO) {
-        log.info(errorMsg);
-      } else {
-        log.warn(errorMsg);
-      }
-    }
+  private AzureKubeconfigFormat getAzureKubeconfigFormat(LogCallback logCallback) {
+    return isExecAuthPluginBinaryAvailable(AZURE_AUTH_PLUGIN_BINARY, logCallback) ? AzureKubeconfigFormat.EXEC
+                                                                                  : AzureKubeconfigFormat.AZURE;
   }
 }

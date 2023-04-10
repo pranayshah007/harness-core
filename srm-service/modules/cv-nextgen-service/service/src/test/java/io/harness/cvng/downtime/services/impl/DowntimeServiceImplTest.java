@@ -7,6 +7,7 @@
 
 package io.harness.cvng.downtime.services.impl;
 
+import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 import static io.harness.rule.TestUserProvider.testUserProvider;
 
@@ -44,6 +45,7 @@ import io.harness.cvng.downtime.beans.EntitiesRule;
 import io.harness.cvng.downtime.beans.EntityDetails;
 import io.harness.cvng.downtime.beans.EntityIdentifiersRule;
 import io.harness.cvng.downtime.beans.EntityType;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.beans.OnetimeDowntimeSpec;
 import io.harness.cvng.downtime.beans.RecurringDowntimeSpec;
@@ -66,6 +68,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -949,6 +952,46 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testListView_AfterDeletingMS() throws IllegalAccessException {
+    FieldUtils.writeField(
+        downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
+    String msIdentifier = "msIdentifier";
+    MonitoredServiceDTO monitoredServiceDTO1 = builderFactory.monitoredServiceDTOBuilder().build();
+    monitoredServiceDTO1.setIdentifier(msIdentifier);
+    monitoredServiceDTO1.setServiceRef("demo");
+    monitoredServiceDTO1.setEnvironmentRef("testing");
+    monitoredServiceDTO1.setSources(MonitoredServiceDTO.Sources.builder().build());
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO1);
+
+    oneTimeDurationBasedDowntimeDTO.setEntitiesRule(
+        EntityIdentifiersRule.builder()
+            .entityIdentifiers(Arrays.asList(EntityDetails.builder()
+                                                 .enabled(true)
+                                                 .entityRef(builderFactory.getContext().getMonitoredServiceIdentifier())
+                                                 .build(),
+                EntityDetails.builder().enabled(true).entityRef(msIdentifier).build()))
+            .build());
+    downtimeService.create(projectParams, oneTimeDurationBasedDowntimeDTO);
+    PageResponse<DowntimeListView> downtimeListViewPageResponse = downtimeService.list(
+        projectParams, PageParams.builder().page(0).size(20).build(), new DowntimeDashboardFilter());
+    assertThat(downtimeListViewPageResponse.getPageItemCount()).isEqualTo(1);
+    assertThat(downtimeListViewPageResponse.getContent().size()).isEqualTo(1);
+    assertThat(downtimeListViewPageResponse.getContent().get(0).getName())
+        .isEqualTo(oneTimeDurationBasedDowntimeDTO.getName());
+    assertThat(downtimeListViewPageResponse.getContent().get(0).getAffectedEntities().size()).isEqualTo(2);
+    assertThat(
+        downtimeListViewPageResponse.getContent().get(0).getAffectedEntities().get(1).getMonitoredServiceIdentifier())
+        .isEqualTo(msIdentifier);
+
+    monitoredServiceService.delete(builderFactory.getProjectParams(), msIdentifier);
+    PageResponse<DowntimeListView> updatedDowntimeListViewPageResponse = downtimeService.list(
+        projectParams, PageParams.builder().page(0).size(20).build(), new DowntimeDashboardFilter());
+    assertThat(updatedDowntimeListViewPageResponse.getContent().get(0).getAffectedEntities().size()).isEqualTo(1);
+  }
+
+  @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testGet() {
@@ -965,9 +1008,37 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
     List<MonitoredServiceDetail> response =
         downtimeService.getAssociatedMonitoredServices(projectParams, recurringDowntimeDTO.getIdentifier());
     assertThat(response.size()).isEqualTo(1);
-    assertThat(response.size()).isEqualTo(1);
     assertThat(response.get(0).getServiceName()).isEqualTo("Mocked service name");
     assertThat(response.get(0).getEnvironmentName()).isEqualTo("Mocked env name");
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetMonitoredServicesAssociatedUnavailabilityInstances() throws IllegalAccessException {
+    FieldUtils.writeField(
+        downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
+    OnetimeDowntimeSpec onetimeDowntimeSpec = (OnetimeDowntimeSpec) oneTimeDurationBasedDowntimeDTO.getSpec().getSpec();
+    onetimeDowntimeSpec.setStartTime(clock.instant().plus(Duration.ofMinutes(10)).getEpochSecond());
+    oneTimeDurationBasedDowntimeDTO.getSpec().setSpec(onetimeDowntimeSpec);
+    downtimeService.create(builderFactory.getProjectParams(), oneTimeDurationBasedDowntimeDTO);
+
+    RecurringDowntimeSpec recurringDowntimeSpec = (RecurringDowntimeSpec) recurringDowntimeDTO.getSpec().getSpec();
+    recurringDowntimeSpec.setStartTime(clock.instant().plus(Duration.ofMinutes(5)).getEpochSecond());
+    recurringDowntimeDTO.getSpec().setSpec(recurringDowntimeSpec);
+    downtimeService.create(projectParams, recurringDowntimeDTO);
+
+    Map<String, EntityUnavailabilityStatusesDTO> response =
+        downtimeService.getMonitoredServicesAssociatedUnavailabilityInstanceMap(
+            projectParams, Collections.singleton(monitoredServiceIdentifier));
+    assertThat(response.size()).isEqualTo(1);
+    assertThat(response.get(monitoredServiceIdentifier).getStatus())
+        .isEqualTo(EntityUnavailabilityStatus.MAINTENANCE_WINDOW);
+    // will get the unavailability instance with next nearest start time
+    assertThat(response.get(monitoredServiceIdentifier).getStartTime())
+        .isEqualTo(clock.instant().plus(Duration.ofMinutes(5)).getEpochSecond());
+    assertThat(response.get(monitoredServiceIdentifier).getEndTime())
+        .isEqualTo(clock.instant().plus(Duration.ofMinutes(35)).getEpochSecond());
   }
 
   @Test
@@ -979,10 +1050,10 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
     List<MonitoredServiceDetail> response =
         downtimeService.getAssociatedMonitoredServices(projectParams, recurringDowntimeDTO.getIdentifier());
     assertThat(response.size()).isEqualTo(1);
-    assertThat(response.size()).isEqualTo(1);
     assertThat(response.get(0).getServiceName()).isEqualTo("Mocked service name");
     assertThat(response.get(0).getEnvironmentName()).isEqualTo("Mocked env name");
   }
+
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
@@ -1058,6 +1129,54 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
     assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getName()).isEqualTo(recurringDowntimeDTO.getName());
     assertThat(downtimeHistoryViewPageResponse.getContent().get(1).getName())
         .isEqualTo(oneTimeDurationBasedDowntimeDTO.getName());
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testListHistory_AfterDeletingMS() throws IllegalAccessException {
+    FieldUtils.writeField(
+        downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
+    String msIdentifier = "msIdentifier";
+    MonitoredServiceDTO monitoredServiceDTO1 = builderFactory.monitoredServiceDTOBuilder().build();
+    monitoredServiceDTO1.setIdentifier(msIdentifier);
+    monitoredServiceDTO1.setServiceRef("demo");
+    monitoredServiceDTO1.setEnvironmentRef("testing");
+    monitoredServiceDTO1.setSources(MonitoredServiceDTO.Sources.builder().build());
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO1);
+
+    oneTimeDurationBasedDowntimeDTO.setEntitiesRule(
+        EntityIdentifiersRule.builder()
+            .entityIdentifiers(Arrays.asList(EntityDetails.builder()
+                                                 .enabled(true)
+                                                 .entityRef(builderFactory.getContext().getMonitoredServiceIdentifier())
+                                                 .build(),
+                EntityDetails.builder().enabled(true).entityRef(msIdentifier).build()))
+            .build());
+    downtimeService.create(projectParams, oneTimeDurationBasedDowntimeDTO);
+
+    clock = Clock.fixed(clock.instant().plus(7, ChronoUnit.DAYS), clock.getZone());
+    FieldUtils.writeField(downtimeService, "clock", clock, true);
+    FieldUtils.writeField(entityUnavailabilityStatusesService, "clock", clock, true);
+
+    PageResponse<DowntimeHistoryView> downtimeHistoryViewPageResponse = downtimeService.history(
+        projectParams, PageParams.builder().page(0).size(20).build(), new DowntimeDashboardFilter());
+    assertThat(downtimeHistoryViewPageResponse.getPageItemCount()).isEqualTo(1);
+    assertThat(downtimeHistoryViewPageResponse.getContent().size()).isEqualTo(1);
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getName())
+        .isEqualTo(oneTimeDurationBasedDowntimeDTO.getName());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getAffectedEntities().size()).isEqualTo(2);
+    assertThat(downtimeHistoryViewPageResponse.getContent()
+                   .get(0)
+                   .getAffectedEntities()
+                   .get(1)
+                   .getMonitoredServiceIdentifier())
+        .isEqualTo(msIdentifier);
+
+    monitoredServiceService.delete(builderFactory.getProjectParams(), msIdentifier);
+    PageResponse<DowntimeHistoryView> updatedDowntimeHistoryViewPageResponse = downtimeService.history(
+        projectParams, PageParams.builder().page(0).size(20).build(), new DowntimeDashboardFilter());
+    assertThat(updatedDowntimeHistoryViewPageResponse.getContent().get(0).getAffectedEntities().size()).isEqualTo(1);
   }
 
   @Test

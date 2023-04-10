@@ -65,6 +65,8 @@ public class ThresholdServiceLevelIndicator extends ServiceLevelIndicator {
           ThresholdServiceLevelIndicatorKeys.thresholdValue, thresholdServiceLevelIndicator.getThresholdValue());
       updateOperations.set(
           ThresholdServiceLevelIndicatorKeys.thresholdType, thresholdServiceLevelIndicator.getThresholdType());
+      updateOperations.set(
+          ServiceLevelIndicatorKeys.sliMissingDataType, thresholdServiceLevelIndicator.getSliMissingDataType());
       if (thresholdServiceLevelIndicator.getConsiderConsecutiveMinutes() != null) {
         updateOperations.set(ThresholdServiceLevelIndicatorKeys.considerConsecutiveMinutes,
             thresholdServiceLevelIndicator.getConsiderConsecutiveMinutes());
@@ -95,6 +97,7 @@ public class ThresholdServiceLevelIndicator extends ServiceLevelIndicator {
   @Override
   public boolean shouldReAnalysis(ServiceLevelIndicator serviceLevelIndicator) {
     try {
+      Preconditions.checkArgument(this.getSliMissingDataType().equals(serviceLevelIndicator.getSliMissingDataType()));
       ThresholdServiceLevelIndicator thresholdServiceLevelIndicator =
           (ThresholdServiceLevelIndicator) serviceLevelIndicator;
       Preconditions.checkArgument(this.getThresholdValue().equals(thresholdServiceLevelIndicator.getThresholdValue()));

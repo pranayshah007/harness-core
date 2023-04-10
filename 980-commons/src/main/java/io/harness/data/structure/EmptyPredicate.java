@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.protobuf.ByteString;
 import java.util.Collection;
 import java.util.Map;
+import org.springframework.data.domain.Page;
 
 /**
  * EmptyPredicate provides generic methods that are applicable for wide variety of constructs allowing for
@@ -77,6 +78,10 @@ public class EmptyPredicate {
 
   public static boolean isEmpty(boolean[] array) {
     return array == null || array.length == 0;
+  }
+
+  public static boolean isEmpty(Page<?> array) {
+    return array == null || array.getSize() == 0;
   }
 
   public static boolean isEmpty(ObjectNode node) {

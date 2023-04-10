@@ -84,4 +84,6 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
    * @param planExecutionIds Ids of to be deleted planExecutions
    */
   void deleteAllPlanExecutionAndMetadata(Set<String> planExecutionIds);
+
+  void calculateAndUpdateRunningStatus(String planNodeId, String nodeId);
 }

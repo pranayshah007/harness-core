@@ -7,4 +7,13 @@
 
 package io.harness.shell.ssh.xfer;
 
-public class ScpResponse {}
+import io.harness.logging.CommandExecutionStatus;
+
+import lombok.Builder;
+
+@Builder
+public class ScpResponse {
+  boolean success;
+  int exitCode;
+  CommandExecutionStatus status;
+}

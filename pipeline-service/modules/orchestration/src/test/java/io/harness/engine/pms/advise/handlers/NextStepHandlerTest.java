@@ -8,7 +8,10 @@
 package io.harness.engine.pms.advise.handlers;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.pms.contracts.plan.ExecutionMode.NORMAL;
+import static io.harness.pms.contracts.plan.ExecutionMode.PIPELINE_ROLLBACK;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,6 +41,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
@@ -72,7 +76,13 @@ public class NextStepHandlerTest extends CategoryTest {
     AdviserResponse adviserResponse =
         AdviserResponse.newBuilder().setNextStepAdvise(NextStepAdvise.newBuilder().build()).build();
     doNothing().when(engine).endNodeExecution(any());
-    nextStepHandler.handleAdvise(NodeExecution.builder().build(), adviserResponse);
+    nextStepHandler.handleAdvise(
+        NodeExecution.builder()
+            .ambiance(Ambiance.newBuilder()
+                          .setMetadata(ExecutionMetadata.newBuilder().setExecutionMode(NORMAL).build())
+                          .build())
+            .build(),
+        adviserResponse);
     verify(engine).endNodeExecution(any());
   }
 
@@ -138,13 +148,14 @@ public class NextStepHandlerTest extends CategoryTest {
                             .stepType(StepType.newBuilder().build())
                             .build();
     // node already of identityType. Same will be returned.
-    assertThat(nextStepHandler.createIdentityNodeIfRequired(identityPlanNode, NodeExecution.builder().build()))
+    assertThat(nextStepHandler.createIdentityNodeIfRequired(identityPlanNode, NodeExecution.builder().build(), NORMAL))
         .isEqualTo(identityPlanNode);
     // NodeExecution.parentId is empty. Same node will be returned.
     assertThat(nextStepHandler.createIdentityNodeIfRequired(planNode,
                    NodeExecution.builder()
                        .ambiance(Ambiance.newBuilder().setPlanExecutionId("planExecutinoId").build())
-                       .build()))
+                       .build(),
+                   NORMAL))
         .isEqualTo(planNode);
 
     doReturn(NodeExecution.builder()
@@ -154,8 +165,8 @@ public class NextStepHandlerTest extends CategoryTest {
                  .build())
         .when(nodeExecutionService)
         .getWithFieldsIncluded(eq("parentId"), any());
-    assertThat(
-        nextStepHandler.createIdentityNodeIfRequired(planNode, NodeExecution.builder().parentId("parentId").build()))
+    assertThat(nextStepHandler.createIdentityNodeIfRequired(
+                   planNode, NodeExecution.builder().parentId("parentId").build(), NORMAL))
         .isEqualTo(planNode);
 
     // Till now, same node has been returned all time. So, no interaction with planService.
@@ -183,10 +194,25 @@ public class NextStepHandlerTest extends CategoryTest {
             .ambiance(Ambiance.newBuilder().setPlanId("planId").build())
             .originalNodeExecutionId("originalNodeExecutionId")
             .parentId("parentId")
-            .build());
+            .build(),
+        NORMAL);
     assertThat(savedIdentityNode.getName()).isEqualTo(planNode.getName());
     assertThat(savedIdentityNode.getIdentifier()).isEqualTo(planNode.getIdentifier());
     assertThat(savedIdentityNode.getStepType()).isEqualTo(planNode.getStepType());
     assertThat(((IdentityPlanNode) savedIdentityNode).getOriginalNodeExecutionId()).isEqualTo("nextId");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testCreateIdentityNodeInRBMode() {
+    PlanNode planNode = PlanNode.builder()
+                            .uuid("uuid")
+                            .identifier("nodeId")
+                            .name("nodeName")
+                            .stepType(StepType.newBuilder().build())
+                            .preserveInRollbackMode(true)
+                            .build();
+    assertThat(nextStepHandler.createIdentityNodeIfRequired(planNode, null, PIPELINE_ROLLBACK)).isEqualTo(planNode);
   }
 }

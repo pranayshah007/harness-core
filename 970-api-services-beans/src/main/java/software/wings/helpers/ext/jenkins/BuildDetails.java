@@ -250,6 +250,7 @@ public class BuildDetails {
     private String artifactFileSize;
     private BuildStatus status;
     private Map<String, String> metadata = new HashMap<>();
+    private Map<String, String> labels = new HashMap<>();
     private String uiDisplayName;
     private List<ArtifactFileMetadata> artifactFileMetadata = new ArrayList<>();
 
@@ -338,6 +339,11 @@ public class BuildDetails {
 
     public Builder withMetadata(Map<String, String> metadata) {
       this.metadata = metadata;
+      return this;
+    }
+
+    public Builder withLabels(Map<String, String> labels) {
+      this.labels = labels;
       return this;
     }
 

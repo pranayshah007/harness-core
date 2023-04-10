@@ -8,11 +8,15 @@
 package io.harness.steps.http;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.exception.WingsException.USER;
 
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.HttpCertificateNG;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
@@ -23,7 +27,7 @@ import io.harness.delegate.task.http.HttpTaskParametersNg;
 import io.harness.delegate.task.http.HttpTaskParametersNg.HttpTaskParametersNgBuilder;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.http.HttpHeaderConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
@@ -39,6 +43,7 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
@@ -56,13 +61,16 @@ import io.harness.utils.PmsFeatureFlagHelper;
 
 import software.wings.beans.TaskType;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
@@ -75,6 +83,7 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private PmsFeatureFlagHelper pmsFeatureFlagHelper;
   @Inject private StepHelper stepHelper;
+  @Inject private EngineExpressionService engineExpressionService;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -114,10 +123,17 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     if (httpStepParameters.getRequestBody() != null) {
       httpTaskParametersNgBuilder.body((String) httpStepParameters.getRequestBody().fetchFinalValue());
     }
-
-    boolean shouldAvoidCapabilityUsingHeaders = pmsFeatureFlagHelper.isEnabled(
-        AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_NOT_USE_HEADERS_FOR_HTTP_CAPABILITY);
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    boolean shouldAvoidCapabilityUsingHeaders =
+        pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_NOT_USE_HEADERS_FOR_HTTP_CAPABILITY);
     httpTaskParametersNgBuilder.shouldAvoidHeadersInCapability(shouldAvoidCapabilityUsingHeaders);
+
+    httpTaskParametersNgBuilder.isCertValidationRequired(
+        pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.ENABLE_CERT_VALIDATION));
+
+    if (pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_HTTP_STEP_NG_CERTIFICATE)) {
+      createCertificate(httpStepParameters).ifPresent(cert -> { httpTaskParametersNgBuilder.certificateNG(cert); });
+    }
 
     final TaskData taskData =
         TaskData.builder()
@@ -132,6 +148,25 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
             StepUtils.generateLogAbstractions(ambiance), Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT))),
         null, null, TaskSelectorYaml.toTaskSelector(httpStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
+  }
+
+  @VisibleForTesting
+  protected Optional<HttpCertificateNG> createCertificate(HttpStepParameters httpStepParameters) {
+    if (isEmpty(httpStepParameters.getCertificate().getValue())
+        && isEmpty(httpStepParameters.getCertificateKey().getValue())) {
+      return Optional.empty();
+    }
+
+    if (isEmpty(httpStepParameters.getCertificate().getValue())
+        && isNotEmpty(httpStepParameters.getCertificateKey().getValue())) {
+      throw new InvalidRequestException(
+          "Only certificateKey is provided, we need both certificate and certificateKey or only certificate", USER);
+    }
+
+    return Optional.of(HttpCertificateNG.builder()
+                           .certificate(httpStepParameters.getCertificate().getValue())
+                           .certificateKey(httpStepParameters.getCertificateKey().getValue())
+                           .build());
   }
 
   @Override
@@ -151,7 +186,8 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
 
       Map<String, Object> outputVariables =
           httpStepParameters.getOutputVariables() == null ? null : httpStepParameters.getOutputVariables().getValue();
-      Map<String, String> outputVariablesEvaluated = evaluateOutputVariables(outputVariables, httpStepResponse);
+      Map<String, String> outputVariablesEvaluated =
+          evaluateOutputVariables(outputVariables, httpStepResponse, ambiance);
 
       logCallback.saveExecutionLog("Validating the assertions...");
       boolean assertionSuccessful = validateAssertions(httpStepResponse, httpStepParameters);
@@ -202,7 +238,7 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
 
     HttpExpressionEvaluator evaluator = new HttpExpressionEvaluator(httpStepResponse);
     String assertion = (String) stepParameters.getAssertion().fetchFinalValue();
-    if (assertion == null || EmptyPredicate.isEmpty(assertion.trim())) {
+    if (assertion == null || isEmpty(assertion.trim())) {
       return true;
     }
 
@@ -218,17 +254,18 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     }
   }
 
-  public static Map<String, String> evaluateOutputVariables(
-      Map<String, Object> outputVariables, HttpStepResponse httpStepResponse) {
+  public Map<String, String> evaluateOutputVariables(
+      Map<String, Object> outputVariables, HttpStepResponse httpStepResponse, Ambiance ambiance) {
     Map<String, String> outputVariablesEvaluated = new LinkedHashMap<>();
     if (outputVariables != null) {
-      EngineExpressionEvaluator expressionEvaluator = new HttpExpressionEvaluator(httpStepResponse);
+      Map<String, String> contextMap = buildContextMapFromResponse(httpStepResponse);
       outputVariables.keySet().forEach(name -> {
         Object expression = outputVariables.get(name);
         if (expression instanceof ParameterField) {
           ParameterField<?> expr = (ParameterField<?>) expression;
           if (expr.isExpression()) {
-            Object evaluatedValue = expressionEvaluator.evaluateExpression(expr.getExpressionValue());
+            Object evaluatedValue = engineExpressionService.resolve(
+                ambiance, expr.getExpressionValue(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED, contextMap);
             if (evaluatedValue != null) {
               outputVariablesEvaluated.put(name, evaluatedValue.toString());
             }
@@ -239,6 +276,14 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
       });
     }
     return outputVariablesEvaluated;
+  }
+
+  private Map<String, String> buildContextMapFromResponse(HttpStepResponse httpStepResponse) {
+    Map<String, String> contextMap = new HashMap<>();
+    contextMap.put("httpResponseBody", httpStepResponse.getHttpResponseBody());
+    contextMap.put("httpResponseCode", String.valueOf(httpStepResponse.getHttpResponseCode()));
+
+    return contextMap;
   }
 
   @Override

@@ -9,6 +9,10 @@ package io.harness.engine.expressions.usages;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.engine.expressions.usages.beans.ExpressionCategory;
+import io.harness.engine.expressions.usages.beans.ExpressionMetadata;
+import io.harness.engine.expressions.usages.beans.ExpressionUsagesEntity;
+import io.harness.engine.expressions.usages.dto.ExpressionUsagesDTO;
 
 import java.util.Map;
 import java.util.Set;
@@ -19,4 +23,7 @@ public interface ExpressionUsageService {
   boolean doesExpressionUsagesEntityExists(String pipelineIdentifier, String accountId, String orgId, String projectId);
   ExpressionUsagesEntity upsertExpressions(String pipelineIdentifier, String accountId, String orgId, String projectId,
       Map<ExpressionCategory, Set<ExpressionMetadata>> expressionUsages);
+
+  ExpressionUsagesDTO fetchExpressionUsages(
+      String accountId, String orgId, String projectId, ExpressionCategory category);
 }

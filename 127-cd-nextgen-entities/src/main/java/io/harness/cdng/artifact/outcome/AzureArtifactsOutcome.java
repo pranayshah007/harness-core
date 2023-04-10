@@ -100,7 +100,12 @@ public class AzureArtifactsOutcome implements ArtifactOutcome {
 
   @Override
   public ArtifactSummary getArtifactSummary() {
-    return AzureArtifactsSummary.builder().packageName(packageName).version(version).packageId(packageId).build();
+    return AzureArtifactsSummary.builder()
+        .packageName(packageName)
+        .version(version)
+        .packageId(packageId)
+        .tag(packageName + ":" + version)
+        .build();
   }
 
   @Override

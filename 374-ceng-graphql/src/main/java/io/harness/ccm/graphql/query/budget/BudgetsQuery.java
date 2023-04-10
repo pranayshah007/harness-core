@@ -222,6 +222,7 @@ public class BudgetsQuery {
         .isBudgetGroup(false)
         .disableCurrencyWarning(budget.getDisableCurrencyWarning())
         .folderId(folderId)
+        .parentId(budget.getParentBudgetGroupId())
         .build();
   }
 
@@ -250,6 +251,7 @@ public class BudgetsQuery {
         .startTime(BudgetUtils.getBudgetStartTime(budgetGroup.getStartTime(), budgetGroup.getPeriod()))
         .budgetMonthlyBreakdown(budgetGroup.getBudgetGroupMonthlyBreakdown())
         .isBudgetGroup(true)
+        .parentId(budgetGroup.getParentBudgetGroupId())
         .build();
   }
 }

@@ -69,6 +69,9 @@ public class HttpStepInfo extends HttpBaseStepInfo implements PMSStepInfo, Visit
 
   @VariableExpression(skipVariableExpression = true) List<NGVariable> outputVariables;
   List<HttpHeaderConfig> headers;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> certificate;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> certificateKey;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes(value = {runtime})
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
@@ -76,11 +79,14 @@ public class HttpStepInfo extends HttpBaseStepInfo implements PMSStepInfo, Visit
   @Builder(builderMethodName = "infoBuilder")
   public HttpStepInfo(ParameterField<String> url, ParameterField<String> method, ParameterField<String> requestBody,
       ParameterField<String> assertion, String metadata, List<NGVariable> outputVariables,
-      List<HttpHeaderConfig> headers, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+      List<HttpHeaderConfig> headers, ParameterField<String> certificate, ParameterField<String> certificateKey,
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     super(url, method, requestBody, assertion);
     this.metadata = metadata;
     this.outputVariables = outputVariables;
     this.headers = headers;
+    this.certificate = certificate;
+    this.certificateKey = certificateKey;
     this.delegateSelectors = delegateSelectors;
   }
 
@@ -108,6 +114,8 @@ public class HttpStepInfo extends HttpBaseStepInfo implements PMSStepInfo, Visit
         .headers(EmptyPredicate.isEmpty(headers)
                 ? Collections.emptyMap()
                 : headers.stream().collect(Collectors.toMap(HttpHeaderConfig::getKey, HttpHeaderConfig::getValue)))
+        .certificate(getCertificate())
+        .certificateKey(getCertificateKey())
         .method(getMethod())
         .outputVariables(NGVariablesUtils.getMapOfVariables(outputVariables, 0L))
         .requestBody(getRequestBody())

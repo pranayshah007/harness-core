@@ -25,13 +25,6 @@ function check_bug_ticket(){
   if [ "$2" = "null" ]; then
     echo "ERROR: JIRA FIELD: Jira Resolved As is not selected" >>/tmp/error_fields
   fi
-  if [ "$3" = "null" ]; then
-    echo "ERROR: JIRA FIELD: Phase Defect Injected is not selected" >>/tmp/error_fields
-  fi
-  if [ "$4" = "null" ]; then
-    echo "ERROR: JIRA FIELD: What Changed ? is not updated" >> /tmp/error_fields
-  fi
-
   if [ -f /tmp/error_fields ]; then
     cat /tmp/error_fields
     exit 1
@@ -42,9 +35,6 @@ function check_bug_ticket(){
 function check_story_ticket(){
   if [ $1 = "null" ]; then
     echo "ERROR: JIRA FIELD: FF Added is not updated, Please update FF added to proceed" >> /tmp/error_fields
-  fi
-  if [ $2 = "null" ]; then
-    echo "ERROR: JIRA FIELD: What Changed ? is not updated" >>/tmp/error_fields
   fi
 
   if [ -f /tmp/error_fields ]; then
@@ -70,26 +60,19 @@ jira_response=`curl -X GET -H "Content-Type: application/json" https://harness.a
 issuetype=`echo "${jira_response}" | jq ".fields.issuetype.name" | tr -d '"'`
 prioritytype=`echo "${jira_response}" | jq ".fields.priority.name" | tr -d '"'`
 
-# No longer require what changed or phase injected in fields
-# BT-950
-what_changed="n/a"
-phase_injected="n/a"
-## End Change for BT-950
+# No longer require what changed or phase injected in fields BT-950
+# Once again remove the check for what changed or phase injected BT-3453
 PRIORITY_LIST=("P2","P3","P4")
 
 if [[ $KEY == BT-* || $KEY == SPG-* ]]
 then
   bug_resolution="n/a"
-  what_changed="n/a"
   ff_added="n/a"
   jira_resolved_as="n/a"
-  phase_injected="n/a"
 else
   bug_resolution=`echo "${jira_response}" | jq ".fields.customfield_10687" | tr -d '"'`
-  what_changed=`echo "${jira_response}" | jq ".fields.customfield_10763[0].value" | tr -d '"'`
   ff_added=`echo "${jira_response}" | jq ".fields.customfield_10785.value" | tr -d '"'`
   jira_resolved_as=`echo "${jira_response}" | jq ".fields.customfield_10709.value" | tr -d '"'`
-  phase_injected=`echo "${jira_response}" | jq ".fields.customfield_10748.value" | tr -d '"'`
 fi
 
 # BT-1465 - Disallow PRs on issuetype question
@@ -105,9 +88,9 @@ then
 
   # check ticket fields
   if [ "${issuetype}" = "Story" ]; then
-    check_story_ticket "${ff_added}" "${what_changed}"
+    check_story_ticket "${ff_added}"
   elif [ "${issuetype}" = "Bug" ]; then
-    check_bug_ticket "${bug_resolution}" "${jira_resolved_as}" "${phase_injected}" "${what_changed}"
+    check_bug_ticket "${bug_resolution}" "${jira_resolved_as}"
   fi
   exit 1
 fi
@@ -116,9 +99,9 @@ echo "issueType is ${issuetype}"
 echo "INFO: Checking JIRA STATUS OF issueType ${issuetype}"
 
 if [ "${issuetype}" = "Bug" ]; then
-  check_bug_ticket "${bug_resolution}" "${jira_resolved_as}" "${phase_injected}" "${what_changed}"
+  check_bug_ticket "${bug_resolution}" "${jira_resolved_as}"
 elif [ "${issuetype}" = "Story" ]; then
-  check_story_ticket "${ff_added}" "${what_changed}"
+  check_story_ticket "${ff_added}"
 fi
 
-echo "JIRA Key is : $KEY is having all the mandatory details"
+echo "JIRA Key is : $KEY has all the mandatory details"

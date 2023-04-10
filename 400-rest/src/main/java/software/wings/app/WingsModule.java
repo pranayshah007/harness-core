@@ -37,6 +37,10 @@ import io.harness.artifacts.ami.service.AMIRegistryService;
 import io.harness.artifacts.ami.service.AMIRegistryServiceImpl;
 import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryService;
 import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryServiceImpl;
+import io.harness.artifacts.docker.client.DockerRestClientFactory;
+import io.harness.artifacts.docker.client.DockerRestClientFactoryImpl;
+import io.harness.artifacts.docker.service.DockerRegistryService;
+import io.harness.artifacts.docker.service.DockerRegistryServiceImpl;
 import io.harness.artifacts.gcr.service.GcrApiService;
 import io.harness.artifacts.gcr.service.GcrApiServiceImpl;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
@@ -44,6 +48,7 @@ import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactor
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryService;
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryServiceImpl;
 import io.harness.audit.client.remote.AuditClientModule;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.ccm.anomaly.service.impl.AnomalyServiceImpl;
 import io.harness.ccm.anomaly.service.itfc.AnomalyService;
 import io.harness.ccm.billing.GcpBillingService;
@@ -73,10 +78,12 @@ import io.harness.ccm.health.HealthStatusServiceImpl;
 import io.harness.ccm.ngperpetualtask.service.K8sWatchTaskService;
 import io.harness.ccm.ngperpetualtask.service.K8sWatchTaskServiceImpl;
 import io.harness.ccm.setup.CESetupServiceModule;
-import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingHistoryServiceImpl;
-import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingServiceImpl;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingHistoryService;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.businessmapping.service.impl.BusinessMappingHistoryServiceImpl;
+import io.harness.ccm.views.businessmapping.service.impl.BusinessMappingServiceImpl;
+import io.harness.ccm.views.businessmapping.service.impl.BusinessMappingValidationServiceImpl;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingHistoryService;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingValidationService;
 import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEReportTemplateBuilderService;
 import io.harness.ccm.views.service.CEViewFolderService;
@@ -124,7 +131,6 @@ import io.harness.delegate.event.listener.ProjectEntityCRUDEventListener;
 import io.harness.delegate.heartbeat.HeartbeatModule;
 import io.harness.delegate.outbox.DelegateOutboxEventHandler;
 import io.harness.delegate.queueservice.DelegateTaskQueueService;
-import io.harness.delegate.queueservice.HQueueServiceClientFactory;
 import io.harness.delegate.service.impl.AccountDataProviderImpl;
 import io.harness.delegate.service.impl.DelegateDownloadServiceImpl;
 import io.harness.delegate.service.impl.DelegateFeedbacksServiceImpl;
@@ -168,7 +174,6 @@ import io.harness.governance.pipeline.service.evaluators.OnWorkflow;
 import io.harness.governance.pipeline.service.evaluators.PipelineStatusEvaluator;
 import io.harness.governance.pipeline.service.evaluators.WorkflowStatusEvaluator;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
-import io.harness.hsqs.client.HsqsClient;
 import io.harness.instancesync.InstanceSyncResourceClientModule;
 import io.harness.instancesyncmonitoring.module.InstanceSyncMonitoringModule;
 import io.harness.invites.NgInviteClientModule;
@@ -1143,6 +1148,8 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(GcrBuildService.class).to(GcrBuildServiceImpl.class);
     bind(GithubPackagesRestClientFactory.class).to(GithubPackagesRestClientFactoryImpl.class);
     bind(GithubPackagesRegistryService.class).to(GithubPackagesRegistryServiceImpl.class);
+    bind(DockerRegistryService.class).to(DockerRegistryServiceImpl.class);
+    bind(DockerRestClientFactory.class).to(DockerRestClientFactoryImpl.class);
     bind(AzureArtifactsRegistryService.class).to(AzureArtifactsRegistryServiceImpl.class);
     bind(AMIRegistryService.class).to(AMIRegistryServiceImpl.class);
     bind(AcrService.class).to(AcrServiceImpl.class);
@@ -1241,6 +1248,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(CEViewFolderService.class).to(CEViewFolderServiceImpl.class);
     bind(BusinessMappingService.class).to(BusinessMappingServiceImpl.class);
     bind(BusinessMappingHistoryService.class).to(BusinessMappingHistoryServiceImpl.class);
+    bind(BusinessMappingValidationService.class).to(BusinessMappingValidationServiceImpl.class);
     bind(CECommunicationsService.class).to(CECommunicationsServiceImpl.class);
     bind(CESlackWebhookService.class).to(CESlackWebhookServiceImpl.class);
     bind(CEReportScheduleService.class).to(CEReportScheduleServiceImpl.class);
@@ -1547,7 +1555,6 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(K8sWatchTaskService.class).to(K8sWatchTaskServiceImpl.class);
     bind(HelmChartService.class).to(HelmChartServiceImpl.class);
     bind(LogStreamingServiceRestClient.class).toProvider(LogStreamingServiceClientFactory.class);
-    bind(HsqsClient.class).toProvider(HQueueServiceClientFactory.class);
     bind(IInstanceReconService.class).to(InstanceReconServiceImpl.class);
 
     // audit service
@@ -1556,6 +1563,9 @@ public class WingsModule extends AbstractModule implements ServersModule {
         this.configuration.isEnableAudit()));
     install(new TransactionOutboxModule(DEFAULT_OUTBOX_POLL_CONFIGURATION, MANAGER.getServiceId(), false));
 
+    install(new io.harness.hsqs.client.HsqsServiceClientModule(
+        configuration.getQueueServiceConfig().getQueueServiceClientConfig(),
+        AuthorizationServiceHeader.BEARER.getServiceId()));
     registerOutboxEventHandlers();
     bind(OutboxEventHandler.class).to(WingsOutboxEventHandler.class);
     install(new CVCommonsServiceModule());

@@ -66,4 +66,8 @@ public class LateBindingContext implements JexlContext {
   public synchronized void clear() {
     map.clear();
   }
+
+  Map<String, Object> getMap() {
+    return map;
+  }
 }

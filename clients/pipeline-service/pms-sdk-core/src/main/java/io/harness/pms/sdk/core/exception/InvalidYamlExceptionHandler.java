@@ -27,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
+// TODO(sahil): Revisit to handle better with error handling on execute
 public class InvalidYamlExceptionHandler implements ExceptionHandler {
   public static Set<Class<? extends Exception>> exceptions() {
     return ImmutableSet.<Class<? extends Exception>>builder().add(InvalidYamlRuntimeException.class).build();

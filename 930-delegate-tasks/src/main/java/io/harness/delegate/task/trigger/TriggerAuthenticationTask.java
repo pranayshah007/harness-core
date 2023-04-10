@@ -67,6 +67,8 @@ public class TriggerAuthenticationTask extends AbstractDelegateRunnableTask {
       }
       if (!isEmpty(secret)) {
         authenticationStatus = authenticateTrigger(taskParams.getEventPayload(), taskParams.getHashedPayload(), secret);
+      } else {
+        log.warn("Decrypted secret for trigger authentication task is empty");
       }
       triggersAuthenticationStatus.add(authenticationStatus);
     }
@@ -77,8 +79,11 @@ public class TriggerAuthenticationTask extends AbstractDelegateRunnableTask {
     try {
       String hashedPayloadUsingSecret = "sha256=" + encode(secret, payload);
       if (hashedPayloadUsingSecret.equals(hashedPayload)) {
+        log.info("Trigger authentication success");
         return true;
       }
+      log.warn("hashedPayload does not match hashedPayloadUsingSecret: hashedPayload: [" + hashedPayload
+          + "], hashedPayloadUsingSecret: [" + hashedPayloadUsingSecret + "]");
       return false;
     } catch (Exception ex) {
       log.error("Error encoding the payload", ex);

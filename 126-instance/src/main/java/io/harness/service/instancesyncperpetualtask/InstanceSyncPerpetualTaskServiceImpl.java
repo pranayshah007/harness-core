@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.AccountId;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
@@ -67,6 +68,17 @@ public class InstanceSyncPerpetualTaskServiceImpl implements InstanceSyncPerpetu
   }
 
   @Override
+  public void resetPerpetualTaskV2(String accountIdentifier, String perpetualTaskId,
+      InfrastructureMappingDTO infrastructureMappingDTO, AbstractInstanceSyncHandler abstractInstanceSyncHandler,
+      ConnectorInfoDTO connectorInfoDTO) {
+    PerpetualTaskExecutionBundle perpetualTaskExecutionBundle =
+        getExecutionBundleForV2(infrastructureMappingDTO, abstractInstanceSyncHandler, connectorInfoDTO);
+
+    delegateServiceGrpcClient.resetPerpetualTask(AccountId.newBuilder().setId(accountIdentifier).build(),
+        PerpetualTaskId.newBuilder().setId(perpetualTaskId).build(), perpetualTaskExecutionBundle);
+  }
+
+  @Override
   public void deletePerpetualTask(String accountIdentifier, String perpetualTaskId) {
     delegateServiceGrpcClient.deletePerpetualTask(AccountId.newBuilder().setId(accountIdentifier).build(),
         PerpetualTaskId.newBuilder().setId(perpetualTaskId).build());
@@ -109,6 +121,13 @@ public class InstanceSyncPerpetualTaskServiceImpl implements InstanceSyncPerpetu
         infrastructureMappingDTO, deploymentInfoDTOList, infrastructureOutcome);
   }
 
+  private PerpetualTaskExecutionBundle getExecutionBundleForV2(InfrastructureMappingDTO infrastructureMappingDTO,
+      AbstractInstanceSyncHandler abstractInstanceSyncHandler, ConnectorInfoDTO connectorInfoDTO) {
+    InstanceSyncPerpetualTaskHandler instanceSyncPerpetualTaskHandler =
+        getInstanceSyncPerpetualTaskHandler(abstractInstanceSyncHandler);
+    return instanceSyncPerpetualTaskHandler.getExecutionBundleForV2(infrastructureMappingDTO, connectorInfoDTO);
+  }
+
   private InstanceSyncPerpetualTaskHandler getInstanceSyncPerpetualTaskHandler(
       AbstractInstanceSyncHandler abstractInstanceSyncHandler) {
     return perpetualTaskServiceRegister.getInstanceSyncPerpetualService(
@@ -118,7 +137,18 @@ public class InstanceSyncPerpetualTaskServiceImpl implements InstanceSyncPerpetu
   public boolean isInstanceSyncV2Enabled() {
     return false;
   }
-  public String createPerpetualTaskV2() {
-    return null;
+
+  public String createPerpetualTaskV2(AbstractInstanceSyncHandler abstractInstanceSyncHandler,
+      InfrastructureMappingDTO infrastructureMappingDTO, ConnectorInfoDTO connectorInfoDTO) {
+    PerpetualTaskExecutionBundle perpetualTaskExecutionBundle =
+        getExecutionBundleForV2(infrastructureMappingDTO, abstractInstanceSyncHandler, connectorInfoDTO);
+
+    PerpetualTaskId perpetualTaskId = delegateServiceGrpcClient.createPerpetualTask(
+        AccountId.newBuilder().setId(infrastructureMappingDTO.getAccountIdentifier()).build(),
+        abstractInstanceSyncHandler.getPerpetualTaskV2Type(), preparePerpetualTaskSchedule(),
+        PerpetualTaskClientContextDetails.newBuilder().setExecutionBundle(perpetualTaskExecutionBundle).build(), true,
+        getPerpetualTaskDescription(infrastructureMappingDTO));
+
+    return perpetualTaskId.getId();
   }
 }

@@ -9,42 +9,62 @@ package io.harness.cdng.aws.lambda;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
+import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.v2.lambda.AwsLambdaCommandUnitConstants;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepParameters;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.infra.beans.AwsLambdaInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
+import io.harness.cdng.manifest.yaml.AwsLambdaAliasDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AwsLambdaDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.mapper.AwsLambdaToServerInstanceInfoMapper;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.task.aws.lambda.AwsLambda;
+import io.harness.delegate.task.aws.lambda.AwsLambdaArtifactConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaS3ArtifactConfig;
+import io.harness.delegate.task.aws.lambda.response.AwsLambdaCommandResponse;
+import io.harness.delegate.task.aws.lambda.response.AwsLambdaDeployResponse;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaPrepareRollbackResponse;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaPrepareRollbackResponse.AwsLambdaPrepareRollbackResponseBuilder;
+import io.harness.delegate.task.git.TaskStatus;
+import io.harness.delegate.task.gitcommon.GitFetchFilesResult;
+import io.harness.delegate.task.gitcommon.GitTaskNGResponse;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.service.FileStoreService;
+import io.harness.git.model.GitFile;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
@@ -52,6 +72,8 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
@@ -238,5 +260,248 @@ public class AwsLambdaHelperTest extends CategoryTest {
     awsLambdaHelper.handlePrepareRollbackDataResponse(
         awsLambdaPrepareRollbackResponseBuilder.build(), ambiance, stepElementParameters, awsLambdaStepPassThroughData);
     Mockito.verify(executionSweepingOutputService, Mockito.times(1)).consume(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void getInfraConfigTest() {
+    AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig = mock(AwsLambdaFunctionsInfraConfig.class);
+    doReturn(awsLambdaFunctionsInfraConfig).when(awsLambdaEntityHelper).getInfraConfig(any(), any());
+    assertThat(awsLambdaHelper.getInfraConfig(infrastructureOutcome, ambiance))
+        .isEqualTo(awsLambdaFunctionsInfraConfig);
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void getAwsLambdaManifestOutcomeTest() {
+    AwsLambdaAliasDefinitionManifestOutcome awsLambdaAliasDefinitionManifestOutcome =
+        mock(AwsLambdaAliasDefinitionManifestOutcome.class);
+    AwsLambdaDefinitionManifestOutcome awsLambdaDefinitionManifestOutcome =
+        mock(AwsLambdaDefinitionManifestOutcome.class);
+    when(awsLambdaDefinitionManifestOutcome.getType()).thenReturn(ManifestType.AwsLambdaFunctionDefinition);
+    when(awsLambdaAliasDefinitionManifestOutcome.getType()).thenReturn(ManifestType.AwsLambdaFunctionAliasDefinition);
+    assertThat(awsLambdaHelper
+                   .getAwsLambdaManifestOutcome(
+                       Arrays.asList(awsLambdaAliasDefinitionManifestOutcome, awsLambdaDefinitionManifestOutcome))
+                   .size())
+        .isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void executeNextLinkTestWhenGitFetchResponseAsFailure() throws Exception {
+    GitTaskNGResponse gitTaskNGResponse = GitTaskNGResponse.builder().taskStatus(TaskStatus.FAILURE).build();
+    AwsLambdaStepPassThroughData awsLambdaStepPassThroughData = AwsLambdaStepPassThroughData.builder().build();
+    assertThat(
+        awsLambdaHelper
+            .executeNextLink(ambiance, stepElementParameters, awsLambdaStepPassThroughData, () -> gitTaskNGResponse)
+            .getPassThroughData())
+        .isInstanceOf(AwsLambdaStepExceptionPassThroughData.class);
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void executeNextLinkTestWhenGitFetchResponseAsSuccess() throws Exception {
+    String identifier = "iden";
+    String content = "content";
+    String identifier1 = "iden";
+    String content1 = "content";
+    AwsLambdaDefinitionManifestOutcome awsLambdaDefinitionManifestOutcome =
+        AwsLambdaDefinitionManifestOutcome.builder().identifier(identifier1).build();
+    GitFile gitFile = GitFile.builder().fileContent(content).build();
+    GitFetchFilesResult gitFetchFilesResult =
+        GitFetchFilesResult.builder().identifier(identifier).files(Arrays.asList(gitFile)).build();
+    Map<String, List<String>> harnessManifest = Map.of(identifier1, Arrays.asList(content1));
+    GitTaskNGResponse gitTaskNGResponse = GitTaskNGResponse.builder()
+                                              .unitProgressData(unitProgressData)
+                                              .gitFetchFilesResults(Arrays.asList(gitFetchFilesResult))
+                                              .taskStatus(TaskStatus.SUCCESS)
+                                              .build();
+    AwsLambdaInfrastructureOutcome awsLambdaInfrastructureOutcome = AwsLambdaInfrastructureOutcome.builder().build();
+    AwsLambdaStepPassThroughData awsLambdaStepPassThroughData =
+        AwsLambdaStepPassThroughData.builder()
+            .infrastructureOutcome(awsLambdaInfrastructureOutcome)
+            .manifestFileContentsMap(harnessManifest)
+            .unitProgressData(unitProgressData)
+            .manifestsOutcomes(Arrays.asList(awsLambdaDefinitionManifestOutcome))
+            .build();
+    AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig = AwsLambdaFunctionsInfraConfig.builder().build();
+    doReturn(awsLambdaFunctionsInfraConfig).when(awsLambdaEntityHelper).getInfraConfig(any(), any());
+    ArtifactOutcome artifactOutcome = S3ArtifactOutcome.builder().build();
+    doReturn(OptionalOutcome.builder()
+                 .found(true)
+                 .outcome(ArtifactsOutcome.builder().primary(artifactOutcome).build())
+                 .build())
+        .when(outcomeService)
+        .resolveOptional(any(), any());
+    AwsLambdaArtifactConfig awsLambdaArtifactConfig = AwsLambdaS3ArtifactConfig.builder().build();
+    doReturn(awsLambdaArtifactConfig).when(awsLambdaEntityHelper).getAwsLambdaArtifactConfig(any(), any());
+
+    AwsLambdaSpecParameters awsLambdaSpecParameters = AwsLambdaDeployStepParameters.infoBuilder().build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                      .timeout(ParameterField.createValueField("10m"))
+                                                      .spec(awsLambdaSpecParameters)
+                                                      .build();
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+
+    assertThat(
+        awsLambdaHelper
+            .executeNextLink(ambiance, stepElementParameters, awsLambdaStepPassThroughData, () -> gitTaskNGResponse)
+            .getPassThroughData())
+        .isInstanceOf(AwsLambdaStepPassThroughData.class);
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void executeNextLinkTestWhenPrepareRollbackResponseAsFailure() throws Exception {
+    AwsLambdaPrepareRollbackResponse awsLambdaPrepareRollbackResponse =
+        AwsLambdaPrepareRollbackResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).build();
+    AwsLambdaStepPassThroughData awsLambdaStepPassThroughData = AwsLambdaStepPassThroughData.builder().build();
+    assertThat(awsLambdaHelper
+                   .executeNextLink(ambiance, stepElementParameters, awsLambdaStepPassThroughData,
+                       () -> awsLambdaPrepareRollbackResponse)
+                   .getPassThroughData())
+        .isInstanceOf(AwsLambdaStepExceptionPassThroughData.class);
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void executeNextLinkTestWhenPrepareResponseAsSuccess() throws Exception {
+    String identifier1 = "iden";
+    String content1 = "content";
+    AwsLambdaDefinitionManifestOutcome awsLambdaDefinitionManifestOutcome =
+        AwsLambdaDefinitionManifestOutcome.builder().identifier(identifier1).build();
+    Map<String, List<String>> harnessManifest = Map.of(identifier1, Arrays.asList(content1));
+    AwsLambdaPrepareRollbackResponse awsLambdaPrepareRollbackResponse =
+        AwsLambdaPrepareRollbackResponse.builder()
+            .unitProgressData(unitProgressData)
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .manifestContent(content1)
+            .build();
+    AwsLambdaInfrastructureOutcome awsLambdaInfrastructureOutcome = AwsLambdaInfrastructureOutcome.builder().build();
+    AwsLambdaStepPassThroughData awsLambdaStepPassThroughData =
+        AwsLambdaStepPassThroughData.builder()
+            .infrastructureOutcome(awsLambdaInfrastructureOutcome)
+            .manifestFileContentsMap(harnessManifest)
+            .unitProgressData(unitProgressData)
+            .manifestsOutcomes(Arrays.asList(awsLambdaDefinitionManifestOutcome))
+            .build();
+    AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig = AwsLambdaFunctionsInfraConfig.builder().build();
+    doReturn(awsLambdaFunctionsInfraConfig).when(awsLambdaEntityHelper).getInfraConfig(any(), any());
+    ArtifactOutcome artifactOutcome = S3ArtifactOutcome.builder().build();
+    doReturn(OptionalOutcome.builder()
+                 .found(true)
+                 .outcome(ArtifactsOutcome.builder().primary(artifactOutcome).build())
+                 .build())
+        .when(outcomeService)
+        .resolveOptional(any(), any());
+    AwsLambdaArtifactConfig awsLambdaArtifactConfig = AwsLambdaS3ArtifactConfig.builder().build();
+    doReturn(awsLambdaArtifactConfig).when(awsLambdaEntityHelper).getAwsLambdaArtifactConfig(any(), any());
+
+    AwsLambdaSpecParameters awsLambdaSpecParameters = AwsLambdaDeployStepParameters.infoBuilder().build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                      .timeout(ParameterField.createValueField("10m"))
+                                                      .spec(awsLambdaSpecParameters)
+                                                      .build();
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+
+    assertThat(awsLambdaHelper
+                   .executeNextLink(ambiance, stepElementParameters, awsLambdaStepPassThroughData,
+                       () -> awsLambdaPrepareRollbackResponse)
+                   .getPassThroughData())
+        .isInstanceOf(AwsLambdaStepPassThroughData.class);
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void executeNextLinkTestWhenException() throws Exception {
+    AwsLambdaPrepareRollbackResponse awsLambdaPrepareRollbackResponse =
+        AwsLambdaPrepareRollbackResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+    AwsLambdaStepPassThroughData awsLambdaStepPassThroughData = AwsLambdaStepPassThroughData.builder().build();
+    assertThat(awsLambdaHelper
+                   .executeNextLink(ambiance, stepElementParameters, awsLambdaStepPassThroughData,
+                       () -> awsLambdaPrepareRollbackResponse)
+                   .getPassThroughData())
+        .isInstanceOf(AwsLambdaStepExceptionPassThroughData.class);
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void getServerInstanceInfoTest() {
+    AwsLambda awsLambda = AwsLambda.builder().build();
+    AwsLambdaCommandResponse awsLambdaCommandResponse = AwsLambdaDeployResponse.builder()
+                                                            .awsLambda(awsLambda)
+                                                            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                            .build();
+    ServerInstanceInfo serverInstanceInfo = mock(ServerInstanceInfo.class);
+    Mockito.mockStatic(AwsLambdaToServerInstanceInfoMapper.class);
+    when(AwsLambdaToServerInstanceInfoMapper.toServerInstanceInfo(any(), any(), any())).thenReturn(serverInstanceInfo);
+    AwsLambdaInfraConfig awsLambdaInfraConfig = AwsLambdaFunctionsInfraConfig.builder().region("region").build();
+    assertThat(awsLambdaHelper.getServerInstanceInfo(awsLambdaCommandResponse, awsLambdaInfraConfig, "infraKey").size())
+        .isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void handleStepExceptionFailure() {
+    AwsLambdaStepExceptionPassThroughData awsLambdaStepExceptionPassThroughData =
+        AwsLambdaStepExceptionPassThroughData.builder().unitProgressData(unitProgressData).build();
+    assertThat(awsLambdaHelper.handleStepExceptionFailure(awsLambdaStepExceptionPassThroughData))
+        .isInstanceOf(StepResponse.class);
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void generateStepResponseTestWhenFailure() {
+    AwsLambda awsLambda = AwsLambda.builder().build();
+    StepResponseBuilder stepResponseBuilder = StepResponse.builder();
+    AwsLambdaCommandResponse awsLambdaCommandResponse = AwsLambdaDeployResponse.builder()
+                                                            .awsLambda(awsLambda)
+                                                            .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+                                                            .build();
+    assertThat(
+        awsLambdaHelper.generateStepResponse(awsLambdaCommandResponse, stepResponseBuilder, ambiance).getStatus())
+        .isEqualTo(Status.FAILED);
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void generateStepResponseTestWhenSuccess() {
+    AwsLambda awsLambda = AwsLambda.builder().build();
+    StepResponseBuilder stepResponseBuilder = StepResponse.builder();
+    doReturn(infrastructureOutcome).when(outcomeService).resolve(any(), any());
+    AwsLambdaCommandResponse awsLambdaCommandResponse = AwsLambdaDeployResponse.builder()
+                                                            .awsLambda(awsLambda)
+                                                            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                            .build();
+    assertThat(
+        awsLambdaHelper.generateStepResponse(awsLambdaCommandResponse, stepResponseBuilder, ambiance).getStatus())
+        .isEqualTo(Status.SUCCEEDED);
+  }
+
+  @Test()
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void handleStepExceptionFailureTest() throws Exception {
+    AwsLambdaStepPassThroughData awsLambdaStepPassThroughData = AwsLambdaStepPassThroughData.builder().build();
+    Exception exception = new Exception("exception");
+    assertThat(
+        awsLambdaHelper.handleStepFailureException(ambiance, awsLambdaStepPassThroughData, exception).getStatus())
+        .isEqualTo(Status.FAILED);
   }
 }

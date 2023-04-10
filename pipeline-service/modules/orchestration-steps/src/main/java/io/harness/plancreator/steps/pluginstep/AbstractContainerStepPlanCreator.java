@@ -13,6 +13,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.advisers.rollback.RollbackStrategy;
+import io.harness.plancreator.steps.InitContainerStepPlanCreater;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
@@ -37,12 +38,14 @@ import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
+import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.common.steps.stepgroup.StepGroupStep;
 import io.harness.steps.common.steps.stepgroup.StepGroupStepParameters;
 import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 import io.harness.utils.PlanCreatorUtilsCommon;
 import io.harness.utils.TimeoutUtils;
+import io.harness.when.utils.RunInfoUtils;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -82,8 +85,8 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
         ((ContainerStepSpec) stepElementParameters.getSpec()).setIdentifier(config.getIdentifier());
       }
     }
-    PlanNode initPlanNode =
-        InitContainerStepPlanCreater.createPlanForField(initStepNodeId, stepParameters, advisorParametersInitStep);
+    PlanNode initPlanNode = InitContainerStepPlanCreater.createPlanForField(
+        initStepNodeId, stepParameters, advisorParametersInitStep, StepSpecTypeConstants.INIT_CONTAINER_STEP);
     PlanNode stepPlanNode = createPlanForStep(stepNodeId, stepParameters);
 
     planCreationResponseMap.put(
@@ -126,6 +129,7 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
                 .build())
         .adviserObtainments(getAdviserObtainmentFromMetaData(
             ctx.getCurrentField(), StrategyUtils.isWrappedUnderStrategy(ctx.getCurrentField())))
+        .whenCondition(RunInfoUtils.getRunConditionForStep(config.getWhen()))
         .timeoutObtainment(
             SdkTimeoutObtainment.builder()
                 .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)

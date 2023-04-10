@@ -37,6 +37,7 @@ public class PipelineCoreMigrationProvider implements MigrationProvider {
       { add(PipelineCoreMigrationDetails.class); }
       { add(PipelineCoreTimeScaleMigrationDetails.class); }
       { add(PipelineCoreTimeScaleBgMigrationDetails.class); }
+      { add(PipelineCoreBackgroundMigrationDetails.class); }
     };
   }
 }

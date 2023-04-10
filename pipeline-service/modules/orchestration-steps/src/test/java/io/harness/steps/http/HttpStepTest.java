@@ -10,22 +10,27 @@ package io.harness.steps.http;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.ROHITKARELIA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.HttpCertificateNG;
 import io.harness.category.element.UnitTests;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.http.HttpStepResponse;
 import io.harness.delegate.task.http.HttpTaskParametersNg;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
@@ -36,6 +41,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -55,6 +61,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -73,6 +81,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
 public class HttpStepTest extends CategoryTest {
   @Inject private StepElementParameters stepElementParameters;
   @Inject private Ambiance ambiance;
+
+  @Mock EngineExpressionService engineExpressionService;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @InjectMocks private HttpStepParameters httpStepParameters;
 
@@ -89,6 +99,7 @@ public class HttpStepTest extends CategoryTest {
   public void setup() {
     LogStreamingStepClientImpl logClient = mock(LogStreamingStepClientImpl.class);
     Mockito.when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logClient);
+    Reflect.on(httpStep).set("engineExpressionService", engineExpressionService);
   }
 
   @Test
@@ -111,7 +122,12 @@ public class HttpStepTest extends CategoryTest {
     variables.put("name1", var1);
     variables.put("name4", var4);
 
-    Map<String, String> evaluatedVariables = HttpStep.evaluateOutputVariables(variables, response1);
+    // mocked pms evaluator
+    doReturn("metadataValue")
+        .when(engineExpressionService)
+        .resolve(any(), eq("<+json.object(httpResponseBody).metaData>"), any(), any());
+
+    Map<String, String> evaluatedVariables = httpStep.evaluateOutputVariables(variables, response1, null);
     assertThat(evaluatedVariables).isNotEmpty();
     assertThat(evaluatedVariables.get("name1")).isEqualTo("metadataValue");
     assertThat(evaluatedVariables.get("name4")).isEqualTo("directValue");
@@ -120,7 +136,7 @@ public class HttpStepTest extends CategoryTest {
     variables.put("name3", var3);
 
     HttpStepResponse response2 = HttpStepResponse.builder().httpResponseBody(body).build();
-    evaluatedVariables = HttpStep.evaluateOutputVariables(variables, response2);
+    evaluatedVariables = httpStep.evaluateOutputVariables(variables, response2, null);
     assertThat(evaluatedVariables).isNotEmpty();
     assertThat(evaluatedVariables.get("name2")).isNull();
     assertThat(evaluatedVariables.get("name3")).isNull();
@@ -347,5 +363,41 @@ public class HttpStepTest extends CategoryTest {
 
     // non null task request
     assertThat(httpStep.obtainTask(ambiance, stepElementParameters, null)).isEqualTo(TaskRequest.newBuilder().build());
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testCreateCertificateReturnsEmptyIfCertAndCertKeyIsEmpty() {
+    HttpStepParameters httpStepParameters = HttpStepParameters.infoBuilder()
+                                                .certificate(ParameterField.createValueField(""))
+                                                .certificateKey(ParameterField.createValueField(""))
+                                                .build();
+    Optional<HttpCertificateNG> certificate = httpStep.createCertificate(httpStepParameters);
+    assertThat(certificate).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testCreateCertificateCertKeyCanBeEmpty() {
+    HttpStepParameters httpStepParameters = HttpStepParameters.infoBuilder()
+                                                .certificate(ParameterField.createValueField("value"))
+                                                .certificateKey(ParameterField.createValueField(""))
+                                                .build();
+    Optional<HttpCertificateNG> certificate = httpStep.createCertificate(httpStepParameters);
+    assertThat(certificate).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testCreateCertificateCertCannotBeEmpty() {
+    assertThatThrownBy(()
+                           -> httpStep.createCertificate(HttpStepParameters.infoBuilder()
+                                                             .certificate(ParameterField.createValueField(""))
+                                                             .certificateKey(ParameterField.createValueField("value"))
+                                                             .build()))
+        .isInstanceOf(InvalidRequestException.class);
   }
 }

@@ -19,7 +19,10 @@ import io.harness.repositories.instancesyncperpetualtaskinfo.InstanceSyncPerpetu
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -84,5 +87,18 @@ public class InstanceSyncPerpetualTaskInfoServiceImpl implements InstanceSyncPer
             instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList()));
     update.set(InstanceSyncPerpetualTaskInfoKeys.connectorIdentifier, connectorIdentifier);
     return InstanceSyncPerpetualTaskInfoMapper.toDTO(instanceSyncPerpetualTaskInfoRepository.update(criteria, update));
+  }
+
+  @Override
+  public List<InstanceSyncPerpetualTaskInfoDTO> findAll(String accountId, String perpetualTaskId) {
+    Criteria criteria = Criteria.where(InstanceSyncPerpetualTaskInfoKeys.accountIdentifier)
+                            .is(accountId)
+                            .and(InstanceSyncPerpetualTaskInfoKeys.perpetualTaskId)
+                            .is(perpetualTaskId);
+
+    return instanceSyncPerpetualTaskInfoRepository.findAll(criteria)
+        .stream()
+        .map(InstanceSyncPerpetualTaskInfoMapper::toDTO)
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 }

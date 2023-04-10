@@ -20,6 +20,7 @@ delayQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 8
 delayQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 executionInputInstance {"name": "expireAt_1", "background": true, "expireAfterSeconds": 0} {"expireAt": 1}
 executionInputInstance {"name": "nodeExecutionId_1", "unique": true} {"nodeExecutionId": 1}
+executionSweepingOutput {"name": "planExecutionId_fully_qualified_name_createdAt_Idx", "background": true} {"planExecutionId": 1, "fullyQualifiedName": 1, "createdAt": -1}
 executionSweepingOutput {"name": "producedByRuntime_Idx", "background": true} {"producedBy.runtimeId": 1}
 executionSweepingOutput {"name": "unique_levelRuntimeIdUniqueIdx2", "unique": true} {"planExecutionId": 1, "levelRuntimeIdIdx": 1, "name": 1}
 executionSweepingOutput {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
@@ -64,6 +65,7 @@ orchestrationEventLog {"name": "validUntil_1", "background": true, "expireAfterS
 outboxEvents {"name": "blocked_createdAt_nextUnblockAttemptAt_outbox_Idx", "background": true} {"blocked": 1, "createdAt": 1, "nextUnblockAttemptAt": 1}
 outboxEvents {"name": "eventType_blocked_outbox_Idx", "background": true} {"eventType": 1, "blocked": 1}
 outcomeInstances {"name": "planExecutionIdProducedByRuntimeIdCreatedAtIdx", "background": true} {"planExecutionId": 1, "producedBy.runtimeId": 1, "createdAt": -1}
+outcomeInstances {"name": "planExecutionId_fully_qualified_name_createdAt", "background": true} {"planExecutionId": 1, "fullyQualifiedName": 1, "createdAt": -1}
 outcomeInstances {"name": "producedByRuntimeIdIdx", "background": true} {"producedBy.runtimeId": 1}
 outcomeInstances {"name": "unique_levelRuntimeIdUniqueIdx", "unique": true} {"planExecutionId": 1, "levelRuntimeIdIdx": 1, "name": 1}
 outcomeInstances {"name": "unique_producedBySetupIdRuntimeIdIdx", "unique": true} {"planExecutionId": 1, "producedBy.setupId": 1, "producedBy.runtimeId": 1, "name": 1}

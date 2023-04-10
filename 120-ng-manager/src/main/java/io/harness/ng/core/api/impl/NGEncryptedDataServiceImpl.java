@@ -170,8 +170,6 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         validatePath(encryptedData.getPath(), encryptedData.getEncryptionType());
         break;
       case CustomSecretManagerValues:
-        // At the time of creation, ensure secret exist.
-        validateCustomSecretManagerPathValue(accountIdentifier, encryptedData, secretManager, secret.getValue());
         break;
       default:
         throw new RuntimeException("Secret value type is unknown");
@@ -566,6 +564,16 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         vaultEncryptorsRegistry.getVaultEncryptor(SecretManagerConfigMapper.fromDTO(secretManager).getEncryptionType())
             .validateReference(accountIdentifier, secretRefPath, SecretManagerConfigMapper.fromDTO(secretManager));
     return isValidationSuccess;
+  }
+
+  @Override
+  public boolean isSecretManagerReadOnly(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String secretManagerId) {
+    SecretManagerConfigDTO secretManager;
+
+    secretManager =
+        getSecretManagerOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, secretManagerId, false);
+    return isReadOnlySecretManager(secretManager);
   }
 
   private byte[] getInputBytes(InputStream inputStream) {

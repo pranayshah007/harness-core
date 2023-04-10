@@ -20,15 +20,18 @@ import io.harness.data.OutcomeInstance;
 import io.harness.data.OutcomeInstance.OutcomeInstanceKeys;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.expressions.ExpressionEvaluatorProvider;
+import io.harness.engine.expressions.functors.ExpandedJsonFunctorUtils;
 import io.harness.engine.expressions.functors.NodeExecutionEntityType;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.data.StepOutcomeRef;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.data.PmsOutcome;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.springdata.PersistenceUtils;
 import io.harness.springdata.TransactionHelper;
@@ -49,6 +52,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.jexl3.JexlException;
@@ -58,6 +62,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
 @OwnedBy(HarnessTeam.PIPELINE)
+@Slf4j
 public class PmsOutcomeServiceImpl implements PmsOutcomeService {
   @Inject private ExpressionEvaluatorProvider expressionEvaluatorProvider;
   @Inject private Injector injector;
@@ -76,11 +81,22 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
       return resolveUsingRuntimeId(ambiance, refObject);
     }
 
-    EngineExpressionEvaluator evaluator =
-        expressionEvaluatorProvider.get(null, ambiance, EnumSet.of(NodeExecutionEntityType.OUTCOME), true);
-    injector.injectMembers(evaluator);
-    Object value = evaluator.evaluateExpression(EngineExpressionEvaluator.createExpression(refObject.getName()));
-    return value == null ? null : RecastOrchestrationUtils.toJson(value);
+    String fullyQualifiedName = ExpandedJsonFunctorUtils.createFullQualifiedName(ambiance, refObject.getName());
+    String valueUsingFullyQualifiedName = resolveUsingFullyQualifiedName(ambiance, refObject, fullyQualifiedName);
+    if (valueUsingFullyQualifiedName == null) {
+      try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
+        log.warn(String.format("Not able to find the outcome using fullyQualifiedName: %s", fullyQualifiedName));
+      }
+      EngineExpressionEvaluator evaluator =
+          expressionEvaluatorProvider.get(null, ambiance, EnumSet.of(NodeExecutionEntityType.OUTCOME), true);
+      injector.injectMembers(evaluator);
+      Object value = evaluator.evaluateExpression(EngineExpressionEvaluator.createExpression(refObject.getName()));
+      if (value != null) {
+        // Add a log line
+      }
+      return value == null ? null : RecastOrchestrationUtils.toJson(value);
+    }
+    return valueUsingFullyQualifiedName;
   }
 
   @Override
@@ -97,6 +113,7 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
                 .outcomeValue(PmsOutcome.parse(value))
                 .groupName(groupName)
                 .levelRuntimeIdIdx(ResolverUtils.prepareLevelRuntimeIdIdx(ambiance.getLevelsList()))
+                .fullyQualifiedName(ExpandedJsonFunctorUtils.generateFullyQualifiedName(ambiance, name))
                 .build());
         planExpansionService.addOutcomes(ambiance, name, instance.getOutcomeValue());
         return instance.getUuid();
@@ -190,6 +207,24 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
     return instances.get(0).getOutcomeJsonValue();
   }
 
+  private String resolveUsingFullyQualifiedName(
+      @NotNull Ambiance ambiance, @NotNull RefObject refObject, String fullyQualifiedName) {
+    String name = refObject.getName();
+
+    Query query = query(where(OutcomeInstanceKeys.planExecutionId).is(ambiance.getPlanExecutionId()))
+                      .addCriteria(where(OutcomeInstanceKeys.fullyQualifiedName).is(fullyQualifiedName))
+                      .with(Sort.by(Sort.Direction.DESC, OutcomeInstanceKeys.createdAt))
+                      .limit(1);
+
+    List<OutcomeInstance> instances = mongoTemplate.find(query, OutcomeInstance.class);
+
+    // Multiple instances might be returned if the same plan node executed multiple times.
+    if (EmptyPredicate.isEmpty(instances)) {
+      throw new OutcomeException(format("Could not resolve outcome with name '%s'", name));
+    }
+    return instances.get(0).getOutcomeJsonValue();
+  }
+
   @Override
   public List<StepOutcomeRef> fetchOutcomeRefs(String nodeExecutionId) {
     List<OutcomeInstance> instances = fetchOutcomeInstanceByRuntimeId(nodeExecutionId);
@@ -211,6 +246,15 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
       return resolveOptionalUsingRuntimeId(ambiance, refObject);
     }
 
+    String fullyQualifiedName = ExpandedJsonFunctorUtils.createFullQualifiedName(ambiance, refObject.getName());
+
+    OptionalOutcome optionalOutcome = resolveOptionalUsingFullyQualifiedName(ambiance, refObject, fullyQualifiedName);
+    if (optionalOutcome.isFound()) {
+      return optionalOutcome;
+    }
+    try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
+      log.warn(String.format("Not able to find the outcome using fullyQualifiedName: %s", fullyQualifiedName));
+    }
     EngineExpressionEvaluator evaluator =
         expressionEvaluatorProvider.get(null, ambiance, EnumSet.of(NodeExecutionEntityType.OUTCOME), true);
     injector.injectMembers(evaluator);
@@ -296,6 +340,20 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
     boolean isResolvable;
     try {
       outcome = resolveUsingRuntimeId(ambiance, refObject);
+      isResolvable = true;
+    } catch (OutcomeException ignore) {
+      outcome = null;
+      isResolvable = false;
+    }
+    return OptionalOutcome.builder().found(isResolvable).outcome(outcome).build();
+  }
+
+  private OptionalOutcome resolveOptionalUsingFullyQualifiedName(
+      Ambiance ambiance, RefObject refObject, String fullyQualifiedName) {
+    String outcome;
+    boolean isResolvable;
+    try {
+      outcome = resolveUsingFullyQualifiedName(ambiance, refObject, fullyQualifiedName);
       isResolvable = true;
     } catch (OutcomeException ignore) {
       outcome = null;

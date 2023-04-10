@@ -55,7 +55,10 @@ public enum PlanExecutionInterruptType {
   @JsonProperty("Retry") RETRY("Retry execution of  paused node in the current workflow", InterruptType.RETRY, "Retry"),
   @JsonProperty("MarkAsFailure")
   MarkAsFailure(
-      "MarkFailed execution of paused node in the current workflow", InterruptType.MARK_FAILED, "MarkAsFailure");
+      "MarkFailed execution of paused node in the current workflow", InterruptType.MARK_FAILED, "MarkAsFailure"),
+  @JsonProperty("UserMarkedFailure")
+  UserMarkedFailure(
+      "Mark running steps/stages as user marked failure", InterruptType.USER_MARKED_FAIL_ALL, "UserMarkedFailure");
 
   private String description;
   private InterruptType executionInterruptType;

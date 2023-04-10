@@ -83,6 +83,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 @Slf4j
 public class RecommendationsOverviewQueryV2Test extends CategoryTest {
+  private static final Long DEFAULT_DAYS_BACK = 4L;
   private static final String ACCOUNT_ID = "accountId";
   private static final String NAME = "name";
   private static final String CLUSTER_NAME = "clusterName";
@@ -97,6 +98,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
   private static final K8sRecommendationFilterDTO defaultFilter = K8sRecommendationFilterDTO.builder()
                                                                       .limit(GraphQLUtils.DEFAULT_LIMIT)
                                                                       .offset(GraphQLUtils.DEFAULT_OFFSET)
+                                                                      .daysBack(DEFAULT_DAYS_BACK)
                                                                       .build();
   private ArgumentCaptor<Condition> conditionCaptor;
 
@@ -139,6 +141,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     K8sRecommendationFilterDTO filter = K8sRecommendationFilterDTO.builder()
                                             .limit(GraphQLUtils.DEFAULT_LIMIT)
                                             .offset(GraphQLUtils.DEFAULT_OFFSET)
+                                            .daysBack(DEFAULT_DAYS_BACK)
                                             .build();
     final RecommendationsDTO recommendationsDTO = overviewQueryV2.recommendations(filter, null);
 
@@ -163,6 +166,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
                                             .ids(singletonList(ID))
                                             .limit(GraphQLUtils.DEFAULT_LIMIT)
                                             .offset(GraphQLUtils.DEFAULT_OFFSET)
+                                            .daysBack(DEFAULT_DAYS_BACK)
                                             .build();
     final RecommendationsDTO recommendationsDTO = overviewQueryV2.recommendations(filter, null);
 
@@ -210,6 +214,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
                                             .minSaving(0D)
                                             .limit(GraphQLUtils.DEFAULT_LIMIT)
                                             .offset(GraphQLUtils.DEFAULT_OFFSET)
+                                            .daysBack(DEFAULT_DAYS_BACK)
                                             .build();
 
     final RecommendationsDTO recommendationsDTO = overviewQueryV2.recommendations(filter, null);
@@ -399,6 +404,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
         .minSaving(0D)
         .limit(GraphQLUtils.DEFAULT_LIMIT)
         .offset(GraphQLUtils.DEFAULT_OFFSET)
+        .daysBack(DEFAULT_DAYS_BACK)
         .build();
   }
 
@@ -499,6 +505,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
                                             .resourceTypes(singletonList(ResourceType.WORKLOAD))
                                             .minCost(200D)
                                             .minSaving(100D)
+                                            .daysBack(DEFAULT_DAYS_BACK)
                                             .build();
 
     List<FilterStatsDTO> result = overviewQueryV2.recommendationFilterStats(columns, filter, null);
@@ -511,6 +518,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
 
     Condition condition = conditionCaptor.getValue();
     assertCommonCondition(condition);
+    assertThat(condition.toString()).contains(CE_RECOMMENDATIONS.LASTPROCESSEDAT.getQualifiedName().toString());
 
     assertThat(condition.toString())
         .contains(CE_RECOMMENDATIONS.NAME.getQualifiedName().toString())
@@ -558,8 +566,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     assertThat(condition).isNotNull();
     assertThat(condition.toString())
         .contains(CE_RECOMMENDATIONS.ISVALID.getQualifiedName().toString())
-        .contains("true")
-        .contains(CE_RECOMMENDATIONS.LASTPROCESSEDAT.getQualifiedName().toString());
+        .contains("true");
   }
 
   private void assertRecommendationOverviewListResponse(final RecommendationsDTO recommendationsDTO) {

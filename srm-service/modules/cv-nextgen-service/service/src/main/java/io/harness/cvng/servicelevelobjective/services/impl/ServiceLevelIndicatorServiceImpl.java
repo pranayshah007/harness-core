@@ -48,7 +48,6 @@ import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLIValue;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
-import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
@@ -61,6 +60,7 @@ import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
+import io.harness.cvng.utils.ScopedInformation;
 import io.harness.datacollection.entity.TimeSeriesRecord;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.persistence.HPersistence;
@@ -194,10 +194,9 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
   private SLIValue getSLIValue(ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, SLIAnalyseResponse sliAnalyseResponse,
       SLIAnalyseResponse initialSLIResponse) {
     if (serviceLevelIndicatorDTO.getType() == SLIEvaluationType.WINDOW) {
-      return ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec())
-          .getSliMissingDataType()
-          .calculateSLIValue(sliAnalyseResponse.getRunningGoodCount(), sliAnalyseResponse.getRunningBadCount(),
-              Duration.between(initialSLIResponse.getTimeStamp(), sliAnalyseResponse.getTimeStamp()).toMinutes() + 1);
+      return serviceLevelIndicatorDTO.getSLIMissingDataType().calculateSLIValue(
+          sliAnalyseResponse.getRunningGoodCount(), sliAnalyseResponse.getRunningBadCount(),
+          Duration.between(initialSLIResponse.getTimeStamp(), sliAnalyseResponse.getTimeStamp()).toMinutes() + 1);
     } else if (serviceLevelIndicatorDTO.getType() == SLIEvaluationType.REQUEST) {
       return SLIValue.builder()
           .goodCount(sliAnalyseResponse.getRunningGoodCount())
@@ -276,10 +275,8 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
 
   private void generateNameAndIdentifier(
       String serviceLevelObjectiveIdentifier, ServiceLevelIndicatorDTO serviceLevelIndicatorDTO) {
-    serviceLevelIndicatorDTO.setName(serviceLevelObjectiveIdentifier + "_"
-        + ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec().getMetricName());
-    serviceLevelIndicatorDTO.setIdentifier(serviceLevelObjectiveIdentifier + "_"
-        + ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec().getMetricName());
+    serviceLevelIndicatorDTO.getSpec().generateNameAndIdentifier(
+        serviceLevelObjectiveIdentifier, serviceLevelIndicatorDTO);
   }
 
   @Override
@@ -608,6 +605,20 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
                                       .startTime(startTime.getEpochSecond())
                                       .endTime(endTime.getEpochSecond())
                                       .build()));
-    orchestrationService.queueAnalysis(verificationTaskId, startTime, endTime);
+    for (Instant intervalStartTime = startTime; intervalStartTime.isBefore(endTime);) {
+      Instant intervalEndTime = intervalStartTime.plus(INTERVAL_HOURS, ChronoUnit.HOURS);
+      if (intervalEndTime.isAfter(endTime)) {
+        intervalEndTime = endTime;
+      }
+      orchestrationService.queueAnalysis(verificationTaskId, intervalStartTime, intervalEndTime);
+      intervalStartTime = intervalEndTime;
+    }
+  }
+
+  @Override
+  public String getScopedIdentifier(ServiceLevelIndicator serviceLevelIndicator) {
+    return ScopedInformation.getScopedInformation(serviceLevelIndicator.getAccountId(),
+        serviceLevelIndicator.getOrgIdentifier(), serviceLevelIndicator.getProjectIdentifier(),
+        serviceLevelIndicator.getIdentifier());
   }
 }

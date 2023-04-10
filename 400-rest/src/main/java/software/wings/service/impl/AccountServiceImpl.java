@@ -2135,7 +2135,7 @@ public class AccountServiceImpl implements AccountService {
 
       long assureTo = now + assureInterval;
       log.info("Correct valid until values if needed for the next {}", assureTo);
-      entityClasses.forEach(clz -> accountDataRetentionService.corectValidUntilAccount(clz, accounts, now, assureTo));
+      entityClasses.forEach(clz -> accountDataRetentionService.correctValidUntilAccount(clz, accounts, now, assureTo));
     }
   }
 

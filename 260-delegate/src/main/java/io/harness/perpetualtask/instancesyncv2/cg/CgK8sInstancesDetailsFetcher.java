@@ -65,7 +65,6 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
   private final KubernetesContainerService kubernetesContainerService;
   private final KryoSerializer kryoSerializer;
   private final K8sTaskHelperBase k8sTaskHelperBase;
-  private final KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   public InstanceSyncData fetchRunningInstanceDetails(
@@ -79,8 +78,8 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
       return InstanceSyncData.newBuilder().setTaskDetailsId(releaseDetails.getTaskDetailsId()).build();
     }
     try {
-      K8sClusterConfig config = (K8sClusterConfig) referenceFalseKryoSerializer.asObject(
-          instanceSyncTaskDetails.getK8SClusterConfig().toByteArray());
+      K8sClusterConfig config =
+          (K8sClusterConfig) kryoSerializer.asObject(instanceSyncTaskDetails.getK8SClusterConfig().toByteArray());
       KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(config, true);
 
       DelegateTaskNotifyResponseData taskResponseData = instanceSyncTaskDetails.getIsHelm()
@@ -89,7 +88,7 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
 
       return InstanceSyncData.newBuilder()
           .setTaskDetailsId(releaseDetails.getTaskDetailsId())
-          .setTaskResponse(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(taskResponseData)))
+          .setTaskResponse(ByteString.copyFrom(kryoSerializer.asBytes(taskResponseData)))
           .setReleaseDetails(Any.pack(DirectK8sReleaseDetails.newBuilder()
                                           .setReleaseName(instanceSyncTaskDetails.getReleaseName())
                                           .setNamespace(instanceSyncTaskDetails.getNamespace())
@@ -114,7 +113,7 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
                                           .build()))
           .setErrorMessage("Exception while fetching running K8s pods. Exception message: " + e.getMessage())
           .setTaskResponse(ByteString.copyFrom(
-              referenceFalseKryoSerializer.asBytes(createFailedTaskResponse(instanceSyncTaskDetails.getIsHelm(), e))))
+              kryoSerializer.asBytes(createFailedTaskResponse(instanceSyncTaskDetails.getIsHelm(), e))))
           .setExecutionStatus(CommandExecutionStatus.FAILURE.name())
           .build();
     }

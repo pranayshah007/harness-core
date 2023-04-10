@@ -39,6 +39,7 @@ import io.harness.pms.events.base.PmsEventCategory;
 import io.harness.pms.exception.InitializeSdkException;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandlerInfo;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
+import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoDecoratorImpl;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
 import io.harness.pms.sdk.core.registries.StepRegistry;
 import io.harness.pms.sdk.core.steps.Step;
@@ -126,7 +127,8 @@ public class PmsSdkInitHelper {
 
   private static InitializeSdkRequest buildInitializeSdkRequest(
       Injector injector, PmsSdkConfiguration sdkConfiguration) {
-    PipelineServiceInfoProvider infoProvider = injector.getInstance(PipelineServiceInfoProvider.class);
+    PipelineServiceInfoProvider infoProvider = injector.getInstance(PipelineServiceInfoDecoratorImpl.class);
+
     ModuleType moduleType = sdkConfiguration.getModuleType();
     EventsFrameworkConfiguration eventsConfig = sdkConfiguration.getEventsFrameworkConfiguration();
     return InitializeSdkRequest.newBuilder()

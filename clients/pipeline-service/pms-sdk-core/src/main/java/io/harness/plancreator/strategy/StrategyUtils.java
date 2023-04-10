@@ -23,6 +23,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.strategy.StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX_ESCAPED;
 
+import io.harness.advisers.nextstep.NextStageAdviserParameters;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
@@ -64,6 +65,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Optional;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -114,16 +116,34 @@ public class StrategyUtils {
       }
       YamlField siblingField = stageField.getNode().nextSiblingFromParentArray(
           stageField.getName(), Arrays.asList(YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.PARALLEL));
+      String pipelineRollbackStageId = getPipelineRollbackStageId(stageField);
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
+        String siblingFieldUuid = siblingField.getNode().getUuid();
         adviserObtainments.add(
             AdviserObtainment.newBuilder()
                 .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
                 .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                    NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
+                    NextStageAdviserParameters.builder()
+                        .nextNodeId(siblingFieldUuid.equals(pipelineRollbackStageId) ? null : siblingFieldUuid)
+                        .pipelineRollbackStageId(pipelineRollbackStageId)
+                        .build())))
                 .build());
       }
     }
     return adviserObtainments;
+  }
+
+  public String getPipelineRollbackStageId(YamlField currentField) {
+    List<YamlNode> stages =
+        YamlUtils.getGivenYamlNodeFromParentPath(currentField.getNode(), YAMLFieldNameConstants.STAGES).asArray();
+    Optional<String> pipelineRollbackUuid =
+        stages.stream()
+            .filter(stage
+                -> stage.getField(YAMLFieldNameConstants.STAGE) != null
+                    && stage.getField(YAMLFieldNameConstants.STAGE).getType().equals("PipelineRollback"))
+            .map(stage -> stage.getField(YAMLFieldNameConstants.STAGE).getUuid())
+            .findAny();
+    return pipelineRollbackUuid.orElse(null);
   }
 
   public Map<String, GraphLayoutNode> modifyStageLayoutNodeGraph(YamlField yamlField) {

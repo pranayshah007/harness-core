@@ -16,6 +16,7 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.infra.helper.InfraStructureDefinitionVisitorHelper;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
@@ -24,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -41,7 +43,10 @@ public class InfraStructureDefinitionYaml implements Visitable {
   @ApiModelProperty(hidden = true)
   private String uuid;
 
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) private ParameterField<String> identifier;
+  @Pattern(regexp = NGRegexValidatorConstants.NON_EMPTY_STRING_PATTERN)
+  @NotNull
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  private ParameterField<String> identifier;
 
   // inputs
   @YamlSchemaTypes(expression)

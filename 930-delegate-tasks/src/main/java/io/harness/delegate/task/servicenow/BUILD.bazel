@@ -1,0 +1,53 @@
+# Copyright 2023 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/common:module",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/utils:module",
+        "//932-connector-task:module",
+        "//950-delegate-tasks-beans:module",
+        "//954-connector-beans:module",
+        "//960-api-services/src/main/java/io/harness/adfs:module",
+        "//960-api-services/src/main/java/io/harness/exception/sanitizer:module",
+        "//960-api-services/src/main/java/io/harness/retry:module",
+        "//960-api-services/src/main/java/io/harness/security/encryption:module",
+        "//960-api-services/src/main/java/software/wings/helpers/ext/servicenow:module",
+        "//970-api-services-beans/src/main/java/io/harness/adfs:module",
+        "//970-api-services-beans/src/main/java/io/harness/logging:module",
+        "//970-api-services-beans/src/main/java/io/harness/servicenow:module",
+        "//970-ng-commons/src/main/java/io/harness/connector:module",
+        "//970-ng-commons/src/main/java/io/harness/encryption:module",
+        "//970-ng-commons/src/main/java/io/harness/errorhandling:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/eraro:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
+        "//980-commons/src/main/java/io/harness/jackson:module",
+        "//980-commons/src/main/java/io/harness/logging:module",
+        "//980-commons/src/main/java/io/harness/network:module",
+        "//980-commons/src/main/java/io/harness/security:module",
+        "//980-commons/src/main/java/io/harness/serializer:module",
+        "//980-commons/src/main/java/software/wings/beans:module",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_inject_guice",
+        "@maven//:com_intellij_annotations",
+        "@maven//:com_squareup_okhttp3_okhttp",
+        "@maven//:com_squareup_retrofit2_converter_jackson",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:io_github_resilience4j_resilience4j_retry",
+        "@maven//:org_apache_commons_commons_lang3",
+    ],
+)
+
+run_analysis_per_module()

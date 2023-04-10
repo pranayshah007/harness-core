@@ -99,12 +99,15 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
 
   @Builder
   public AmbianceExpressionEvaluator(VariableResolverTracker variableResolverTracker, Ambiance ambiance,
-      Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific) {
+      Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific, Map<String, String> contextMap) {
     super(variableResolverTracker);
     this.ambiance = ambiance;
     this.entityTypes = entityTypes == null ? NodeExecutionEntityType.allEntities() : entityTypes;
     this.refObjectSpecific = refObjectSpecific;
     this.groupAliases = new HashMap<>();
+    if (contextMap != null) {
+      contextMap.forEach(this::addToContext);
+    }
   }
 
   /**

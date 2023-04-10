@@ -32,6 +32,7 @@ public interface StepSpecTypeConstants {
   String SERVICENOW_IMPORT_SET = "ServiceNowImportSet";
   String APPROVAL_STAGE = "Approval";
   String PIPELINE_STAGE = "Pipeline";
+  String PIPELINE_ROLLBACK_STAGE = "PipelineRollback";
   String CUSTOM_STAGE = "Custom";
   String FEATURE_FLAG_STAGE = "FeatureFlag";
   String POLICY_STEP = "Policy";
@@ -40,6 +41,8 @@ public interface StepSpecTypeConstants {
   String CONTAINER_STEP = "Container";
   String INIT_CONTAINER_STEP = "InitContainer";
   String RUN_CONTAINER_STEP = "RunContainer";
+  String INIT_CONTAINER_STEP_V2 = "InitializeContainer";
+  //  String INIT_CONTAINER_STEP_V2 = "InitContainer";
 
   String APPROVAL_FACILITATOR = "APPROVAL_FACILITATOR";
   String RESOURCE_RESTRAINT_FACILITATOR_TYPE = "RESOURCE_RESTRAINT";
@@ -100,4 +103,9 @@ public interface StepSpecTypeConstants {
                                          .setType(StepSpecTypeConstants.RUN_CONTAINER_STEP)
                                          .setStepCategory(StepCategory.STEP)
                                          .build();
+
+  StepType INIT_CONTAINER_V2_STEP_TYPE = StepType.newBuilder()
+                                             .setType(StepSpecTypeConstants.INIT_CONTAINER_STEP_V2)
+                                             .setStepCategory(StepCategory.STEP)
+                                             .build();
 }

@@ -21,6 +21,7 @@ import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.perpetualtask.PerpetualTaskLogContext;
 import io.harness.perpetualtask.instancesync.InstanceSyncResponsePublisher;
+import io.harness.perpetualtask.instancesync.InstanceSyncTaskDetails;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
 import io.harness.rest.RestResponse;
@@ -58,35 +59,20 @@ public class InstanceSyncResource {
   @Inject private CgInstanceSyncServiceV2 instanceSyncServiceV2;
 
   @DelegateAuth
-  @POST
-  @Path("instance-sync-ng/v2/{perpetualTaskId}")
-  public RestResponse<Boolean> processInstanceSyncNGResultV2(
-      @PathParam("perpetualTaskId") @NotEmpty String perpetualTaskId,
-      @QueryParam("accountId") @NotEmpty String accountId, DelegateResponseData response) {
+  @GET
+  @Path("instance-sync-ng-v2/task/{perpetualTaskId}/details")
+  @Produces(ProtocolBufferMediaType.APPLICATION_PROTOBUF)
+  public Response fetchInstanceSyncV2TaskDetails(
+      @PathParam("perpetualTaskId") String perpetualTaskId, @QueryParam("accountId") String accountId) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
-      instanceSyncResponsePublisher.publishInstanceSyncResponseToNG(
-          accountId, perpetualTaskId.replaceAll("[\r\n]", ""), response, true);
+      InstanceSyncTaskDetails details =
+          instanceSyncResponsePublisher.fetchTaskDetails(perpetualTaskId.replaceAll("[\r\n]", ""), accountId);
+      return Response.ok(details).build();
     } catch (Exception e) {
       log.error("Failed to process results for perpetual task: [{}]", perpetualTaskId.replaceAll("[\r\n]", ""), e);
     }
-    return new RestResponse<>(true);
-  }
-
-  @DelegateAuth
-  @POST
-  @Path("instance-sync/v2/{perpetualTaskId}")
-  @Consumes(ProtocolBufferMediaType.APPLICATION_PROTOBUF)
-  public RestResponse<Boolean> processInstanceSyncResultV2(
-      @PathParam("perpetualTaskId") @NotEmpty String perpetualTaskId,
-      @QueryParam("accountId") @NotEmpty String accountId, CgInstanceSyncResponse response) {
-    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
-         AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
-      instanceSyncServiceV2.processInstanceSyncResult(perpetualTaskId.replaceAll("[\r\n]", ""), response, true);
-    } catch (Exception e) {
-      log.error("Failed to process results for perpetual task: [{}]", perpetualTaskId.replaceAll("[\r\n]", ""), e);
-    }
-    return new RestResponse<>(true);
+    return Response.status(Response.Status.EXPECTATION_FAILED).build();
   }
 
   @DelegateAuth
@@ -103,7 +89,6 @@ public class InstanceSyncResource {
     return new RestResponse<>(true);
   }
 
-  //@TODO: Remove the V1 version once all delegates adopt the V2 version of this endpoint
   @DelegateAuth
   @POST
   @Path("instance-sync-ng/{perpetualTaskId}")
@@ -113,14 +98,13 @@ public class InstanceSyncResource {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
       instanceSyncResponsePublisher.publishInstanceSyncResponseToNG(
-          accountId, perpetualTaskId.replaceAll("[\r\n]", ""), response, false);
+          accountId, perpetualTaskId.replaceAll("[\r\n]", ""), response);
     } catch (Exception e) {
       log.error("Failed to process results for perpetual task: [{}]", perpetualTaskId.replaceAll("[\r\n]", ""), e);
     }
     return new RestResponse<>(true);
   }
 
-  //@TODO: Remove the V1 version once all delegates adopt the V2 version of this endpoint
   @DelegateAuth
   @POST
   @Path("instance-sync-v2/{perpetualTaskId}")
@@ -130,7 +114,7 @@ public class InstanceSyncResource {
       @QueryParam("accountId") @NotEmpty String accountId, CgInstanceSyncResponse response) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
-      instanceSyncServiceV2.processInstanceSyncResult(perpetualTaskId.replaceAll("[\r\n]", ""), response, false);
+      instanceSyncServiceV2.processInstanceSyncResult(perpetualTaskId.replaceAll("[\r\n]", ""), response);
     } catch (Exception e) {
       log.error("Failed to process results for perpetual task: [{}]", perpetualTaskId.replaceAll("[\r\n]", ""), e);
     }

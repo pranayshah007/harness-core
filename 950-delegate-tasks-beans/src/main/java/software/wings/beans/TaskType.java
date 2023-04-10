@@ -481,7 +481,10 @@ public enum TaskType {
   OCI_HELM_DOCKER_API_LIST_TAGS_TASK_NG(TaskGroup.HELM, "Task to query OCI Helm Docker API List Tags"),
   TAS_ROUTE_MAPPING(TaskGroup.TAS, "Tas Route Mapping task"),
   AWS_EKS_LIST_CLUSTERS_TASK(TaskGroup.AWS, "AWS EKS List Clusters Task"),
-  TERRAFORM_TASK_NG_V5(TaskGroup.TERRAFORM_NG, "Terraform Task NG V5");
+  TERRAFORM_TASK_NG_V5(TaskGroup.TERRAFORM_NG, "Terraform Task NG V5"),
+  GOOGLE_FUNCTION_GEN_ONE_DEPLOY_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Deploy Task"),
+  GOOGLE_FUNCTION_GEN_ONE_ROLLBACK_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Rollback Task"),
+  GOOGLE_FUNCTION_GEN_ONE_PREPARE_ROLLBACK_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Prepare Rollback Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;

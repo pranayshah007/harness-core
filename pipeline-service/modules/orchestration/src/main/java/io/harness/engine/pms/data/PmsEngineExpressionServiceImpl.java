@@ -17,6 +17,7 @@ import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsEngineExpressionServiceImpl implements PmsEngineExpressionService {
@@ -60,8 +61,18 @@ public class PmsEngineExpressionServiceImpl implements PmsEngineExpressionServic
   }
 
   @Override
+  public Object resolve(Ambiance ambiance, Object o, ExpressionMode expressionMode, Map<String, String> contextMap) {
+    EngineExpressionEvaluator evaluator = prepareExpressionEvaluator(ambiance, contextMap);
+    return evaluator.resolve(o, expressionMode);
+  }
+
+  @Override
   public EngineExpressionEvaluator prepareExpressionEvaluator(Ambiance ambiance) {
-    EngineExpressionEvaluator engineExpressionEvaluator = expressionEvaluatorProvider.get(null, ambiance, null, false);
+    return prepareExpressionEvaluator(ambiance, null);
+  }
+  public EngineExpressionEvaluator prepareExpressionEvaluator(Ambiance ambiance, Map<String, String> contextMap) {
+    EngineExpressionEvaluator engineExpressionEvaluator =
+        expressionEvaluatorProvider.get(null, ambiance, null, false, contextMap);
     injector.injectMembers(engineExpressionEvaluator);
     return engineExpressionEvaluator;
   }

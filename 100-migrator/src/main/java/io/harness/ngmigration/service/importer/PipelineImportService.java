@@ -32,7 +32,7 @@ public class PipelineImportService implements ImportService {
   @Inject DiscoveryService discoveryService;
   @Inject HPersistence hPersistence;
 
-  public DiscoveryResult discover(String authToken, ImportDTO importDTO) {
+  public DiscoveryResult discover(ImportDTO importDTO) {
     PipelineFilter filter = (PipelineFilter) importDTO.getFilter();
     String accountId = importDTO.getAccountIdentifier();
     String appId = filter.getAppId();

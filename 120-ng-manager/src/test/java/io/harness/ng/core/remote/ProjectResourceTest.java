@@ -133,7 +133,6 @@ public class ProjectResourceTest extends CategoryTest {
     String searchTerm = randomAlphabetic(10);
     PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(10).build();
     ProjectDTO projectDTO = getProjectDTO(orgIdentifier, identifier, name);
-    projectDTO.setModules(singletonList(ModuleType.CD));
     Project project = toProject(projectDTO);
     project.setVersion((long) 0);
     ArgumentCaptor<ProjectFilterDTO> argumentCaptor = ArgumentCaptor.forClass(ProjectFilterDTO.class);

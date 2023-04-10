@@ -62,6 +62,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Sort;
 
 @OwnedBy(HarnessTeam.PL)
 public class AccountConnectorApiImplTest extends CategoryTest {
@@ -244,10 +245,11 @@ public class AccountConnectorApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetAccountScopedConnectors() {
     Page<ConnectorResponseDTO> pages = new PageImpl<>(Collections.singletonList(connectorResponseDTO));
-    when(connectorService.list(eq(0), eq(10), eq(account), any(), any(), any(), any(), any(), eq(false), any()))
+    when(connectorService.list(eq(account), any(), any(), any(), any(), any(), eq(false), any(), any()))
         .thenReturn(pages);
 
-    Response response = accountConnectorApi.getAccountScopedConnectors(false, null, 0, 10, account);
+    Response response = accountConnectorApi.getAccountScopedConnectors(
+        false, null, 0, 10, "name", Sort.Direction.ASC.toString(), account);
 
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getHeaders().size()).isEqualTo(3);
@@ -265,10 +267,11 @@ public class AccountConnectorApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetAccountScopedConnectorsEmpty() {
     Page<ConnectorResponseDTO> pages = Page.empty();
-    when(connectorService.list(eq(0), eq(10), eq(account), any(), any(), any(), any(), any(), eq(false), any()))
+    when(connectorService.list(eq(account), any(), any(), any(), any(), any(), eq(false), any(), any()))
         .thenReturn(pages);
 
-    Response response = accountConnectorApi.getAccountScopedConnectors(false, null, 0, 10, account);
+    Response response = accountConnectorApi.getAccountScopedConnectors(
+        false, null, 0, 10, "name", Sort.Direction.ASC.toString(), account);
 
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getHeaders().size()).isEqualTo(3);

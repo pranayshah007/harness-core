@@ -196,7 +196,6 @@ public interface K8sConstants {
 
   String AZURE_AUTH_PLUGIN_BINARY = "kubelogin";
   String GCP_AUTH_PLUGIN_BINARY = "gke-gcloud-auth-plugin";
-
   String GCP_AUTH_PLUGIN_INSTALL_HINT = "gke-gcloud-auth-plugin is required to authenticate to the current cluster.\n"
       + "It can be installed on the delegate using following command from:\n"
       + "https://cloud.google.com/sdk/docs/install#rpm\n"
@@ -218,4 +217,18 @@ public interface K8sConstants {
       + "// USE_GKE_GCLOUD_AUTH_PLUGIN=True for kubernetes version <1.26\n"
       + "echo \"export USE_GKE_GCLOUD_AUTH_PLUGIN=True\" >> ~/.bashrc\n"
       + "source ~/.bashrc\n";
+  String EKS_AUTH_PLUGIN_BINARY = "aws-iam-authenticator";
+  String EKS_AUTH_PLUGIN_INSTALL_HINT = "aws-iam-authenticator is required to authenticate to the current cluster.\n"
+      + "It can be installed on the delegate by creating an immutable delegate and updating the following commands in INIT_SCRIPT\n"
+      + "Reference: https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html\n"
+      + "\n"
+      + "// Download aws-iam-authenticator\n"
+      + "curl -Lo aws-iam-authenticator https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v0.5.9/aws-iam-authenticator_0.5.9_linux_amd64\n"
+      + "chmod +x ./aws-iam-authenticator\n"
+      + "\n"
+      + "// Add the binary to PATH\n"
+      + "mv ./aws-iam-authenticator /usr/local/bin\n"
+      + "\n"
+      + "// Verify the binary\n"
+      + "aws-iam-authenticator version";
 }

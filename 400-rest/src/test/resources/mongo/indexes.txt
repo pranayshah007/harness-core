@@ -23,6 +23,7 @@ accounts {"name": "secretManagerValidationIterator_1", "background": true} {"sec
 accounts {"name": "usageMetricsTaskIteration_1", "background": true} {"usageMetricsTaskIteration": 1}
 accounts {"name": "workflowDataCollectionIteration_1", "background": true} {"workflowDataCollectionIteration": 1}
 activities {"name": "accountId_1", "background": true} {"accountId": 1}
+activities {"name": "accountId_validUntil", "background": true} {"accountId": 1, "validUntil": 1}
 activities {"name": "appId_serviceId_environmentId_status_createdAt", "background": true} {"appId": 1, "serviceId": 1, "environmentId": 1, "status": 1, "createdAt": -1}
 activities {"name": "app_status_createdAt", "background": true} {"appId": 1, "serviceInstanceId": 1, "status": 1, "createdAt": -1}
 activities {"name": "createdAt_1", "background": true} {"createdAt": 1}
@@ -115,6 +116,7 @@ clusterRecords {"name": "accountId_1", "background": true} {"accountId": 1}
 collectorQueue2 {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 collectorQueue2 {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 commandLogs {"name": "accountId_1", "background": true} {"accountId": 1}
+commandLogs {"name": "accountId_validUntil", "background": true} {"accountId": 1, "validUntil": 1}
 commandLogs {"name": "activityIdCreatedAt", "background": true} {"activityId": 1, "createdAt": 1}
 commandLogs {"name": "appId_activityId", "background": true} {"appId": 1, "activityId": 1}
 commandLogs {"name": "createdAt_1", "background": true} {"createdAt": 1}
@@ -683,6 +685,7 @@ ssoSettings {"name": "createdAt_1", "background": true} {"createdAt": 1}
 ssoSettings {"name": "nextIterations_1", "background": true} {"nextIterations": 1}
 ssoSettings {"name": "typeNextIterations", "background": true} {"type": 1, "nextIterations": 1}
 stateExecutionInstances {"name": "accountId_status_stateType", "background": true} {"accountId": 1, "status": 1, "stateType": 1}
+stateExecutionInstances {"name": "accountId_validUntil", "background": true} {"accountId": 1, "validUntil": 1}
 stateExecutionInstances {"name": "appIdExecutionIdStatus", "background": true} {"appId": 1, "executionUuid": 1, "status": 1}
 stateExecutionInstances {"name": "appId_createdAt", "background": true} {"appId": 1, "createdAt": 1}
 stateExecutionInstances {"name": "appId_endTs", "background": true} {"appId": 1, "endTs": 1}
@@ -875,6 +878,7 @@ workflowExecutions {"name": "accountId_pipExecutionId_createdAt", "background": 
 workflowExecutions {"name": "accountId_startTs_serviceIds", "background": true} {"accountId": 1, "startTs": 1, "serviceIds": 1}
 workflowExecutions {"name": "accountId_startTs_status_pipelineExecutionId", "background": true} {"accountId": 1, "startTs": 1, "status": 1, "pipelineExecutionId": 1}
 workflowExecutions {"name": "accountId_tags_createdAt", "background": true} {"accountId": 1, "tags.name": 1, "createdAt": -1}
+workflowExecutions {"name": "accountId_validUntil", "background": true} {"accountId": 1, "validUntil": 1}
 workflowExecutions {"name": "appId_createdAt", "background": true} {"appId": 1, "createdAt": -1}
 workflowExecutions {"name": "app_pipExecutionId_createdAt", "background": true} {"appId": 1, "pipelineExecutionId": 1, "createdAt": -1}
 workflowExecutions {"name": "appid_status_workflowid_infraMappingIds_createdat", "background": true} {"appId": 1, "status": 1, "workflowId": 1, "infraMappingIds": 1, "createdAt": -1}

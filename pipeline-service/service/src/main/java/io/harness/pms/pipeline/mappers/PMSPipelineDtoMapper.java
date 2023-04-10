@@ -465,6 +465,7 @@ public class PMSPipelineDtoMapper {
         .policyEval(event.getResult().getGovernanceMetadata())
         .startTs(event.getStartTs())
         .endTs(event.getEndTs())
+        .templateValidationResponse(event.getResult().getTemplateValidationResponse())
         .build();
   }
 }

@@ -7,9 +7,10 @@
 
 package io.harness.pms.utils;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -31,6 +32,9 @@ public class PipelineYamlHelper {
   }
 
   public String getVersion(String yaml) {
+    if (isEmpty(yaml)) {
+      return PipelineVersion.V0;
+    }
     String version;
     try {
       YamlField yamlField = YamlUtils.readTree(yaml);
@@ -38,7 +42,7 @@ public class PipelineYamlHelper {
     } catch (IOException ioException) {
       throw new InvalidRequestException("Invalid yaml passed.");
     }
-    return EmptyPredicate.isEmpty(version) ? PipelineVersion.V0 : version;
+    return isEmpty(version) ? PipelineVersion.V0 : version;
   }
 
   public Optional<Registry> getRegistry(String pipelineYaml) {

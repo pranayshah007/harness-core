@@ -31,6 +31,7 @@ import io.harness.cdng.infra.InfrastructureOutcomeProvider;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
@@ -47,6 +48,7 @@ import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
+import io.harness.cdng.infra.yaml.K8sRancherInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
@@ -166,7 +168,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     infrastructureValidator.validate(infrastructure);
 
     final InfrastructureOutcome infrastructureOutcome =
-        infrastructureOutcomeProvider.getOutcome(infrastructure, environmentOutcome, serviceOutcome,
+        infrastructureOutcomeProvider.getOutcome(ambiance, infrastructure, environmentOutcome, serviceOutcome,
             ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
     if (environmentOutcome != null) {
@@ -247,7 +249,8 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     if (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome
         || infrastructureOutcome instanceof K8sDirectInfrastructureOutcome
-        || infrastructureOutcome instanceof K8sAzureInfrastructureOutcome) {
+        || infrastructureOutcome instanceof K8sAzureInfrastructureOutcome
+        || infrastructureOutcome instanceof K8sAwsInfrastructureOutcome) {
       K8sInfraDelegateConfig k8sInfraDelegateConfig =
           cdStepHelper.getK8sInfraDelegateConfig(infrastructureOutcome, ambiance);
 
@@ -569,6 +572,12 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
           saveExecutionLogSafely(
               logCallback, color(format(k8sNamespaceLogLine, k8sAwsInfrastructure.getNamespace().getValue()), Yellow));
         }
+        break;
+
+      case InfrastructureKind.KUBERNETES_RANCHER:
+        K8sRancherInfrastructure rancherInfrastructure = (K8sRancherInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(rancherInfrastructure.getConnectorRef(),
+            rancherInfrastructure.getNamespace(), rancherInfrastructure.getCluster());
         break;
 
       default:

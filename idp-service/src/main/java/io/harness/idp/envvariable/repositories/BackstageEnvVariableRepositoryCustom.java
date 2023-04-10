@@ -9,10 +9,14 @@ package io.harness.idp.envvariable.repositories;
 
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface BackstageEnvVariableRepositoryCustom {
   BackstageEnvVariableEntity update(BackstageEnvVariableEntity backstageEnvVariableEntity);
   Optional<BackstageEnvVariableEntity> findByAccountIdentifierAndHarnessSecretIdentifier(
       String accountIdentifier, String harnessSecretIdentifier);
+  List<BackstageEnvVariableEntity> findAllByAccountIdentifierAndMultipleEnvNames(
+      String accountIdentifier, List<String> envNames);
+  void deleteAllByEnvName(List<String> envName);
 }

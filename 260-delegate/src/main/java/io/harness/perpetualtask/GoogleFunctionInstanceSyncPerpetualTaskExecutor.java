@@ -27,6 +27,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.GoogleFunctionDeploymentRelease;
 import io.harness.perpetualtask.instancesync.GoogleFunctionInstanceSyncPerpetualTaskParams;
+import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.time.Instant;
@@ -39,9 +40,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(HarnessTeam.CDP)
-public class GoogleFunctionInstanceSyncPerpetualTaskExecutor
-    extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
+public class GoogleFunctionInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
+  @Inject private KryoSerializer kryoSerializer;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private GoogleFunctionTaskHelperBase googleFunctionTaskHelperBase;
 
@@ -51,13 +52,13 @@ public class GoogleFunctionInstanceSyncPerpetualTaskExecutor
     log.info("Running the Google Cloud Function InstanceSync perpetual task executor for task id: {}", taskId);
     GoogleFunctionInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), GoogleFunctionInstanceSyncPerpetualTaskParams.class);
-    return executeGoogleFunctionInstanceSyncTask(taskId, taskParams, params.getReferenceFalseKryoSerializer());
+    return executeGoogleFunctionInstanceSyncTask(taskId, taskParams);
   }
 
-  public PerpetualTaskResponse executeGoogleFunctionInstanceSyncTask(PerpetualTaskId taskId,
-      GoogleFunctionInstanceSyncPerpetualTaskParams taskParams, boolean referenceFalseKryoSerializer) {
+  public PerpetualTaskResponse executeGoogleFunctionInstanceSyncTask(
+      PerpetualTaskId taskId, GoogleFunctionInstanceSyncPerpetualTaskParams taskParams) {
     List<GoogleFunctionDeploymentReleaseData> deploymentReleaseDataList =
-        getGoogleFunctionDeploymentReleaseData(taskParams, referenceFalseKryoSerializer);
+        getGoogleFunctionDeploymentReleaseData(taskParams);
 
     List<ServerInstanceInfo> serverInstanceInfos = deploymentReleaseDataList.stream()
                                                        .map(this::getServerInstanceInfoList)
@@ -82,19 +83,18 @@ public class GoogleFunctionInstanceSyncPerpetualTaskExecutor
   }
 
   private List<GoogleFunctionDeploymentReleaseData> getGoogleFunctionDeploymentReleaseData(
-      GoogleFunctionInstanceSyncPerpetualTaskParams taskParams, boolean referenceFalseKryoSerializer) {
+      GoogleFunctionInstanceSyncPerpetualTaskParams taskParams) {
     return taskParams.getGoogleFunctionsDeploymentReleaseListList()
         .stream()
-        .map(data -> toGoogleFunctionDeploymentReleaseData(data, referenceFalseKryoSerializer))
+        .map(this::toGoogleFunctionDeploymentReleaseData)
         .collect(Collectors.toList());
   }
 
   private GoogleFunctionDeploymentReleaseData toGoogleFunctionDeploymentReleaseData(
-      GoogleFunctionDeploymentRelease googleFunctionDeploymentRelease, boolean referenceFalseKryoSerializer) {
+      GoogleFunctionDeploymentRelease googleFunctionDeploymentRelease) {
     return GoogleFunctionDeploymentReleaseData.builder()
-        .googleFunctionInfraConfig(
-            (GoogleFunctionInfraConfig) getKryoSerializer(referenceFalseKryoSerializer)
-                .asObject(googleFunctionDeploymentRelease.getGoogleFunctionsInfraConfig().toByteArray()))
+        .googleFunctionInfraConfig((GoogleFunctionInfraConfig) kryoSerializer.asObject(
+            googleFunctionDeploymentRelease.getGoogleFunctionsInfraConfig().toByteArray()))
         .function(googleFunctionDeploymentRelease.getFunction())
         .region(googleFunctionDeploymentRelease.getRegion())
         .build();

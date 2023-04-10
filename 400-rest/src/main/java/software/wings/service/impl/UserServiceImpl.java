@@ -16,6 +16,7 @@ import static io.harness.beans.SearchFilter.Operator.IN;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.ng.core.account.AuthenticationMechanism.USER_PASSWORD;
 import static io.harness.ng.core.common.beans.Generation.NG;
@@ -120,6 +121,7 @@ import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.PasswordChangeDTO;
 import io.harness.ng.core.user.PasswordChangeResponse;
 import io.harness.ng.core.user.UserInfo;
+import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.UuidAware;
 import io.harness.remote.client.NGRestUtils;
@@ -203,6 +205,7 @@ import software.wings.service.intfc.AccessRequestService;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.AuthService;
+import software.wings.service.intfc.AwsMarketPlaceApiHandler;
 import software.wings.service.intfc.EmailNotificationService;
 import software.wings.service.intfc.HarnessUserGroupService;
 import software.wings.service.intfc.RoleService;
@@ -371,6 +374,8 @@ public class UserServiceImpl implements UserService {
   @Inject private UserServiceHelper userServiceHelper;
 
   @Inject private AdminLicenseHttpClient adminLicenseHttpClient;
+
+  @Inject private AwsMarketPlaceApiHandler awsMarketPlaceApiHandler;
 
   private final ScheduledExecutorService scheduledExecutor = new ScheduledThreadPoolExecutor(1,
       new ThreadFactoryBuilder().setNameFormat("invite-executor-thread-%d").setPriority(Thread.NORM_PRIORITY).build());
@@ -3025,9 +3030,10 @@ public class UserServiceImpl implements UserService {
         defaultAccountId = user.getDefaultAccountCandidate();
       }
 
-      List<Role> accountRoles = roleService.getAccountRoles(accountId);
+      Query<Role> query = roleService.getAccountRolesQuery(accountId);
+      query.limit(NO_LIMIT);
       List<Role> updatedRolesForUser = new ArrayList<>(user.getRoles());
-      if (accountRoles != null) {
+      try (HIterator<Role> accountRoles = new HIterator<>(query.fetch())) {
         for (Role role : accountRoles) {
           updatedRolesForUser.remove(role);
         }
@@ -4148,16 +4154,22 @@ public class UserServiceImpl implements UserService {
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
+      String dimension = marketPlace.getDimension();
+      Integer orderQuantity = awsMarketPlaceApiHandler.getDimensionQuantity(dimension);
+      Edition plan = licenseService.getDimensionPlan(dimension);
+      Long numberOfClientMAUs = licenseService.getNumberOfClientMAUs(plan);
+      LicenseType licenseType = licenseService.getModuleLicenseType(dimension, plan);
+
       // TODO: please add trial logic here [PLG-1942]
       accountId = setupAccountForUser(user, userInvite, licenseInfo);
       adminLicenseHttpClient.createAccountLicense(accountId,
           CFModuleLicenseDTO.builder()
-              .numberOfClientMAUs(TEST_FF_NUMBER_OF_CLIENT_MAUS)
-              .numberOfUsers(TEST_FF_NUMBER_OF_USERS)
+              .numberOfClientMAUs(numberOfClientMAUs)
+              .numberOfUsers(orderQuantity)
               .accountIdentifier(accountId)
               .moduleType(ModuleType.CF)
-              .edition(Edition.ENTERPRISE)
-              .licenseType(LicenseType.PAID)
+              .edition(plan)
+              .licenseType(licenseType)
               .status(LicenseStatus.ACTIVE)
               .startTime(DateTime.now().getMillis())
               .expiryTime(marketPlace.getExpirationDate().getTime())

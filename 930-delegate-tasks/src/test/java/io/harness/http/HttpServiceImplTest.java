@@ -9,6 +9,7 @@ package io.harness.http;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.AGORODETKI;
+import static io.harness.rule.OwnerRule.ROHITKARELIA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -22,6 +23,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.beans.HttpCertificate;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.http.beans.HttpInternalConfig;
@@ -39,6 +41,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -59,6 +62,54 @@ public class HttpServiceImplTest extends CategoryTest {
   HttpInternalConfig httpInternalConfig_Proxy_T_CertValid_F_Error_T;
   HttpInternalConfig httpInternalConfig_Proxy_T_CertValid_T_Error_T;
   HttpInternalConfig httpInternalConfig_Proxy_F_CertValid_F_Error_T;
+  HttpInternalConfig httpInternalConfig_Create_SSLContextBuilder;
+
+  String cert = "-----BEGIN CERTIFICATE-----\n"
+      + "MIICwDCCAagCCQCzMN+X/Ym6hTANBgkqhkiG9w0BAQsFADAiMQswCQYDVQQGEwJV\n"
+      + "UzETMBEGA1UECAwKQ2FsaWZvcm5pYTAeFw0yMzAxMDYyMjQ2NDZaFw0yNTEwMDEy\n"
+      + "MjQ2NDZaMCIxCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMIIBIjAN\n"
+      + "BgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxrPzWy6wTmtLHgQ0mVY/iLBBdh6I\n"
+      + "8YpqYqAFgrm3vjvhe+ymxUlHNCkM8syfFeUrHm06yfBwOoBsjkxCK9wjZgPnxRHe\n"
+      + "4OwNEM85668Qz5rWe0HViHedhVDVx/JSU5Ci/Z4dn1DzEumAtb9dZzUrDK5rRJ27\n"
+      + "7sUlMqvcc23w39h0HLwh8o/WxHNtHSWfx/Pqs3OkazKrxr9f54BoX31zTmSmq4LV\n"
+      + "t8sILLDRbfFeHQvlxY+ZWVFNtCVo40L5Pn0YmBOcjm1tcjuuaJpNbTu+AVwoR2Jb\n"
+      + "Nrfwq6Tjhg0kajIKVJhdUlAp6lJ8w+L3LZV4a8dwAl5dWfLSmb9gf4tY6QIDAQAB\n"
+      + "MA0GCSqGSIb3DQEBCwUAA4IBAQAonmJCr3JhGYRrazhRA7DtohD+UsidL81PY1ij\n"
+      + "r67FvyfV6pXw4NumN9+HPEa5a6/ZQ4u2FNbG1Jip7862XV/TTB5rH4ysrl24znVq\n"
+      + "/mMBaj8j7/QYOmp/9RLotCD3QmQ0SpKxF5BT1X38iSJV7puoVp7osKjt7rDvBT1d\n"
+      + "iQUHFO+wQJrrqWS7lZm8bdSF7ZdHT+ezTkBIW/+b0yzWsaJ9V9aNa//MG8SBKEAl\n"
+      + "I1c0N4LlabXsFRatLB5WUmkjG5PCUL5Nt3ArgAU3Jyy6O8Bmma+abXUAm81eEzpY\n"
+      + "sPOlhBFKZWC651W+vVvXlaBp6fGL0LpYbvaaxVbqsvevYPJY\n"
+      + "-----END CERTIFICATE-----\n";
+
+  String certKey = "-----BEGIN PRIVATE KEY-----\n"
+      + "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDGs/NbLrBOa0se\n"
+      + "BDSZVj+IsEF2HojximpioAWCube+O+F77KbFSUc0KQzyzJ8V5SsebTrJ8HA6gGyO\n"
+      + "TEIr3CNmA+fFEd7g7A0QzznrrxDPmtZ7QdWId52FUNXH8lJTkKL9nh2fUPMS6YC1\n"
+      + "v11nNSsMrmtEnbvuxSUyq9xzbfDf2HQcvCHyj9bEc20dJZ/H8+qzc6RrMqvGv1/n\n"
+      + "gGhffXNOZKargtW3ywgssNFt8V4dC+XFj5lZUU20JWjjQvk+fRiYE5yObW1yO65o\n"
+      + "mk1tO74BXChHYls2t/CrpOOGDSRqMgpUmF1SUCnqUnzD4vctlXhrx3ACXl1Z8tKZ\n"
+      + "v2B/i1jpAgMBAAECggEAEJA5jfVDXxYUiekB1XJaE3PV0RnUgoXuPlBmhTIj/eiR\n"
+      + "8DmW4UUteUyetrKV5EZZJM0oJGM1h7ri0a3LqkpMbRmQPV4y/P7QTAFqK5pJRXT7\n"
+      + "wgSH3ztRVyaY23T4pdydqZR/laMyz/XE8+GC0LKe5wy3Bl47pzip1CJ9WuXkOVR0\n"
+      + "7Yc1Y6cNlhU2RHseEhFpVT4/MXp+bc/naEF/QMxVLfvIXrbnULlaMRAuqDEdZy7q\n"
+      + "t2qvW+TsPnQrYH5LDKx0sDzS14yI+OIuTZ7DDpJ3TszZ3lLdLHbUYjuxLDiKxwam\n"
+      + "KUAObQ7kqxa3tvt++FxWkkvisCjgmkEH0GzyFUNVMQKBgQD7quXqMQ27tks/u1SG\n"
+      + "C3Ep/a4Gx6wqxHrp4GsdIdORu6odNOtnYjVPZiRZGzutOe8dcKVhbat88HIJNRpF\n"
+      + "6Z01WbOvwsRgTe+ozI4b4a1AaROzvTz4rq9f3oZTmYcOTUxf8Zam2f8V3B+H357o\n"
+      + "NS2kSfSeurUCZYvvYKBvfNLN1QKBgQDKH6MAv3j054GeMLBRreob0sxj31WV8PXR\n"
+      + "igQ2d75QPkmWC6SA9JlJgkFRjT/a9D+a0He/jhm+DKS222UgGMaE4W0K0NgfNdzQ\n"
+      + "Dp51/jNCKbsvjXBWtQUC53OYaOfKf/zOVWgqWeOf432pacMZnUs/LdhlB5OTgmgy\n"
+      + "TXg77l0kxQKBgQCpZsXQOCi4W+KXCa/Bct4/l6SWp7z6JLtfxlITj/trs1i0xDRY\n"
+      + "qMCdq3F4EV7AIakUtgh8Zmfyd58rF3WR7ciGatUK0B2DfbJ+ewKFPglyu8gpSo5K\n"
+      + "Dru52n2stEE2nU11n5b6xO5xdnQ674l1YKZSWf2xApho/pWNEgusP+dd6QKBgBM/\n"
+      + "egVbNoiT90r6NgBBQJcPtvkXzo2t2arvqsEJHC2GEPnh9/Nz15khd1jty5PtSJVU\n"
+      + "nuK2BIuNpq3nLLUmxtjmoryx8LLgLTv++GYiI/17/eBkZrtLF8QUCHUOIGyvTYLU\n"
+      + "rUvDLaMPRes5MCQjT4QfuIi+dPZKJ+QKbpW+eE5FAoGARw1A+oTxWs1yB94TXAX6\n"
+      + "pTc4MCbgG+VVnQtlkHlBuBPdQltXumn5qSfLbSiXM0l/aVB3MV1OIqHLutC7QEbT\n"
+      + "4IPx0xJAR5cmNKHeRAjsL5yN+N8Bz02zg/pz/upapxl6jitEj4+2CLVb2eK140pU\n"
+      + "OqwwfdMKaytzpDqUNsbiy/w=\n"
+      + "-----END PRIVATE KEY-----\n";
 
   @Before
   public void setup() {
@@ -94,6 +145,18 @@ public class HttpServiceImplTest extends CategoryTest {
                                                          .isCertValidationRequired(false)
                                                          .throwErrorIfNoProxySetWithDelegateProxy(true)
                                                          .build();
+
+    httpInternalConfig_Create_SSLContextBuilder =
+        HttpInternalConfig.builder()
+            .method("GET")
+            .body(null)
+            .headers(null)
+            .socketTimeoutMillis(5000)
+            .url("https://tempUrl")
+            .useProxy(false)
+            .certificate(HttpCertificate.builder().cert(cert.toCharArray()).certKey(certKey.toCharArray()).build())
+            .isCertValidationRequired(true)
+            .build();
   }
 
   @Test
@@ -419,5 +482,14 @@ public class HttpServiceImplTest extends CategoryTest {
     spyHttpService.getMethodSpecificHttpRequest(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getMethod(),
         httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl(),
         httpInternalConfig_Proxy_F_CertValid_F_Error_T.getBody());
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testCreateSslContextBuilder() {
+    SSLContextBuilder sslContextBuilder =
+        httpService.createSslContextBuilder(httpInternalConfig_Create_SSLContextBuilder);
+    assertThat(sslContextBuilder).isNotNull();
   }
 }

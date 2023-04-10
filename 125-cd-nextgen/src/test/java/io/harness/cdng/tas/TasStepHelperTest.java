@@ -15,17 +15,22 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_S3_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AZURE_ARTIFACTS_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.BAMBOO_ARTIFACTS_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GITHUB_PACKAGES_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GOOGLE_CLOUD_STORAGE_ARTIFACT_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.JENKINS_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS2_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS3_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.AMAZONS3;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.ARTIFACTORY_REGISTRY;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.AZURE_ARTIFACTS;
+import static io.harness.delegate.task.artifacts.ArtifactSourceType.BAMBOO;
+import static io.harness.delegate.task.artifacts.ArtifactSourceType.GOOGLE_CLOUD_STORAGE_ARTIFACT;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.JENKINS;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.RISHABH;
 
 import static java.lang.String.format;
@@ -59,12 +64,14 @@ import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
+import io.harness.cdng.artifact.outcome.BambooArtifactOutcome;
 import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GarArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GithubPackagesArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GoogleCloudStorageArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
@@ -125,6 +132,10 @@ import io.harness.delegate.beans.connector.azureconnector.AzureCredentialDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
 import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureSecretType;
+import io.harness.delegate.beans.connector.bamboo.BambooAuthType;
+import io.harness.delegate.beans.connector.bamboo.BambooAuthenticationDTO;
+import io.harness.delegate.beans.connector.bamboo.BambooConnectorDTO;
+import io.harness.delegate.beans.connector.bamboo.BambooUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthType;
 import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
@@ -132,6 +143,7 @@ import io.harness.delegate.beans.connector.docker.DockerRegistryProviderType;
 import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialSpecDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
@@ -163,7 +175,9 @@ import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResp
 import io.harness.delegate.task.pcf.artifact.ArtifactoryTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.AwsS3TasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.AzureDevOpsTasArtifactRequestDetails;
+import io.harness.delegate.task.pcf.artifact.BambooTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.CustomArtifactTasRequestDetails;
+import io.harness.delegate.task.pcf.artifact.GoogleCloudStorageTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.JenkinsTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.NexusTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
@@ -1528,6 +1542,94 @@ public class TasStepHelperTest extends CategoryTest {
     assertThat(azureArtifactRequestDetails.getBuild()).isEqualTo("testBuild");
     assertThat(azureArtifactRequestDetails.getJobName()).isEqualTo("testJobName");
     assertThat(packageArtifactConfig.getSourceType()).isEqualTo(JENKINS);
+    assertThat(packageArtifactConfig.getEncryptedDataDetails()).isEqualTo(encryptedDataDetails);
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testGetPrimaryPackageArtifactConfigGCS() {
+    final GoogleCloudStorageArtifactOutcome googleCloudStorageArtifactOutcome =
+        GoogleCloudStorageArtifactOutcome.builder()
+            .connectorRef("gcpConnector")
+            .artifactPath("testArtifact")
+            .project("project")
+            .bucket("bucket")
+            .identifier("testIdentifier")
+            .type(GOOGLE_CLOUD_STORAGE_ARTIFACT_NAME)
+            .build();
+
+    final GcpCredentialSpecDTO gcpCredentialSpecDTO =
+        GcpManualDetailsDTO.builder().secretKeyRef(SecretRefData.builder().build()).build();
+
+    final GcpConnectorCredentialDTO gcpConnectorCredentialDTO =
+        GcpConnectorCredentialDTO.builder()
+            .gcpCredentialType(GcpCredentialType.MANUAL_CREDENTIALS)
+            .config(gcpCredentialSpecDTO)
+            .build();
+
+    final GcpConnectorDTO gcpConnectorDTO = GcpConnectorDTO.builder().credential(gcpConnectorCredentialDTO).build();
+
+    final ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder().connectorType(ConnectorType.GCP).connectorConfig(gcpConnectorDTO).build();
+    final List<EncryptedDataDetail> encryptedDataDetails = singletonList(EncryptedDataDetail.builder().build());
+
+    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector("gcpConnector", ambiance);
+    doReturn(encryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(NGAccess.class), any());
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), any());
+    TasArtifactConfig tasArtifactConfig =
+        tasStepHelper.getPrimaryArtifactConfig(ambiance, googleCloudStorageArtifactOutcome);
+    assertThat(tasArtifactConfig.getArtifactType()).isEqualTo(TasArtifactType.PACKAGE);
+    TasPackageArtifactConfig packageArtifactConfig = (TasPackageArtifactConfig) tasArtifactConfig;
+
+    GoogleCloudStorageTasArtifactRequestDetails azureArtifactRequestDetails =
+        (GoogleCloudStorageTasArtifactRequestDetails) packageArtifactConfig.getArtifactDetails();
+
+    assertThat(packageArtifactConfig.getConnectorConfig()).isEqualTo(gcpConnectorDTO);
+    assertThat(azureArtifactRequestDetails.getArtifactPath()).isEqualTo("testArtifact");
+    assertThat(packageArtifactConfig.getSourceType()).isEqualTo(GOOGLE_CLOUD_STORAGE_ARTIFACT);
+    assertThat(packageArtifactConfig.getEncryptedDataDetails()).isEqualTo(encryptedDataDetails);
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testGetPrimaryPackageArtifactConfigBamboo() {
+    final BambooArtifactOutcome bambooArtifactOutcome = BambooArtifactOutcome.builder()
+                                                            .connectorRef("bambooConnector")
+                                                            .artifactPath(Arrays.asList("testArtifact"))
+                                                            .planKey("planKey")
+                                                            .build("build")
+                                                            .identifier("testIdentifier")
+                                                            .type(BAMBOO_ARTIFACTS_NAME)
+                                                            .build();
+
+    final BambooAuthenticationDTO bambooAuthenticationDTO =
+        BambooAuthenticationDTO.builder()
+            .authType(BambooAuthType.USER_PASSWORD)
+            .credentials(BambooUserNamePasswordDTO.builder().build())
+            .build();
+
+    final BambooConnectorDTO bambooConnectorDTO =
+        BambooConnectorDTO.builder().bambooUrl("url").auth(bambooAuthenticationDTO).build();
+
+    final ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder().connectorType(ConnectorType.BAMBOO).connectorConfig(bambooConnectorDTO).build();
+    final List<EncryptedDataDetail> encryptedDataDetails = singletonList(EncryptedDataDetail.builder().build());
+
+    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector("bambooConnector", ambiance);
+    doReturn(encryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(NGAccess.class), any());
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), any());
+    TasArtifactConfig tasArtifactConfig = tasStepHelper.getPrimaryArtifactConfig(ambiance, bambooArtifactOutcome);
+    assertThat(tasArtifactConfig.getArtifactType()).isEqualTo(TasArtifactType.PACKAGE);
+    TasPackageArtifactConfig packageArtifactConfig = (TasPackageArtifactConfig) tasArtifactConfig;
+
+    BambooTasArtifactRequestDetails azureArtifactRequestDetails =
+        (BambooTasArtifactRequestDetails) packageArtifactConfig.getArtifactDetails();
+
+    assertThat(packageArtifactConfig.getConnectorConfig()).isEqualTo(bambooConnectorDTO);
+    assertThat(azureArtifactRequestDetails.getArtifactPath()).isEqualTo("testArtifact");
+    assertThat(packageArtifactConfig.getSourceType()).isEqualTo(BAMBOO);
     assertThat(packageArtifactConfig.getEncryptedDataDetails()).isEqualTo(encryptedDataDetails);
   }
 

@@ -92,6 +92,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -936,7 +937,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
   @Override
   public List<String> getEligibleDelegatesToExecuteTaskV2(DelegateTask task) throws WingsException {
-    // if task comes with eligibleToExecuteDelegateIds then no need to do assignment logic
+    // If task comes with eligibleToExecuteDelegateIds then no need to do assignment logic.
     if (isNotEmpty(task.getEligibleToExecuteDelegateIds())) {
       log.info(
           "Task {} has eligibleToExecuteDelegateIds:  {} ", task.getUuid(), task.getEligibleToExecuteDelegateIds());
@@ -951,14 +952,14 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
       if (isEmpty(accountDelegates)) {
         task.getNonAssignableDelegates().putIfAbsent(NO_ACTIVE_DELEGATES, Collections.emptyList());
         delegateTaskServiceClassic.addToTaskActivityLog(task, NO_ACTIVE_DELEGATES);
-        throw new NoAvailableDelegatesException();
+        return List.of();
       }
 
       List<Delegate> delegates = getDelegatesWithOwnerShipCriteriaMatch(task, accountDelegates);
       if (isEmpty(delegates)) {
         task.getNonAssignableDelegates().put(CAN_NOT_ASSIGN_OWNER, Collections.emptyList());
         delegateTaskServiceClassic.addToTaskActivityLog(task, CAN_NOT_ASSIGN_OWNER);
-        return eligibleDelegateIds;
+        return List.of();
       }
 
       eligibleDelegateIds = delegates.stream()
@@ -1058,7 +1059,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
       task.getNonAssignableDelegates().get(taskNotAssignedReasonPhrase).add(delegateName);
       log.debug("Delegate {} does not support task {} which is of type {}", delegateId, task.getUuid(),
           task.getTaskDataV2().getTaskType());
-      return canAssignTaskToDelegate;
+      return false;
     }
 
     boolean canAssignDelegateScopes = canAssignDelegateScopesV2(delegate, task);
@@ -1067,7 +1068,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
       task.getNonAssignableDelegates().putIfAbsent(CAN_NOT_ASSIGN_DELEGATE_SCOPE_GROUP, new ArrayList<>());
       task.getNonAssignableDelegates().get(CAN_NOT_ASSIGN_DELEGATE_SCOPE_GROUP).add(delegateName);
       log.debug("can not assign canAssignDelegateScopes {}", canAssignDelegateScopes);
-      return canAssignDelegateScopes;
+      return false;
     }
 
     boolean canAssignDelegateProfileScopes =
@@ -1077,15 +1078,23 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
       task.getNonAssignableDelegates().putIfAbsent(CAN_NOT_ASSIGN_PROFILE_SCOPE_GROUP, new ArrayList<>());
       task.getNonAssignableDelegates().get(CAN_NOT_ASSIGN_PROFILE_SCOPE_GROUP).add(delegateName);
       log.debug("can not assign canAssignDelegateProfileScopes {}", canAssignDelegateProfileScopes);
-      return canAssignDelegateProfileScopes;
+      return false;
     }
 
     boolean canAssignSelectors = canAssignSelectors(delegate, task.getExecutionCapabilities());
     if (!canAssignSelectors) {
-      task.getNonAssignableDelegates().putIfAbsent(CAN_NOT_ASSIGN_SELECTOR_TASK_GROUP, new ArrayList<>());
-      task.getNonAssignableDelegates().get(CAN_NOT_ASSIGN_SELECTOR_TASK_GROUP).add(delegateName);
+      final Set<String> selectors =
+          delegateTaskServiceClassic.fetchTaskSelectorCapabilities(task.getExecutionCapabilities())
+              .stream()
+              .map(selectorCapability -> selectorCapability.getSelectors())
+              .flatMap(Collection::stream)
+              .collect(Collectors.toSet());
+      final String noMatchingSelectorsMessage = CAN_NOT_ASSIGN_SELECTOR_TASK_GROUP + " " + selectors;
+
+      task.getNonAssignableDelegates().putIfAbsent(noMatchingSelectorsMessage, new ArrayList<>());
+      task.getNonAssignableDelegates().get(noMatchingSelectorsMessage).add(delegateName);
       log.debug("can not assign canAssignSelectors {}", canAssignSelectors);
-      return canAssignSelectors;
+      return false;
     }
     return true;
   }

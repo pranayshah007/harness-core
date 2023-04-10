@@ -122,12 +122,13 @@ public class K8sCanaryDeployTest extends CategoryTest {
 
   private StateExecutionInstance stateExecutionInstance = aStateExecutionInstance().displayName(STATE_NAME).build();
 
-  private ExecutionContextImpl context;
+  @InjectMocks private ExecutionContextImpl context;
 
   @Before
   public void setup() {
-    MockitoAnnotations.initMocks(this);
     context = new ExecutionContextImpl(stateExecutionInstance);
+    MockitoAnnotations.initMocks(this);
+
     on(context).set("contextElementParamMapperFactory", contextElementParamMapperFactory);
     on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     k8sCanaryDeploy.setSkipDryRun(true);

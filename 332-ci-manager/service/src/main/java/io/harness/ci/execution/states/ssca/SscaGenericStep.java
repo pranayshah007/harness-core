@@ -49,10 +49,10 @@ public class SscaGenericStep extends AbstractStepExecutable {
       throw new CIStageExecutionException("Could not fetch stage details");
     }
 
-    String stageIdentifier = stageLevel.get().getIdentifier();
-    Call<SBOMArtifactResponse> call = sscaServiceClient.getArtifactInfo(AmbianceUtils.obtainCurrentRuntimeId(ambiance),
-        stageIdentifier, stepIdentifier, AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-        AmbianceUtils.getProjectIdentifier(ambiance));
+    String stepExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    Call<SBOMArtifactResponse> call =
+        sscaServiceClient.getArtifactInfoV2(stepExecutionId, AmbianceUtils.getAccountId(ambiance),
+            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
 
     Response<SBOMArtifactResponse> response = null;
     try {
@@ -76,7 +76,7 @@ public class SscaGenericStep extends AbstractStepExecutable {
                                                  .isSbomAttested(sbomArtifactResponse.getAttestation().isAttested())
                                                  .sbomName(sbomArtifactResponse.getSbom().getName())
                                                  .sbomUrl(sbomArtifactResponse.getSbom().getUrl())
-                                                 .stepExecutionId(sbomArtifactResponse.getStepExecutionId())
+                                                 .stepExecutionId(stepExecutionId)
                                                  .build())
                                        .build());
   }

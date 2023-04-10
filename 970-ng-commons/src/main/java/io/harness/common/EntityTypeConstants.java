@@ -90,11 +90,14 @@ public interface EntityTypeConstants {
   String BURP = "Burp";
   String CHECKMARX = "Checkmarx";
   String CLAIR = "Clair";
+  String CODEQL = "CodeQL";
   String DATA_THEOREM = "DataTheorem";
   String DOCKER_CONTENT_TRUST = "DockerContentTrust";
   String CUSTOM_INGEST = "CustomIngest";
   String EXTERNAL = "External";
   String FORTIFY_ON_DEMAND = "FortifyOnDemand";
+  String FOSSA = "Fossa";
+  String GIT_LEAKS = "GitLeaks";
   String GRYPE = "Grype";
   String JFROG_XRAY = "JfrogXray";
   String MEND = "Mend";
@@ -209,6 +212,8 @@ public interface EntityTypeConstants {
   String GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC = "DeployCloudFunctionWithNoTraffic";
   String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT = "CloudFunctionTrafficShift";
   String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = "CloudFunctionRollback";
+  String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY = "DeployCloudFunctionGenOne";
+  String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK = "RollbackCloudFunctionGenOne";
 
   String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
   String TAS_ROLLING_ROLLBACK = "TasRollingRollback";
@@ -228,4 +233,5 @@ public interface EntityTypeConstants {
   String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
   String CD_SSCA_ORCHESTRATION = "CdSscaOrchestration";
   String TAS_ROUTE_MAPPING = "TasRouteMapping";
+  String BACKSTAGE_ENVIRONMENT_VARIABLE = "BackstageEnvironmentVariable";
 }

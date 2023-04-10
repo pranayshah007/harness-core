@@ -655,13 +655,16 @@ public class StateMachineExecutor implements StateInspectionListener {
 
       handleResponse(context, executionResponse);
     } catch (StateExecutionInstanceUpdateException exception) {
-      log.error("Exception occurred while updating state execution instance : {}", exception);
+      log.error(
+          String.format("Exception occurred while updating state execution instance : %s", stateExecutionInstance),
+          exception);
     } catch (WingsException exception) {
       ex = exception;
-      log.error("Exception occurred while starting state execution : {}", exception);
+      log.error(
+          String.format("Exception occurred while starting state execution : %s", stateExecutionInstance), exception);
     } catch (Exception exception) {
       ex = new WingsException(exception);
-      log.error("Exception occurred while starting state execution : {}", ex);
+      log.error(String.format("Exception occurred while starting state execution : %s", stateExecutionInstance), ex);
     }
 
     if (ex != null) {
@@ -1751,15 +1754,8 @@ public class StateMachineExecutor implements StateInspectionListener {
           ? context.getStateExecutionData().getErrorMsg()
           : errorMsgBuilder.toString();
 
-      // NOT CHANGED TO REDUCE THE BLAST RATIO.
-      // WHEN MAPPING FAIL HERE IT HANGS THE ABORT OPERATION, ALREADY SILENCED BECAUSE THAT.
-      try {
-        if (stateExecutionInstance.getStateParams() != null) {
-          MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
-        }
-      } catch (org.modelmapper.MappingException e) {
-        log.error("Got model mapping exception during mapping the stateParams {}",
-            stateExecutionInstance.getStateParams(), e);
+      if (stateExecutionInstance.getStateParams() != null) {
+        mapObject(stateExecutionInstance.getStateParams(), currentState, context.getAccountId());
       }
 
       currentState.handleAbortEvent(context);

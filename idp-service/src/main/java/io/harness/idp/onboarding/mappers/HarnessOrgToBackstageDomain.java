@@ -16,22 +16,33 @@ import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
 import io.harness.ng.core.dto.OrganizationDTO;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @OwnedBy(HarnessTeam.IDP)
 public class HarnessOrgToBackstageDomain
     implements HarnessEntityToBackstageEntity<OrganizationDTO, BackstageCatalogDomainEntity> {
+  public final List<String> entityNamesSeenSoFar = new ArrayList<>();
+
   @Override
   public BackstageCatalogDomainEntity map(OrganizationDTO organizationDTO) {
     BackstageCatalogDomainEntity backstageCatalogDomainEntity = new BackstageCatalogDomainEntity();
 
     BackstageCatalogEntity.Metadata metadata = new BackstageCatalogEntity.Metadata();
-    metadata.setMetadata(organizationDTO.getIdentifier(), organizationDTO.getIdentifier(), organizationDTO.getName(),
-        organizationDTO.getDescription(), new ArrayList<>(organizationDTO.getTags().values()), null);
+    metadata.setMetadata(organizationDTO.getIdentifier(), organizationDTO.getIdentifier(),
+        truncateName(organizationDTO.getIdentifier()), organizationDTO.getDescription(),
+        getTags(organizationDTO.getTags()), null);
     backstageCatalogDomainEntity.setMetadata(metadata);
 
     BackstageCatalogDomainEntity.Spec spec = new BackstageCatalogDomainEntity.Spec();
     spec.setOwner(ENTITY_UNKNOWN_OWNER);
     backstageCatalogDomainEntity.setSpec(spec);
+
+    if (entityNamesSeenSoFar.contains(organizationDTO.getIdentifier())) {
+      backstageCatalogDomainEntity.getMetadata().setName(
+          truncateName(backstageCatalogDomainEntity.getMetadata().getAbsoluteIdentifier()));
+    }
+
+    entityNamesSeenSoFar.add(organizationDTO.getIdentifier());
 
     return backstageCatalogDomainEntity;
   }

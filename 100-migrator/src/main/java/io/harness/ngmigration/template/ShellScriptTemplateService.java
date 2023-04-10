@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.template;
 
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
+
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
@@ -80,6 +82,7 @@ public class ShellScriptTemplateService implements NgTemplateService {
     }
     Map<String, Object> templateSpec =
         ImmutableMap.<String, Object>builder()
+            .put("delegateSelectors", RUNTIME_INPUT)
             .put("onDelegate", true)
             .put("source",
                 ImmutableMap.of(

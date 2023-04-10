@@ -72,6 +72,7 @@ import io.harness.secretmanagerclient.WinRmAuthScheme;
 import io.harness.secretmanagerclient.services.SshKeySpecDTOHelper;
 import io.harness.secretmanagerclient.services.WinRmCredentialsSpecDTOHelper;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -97,6 +98,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
   private TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   private TransactionTemplate transactionTemplate;
   private AccessControlClient accessControlClient;
+  private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
@@ -128,12 +130,13 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
     transactionTemplate = mock(TransactionTemplate.class);
     taskSetupAbstractionHelper = new TaskSetupAbstractionHelper();
     accessControlClient = mock(AccessControlClient.class);
+    ngFeatureFlagHelperService = mock(NGFeatureFlagHelperService.class);
     SshKeySpecDTOHelper sshKeySpecDTOHelper = mock(SshKeySpecDTOHelper.class);
     WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper = mock(WinRmCredentialsSpecDTOHelper.class);
 
     secretServiceV2 = new NGSecretServiceV2Impl(secretRepository, delegateGrpcClientWrapper, sshKeySpecDTOHelper,
         ngSecretActivityService, outboxService, transactionTemplate, taskSetupAbstractionHelper,
-        winRmCredentialsSpecDTOHelper, accessControlClient);
+        winRmCredentialsSpecDTOHelper, accessControlClient, ngFeatureFlagHelperService);
     secretServiceV2Spy = spy(secretServiceV2);
     secretForceDeleteEventArgumentCaptor = ArgumentCaptor.forClass(SecretForceDeleteEvent.class);
     secretDeleteEventArgumentCaptor = ArgumentCaptor.forClass(SecretDeleteEvent.class);
@@ -486,7 +489,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
     Secret secret3 =
         Secret.builder().name("name3").type(SecretType.SecretText).identifier("id3").createdAt((long) 3).build();
     Page<Secret> paginatedResult = secretServiceV2.getPaginatedResult(Arrays.asList(secret1, secret2, secret3), 1, 2);
-    assertThat(paginatedResult.getNumberOfElements()).isEqualTo(1);
-    assertThat(paginatedResult.getContent()).isEqualTo(Arrays.asList(secret1));
+    assertThat(paginatedResult.getContent().size()).isEqualTo(1);
+    assertThat(paginatedResult.getContent()).isEqualTo(Arrays.asList(secret3));
   }
 }

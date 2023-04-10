@@ -9,6 +9,7 @@ package io.harness.cdng.manifest.resources;
 
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.convertBase64UuidToCanonicalForm;
 import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
@@ -20,18 +21,29 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.k8s.K8sEntityHelper;
+import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeMapper;
 import io.harness.cdng.manifest.resources.dtos.HelmChartResponseDTO;
 import io.harness.cdng.manifest.resources.dtos.HelmManifestInternalDTO;
+import io.harness.cdng.manifest.yaml.AzureRepoStore;
+import io.harness.cdng.manifest.yaml.BitbucketStore;
+import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
+import io.harness.cdng.manifest.yaml.GitLabStore;
+import io.harness.cdng.manifest.yaml.GitStore;
+import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.HttpStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.OciHelmChartConfig;
+import io.harness.cdng.manifest.yaml.OciHelmChartStoreGenericConfig;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
+import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfig;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigType;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigWrapper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
-import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -54,11 +66,11 @@ import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
-import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.service.DelegateGrpcClientWrapper;
@@ -89,14 +101,12 @@ public class HelmChartServiceImpl implements HelmChartService {
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private ExceptionManager exceptionManager;
-  @Inject DelegateServiceGrpcClient delegateServiceGrpcClient;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
-  private static final int PAGE_SIZE = 20;
+  private static final int PAGE_SIZE = 100000;
 
-  @Override
-  public HelmChartResponseDTO getHelmChartVersionDetails(String accountId, String orgId, String projectId,
-      String serviceRef, String manifestPath, String connectorId, String chartName, String region, String bucketName,
-      String folderPath, String lastTag) {
+  private HelmChartResponseDTO getHelmChartVersionDetails(String accountId, String orgId, String projectId,
+      HelmChartManifestOutcome helmChartManifestOutcome, String connectorId, String chartName, String region,
+      String bucketName, String folderPath, String lastTag) {
     NGAccess ngAccess =
         BaseNGAccess.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build();
 
@@ -111,10 +121,6 @@ public class HelmChartServiceImpl implements HelmChartService {
     }
     abstractions.put("ng", "true");
     abstractions.put("owner", ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier());
-
-    HelmManifestInternalDTO helmChartManifest =
-        locateManifestInService(accountId, orgId, projectId, serviceRef, manifestPath);
-    HelmChartManifestOutcome helmChartManifestOutcome = getHelmChartManifestOutcome(helmChartManifest);
 
     DelegateTaskRequest delegateTaskRequest = null;
     String taskTypeName = null;
@@ -168,7 +174,7 @@ public class HelmChartServiceImpl implements HelmChartService {
               .helmChartManifestDelegateConfig(helmChartManifestDelegateConfig)
               .build();
 
-      taskTypeName = NGTaskType.HELM_FETCH_CHART_VERSIONS_TASK_NG.name();
+      taskTypeName = TaskType.HELM_FETCH_CHART_VERSIONS_TASK_NG.name();
       delegateTaskRequest = DelegateTaskRequest.builder()
                                 .accountId(ngAccess.getAccountIdentifier())
                                 .taskType(taskTypeName)
@@ -204,6 +210,133 @@ public class HelmChartServiceImpl implements HelmChartService {
 
       return HelmChartResponseDTO.builder().helmChartVersions(chartVersions).build();
     }
+  }
+
+  private StoreConfig getHelmChartStoreConfig(
+      String storeType, String connectorId, String region, String bucketName, String folderPath) {
+    StoreConfig storeConfig;
+
+    if (!ManifestStoreType.HelmAllRepo.contains(storeType)) {
+      throw new InvalidRequestException(
+          format("HelmChart store type not recognized! [%s] is not in list of approved store types [%s]", storeType,
+              ManifestStoreType.HelmAllRepo));
+    }
+
+    switch (storeType) {
+      case ManifestStoreType.HTTP: {
+        storeConfig = HttpStoreConfig.builder().connectorRef(ParameterField.createValueField(connectorId)).build();
+        break;
+      }
+      case ManifestStoreType.GCS: {
+        if (isEmpty(bucketName)) {
+          throw new InvalidRequestException("query param bucketName: must not be null");
+        }
+
+        if (isEmpty(folderPath)) {
+          throw new InvalidRequestException("query param folderPath: must not be null");
+        }
+
+        storeConfig = GcsStoreConfig.builder()
+                          .connectorRef(ParameterField.createValueField(connectorId))
+                          .bucketName(ParameterField.createValueField(bucketName))
+                          .folderPath(ParameterField.createValueField(folderPath))
+                          .build();
+        break;
+      }
+      case ManifestStoreType.S3: {
+        if (isEmpty(region)) {
+          throw new InvalidRequestException("query param region: must not be null");
+        }
+
+        if (isEmpty(bucketName)) {
+          throw new InvalidRequestException("query param bucketName: must not be null");
+        }
+
+        if (isEmpty(folderPath)) {
+          throw new InvalidRequestException("query param folderPath: must not be null");
+        }
+        storeConfig = S3StoreConfig.builder()
+                          .connectorRef(ParameterField.createValueField(connectorId))
+                          .bucketName(ParameterField.createValueField(bucketName))
+                          .region(ParameterField.createValueField(region))
+                          .folderPath(ParameterField.createValueField(folderPath))
+                          .build();
+        break;
+      }
+      case ManifestStoreType.GIT: {
+        storeConfig = GitStore.builder().connectorRef(ParameterField.createValueField(connectorId)).build();
+        break;
+      }
+      case ManifestStoreType.GITHUB: {
+        storeConfig = GithubStore.builder().connectorRef(ParameterField.createValueField(connectorId)).build();
+        break;
+      }
+      case ManifestStoreType.GITLAB: {
+        storeConfig = GitLabStore.builder().connectorRef(ParameterField.createValueField(connectorId)).build();
+        break;
+      }
+      case ManifestStoreType.BITBUCKET: {
+        storeConfig = BitbucketStore.builder().connectorRef(ParameterField.createValueField(connectorId)).build();
+        break;
+      }
+      case ManifestStoreType.OCI: {
+        OciHelmChartStoreConfig ociHelmChartStoreConfig =
+            OciHelmChartStoreGenericConfig.builder().connectorRef(ParameterField.createValueField(connectorId)).build();
+        OciHelmChartStoreConfigWrapper ociHelmChartStoreConfigWrapper = OciHelmChartStoreConfigWrapper.builder()
+                                                                            .type(OciHelmChartStoreConfigType.GENERIC)
+                                                                            .spec(ociHelmChartStoreConfig)
+                                                                            .build();
+        storeConfig = OciHelmChartConfig.builder()
+                          .config(ParameterField.createValueField(ociHelmChartStoreConfigWrapper))
+                          .build();
+        break;
+      }
+      case ManifestStoreType.CUSTOM_REMOTE: {
+        storeConfig = CustomRemoteStoreConfig.builder().build();
+        break;
+      }
+      case ManifestStoreType.AZURE_REPO: {
+        storeConfig = AzureRepoStore.builder().connectorRef(ParameterField.createValueField(connectorId)).build();
+        break;
+      }
+      case ManifestStoreType.HARNESS: {
+        storeConfig = HarnessStore.builder().build();
+        break;
+      }
+      default:
+        throw new InvalidRequestException(format("HelmChart store type not recognized [%s]", storeType));
+    }
+
+    return storeConfig;
+  }
+
+  @Override
+  public HelmChartResponseDTO getHelmChartVersionDetails(String accountId, String orgId, String projectId,
+      String connectorId, String chartName, String region, String bucketName, String folderPath, String lastTag,
+      String storeType, String helmVersion) {
+    StoreConfig storeConfig = getHelmChartStoreConfig(storeType, connectorId, region, bucketName, folderPath);
+
+    HelmChartManifestOutcome helmChartManifestOutcome = HelmChartManifestOutcome.builder()
+                                                            .chartName(ParameterField.createValueField(chartName))
+                                                            .chartVersion(ParameterField.<String>builder().build())
+                                                            .helmVersion(HelmVersion.fromString(helmVersion))
+                                                            .store(storeConfig)
+                                                            .build();
+
+    return getHelmChartVersionDetails(accountId, orgId, projectId, helmChartManifestOutcome, connectorId, chartName,
+        region, bucketName, folderPath, lastTag);
+  }
+
+  @Override
+  public HelmChartResponseDTO getHelmChartVersionDetailsV2(String accountId, String orgId, String projectId,
+      String serviceRef, String manifestPath, String connectorId, String chartName, String region, String bucketName,
+      String folderPath, String lastTag) {
+    HelmManifestInternalDTO helmChartManifest =
+        locateManifestInService(accountId, orgId, projectId, serviceRef, manifestPath);
+    HelmChartManifestOutcome helmChartManifestOutcome = getHelmChartManifestOutcome(helmChartManifest);
+
+    return getHelmChartVersionDetails(accountId, orgId, projectId, helmChartManifestOutcome, connectorId, chartName,
+        region, bucketName, folderPath, lastTag);
   }
 
   @Override

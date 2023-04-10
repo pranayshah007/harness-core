@@ -7,14 +7,14 @@
 
 package io.harness.idp.events.eventlisteners.factory;
 
-import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
-import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SECRET_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.*;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.events.eventlisteners.messagehandler.ConnectorMessageHandler;
 import io.harness.idp.events.eventlisteners.messagehandler.EventMessageHandler;
 import io.harness.idp.events.eventlisteners.messagehandler.SecretMessageHandler;
+import io.harness.idp.events.eventlisteners.messagehandler.UserMessageHandler;
 
 import lombok.AllArgsConstructor;
 
@@ -23,6 +23,7 @@ import lombok.AllArgsConstructor;
 public class EventMessageHandlerFactory {
   SecretMessageHandler secretMessageHandler;
   ConnectorMessageHandler gitIntegrationConnectorMessageHandler;
+  UserMessageHandler userMessageHandler;
 
   public EventMessageHandler getEventMessageHandler(String entity) {
     switch (entity) {
@@ -30,6 +31,9 @@ public class EventMessageHandlerFactory {
         return secretMessageHandler;
       case CONNECTOR_ENTITY:
         return gitIntegrationConnectorMessageHandler;
+      case USER_ENTITY:
+      case USER_GROUP:
+        return userMessageHandler;
       default:
         return null;
     }

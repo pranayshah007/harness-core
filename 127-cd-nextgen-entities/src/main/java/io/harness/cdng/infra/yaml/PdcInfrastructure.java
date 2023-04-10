@@ -8,7 +8,6 @@
 package io.harness.cdng.infra.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -19,7 +18,6 @@ import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.PdcInfraMapping;
 import io.harness.cdng.infra.beans.PdcInfraMapping.PdcInfraMappingBuilder;
 import io.harness.cdng.infra.beans.host.HostFilter;
-import io.harness.common.ParameterFieldHelper;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -39,18 +37,22 @@ import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import lombok.Builder;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Value;
+import lombok.experimental.SuperBuilder;
 import lombok.experimental.Wither;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(CDP)
 @Value
-@Builder
+@SuperBuilder
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @JsonTypeName(InfrastructureKind.PDC)
-@OneOfSet(fields = {"hosts", "connectorRef", "hostObjectArray"},
-    requiredFieldNames = {"hosts", "connectorRef", "hostObjectArray"})
+@OneOfSet(fields = {"hosts", "connectorRef", "hostArrayPath"},
+    requiredFieldNames = {"hosts", "connectorRef", "hostArrayPath"})
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("PdcInfrastructure")
 @RecasterAlias("io.harness.cdng.infra.yaml.PdcInfrastructure")
@@ -72,15 +74,7 @@ public class PdcInfrastructure extends InfrastructureDetailsAbstract implements 
   @SkipAutoEvaluation
   ParameterField<List<String>> hosts;
 
-  @YamlSchemaTypes({string})
-  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
-  @Wither
-  ParameterField<Boolean> dynamicallyProvisioned;
-
-  @YamlSchemaTypes({expression})
-  @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH)
-  @Wither
-  ParameterField<String> hostObjectArray;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> hostArrayPath;
 
   @YamlSchemaTypes({string})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_MAP_CLASSPATH)
@@ -116,11 +110,8 @@ public class PdcInfrastructure extends InfrastructureDetailsAbstract implements 
     if (hostFilter != null) {
       builder.hostFilter(hostFilter);
     }
-    if (dynamicallyProvisioned != null) {
-      builder.dynamicallyProvisioned(dynamicallyProvisioned.getValue());
-    }
-    if (hostObjectArray != null) {
-      builder.hostObjectArray(hostObjectArray.getValue());
+    if (hostArrayPath != null) {
+      builder.hostObjectArray(hostArrayPath.getValue());
     }
     if (hostAttributes != null) {
       builder.hostAttributes(hostAttributes.getValue());
@@ -148,10 +139,6 @@ public class PdcInfrastructure extends InfrastructureDetailsAbstract implements 
     }
   }
 
-  public boolean isDynamicallyProvisioned() {
-    return ParameterFieldHelper.getBooleanParameterFieldValue(dynamicallyProvisioned);
-  }
-
   @Override
   public PdcInfrastructure applyOverrides(Infrastructure overrideConfig) {
     PdcInfrastructure config = (PdcInfrastructure) overrideConfig;
@@ -171,11 +158,11 @@ public class PdcInfrastructure extends InfrastructureDetailsAbstract implements 
     if (!ParameterField.isNull(config.getDelegateSelectors())) {
       resultantInfra = resultantInfra.withDelegateSelectors(config.getDelegateSelectors());
     }
-    if (!ParameterField.isNull(config.getDynamicallyProvisioned())) {
-      resultantInfra = resultantInfra.withDynamicallyProvisioned(config.getDynamicallyProvisioned());
+    if (!ParameterField.isNull(config.getProvisioner())) {
+      resultantInfra.setProvisioner(config.getProvisioner());
     }
-    if (!ParameterField.isNull(config.getHostObjectArray())) {
-      resultantInfra = resultantInfra.withHostObjectArray(config.getHostObjectArray());
+    if (!ParameterField.isNull(config.getHostArrayPath())) {
+      resultantInfra = resultantInfra.withHostArrayPath(config.getHostArrayPath());
     }
     if (!ParameterField.isNull(config.getHostAttributes())) {
       resultantInfra = resultantInfra.withHostAttributes(config.getHostAttributes());
