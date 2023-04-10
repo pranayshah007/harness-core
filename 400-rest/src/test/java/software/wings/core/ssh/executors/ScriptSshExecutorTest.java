@@ -10,8 +10,6 @@ package software.wings.core.ssh.executors;
 import static io.harness.rule.OwnerRule.AGORODETKI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -24,13 +22,14 @@ import io.harness.shell.SshSessionConfig;
 
 import software.wings.delegatetasks.DelegateFileManager;
 
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ScriptSshExecutorTest extends CategoryTest {
@@ -51,15 +50,14 @@ public class ScriptSshExecutorTest extends CategoryTest {
   @Test
   @Owner(developers = AGORODETKI)
   @Category(UnitTests.class)
-  public void shouldRecognizeEnvVarsInPathAndReplaceWithValuesExtractedFromSystem() {
-    try (MockedStatic<System> aStatic = mockStatic(System.class)) {
-      doReturn(ENV_VAR_VALUE).when(System.getenv("Path"));
-      doReturn(ENV_VAR_VALUE).when(System.getenv("HOME"));
+  public void shouldRecognizeEnvVarsInPathAndReplaceWithValuesExtractedFromSystem() throws Exception {
+    Map<String, String> envVars = Map.ofEntries(Map.entry("Path", ENV_VAR_VALUE), Map.entry("HOME", ENV_VAR_VALUE));
+    new EnvironmentVariables(envVars).execute(() -> {
       assertThat(scriptSshExecutor.resolveEnvVarsInPath("$HOME")).isEqualTo(ENV_VAR_VALUE);
       assertThat(scriptSshExecutor.resolveEnvVarsInPath("$HOME/abc/$Path"))
           .isEqualTo(ENV_VAR_VALUE + "/abc" + ENV_VAR_VALUE);
       assertThat(scriptSshExecutor.resolveEnvVarsInPath("$HOME/work$Path/abc"))
           .isEqualTo(ENV_VAR_VALUE + "/work" + ENV_VAR_VALUE + "/abc");
-    }
+    });
   }
 }

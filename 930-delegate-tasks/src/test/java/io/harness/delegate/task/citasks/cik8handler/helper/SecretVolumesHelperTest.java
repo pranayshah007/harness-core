@@ -34,8 +34,8 @@ import org.mockito.InjectMocks;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 
 @RunWith(MockitoJUnitRunner.class)
 @Slf4j
@@ -48,7 +48,6 @@ public class SecretVolumesHelperTest extends CategoryTest {
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
-    mockStatic(System.class);
     tempFile1 = temporaryFolder.newFile();
     tempFile2 = temporaryFolder.newFile();
   }
@@ -68,10 +67,11 @@ public class SecretVolumesHelperTest extends CategoryTest {
   @Owner(developers = VISTAAR)
   @Category(UnitTests.class)
   public void testGetSecretVolumeMappingsNotConfigured() {
-    MockedStatic<SystemWrapper> mockStatic = mockStatic(SystemWrapper.class);
-    mockStatic.when(() -> SystemWrapper.getenv(Mockito.eq(CI_MOUNT_VOLUMES))).thenReturn("");
-    Map<String, List<String>> ret = secretVolumesHelper.getSecretVolumeMappings();
-    assertThat(isEmpty(ret));
+    try (MockedStatic<SystemWrapper> mockStatic = mockStatic(SystemWrapper.class)) {
+      mockStatic.when(() -> SystemWrapper.getenv(Mockito.eq(CI_MOUNT_VOLUMES))).thenReturn("");
+      Map<String, List<String>> ret = secretVolumesHelper.getSecretVolumeMappings();
+      assertThat(isEmpty(ret));
+    }
   }
 
   @Test

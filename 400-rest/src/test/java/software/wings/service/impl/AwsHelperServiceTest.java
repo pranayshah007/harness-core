@@ -61,6 +61,7 @@ import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.sm.states.ManagerExecutionLogCallback;
 
+import com.amazonaws.SDKGlobalConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.WebIdentityTokenCredentialsProvider;
 import com.amazonaws.client.builder.AwsClientBuilder;
@@ -92,6 +93,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.joor.Reflect;
@@ -104,6 +106,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 @OwnedBy(CDP)
 public class AwsHelperServiceTest extends WingsBaseTest {
@@ -474,24 +477,25 @@ public class AwsHelperServiceTest extends WingsBaseTest {
   @Test(expected = com.amazonaws.SdkClientException.class)
   @Owner(developers = RAGHVENDRA)
   @Category(UnitTests.class)
-  public void testAttachCredentialsAndBackoffPolicyWithIRSA() {
-    /*PowerMockito.mockStatic(System.class);
-    when(System.getenv(SDKGlobalConfiguration.AWS_ROLE_ARN_ENV_VAR)).thenAnswer(i -> "abcd");
-    when(System.getenv(SDKGlobalConfiguration.AWS_WEB_IDENTITY_ENV_VAR)).thenAnswer(i -> "/jkj");*/
-    AwsInternalConfig awsInternalConfig = mock(AwsInternalConfig.class);
-    when(awsInternalConfig.isUseEc2IamCredentials()).thenReturn(false);
-    when(awsInternalConfig.isUseIRSA()).thenReturn(true);
-    when(awsInternalConfig.isAssumeCrossAccountRole()).thenReturn(false);
-    AwsClientBuilder awsClientBuilder = AmazonEC2ClientBuilder.standard().withRegion("us-east-1");
-    doCallRealMethod()
-        .when(awsApiHelperService)
-        .attachCredentialsAndBackoffPolicy(eq(awsClientBuilder), eq(awsInternalConfig));
-    doCallRealMethod().when(awsApiHelperService).getAwsCredentialsProvider(eq(awsInternalConfig));
+  public void testAttachCredentialsAndBackoffPolicyWithIRSA() throws Exception {
+    Map<String, String> envVarsMap = Map.ofEntries(Map.entry(SDKGlobalConfiguration.AWS_ROLE_ARN_ENV_VAR, "abcd"),
+        Map.entry(SDKGlobalConfiguration.AWS_WEB_IDENTITY_ENV_VAR, "/jkj"));
+    new EnvironmentVariables(envVarsMap).execute(() -> {
+      AwsInternalConfig awsInternalConfig = mock(AwsInternalConfig.class);
+      when(awsInternalConfig.isUseEc2IamCredentials()).thenReturn(false);
+      when(awsInternalConfig.isUseIRSA()).thenReturn(true);
+      when(awsInternalConfig.isAssumeCrossAccountRole()).thenReturn(false);
+      AwsClientBuilder awsClientBuilder = AmazonEC2ClientBuilder.standard().withRegion("us-east-1");
+      doCallRealMethod()
+          .when(awsApiHelperService)
+          .attachCredentialsAndBackoffPolicy(eq(awsClientBuilder), eq(awsInternalConfig));
+      doCallRealMethod().when(awsApiHelperService).getAwsCredentialsProvider(eq(awsInternalConfig));
 
-    awsApiHelperService.attachCredentialsAndBackoffPolicy(awsClientBuilder, awsInternalConfig);
+      awsApiHelperService.attachCredentialsAndBackoffPolicy(awsClientBuilder, awsInternalConfig);
 
-    assertThat(awsClientBuilder.getCredentials()).isInstanceOf(WebIdentityTokenCredentialsProvider.class);
-    awsClientBuilder.getCredentials().getCredentials().getAWSSecretKey();
+      assertThat(awsClientBuilder.getCredentials()).isInstanceOf(WebIdentityTokenCredentialsProvider.class);
+      awsClientBuilder.getCredentials().getCredentials().getAWSSecretKey();
+    });
   }
 
   @Test

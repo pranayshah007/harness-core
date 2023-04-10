@@ -2014,6 +2014,7 @@ test_targets = run_package_tests(
         "@maven//:software_amazon_ion_ion_java",
         "@maven//:stax_stax",
         "@maven//:stax_stax_api",
+        "@maven//:uk_org_webcompere_system_stubs_core",
         "@maven//:wsdl4j_wsdl4j",
         "@maven//:xerces_xercesImpl",
         "@maven//:xml_apis_xml_apis",
