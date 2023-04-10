@@ -356,7 +356,8 @@ public class GkeClusterHelper {
         String gcpKeyFilePath =
             Paths.get(workingDirectory, K8sConstants.GCP_JSON_KEY_FILE_NAME).normalize().toAbsolutePath().toString();
         FileIo.writeUtf8StringToFile(gcpKeyFilePath, String.valueOf(serviceAccountKeyFileContent));
-        envVariableList.add(new EnvVariable(GOOGLE_APPLICATION_CREDENTIALS, gcpKeyFilePath));
+        envVariableList.add(new EnvVariable(GOOGLE_APPLICATION_CREDENTIALS,
+            "/opt/harness-delegate/.config/gcloud/application_default_credentials.json"));
         envVariableList.add(new EnvVariable(USE_GKE_GCLOUD_AUTH_PLUGIN, "true"));
       }
     } catch (IOException ex) {
