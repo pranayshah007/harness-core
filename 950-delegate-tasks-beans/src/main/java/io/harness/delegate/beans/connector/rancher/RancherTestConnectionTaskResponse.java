@@ -16,7 +16,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class RancherConnectionTaskResponse implements DelegateResponseData {
+public class RancherTestConnectionTaskResponse implements DelegateResponseData {
   private ConnectorValidationResult connectorValidationResult;
   private DelegateMetaInfo delegateMetaInfo;
 }

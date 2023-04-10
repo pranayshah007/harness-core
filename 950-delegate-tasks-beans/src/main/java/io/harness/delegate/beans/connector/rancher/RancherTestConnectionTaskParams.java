@@ -7,10 +7,10 @@
 
 package io.harness.delegate.beans.connector.rancher;
 
-import io.harness.delegate.beans.connector.ConnectorTaskParams;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
-import io.harness.delegate.task.TaskParameters;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -20,13 +20,18 @@ import lombok.experimental.SuperBuilder;
 
 @Data
 @SuperBuilder
-public class RancherConnectionTaskParams
-    extends ConnectorTaskParams implements TaskParameters, ExecutionCapabilityDemander {
-  private RancherConnectorDTO clusterConfig;
-  private List<EncryptedDataDetail> encryptionDetails;
+public class RancherTestConnectionTaskParams implements ConnectorValidationParams, ExecutionCapabilityDemander {
+  RancherConnectorDTO rancherConnectorDTO;
+  List<EncryptedDataDetail> encryptedDataDetails;
+  String connectorName;
+
+  @Override
+  public ConnectorType getConnectorType() {
+    return ConnectorType.RANCHER;
+  }
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    return RancherTaskCapabilityHelper.fetchRequiredExecutionCapabilities(clusterConfig, maskingEvaluator);
+    return RancherTaskCapabilityHelper.fetchRequiredExecutionCapabilities(rancherConnectorDTO, maskingEvaluator);
   }
 }

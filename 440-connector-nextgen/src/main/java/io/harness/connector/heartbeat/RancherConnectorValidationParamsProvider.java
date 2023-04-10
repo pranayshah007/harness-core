@@ -15,7 +15,7 @@ import io.harness.connector.helper.EncryptionHelper;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.rancher.RancherConnectorDTO;
-import io.harness.delegate.beans.connector.rancher.RancherValidationParams;
+import io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import com.google.inject.Inject;
@@ -36,8 +36,8 @@ public class RancherConnectorValidationParamsProvider implements ConnectorValida
     }
     final List<EncryptedDataDetail> encryptionDetail =
         encryptionHelper.getEncryptionDetail(decryptableEntity, accountIdentifier, orgIdentifier, projectIdentifier);
-    return RancherValidationParams.builder()
-        .rancherClusterConfig((RancherConnectorDTO) connectorConfigDTO)
+    return RancherTestConnectionTaskParams.builder()
+        .rancherConnectorDTO((RancherConnectorDTO) connectorConfigDTO)
         .connectorName(connectorName)
         .encryptedDataDetails(encryptionDetail)
         .build();

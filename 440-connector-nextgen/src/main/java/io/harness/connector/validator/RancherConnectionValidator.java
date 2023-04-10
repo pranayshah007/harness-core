@@ -12,9 +12,9 @@ import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.validator.scmValidators.AbstractKubernetesConnectorValidator;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
-import io.harness.delegate.beans.connector.rancher.RancherConnectionTaskParams;
-import io.harness.delegate.beans.connector.rancher.RancherConnectionTaskResponse;
 import io.harness.delegate.beans.connector.rancher.RancherConnectorDTO;
+import io.harness.delegate.beans.connector.rancher.RancherTaskParams;
+import io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskResponse;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -26,12 +26,12 @@ public class RancherConnectionValidator extends AbstractKubernetesConnectorValid
   @Override
   public <T extends ConnectorConfigDTO> TaskParameters getTaskParameters(
       T connectorConfig, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    RancherConnectorDTO clusterConfig = (RancherConnectorDTO) connectorConfig;
+    RancherConnectorDTO rancherConnectorDTO = (RancherConnectorDTO) connectorConfig;
     List<EncryptedDataDetail> encryptedDataDetails =
-        super.fetchEncryptionDetailsList(clusterConfig, accountIdentifier, orgIdentifier, projectIdentifier);
+        super.fetchEncryptionDetailsList(rancherConnectorDTO, accountIdentifier, orgIdentifier, projectIdentifier);
 
-    return RancherConnectionTaskParams.builder()
-        .clusterConfig(clusterConfig)
+    return RancherTaskParams.builder()
+        .rancherConnectorDTO(rancherConnectorDTO)
         .encryptionDetails(encryptedDataDetails)
         .build();
   }
@@ -46,7 +46,7 @@ public class RancherConnectionValidator extends AbstractKubernetesConnectorValid
       String orgIdentifier, String projectIdentifier, String identifier) {
     DelegateResponseData responseData =
         super.validateConnector(connectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-    RancherConnectionTaskResponse taskResponse = (RancherConnectionTaskResponse) responseData;
+    RancherTestConnectionTaskResponse taskResponse = (RancherTestConnectionTaskResponse) responseData;
     return taskResponse.getConnectorValidationResult();
   }
 

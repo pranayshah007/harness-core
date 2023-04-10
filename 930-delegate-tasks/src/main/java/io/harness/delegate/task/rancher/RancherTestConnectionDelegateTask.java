@@ -9,13 +9,23 @@ package io.harness.delegate.task.rancher;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.task.rancher.RancherValidationHandler;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.beans.connector.rancher.RancherTaskParams;
+import io.harness.delegate.beans.connector.rancher.RancherTaskType;
+import io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.exception.InvalidRequestException;
+import io.harness.security.encryption.EncryptedDataDetail;
 
+import com.google.inject.Inject;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +34,7 @@ import org.apache.commons.lang3.NotImplementedException;
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class RancherTestConnectionDelegateTask extends AbstractDelegateRunnableTask {
+  @Inject private RancherValidationHandler rancherValidationHandler;
   public RancherTestConnectionDelegateTask(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
       BooleanSupplier preExecute) {
@@ -37,7 +48,25 @@ public class RancherTestConnectionDelegateTask extends AbstractDelegateRunnableT
 
   @Override
   public DelegateResponseData run(TaskParameters parameters) {
-    // TODO implement connection task here
-    return null;
+    final RancherTaskParams rancherTaskParams = (RancherTaskParams) parameters;
+    final RancherTaskType rancherTaskType = rancherTaskParams.getRancherTaskType();
+    if (Objects.isNull(rancherTaskType)) {
+      throw new InvalidRequestException("Task type not provided");
+    }
+
+    final List<EncryptedDataDetail> encryptionDetails = rancherTaskParams.getEncryptionDetails();
+    if (rancherTaskType == RancherTaskType.VALIDATE) {
+      return handleValidateTask(rancherTaskParams, encryptionDetails);
+    } else {
+      throw new InvalidRequestException("Task type not identified");
+    }
+  }
+
+  public DelegateResponseData handleValidateTask(
+      RancherTaskParams rancherTaskParams, List<EncryptedDataDetail> encryptionDetails) {
+    ConnectorValidationResult connectorValidationResult =
+        rancherValidationHandler.validate(rancherTaskParams, encryptionDetails);
+    connectorValidationResult.setDelegateId(getDelegateId());
+    return RancherTestConnectionTaskResponse.builder().connectorValidationResult(connectorValidationResult).build();
   }
 }
