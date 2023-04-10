@@ -2618,6 +2618,13 @@
 980100:software.wings.beans.infrastructure.instance.info.K8sPodInfo
 980101:software.wings.beans.infrastructure.instance.info.K8sContainerInfo
 1010101:io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse
+1800003:io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionGenOneDeployRequest
+1800004:io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionGenOneDeployResponse
+1800005:io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionGenOnePrepareRollbackRequest
+1800006:io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionGenOnePrepareRollbackResponse
+1800007:io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionGenOneRollbackRequest
+1800008:io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionGenOneRollbackResponse
+1800009:io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceFetchType
 5731600:io.harness.aws.beans.AsgLoadBalancerConfig
 5731601:io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackRequest
 5731602:io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResponse

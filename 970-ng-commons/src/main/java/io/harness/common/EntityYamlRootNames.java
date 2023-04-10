@@ -219,6 +219,8 @@ public class EntityYamlRootNames {
   public static final String GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC = "DeployCloudFunctionWithNoTraffic";
   public static final String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT = "CloudFunctionTrafficShift";
   public static final String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = "CloudFunctionRollback";
+  public static final String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY = "DeployCloudFunctionGenOne";
+  public static final String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK = "RollbackCloudFunctionGenOne";
 
   public static final String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
   public static final String TAS_ROLLING_ROLLBACK = "TasRollingRollback";

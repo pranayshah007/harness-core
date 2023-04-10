@@ -5,13 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.googlefunctions.beans;
+package io.harness.cdng.manifest.yaml;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
-import io.harness.pms.sdk.core.data.Outcome;
+import io.harness.cdng.manifest.ManifestType;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
@@ -21,12 +21,12 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-@TypeAlias("googleFunctionPrepareRollbackOutcome")
-@JsonTypeName("googleFunctionPrepareRollbackOutcome")
-@RecasterAlias("io.harness.cdng.googlefunctions.beans.GoogleFunctionPrepareRollbackOutcome")
-public class GoogleFunctionPrepareRollbackOutcome implements Outcome, ExecutionSweepingOutput {
-  boolean isFirstDeployment;
-  String cloudRunServiceAsString;
-  String cloudFunctionAsString;
-  String manifestContent;
+@TypeAlias("googleCloudFunctionGenOneDefinitionManifestOutcome")
+@JsonTypeName(ManifestType.GoogleCloudFunctionGenOneDefinition)
+@RecasterAlias("io.harness.cdng.manifest.yaml.GoogleCloudFunctionGenOneDefinitionManifestOutcome")
+public class GoogleCloudFunctionGenOneDefinitionManifestOutcome implements ManifestOutcome {
+  String identifier;
+  String type = ManifestType.GoogleCloudFunctionGenOneDefinition;
+  StoreConfig store;
+  int order;
 }

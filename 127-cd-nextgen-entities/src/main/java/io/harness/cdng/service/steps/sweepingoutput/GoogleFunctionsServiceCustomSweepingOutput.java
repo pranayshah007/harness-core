@@ -5,28 +5,24 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.googlefunctions.beans;
+package io.harness.cdng.service.steps.sweepingoutput;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
-import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
-@OwnedBy(HarnessTeam.CDP)
+@OwnedBy(HarnessTeam.CDC)
 @Value
 @Builder
-@TypeAlias("googleFunctionPrepareRollbackOutcome")
-@JsonTypeName("googleFunctionPrepareRollbackOutcome")
-@RecasterAlias("io.harness.cdng.googlefunctions.beans.GoogleFunctionPrepareRollbackOutcome")
-public class GoogleFunctionPrepareRollbackOutcome implements Outcome, ExecutionSweepingOutput {
-  boolean isFirstDeployment;
-  String cloudRunServiceAsString;
-  String cloudFunctionAsString;
-  String manifestContent;
+@TypeAlias("googleFunctionsServiceCustomSweepingOutput")
+@JsonTypeName("googleFunctionsServiceCustomSweepingOutput")
+@RecasterAlias("io.harness.cdng.service.steps.sweepingoutput.GoogleFunctionsServiceCustomSweepingOutput")
+public class GoogleFunctionsServiceCustomSweepingOutput implements ExecutionSweepingOutput {
+  String environmentType;
 }

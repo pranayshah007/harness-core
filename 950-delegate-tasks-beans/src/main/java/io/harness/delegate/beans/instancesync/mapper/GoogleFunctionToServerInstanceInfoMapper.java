@@ -22,6 +22,10 @@ import org.apache.commons.collections.CollectionUtils;
 @UtilityClass
 @OwnedBy(HarnessTeam.CDP)
 public class GoogleFunctionToServerInstanceInfoMapper {
+  public static final String GOOGLE_FUNCTION_GEN_ONE_REVISION_NAME = "LATEST";
+  public static final String GOOGLE_FUNCTION_GEN_TWO_ENVIRONMENT_TYPE = "GEN_2";
+  public static final String GOOGLE_FUNCTION_GEN_ONE_ENVIRONMENT_TYPE = "GEN_1";
+
   public List<ServerInstanceInfo> toServerInstanceInfoList(
       GoogleFunction googleFunction, String project, String region, String infraStructureKey) {
     List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
@@ -38,6 +42,15 @@ public class GoogleFunctionToServerInstanceInfoMapper {
     return serverInstanceInfoList;
   }
 
+  public List<ServerInstanceInfo> toGenOneServerInstanceInfoList(
+      GoogleFunction googleFunction, String project, String region, String infraStructureKey) {
+    List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
+
+    serverInstanceInfoList.add(toGenOneServerInstanceInfo(googleFunction, project, region, infraStructureKey));
+
+    return serverInstanceInfoList;
+  }
+
   public ServerInstanceInfo toServerInstanceInfo(
       GoogleFunction googleFunction, String revision, String project, String region, String infraStructureKey) {
     return GoogleFunctionServerInstanceInfo.builder()
@@ -50,6 +63,23 @@ public class GoogleFunctionToServerInstanceInfoMapper {
         .memorySize(googleFunction.getCloudRunService().getMemory())
         .runTime(googleFunction.getRuntime())
         .infraStructureKey(infraStructureKey)
+        .environmentType(GOOGLE_FUNCTION_GEN_TWO_ENVIRONMENT_TYPE)
+        .build();
+  }
+
+  public ServerInstanceInfo toGenOneServerInstanceInfo(
+      GoogleFunction googleFunction, String project, String region, String infraStructureKey) {
+    return GoogleFunctionServerInstanceInfo.builder()
+        .functionName(googleFunction.getFunctionName())
+        .project(project)
+        .region(region)
+        .revision(GOOGLE_FUNCTION_GEN_ONE_REVISION_NAME)
+        .source(googleFunction.getSource())
+        .updatedTime(googleFunction.getUpdatedTime())
+        .memorySize("")
+        .runTime(googleFunction.getRuntime())
+        .infraStructureKey(infraStructureKey)
+        .environmentType(GOOGLE_FUNCTION_GEN_ONE_ENVIRONMENT_TYPE)
         .build();
   }
 }

@@ -212,6 +212,8 @@ public interface EntityTypeConstants {
   String GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC = "DeployCloudFunctionWithNoTraffic";
   String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT = "CloudFunctionTrafficShift";
   String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = "CloudFunctionRollback";
+  String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY = "DeployCloudFunctionGenOne";
+  String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK = "RollbackCloudFunctionGenOne";
 
   String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
   String TAS_ROLLING_ROLLBACK = "TasRollingRollback";

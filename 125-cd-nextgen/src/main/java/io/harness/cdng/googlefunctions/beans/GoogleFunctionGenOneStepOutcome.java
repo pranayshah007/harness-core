@@ -21,12 +21,14 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-@TypeAlias("googleFunctionPrepareRollbackOutcome")
-@JsonTypeName("googleFunctionPrepareRollbackOutcome")
-@RecasterAlias("io.harness.cdng.googlefunctions.beans.GoogleFunctionPrepareRollbackOutcome")
-public class GoogleFunctionPrepareRollbackOutcome implements Outcome, ExecutionSweepingOutput {
-  boolean isFirstDeployment;
-  String cloudRunServiceAsString;
-  String cloudFunctionAsString;
-  String manifestContent;
+@TypeAlias("googleFunctionGenOneStepOutcome")
+@JsonTypeName("googleFunctionGenOneStepOutcome")
+@RecasterAlias("io.harness.cdng.googlefunctions.GoogleFunctionGenOneStepOutcome")
+public class GoogleFunctionGenOneStepOutcome implements Outcome, ExecutionSweepingOutput {
+  String functionName;
+  String runtime;
+  String state;
+  String environment;
+  String url;
+  String source;
 }

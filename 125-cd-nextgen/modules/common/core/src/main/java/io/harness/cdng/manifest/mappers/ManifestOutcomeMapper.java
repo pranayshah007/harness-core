@@ -20,6 +20,7 @@ import static io.harness.cdng.manifest.ManifestType.EcsScalingPolicyDefinition;
 import static io.harness.cdng.manifest.ManifestType.EcsServiceDefinition;
 import static io.harness.cdng.manifest.ManifestType.EcsTaskDefinition;
 import static io.harness.cdng.manifest.ManifestType.GoogleCloudFunctionDefinition;
+import static io.harness.cdng.manifest.ManifestType.GoogleCloudFunctionGenOneDefinition;
 import static io.harness.cdng.manifest.ManifestType.HelmChart;
 import static io.harness.cdng.manifest.ManifestType.K8Manifest;
 import static io.harness.cdng.manifest.ManifestType.Kustomize;
@@ -49,6 +50,7 @@ import io.harness.cdng.manifest.yaml.EcsScalingPolicyDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsServiceDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsTaskDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.GoogleCloudFunctionDefinitionManifestOutcome;
+import io.harness.cdng.manifest.yaml.GoogleCloudFunctionGenOneDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
@@ -75,6 +77,7 @@ import io.harness.cdng.manifest.yaml.kinds.EcsServiceDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsTaskDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.GitOpsDeploymentRepoManifest;
 import io.harness.cdng.manifest.yaml.kinds.GoogleCloudFunctionDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.GoogleCloudFunctionGenOneDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.manifest.yaml.kinds.KustomizeManifest;
@@ -156,6 +159,8 @@ public class ManifestOutcomeMapper {
         return getAwsLambdaDefinitionManifestOutcome(manifestAttributes);
       case AwsLambdaFunctionAliasDefinition:
         return getAwsLambdaAliasDefinitionManifestOutcome(manifestAttributes);
+      case GoogleCloudFunctionGenOneDefinition:
+        return getGoogleCloudFunctionGenOneDefinitionManifestOutcome(manifestAttributes);
       default:
         throw new UnsupportedOperationException(
             format("Unknown Manifest Config type: [%s]", manifestAttributes.getKind()));
@@ -380,6 +385,16 @@ public class ManifestOutcomeMapper {
       ManifestAttributes manifestAttributes) {
     GoogleCloudFunctionDefinitionManifest attributes = (GoogleCloudFunctionDefinitionManifest) manifestAttributes;
     return GoogleCloudFunctionDefinitionManifestOutcome.builder()
+        .identifier(attributes.getIdentifier())
+        .store(attributes.getStoreConfig())
+        .build();
+  }
+
+  private GoogleCloudFunctionGenOneDefinitionManifestOutcome getGoogleCloudFunctionGenOneDefinitionManifestOutcome(
+      ManifestAttributes manifestAttributes) {
+    GoogleCloudFunctionGenOneDefinitionManifest attributes =
+        (GoogleCloudFunctionGenOneDefinitionManifest) manifestAttributes;
+    return GoogleCloudFunctionGenOneDefinitionManifestOutcome.builder()
         .identifier(attributes.getIdentifier())
         .store(attributes.getStoreConfig())
         .build();

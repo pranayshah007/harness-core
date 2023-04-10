@@ -442,6 +442,7 @@ import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactD
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceFetchType;
 import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
@@ -722,11 +723,17 @@ import io.harness.delegate.task.googlefunctionbeans.GoogleFunction;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionCommandTypeNG;
 import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionDeployRequest;
 import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionDeployWithoutTrafficRequest;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionGenOneDeployRequest;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionGenOnePrepareRollbackRequest;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionGenOneRollbackRequest;
 import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionPrepareRollbackRequest;
 import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionRollbackRequest;
 import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionTrafficShiftRequest;
 import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionDeployResponse;
 import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionDeployWithoutTrafficResponse;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionGenOneDeployResponse;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionGenOnePrepareRollbackResponse;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionGenOneRollbackResponse;
 import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionPrepareRollbackResponse;
 import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionRollbackResponse;
 import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionTrafficShiftResponse;
@@ -1574,6 +1581,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GoogleCloudStorageArtifactDelegateResponse.class, 19710);
     kryo.register(GoogleCloudSourceArtifactDelegateRequest.class, 19707);
     kryo.register(GoogleCloudSourceArtifactDelegateResponse.class, 19708);
+    kryo.register(GoogleCloudSourceFetchType.class, 1800009);
 
     kryo.register(SpotValidateTaskResponse.class, 21006);
     kryo.register(SpotTaskParams.class, 21007);
@@ -2466,5 +2474,12 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
 
     kryo.register(S3StoreTFDelegateConfig.class, 10000524);
     kryo.register(HttpCertificateNG.class, 10000526);
+
+    kryo.register(GoogleFunctionGenOneDeployRequest.class, 1800003);
+    kryo.register(GoogleFunctionGenOneDeployResponse.class, 1800004);
+    kryo.register(GoogleFunctionGenOnePrepareRollbackRequest.class, 1800005);
+    kryo.register(GoogleFunctionGenOnePrepareRollbackResponse.class, 1800006);
+    kryo.register(GoogleFunctionGenOneRollbackRequest.class, 1800007);
+    kryo.register(GoogleFunctionGenOneRollbackResponse.class, 1800008);
   }
 }
