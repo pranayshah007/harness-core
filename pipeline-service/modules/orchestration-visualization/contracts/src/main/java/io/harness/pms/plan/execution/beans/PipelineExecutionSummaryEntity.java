@@ -123,7 +123,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
   String firstRollbackStageGraphId;
   List<String> modules;
   Set<String> executedModules;
-  String startingNodeId;
+  @Setter @NonFinal String startingNodeId;
 
   ExecutionTriggerInfo executionTriggerInfo;
   @Deprecated ExecutionErrorInfo executionErrorInfo;

@@ -23,14 +23,16 @@ import io.harness.pms.execution.ExecutionStatus;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
+import lombok.Setter;
 import lombok.Value;
+import lombok.experimental.NonFinal;
 
 @Value
 @Builder
 @OwnedBy(PIPELINE)
 public class ExecutionNode {
   String uuid;
-  String setupId;
+  @Setter @NonFinal String setupId;
   String name;
   String identifier;
   String baseFqn;
