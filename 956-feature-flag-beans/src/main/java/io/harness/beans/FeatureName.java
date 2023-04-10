@@ -8,6 +8,7 @@
 package io.harness.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.GTM;
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -708,7 +709,11 @@ public enum FeatureName {
       "Enable Harness variable rendering in Hanress config files (SSH/WinRM)", HarnessTeam.CDP),
   CDS_TERRAFORM_S3_NG("Enables storing Terraform config, backend and var files in S3", HarnessTeam.CDP),
   CDS_HTTP_STEP_NG_CERTIFICATE("Allow enforce SSL/TLS certificate in NG HTTP step", HarnessTeam.CDC),
-  SRM_ENABLE_JIRA_INTEGRATION("Enable Jira integration in CVNG Verify step UI", HarnessTeam.CV);
+  SRM_ENABLE_JIRA_INTEGRATION("Enable Jira integration in CVNG Verify step UI", HarnessTeam.CV),
+  CDS_GIT_CONFIG_FILES("Enable config files from GIT repositories", HarnessTeam.CDP),
+  NG_EXPRESSIONS_NEW_INPUT_ELEMENT(
+      "FF to enable the new input element for the Expressions on UI when UI suggests the probable expressions to the User based on text input so far",
+      PIPELINE);
 
   @Deprecated
   FeatureName() {

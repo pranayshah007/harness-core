@@ -852,3 +852,4 @@ io.harness.cdng.googlefunctions.GoogleFunctionGenOnePrepareRollbackOutcome
 io.harness.cdng.googlefunctions.GoogleFunctionGenOneStepOutcome
 io.harness.cdng.service.steps.sweepingoutput.GoogleFunctionsServiceCustomSweepingOutput
 io.harness.pms.sdk.core.steps.io.EmptyStepParameters
+io.harness.cdng.configfile.steps.ConfigFilesStepV2SweepingOutput

@@ -602,6 +602,21 @@ paths:
       description: API for retriving merged configs for enabled plugin of account.
       tags:
         - MergedPluginsConfig
+  /v1/backstage-plugins-info:
+    get:
+      summary: List Available Backstage Plugins
+      tags:
+        - PluginInfo
+      responses:
+        '200':
+          $ref: '#/components/responses/PluginInfoResponseList'
+      operationId: get-backstage-plugins
+      description: Get all backstage plugins available
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
 components:
   schemas:
     BackstageEnvVariable:
