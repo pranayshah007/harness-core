@@ -9,6 +9,7 @@ package io.harness.artifacts.nexus;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.SHIVAM;
 
@@ -25,6 +26,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
+import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
+import io.harness.artifacts.docker.service.DockerRegistryUtils;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.exception.ExplanationException;
@@ -57,6 +61,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+import retrofit2.Response;
 
 @PrepareForTest({HTimeLimiter.class})
 @OwnedBy(HarnessTeam.CDP)
@@ -64,11 +69,19 @@ public class NexusClientImplTest extends CategoryTest {
   @Inject @InjectMocks private NexusClientImpl nexusClient;
   @Mock NexusThreeClientImpl nexusThreeService;
   @Mock NexusTwoClientImpl nexusTwoClient;
+  @Mock DockerRegistryUtils dockerRegistryUtils;
   private static String url;
   private static Map<String, List<BuildDetailsInternal>> buildDetailsData;
   private NexusRequest nexusConfig;
   private NexusRequest nexusThreeConfig;
   private String DEFAULT_NEXUS_URL;
+  private static final String SHA = "sha256:12345";
+  private static final Map<String, String> LABEL = Map.of("k1", "v1");
+  private static final ArtifactMetaInfo ARTIFACT_META_INFO = ArtifactMetaInfo.builder().sha(SHA).labels(LABEL).build();
+  private static final String REPOSITORY = "test1";
+  private static final String ARTIFACT = "superApp";
+  private static final String TAG = "tag1";
+  private static final String VERSION_3 = "3.x";
 
   @Before
   public void before() {
@@ -80,7 +93,7 @@ public class NexusClientImplTest extends CategoryTest {
 
     List<BuildDetailsInternal> bdiList = new ArrayList<>();
     String repoUrl = "nexus.harness.io:8001";
-    String imageName = "superApp";
+    String imageName = ARTIFACT;
     bdiList.add(createBuildDetails(repoUrl, null, imageName, "1.0"));
     bdiList.add(createBuildDetails(repoUrl, null, imageName, "2.0"));
     bdiList.add(createBuildDetails(repoUrl, null, imageName, "3.0"));
@@ -166,7 +179,7 @@ public class NexusClientImplTest extends CategoryTest {
                                     .password("password".toCharArray())
                                     .hasCredentials(true)
                                     .artifactRepositoryUrl(url)
-                                    .version("3.x")
+                                    .version(VERSION_3)
                                     .build();
 
     try (MockedStatic<HTimeLimiter> hTimeLimiterMockedStatic = mockStatic(HTimeLimiter.class)) {
@@ -192,7 +205,7 @@ public class NexusClientImplTest extends CategoryTest {
                                     .password("password".toCharArray())
                                     .hasCredentials(true)
                                     .artifactRepositoryUrl(url)
-                                    .version("3.x")
+                                    .version(VERSION_3)
                                     .build();
 
     try (MockedStatic<HTimeLimiter> hTimeLimiterMockedStatic = mockStatic(HTimeLimiter.class)) {
@@ -272,7 +285,7 @@ public class NexusClientImplTest extends CategoryTest {
                        .password("password".toCharArray())
                        .hasCredentials(true)
                        .artifactRepositoryUrl(url)
-                       .version("3.x")
+                       .version(VERSION_3)
                        .build();
 
     try (MockedStatic<HTimeLimiter> hTimeLimiterMockedStatic = mockStatic(HTimeLimiter.class)) {
@@ -300,7 +313,7 @@ public class NexusClientImplTest extends CategoryTest {
                                     .password("password".toCharArray())
                                     .hasCredentials(true)
                                     .artifactRepositoryUrl(url)
-                                    .version("3.x")
+                                    .version(VERSION_3)
                                     .build();
 
     try (MockedStatic<HTimeLimiter> hTimeLimiterMockedStatic = mockStatic(HTimeLimiter.class)) {
@@ -327,7 +340,7 @@ public class NexusClientImplTest extends CategoryTest {
                                    .password("password".toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(url)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     try {
@@ -350,7 +363,7 @@ public class NexusClientImplTest extends CategoryTest {
                                    .password("password".toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(url)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     try {
@@ -375,7 +388,7 @@ public class NexusClientImplTest extends CategoryTest {
                                    .password("password".toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(url)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     try {
@@ -396,7 +409,7 @@ public class NexusClientImplTest extends CategoryTest {
                                    .password("password".toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(url)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     try {
@@ -421,7 +434,7 @@ public class NexusClientImplTest extends CategoryTest {
                                     .build();
 
     assertThatThrownBy(()
-                           -> nexusClient.getDockerArtifactVersions(nexusConfig1, "test1", null, "superApp",
+                           -> nexusClient.getDockerArtifactVersions(nexusConfig1, REPOSITORY, null, ARTIFACT,
                                RepositoryFormat.docker.name(), Integer.MAX_VALUE))
         .isInstanceOf(HintException.class);
 
@@ -431,15 +444,15 @@ public class NexusClientImplTest extends CategoryTest {
                                     .password("password".toCharArray())
                                     .hasCredentials(true)
                                     .artifactRepositoryUrl(url)
-                                    .version("3.x")
+                                    .version(VERSION_3)
                                     .build();
 
     doReturn(buildDetailsData.get("bdi1"))
         .when(nexusThreeService)
-        .getArtifactsVersions(nexusConfig2, "test1", null, "superApp", RepositoryFormat.docker.name());
+        .getArtifactsVersions(nexusConfig2, REPOSITORY, null, ARTIFACT, RepositoryFormat.docker.name());
 
     List<BuildDetailsInternal> response = nexusClient.getDockerArtifactVersions(
-        nexusConfig2, "test1", null, "superApp", RepositoryFormat.docker.name(), Integer.MAX_VALUE);
+        nexusConfig2, REPOSITORY, null, ARTIFACT, RepositoryFormat.docker.name(), Integer.MAX_VALUE);
 
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(3);
@@ -459,7 +472,7 @@ public class NexusClientImplTest extends CategoryTest {
                                     .build();
 
     assertThatThrownBy(()
-                           -> nexusClient.getDockerArtifactVersions(nexusConfig1, "test1", null, "superApp",
+                           -> nexusClient.getDockerArtifactVersions(nexusConfig1, REPOSITORY, null, ARTIFACT,
                                RepositoryFormat.docker.name(), Integer.MAX_VALUE))
         .isInstanceOf(HintException.class);
 
@@ -469,16 +482,16 @@ public class NexusClientImplTest extends CategoryTest {
                                     .password("password".toCharArray())
                                     .hasCredentials(true)
                                     .artifactRepositoryUrl(url)
-                                    .version("3.x")
+                                    .version(VERSION_3)
                                     .build();
 
-    when(
-        nexusThreeService.getArtifactsVersions(nexusConfig2, "test1", null, "superApp", RepositoryFormat.docker.name()))
+    when(nexusThreeService.getArtifactsVersions(
+             nexusConfig2, REPOSITORY, null, ARTIFACT, RepositoryFormat.docker.name()))
         .thenThrow(NexusRegistryException.class);
 
     try {
       List<BuildDetailsInternal> response = nexusClient.getDockerArtifactVersions(
-          nexusConfig2, "test1", null, "superApp", RepositoryFormat.docker.name(), Integer.MAX_VALUE);
+          nexusConfig2, REPOSITORY, null, ARTIFACT, RepositoryFormat.docker.name(), Integer.MAX_VALUE);
     } catch (NexusRegistryException | HintException ex) {
       assertThat(ex).isInstanceOf(NexusRegistryException.class);
     }
@@ -494,14 +507,14 @@ public class NexusClientImplTest extends CategoryTest {
                                     .password("password".toCharArray())
                                     .hasCredentials(true)
                                     .artifactRepositoryUrl(url)
-                                    .version("3.x")
+                                    .version(VERSION_3)
                                     .build();
 
-    when(nexusThreeService.getPackageVersions(nexusConfig2, "test1", null)).thenThrow(NexusRegistryException.class);
+    when(nexusThreeService.getPackageVersions(nexusConfig2, REPOSITORY, null)).thenThrow(NexusRegistryException.class);
 
     try {
       nexusClient.getDockerArtifactVersions(
-          nexusConfig2, "test1", null, "superApp", RepositoryFormat.docker.name(), Integer.MAX_VALUE);
+          nexusConfig2, REPOSITORY, null, ARTIFACT, RepositoryFormat.docker.name(), Integer.MAX_VALUE);
     } catch (NexusRegistryException | HintException ex) {
       assertThat(ex).isInstanceOf(NexusRegistryException.class);
     }
@@ -522,7 +535,7 @@ public class NexusClientImplTest extends CategoryTest {
 
     assertThatThrownBy(()
                            -> nexusClient.getBuildDetails(
-                               nexusConfig1, "test1", null, "superApp", RepositoryFormat.docker.name(), "tag1"))
+                               nexusConfig1, REPOSITORY, null, ARTIFACT, RepositoryFormat.docker.name(), TAG))
         .isInstanceOf(HintException.class);
 
     NexusRequest nexusConfig2 = NexusRequest.builder()
@@ -531,15 +544,15 @@ public class NexusClientImplTest extends CategoryTest {
                                     .password("password".toCharArray())
                                     .hasCredentials(true)
                                     .artifactRepositoryUrl(url)
-                                    .version("3.x")
+                                    .version(VERSION_3)
                                     .build();
 
     doReturn(buildDetailsData.get("bdi1"))
         .when(nexusThreeService)
-        .getBuildDetails(nexusConfig2, "test1", null, "superApp", RepositoryFormat.docker.name(), "1.0");
+        .getBuildDetails(nexusConfig2, REPOSITORY, null, ARTIFACT, RepositoryFormat.docker.name(), "1.0");
 
     List<BuildDetailsInternal> response =
-        nexusClient.getBuildDetails(nexusConfig2, "test1", null, "superApp", RepositoryFormat.docker.name(), "1.0");
+        nexusClient.getBuildDetails(nexusConfig2, REPOSITORY, null, ARTIFACT, RepositoryFormat.docker.name(), "1.0");
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(3);
   }
@@ -559,10 +572,10 @@ public class NexusClientImplTest extends CategoryTest {
 
     doReturn(buildDetailsData.get("bdi1"))
         .when(nexusTwoClient)
-        .getVersions(nexusConfig1, "test1", "groupId", "superApp", "war", "1.0");
+        .getVersions(nexusConfig1, REPOSITORY, "groupId", ARTIFACT, "war", "1.0");
 
-    List<BuildDetailsInternal> response =
-        nexusClient.getArtifactsVersions(nexusConfig1, "test1", "groupId", "superApp", "war", "1.0", Integer.MAX_VALUE);
+    List<BuildDetailsInternal> response = nexusClient.getArtifactsVersions(
+        nexusConfig1, REPOSITORY, "groupId", ARTIFACT, "war", "1.0", Integer.MAX_VALUE);
 
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(3);
@@ -573,15 +586,15 @@ public class NexusClientImplTest extends CategoryTest {
                                     .password("password".toCharArray())
                                     .hasCredentials(true)
                                     .artifactRepositoryUrl(url)
-                                    .version("3.x")
+                                    .version(VERSION_3)
                                     .build();
 
     doReturn(buildDetailsData.get("bdi1"))
         .when(nexusThreeService)
-        .getVersions(nexusConfig2, "test1", "groupId", "superApp", "war", "1.0", Integer.MAX_VALUE);
+        .getVersions(nexusConfig2, REPOSITORY, "groupId", ARTIFACT, "war", "1.0", Integer.MAX_VALUE);
 
-    response =
-        nexusClient.getArtifactsVersions(nexusConfig2, "test1", "groupId", "superApp", "war", "1.0", Integer.MAX_VALUE);
+    response = nexusClient.getArtifactsVersions(
+        nexusConfig2, REPOSITORY, "groupId", ARTIFACT, "war", "1.0", Integer.MAX_VALUE);
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(3);
   }
@@ -614,7 +627,7 @@ public class NexusClientImplTest extends CategoryTest {
                                     .password("password".toCharArray())
                                     .hasCredentials(true)
                                     .artifactRepositoryUrl(url)
-                                    .version("3.x")
+                                    .version(VERSION_3)
                                     .build();
 
     doReturn(buildDetailsData.get("bdi1")).when(nexusThreeService).getPackageVersions(nexusConfig2, "npm", "");
@@ -634,7 +647,7 @@ public class NexusClientImplTest extends CategoryTest {
                                     .password("password".toCharArray())
                                     .hasCredentials(true)
                                     .artifactRepositoryUrl(url)
-                                    .version("3.x")
+                                    .version(VERSION_3)
                                     .build();
 
     doReturn(buildDetailsData.get("bdi1"))
@@ -700,6 +713,18 @@ public class NexusClientImplTest extends CategoryTest {
           .isEqualTo(
               "Please check your Nexus connector and/or artifact configuration. Please use the 3.x connector version.");
     }
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetArtifactMetaInfo() throws IOException {
+    NexusRequest nexusConfig1 = NexusRequest.builder().version(VERSION_3).build();
+    Response<DockerImageManifestResponse> response = Response.success(new DockerImageManifestResponse());
+    when(nexusThreeService.fetchImageManifest(nexusConfig1, REPOSITORY, ARTIFACT, true, TAG)).thenReturn(response);
+    when(dockerRegistryUtils.parseArtifactMetaInfoResponse(response, ARTIFACT)).thenReturn(ARTIFACT_META_INFO);
+    ArtifactMetaInfo artifactMetaInfo = nexusClient.getArtifactMetaInfo(nexusConfig1, REPOSITORY, ARTIFACT, TAG, true);
+    assertThat(artifactMetaInfo).isEqualTo(ARTIFACT_META_INFO);
   }
 
   private BuildDetailsInternal createBuildDetails(String repoUrl, String port, String imageName, String tag) {

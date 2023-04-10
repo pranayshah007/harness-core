@@ -81,7 +81,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -121,13 +120,14 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Singleton
 @Slf4j
 public class ServiceEntityServiceImpl implements ServiceEntityService {
+  private static final String ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG = "accountId must be present";
   private final ServiceRepository serviceRepository;
   private final EntitySetupUsageService entitySetupUsageService;
   private final Producer eventProducer;
   private static final Integer QUERY_PAGE_SIZE = 10000;
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private final TransactionTemplate transactionTemplate;
   private final OutboxService outboxService;
-  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
+  private static final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final ServiceOverrideService serviceOverrideService;
   private final ServiceEntitySetupUsageHelper entitySetupUsageHelper;
   @Inject private ServiceEntityValidatorFactory serviceEntityValidatorFactory;
@@ -169,12 +169,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       ServiceEntity createdService =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
             ServiceEntity service = serviceRepository.save(serviceEntity);
-            outboxService.save(ServiceCreateEvent.builder()
-                                   .accountIdentifier(serviceEntity.getAccountId())
-                                   .orgIdentifier(serviceEntity.getOrgIdentifier())
-                                   .projectIdentifier(serviceEntity.getProjectIdentifier())
-                                   .service(serviceEntity)
-                                   .build());
+            outboxService.save(getServiceCreateEvent(serviceEntity));
             return service;
           }));
       entitySetupUsageHelper.createSetupUsages(createdService, referredEntities);
@@ -187,6 +182,15 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
               serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier()),
           USER_SRE, ex);
     }
+  }
+
+  private static ServiceCreateEvent getServiceCreateEvent(ServiceEntity serviceEntity) {
+    return ServiceCreateEvent.builder()
+        .accountIdentifier(serviceEntity.getAccountId())
+        .orgIdentifier(serviceEntity.getOrgIdentifier())
+        .projectIdentifier(serviceEntity.getProjectIdentifier())
+        .service(serviceEntity)
+        .build();
   }
 
   private Set<EntityDetailProtoDTO> getAndValidateReferredEntities(ServiceEntity serviceEntity) {
@@ -203,7 +207,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Override
   public Optional<ServiceEntity> get(
       String accountId, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
-    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
 
     return getServiceByRef(accountId, orgIdentifier, projectIdentifier, serviceRef, deleted);
   }
@@ -236,14 +240,14 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     if (serviceEntityOptional.isPresent()) {
       ServiceEntity oldService = serviceEntityOptional.get();
 
-      if (oldService != null && oldService.getType() != null && requestService.getType() != null
+      if (oldService.getType() != null && requestService.getType() != null
           && !oldService.getType().equals(requestService.getType())) {
-        throw new InvalidRequestException(String.format("Service Deployment Type is not allowed to change."));
+        throw new InvalidRequestException("Service Deployment Type is not allowed to change.");
       }
 
-      if (oldService != null && oldService.getGitOpsEnabled() != null && requestService.getGitOpsEnabled() != null
+      if (oldService.getGitOpsEnabled() != null && requestService.getGitOpsEnabled() != null
           && !oldService.getGitOpsEnabled().equals(requestService.getGitOpsEnabled())) {
-        throw new InvalidRequestException(String.format("GitOps Enabled is not allowed to change."));
+        throw new InvalidRequestException("GitOps Enabled is not allowed to change.");
       }
 
       ServiceEntityValidator serviceEntityValidator =
@@ -292,19 +296,17 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
         get(requestService.getAccountId(), requestService.getOrgIdentifier(), requestService.getProjectIdentifier(),
             requestService.getIdentifier(), false);
 
-    if (serviceEntityOptional.isPresent()) {
-      ServiceEntity oldService = serviceEntityOptional.get();
-
-      if (oldService != null && oldService.getType() != null && requestService.getType() != null
+    serviceEntityOptional.ifPresent(oldService -> {
+      if (oldService.getType() != null && requestService.getType() != null
           && !oldService.getType().equals(requestService.getType())) {
-        throw new InvalidRequestException(String.format("Service Deployment Type is not allowed to change."));
+        throw new InvalidRequestException("Service Deployment Type is not allowed to change.");
       }
 
-      if (oldService != null && oldService.getGitOpsEnabled() != null && requestService.getGitOpsEnabled() != null
+      if (oldService.getGitOpsEnabled() != null && requestService.getGitOpsEnabled() != null
           && !oldService.getGitOpsEnabled().equals(requestService.getGitOpsEnabled())) {
-        throw new InvalidRequestException(String.format("GitOps Enabled is not allowed to change."));
+        throw new InvalidRequestException("GitOps Enabled is not allowed to change.");
       }
-    }
+    });
 
     ServiceEntityValidator serviceEntityValidator =
         serviceEntityValidatorFactory.getServiceEntityValidator(requestService);
@@ -351,7 +353,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Override
   public boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String serviceRef,
       Long version, boolean forceDelete) {
-    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
     checkArgument(isNotEmpty(serviceRef), "serviceRef must be present");
 
     ServiceEntity serviceEntity = ServiceEntity.builder()
@@ -413,9 +415,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       }
       eventProducer.send(
           Message.newBuilder()
-              .putAllMetadata(
-                  ImmutableMap.of("accountId", accountIdentifier, EventsFrameworkMetadataConstants.ENTITY_TYPE,
-                      EventsFrameworkMetadataConstants.SERVICE_ENTITY, EventsFrameworkMetadataConstants.ACTION, action))
+              .putAllMetadata(Map.of("accountId", accountIdentifier, EventsFrameworkMetadataConstants.ENTITY_TYPE,
+                  EventsFrameworkMetadataConstants.SERVICE_ENTITY, EventsFrameworkMetadataConstants.ACTION, action))
               .setData(serviceChangeEvent.build().toByteString())
               .build());
     } catch (EventsFrameworkDownException e) {
@@ -459,7 +460,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   private Criteria getServiceEqualityCriteria(ServiceEntity requestService, boolean deleted) {
-    checkArgument(isNotEmpty(requestService.getAccountId()), "accountId must be present");
+    checkArgument(isNotEmpty(requestService.getAccountId()), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
     String[] serviceRefSplit = StringUtils.split(requestService.getIdentifier(), ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     Criteria criteria;
     if (serviceRefSplit == null || serviceRefSplit.length == 1) {
@@ -510,6 +511,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
         publishEvent(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
             serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier(),
             EventsFrameworkMetadataConstants.CREATE_ACTION);
+        outboxService.save(getServiceCreateEvent(serviceEntity));
         entitySetupUsageHelper.createSetupUsages(serviceEntity, referredEntityList.get(i));
         i++;
       }
@@ -714,7 +716,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Override
   public ServiceInputsMergedResponseDto mergeServiceInputs(
       String accountId, String orgId, String projectId, String serviceRef, String oldServiceInputsYaml) {
-    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
     checkArgument(isNotEmpty(serviceRef), "serviceRef must be present");
     Optional<ServiceEntity> serviceEntity = get(accountId, orgId, projectId, serviceRef, false);
     if (serviceEntity.isEmpty()) {
@@ -831,7 +833,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   @Override
   public boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
-    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
     checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
     checkArgument(isNotEmpty(projectIdentifier), "project identifier must be present");
 
@@ -840,7 +842,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   @Override
   public boolean forceDeleteAllInOrg(String accountId, String orgIdentifier) {
-    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
     checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
 
     return forceDeleteInternal(accountId, orgIdentifier, null);
@@ -992,15 +994,13 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     serviceEntities.forEach(this::modifyServiceRequest);
   }
 
-  boolean processQuietly(BooleanSupplier b) {
+  void processQuietly(BooleanSupplier b) {
     try {
       b.getAsBoolean();
       // supplier processed
-      return true;
     } catch (Exception ex) {
       log.error("failed to process entity deletion", ex);
       // ignore this
-      return false;
     }
   }
 
@@ -1013,7 +1013,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Override
   public ValidateTemplateInputsResponseDTO validateTemplateInputs(
       String accountId, String orgId, String projectId, String serviceIdentifier, String loadFromCache) {
-    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
     checkArgument(isNotEmpty(serviceIdentifier), "service identifier must be present");
 
     Optional<ServiceEntity> optionalService = get(accountId, orgId, projectId, serviceIdentifier, false);

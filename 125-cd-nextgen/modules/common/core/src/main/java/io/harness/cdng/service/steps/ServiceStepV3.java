@@ -363,8 +363,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
     serviceStepsHelper.checkForAccessOrThrow(ambiance, secretNGVariables);
 
-    resolve(ambiance, envToEnvVariables, envToSvcVariables);
-
     GitOpsEnvOutCome gitOpsEnvOutCome = new GitOpsEnvOutCome(envToEnvVariables, envToSvcVariables);
 
     sweepingOutputService.consume(ambiance, GITOPS_ENV_OUTCOME, gitOpsEnvOutCome, StepCategory.STAGE.name());
@@ -476,7 +474,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
             mergeSvcOverrideInputs(ngServiceOverridesEntity.get().getYaml(), parameters.getServiceOverrideInputs());
       }
 
-      resolve(ambiance, ngEnvironmentConfig, ngServiceOverrides);
       List<NGVariable> secretNGVariables = new ArrayList<>();
       if (ngEnvironmentConfig != null && ngEnvironmentConfig.getNgEnvironmentInfoConfig() != null
           && ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables() != null) {

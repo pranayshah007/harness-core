@@ -77,10 +77,10 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
   private final PlanCreationResponseBlobHelper planCreationResponseBlobHelper;
   private final PmsGitSyncHelper pmsGitSyncHelper;
   @Inject
-  public PlanCreatorService(@NotNull PipelineServiceInfoDecorator pipelineServiceInfoProvider,
+  public PlanCreatorService(@NotNull PipelineServiceInfoDecorator serviceInfoDecorator,
       @NotNull FilterCreatorService filterCreatorService, VariableCreatorService variableCreatorService,
       PlanCreationResponseBlobHelper planCreationResponseBlobHelper, PmsGitSyncHelper pmsGitSyncHelper) {
-    this.planCreators = pipelineServiceInfoProvider.getPlanCreators();
+    this.planCreators = serviceInfoDecorator.getPlanCreators();
     this.filterCreatorService = filterCreatorService;
     this.variableCreatorService = variableCreatorService;
     this.planCreationResponseBlobHelper = planCreationResponseBlobHelper;
