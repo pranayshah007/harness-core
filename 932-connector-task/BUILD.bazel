@@ -27,6 +27,7 @@ java_library(
         "//960-api-services/src/main/java/io/harness/gcp/client:module",
         "//960-api-services/src/main/java/io/harness/git:module",
         "//960-api-services/src/main/java/io/harness/pcf:module",
+        "//960-api-services/src/main/java/io/harness/rancher:module",
         "//960-api-services/src/main/java/io/harness/shell:module",
         "//960-api-services/src/main/java/io/harness/spotinst:module",
         "//960-api-services/src/main/java/io/harness/terraformcloud:module",

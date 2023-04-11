@@ -24,5 +24,5 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RancherConfig {
-  private RancherManualConfigCredential credential;
+  private RancherManualConfigCredentials credential;
 }

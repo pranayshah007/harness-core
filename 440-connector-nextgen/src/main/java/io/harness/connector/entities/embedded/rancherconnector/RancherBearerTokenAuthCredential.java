@@ -16,7 +16,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@FieldNameConstants(innerTypeName = "RancherBearerTokenAuthCredential")
+@FieldNameConstants(innerTypeName = "RancherBearerTokenAuthCredentialKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @TypeAlias("io.harness.connector.entities.embedded.rancherconnector.RancherBearerTokenAuthCredential")
 public class RancherBearerTokenAuthCredential implements RancherConfigAuthCredential {

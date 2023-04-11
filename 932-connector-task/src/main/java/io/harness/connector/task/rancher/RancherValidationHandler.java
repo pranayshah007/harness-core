@@ -7,7 +7,6 @@
 
 package io.harness.connector.task.rancher;
 
-import static io.harness.delegate.beans.connector.spotconnector.SpotConstants.INVALID_CREDS;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -20,10 +19,10 @@ import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.rancher.RancherConnectorDTO;
 import io.harness.delegate.beans.connector.rancher.RancherTaskParams;
 import io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskParams;
-import io.harness.delegate.task.rancher.RancherHelperServiceDelegate;
 import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.ng.core.dto.ErrorDetail;
+import io.harness.rancher.RancherHelperServiceDelegate;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import com.google.common.collect.Lists;
@@ -36,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDP)
 public class RancherValidationHandler implements ConnectorValidationHandler {
   @Inject private RancherNgConfigMapper ngConfigMapper;
-  @Inject private RancherHelperServiceDelegate rancherInstHelperServiceDelegate;
+  @Inject private RancherHelperServiceDelegate rancherHelperServiceDelegate;
   @Inject private ExceptionManager exceptionManager;
 
   @Override
@@ -69,13 +68,13 @@ public class RancherValidationHandler implements ConnectorValidationHandler {
   private ConnectorValidationResult handleValidateTask(RancherConfig rancherConfig) {
     ConnectorValidationResultBuilder builder = ConnectorValidationResult.builder();
     try {
-      rancherInstHelperServiceDelegate.testRancherConnection(rancherConfig);
+      rancherHelperServiceDelegate.testRancherConnection(rancherConfig);
       builder.status(ConnectivityStatus.SUCCESS);
     } catch (Exception e) {
       builder.status(ConnectivityStatus.FAILURE);
-      builder.errorSummary(INVALID_CREDS);
+      builder.errorSummary("Invalid Credentials");
       builder.errors(Lists.newArrayList(ErrorDetail.builder()
-                                            .reason(INVALID_CREDS)
+                                            .reason("Invalid Credentials")
                                             .message(ExceptionMessageSanitizer.sanitizeMessage(e.getMessage()))
                                             .build()));
     }

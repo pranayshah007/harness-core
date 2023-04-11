@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.task.rancher;
+package io.harness.rancher;
 
 import io.harness.beans.KeyValuePair;
 import io.harness.connector.task.rancher.RancherConfig;
@@ -13,8 +13,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.http.HttpService;
 import io.harness.http.beans.HttpInternalConfig;
 import io.harness.http.beans.HttpInternalResponse;
-
-import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -29,12 +27,10 @@ import org.jetbrains.annotations.NotNull;
 @Singleton
 @Slf4j
 public class RancherHelperServiceDelegateImpl implements RancherHelperServiceDelegate {
-  @Inject private EncryptionService encryptionService;
   @Inject private HttpService httpService;
 
   @Override
-  public void testRancherConnection(final io.harness.connector.task.rancher.RancherConfig rancherConfig)
-      throws IOException {
+  public void testRancherConnection(final RancherConfig rancherConfig) throws IOException {
     makeRancherApi("GET", "/v3/clusters", rancherConfig);
   }
 

@@ -51,6 +51,8 @@ import io.harness.gcp.client.GcpClient;
 import io.harness.gcp.impl.GcpClientImpl;
 import io.harness.git.GitClientV2;
 import io.harness.git.GitClientV2Impl;
+import io.harness.http.HttpService;
+import io.harness.http.HttpServiceImpl;
 import io.harness.impl.scm.ScmServiceClientImpl;
 import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
 import io.harness.ng.core.accountsetting.services.NGAccountSettingServiceImpl;
@@ -61,6 +63,8 @@ import io.harness.pcf.CfSdkClient;
 import io.harness.pcf.cfcli.client.CfCliClientImpl;
 import io.harness.pcf.cfsdk.CfSdkClientImpl;
 import io.harness.persistence.HPersistence;
+import io.harness.rancher.RancherHelperServiceDelegate;
+import io.harness.rancher.RancherHelperServiceDelegateImpl;
 import io.harness.service.ScmServiceClient;
 import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.SpotInstHelperServiceDelegateImpl;
@@ -148,6 +152,8 @@ public class ConnectorModule extends AbstractModule {
     bind(NGHostService.class).to(NGHostServiceImpl.class);
     bind(GoogleSecretManagerConnectorService.class).to(GoogleSecretManagerConnectorServiceImpl.class);
     bind(TerraformCloudClient.class).to(TerraformCloudClientImpl.class);
+    bind(RancherHelperServiceDelegate.class).to(RancherHelperServiceDelegateImpl.class);
+    bind(HttpService.class).to(HttpServiceImpl.class);
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.CONNECTOR.toString()).to(ConnectorFilterPropertiesMapper.class);

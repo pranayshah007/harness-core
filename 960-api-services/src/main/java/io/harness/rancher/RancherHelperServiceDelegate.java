@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.task.rancher;
+package io.harness.rancher;
 
 import io.harness.connector.task.rancher.RancherConfig;
 

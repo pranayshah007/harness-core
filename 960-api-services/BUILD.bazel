@@ -115,6 +115,7 @@ java_library(
         "//960-api-services/src/main/java/io/harness/pcf/cfcli/option:module",
         "//960-api-services/src/main/java/io/harness/pcf/cfcli/resolver:module",
         "//960-api-services/src/main/java/io/harness/pcf/cfsdk:module",
+        "//960-api-services/src/main/java/io/harness/rancher:module",
         "//960-api-services/src/main/java/io/harness/retry:module",
         "//960-api-services/src/main/java/io/harness/security/encryption:module",
         "//960-api-services/src/main/java/io/harness/serializer:module",

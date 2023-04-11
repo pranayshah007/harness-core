@@ -50,7 +50,7 @@ public class RancherNgConfigMapper {
           rancherConnectorBearerTokenAuthenticationDTO, encryptionDetails);
       rancherConfig =
           RancherConfig.builder()
-              .credential(RancherManualConfigCredential.builder()
+              .credential(RancherManualConfigCredentials.builder()
                               .rancherUrl(rancherConnectorConfigAuthDTO.getRancherUrl())
                               .password(RancherBearerTokenAuthPassword.builder()
                                             .rancherPassword(getDecryptedValueWithNullCheck(
