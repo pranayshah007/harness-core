@@ -19,6 +19,7 @@ import io.harness.gitpolling.github.GitHubPollingWebhookEventDelivery;
 import io.harness.gitpolling.github.GitPollingWebhookData;
 import io.harness.gitpolling.github.GitPollingWebhookEventMetadata;
 import io.harness.network.Http;
+import io.harness.remote.client.NGRestUtils;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -80,7 +81,7 @@ public class GithubServiceImpl implements GithubService {
                            .createAccessTokenForGithubEnterprise(authToken, githubAppConfig.getInstallationId());
       }
 
-      GithubAppTokenCreationResponse response = executeRestCall(responseCall);
+      GithubAppTokenCreationResponse response = NGRestUtils.getGeneralResponse(responseCall);
       return response.getToken();
     } catch (Exception ex) {
       throw new InvalidRequestException(

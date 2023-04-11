@@ -26,6 +26,7 @@ import io.harness.app.beans.entities.DashboardBuildsHealthInfo;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.dashboards.GroupBy;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import io.swagger.annotations.Api;
@@ -107,7 +108,7 @@ public interface CIDashboardOverviewResource {
   getBuildExecution(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @QueryParam("groupBy") GroupBy groupBy,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval);
 

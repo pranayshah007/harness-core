@@ -35,7 +35,8 @@ public enum InfrastructureType {
   GOOGLE_CLOUD_FUNCTIONS(InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS),
   @JsonProperty(InfrastructureKind.AWS_SAM) AWS_SAM(InfrastructureKind.AWS_SAM),
   @JsonProperty(InfrastructureKind.AWS_LAMBDA) AWS_LAMBDA(InfrastructureKind.AWS_LAMBDA),
-  @JsonProperty(InfrastructureKind.KUBERNETES_AWS) KUBERNETES_AWS(InfrastructureKind.KUBERNETES_AWS);
+  @JsonProperty(InfrastructureKind.KUBERNETES_AWS) KUBERNETES_AWS(InfrastructureKind.KUBERNETES_AWS),
+  @JsonProperty(InfrastructureKind.KUBERNETES_RANCHER) KUBERNETES_RANCHER(InfrastructureKind.KUBERNETES_RANCHER);
 
   private final String displayName;
 

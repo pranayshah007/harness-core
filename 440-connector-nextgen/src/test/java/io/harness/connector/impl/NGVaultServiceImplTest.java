@@ -11,7 +11,9 @@ import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
+import static io.harness.rule.OwnerRule.RICHA;
 import static io.harness.rule.OwnerRule.VIKAS_M;
+import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
 import static io.harness.security.encryption.EncryptionType.VAULT;
 import static io.harness.utils.DelegateOwner.NG_DELEGATE_OWNER_CONSTANT;
 
@@ -34,6 +36,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.AzureEnvironmentType;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorDTO;
@@ -45,6 +48,7 @@ import io.harness.connector.mappers.secretmanagermapper.VaultEntityToDTO;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.azureconnector.AzureManagedIdentityType;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.delegatetasks.NGVaultFetchEngineTaskResponse;
@@ -53,7 +57,9 @@ import io.harness.delegatetasks.NGVaultRenewalTaskParameters;
 import io.harness.delegatetasks.NGVaultRenewalTaskResponse;
 import io.harness.delegatetasks.NGVaultTokenLookupTaskResponse;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.GeneralException;
 import io.harness.exception.SecretManagementException;
+import io.harness.exception.WingsException;
 import io.harness.git.model.ChangeType;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
 import io.harness.ng.core.api.NGEncryptedDataService;
@@ -74,6 +80,7 @@ import io.harness.secretmanagerclient.dto.VaultAuthTokenCredentialDTO;
 import io.harness.secretmanagerclient.dto.VaultAwsIamRoleCredentialDTO;
 import io.harness.secretmanagerclient.dto.VaultConfigDTO;
 import io.harness.secretmanagerclient.dto.VaultMetadataRequestSpecDTO;
+import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultMetadataRequestSpecDTO;
 import io.harness.security.encryption.AccessType;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.service.DelegateGrpcClientWrapper;
@@ -190,6 +197,33 @@ public class NGVaultServiceImplTest extends CategoryTest {
     assertThat(secretRefData.getDecryptedValue())
         .isEqualTo(taskParameters.getEncryptionConfig().getXVaultAwsIamServerId().toCharArray());
     assertEquals(vaultAwsIamRole, taskParameters.getEncryptionConfig().getVaultAwsIamRole());
+  }
+
+  @Test
+  @Owner(developers = RICHA)
+  @Category(UnitTests.class)
+  public void test_ListSecretEngines_azureKeyVault_oldDelegate() {
+    String secretManagerIdentifier = randomAlphabetic(10);
+    AzureKeyVaultMetadataRequestSpecDTO specDTO = new AzureKeyVaultMetadataRequestSpecDTO();
+    specDTO.setUseManagedIdentity(true);
+    specDTO.setAzureEnvironmentType(AzureEnvironmentType.AZURE);
+    specDTO.setAzureManagedIdentityType(AzureManagedIdentityType.USER_ASSIGNED_MANAGED_IDENTITY);
+    SecretManagerMetadataRequestDTO requestDTO = SecretManagerMetadataRequestDTO.builder()
+                                                     .encryptionType(AZURE_VAULT)
+                                                     .identifier(secretManagerIdentifier)
+                                                     .spec(specDTO)
+                                                     .build();
+    when(ngConnectorSecretManagerService.getUsingIdentifier(ACCOUNT_IDENTIFIER, null, null, "authtoken", false))
+        .thenReturn(LocalConfigDTO.builder().build());
+    when(ngEncryptedDataService.get(any(), any(), any(), any()))
+        .thenReturn(NGEncryptedData.builder().encryptionType(AZURE_VAULT).build());
+    GeneralException generalException = new GeneralException("Null Pointer Exception");
+    WingsException wingsException = mock(WingsException.class);
+    when(wingsException.getCause()).thenReturn(generalException);
+    when(delegateService.executeSyncTaskV2(any())).thenThrow(wingsException);
+    exceptionRule.expect(WingsException.class);
+    exceptionRule.expectMessage("Listing secret engines failed. Please check if delegate version is 791xx or later.");
+    ngVaultService.getListOfEngines(ACCOUNT_IDENTIFIER, requestDTO);
   }
 
   @Test

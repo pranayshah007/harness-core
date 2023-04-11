@@ -168,8 +168,8 @@ public class ConnectorMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     if (yamlFile.isExists()) {
       return MigrationImportSummaryDTO.builder()
           .errors(Collections.singletonList(ImportError.builder()
@@ -179,7 +179,10 @@ public class ConnectorMigrationService extends NgMigrationService {
           .build();
     }
     Response<ResponseDTO<ConnectorResponseDTO>> resp =
-        ngClient.createConnector(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(yamlFile.getYaml())).execute();
+        ngClient
+            .createConnector(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                JsonUtils.asTree(yamlFile.getYaml()))
+            .execute();
     log.info("Connector creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);
   }

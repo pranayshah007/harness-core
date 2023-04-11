@@ -157,6 +157,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PipelineEventConsumerController;
 import io.harness.pms.expressions.functors.ConfigFileFunctor;
+import io.harness.pms.expressions.functors.DockerConfigJsonFunctor;
 import io.harness.pms.expressions.functors.FileStoreFunctor;
 import io.harness.pms.expressions.functors.ImagePullSecretFunctor;
 import io.harness.pms.expressions.functors.InstanceFunctor;
@@ -544,16 +545,27 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         .microservice(Microservice.CORE)
         .migrationProviderList(new ArrayList<Class<? extends MigrationProvider>>() {
           { add(NGCoreMigrationProvider.class); } // Add all migration provider classes here
+
           { add(ProjectMigrationProvider.class); }
+
           { add(UserMembershipMigrationProvider.class); }
+
           { add(NGBeanMigrationProvider.class); }
+
           { add(InstanceMigrationProvider.class); }
+
           { add(UserMetadataMigrationProvider.class); }
+
           { add(LicenseManagerMigrationProvider.class); }
+
           { add(SourceCodeManagerMigrationProvider.class); }
+
           { add(GitSyncMigrationProvider.class); }
+
           { add(DelegateMigrationProvider.class); }
+
           { add(UserGroupMigrationProvider.class); }
+
           { add(CDMigrationProvider.class); }
         })
         .build();
@@ -730,6 +742,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   private Map<String, Class<? extends SdkFunctor>> getSdkFunctors() {
     Map<String, Class<? extends SdkFunctor>> sdkFunctorMap = new HashMap<>();
     sdkFunctorMap.put(ImagePullSecretFunctor.IMAGE_PULL_SECRET, ImagePullSecretFunctor.class);
+    sdkFunctorMap.put(DockerConfigJsonFunctor.DOCKER_CONFIG_JSON, DockerConfigJsonFunctor.class);
     sdkFunctorMap.put(VariableFunctor.VARIABLE, VariableFunctor.class);
     sdkFunctorMap.put(TerraformPlanJsonFunctor.TERRAFORM_PLAN_JSON, TerraformPlanJsonFunctor.class);
     sdkFunctorMap.put(

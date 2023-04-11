@@ -136,6 +136,7 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import javax.cache.Cache;
 import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -162,6 +163,7 @@ public class AuthServiceImpl implements AuthService {
   private ConfigurationController configurationController;
   private static final String USER_PERMISSION_CACHE_NAME = "userPermissionCache".concat(":%s");
   private static final String USER_RESTRICTION_CACHE_NAME = "userRestrictionCache".concat(":%s");
+  private static final Duration TWO_HOURS = new Duration(TimeUnit.HOURS, 2);
   @Inject private ExecutorService executorService;
   @Inject private ApiKeyService apiKeyService;
   @Inject @Nullable private SegmentHandler segmentHandler;
@@ -516,10 +518,10 @@ public class AuthServiceImpl implements AuthService {
   private Cache<String, UserPermissionInfo> getUserPermissionCache(String accountId) {
     if (configurationController.isPrimary()) {
       return harnessCacheManager.getCache(String.format(PRIMARY_CACHE_PREFIX + USER_PERMISSION_CACHE_NAME, accountId),
-          String.class, UserPermissionInfo.class, AccessedExpiryPolicy.factoryOf(Duration.ONE_HOUR));
+          String.class, UserPermissionInfo.class, CreatedExpiryPolicy.factoryOf(TWO_HOURS));
     }
     return harnessCacheManager.getCache(String.format(USER_PERMISSION_CACHE_NAME, accountId), String.class,
-        UserPermissionInfo.class, AccessedExpiryPolicy.factoryOf(Duration.ONE_HOUR),
+        UserPermissionInfo.class, CreatedExpiryPolicy.factoryOf(TWO_HOURS),
         versionInfoManager.getVersionInfo().getBuildNo());
   }
 

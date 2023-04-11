@@ -668,7 +668,8 @@ public enum ErrorCode {
 
   SCM_FORBIDDEN,
   AWS_EKS_ERROR,
-  OPA_POLICY_EVALUATION_ERROR;
+  OPA_POLICY_EVALUATION_ERROR,
+  USER_MARKED_FAILURE;
 
   private Status status = BAD_REQUEST;
   private String description;

@@ -16,6 +16,7 @@ import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.rule.Owner;
 
+import java.util.HashMap;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,8 +33,8 @@ public class GcrArtifactDelegateResponseTest {
   @Category(UnitTests.class)
   public void testDescribe() {
     ArtifactBuildDetailsNG buildDetailsNG = ArtifactBuildDetailsNG.builder().build();
-    gcrArtifactDelegateResponse =
-        new GcrArtifactDelegateResponse(buildDetailsNG, ArtifactSourceType.GCR, "cd-play/alpine", "v3.0");
+    gcrArtifactDelegateResponse = new GcrArtifactDelegateResponse(
+        buildDetailsNG, ArtifactSourceType.GCR, "cd-play/alpine", "v3.0", new HashMap<>());
     String resp = gcrArtifactDelegateResponse.describe();
     String[] values = resp.split("\n");
     assertThat(resp).isNotNull();

@@ -7,6 +7,7 @@
 
 package io.harness.delegate.expression;
 
+import io.harness.expression.DockerConfigJsonSecretFunctor;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.expression.ImageSecretFunctor;
 import io.harness.expression.JsonFunctor;
@@ -31,6 +32,7 @@ public class DelegateExpressionEvaluator extends ExpressionEvaluator {
             .expressionFunctorToken(expressionFunctorToken)
             .build());
     addFunctor(ImageSecretFunctor.FUNCTOR_NAME, new ImageSecretFunctor());
+    addFunctor(DockerConfigJsonSecretFunctor.FUNCTOR_NAME, new DockerConfigJsonSecretFunctor());
   }
 
   public DelegateExpressionEvaluator(Injector injector, String accountId, int expressionFunctorToken) {

@@ -19,6 +19,7 @@ java_library(
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/featureFlag:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/k8s/beans:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/pipeline/steps:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/evaluators:module",
         "//127-cd-nextgen-entities:module",
         "//440-connector-nextgen:module",
         "//877-filestore:module",

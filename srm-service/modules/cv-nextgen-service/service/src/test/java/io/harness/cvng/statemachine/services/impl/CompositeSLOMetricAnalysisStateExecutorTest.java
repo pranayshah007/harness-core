@@ -20,10 +20,16 @@ import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
+import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
+import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
+import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
+import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
+import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord.CompositeSLORecordKeys;
@@ -70,14 +76,28 @@ public class CompositeSLOMetricAnalysisStateExecutorTest extends CvNextGenTestBa
   private Instant startTime;
   private Instant endTime;
   private String verificationTaskId;
+
   AnalysisStateExecutor sloMetricAnalysisStateExecutor;
   private CompositeSLOMetricAnalysisState sloMetricAnalysisState;
   ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO;
+
+  ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTOWithConsecutiveMinutes;
+
   CompositeServiceLevelObjective compositeServiceLevelObjective;
+
+  CompositeServiceLevelObjective compositeServiceLevelObjectiveWithConsecutiveMinutes;
+
   ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO1;
   ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO2;
+  ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO3;
+
+  ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO4;
+
   SimpleServiceLevelObjective simpleServiceLevelObjective1;
   SimpleServiceLevelObjective simpleServiceLevelObjective2;
+  SimpleServiceLevelObjective simpleServiceLevelObjective3;
+
+  SimpleServiceLevelObjective simpleServiceLevelObjective4;
 
   @Before
   public void setup() throws IllegalAccessException {
@@ -117,6 +137,66 @@ public class CompositeSLOMetricAnalysisStateExecutorTest extends CvNextGenTestBa
     simpleServiceLevelObjective2 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
         builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO2.getIdentifier());
 
+    MonitoredServiceDTO monitoredServiceDTO3 = builderFactory.monitoredServiceDTOBuilder()
+                                                   .sources(MonitoredServiceDTO.Sources.builder().build())
+                                                   .serviceRef("service2")
+                                                   .environmentRef("env2")
+                                                   .identifier("service2_env2")
+                                                   .build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO3);
+    simpleServiceLevelObjectiveDTO3 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("sloIdentifier3").build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec3 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO3.getSpec();
+    simpleServiceLevelObjectiveSpec3.setMonitoredServiceRef(monitoredServiceDTO3.getIdentifier());
+    simpleServiceLevelObjectiveSpec3.setHealthSourceRef(generateUuid());
+    WindowBasedServiceLevelIndicatorSpec windowBasedServiceLevelIndicatorSpec =
+        WindowBasedServiceLevelIndicatorSpec.builder()
+            .sliMissingDataType(SLIMissingDataType.GOOD)
+            .type(SLIMetricType.RATIO)
+            .spec(RatioSLIMetricSpec.builder()
+                      .thresholdType(ThresholdType.GREATER_THAN)
+                      .thresholdValue(20.0)
+                      .eventType(RatioSLIMetricEventType.GOOD)
+                      .metric1("metric1")
+                      .metric2("metric2")
+                      .considerConsecutiveMinutes(2)
+                      .considerAllConsecutiveMinutesFromStartAsBad(true)
+                      .build())
+            .build();
+    simpleServiceLevelObjectiveSpec3.getServiceLevelIndicators().get(0).setSpec(windowBasedServiceLevelIndicatorSpec);
+    simpleServiceLevelObjectiveSpec3.getServiceLevelIndicators().get(0).setIdentifier("sli_identifier");
+    simpleServiceLevelObjectiveDTO3.setSpec(simpleServiceLevelObjectiveSpec3);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO3);
+    simpleServiceLevelObjective3 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO3.getIdentifier());
+
+    simpleServiceLevelObjectiveDTO4 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("sloIdentifier4").build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec4 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO4.getSpec();
+    simpleServiceLevelObjectiveSpec4.setMonitoredServiceRef(monitoredServiceDTO1.getIdentifier());
+    simpleServiceLevelObjectiveSpec4.setHealthSourceRef(generateUuid());
+    windowBasedServiceLevelIndicatorSpec = WindowBasedServiceLevelIndicatorSpec.builder()
+                                               .sliMissingDataType(SLIMissingDataType.GOOD)
+                                               .type(SLIMetricType.RATIO)
+                                               .spec(RatioSLIMetricSpec.builder()
+                                                         .thresholdType(ThresholdType.GREATER_THAN)
+                                                         .thresholdValue(20.0)
+                                                         .eventType(RatioSLIMetricEventType.GOOD)
+                                                         .metric1("metric1")
+                                                         .metric2("metric2")
+                                                         .considerConsecutiveMinutes(3)
+                                                         .considerAllConsecutiveMinutesFromStartAsBad(true)
+                                                         .build())
+                                               .build();
+    simpleServiceLevelObjectiveSpec4.getServiceLevelIndicators().get(0).setSpec(windowBasedServiceLevelIndicatorSpec);
+    simpleServiceLevelObjectiveSpec4.getServiceLevelIndicators().get(0).setIdentifier("sli_identifier2");
+    simpleServiceLevelObjectiveDTO4.setSpec(simpleServiceLevelObjectiveSpec4);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO4);
+    simpleServiceLevelObjective4 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO4.getIdentifier());
+
     serviceLevelObjectiveV2DTO =
         builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
             .spec(CompositeServiceLevelObjectiveSpec.builder()
@@ -137,18 +217,51 @@ public class CompositeSLOMetricAnalysisStateExecutorTest extends CvNextGenTestBa
                                   .build()))
                       .build())
             .build();
+
+    serviceLevelObjectiveV2DTOWithConsecutiveMinutes =
+        builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+            .identifier("compositeSloIdentifier2")
+            .spec(CompositeServiceLevelObjectiveSpec.builder()
+                      .serviceLevelObjectivesDetails(
+                          Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(simpleServiceLevelObjectiveDTO3.getIdentifier())
+                                            .weightagePercentage(75.0)
+                                            .accountId(simpleServiceLevelObjective3.getAccountId())
+                                            .orgIdentifier(simpleServiceLevelObjective3.getOrgIdentifier())
+                                            .projectIdentifier(simpleServiceLevelObjective3.getProjectIdentifier())
+                                            .build(),
+                              ServiceLevelObjectiveDetailsDTO.builder()
+                                  .serviceLevelObjectiveRef(simpleServiceLevelObjective4.getIdentifier())
+                                  .weightagePercentage(25.0)
+                                  .accountId(simpleServiceLevelObjective4.getAccountId())
+                                  .orgIdentifier(simpleServiceLevelObjective4.getOrgIdentifier())
+                                  .projectIdentifier(simpleServiceLevelObjective4.getProjectIdentifier())
+                                  .build()))
+                      .build())
+            .build();
+
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO);
+    serviceLevelObjectiveV2Service.create(
+        builderFactory.getProjectParams(), serviceLevelObjectiveV2DTOWithConsecutiveMinutes);
+
     startTime = TIME_FOR_TESTS.minus(10, ChronoUnit.MINUTES);
     endTime = TIME_FOR_TESTS.minus(5, ChronoUnit.MINUTES);
     compositeServiceLevelObjective = (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
         builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO.getIdentifier());
+    compositeServiceLevelObjectiveWithConsecutiveMinutes =
+        (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+            builderFactory.getProjectParams(), serviceLevelObjectiveV2DTOWithConsecutiveMinutes.getIdentifier());
     UpdateOperations<CompositeServiceLevelObjective> updateOperations =
         hPersistence.createUpdateOperations(CompositeServiceLevelObjective.class)
             .set(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.startedAt, startTime.toEpochMilli());
     compositeServiceLevelObjective = (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
         builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO.getIdentifier());
+    compositeServiceLevelObjectiveWithConsecutiveMinutes =
+        (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+            builderFactory.getProjectParams(), serviceLevelObjectiveV2DTOWithConsecutiveMinutes.getIdentifier());
     verificationTaskId = compositeServiceLevelObjective.getUuid();
     hPersistence.update(compositeServiceLevelObjective, updateOperations);
+    hPersistence.update(compositeServiceLevelObjectiveWithConsecutiveMinutes, updateOperations);
     AnalysisInput input =
         AnalysisInput.builder().verificationTaskId(verificationTaskId).startTime(startTime).endTime(endTime).build();
 
@@ -160,7 +273,16 @@ public class CompositeSLOMetricAnalysisStateExecutorTest extends CvNextGenTestBa
                         .getServiceLevelIndicator(builderFactory.getProjectParams(),
                             simpleServiceLevelObjective2.getServiceLevelIndicators().get(0))
                         .getUuid();
+    String sliId3 = serviceLevelIndicatorService
+                        .getServiceLevelIndicator(builderFactory.getProjectParams(),
+                            simpleServiceLevelObjective3.getServiceLevelIndicators().get(0))
+                        .getUuid();
+    String sliId4 = serviceLevelIndicatorService
+                        .getServiceLevelIndicator(builderFactory.getProjectParams(),
+                            simpleServiceLevelObjective4.getServiceLevelIndicators().get(0))
+                        .getUuid();
     generateSLIRecords(sliId1, sliId2);
+    generateSLIRecords(sliId3, sliId4);
     sloMetricAnalysisState = CompositeSLOMetricAnalysisState.builder().build();
     sloMetricAnalysisState.setInputs(input);
   }
@@ -187,6 +309,35 @@ public class CompositeSLOMetricAnalysisStateExecutorTest extends CvNextGenTestBa
         builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO.getIdentifier());
     assertThat(sloHealthIndicator.getErrorBudgetRemainingPercentage()).isEqualTo(863800.00 / 8640);
     assertThat(sloHealthIndicator.getErrorBudgetRemainingMinutes()).isEqualTo(8638);
+    assertThat(sloHealthIndicator.getErrorBudgetRisk()).isEqualTo(ErrorBudgetRisk.HEALTHY);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testExecuteWithConsecutiveMinutes() {
+    verificationTaskId = compositeServiceLevelObjectiveWithConsecutiveMinutes.getUuid();
+    AnalysisInput input =
+        AnalysisInput.builder().verificationTaskId(verificationTaskId).startTime(startTime).endTime(endTime).build();
+    sloMetricAnalysisState.setInputs(input);
+    verificationTaskService.createCompositeSLOVerificationTask(builderFactory.getContext().getAccountId(),
+        compositeServiceLevelObjectiveWithConsecutiveMinutes.getUuid(), new HashMap<>());
+    sloMetricAnalysisState =
+        (CompositeSLOMetricAnalysisState) sloMetricAnalysisStateExecutor.execute(sloMetricAnalysisState);
+    List<CompositeSLORecord> sloRecordList =
+        hPersistence.createQuery(CompositeSLORecord.class)
+            .filter(CompositeSLORecordKeys.sloId, compositeServiceLevelObjectiveWithConsecutiveMinutes.getUuid())
+            .field(SLIRecordKeys.timestamp)
+            .greaterThanOrEq(startTime)
+            .field(SLIRecordKeys.timestamp)
+            .lessThan(endTime)
+            .asList();
+    assertThat(sloMetricAnalysisState.getStatus().name()).isEqualTo(AnalysisStatus.SUCCESS.name());
+    assertThat(sloRecordList.size()).isEqualTo(3);
+    SLOHealthIndicator sloHealthIndicator = sloHealthIndicatorService.getBySLOIdentifier(
+        builderFactory.getProjectParams(), serviceLevelObjectiveV2DTOWithConsecutiveMinutes.getIdentifier());
+    assertThat(sloHealthIndicator.getErrorBudgetRemainingPercentage()).isEqualTo(863900.00 / 8640);
+    assertThat(sloHealthIndicator.getErrorBudgetRemainingMinutes()).isEqualTo(8639);
     assertThat(sloHealthIndicator.getErrorBudgetRisk()).isEqualTo(ErrorBudgetRisk.HEALTHY);
   }
 

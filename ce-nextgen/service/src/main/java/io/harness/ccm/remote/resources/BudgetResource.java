@@ -292,7 +292,7 @@ public class BudgetResource {
         accountId, null, null, ceViewService.get(BudgetUtils.getPerspectiveIdForBudget(budget)).getFolderId());
     Budget oldBudget = budgetService.get(budgetId, accountId);
     budget.setParentBudgetGroupId(oldBudget.getParentBudgetGroupId());
-    budgetService.update(budgetId, budget);
+    budgetService.update(budgetId, budget, oldBudget);
     Budget newBudget = budgetService.get(budgetId, accountId);
     return ResponseDTO.newResponse(
         Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {

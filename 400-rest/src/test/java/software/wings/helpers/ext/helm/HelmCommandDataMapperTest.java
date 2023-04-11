@@ -24,7 +24,7 @@ import io.harness.logging.NoopExecutionCallback;
 import io.harness.rule.Owner;
 
 import software.wings.beans.dto.HelmChartSpecification;
-import software.wings.helpers.ext.helm.request.HelmCommandRequest;
+import software.wings.delegatetasks.validation.capabilities.HelmCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmInstallCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest;
 import software.wings.helpers.ext.k8s.request.K8sDelegateManifestConfig;

@@ -160,6 +160,10 @@ if [[ "" != "$MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
   export MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MONGO_MAX_DOCUMENT_LIMIT" ]]; then
+  export MONGO_MAX_DOCUMENT_LIMIT; yq -i '.mongo.maxDocumentsToBeFetched=env(MONGO_MAX_DOCUMENT_LIMIT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$ANALYTIC_MONGO_TAG_VALUE" ]]; then
  export ANALYTIC_MONGO_TAG_VALUE; yq -i '.mongo.analyticNodeConfig.mongoTagValue=env(ANALYTIC_MONGO_TAG_VALUE)' $CONFIG_FILE
 fi
@@ -746,13 +750,14 @@ if [[ "" != "$AZURE_MARKETPLACE_SECRETKEY" ]]; then
   export AZURE_MARKETPLACE_SECRETKEY; yq -i '.mktPlaceConfig.azureMarketplaceSecretKey=env(AZURE_MARKETPLACE_SECRETKEY)' $CONFIG_FILE
 fi
 if [[ "" != "$QUEUE_SERVICE_BASE_URL" ]]; then
-  export QUEUE_SERVICE_BASE_URL; yq -i '.delegateQueueServiceConfig.queueServiceConfig.baseUrl=env(QUEUE_SERVICE_BASE_URL)' $CONFIG_FILE
+  export QUEUE_SERVICE_BASE_URL; yq -i '.delegateQueueServiceConfig.queueServiceClientConfig.httpClientConfig.baseUrl=env(QUEUE_SERVICE_BASE_URL)' $CONFIG_FILE
+fi
+if [[ "" != "$QUEUE_SERVICE_AUTH_TOKEN" ]]; then
+  export QUEUE_SERVICE_AUTH_TOKEN; yq -i '.delegateQueueServiceConfig.queueServiceClientConfig.queueServiceSecret=env(QUEUE_SERVICE_AUTH_TOKEN)' $CONFIG_FILE
 fi
 if [[ "" != "$ENABLE_TASK_QUEUE_DEQUEUE" ]]; then
   export ENABLE_TASK_QUEUE_DEQUEUE; yq -i '.delegateQueueServiceConfig.enableQueueAndDequeue=env(ENABLE_TASK_QUEUE_DEQUEUE)' $CONFIG_FILE
 fi
-
-
 
 if [[ "" != "$WORKERS" ]]; then
   IFS=',' read -ra WORKER_ITEMS <<< "$WORKERS"

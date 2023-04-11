@@ -24,6 +24,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.provision.terraform.TerraformStepHelper;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
 import io.harness.cdng.provision.terragrunt.outcome.TerragruntPlanOutcome;
 import io.harness.delegate.beans.TaskData;
@@ -87,6 +88,7 @@ public class TerragruntPlanStepTest extends CategoryTest {
   @Mock private TerragruntStepHelper terragruntStepHelper;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
   @Mock private StepHelper stepHelper;
+  @Mock private TerraformStepHelper terraformStepHelper;
   @InjectMocks private TerragruntPlanStep terragruntPlanStep = new TerragruntPlanStep();
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
 

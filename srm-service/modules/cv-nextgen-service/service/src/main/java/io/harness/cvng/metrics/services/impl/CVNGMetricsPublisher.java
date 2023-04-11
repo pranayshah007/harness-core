@@ -41,6 +41,7 @@ import io.harness.persistence.PersistentEntity;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.mongodb.AggregationOptions;
+import dev.morphia.aggregation.AggregationPipeline;
 import dev.morphia.annotations.Id;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
@@ -111,10 +112,14 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
           hPersistence.createQuery(clazz).field(queryParams.getStatusField()).in(queryParams.getNonFinalStatuses());
       log.info("Starting getting tasks status based metrics {}", clazz.getSimpleName());
       long startTime = Instant.now().toEpochMilli();
-      hPersistence.getDatastore(clazz)
-          .createAggregation(clazz)
-          .match(query)
-          .group(id(grouping("accountId", "accountId")), grouping("count", accumulator("$sum", 1)))
+      int limit = hPersistence.getMaxDocumentLimit(clazz);
+      AggregationPipeline aggregationPipeline =
+          hPersistence.getDatastore(clazz).createAggregation(clazz).match(query).group(
+              id(grouping("accountId", "accountId")), grouping("count", accumulator("$sum", 1)));
+      if (limit > 0) {
+        aggregationPipeline.limit(limit);
+      }
+      aggregationPipeline
           .aggregate(InstanceCount.class,
               AggregationOptions.builder().maxTime(hPersistence.getMaxTimeMs(clazz), TimeUnit.MILLISECONDS).build())
           .forEachRemaining(instanceCount -> {
@@ -123,10 +128,15 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
             }
           });
       queryParams.getNonFinalStatuses().forEach(status -> {
-        hPersistence.getDatastore(clazz)
-            .createAggregation(clazz)
-            .match(hPersistence.createQuery(clazz).field(queryParams.getStatusField()).equal(status))
-            .group(id(grouping("accountId", "accountId")), grouping("count", accumulator("$sum", 1)))
+        AggregationPipeline aggregatePipeline =
+            hPersistence.getDatastore(clazz)
+                .createAggregation(clazz)
+                .match(hPersistence.createQuery(clazz).field(queryParams.getStatusField()).equal(status))
+                .group(id(grouping("accountId", "accountId")), grouping("count", accumulator("$sum", 1)));
+        if (limit > 0) {
+          aggregatePipeline.limit(limit);
+        }
+        aggregatePipeline
             .aggregate(InstanceCount.class,
                 AggregationOptions.builder().maxTime(hPersistence.getMaxTimeMs(clazz), TimeUnit.MILLISECONDS).build())
             .forEachRemaining(instanceCount -> {

@@ -29,6 +29,7 @@ import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.FileDelegateConfig;
 import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.encryption.SecretRefHelper;
+import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
@@ -78,19 +79,20 @@ public class SshWinRmConfigFileHelper {
   }
 
   public FileDelegateConfig getFileDelegateConfig(
-      Map<String, ConfigFileOutcome> configFilesOutcome, Ambiance ambiance) {
+      Map<String, ConfigFileOutcome> configFilesOutcome, Ambiance ambiance, boolean shouldRenderConfigFiles) {
     List<StoreDelegateConfig> stores = new ArrayList<>(configFilesOutcome.size());
     for (ConfigFileOutcome configFileOutcome : configFilesOutcome.values()) {
       StoreConfig storeConfig = configFileOutcome.getStore();
       if (storeConfig != null && HARNESS_STORE_TYPE.equals(storeConfig.getKind())) {
-        stores.add(buildHarnessStoreDelegateConfig(ambiance, (HarnessStore) storeConfig));
+        stores.add(buildHarnessStoreDelegateConfig(ambiance, (HarnessStore) storeConfig, shouldRenderConfigFiles));
       }
     }
 
     return FileDelegateConfig.builder().stores(stores).build();
   }
 
-  private HarnessStoreDelegateConfig buildHarnessStoreDelegateConfig(Ambiance ambiance, HarnessStore harnessStore) {
+  private HarnessStoreDelegateConfig buildHarnessStoreDelegateConfig(
+      Ambiance ambiance, HarnessStore harnessStore, boolean shouldRenderConfigFiles) {
     harnessStore = (HarnessStore) cdExpressionResolver.updateExpressions(ambiance, harnessStore);
     List<String> files = ParameterFieldHelper.getParameterFieldValue(harnessStore.getFiles());
     List<String> secretFiles = ParameterFieldHelper.getParameterFieldValue(harnessStore.getSecretFiles());
@@ -116,7 +118,35 @@ public class SshWinRmConfigFileHelper {
       });
     }
 
+    if (shouldRenderConfigFiles) {
+      renderConfigFilesParameters(ambiance, configFileParameters);
+    }
+
     return HarnessStoreDelegateConfig.builder().configFiles(configFileParameters).build();
+  }
+
+  private List<ConfigFileParameters> renderConfigFilesParameters(
+      Ambiance ambiance, List<ConfigFileParameters> configFileParameters) {
+    for (ConfigFileParameters configFileParameter : configFileParameters) {
+      if (configFileParameter.isEncrypted()) {
+        // At this point we don't have secret content as it will be retrieved on delegate side, hence skipping rendering
+        // for secret files. Generally we don't want to touch secret as it is not safe and might raise security
+        // concerns.
+        continue;
+      }
+
+      String renderedContent;
+      try {
+        renderedContent = cdExpressionResolver.renderExpression(ambiance, configFileParameter.getFileContent(), false);
+      } catch (GeneralException generalException) {
+        throw new InvalidRequestException(format("Failed to render config file %s, reason: %s",
+            configFileParameter.getFileName(), generalException.getMessage()));
+      }
+
+      configFileParameter.setFileContent(renderedContent);
+    }
+
+    return configFileParameters;
   }
 
   private List<ConfigFileParameters> fetchConfigFileFromFileStore(FileReference fileReference) {

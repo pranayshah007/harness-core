@@ -55,7 +55,9 @@ public class StepElementParameters implements StepParameters {
   @Override
   public String toViewJson() {
     StepElementParameters stepElementParameters = cloneParameters(false, false);
-    stepElementParameters.setSpec(spec.getViewJsonObject());
+    if (spec != null) {
+      stepElementParameters.setSpec(spec.getViewJsonObject());
+    }
     return RecastOrchestrationUtils.toJson(stepElementParameters);
   }
 

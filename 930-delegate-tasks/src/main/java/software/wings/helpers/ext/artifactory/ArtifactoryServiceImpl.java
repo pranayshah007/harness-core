@@ -74,7 +74,7 @@ import org.jfrog.artifactory.client.Artifactory;
 import org.jfrog.artifactory.client.ArtifactoryClientBuilder;
 import org.jfrog.artifactory.client.ArtifactoryRequest;
 import org.jfrog.artifactory.client.ArtifactoryResponse;
-import org.jfrog.artifactory.client.ProxyConfig;
+import org.jfrog.artifactory.client.httpClient.http.ProxyConfig;
 import org.jfrog.artifactory.client.impl.ArtifactoryRequestImpl;
 import org.jfrog.artifactory.client.model.impl.PackageTypeImpl;
 
@@ -301,8 +301,13 @@ public class ArtifactoryServiceImpl implements ArtifactoryService {
       ArtifactoryClientBuilder builder, ArtifactoryConfigRequest artifactoryConfig) {
     HttpHost httpProxyHost = Http.getHttpProxyHost(artifactoryConfig.getArtifactoryUrl());
     if (httpProxyHost != null && !Http.shouldUseNonProxy(artifactoryConfig.getArtifactoryUrl())) {
-      builder.setProxy(new ProxyConfig(httpProxyHost.getHostName(), httpProxyHost.getPort(), Http.getProxyScheme(),
-          Http.getProxyUserName(), Http.getProxyPassword()));
+      ProxyConfig proxy = new ProxyConfig();
+      proxy.setHost(httpProxyHost.getHostName());
+      proxy.setPort(httpProxyHost.getPort());
+      proxy.setUsername(Http.getProxyUserName());
+      proxy.setPassword(Http.getProxyPassword());
+      builder.setProxy(proxy);
+      builder.setProxy(proxy);
     }
   }
 

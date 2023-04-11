@@ -28,6 +28,7 @@ import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.expression.RegexFunctor;
@@ -109,7 +110,12 @@ public class GARApiServiceImpl implements GarApiService {
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(
       GarInternalConfig garinternalConfig, String versionRegex) {
     List<BuildDetailsInternal> builds = getBuilds(garinternalConfig, versionRegex, garinternalConfig.getMaxBuilds());
-    if (builds.isEmpty()) {
+    if (EmptyPredicate.isNotEmpty(builds)) {
+      builds = builds.stream()
+                   .filter(build -> new RegexFunctor().match(versionRegex, build.getNumber()))
+                   .collect(Collectors.toList());
+    }
+    if (EmptyPredicate.isEmpty(builds)) {
       throw NestedExceptionUtils.hintWithExplanationException("Could not fetch versions for the package",
           "Please check versionRegex Provided",
           new InvalidArtifactServerException("No versions found with versionRegex provided for the given package"));
@@ -210,7 +216,10 @@ public class GARApiServiceImpl implements GarApiService {
       nextPage = StringUtils.isBlank(page.getNextPageToken()) ? null : page.getNextPageToken();
     } while (StringUtils.isNotBlank(nextPage));
 
-    return details.stream().limit(maxNumberOfBuilds).collect(Collectors.toList());
+    return details.stream()
+        .limit(maxNumberOfBuilds)
+        .sorted(new BuildDetailsInternalComparatorDescending())
+        .collect(Collectors.toList());
   }
 
   private boolean isSuccessful(int code, String errormessage) {
@@ -305,8 +314,9 @@ public class GARApiServiceImpl implements GarApiService {
   private ArtifactMetaInfo getArtifactMetaInfoHelper(Response<DockerImageManifestResponse> response, String image) {
     if (!GARUtils.checkIfResponseNull(response) && response.isSuccessful()) {
       return dockerRegistryUtils.parseArtifactMetaInfoResponse(response, image);
-    } else if (!GARUtils.checkIfResponseNull(response)) {
-      isSuccessful(response.code(), response.errorBody().toString());
+    } else if (!GARUtils.checkIfResponseNull(response)
+        && !isSuccessful(response.code(), response.errorBody().toString())) {
+      throw new InvalidRequestException(COULD_NOT_FETCH_IMAGE_MANIFEST);
     }
     return null;
   }

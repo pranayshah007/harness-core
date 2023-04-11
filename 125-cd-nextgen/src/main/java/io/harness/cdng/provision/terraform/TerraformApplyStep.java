@@ -17,6 +17,7 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.provision.ProvisionerOutputHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
@@ -76,6 +77,7 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private StepHelper stepHelper;
+  @Inject private ProvisionerOutputHelper provisionerOutputHelper;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -235,8 +237,10 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
             .configFile(helper.getGitFetchFilesConfig(
                 inheritOutput.getConfigFiles(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
             .tfModuleSourceInheritSSH(inheritOutput.isUseConnectorCredentials())
-            .fileStoreConfigFiles(helper.getFileStoreFetchFilesConfig(
-                inheritOutput.getFileStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
+            .fileStoreConfigFiles(inheritOutput.getFileStorageConfigDTO() != null
+                    ? helper.prepareTerraformConfigFileInfo(inheritOutput.getFileStorageConfigDTO(), ambiance)
+                    : helper.getFileStoreFetchFilesConfig(
+                        inheritOutput.getFileStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
             .varFileInfos(helper.prepareTerraformVarFileInfo(inheritOutput.getVarFileConfigs(), ambiance))
             .backendConfig(inheritOutput.getBackendConfig())
             .backendConfigFileInfo(helper.prepareTerraformBackendConfigFileInfo(
@@ -319,12 +323,11 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
   }
 
   private void addStepOutcomeToStepResponse(
-      StepResponseBuilder stepResponseBuilder, TerraformTaskNGResponse terraformTaskNGResponse) {
-    stepResponseBuilder.stepOutcome(
-        StepResponse.StepOutcome.builder()
-            .name(OutcomeExpressionConstants.OUTPUT)
-            .outcome(new TerraformApplyOutcome(helper.parseTerraformOutputs(terraformTaskNGResponse.getOutputs())))
-            .build());
+      StepResponseBuilder stepResponseBuilder, TerraformApplyOutcome terraformApplyOutcome) {
+    stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
+                                        .name(OutcomeExpressionConstants.OUTPUT)
+                                        .outcome(terraformApplyOutcome)
+                                        .build());
   }
 
   private StepResponse handleTaskResultInline(Ambiance ambiance, TerraformApplyStepParameters stepParameters,
@@ -338,7 +341,7 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
     stepResponseBuilder.unitProgressList(unitProgresses);
     if (CommandExecutionStatus.SUCCESS == terraformTaskNGResponse.getCommandExecutionStatus()) {
       helper.saveRollbackDestroyConfigInline(stepParameters, terraformTaskNGResponse, ambiance);
-      addStepOutcomeToStepResponse(stepResponseBuilder, terraformTaskNGResponse);
+      addStepOutcome(ambiance, stepResponseBuilder, terraformTaskNGResponse.getOutputs());
       helper.updateParentEntityIdAndVersion(
           helper.generateFullIdentifier(
               ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
@@ -358,12 +361,18 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
     stepResponseBuilder.unitProgressList(unitProgresses);
     if (CommandExecutionStatus.SUCCESS == terraformTaskNGResponse.getCommandExecutionStatus()) {
       helper.saveRollbackDestroyConfigInherited(stepParameters, ambiance);
-      addStepOutcomeToStepResponse(stepResponseBuilder, terraformTaskNGResponse);
+      addStepOutcome(ambiance, stepResponseBuilder, terraformTaskNGResponse.getOutputs());
       helper.updateParentEntityIdAndVersion(
           helper.generateFullIdentifier(
               ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
           terraformTaskNGResponse.getStateFileId());
     }
     return stepResponseBuilder.build();
+  }
+
+  private void addStepOutcome(Ambiance ambiance, StepResponseBuilder stepResponseBuilder, String outputs) {
+    TerraformApplyOutcome terraformApplyOutcome = new TerraformApplyOutcome(helper.parseTerraformOutputs(outputs));
+    provisionerOutputHelper.saveProvisionerOutputByStepIdentifier(ambiance, terraformApplyOutcome);
+    addStepOutcomeToStepResponse(stepResponseBuilder, terraformApplyOutcome);
   }
 }

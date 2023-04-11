@@ -498,6 +498,9 @@ public class DowntimeServiceImpl implements DowntimeService {
                            ? ((EntityIdentifiersRule) instance.getEntitiesRule())
                                  .getEntityIdentifiers()
                                  .stream()
+                                 .filter(entityDetails
+                                     -> monitoredServiceIdentifierAffectedEntityMap.containsKey(
+                                         entityDetails.getEntityRef()))
                                  .map(entityDetails
                                      -> monitoredServiceIdentifierAffectedEntityMap.get(entityDetails.getEntityRef()))
                                  .collect(Collectors.toList())
@@ -676,6 +679,8 @@ public class DowntimeServiceImpl implements DowntimeService {
                            ? ((EntityIdentifiersRule) downtime.getEntitiesRule())
                                  .getEntityIdentifiers()
                                  .stream()
+                                 .filter(entityDetails
+                                     -> identifierAffectedEntityMap.containsKey(entityDetails.getEntityRef()))
                                  .map(entityDetails -> identifierAffectedEntityMap.get(entityDetails.getEntityRef()))
                                  .collect(Collectors.toList())
                            : Collections.singletonList(downtime.getEntitiesRule().getAffectedEntity().get()))

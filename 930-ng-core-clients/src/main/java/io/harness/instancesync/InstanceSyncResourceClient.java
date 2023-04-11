@@ -12,12 +12,15 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.perpetualtask.instancesync.InstanceSyncTaskDetails;
 
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 @OwnedBy(HarnessTeam.DX)
@@ -29,4 +32,9 @@ public interface InstanceSyncResourceClient {
       @NotEmpty @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotEmpty @Query(NGCommonEntityConstants.PERPETUAL_TASK_ID) String perpetualTaskId,
       @NotNull @Body DelegateResponseData instanceSyncPerpetualTaskResponse);
+
+  @GET(INSTANCE_SYNC + "/task/{perpetualTaskId}/details")
+  Call<ResponseDTO<InstanceSyncTaskDetails>> getInstanceSyncTaskDetails(
+      @NotEmpty @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotEmpty @Path(NGCommonEntityConstants.PERPETUAL_TASK_ID) String perpetualTaskId);
 }

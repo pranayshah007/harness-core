@@ -34,6 +34,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.PipelineServiceTestBase;
 import io.harness.PipelineSettingsService;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
@@ -69,6 +70,7 @@ import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationS
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.project.remote.ProjectClient;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
@@ -117,6 +119,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
   @Mock private PipelineAsyncValidationService pipelineAsyncValidationService;
   @Mock private ProjectClient projectClient;
+  @Mock private AccountClient accountClient;
 
   StepCategory library;
   StepCategory cv;
@@ -332,11 +335,13 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
         .when(pmsPipelineServiceHelper)
         .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
     MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
+    MockedStatic<CGRestUtils> cgStatic = Mockito.mockStatic(CGRestUtils.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
     aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
         .thenReturn(projDTOCall);
     pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
     aStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(false);
+    cgStatic.when(() -> CGRestUtils.getResponse(any())).thenReturn(false);
     pmsPipelineService.delete(accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, 1L);
   }
 

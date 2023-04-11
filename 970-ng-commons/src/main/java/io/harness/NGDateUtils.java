@@ -77,4 +77,8 @@ public class NGDateUtils {
   private static boolean isTimestampMidnight(long epochInMs) {
     return epochInMs % DAY_IN_MS == 0;
   }
+
+  public static double getDiffOfTimeStampsInMinutes(Long currentTs, Long previousTs) {
+    return Math.ceil((currentTs - previousTs) / 60000);
+  }
 }

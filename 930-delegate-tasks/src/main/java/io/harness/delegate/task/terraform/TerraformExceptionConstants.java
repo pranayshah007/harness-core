@@ -41,6 +41,8 @@ public final class TerraformExceptionConstants {
         "Please check if artifact details point to an existing file";
     public static final String HINT_NO_ARTIFACT_DETAILS_FOR_ARTIFACTORY_CONFIG =
         "Please check if Artifactory config has artifact details";
+    public static final String HINT_FILES_NOT_FOUND_IN_S3_CONFIG =
+        "Please check if there is any file on provided S3 path";
   }
 
   public static final class Explanation {
@@ -53,6 +55,8 @@ public final class TerraformExceptionConstants {
         "Failed to download file: %s from Artifactory: %s";
     public static final String EXPLANATION_NO_ARTIFACT_DETAILS_FOR_ARTIFACTORY_CONFIG =
         "No Artifactory config files details set";
+    public static final String EXPLANATION_FILES_NOT_FOUND_IN_S3_CONFIG =
+        "Couldn't find any file on specified S3 path ";
   }
 
   public static final class Message {

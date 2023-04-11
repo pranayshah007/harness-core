@@ -152,7 +152,11 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
         .isTrue();
     verify(waitNotifyEngine).waitForAllOn(any(), any(), any());
     verify(waitNotifyEngine)
-        .progressOn("id", ApprovalProgressData.builder().latestDelegateTaskId("__TASK_ID__").build());
+        .progressOn("id",
+            ApprovalProgressData.builder()
+                .latestDelegateTaskId("__TASK_ID__")
+                .taskName("ServiceNow Task: Get Ticket")
+                .build());
 
     // since auth object is present, then decrypt-able entity will be ServiceNowAuthCredentialsDTO
     doReturn(ServiceNowConnectorDTO.builder()
@@ -181,7 +185,11 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
     verify(ngDelegate2TaskExecutor, times(3)).queueTask(any(), any(), eq(Duration.ofSeconds(0)));
     verify(waitNotifyEngine, times(3)).waitForAllOn(any(), any(), any());
     verify(waitNotifyEngine, times(3))
-        .progressOn("id", ApprovalProgressData.builder().latestDelegateTaskId("__TASK_ID__").build());
+        .progressOn("id",
+            ApprovalProgressData.builder()
+                .latestDelegateTaskId("__TASK_ID__")
+                .taskName("ServiceNow Task: Get Ticket")
+                .build());
 
     // when task id is empty, progress update shouldn't be called
 
