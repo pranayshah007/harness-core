@@ -531,8 +531,7 @@ public class EngineExpressionEvaluator {
   }
 
   protected Object evaluateByCreatingExpression(@NotNull String expression, @NotNull EngineJexlContext ctx) {
-    JexlExpression jexlExpression = engine.createExpression(expression);
-    return jexlExpression.evaluate(ctx);
+    return engine.createScript(expression).execute(ctx);
   }
 
   protected Object evaluateByCreatingScript(@NotNull String expression, @NotNull EngineJexlContext ctx) {
