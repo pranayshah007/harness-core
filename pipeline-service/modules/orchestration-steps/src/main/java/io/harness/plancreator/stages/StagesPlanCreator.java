@@ -7,6 +7,7 @@
 
 package io.harness.plancreator.stages;
 
+import io.harness.beans.FeatureName;
 import io.harness.plancreator.pipelinerollback.PipelineRollbackStageHelper;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
@@ -32,6 +33,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StagesStep;
 import io.harness.steps.common.NGSectionStepParameters;
 import io.harness.utils.ExecutionModeUtils;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -50,6 +52,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
   @Inject KryoSerializer kryoSerializer;
+  @Inject PmsFeatureFlagService featureFlagService;
 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
@@ -66,7 +69,9 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
     }
     PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
     ExecutionMode executionMode = planCreationContextValue.getMetadata().getExecutionMode();
-    if (!ExecutionModeUtils.isRollbackMode(executionMode)) {
+    String accountIdentifier = planCreationContextValue.getAccountIdentifier();
+    if (!ExecutionModeUtils.isRollbackMode(executionMode)
+        && featureFlagService.isEnabled(accountIdentifier, FeatureName.PIPELINE_ROLLBACK)) {
       PipelineRollbackStageHelper.addPipelineRollbackStageDependency(responseMap, ctx.getCurrentField());
     }
     return responseMap;
