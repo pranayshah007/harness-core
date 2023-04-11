@@ -59,20 +59,6 @@ public class RunInfoUtils {
         getGivenRunCondition(stageWhenCondition.getValue().getCondition()));
   }
 
-  public String getRunConditionForStage(
-      ParameterField<StageWhenCondition> stageWhenCondition, ExecutionMode executionMode) {
-    if (ParameterField.isNull(stageWhenCondition) || stageWhenCondition.getValue() == null) {
-      return getDefaultWhenCondition(true, executionMode);
-    }
-
-    if (stageWhenCondition.getValue().getPipelineStatus() == null) {
-      throw new InvalidRequestException("Pipeline Status in stage when condition cannot be empty.");
-    }
-
-    return combineExpressions(getStatusExpression(stageWhenCondition.getValue().getPipelineStatus(), true),
-        getGivenRunCondition(stageWhenCondition.getValue().getCondition()));
-  }
-
   public String getRunConditionForStep(ParameterField<StepWhenCondition> stepWhenCondition) {
     if (ParameterField.isNull(stepWhenCondition) || stepWhenCondition.getValue() == null) {
       return getDefaultWhenCondition(false);
@@ -112,13 +98,6 @@ public class RunInfoUtils {
 
   private String getDefaultWhenCondition(boolean isStage) {
     return getDefaultWhenCondition(isStage, NORMAL);
-  }
-
-  private String getDefaultWhenCondition(boolean isStage, ExecutionMode executionMode) {
-    if (!isStage) {
-      return getStatusExpression(STAGE_SUCCESS);
-    }
-    return isRollbackMode(executionMode) ? getStatusExpression(ALWAYS) : getStatusExpression(PIPELINE_SUCCESS);
   }
 
   private String getDefaultWhenCondition(boolean isStage, ExecutionMode executionMode) {
