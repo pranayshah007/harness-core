@@ -86,7 +86,11 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -94,6 +98,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -110,6 +116,7 @@ import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.json.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -693,5 +700,79 @@ public class GovernanceRuleResource {
       @QueryParam(NGCommonEntityConstants.ENTITY_TYPE) EntityType entityType, Scope scope) {
     return ResponseDTO.newResponse(
         yamlSchemaProvider.getYamlSchema(entityType, orgIdentifier, projectIdentifier, scope));
+  }
+
+  @GET
+  @PublicApi
+  @Path("aiengine")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Get ai generated yaml for governance", nickname = "aiengine")
+  @Operation(operationId = "aiengine", description = "Get ai generated yaml for governance",
+      summary = "Get ai generated yaml for governance",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Schema", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<String>
+  aiengine(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam("prompt") String prompt, @NotNull @QueryParam("explain") Boolean isExplain,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.ENTITY_TYPE) EntityType entityType, Scope scope) throws IOException {
+    String PRIMING =
+        "You are a bot that has knowledge about writing cloud custodian policies for governance of cloud resources. "
+        + "Refuse to answer any question which is not related to writing cloud custodian's yaml policy. ";
+    // TODO: Make things configurable. Remove @Public api
+    // "gpt-3.5-turbo-0301"; // "text-davinci-003"
+    String APIURL = "https://api.openai.com/v1/chat/completions";
+    HttpURLConnection con = (HttpURLConnection) new URL(APIURL).openConnection();
+    con.setRequestMethod("POST");
+    con.setRequestProperty("Content-Type", "application/json");
+
+    String OPENAI_API_KEY = System.getenv("OPENAI_API_KEY");
+    String OPENAI_MODEL = System.getenv("OPENAI_MODEL");
+    con.setRequestProperty("Authorization", "Bearer " + OPENAI_API_KEY);
+    log.info("prompt is: {}", prompt);
+
+    // Prep request body for OpenAI
+    JSONObject data = new JSONObject();
+    JSONArray messages = new JSONArray();
+    JSONObject messagesData = new JSONObject();
+    messagesData.put("role", "system");
+    messagesData.put("content", PRIMING);
+    messages.put(messagesData);
+
+    JSONObject messagesData2 = new JSONObject();
+    messagesData2.put("role", "user");
+    messagesData2.put("content", prompt);
+    messages.put(messagesData2);
+
+    data.put("model", OPENAI_MODEL);
+    data.put("messages", messages);
+    log.info("request payload:  {}", data.toString());
+
+    con.setDoOutput(true);
+    con.getOutputStream().write(data.toString().getBytes());
+    String output =
+        new BufferedReader(new InputStreamReader(con.getInputStream())).lines().reduce((a, b) -> a + b).get();
+
+    output =
+        new JSONObject(output).getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
+    log.info("response:  {}", output);
+
+    String response = output;
+    if (!isExplain) {
+      String regex = "(?<=```yaml)[\\s\\S]*?(?=```)";
+      Pattern pattern = Pattern.compile(regex);
+      Matcher matcher = pattern.matcher(output);
+      if (matcher.find()) {
+        response = matcher.group(0);
+      }
+      log.info(response);
+    }
+
+    return ResponseDTO.newResponse(response);
   }
 }
