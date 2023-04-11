@@ -107,6 +107,8 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 
 	errorMsgChan := make(chan types.KeyErrorMsg, 1000)
 
+	scheduleGPTRCAThread(ctx, store, errorMsgChan)
+
 	// create the http server.
 	server := server.Server{
 		Acme:    config.Server.Acme,
@@ -187,13 +189,13 @@ func initLogging(c config.Config) {
 }
 
 
-func scheduleGPTRCAThread(ctx context.Context, errorMsgChan <-chan string) {
+func scheduleGPTRCAThread(ctx context.Context, store store.Store, errorMsgChan <-chan types.KeyErrorMsg) {
 	logrus.Info("Starting scheduleGPTRCAThread thread")
 	go func() {
 		for {
 			select {
 			case msg := <-errorMsgChan:
-				go GPTRCAThread(msg)
+				go GPTRCAThread(ctx, store, msg)
 			case <-ctx.Done():
 				return
 			}
@@ -201,10 +203,15 @@ func scheduleGPTRCAThread(ctx context.Context, errorMsgChan <-chan string) {
 	}()
 }
 
-func GPTRCAThread(errorMsg string) {
+func GPTRCAThread(ctx context.Context, store store.Store, keyErrorMsg types.KeyErrorMsg) {
 	//upload error message to new bucket
-
+	if err := store.Upload(ctx, keyErrorMsg.key + "/error-message", keyErrorMsg.ErrorMsg); err != nil {
+		logrus.Errorf("cannot upload error message object")
+	}
 	//process error message by chatgpt
 
 	//upload processed message by chatgpt
+	if err := store.Upload(ctx, keyErrorMsg.key + "/chatgpt-resp", keyErrorMsg.ErrorMsg); err != nil {
+		logrus.Errorf("cannot upload chatgpt response object")
+	}
 }
