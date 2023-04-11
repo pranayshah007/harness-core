@@ -65,6 +65,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
 
@@ -154,7 +155,7 @@ public class StrategyUtils {
     String planNodeId = yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY).getNode().getUuid();
     if (siblingField == null) {
       edgeLayoutList = EdgeLayoutList.newBuilder().addCurrentNodeChildren(planNodeId).build();
-    } else if (!StrategyUtils.getPipelineRollbackStageId(yamlField).equals(siblingField.getUuid())) {
+    } else if (!Objects.equals(siblingField.getUuid(), StrategyUtils.getPipelineRollbackStageId(yamlField))) {
       edgeLayoutList = EdgeLayoutList.newBuilder()
                            .addNextIds(siblingField.getNode().getUuid())
                            .addCurrentNodeChildren(planNodeId)
