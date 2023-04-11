@@ -15,7 +15,6 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
-import io.harness.exception.InvalidRequestException;
 import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.configmanager.utils.ConfigManagerUtils;
@@ -126,6 +125,11 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
     createConnectorInBackstage(accountIdentifier, catalogConnectorEntity.getConnectorIdentifier(),
         catalogConnectorEntity.getConnectorProviderType());
     return savedCatalogConnectorEntity;
+  }
+
+  @Override
+  public CatalogConnectorEntity findDefaultConnectorDetails(String accountIdentifier) {
+    return catalogConnectorRepository.findOneByLastUpdatedAt(accountIdentifier);
   }
 
   private Optional<CatalogConnectorEntity> getCatalogConnectorEntity(

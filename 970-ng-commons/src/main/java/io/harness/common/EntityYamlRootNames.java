@@ -112,7 +112,7 @@ public class EntityYamlRootNames {
   public static final String EXTERNAL = "External";
   public static final String FORTIFY_ON_DEMAND = "FortifyOnDemand";
   public static final String FOSSA = "Fossa";
-  public static final String GIT_LEAKS = "GitLeaks";
+  public static final String GIT_LEAKS = "Gitleaks";
   public static final String GRYPE = "Grype";
   public static final String JFROG_XRAY = "JfrogXray";
   public static final String MEND = "Mend";

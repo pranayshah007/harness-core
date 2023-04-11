@@ -110,7 +110,6 @@ public class BudgetServiceImpl implements BudgetService {
     validatePerspective(budget);
     updateBudgetParent(budget);
     updateBudgetDetails(budget, oldBudget);
-    updateBudgetEndTime(budget);
     updateBudgetCosts(budget);
     budgetDao.update(budgetId, budget);
   }
@@ -210,6 +209,7 @@ public class BudgetServiceImpl implements BudgetService {
     // We do not allow updates to period or startTime of a budget
     budget.setPeriod(oldBudget.getPeriod());
     budget.setStartTime(oldBudget.getStartTime());
+    budget.setEndTime(oldBudget.getEndTime());
 
     // In case this budget is part of budget group
     // We do not allow updates to breakdown as well
@@ -247,18 +247,20 @@ public class BudgetServiceImpl implements BudgetService {
   }
 
   private void updateBudgetEndTime(Budget budget) {
-    boolean isStartTimeValid = true;
     try {
       budget.setEndTime(BudgetUtils.getEndTimeForBudget(budget.getStartTime(), budget.getPeriod()));
       if (budget.getEndTime() < BudgetUtils.getStartOfCurrentDay()) {
-        isStartTimeValid = false;
+        long timeDiff = BudgetUtils.getStartOfCurrentDay() - budget.getEndTime() + BudgetUtils.ONE_DAY_MILLIS;
+        long periodInMilliSeconds = BudgetUtils.getEndTimeForBudget(0l, budget.getPeriod());
+        // Calculate the number of periods needed to cover the time difference
+        long periods_needed = Math.round(Math.ceil((double) timeDiff / (double) periodInMilliSeconds));
+        // Calculate the total time to shift the start time
+        long shift_time = periods_needed * periodInMilliSeconds;
+        budget.setStartTime(budget.getStartTime() + shift_time);
+        budget.setEndTime(BudgetUtils.getEndTimeForBudget(budget.getStartTime(), budget.getPeriod()));
       }
     } catch (Exception e) {
       log.error("Error occurred while updating end time of budget: {}, Exception : {}", budget.getUuid(), e);
-    }
-
-    if (!isStartTimeValid) {
-      throw new InvalidRequestException(BudgetUtils.INVALID_START_TIME_EXCEPTION);
     }
   }
 

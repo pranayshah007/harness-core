@@ -379,7 +379,7 @@ public enum FeatureName {
   STO_STEP_PALETTE_BURP_ENTERPRISE("Enable Burp Enterpise step for STO", HarnessTeam.STO),
 
   STO_STEP_PALETTE_CODEQL("Enable CodeQL step for STO", HarnessTeam.STO),
-  STO_STEP_PALETTE_GIT_LEAKS("Enable GitLeaks step for STO", HarnessTeam.STO),
+  STO_STEP_PALETTE_GIT_LEAKS("Enable Gitleaks step for STO", HarnessTeam.STO),
 
   DONT_ENABLE_STO_STEP_PALETTE_V3(
       "Enable the rest of STO Steps Q2 2023 and beyond, NOT READY for use in PRODUCTION", HarnessTeam.STO),
@@ -713,7 +713,9 @@ public enum FeatureName {
   CDS_GIT_CONFIG_FILES("Enable config files from GIT repositories", HarnessTeam.CDP),
   NG_EXPRESSIONS_NEW_INPUT_ELEMENT(
       "FF to enable the new input element for the Expressions on UI when UI suggests the probable expressions to the User based on text input so far",
-      PIPELINE);
+      PIPELINE),
+  CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN(
+      "Enable the check if Vault secret manager is read only", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

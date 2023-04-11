@@ -34,7 +34,7 @@ import io.harness.beans.steps.nodes.security.DataTheoremScanNode;
 import io.harness.beans.steps.nodes.security.DockerContentTrustScanNode;
 import io.harness.beans.steps.nodes.security.FortifyOnDemandScanNode;
 import io.harness.beans.steps.nodes.security.FossaScanNode;
-import io.harness.beans.steps.nodes.security.GitLeaksScanNode;
+import io.harness.beans.steps.nodes.security.GitleaksScanNode;
 import io.harness.beans.steps.nodes.security.GrypeScanNode;
 import io.harness.beans.steps.nodes.security.JfrogXrayScanNode;
 import io.harness.beans.steps.nodes.security.MendScanNode;
@@ -115,7 +115,7 @@ public enum STOStepType {
   FORTIFY_ON_DEMAND("FortifyOnDemand", "Fortify On Demand", FeatureName.DONT_ENABLE_STO_STEP_PALETTE_V3,
       FortifyOnDemandScanNode.class, EntityType.FORTIFY_ON_DEMAND, new String[] {SECURITY}),
 
-  GIT_LEAKS("GitLeaks", null, FeatureName.STO_STEP_PALETTE_GIT_LEAKS, GitLeaksScanNode.class, EntityType.GIT_LEAKS,
+  GIT_LEAKS("Gitleaks", null, FeatureName.STO_STEP_PALETTE_GIT_LEAKS, GitleaksScanNode.class, EntityType.GIT_LEAKS,
       new String[] {SAST}),
   GRYPE("Grype", null, null, GrypeScanNode.class, EntityType.GRYPE, new String[] {CONTAINER_SECURITY}),
   JFROG_XRAY("JfrogXray", "Jfrog Xray", FeatureName.DONT_ENABLE_STO_STEP_PALETTE_V3, JfrogXrayScanNode.class,

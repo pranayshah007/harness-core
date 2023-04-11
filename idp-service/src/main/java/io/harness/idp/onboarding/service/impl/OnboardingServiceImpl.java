@@ -100,7 +100,6 @@ import org.apache.commons.math3.util.Pair;
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
 public class OnboardingServiceImpl implements OnboardingService {
-  static final String BEARER_TOKEN_FORMAT = "Bearer %s";
   @Inject @Named("onboardingModuleConfig") OnboardingModuleConfig onboardingModuleConfig;
   @Inject @Named("PRIVILEGED") OrganizationClient organizationClient;
   @Inject @Named("PRIVILEGED") ProjectClient projectClient;
@@ -113,7 +112,6 @@ public class OnboardingServiceImpl implements OnboardingService {
   @Inject BackstageResourceClient backstageResourceClient;
   @Inject GitIntegrationService gitIntegrationService;
   @Inject StatusInfoService statusInfoService;
-  @Inject @Named("backstageServiceSecret") private String backstageServiceSecret;
 
   @Override
   public HarnessEntitiesCountResponse getHarnessEntitiesCount(String accountIdentifier) {
@@ -622,9 +620,8 @@ public class OnboardingServiceImpl implements OnboardingService {
   private void registerLocationInBackstage(String accountIdentifier, String type, List<String> targets) {
     for (String target : targets) {
       try {
-        getGeneralResponse(backstageResourceClient.createCatalogLocation(accountIdentifier,
-            String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret),
-            new BackstageCatalogLocationCreateRequest(type, target)));
+        getGeneralResponse(backstageResourceClient.createCatalogLocation(
+            accountIdentifier, new BackstageCatalogLocationCreateRequest(type, target)));
       } catch (Exception e) {
         log.error("Unable to register target of type = {} with location = {} in backstage, ex = {}", type, target,
             e.getMessage(), e);

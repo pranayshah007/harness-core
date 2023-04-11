@@ -87,6 +87,7 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
+import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -345,7 +346,7 @@ public class AwsApiHelperService {
     return buildDetails;
   }
 
-  private boolean isVersioningEnabledForBucket(AwsInternalConfig awsInternalConfig, String bucketName, String region) {
+  public boolean isVersioningEnabledForBucket(AwsInternalConfig awsInternalConfig, String bucketName, String region) {
     try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
              new CloseableAmazonWebServiceClient(getAmazonS3Client(awsInternalConfig, region))) {
       tracker.trackS3Call("Get Bucket Versioning Configuration");
@@ -353,7 +354,7 @@ public class AwsApiHelperService {
       BucketVersioningConfiguration bucketVersioningConfiguration =
           closeableAmazonS3Client.getClient().getBucketVersioningConfiguration(bucketName);
 
-      return "ENABLED".equals(bucketVersioningConfiguration.getStatus());
+      return "ENABLED".equalsIgnoreCase(bucketVersioningConfiguration.getStatus());
 
     } catch (AmazonServiceException amazonServiceException) {
       handleAmazonServiceException(amazonServiceException);
@@ -465,6 +466,23 @@ public class AwsApiHelperService {
       handleAmazonClientException(amazonClientException);
     }
 
+    return null;
+  }
+
+  public S3Object getVersionedObjectFromS3(
+      AwsInternalConfig awsInternalConfig, String region, String bucketName, String key, String version) {
+    GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, key, version);
+    try {
+      tracker.trackS3Call("Get Object");
+
+      return getAmazonS3Client(awsInternalConfig, getBucketRegion(awsInternalConfig, bucketName, region))
+          .getObject(getObjectRequest);
+
+    } catch (AmazonServiceException amazonServiceException) {
+      handleAmazonServiceException(amazonServiceException);
+    } catch (AmazonClientException amazonClientException) {
+      handleAmazonClientException(amazonClientException);
+    }
     return null;
   }
 

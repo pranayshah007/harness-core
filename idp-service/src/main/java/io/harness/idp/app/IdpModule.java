@@ -224,8 +224,7 @@ public class IdpModule extends AbstractModule {
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new ServiceResourceClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
-    install(new BackstageResourceClientModule(
-        appConfig.getBackstageHttpClientConfig(), appConfig.getBackstageServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new BackstageResourceClientModule(appConfig.getBackstageHttpClientConfig()));
 
     bind(IdpConfiguration.class).toInstance(appConfig);
     install(PersistentLockModule.getInstance());
@@ -274,6 +273,9 @@ public class IdpModule extends AbstractModule {
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("userSyncer"))
         .toInstance(new ManagedScheduledExecutorService("UserSyncer"));
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("AppConfigPurger"))
+        .toInstance(new ManagedScheduledExecutorService("AppConfigPurger"));
     bind(HealthResource.class).to(HealthResourceImpl.class);
 
     MapBinder<BackstageEnvVariableType, BackstageEnvVariableMapper> backstageEnvVariableMapBinder =

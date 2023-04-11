@@ -21,6 +21,7 @@ import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
 import io.harness.idp.annotations.IdpServiceAuth;
 import io.harness.idp.annotations.IdpServiceAuthIfHasApiKey;
+import io.harness.idp.configmanager.jobs.ConfigPurgeJob;
 import io.harness.idp.envvariable.jobs.BackstageEnvVariablesSyncJob;
 import io.harness.idp.events.consumers.EntityCrudStreamConsumer;
 import io.harness.idp.events.consumers.IdpEventConsumerController;
@@ -150,6 +151,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
   private void registerManagedJobs(Environment environment, Injector injector) {
     environment.lifecycle().manage(injector.getInstance(BackstageEnvVariablesSyncJob.class));
     environment.lifecycle().manage(injector.getInstance(UserSyncJob.class));
+    environment.lifecycle().manage(injector.getInstance(ConfigPurgeJob.class));
   }
 
   private void registerQueueListeners(Injector injector) {

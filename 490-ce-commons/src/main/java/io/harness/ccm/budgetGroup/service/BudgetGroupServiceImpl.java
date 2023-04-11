@@ -508,9 +508,9 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
         if (childProportions.get(child) < 0 || childProportions.get(child) > 100) {
           throw new InvalidRequestException(INVALID_INDIVIDUAL_PROPORTION);
         }
-        totalProportion += totalProportion + childProportions.get(child);
+        totalProportion += childProportions.get(child);
       }
-      if (totalProportion != 100) {
+      if (totalProportion != 100.0) {
         throw new InvalidRequestException(INVALID_TOTAL_PROPORTION);
       }
     }

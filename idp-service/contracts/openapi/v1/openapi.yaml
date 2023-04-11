@@ -555,6 +555,20 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       x-internal: true
   /v1/connector-info:
+    get:
+      summary: 'Get Connector Info'
+      tags:
+        - ConnectorInfo
+      operationId: get-connector-info
+      responses:
+        '200':
+          $ref: '#/components/responses/ConnectorInfoResponse'
+      description: Get Connector Info
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
     post:
       summary: Create or Update Connector Info
       tags:

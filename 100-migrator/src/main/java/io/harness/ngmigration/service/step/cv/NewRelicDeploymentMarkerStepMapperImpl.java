@@ -30,6 +30,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
 
 import software.wings.beans.GraphNode;
+import software.wings.beans.Workflow;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
@@ -62,7 +63,7 @@ public class NewRelicDeploymentMarkerStepMapperImpl extends StepMapper {
 
   @Override
   public List<CgEntityId> getReferencedEntities(
-      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+      String accountId, Workflow workflow, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     NewRelicDeploymentMarkerState state = (NewRelicDeploymentMarkerState) getState(graphNode);
     List<CgEntityId> references = new ArrayList<>();
     if (isNotEmpty(state.getAnalysisServerConfigId())) {

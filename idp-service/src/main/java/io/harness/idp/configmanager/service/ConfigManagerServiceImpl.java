@@ -96,6 +96,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setConfigType(configType);
     appConfigEntity.setEnabledDisabledAt(System.currentTimeMillis());
+    appConfigEntity.setEnabled(false);
     List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
         configEnvVariablesService.insertConfigEnvVariables(appConfig, accountIdentifier);
     AppConfigEntity insertedData = appConfigRepository.save(appConfigEntity);
@@ -210,6 +211,12 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
     return mergedPluginConfigs.config(ConfigManagerUtils.asYaml(mergedPluginConfig.toString()))
         .envVariables(envVariableAndSecretList);
+  }
+
+  @Override
+  public List<AppConfigEntity> deleteDisabledPluginsConfigsThatAreDisableWithinOneWeek() {
+    long baseTimeStamp = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000;
+    return appConfigRepository.deleteDisabledPluginsConfigBasedOnTimestampsForEnabledDisabledTime(baseTimeStamp);
   }
 
   private String mergeAppConfigs(List<String> configs) throws Exception {

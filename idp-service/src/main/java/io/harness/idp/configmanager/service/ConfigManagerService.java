@@ -14,6 +14,7 @@ import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.AppConfigRequest;
 import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 
+import java.util.List;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.IDP)
@@ -34,4 +35,6 @@ public interface ConfigManagerService {
   MergedAppConfigEntity mergeAndSaveAppConfig(String accountIdentifier) throws Exception;
 
   MergedPluginConfigs mergeEnabledPluginConfigsForAccount(String accountIdentifier) throws Exception;
+
+  List<AppConfigEntity> deleteDisabledPluginsConfigsThatAreDisableWithinOneWeek();
 }

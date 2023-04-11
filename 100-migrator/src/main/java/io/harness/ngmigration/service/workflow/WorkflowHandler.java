@@ -134,7 +134,7 @@ public abstract class WorkflowHandler {
         steps.stream()
             .map(step
                 -> stepMapperFactory.getStepMapper(step.getType())
-                       .getReferencedEntities(workflow.getAccountId(), step, stepIdToServiceIdMap))
+                       .getReferencedEntities(workflow.getAccountId(), workflow, step, stepIdToServiceIdMap))
             .filter(EmptyPredicate::isNotEmpty)
             .flatMap(Collection::stream)
             .collect(Collectors.toList()));
