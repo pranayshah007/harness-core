@@ -39,6 +39,8 @@ public interface PlanExpansionService {
 
   Map<String, Object> resolveExpressions(Ambiance ambiance, List<String> expressions);
 
+  String get(String planExecutionId);
+
   /**
    * Updates the status for given nodeExecution in Ambiance
    * @param ambiance

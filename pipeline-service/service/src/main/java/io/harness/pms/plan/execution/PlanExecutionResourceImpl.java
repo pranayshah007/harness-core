@@ -29,14 +29,22 @@ import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.retry.RetryHistoryResponseDto;
 import io.harness.engine.executions.retry.RetryInfo;
 import io.harness.engine.executions.retry.RetryLatestExecutionResponseDto;
+import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
+import io.harness.execution.ExpressionTestDetails;
+import io.harness.execution.ExpressionTestRequest;
+import io.harness.execution.ExpressionTestResponse;
 import io.harness.execution.PlanExecution;
+import io.harness.execution.expansion.PlanExpansionService;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitx.USER_FLOW;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.annotations.PipelineServiceAuth;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineResourceConstants;
@@ -63,6 +71,8 @@ import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -84,6 +94,10 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   @Inject private final OrchestrationEventLogRepository orchestrationEventLogRepository;
   @Inject private final AccessControlClient accessControlClient;
   @Inject PlanExecutionService planExecutionService;
+
+  @Inject PmsEngineExpressionService pmsEngineExpressionService;
+
+  @Inject PlanExpansionService planExpansionService;
 
   @Inject private final PreflightService preflightService;
   @Inject private final PMSPipelineService pmsPipelineService;
@@ -473,5 +487,37 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
             "[Allow user to mark the step as failed explicitly] Settings is not enabled, Please enable this setting if you want to use this product.");
       }
     }
+  }
+
+  @Override
+  public ResponseDTO<String> getExpandedJson(String planExecutionId) {
+    return ResponseDTO.newResponse(planExpansionService.get(planExecutionId));
+  }
+
+  @Override
+  public ResponseDTO<ExpressionTestResponse> testExpression(
+      String planExecutionId, ExpressionTestRequest expressionTestRequest) {
+    ExpressionTestResponse expressionTestResponse =
+        ExpressionTestResponse.builder().expressionTestDetails(new ArrayList<>()).build();
+    for (ExpressionTestDetails expressionTestDetails : expressionTestRequest.getExpressionTestDetails()) {
+      Ambiance ambiance = constructAmbianceForScope(planExecutionId, expressionTestDetails.getScope());
+      String expressionBlock = pmsEngineExpressionService.evaluateExpression(ambiance,
+          expressionTestDetails.getExpressionBlock(), ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+      expressionTestResponse.add(ExpressionTestDetails.builder()
+                                     .expressionBlock(expressionBlock)
+                                     .scope(expressionTestDetails.getScope())
+                                     .build());
+    }
+    return ResponseDTO.newResponse(expressionTestResponse);
+  }
+
+  private Ambiance constructAmbianceForScope(String planExecutionId, String scope) {
+    List<String> scopeSplit = Arrays.asList(scope.split("\\."));
+    List<Level> levels = new ArrayList<>();
+    for (String scopeInfo : scopeSplit) {
+      Level level = Level.newBuilder().setIdentifier(scopeInfo).setSkipExpressionChain(false).build();
+      levels.add(level);
+    }
+    return Ambiance.newBuilder().setPlanExecutionId(planExecutionId).addAllLevels(levels).build();
   }
 }

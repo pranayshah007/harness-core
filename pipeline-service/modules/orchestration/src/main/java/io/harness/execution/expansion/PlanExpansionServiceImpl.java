@@ -102,6 +102,20 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
   }
 
   @Override
+  public String get(String planExecutionId) {
+    Criteria criteria = Criteria.where("planExecutionId").is(planExecutionId);
+    Query query = new Query(criteria);
+    PlanExecutionExpansion planExecutionExpansion = planExecutionExpansionRepository.find(query);
+    if (planExecutionExpansion == null) {
+      return null;
+    }
+    if (planExecutionExpansion.getExpandedJson() == null) {
+      return null;
+    }
+    return planExecutionExpansion.getExpandedJson().toJson();
+  }
+
+  @Override
   public void updateStatus(Ambiance ambiance, Status status) {
     if (shouldSkipUpdate(ambiance)) {
       return;

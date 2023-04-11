@@ -20,6 +20,8 @@ import io.harness.apiexamples.PipelineAPIConstants;
 import io.harness.engine.executions.retry.RetryHistoryResponseDto;
 import io.harness.engine.executions.retry.RetryInfo;
 import io.harness.engine.executions.retry.RetryLatestExecutionResponseDto;
+import io.harness.execution.ExpressionTestRequest;
+import io.harness.execution.ExpressionTestResponse;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -730,4 +732,37 @@ public interface PlanExecutionResource {
           description =
               "planExecutionId of the execution of whose we need to find the latest execution planExecutionId")
       String planExecutionId);
+
+  @GET
+  @Path("expandedJson/{planExecutionId}")
+  @ApiOperation(value = "ExpandedJson for given planExecutionId", nickname = "expandedJson")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @Operation(operationId = "getExpandedJson", summary = "ExpandedJson for given planExecutionId",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns expandedJson for given planExecutionId")
+      })
+  @Hidden
+  ResponseDTO<String>
+  getExpandedJson(@NotNull @PathParam(NGCommonEntityConstants.PLAN_KEY) @Parameter(
+      description = "planExecutionId of the execution of whose we need to find the expandedJson for")
+      String planExecutionId);
+
+  @POST
+  @Path("testExpression/{planExecutionId}")
+  @ApiOperation(value = "Testing expression for given planExecutionId", nickname = "testExpression")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @Operation(operationId = "testExpression", summary = "Test expression on given planExecutionId",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Tests expression for given planExecutionId")
+      })
+  @Hidden
+  ResponseDTO<ExpressionTestResponse>
+  testExpression(@NotNull @PathParam(NGCommonEntityConstants.PLAN_KEY) @Parameter(
+                     description = "Testing expression for given planExecutionId") String planExecutionId,
+      @RequestBody(required = true,
+          description = "InputSet reference details") @NotNull @Valid ExpressionTestRequest expressionTestRequest);
 }
