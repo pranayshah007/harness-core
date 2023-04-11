@@ -570,6 +570,7 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
     doReturn(buildWithDetails).when(jenkinsArtifactTaskHandler).waitForJobExecutionToFinish(any(), any(), any(), any());
     when(jenkinsBuild.getNumber()).thenReturn(20);
     when(jenkinsRegistryUtils.getBuild(any(), any())).thenReturn(jenkinsBuild);
+    when(jenkinsRegistryUtils.getEnvVars(any(), any())).thenReturn(Collections.singletonMap("envVar", "test"));
 
     when(jenkinsBuild.details()).thenReturn(buildWithDetails);
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
@@ -805,5 +806,46 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
         jenkinsArtifactTaskHandler.pollTask(jenkinsArtifactDelegateRequest, logCallback);
     assertThat(artifactTaskExecutionResponse.getJenkinsBuildTaskNGResponse().getExecutionStatus())
         .isEqualTo(ExecutionStatus.FAILED);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testPollTaskForEnvVar() throws IOException, URISyntaxException {
+    String jobName = "FIS_Cleared_Derivatives_Core/NextGen/Build Custom Branch Images/keepbranch%2Fbo-development";
+    JenkinsConnectorDTO jenkinsConnectorDTO =
+        JenkinsConnectorDTO.builder()
+            .jenkinsUrl("https://Jenkins.com")
+            .auth(JenkinsAuthenticationDTO.builder().authType(JenkinsAuthType.USER_PASSWORD).build())
+            .build();
+    JenkinsArtifactDelegateRequest jenkinsArtifactDelegateRequest =
+        JenkinsArtifactDelegateRequest.builder()
+            .artifactPaths(Collections.singletonList("artifactPath"))
+            .jobName(jobName)
+            .jenkinsConnectorDTO(jenkinsConnectorDTO)
+            .useConnectorUrlForJobExecution(true)
+            .buildNumber("tag")
+            .queuedBuildUrl(queueItemUrlPart)
+            .captureEnvironmentVariable(true)
+            .build();
+    BuildDetails buildDetails = BuildDetails.Builder.aBuildDetails().withNumber("tag12").build();
+    queueItemUrlPart = jenkinsArtifactDelegateRequest.getQueuedBuildUrl();
+
+    JenkinsInternalConfig jenkinsInternalConfig =
+        JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
+    jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
+    when(buildWithDetails.getResult()).thenReturn(BuildResult.SUCCESS);
+    doReturn(buildWithDetails).when(jenkinsArtifactTaskHandler).waitForJobExecutionToFinish(any(), any(), any(), any());
+    when(jenkinsBuild.getNumber()).thenReturn(20);
+    when(jenkinsRegistryUtils.getBuild(any(), any())).thenReturn(jenkinsBuild);
+    when(jenkinsRegistryUtils.getEnvVars(any(), any())).thenReturn(Collections.singletonMap("envVar", "test"));
+
+    when(jenkinsBuild.details()).thenReturn(buildWithDetails);
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
+        jenkinsArtifactTaskHandler.pollTask(jenkinsArtifactDelegateRequest, logCallback);
+    assertThat(artifactTaskExecutionResponse.getJenkinsBuildTaskNGResponse().getExecutionStatus())
+        .isEqualTo(ExecutionStatus.SUCCESS);
+    assertThat(artifactTaskExecutionResponse.getJenkinsBuildTaskNGResponse().getEnvVars())
+        .isEqualTo(Collections.singletonMap("envVar", "test"));
   }
 }
