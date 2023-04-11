@@ -105,7 +105,7 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 	}
 	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
 
-	errorMsgChan := make(chan types.KeyErrorMsg)
+	errorMsgChan := make(chan types.KeyErrorMsg, 1000)
 
 	// create the http server.
 	server := server.Server{
