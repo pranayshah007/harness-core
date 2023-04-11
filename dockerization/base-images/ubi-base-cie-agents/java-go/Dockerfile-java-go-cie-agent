@@ -84,3 +84,6 @@ ENV PATH ${PATH}:/opt/gsutil:/usr/local/go/bin:/opt/sonar-scanner-${SONARQUBE_VE
 
 ENV GOROOT /usr/local/go
 ENV GOPATH /usr/local
+
+ENV JAVA_HOME=/opt/harness/OpenJDK17/jdk-17.0.6+10
+ENV PATH=$JAVA_HOME/bin:$PATH
