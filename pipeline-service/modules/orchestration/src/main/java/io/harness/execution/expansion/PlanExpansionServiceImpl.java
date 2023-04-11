@@ -7,6 +7,7 @@
 package io.harness.execution.expansion;
 
 import io.harness.beans.FeatureName;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.execution.PlanExecutionExpansion;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -62,6 +63,10 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
           update.set(strategyKey, Document.parse(RecastOrchestrationUtils.pruneRecasterAdditions(entry.getValue())));
         }
       }
+    }
+    if (EmptyPredicate.isNotEmpty(AmbianceUtils.obtainCurrentLevel(ambiance).getGroup())) {
+      String groupKey = String.format("%s.%s", getExpansionPathUsingLevels(ambiance), "group");
+      update.set(groupKey, AmbianceUtils.obtainCurrentLevel(ambiance).getGroup());
     }
     planExecutionExpansionRepository.update(ambiance.getPlanExecutionId(), update);
   }
