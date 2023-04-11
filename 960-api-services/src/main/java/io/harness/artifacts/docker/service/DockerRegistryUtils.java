@@ -172,6 +172,38 @@ public class DockerRegistryUtils {
     return ImmutablePair.of(dockerImageManifestResponse.fetchLabels(), authHeader);
   }
 
+  public static void verifyImageTag(DockerInternalConfig dockerConfig, DockerRegistryRestClient registryRestClient,
+      Function<Headers, String> getTokenFn, String authHeader, String imageName, String tag) throws IOException {
+    Response<DockerImageManifestResponse> response =
+        registryRestClient.verifyImage(authHeader, imageName, tag).execute();
+    if (DockerRegistryUtils.fallbackToTokenAuth(response.code(), dockerConfig)) { // unauthorized
+      if (getTokenFn == null) {
+        // We don't want to retry if getTokenFn is null.
+        throw NestedExceptionUtils.hintWithExplanationException("Invalid Credentials",
+            "Check if the provided credentials are correct",
+            new InvalidArtifactServerException("Invalid Docker Registry credentials", USER));
+      }
+      String token = getTokenFn.apply(response.headers());
+      authHeader = "Bearer " + token;
+      response = registryRestClient.verifyImage(authHeader, imageName, tag).execute();
+      if (response.code() == 401) {
+        // Unauthorized even after retry.
+        throw NestedExceptionUtils.hintWithExplanationException("Invalid Credentials",
+            "Check if the provided credentials are correct",
+            new InvalidArtifactServerException("Invalid Docker Registry credentials", USER));
+      }
+    }
+
+    if (!isSuccessful(response)) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Failed to fetch tags for image. Check if the image details are correct",
+          "Check if the image exists, the permissions are scoped for the authenticated user & check if the right connector chosen for fetching tags for the image",
+          new InvalidArtifactServerException(response.message(), USER));
+    }
+
+    checkValidImage(imageName, response);
+  }
+
   static void checkValidImage(String imageName, Response response) {
     if (response.code() == 404) { // page not found
       throw imageNotFoundException(imageName);
