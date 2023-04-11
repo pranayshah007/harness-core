@@ -18,6 +18,7 @@ type Config struct {
 		DisableAuth bool   `envconfig:"LOG_SERVICE_DISABLE_AUTH"`
 		LogSecret   string `envconfig:"LOG_SERVICE_SECRET" default:"secret" secret:"true"`
 		GlobalToken string `envconfig:"LOG_SERVICE_GLOBAL_TOKEN" default:"token" secret:"true"`
+		OpenAPIToken string `envconfig:"OPENAPI_TOKEN"`
 	}
 
 	Platform struct {

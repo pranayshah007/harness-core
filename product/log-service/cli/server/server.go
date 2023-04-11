@@ -8,7 +8,10 @@ package server
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"os/signal"
 
@@ -23,8 +26,8 @@ import (
 	"github.com/harness/harness-core/product/log-service/stream"
 	"github.com/harness/harness-core/product/log-service/stream/memory"
 	"github.com/harness/harness-core/product/log-service/stream/redis"
-	"github.com/harness/harness-core/product/platform/client"
 	"github.com/harness/harness-core/product/log-service/types"
+	"github.com/harness/harness-core/product/platform/client"
 
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
@@ -107,7 +110,7 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 
 	errorMsgChan := make(chan types.KeyErrorMsg, 1000)
 
-	scheduleGPTRCAThread(ctx, store, errorMsgChan)
+	scheduleGPTRCAThread(ctx, store, errorMsgChan, config.Auth.OpenAPIToken)
 
 	// create the http server.
 	server := server.Server{
@@ -189,13 +192,13 @@ func initLogging(c config.Config) {
 }
 
 
-func scheduleGPTRCAThread(ctx context.Context, store store.Store, errorMsgChan <-chan types.KeyErrorMsg) {
+func scheduleGPTRCAThread(ctx context.Context, store store.Store, errorMsgChan <-chan types.KeyErrorMsg, OpenAPIToken string) {
 	logrus.Info("Starting scheduleGPTRCAThread thread")
 	go func() {
 		for {
 			select {
 			case msg := <-errorMsgChan:
-				go GPTRCAThread(ctx, store, msg)
+				go GPTRCAThread(ctx, store, msg, OpenAPIToken)
 			case <-ctx.Done():
 				return
 			}
@@ -203,15 +206,66 @@ func scheduleGPTRCAThread(ctx context.Context, store store.Store, errorMsgChan <
 	}()
 }
 
-func GPTRCAThread(ctx context.Context, store store.Store, keyErrorMsg types.KeyErrorMsg) {
+func GPTRCAThread(ctx context.Context, store store.Store, keyErrorMsg types.KeyErrorMsg, OpenAPIToken string) {
 	//upload error message to new bucket
 	if err := store.Upload(ctx, keyErrorMsg.key + "/error-message", keyErrorMsg.ErrorMsg); err != nil {
 		logrus.Errorf("cannot upload error message object")
 	}
+
 	//process error message by chatgpt
 
+	// Set up the HTTP request
+    url := "https://api.openai.com/v1/chat/completions"
+	reqContent := "What caused the build to fail? Here's the error message: "+keyErrorMsg.ErrorMsg
+    requestData := map[string]interface{}{
+        "model":       "gpt-3.5-turbo",
+        "messages": []map[string]string{
+            {"role": "user", "content": reqContent},
+        },
+        "temperature": 0.7,
+    }
+    requestDataBytes, err := json.Marshal(requestData)
+    if err != nil {
+        logrus.Errorf(err.Error())
+		return
+    }
+    req, err := http.NewRequest("POST", url, bytes.NewBuffer(requestDataBytes))
+    if err != nil {
+    	logrus.Errorf(err.Error())
+    }
+    req.Header.Set("Content-Type", "application/json")
+    req.Header.Set("Authorization", "Bearer "+OpenAPIToken)
+
+    // Send the HTTP request and parse the response
+    client := http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+		logrus.Errorf(err.Error())
+        return
+    }
+    defer resp.Body.Close()
+
+    responseBytes, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        logrus.Errorf(err.Error())
+		return
+    }
+
+    // // Parse the response body into a Go data structure
+    // var responseMap map[string]interface{}
+    // err = json.Unmarshal(responseBytes, &responseMap)
+    // if err != nil {
+    //     panic(err)
+    // }
+
+    // // Access the content field of each choice
+    // for _, choice := range responseMap["choices"].([]interface{}) {
+    //     message := choice.(map[string]interface{})["message"].(map[string]interface{})
+    //     content := message["content"].(string)
+    // }
+
 	//upload processed message by chatgpt
-	if err := store.Upload(ctx, keyErrorMsg.key + "/chatgpt-resp", keyErrorMsg.ErrorMsg); err != nil {
+	if err := store.Upload(ctx, keyErrorMsg.key + "/chatgpt-resp", string(responseBytes)); err != nil {
 		logrus.Errorf("cannot upload chatgpt response object")
 	}
 }
