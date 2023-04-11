@@ -1,0 +1,1 @@
+ Service Type allow you to specify what kind of service you want.  

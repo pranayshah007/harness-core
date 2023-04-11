@@ -1,0 +1,13 @@
+## namespace.yaml
+
+```yaml
+{{- if .Values.createNamespace}}  
+apiVersion: v1  
+kind: Namespace  
+metadata:  
+  name: {{.Values.namespace}}  
+{{- end}}
+```
+  
+
+

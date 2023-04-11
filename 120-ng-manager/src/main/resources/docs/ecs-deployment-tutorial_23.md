@@ -1,0 +1,1 @@
+ AWS Event: 2022-10-06 23:04:30.971 (service myapp) updated computedDesiredCount for taskSet ecs-svc/2991467373931924299 to 0.  

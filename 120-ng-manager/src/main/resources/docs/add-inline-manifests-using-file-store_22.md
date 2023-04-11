@@ -1,0 +1,16 @@
+## service.yaml
+
+```yaml
+apiVersion: v1  
+kind: Service  
+metadata:  
+  name: {{.Values.name}}-svc  
+spec:  
+  type: {{.Values.serviceType}}  
+  ports:  
+  - port: {{.Values.servicePort}}  
+    targetPort: {{.Values.serviceTargetPort}}  
+    protocol: TCP  
+  selector:  
+    app: {{.Values.name}}
+```

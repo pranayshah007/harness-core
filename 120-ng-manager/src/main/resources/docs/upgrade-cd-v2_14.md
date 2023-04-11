@@ -1,0 +1,1 @@
+# You will need to add an artifact if you want to pass an image tag in at pipeline runtime 

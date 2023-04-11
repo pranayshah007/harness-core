@@ -1,0 +1,1 @@
+ The following two maps, config and secrets, are put into a ConfigMap  
