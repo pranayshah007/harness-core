@@ -127,6 +127,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import dev.morphia.utils.Assert;
 import io.fabric8.utils.Strings;
 import java.io.IOException;
 import java.net.MalformedURLException;
