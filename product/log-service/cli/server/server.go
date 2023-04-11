@@ -182,3 +182,26 @@ func initLogging(c config.Config) {
 		l.SetLevel(logrus.TraceLevel)
 	}
 }
+
+
+func scheduleGPTRCAThread(ctx context.Context, errorMsgChan <-chan string) {
+	logrus.Info("Starting scheduleGPTRCAThread thread")
+	go func() {
+		for {
+			select {
+			case msg := <-errorMsgChan:
+				go GPTRCAThread(msg)
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+}
+
+func GPTRCAThread(errorMsg string) {
+	//upload error message to new bucket
+
+	//process error message by chatgpt
+
+	//upload processed message by chatgpt
+}
