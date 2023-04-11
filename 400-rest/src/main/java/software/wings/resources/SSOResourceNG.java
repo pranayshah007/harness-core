@@ -57,6 +57,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -205,6 +206,18 @@ public class SSOResourceNG {
     return new RestResponse<>(ssoService.updateSamlConfiguration(accountId, samlSSOId, uploadedInputStream, displayName,
         groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
         isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), friendlySamlAppName, true));
+  }
+
+  @PUT
+  @Path("update-login-enabled-saml-setting")
+  @Timed
+  @AuthRule(permissionType = LOGGED_IN)
+  @ExceptionMetered
+  @InternalApi
+  public RestResponse<Boolean> updateLoginEnabledForSAMLSetting(@QueryParam("accountId") String accountId,
+                                                                @QueryParam("samlSSOId") String samlSSOId, @QueryParam("enable") @DefaultValue("true") Boolean enable) {
+    ssoService.updateLoginEnabledForSAMLSetting(accountId, samlSSOId, enable);
+    return new RestResponse<>(true);
   }
 
   @DELETE

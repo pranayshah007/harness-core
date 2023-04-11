@@ -60,4 +60,5 @@ public interface AuthenticationSettingsService {
       @AccountIdentifier String accountIdentifier, SessionTimeoutSettings sessionTimeoutSettings);
 
   PasswordStrengthPolicy getPasswordStrengthSettings(String accountIdentifier);
+  void allowLoginForSAMLSetting(@NotNull String accountId, @NotNull String samlSSOId, @NotNull Boolean enable);
 }

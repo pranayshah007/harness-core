@@ -13,6 +13,8 @@ import static io.harness.ng.accesscontrol.PlatformPermissions.EDIT_AUTHSETTING_P
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_AUTHSETTING_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.AUTHSETTING;
 
+import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Timed;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
@@ -55,6 +57,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -405,6 +408,26 @@ public class AuthenticationSettingsResource {
     } catch (Exception e) {
       throw new GeneralException("Error while editing saml-config", e);
     }
+  }
+
+  @PUT
+  @Timed
+  @ExceptionMetered
+  @Path("/login/{samlSSOId}")
+  @ApiOperation(value = "Enables or disables login for the SAML sso id", nickname = "enableDisableLoginForSAMLSetting")
+  @Operation(operationId = "enableDisableLoginForSAMLSetting", summary = "Update login allowed or not for given SAML setting",
+      description = "Updates if login is allowed or not for given SAML setting in Account ID.",
+      responses =
+          {
+              @io.swagger.v3.oas.annotations.responses.
+                  ApiResponse(responseCode = "default", description = "Successfully updated login allowed status for SAML setting in account")
+          })
+  public RestResponse<Boolean> enableDisableLoginForSAMLSetting(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+      "accountIdentifier") @NotNull String accountIdentifier, @NotNull @QueryParam("enable") @DefaultValue("true") Boolean enable, @Parameter(description = "Saml Settings Identifier") @PathParam("samlSSOId") String samlSSOId) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountIdentifier, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
+    authenticationSettingsService.allowLoginForSAMLSetting(accountIdentifier, samlSSOId, Boolean.TRUE.equals(enable));
+    return new RestResponse<>(true);
   }
 
   @DELETE

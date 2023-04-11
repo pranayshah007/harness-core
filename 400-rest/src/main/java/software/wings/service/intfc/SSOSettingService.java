@@ -51,6 +51,8 @@ public interface SSOSettingService extends OwnedByAccount {
       @GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings, boolean isUpdateCase, boolean isNGSso);
   OauthSettings saveOauthSettings(OauthSettings settings);
 
+  void updateLoginEnabledForSAMLSetting(@NotNull String accountId, @NotNull String samlSSOId, Boolean enable);
+
   boolean deleteSamlSettings(@NotNull String accountId);
 
   boolean deleteSamlSettings(SamlSettings samlSettings);

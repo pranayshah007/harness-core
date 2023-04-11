@@ -24,6 +24,7 @@ import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 
 import static java.util.Arrays.asList;
 
+import dev.morphia.query.UpdateOperations;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -43,6 +44,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import software.wings.beans.Account;
 import software.wings.beans.Event;
 import software.wings.beans.SyncTaskContext;
+import software.wings.beans.User;
 import software.wings.beans.loginSettings.events.AuthMechanismYamlDTO;
 import software.wings.beans.loginSettings.events.LoginSettingsAuthMechanismUpdateEvent;
 import software.wings.beans.sso.LdapConnectionSettings;
@@ -254,6 +256,11 @@ public class SSOServiceImpl implements SSOService {
           "NG Auth Audits: for account {} saving the LoginSettingsAuthMechanismUpdateEvent to outbox failed with exception: ",
           accountIdentifier, ex);
     }
+  }
+
+  @Override
+  public void updateLoginEnabledForSAMLSetting(String accountId, String samlSSOId, Boolean enable) {
+    ssoSettingService.updateLoginEnabledForSAMLSetting(accountId, samlSSOId, enable);
   }
 
   @Override

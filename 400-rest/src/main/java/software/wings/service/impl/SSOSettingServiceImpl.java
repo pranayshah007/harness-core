@@ -19,6 +19,7 @@ import static software.wings.common.NotificationMessageResolver.NotificationMess
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
 
+import dev.morphia.query.UpdateOperations;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -155,7 +156,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
         .equal(accountId)
         .field("type")
         .equal(SSOType.SAML)
-        .field("isConfiguredFromNG")
+        .field("configuredFromNG")
         .equal(false)
         .get();
   }
@@ -403,6 +404,13 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     ngAuditLoginSettingsForOAuthDelete(accountId, settings);
     log.info("Auditing deletion of OAUTH Settings for account={}", accountId);
     return wingsPersistence.delete(settings);
+  }
+
+  @Override
+  public void updateLoginEnabledForSAMLSetting(String accountId, String samlSSOId, Boolean enable) {
+    SamlSettings samlSettings = getSamlSettingsByAccountIdAndUuid(accountId, samlSSOId);
+    samlSettings.setLoginEnabled(Boolean.TRUE.equals(enable));
+    wingsPersistence.save(samlSettings);
   }
 
   @Override

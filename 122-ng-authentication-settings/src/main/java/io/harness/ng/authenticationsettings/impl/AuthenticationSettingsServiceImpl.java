@@ -97,6 +97,11 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     getResponse(managerClient.updateAuthMechanism(accountId, authenticationMechanism));
   }
 
+  @Override
+  public void allowLoginForSAMLSetting(String accountId, String samlSSOId, Boolean enable) {
+    managerClient.updateLoginEnabledForSAMLSetting(accountId, samlSSOId, enable);
+  }
+
   private void checkLicenseEnforcement(String accountId, AuthenticationMechanism authenticationMechanism) {
     switch (authenticationMechanism) {
       case OAUTH:
@@ -157,8 +162,9 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
                                              .displayName(samlSettings.getDisplayName())
                                              .authorizationEnabled(samlSettings.isAuthorizationEnabled())
                                              .entityIdentifier(samlSettings.getEntityIdentifier())
-                                             .friendlySamlName(samlSettings.getFriendlySamlName())
-                                             .build();
+            .friendlySamlName(samlSettings.getFriendlySamlName())
+            .loginEnabled(samlSettings.isLoginEnabled())
+            .build();
 
         if (null != samlSettings.getSamlProviderType()) {
           samlSettingsBuilt.setSamlProviderType(samlSettings.getSamlProviderType().name());

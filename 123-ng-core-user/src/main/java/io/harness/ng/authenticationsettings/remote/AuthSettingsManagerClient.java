@@ -78,6 +78,10 @@ public interface AuthSettingsManagerClient {
   Call<RestResponse<SSOConfig>> updateAuthMechanism(@Query("accountId") @NotEmpty String accountId,
       @Query("authMechanism") AuthenticationMechanism authenticationMechanism);
 
+  @PUT(API_PREFIX + "sso/update-login-enabled-saml-setting")
+  Call<RestResponse<SSOConfig>> updateLoginEnabledForSAMLSetting(@Query("accountId") @NotEmpty String accountId,
+                                                    @Query("samlSSOId") @NotEmpty String samlSSOId, @Query("enable") @NotNull Boolean enable);
+
   @PUT(API_PREFIX + "login-settings/{loginSettingsId}")
   Call<RestResponse<LoginSettings>> updateLoginSettings(@Path("loginSettingsId") String loginSettingsId,
       @Query("accountId") @NotEmpty String accountId, @Body @NotNull @Valid LoginSettings loginSettings);
