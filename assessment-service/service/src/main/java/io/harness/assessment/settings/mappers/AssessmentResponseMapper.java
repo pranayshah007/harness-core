@@ -30,6 +30,7 @@ public class AssessmentResponseMapper {
                        .collect(Collectors.toList()))
         .userScores(assessmentResponse.getScores())
         .status(assessmentResponse.getStatus())
+        .resultLink(assessmentResponse.getResultLink())
         .build();
   }
 

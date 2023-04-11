@@ -14,6 +14,7 @@ import io.harness.assessment.settings.beans.dto.upload.AssessmentUploadResponse;
 import io.harness.assessment.settings.beans.entities.Assessment;
 import io.harness.assessment.settings.beans.entities.Question;
 import io.harness.assessment.settings.beans.entities.QuestionOption;
+import io.harness.assessment.settings.beans.entities.QuestionType;
 import io.harness.assessment.settings.mappers.AssessmentUploadMapper;
 import io.harness.assessment.settings.repositories.AssessmentRepository;
 
@@ -45,7 +46,7 @@ public class AssessmentUploadServiceImpl implements AssessmentUploadService {
       throw new BadRequestException("Assessment already exists, for Id : " + assessmentUploadRequest.getAssessmentId());
     }
     Assessment assessmentUploaded = AssessmentUploadMapper.fromDTO(assessmentUploadRequest);
-    if (!isValidAssessment(assessmentUploaded)) {
+    if (isInValidAssessment(assessmentUploaded)) {
       throw new RuntimeException("Uploaded Assessment is invalid");
     }
     assessmentUploaded.setVersion(1L);
@@ -62,7 +63,7 @@ public class AssessmentUploadServiceImpl implements AssessmentUploadService {
     return AssessmentUploadMapper.toDTO(assessmentUploaded);
   }
 
-  boolean isValidAssessment(Assessment assessment) {
+  boolean isInValidAssessment(Assessment assessment) {
     // add option id checks and section id checks TODO
     boolean isValid = true;
     List<String> questionsUploaded = assessment.getQuestions()
@@ -80,8 +81,32 @@ public class AssessmentUploadServiceImpl implements AssessmentUploadService {
         isValid = false;
         // add reason
       }
+      if (!validateQuestionType(question)) {
+        isValid = false;
+      }
     }
-    return isValid;
+    return !isValid;
+  }
+
+  boolean validateQuestionType(Question question) {
+    QuestionType questionType = question.getQuestionType();
+    switch (questionType) {
+      case RATING:
+        break;
+      case LIKERT:
+        break;
+      case CHECKBOX:
+        long sum = question.getPossibleResponses().stream().mapToLong(QuestionOption::getOptionPoints).sum();
+        if (sum > 10) {
+          return false;
+        }
+        break;
+      case RADIO_BUTTON:
+        break;
+      case YES_NO:
+        break;
+    }
+    return true;
   }
 
   @Override
@@ -91,7 +116,7 @@ public class AssessmentUploadServiceImpl implements AssessmentUploadService {
     log.info("Updating assessment with request: {}", assessmentUploadRequest);
     String assessmentId = assessmentUploadRequest.getAssessmentId();
     Assessment assessmentUploaded = AssessmentUploadMapper.fromDTO(assessmentUploadRequest);
-    if (!isValidAssessment(assessmentUploaded)) {
+    if (isInValidAssessment(assessmentUploaded)) {
       throw new RuntimeException("Uploaded assessment is invalid");
     }
     Optional<Assessment> assessmentOptional =
