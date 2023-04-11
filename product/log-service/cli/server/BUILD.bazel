@@ -17,6 +17,7 @@ go_library(
         "//product/log-service/logger",
         "//product/log-service/server",
         "//product/log-service/store",
+        "//product/log-service/types",
         "//product/log-service/store/bolt",
         "//product/log-service/store/s3",
         "//product/log-service/stream",

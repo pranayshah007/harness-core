@@ -24,6 +24,7 @@ import (
 	"github.com/harness/harness-core/product/log-service/stream/memory"
 	"github.com/harness/harness-core/product/log-service/stream/redis"
 	"github.com/harness/harness-core/product/platform/client"
+	"github.com/harness/harness-core/product/log-service/types"
 
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
@@ -104,11 +105,13 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 	}
 	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
 
+	errorMsgChan := make(chan types.KeyErrorMsg)
+
 	// create the http server.
 	server := server.Server{
 		Acme:    config.Server.Acme,
 		Addr:    config.Server.Bind,
-		Handler: handler.Handler(stream, store, config, ngClient),
+		Handler: handler.Handler(stream, store, config, ngClient, errorMsgChan),
 	}
 
 	// trap the os signal to gracefully shutdown the

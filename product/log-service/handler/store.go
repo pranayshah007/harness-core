@@ -12,11 +12,12 @@ import (
 
 	"github.com/harness/harness-core/product/log-service/logger"
 	"github.com/harness/harness-core/product/log-service/store"
+	"github.com/harness/harness-core/product/log-service/types"
 )
 
 // HandleUpload returns an http.HandlerFunc that uploads
 // a blob to the datastore.
-func HandleUpload(store store.Store) http.HandlerFunc {
+func HandleUpload(store store.Store, errorMsgChan <-chan types.KeyErrorMsg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		st := time.Now()
