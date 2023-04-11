@@ -27,7 +27,7 @@ java_binary(
         "//959-ng-persistence:module",
 #        "//clients/notification:module",
 #        "//clients/access-control/:module",
-#        "//960-persistence:module",
+        "//960-persistence:module",
         "//980-commons:module"
     ],
 )

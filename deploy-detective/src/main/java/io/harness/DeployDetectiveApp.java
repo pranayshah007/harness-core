@@ -43,20 +43,20 @@ public class DeployDetectiveApp extends Application<AppConfig> {
     log.info("Starting DeployDetective Application ...");
 
     List<Module> modules = new ArrayList<>();
-    modules.add(new PersistenceModule());
     Injector injector = Guice.createInjector(modules);
 
     // Will create collections and Indexes
-    injector.getInstance(HPersistence.class);
+    //    injector.getInstance(HPersistence.class);
     registerResources(configuration, environment, injector);
   }
 
   private void registerResources(AppConfig appConfig, Environment environment, Injector injector) {
-    List<Class> resourceClasses = HarnessReflections.get()
-                                      .getTypesAnnotatedWith(Path.class)
-                                      .stream()
-                                      .filter(klazz -> StringUtils.startsWithAny("io.harness.resources"))
-                                      .collect(Collectors.toList());
+    List<Class> resourceClasses =
+        HarnessReflections.get()
+            .getTypesAnnotatedWith(Path.class)
+            .stream()
+            .filter(klazz -> StringUtils.startsWithAny(klazz.getPackage().getName(), "io.harness"))
+            .collect(Collectors.toList());
     for (Class<?> resource : resourceClasses) {
       if (Resource.isAcceptable(resource)) {
         environment.jersey().register(injector.getInstance(resource));
