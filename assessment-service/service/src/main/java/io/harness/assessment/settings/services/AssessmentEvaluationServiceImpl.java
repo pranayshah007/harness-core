@@ -176,6 +176,7 @@ public class AssessmentEvaluationServiceImpl implements AssessmentEvaluationServ
     Set<String> setOfQuestionInDb =
         assessment.getQuestions().stream().map(Question::getQuestionId).collect(Collectors.toSet());
     Set<String> setOfQuestionInResponse = userResponseQuestionMap.keySet();
+
     if (!setOfQuestionInResponse.equals(setOfQuestionInDb)) {
       throw new RuntimeException(
           "Assessment is incomplete : " + SetUtils.difference(setOfQuestionInDb, setOfQuestionInResponse)

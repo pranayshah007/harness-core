@@ -27,4 +27,5 @@ public class AssessmentResultsResponse {
   List<Score> userScores;
   List<Score> organizationScores;
   List<BenchmarkDTO> benchmarks;
+  String resultLink;
 }
