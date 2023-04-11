@@ -253,6 +253,8 @@ shared_dependencies = [
     "@maven//:com_sun_xml_fastinfoset_FastInfoset",
     "@maven//:com_sun_xml_messaging_saaj_saaj_impl",
     "@maven//:com_tdunning_t_digest",
+    "@maven//:com_theokanning_openai_gpt3_java_api",
+    "@maven//:com_theokanning_openai_gpt3_java_client",
     "@maven//:com_theokanning_openai_gpt3_java_service",
     "@maven//:com_thoughtworks_proxytoys_proxytoys",
     "@maven//:com_typesafe_config",

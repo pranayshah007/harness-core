@@ -5523,6 +5523,16 @@ maven_install(
             group = "com.theokanning.openai-gpt3-java",
             version = "0.12.0",
         ),
+        maven.artifact(
+            artifact ="api",
+            group = "com.theokanning.openai-gpt3-java",
+            version = "0.12.0",
+        ),
+        maven.artifact(
+            artifact ="client",
+            group = "com.theokanning.openai-gpt3-java",
+            version = "0.12.0",
+        ),
         maven_test_artifact("com.github.tomakehurst:wiremock-jre8-standalone:2.27.2"),
         maven_test_artifact("com.icegreen:greenmail:1.5.0"),
         maven_test_artifact("com.squareup.okhttp3:mockwebserver:4.9.2"),
