@@ -8,9 +8,9 @@
 package io.harness.repositories;
 
 import io.harness.annotation.HarnessRepo;
-import io.harness.entities.DemoEntity;
+import io.harness.deploydetective.entities.EventEntity;
 
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 @HarnessRepo
-public interface DemoRepository extends PagingAndSortingRepository<DemoEntity, String> {}
+public interface EventRepository extends PagingAndSortingRepository<EventEntity, String> {}

@@ -7,6 +7,9 @@
 
 package io.harness;
 
+import io.harness.mongo.MongoConfig;
+import io.harness.springdata.SpringPersistenceModule;
+
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -14,11 +17,8 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
-import io.harness.mongo.MongoConfig;
-import io.harness.springdata.SpringPersistenceModule;
-import org.springframework.core.convert.converter.Converter;
-
 import java.util.List;
+import org.springframework.core.convert.converter.Converter;
 
 public class DetectiveAppModule extends AbstractModule {
   private static DetectiveAppModule instance;
