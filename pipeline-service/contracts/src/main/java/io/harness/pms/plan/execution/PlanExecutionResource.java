@@ -20,6 +20,8 @@ import io.harness.apiexamples.PipelineAPIConstants;
 import io.harness.engine.executions.retry.RetryHistoryResponseDto;
 import io.harness.engine.executions.retry.RetryInfo;
 import io.harness.engine.executions.retry.RetryLatestExecutionResponseDto;
+import io.harness.execution.ExpressionDetailRequest;
+import io.harness.execution.ExpressionDetailResponse;
 import io.harness.execution.ExpressionTestRequest;
 import io.harness.execution.ExpressionTestResponse;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -765,4 +767,21 @@ public interface PlanExecutionResource {
                      description = "Testing expression for given planExecutionId") String planExecutionId,
       @RequestBody(required = true,
           description = "InputSet reference details") @NotNull @Valid ExpressionTestRequest expressionTestRequest);
+
+    @GET
+    @Path("fetchExpressions/{planExecutionId}")
+    @ApiOperation(value = "Fetch the expressions at various scopes for given planExecutionId and given expressionFQN", nickname = "fetchExpression")
+    @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+    @Operation(operationId = "fetchExpression", summary = "Fetch the expressions at various scopes for given planExecutionId and given expressionFQN",
+            responses =
+                    {
+                            @io.swagger.v3.oas.annotations.responses.
+                                    ApiResponse(responseCode = "default", description = "Tests expression for given planExecutionId")
+                    })
+    @Hidden
+    ResponseDTO<ExpressionDetailResponse>
+    fetchExpressionDetails(@NotNull @PathParam(NGCommonEntityConstants.PLAN_KEY) @Parameter(
+            description = "Fetching the expressions at various scopes for given planExecutionId and given expressionFQN") String planExecutionId,
+                           @NotNull @QueryParam("expression") String expression);
+
 }

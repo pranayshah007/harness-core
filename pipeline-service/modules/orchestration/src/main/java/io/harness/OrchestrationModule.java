@@ -62,6 +62,8 @@ import io.harness.engine.progress.publisher.ProgressEventPublisher;
 import io.harness.engine.progress.publisher.RedisProgressEventPublisher;
 import io.harness.event.OrchestrationLogConfiguration;
 import io.harness.exception.exceptionmanager.ExceptionModule;
+import io.harness.execution.expansion.ExpressionTestService;
+import io.harness.execution.expansion.ExpressionTestServiceImpl;
 import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.execution.expansion.PlanExpansionServiceImpl;
 import io.harness.govern.ServersModule;
@@ -151,6 +153,7 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
       bind(PipelineSettingsService.class).to(PipelineSettingsServiceImpl.class).in(Singleton.class);
     }
     bind(PlanExpansionService.class).to(PlanExpansionServiceImpl.class).in(Singleton.class);
+    bind(ExpressionTestService.class).to(ExpressionTestServiceImpl.class).in(Singleton.class);
 
     bind(NodeExecutionService.class).to(NodeExecutionServiceImpl.class).in(Singleton.class);
     bind(PlanExecutionService.class).to(PlanExecutionServiceImpl.class).in(Singleton.class);
