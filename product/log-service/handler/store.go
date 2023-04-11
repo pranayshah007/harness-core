@@ -144,6 +144,74 @@ func HandleDownloadLink(store store.Store) http.HandlerFunc {
 	}
 }
 
+// HandleDownload returns an http.HandlerFunc that downloads
+// a blob from the datastore and copies to the http.Response.
+func HandleGPTDownload(store store.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		st := time.Now()
+		h := w.Header()
+		h.Set("Access-Control-Allow-Origin", "*")
+		ctx := r.Context()
+
+		accountID := r.FormValue(accountIDParam)
+		key := CreateAccountSeparatedKey(accountID, r.FormValue(keyParam))
+
+		out, err := store.Download(ctx, key+"/chatgpt-resp")
+		if out != nil {
+			defer out.Close()
+		}
+		if err != nil {
+			WriteNotFound(w, err)
+			logger.FromRequest(r).
+				WithError(err).
+				WithField("key", key).
+				Errorln("api: cannot download the object")
+		} else {
+			io.Copy(w, out)
+			logger.FromRequest(r).
+				WithField("key", key).
+				WithField("latency", time.Since(st)).
+				WithField("time", time.Now().Format(time.RFC3339)).
+				Infoln("api: successfully downloaded object")
+		}
+	}
+}
+
+// HandleDownloadLink returns an http.HandlerFunc that generates
+// a signed link to download a blob to the datastore.
+func HandleGPTDownloadLink(store store.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		st := time.Now()
+		h.Set("Access-Control-Allow-Origin", "*")
+		ctx := r.Context()
+
+		accountID := r.FormValue(accountIDParam)
+		key := CreateAccountSeparatedKey(accountID, r.FormValue(keyParam))
+		expires := time.Hour
+
+		link, err := store.DownloadLink(ctx, key+"/chatgpt-resp", expires)
+		if err != nil {
+			WriteInternalError(w, err)
+			logger.FromRequest(r).
+				WithError(err).
+				WithField("key", key).
+				Errorln("api: cannot generate download url")
+			return
+		}
+
+		logger.FromRequest(r).
+			WithField("key", key).
+			WithField("latency", time.Since(st)).
+			WithField("time", time.Now().Format(time.RFC3339)).
+			Infoln("api: successfully created download url")
+		WriteJSON(w, struct {
+			Link    string        `json:"link"`
+			Expires time.Duration `json:"expires"`
+		}{link, expires}, 200)
+	}
+}
+
 // HandleDelete returns an http.HandlerFunc that deletes
 // a blob from the datastore.
 func HandleDelete(store store.Store) http.HandlerFunc {

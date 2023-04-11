@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 
 	"github.com/harness/harness-core/commons/go/lib/secret"
 	"github.com/harness/harness-core/product/log-service/config"
@@ -208,7 +209,7 @@ func scheduleGPTRCAThread(ctx context.Context, store store.Store, errorMsgChan <
 
 func GPTRCAThread(ctx context.Context, store store.Store, keyErrorMsg types.KeyErrorMsg, OpenAPIToken string) {
 	//upload error message to new bucket
-	if err := store.Upload(ctx, keyErrorMsg.key + "/error-message", keyErrorMsg.ErrorMsg); err != nil {
+	if err := store.Upload(ctx, keyErrorMsg.Key + "/error-message", strings.NewReader(keyErrorMsg.ErrorMsg)); err != nil {
 		logrus.Errorf("cannot upload error message object")
 	}
 
@@ -265,7 +266,7 @@ func GPTRCAThread(ctx context.Context, store store.Store, keyErrorMsg types.KeyE
     // }
 
 	//upload processed message by chatgpt
-	if err := store.Upload(ctx, keyErrorMsg.key + "/chatgpt-resp", string(responseBytes)); err != nil {
+	if err := store.Upload(ctx, keyErrorMsg.Key + "/chatgpt-resp", strings.NewReader(string(responseBytes))); err != nil {
 		logrus.Errorf("cannot upload chatgpt response object")
 	}
 }

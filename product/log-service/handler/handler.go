@@ -101,6 +101,8 @@ func Handler(stream stream.Stream, store store.Store, config config.Config, ngCl
 		sr.Get("/", HandleDownload(store))
 		sr.Post("/link/upload", HandleUploadLink(store))
 		sr.Post("/link/download", HandleDownloadLink(store))
+		sr.Get("/download/gpterrorresp", HandleGPTDownload(store))
+		sr.Post("/link/download/gpterrorresp", HandleGPTDownloadLink(store))
 
 		return sr
 	}())
