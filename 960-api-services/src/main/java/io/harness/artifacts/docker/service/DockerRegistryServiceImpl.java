@@ -339,7 +339,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
       String authHeader = getBasicAuthHeader(dockerConfig, true);
       Function<Headers, String> getToken = headers -> getToken(dockerConfig, headers, registryRestClient);
       // Note: We try & fetch the labels. If we cannot fetch the labels that means the image does not exist
-      DockerRegistryUtils.getSingleTagLabels(dockerConfig, registryRestClient, getToken, authHeader, imageName, tag);
+      DockerRegistryUtils.verifyImageTag(dockerConfig, registryRestClient, getToken, authHeader, imageName, tag);
       return processBuildResponse(dockerConfig.getDockerRegistryUrl(), imageName, tag);
     } catch (Exception e) {
       throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the given tag for the image",
@@ -385,7 +385,8 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
         registryRestClient = dockerRestClientFactory.getDockerRegistryRestClient(dockerConfig);
         basicAuthHeader = getBasicAuthHeader(dockerConfig, true);
         response = registryRestClient.getApiVersion(basicAuthHeader).execute();
-        if (DockerRegistryUtils.fallbackToTokenAuth(response.code(), dockerConfig)) { // unauthorized
+        if (DockerRegistryUtils.fallbackToTokenAuth(response.code(),
+                dockerConfig)) { // unauthorized
           dockerRegistryToken = fetchToken(dockerConfig, registryRestClient, response.headers());
           if (dockerRegistryToken != null) {
             String token = dockerRegistryToken.getToken();
