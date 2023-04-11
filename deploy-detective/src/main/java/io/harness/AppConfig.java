@@ -12,8 +12,10 @@ import io.harness.secret.ConfigSecret;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
+import lombok.Data;
 import lombok.Setter;
 
+@Data
 public class AppConfig extends Configuration {
   @Setter @JsonProperty("mongo") @ConfigSecret private MongoConfig mongoConfig;
 }

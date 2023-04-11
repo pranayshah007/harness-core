@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(PL)
 public class DbAliases {
   public static final String NG_MANAGER = "ng-harness";
+  public static final String DEPLOY_DETECTIVE = "deploy-detective";
   public static final String NOTIFICATION = "notification";
   public static final String ACCESS_CONTROL = "accesscontrol";
   public static final String AUDITS = "ng-audits";

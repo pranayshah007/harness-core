@@ -8,8 +8,6 @@
 package io.harness;
 
 import io.harness.maintenance.MaintenanceController;
-import io.harness.persistence.HPersistence;
-import io.harness.persistence.PersistenceModule;
 import io.harness.reflection.HarnessReflections;
 
 import com.google.inject.Guice;
@@ -43,6 +41,7 @@ public class DeployDetectiveApp extends Application<AppConfig> {
     log.info("Starting DeployDetective Application ...");
 
     List<Module> modules = new ArrayList<>();
+    modules.add(DetectiveAppModule.getInstance(configuration));
     Injector injector = Guice.createInjector(modules);
 
     // Will create collections and Indexes

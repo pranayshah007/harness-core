@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 public class HealthCheckResource {
   @GET
   @ApiOperation(value = "an http ping API, to check if service is alive", nickname = "health")
-  public RestResponse<String> ping() throws Exception {
+  public RestResponse<String> ping() {
     return new RestResponse<>("ok");
   }
 }
