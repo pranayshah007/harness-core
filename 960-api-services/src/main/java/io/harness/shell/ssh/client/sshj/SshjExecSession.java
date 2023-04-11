@@ -9,18 +9,18 @@ package io.harness.shell.ssh.client.sshj;
 
 import io.harness.shell.ssh.client.SshSession;
 
-import com.jcraft.jsch.ChannelExec;
 import lombok.Builder;
 import lombok.Getter;
+import net.schmizz.sshj.connection.channel.direct.Session;
 
 @Builder
 @Getter
 public class SshjExecSession extends SshSession {
-  private ChannelExec channel;
+  private Session session;
   @Override
   public void close() throws Exception {
-    if (channel != null && !channel.isClosed()) {
-      channel.disconnect();
+    if (session != null && !session.isOpen()) {
+      session.close();
     }
   }
 }

@@ -8,9 +8,14 @@
 package io.harness.shell.ssh.client.sshj;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.eraro.ErrorCode.SSH_RETRY;
 import static io.harness.eraro.ErrorCode.UNKNOWN_EXECUTOR_TYPE_ERROR;
+import static io.harness.logging.CommandExecutionStatus.FAILURE;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.shell.AccessType.USER_PASSWORD;
 import static io.harness.shell.AuthenticationScheme.KERBEROS;
+
+import static java.lang.String.format;
 
 import io.harness.logging.LogCallback;
 import io.harness.shell.SshSessionConfig;
@@ -25,6 +30,7 @@ import io.harness.shell.ssh.sftp.SftpResponse;
 import io.harness.shell.ssh.xfer.ScpRequest;
 import io.harness.shell.ssh.xfer.ScpResponse;
 
+import com.hierynomus.sshj.userauth.keyprovider.OpenSSHKeyV1KeyFile;
 import com.jcraft.jsch.JSchException;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -35,11 +41,13 @@ import javax.security.auth.login.LoginException;
 import lombok.extern.slf4j.Slf4j;
 import net.schmizz.sshj.DefaultConfig;
 import net.schmizz.sshj.SSHClient;
+import net.schmizz.sshj.common.IOUtils;
+import net.schmizz.sshj.connection.ConnectionException;
+import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.transport.TransportException;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import net.schmizz.sshj.userauth.UserAuthException;
 import net.schmizz.sshj.userauth.keyprovider.OpenSSHKeyFile;
-import net.schmizz.sshj.userauth.password.PasswordFinder;
 import org.apache.commons.lang3.NotImplementedException;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.Oid;
@@ -54,7 +62,31 @@ public class SshjClient extends SshClient {
 
   @Override
   protected ExecResponse execInternal(ExecRequest commandData, SshConnection sshConnection) {
-    throw new NotImplementedException("Not implemented");
+    try (SshjExecSession execSession = getExecSession(sshConnection)) {
+      Session session = execSession.getSession();
+      session.allocateDefaultPTY();
+
+      if (commandData.isDisplayCommand()) {
+        saveExecutionLog(format("Executing command %s ...", commandData.getCommand()));
+      } else {
+        saveExecutionLog("Executing command ...");
+      }
+
+      Session.Command cmd = session.exec(commandData.getCommand());
+      String output = IOUtils.readFully(cmd.getInputStream()).toString();
+      cmd.join();
+      Integer exitStatus = cmd.getExitStatus();
+      return ExecResponse.builder().output(output).exitCode(exitStatus).status(SUCCESS).build();
+    } catch (SshClientException ex) {
+      if (ex.getCode() == SSH_RETRY) {
+        throw ex;
+      }
+      log.error("Command execution failed with error", ex);
+      return ExecResponse.builder().output(null).exitCode(1).status(FAILURE).build();
+    } catch (Exception ex) {
+      log.error("Command execution failed with error", ex);
+      return ExecResponse.builder().output(null).exitCode(1).status(FAILURE).build();
+    }
   }
 
   @Override
@@ -160,6 +192,7 @@ public class SshjClient extends SshClient {
     client.connect(config.getHost(), config.getPort());
     client.setTimeout(config.getSshSessionTimeout());
     client.getConnection().getKeepAlive().setKeepAliveInterval(10);
+    client.useCompression();
 
     if (config.getAuthenticationScheme() != null && config.getAuthenticationScheme() == KERBEROS) {
       logCallback.saveExecutionLog("SSH using Kerberos Auth");
@@ -191,15 +224,16 @@ public class SshjClient extends SshClient {
       log.info("[SshSessionFactory]: SSH using Vault SSH secret engine with SignedPublicKey: {} ",
           config.getSignedPublicKey());
 
-      final char[] copyOfKey = getCopyOfKey();
-      if (isEmpty(config.getKeyPassphrase())) {
-        client.loadKeys(new String(copyOfKey), config.getSignedPublicKey(),
-            isEmpty(config.getKeyPassphrase()) ? null
-                                               : new StaticPasswordFinder(new String(config.getKeyPassphrase())));
-        client.authPublickey(config.getUserName());
-        log.info("[VaultSSH]: SSH using Vault SSH secret engine with SignedPublicKey is completed: {} ",
-            config.getSignedPublicKey());
-      }
+      OpenSSHKeyFile openSSHKeyFile = new OpenSSHKeyFile();
+      openSSHKeyFile.init(new String(getCopyOfKey()), config.getSignedPublicKey());
+
+      OpenSSHKeyV1KeyFile openSSHKeyV1KeyFile = new OpenSSHKeyV1KeyFile();
+      openSSHKeyV1KeyFile.init(new String(getCopyOfKey()), config.getSignedPublicKey());
+
+      client.authPublickey(config.getUserName(), openSSHKeyFile, openSSHKeyV1KeyFile);
+      log.info("[VaultSSH]: SSH using Vault SSH secret engine with SignedPublicKey is completed: {} ",
+          config.getSignedPublicKey());
+
     } else {
       if (config.getKey() != null && config.getKey().length > 0) {
         // Copy Key because EncryptionUtils has a side effect of modifying the original array
@@ -222,20 +256,17 @@ public class SshjClient extends SshClient {
   }
 
   @Override
-  protected Object getExecSession(SshConnection sshConnection) throws SshClientException {
-    throw new NotImplementedException("Not implemented");
-  }
-
-  class StaticPasswordFinder implements PasswordFinder {
-    private char[] password;
-    public StaticPasswordFinder(String password) {
-      this.password = password.toCharArray();
-    }
-    public char[] reqPassword(net.schmizz.sshj.userauth.password.Resource<?> resource) {
-      return password;
-    }
-    public boolean shouldRetry(net.schmizz.sshj.userauth.password.Resource<?> resource) {
-      return false;
+  protected SshjExecSession getExecSession(SshConnection sshConnection) throws SshClientException {
+    try {
+      SSHClient client = ((SshjConnection) sshConnection).getClient();
+      ;
+      return SshjExecSession.builder().session(client.startSession()).build();
+    } catch (TransportException e) {
+      log.error("Transport exception", e);
+      throw new SshjClientException("Transport exception " + e.getMessage(), e);
+    } catch (ConnectionException e) {
+      log.error("Connection exception", e);
+      throw new SshjClientException("Connection exception " + e.getMessage(), e);
     }
   }
 
