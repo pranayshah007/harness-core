@@ -6,12 +6,8 @@
  */
 package io.harness.execution.expansion;
 
-
-import io.harness.execution.ExpressionDetailRequest;
 import io.harness.execution.ExpressionDetailResponse;
-import io.harness.execution.ExpressionTestRequest;
-import io.harness.execution.ExpressionTestResponse;
 
 public interface ExpressionTestService {
-    ExpressionDetailResponse getExpressionResponse(String planExecutionId, String expression);
+  ExpressionDetailResponse getExpressionResponse(String planExecutionId, String expression);
 }

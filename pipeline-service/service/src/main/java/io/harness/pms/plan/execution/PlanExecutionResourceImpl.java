@@ -32,7 +32,6 @@ import io.harness.engine.executions.retry.RetryLatestExecutionResponseDto;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
-import io.harness.execution.ExpressionDetailRequest;
 import io.harness.execution.ExpressionDetailResponse;
 import io.harness.execution.ExpressionTestDetails;
 import io.harness.execution.ExpressionTestRequest;
@@ -101,8 +100,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   @Inject PmsEngineExpressionService pmsEngineExpressionService;
 
   @Inject PlanExpansionService planExpansionService;
-  @Inject
-  ExpressionTestService expressionTestService;
+  @Inject ExpressionTestService expressionTestService;
 
   @Inject private final PreflightService preflightService;
   @Inject private final PMSPipelineService pmsPipelineService;
@@ -518,7 +516,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
 
   @Override
   public ResponseDTO<ExpressionDetailResponse> fetchExpressionDetails(String planExecutionId, String expression) {
-    return ResponseDTO.newResponse(expressionTestService.getExpressionResponse(planExecutionId,expression));
+    return ResponseDTO.newResponse(expressionTestService.getExpressionResponse(planExecutionId, expression));
   }
 
   private Ambiance constructAmbianceForScope(String planExecutionId, String scope) {

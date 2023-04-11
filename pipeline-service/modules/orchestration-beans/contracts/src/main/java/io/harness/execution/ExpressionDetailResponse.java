@@ -7,12 +7,11 @@
 
 package io.harness.execution;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.Singular;
-
-import java.util.List;
 
 @Data
 @Builder
