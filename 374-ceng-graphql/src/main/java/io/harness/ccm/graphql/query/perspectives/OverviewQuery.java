@@ -111,4 +111,44 @@ public class OverviewQuery {
       return null;
     }
   }
+  public PerspectiveTimeSeriesData totalCostTimeSeriesStats(List<QLCEViewAggregation> aggregateFunction,
+      List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy, String accountId) {
+    long timePeriod = perspectiveTimeSeriesHelper.getTimePeriod(groupBy);
+    List<QLCEViewTimeFilter> timeFilters = filters.stream()
+                                               .filter(filter -> filter.getTimeFilter() != null)
+                                               .map(QLCEViewFilterWrapper::getTimeFilter)
+                                               .collect(Collectors.toList());
+
+    if (!isClickHouseEnabled) {
+      TableResult result;
+      String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
+      BigQuery bigQuery = bigQueryService.get();
+      SelectQuery query = viewsQueryBuilder.getTotalCostTimeSeriesQuery(
+          timeFilters, groupBy, aggregateFunction, cloudProviderTableName);
+      QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
+      try {
+        result = bigQuery.query(queryConfig);
+      } catch (InterruptedException e) {
+        log.error("Failed to get totalCostTimeSeriesStats. {}", e);
+        Thread.currentThread().interrupt();
+        return null;
+      }
+      return perspectiveTimeSeriesHelper.fetch(result, timePeriod, groupBy);
+    } else {
+      ResultSet resultSet = null;
+      SelectQuery query = viewsQueryBuilder.getTotalCostTimeSeriesQuery(
+          timeFilters, groupBy, aggregateFunction, CLICKHOUSE_UNIFIED_TABLE);
+      try (Connection connection = clickHouseService.getConnection(clickHouseConfig);
+           Statement statement = connection.createStatement()) {
+        resultSet = statement.executeQuery(query.toString());
+        return clickHouseQueryResponseHelper.convertToTimeSeriesData(
+            resultSet, timePeriod, null, null, null, groupBy, null, true);
+      } catch (SQLException e) {
+        log.error("Failed to get totalCostTimeSeriesStats. {}", e.toString());
+      } finally {
+        DBUtils.close(resultSet);
+      }
+      return null;
+    }
+  }
 }
