@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.zendesk.client.v2.Zendesk;
 import org.zendesk.client.v2.model.Collaborator;
 import org.zendesk.client.v2.model.Comment;
+import org.zendesk.client.v2.model.JobStatus;
 import org.zendesk.client.v2.model.Ticket;
 
 @Slf4j
@@ -18,7 +19,7 @@ public class ZendeskTicketHelper {
   public ZendeskTicketHelper() {
     zd = new Zendesk.Builder("https://hrnhelp.zendesk.com/")
         .setUsername("prateek.bit2006@yahoo.com")
-        .setToken("bCYurjDabdslleiFMXi5oyku2C9f4aLtS5QKxotA")
+        .setToken("bCYurjDabdslleiFMXi5oyku2C9f4aLtS5QKxotA") // use pasddword `Passw0rd#001` to login to above url in UI
         .build();
   }
 
@@ -33,12 +34,6 @@ public class ZendeskTicketHelper {
     return zd.createComment(ticketId, cmt);
   }
 
-  // call this in finally block, closes the zendesk connection created in constructor
-  public void close() {
-    zd.close();
-  }
-
-  // to be completed
   public void createTicket(String requesterName, String requesterEmail, Collaborator[] collaborators, List<String> tags, String ticketTitle, String ticketContent) {
     final Ticket ticket = new Ticket(
         new Ticket.Requester(requesterName, requesterEmail),
@@ -46,6 +41,11 @@ public class ZendeskTicketHelper {
         new Comment("test content" + ticketContent));
     ticket.setCollaborators(Arrays.asList(collaborators));
     ticket.setTags(tags);
+    zd.createTicket(ticket);
+  }
 
+  // call this in finally block, closes the zendesk connection created in constructor
+  public void close() {
+    zd.close();
   }
 }
