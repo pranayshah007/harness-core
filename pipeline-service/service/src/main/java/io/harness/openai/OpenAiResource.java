@@ -7,9 +7,6 @@
 
 package io.harness.openai;
 
-import static io.harness.logging.CommandExecutionStatus.FAILURE;
-import static io.harness.logging.CommandExecutionStatus.SUCCESS;
-
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.OrgIdentifier;
@@ -17,7 +14,6 @@ import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
-import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -25,6 +21,7 @@ import io.harness.openai.dtos.GoldenPipelineResponse;
 import io.harness.openai.dtos.Policy;
 import io.harness.openai.dtos.SimilarityResponse;
 import io.harness.openai.dtos.TemplateResponse;
+import io.harness.openai.dtos.VerifyPoliciesResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.openai.dtos.TemplateResponse;
@@ -32,7 +29,6 @@ import io.harness.openai.dtos.TemplateResponse;
 import com.google.inject.Inject;
 import com.theokanning.openai.completion.chat.ChatCompletionChoice;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
-import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
 import io.harness.openai.service.IntelligenceService;
@@ -49,7 +45,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -60,7 +58,6 @@ import javax.ws.rs.QueryParam;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Tag(name = "OpenAI", description = "This contains APIs related to Pipeline Intelligence")
@@ -68,7 +65,6 @@ import lombok.extern.slf4j.Slf4j;
 @Path("/openai")
 @Produces({"application/json", "application/yaml"})
 @Consumes({"application/json", "application/yaml"})
-@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @ApiResponses(value =
     {
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
@@ -77,7 +73,8 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class OpenAiResource {
-  private final PMSPipelineService pmsPipelineService;
+  @Inject PMSPipelineService pmsPipelineService;
+  private Map<String, Object> policyRecsMap = new HashMap<>();
 
   @Inject
   IntelligenceService intelligenceService;
@@ -141,13 +138,18 @@ public class OpenAiResource {
       policyRecs.addAll(policyRec);
     }
 
+    if (!policyRecsMap.containsKey(goldenPipelineEntity)) {
+      policyRecsMap.put(goldenPipelineIdentifier, new ArrayList<>(policyRecs));
+    }
+
     List<Policy> policiesWithCode = new ArrayList<>();
 
     for (String policyRec : policyRecs) {
       String regoCode = "";
       if (Character.isDigit(policyRec.charAt(0))) {
         String queryForGPTCode =
-            "Create a rego for OPA rule. Format the output to include just the rego and no other text: " + policyRec;
+            "Create a rego for the given OPA rule. Format the output to include just the rego and no other text: "
+            + policyRec;
         result = callChatGPT(service, queryForGPTCode);
         regoCode = result.get(0).getMessage().getContent();
       }
@@ -166,6 +168,47 @@ public class OpenAiResource {
         ChatCompletionRequest.builder().model("gpt-3.5-turbo").messages(queries).user("testing").build();
 
     return service.createChatCompletion(completionRequest).getChoices();
+  }
+
+  @GET
+  @Path("/verifyPolicies")
+  @ApiOperation(value = "Verify Policies on Given Pipeline", nickname = "verifyPolicies")
+  @Operation(operationId = "verifyPolicies", description = "Verify Policies on Given Pipeline",
+      summary = "Verify Policies on Given Pipeline",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Verify Policies on Given Pipeline")
+      })
+  public ResponseDTO<VerifyPoliciesResponse>
+  verifyPoliciesOnPipeline(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @QueryParam("pipeline") String pipelineId, @QueryParam("goldenPipelineId") String goldenPipelineIdentifier) {
+    OpenAiService service = new OpenAiService(OpenAiConstants.openAIKey, Duration.ofMinutes(10L));
+
+    if (!policyRecsMap.containsKey(goldenPipelineIdentifier)) {
+      throw new InvalidRequestException("Golden pipeline does not exist or is not Golden yet.");
+    }
+
+    Optional<PipelineEntity> inputPipelineEntity =
+        pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, false);
+
+    if (inputPipelineEntity.isEmpty()) {
+      throw new InvalidRequestException("Input pipeline is not found.");
+    }
+
+    Map<String, String> verification = new HashMap<>();
+    for (String policyRec : ((List<String>) policyRecsMap.get(goldenPipelineIdentifier))) {
+      String queryForGPT =
+          "Given the following pipeline YAML as reference, verify if this verbal policy is satisfied. Return yes or no, with a 1 line description: \n"
+          + inputPipelineEntity.get().getYaml() + policyRec;
+
+      List<ChatCompletionChoice> result = callChatGPT(service, queryForGPT);
+      verification.put(policyRec, result.get(0).getMessage().getContent());
+    }
+    return ResponseDTO.newResponse(VerifyPoliciesResponse.builder().verifiedPolicyMap(verification).build());
   }
 
   @GET
