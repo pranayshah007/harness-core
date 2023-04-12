@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.OrchestrationStepsTestBase;
-import io.harness.advisers.nextstep.NextStepAdviserParameters;
+import io.harness.advisers.nextstep.NextStageAdviserParameters;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.plancreator.approval.ApprovalStagePlanCreatorV2;
@@ -84,8 +84,8 @@ public class GenericStagePlanCreatorTest extends OrchestrationStepsTestBase {
     YamlField sibling = approvalStageYamlField.getNode().nextSiblingFromParentArray(
         approvalStageYamlField.getName(), Arrays.asList(YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.PARALLEL));
     assertThat(sibling).isNotNull();
-    NextStepAdviserParameters nextStepAdviserParameters =
-        NextStepAdviserParameters.builder().nextNodeId(sibling.getNode().getUuid()).build();
+    NextStageAdviserParameters nextStepAdviserParameters =
+        NextStageAdviserParameters.builder().nextNodeId(sibling.getNode().getUuid()).build();
     byte[] siblingAsBytes = kryoSerializerUnMocked.asBytes(nextStepAdviserParameters);
     doReturn(siblingAsBytes).when(kryoSerializer).asBytes(nextStepAdviserParameters);
 

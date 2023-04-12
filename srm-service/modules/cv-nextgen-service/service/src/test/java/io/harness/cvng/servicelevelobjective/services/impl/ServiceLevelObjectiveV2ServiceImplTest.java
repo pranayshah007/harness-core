@@ -534,6 +534,15 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testCreate_Rolling_WithNoti_Success() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    notificationRuleDTO.setIdentifier("rule1");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule2");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule3");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
     ServiceLevelObjectiveV2DTO sloDTO =
         builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
             .identifier("compositeSloIdentifier1")
@@ -605,6 +614,15 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     SimpleServiceLevelObjective simpleServiceLevelObjective4 =
         (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
             projectParams, simpleServiceLevelObjectiveDTO4.getIdentifier());
+
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    notificationRuleDTO.setIdentifier("rule1");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule2");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule3");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
 
     ServiceLevelObjectiveV2DTO sloDTO =
         builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
@@ -874,6 +892,14 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                             .sloTargetPercentage(90.0)
                             .spec(RollingSLOTargetSpec.builder().periodLength("30d").build())
                             .build());
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    notificationRuleDTO.setIdentifier("rule1");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule2");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule3");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
     sloDTO.setNotificationRuleRefs(
         Arrays.asList(NotificationRuleRefDTO.builder().notificationRuleRef("rule1").enabled(true).build(),
             NotificationRuleRefDTO.builder().notificationRuleRef("rule2").enabled(true).build(),
@@ -1056,6 +1082,15 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testUpdate_CompositeSLO_WithNotificationRule_Success() {
     ServiceLevelObjectiveV2DTO compositeSLODTO1 = compositeSLODTO;
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    notificationRuleDTO.setIdentifier("rule1");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule2");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule3");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
     compositeSLODTO1.setNotificationRuleRefs(
         Arrays.asList(NotificationRuleRefDTO.builder().notificationRuleRef("rule1").enabled(true).build(),
             NotificationRuleRefDTO.builder().notificationRuleRef("rule2").enabled(true).build(),
@@ -1761,8 +1796,9 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
     ProjectParams accountProjectParams =
         ProjectParams.builder().accountIdentifier(projectParams.getAccountIdentifier()).build();
-    List<AbstractServiceLevelObjective> serviceLevelObjectiveList = serviceLevelObjectiveV2Service.getWithChildResource(
-        accountProjectParams, Collections.singletonList(sloDTO.getIdentifier()));
+    List<AbstractServiceLevelObjective> serviceLevelObjectiveList =
+        serviceLevelObjectiveV2Service.getSimpleSLOWithChildResource(
+            accountProjectParams, Collections.singletonList(sloDTO.getIdentifier()));
     assertThat(serviceLevelObjectiveList.size()).isEqualTo(1);
     assertThat(serviceLevelObjectiveList.get(0).getIdentifier()).isEqualTo(sloDTO.getIdentifier());
   }
@@ -2072,6 +2108,14 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testBeforeNotificationRuleDelete() {
     ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    notificationRuleDTO.setIdentifier("rule1");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule2");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule3");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
     sloDTO.setNotificationRuleRefs(
         Arrays.asList(NotificationRuleRefDTO.builder().notificationRuleRef("rule1").enabled(true).build(),
             NotificationRuleRefDTO.builder().notificationRuleRef("rule2").enabled(true).build(),
@@ -2102,6 +2146,21 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     createMonitoredService();
     assertThatThrownBy(() -> serviceLevelObjectiveV2Service.create(projectParams, sloDTO))
         .hasMessage("NotificationRule with identifier rule is of type MONITORED_SERVICE and cannot be added into SLO");
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testCreate_withIncorrectIdentifierNotificationRule() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    sloDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder().notificationRuleRef("wrongIdentifier").enabled(true).build()));
+    createMonitoredService();
+    assertThatThrownBy(() -> serviceLevelObjectiveV2Service.create(projectParams, sloDTO))
+        .hasMessage("NotificationRule does not exist for identifier: wrongIdentifier");
   }
 
   @Test
@@ -2549,6 +2608,107 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                    .getNotificationRules(serviceLevelObjective)
                    .size())
         .isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetEvaluationType_accountCompositeSLO() {
+    builderFactory = BuilderFactory.getDefault();
+    builderFactory.getContext().setProjectIdentifier("project1");
+    builderFactory.getContext().setOrgIdentifier("orgIdentifier");
+    accountId = builderFactory.getContext().getAccountId();
+    orgIdentifier = builderFactory.getContext().getOrgIdentifier();
+    projectIdentifier = builderFactory.getContext().getProjectIdentifier();
+    projectParams = ProjectParams.builder()
+                        .accountIdentifier(accountId)
+                        .orgIdentifier(orgIdentifier)
+                        .projectIdentifier(projectIdentifier)
+                        .build();
+
+    monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder()
+                              .identifier("service2_env2")
+                              .name("monitored service 2")
+                              .sources(MonitoredServiceDTO.Sources.builder().build())
+                              .serviceRef("service2")
+                              .environmentRef("env2")
+                              .build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+
+    simpleServiceLevelObjectiveDTO1 =
+        builderFactory.getSimpleRequestServiceLevelObjectiveV2DTOBuilder().identifier("simpleSLOIdentifier").build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec1 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO1.getSpec();
+    simpleServiceLevelObjectiveSpec1.setMonitoredServiceRef(monitoredServiceDTO.getIdentifier());
+    simpleServiceLevelObjectiveSpec1.setHealthSourceRef(generateUuid());
+    simpleServiceLevelObjectiveDTO1.setSpec(simpleServiceLevelObjectiveSpec1);
+    serviceLevelObjectiveV2Service.create(projectParams, simpleServiceLevelObjectiveDTO1);
+    simpleServiceLevelObjective1 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        projectParams, simpleServiceLevelObjectiveDTO1.getIdentifier());
+
+    simpleServiceLevelObjectiveDTO2 =
+        builderFactory.getSimpleRequestServiceLevelObjectiveV2DTOBuilder().identifier("compositeSloIdentifier").build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec2 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO2.getSpec();
+    simpleServiceLevelObjectiveSpec2.setMonitoredServiceRef(monitoredServiceDTO.getIdentifier());
+    simpleServiceLevelObjectiveSpec2.setHealthSourceRef(generateUuid());
+    simpleServiceLevelObjectiveSpec2.setServiceLevelIndicators(
+        Collections.singletonList(builderFactory.getRequestServiceLevelIndicatorDTOBuilder().build()));
+    simpleServiceLevelObjectiveDTO2.setSpec(simpleServiceLevelObjectiveSpec2);
+    serviceLevelObjectiveV2Service.create(projectParams, simpleServiceLevelObjectiveDTO2);
+    simpleServiceLevelObjective2 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        projectParams, simpleServiceLevelObjectiveDTO2.getIdentifier());
+
+    ProjectParams projectParams2 = ProjectParams.builder().accountIdentifier(accountId).build();
+
+    compositeSLODTO = builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+                          .projectIdentifier(null)
+                          .orgIdentifier(null)
+                          .spec(CompositeServiceLevelObjectiveSpec.builder()
+                                    .serviceLevelObjectivesDetails(Arrays.asList(
+                                        ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(simpleServiceLevelObjective2.getIdentifier())
+                                            .weightagePercentage(25.0)
+                                            .accountId(simpleServiceLevelObjective2.getAccountId())
+                                            .orgIdentifier(simpleServiceLevelObjective2.getOrgIdentifier())
+                                            .projectIdentifier(simpleServiceLevelObjective2.getProjectIdentifier())
+                                            .build(),
+                                        ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                                            .weightagePercentage(75.0)
+                                            .accountId(simpleServiceLevelObjective1.getAccountId())
+                                            .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                                            .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                                            .build()))
+                                    .build())
+                          .build();
+    serviceLevelObjectiveResponse = serviceLevelObjectiveV2Service.create(projectParams2, compositeSLODTO);
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams2, compositeSLODTO.getIdentifier());
+    assertThat(serviceLevelObjectiveV2Service
+                   .getEvaluationType(projectParams2, Collections.singletonList(serviceLevelObjective))
+                   .get(serviceLevelObjective))
+        .isEqualTo(SLIEvaluationType.REQUEST);
+  }
+
+  private ServiceLevelObjectiveV2DTO createSimpleWindowSLOBuilder(
+      String orgIdentifier, String projectIdentifier, String identifier) {
+    return builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .name(identifier)
+        .identifier(identifier)
+        .build();
+  }
+
+  private ServiceLevelObjectiveV2DTO createSimpleRequestSLOBuilder(
+      String orgIdentifier, String projectIdentifier, String identifier) {
+    return builderFactory.getSimpleRequestServiceLevelObjectiveV2DTOBuilder()
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .name(identifier)
+        .identifier(identifier)
+        .build();
   }
 
   private ServiceLevelObjectiveV2DTO createSLOBuilder() {

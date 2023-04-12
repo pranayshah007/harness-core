@@ -15,6 +15,9 @@ import static java.util.Collections.emptyMap;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.beans.BuildDetailsInternal;
+import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
+import io.harness.artifacts.docker.service.DockerRegistryUtils;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HintException;
@@ -37,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import javax.xml.stream.XMLStreamException;
 import lombok.extern.slf4j.Slf4j;
+import retrofit2.Response;
 
 @OwnedBy(CDC)
 @Singleton
@@ -45,6 +49,7 @@ public class NexusClientImpl {
   @Inject TimeLimiter timeLimiter;
   @Inject NexusThreeClientImpl nexusThreeService;
   @Inject NexusTwoClientImpl nexusTwoService;
+  @Inject private DockerRegistryUtils dockerRegistryUtils;
 
   public Map<String, String> getRepositories(NexusRequest nexusConfig) {
     return getRepositories(nexusConfig, null);
@@ -162,6 +167,21 @@ public class NexusClientImpl {
               String.format("Currently Nexus connector version [%s] is not allowed.", nexusConfig.getVersion())));
     } else {
       return nexusThreeService.getBuildDetails(nexusConfig, repository, port, artifactName, repositoryFormat, tag);
+    }
+  }
+
+  public ArtifactMetaInfo getArtifactMetaInfo(
+      NexusRequest nexusConfig, String repository, String artifactName, String tag, boolean isV1) throws IOException {
+    if (isNexusVersion2(nexusConfig)) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Please check your Nexus connector and/or artifact configuration. Please use the 3.x connector version.",
+          "Nexus 2.x connector does not support docker artifact type.",
+          new NexusRegistryException(
+              String.format("Currently Nexus connector version [%s] is not allowed.", nexusConfig.getVersion())));
+    } else {
+      Response<DockerImageManifestResponse> response =
+          nexusThreeService.fetchImageManifest(nexusConfig, repository, artifactName, isV1, tag);
+      return dockerRegistryUtils.parseArtifactMetaInfoResponse(response, artifactName);
     }
   }
 

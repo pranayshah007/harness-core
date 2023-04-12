@@ -29,28 +29,54 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.ngpipeline.artifact.bean.EcrArtifactOutcome")
 public class EcrArtifactOutcome implements ArtifactOutcome {
-  /** Docker hub registry connector. */
+  /**
+   * Docker hub registry connector.
+   */
   String connectorRef;
-  /** Images in repos need to be referenced via a path. */
+  /**
+   * Images in repos need to be referenced via a path.
+   */
   String imagePath;
-  /** Tag refers to exact tag number. */
+  /**
+   * Tag refers to exact tag number.
+   */
   String tag;
-  /** Tag regex is used to get latest build from builds matching regex. */
+  /**
+   * Tag regex is used to get latest build from builds matching regex.
+   */
   String tagRegex;
-  /** region */
+  /**
+   * region
+   */
   String region;
-  /** Identifier for artifact. */
+  /**
+   * Identifier for artifact.
+   */
   String identifier;
-  /** Artifact type. */
+  /**
+   * Artifact type.
+   */
   String type;
-  /** Whether this config corresponds to primary artifact.*/
+  /**
+   * Whether this config corresponds to primary artifact.
+   */
   boolean primaryArtifact;
-  /** registryHostName/imagePath:tag */
+  /**
+   * registryHostName/imagePath:tag
+   */
   String image;
-  /** imagePullSecret for Ecr credentials base encoded.*/
+  /**
+   * imagePullSecret for Ecr credentials base encoded.
+   */
   String imagePullSecret;
   Map<String, String> metadata;
+  /**
+   * dockerConfigJson for docker credentials base encoded.
+   */
+  String dockerConfigJsonSecret;
+
   Map<String, String> label;
+
   @Override
   public ArtifactSummary getArtifactSummary() {
     return EcrArtifactSummary.builder().imagePath(imagePath).tag(tag).build();

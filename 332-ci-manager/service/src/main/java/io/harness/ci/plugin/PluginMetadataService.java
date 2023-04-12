@@ -91,6 +91,12 @@ public class PluginMetadataService {
                     .filter(Objects::nonNull)
                     .map(this::inputMapper)
                     .collect(Collectors.toList()))
+        .outputs(Optional.ofNullable(metadata.getOutputs())
+                     .orElseGet(Collections::emptyList)
+                     .stream()
+                     .filter(Objects::nonNull)
+                     .map(this::outputMapper)
+                     .collect(Collectors.toList()))
         .uses(metadata.getUses())
         .build();
   }
@@ -99,10 +105,15 @@ public class PluginMetadataService {
     return PluginMetadataResponse.Input.builder()
         .name(input.getName())
         .description(input.getDescription())
+        .type(input.getType())
         .defaultVal(input.getDefaultVal())
         .allowedValues(input.getAllowedValues())
         .secret(input.isSecret())
         .required(input.isRequired())
         .build();
+  }
+
+  private PluginMetadataResponse.Output outputMapper(PluginMetadata.Output output) {
+    return PluginMetadataResponse.Output.builder().name(output.getName()).description(output.getDescription()).build();
   }
 }

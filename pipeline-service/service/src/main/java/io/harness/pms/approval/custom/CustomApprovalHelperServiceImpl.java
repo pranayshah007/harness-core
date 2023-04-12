@@ -132,7 +132,7 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
       log.info("Queuing Custom Approval delegate task");
       String taskId = queueTask(ambiance, instance, scriptTaskParametersNG);
 
-      sendTaskIdProgressUpdate(taskId, instanceId, waitNotifyEngine);
+      sendTaskIdProgressUpdate(taskId, getCustomApprovalTaskName(instance), instanceId, waitNotifyEngine);
 
       log.info("Custom Approval Instance queued task with taskId - {}", taskId);
       logCallback.saveExecutionLog(String.format("Custom Shell Script Approval: %s", taskId));
@@ -178,6 +178,16 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
     }
   }
 
+  private String getCustomApprovalTaskName(CustomApprovalInstance instance) {
+    if (ShellType.Bash.equals(instance.getShellType())) {
+      return SHELL_SCRIPT_TASK_NG.getDisplayName();
+    } else if (ShellType.PowerShell.equals(instance.getShellType())) {
+      return WIN_RM_SHELL_SCRIPT_TASK_NG.getDisplayName();
+    } else {
+      throw new InvalidRequestException(format("Shell %s is not supported", instance.getShellType()));
+    }
+  }
+
   private TaskRequest prepareBashCustomApprovalTaskRequest(
       Ambiance ambiance, CustomApprovalInstance instance, TaskParameters stepParameters) {
     TaskData taskData = TaskData.builder()
@@ -190,7 +200,7 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
     return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
         CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(
             StepUtils.generateLogAbstractions(ambiance), Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT))),
-        null, null, selectors, stepHelper.getEnvironmentType(ambiance));
+        null, getCustomApprovalTaskName(instance), selectors, stepHelper.getEnvironmentType(ambiance));
   }
 
   private TaskRequest preparePowerShellCustomApprovalTaskRequest(
@@ -205,8 +215,8 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
     List<TaskSelector> selectors = TaskSelectorYaml.toTaskSelector(instance.getDelegateSelectors());
 
     return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        Arrays.asList(WinRmShellScriptTaskNG.INIT_UNIT, WinRmShellScriptTaskNG.COMMAND_UNIT), null, selectors,
-        stepHelper.getEnvironmentType(ambiance));
+        Arrays.asList(WinRmShellScriptTaskNG.INIT_UNIT, WinRmShellScriptTaskNG.COMMAND_UNIT),
+        getCustomApprovalTaskName(instance), selectors, stepHelper.getEnvironmentType(ambiance));
   }
 
   private void validateField(String name, String value) {

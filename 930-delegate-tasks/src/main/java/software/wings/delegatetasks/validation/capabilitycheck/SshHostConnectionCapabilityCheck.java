@@ -34,9 +34,9 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.SshSessionFactory;
+import io.harness.shell.ssh.SshFactory;
 
 import com.google.inject.Inject;
-import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -67,7 +67,7 @@ public class SshHostConnectionCapabilityCheck implements CapabilityCheck {
       // connect with Kerberos to ensure it is configured correctly on delegate
       KerberosConfigDTO kerberosConfigDTO = (KerberosConfigDTO) authDTO.getSpec();
       SshSessionConfig config = generateSshSessionConfigForKerberos(
-          host, kerberosConfigDTO, sshInfraDelegateConfig.getEncryptionDataDetails(), port);
+          authDTO, host, kerberosConfigDTO, sshInfraDelegateConfig.getEncryptionDataDetails(), port);
       log.info("Validating ssh Session to Host: {}, Port: {}", config.getHost(), config.getPort());
 
       try {
@@ -85,18 +85,21 @@ public class SshHostConnectionCapabilityCheck implements CapabilityCheck {
     return capabilityResponseBuilder.build();
   }
 
-  Session connect(SshSessionConfig config) throws JSchException {
-    Session session = SshSessionFactory.getSSHSession(config);
-    session.disconnect();
-    return session;
+  void connect(SshSessionConfig config) throws Exception {
+    if (config.isUseSshClient()) {
+      SshFactory.getSshClient(config).testConnection();
+    } else {
+      Session session = SshSessionFactory.getSSHSession(config);
+      session.disconnect();
+    }
   }
 
-  private SshSessionConfig generateSshSessionConfigForKerberos(
-      String host, KerberosConfigDTO kerberosConfigDTO, List<EncryptedDataDetail> encryptionDetails, int port) {
+  private SshSessionConfig generateSshSessionConfigForKerberos(SSHAuthDTO authDTO, String host,
+      KerberosConfigDTO kerberosConfigDTO, List<EncryptedDataDetail> encryptionDetails, int port) {
     SshSessionConfig.Builder builder =
         aSshSessionConfig().withHost(host).withPort(port).withSshConnectionTimeout(30000);
     SshSessionConfigHelper.generateKerberosBuilder(
-        kerberosConfigDTO, builder, encryptionDetails, secretDecryptionService);
+        authDTO, kerberosConfigDTO, builder, encryptionDetails, secretDecryptionService);
     return builder.build();
   }
 }

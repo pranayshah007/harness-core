@@ -10,6 +10,7 @@ package io.harness.delegate.task.http;
 import static io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator.HttpCapabilityDetailsLevel.QUERY;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.beans.HttpCertificateNG;
 import io.harness.beans.KeyValuePair;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -19,6 +20,7 @@ import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.http.HttpHeaderConfig;
+import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,6 +39,10 @@ public class HttpTaskParametersNg implements TaskParameters, ExecutionCapability
   boolean useProxy;
   boolean isCertValidationRequired;
   boolean shouldAvoidHeadersInCapability;
+
+  // New type for supporting NG secret resolution
+  @Expression(ALLOW_SECRETS) HttpCertificateNG certificateNG;
+  List<EncryptedDataDetail> encryptedDataDetails;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

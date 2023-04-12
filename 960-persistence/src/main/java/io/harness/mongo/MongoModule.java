@@ -175,7 +175,8 @@ public class MongoModule extends AbstractModule {
     MongoClient mongoClient = new MongoClient(clientUri);
 
     AdvancedDatastore datastore = (AdvancedDatastore) morphia.createDatastore(mongoClient, clientUri.getDatabase());
-    datastore.setQueryFactory(new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis()));
+    datastore.setQueryFactory(new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis(),
+        mongoConfig.getMaxDocumentsToBeFetched()));
 
     return datastore;
   }
@@ -289,8 +290,8 @@ public class MongoModule extends AbstractModule {
 
     AdvancedDatastore primaryDatastore = (AdvancedDatastore) morphia.createDatastore(
         mongoClient, new MongoClientURI(mongoConfig.getUri()).getDatabase());
-    primaryDatastore.setQueryFactory(
-        new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis()));
+    primaryDatastore.setQueryFactory(new QueryFactory(mongoConfig.getTraceMode(),
+        mongoConfig.getMaxOperationTimeInMillis(), mongoConfig.getMaxDocumentsToBeFetched()));
 
     Store store = null;
     if (Objects.nonNull(mongoConfig.getAliasDBName())) {
@@ -332,8 +333,8 @@ public class MongoModule extends AbstractModule {
 
     MongoClient mongoClient = new MongoClient(uri);
     AdvancedDatastore analyticalDataStore = (AdvancedDatastore) morphia.createDatastore(mongoClient, uri.getDatabase());
-    analyticalDataStore.setQueryFactory(
-        new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis()));
+    analyticalDataStore.setQueryFactory(new QueryFactory(mongoConfig.getTraceMode(),
+        mongoConfig.getMaxOperationTimeInMillis(), mongoConfig.getMaxDocumentsToBeFetched()));
     return analyticalDataStore;
   }
 

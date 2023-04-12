@@ -13,10 +13,10 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.DEFAULT_STRING_VALUE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.ID_SEPARATOR;
 
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
-import io.harness.ccm.views.businessMapping.entities.CostTarget;
-import io.harness.ccm.views.businessMapping.entities.SharedCost;
-import io.harness.ccm.views.businessMapping.entities.SharedCostParameters;
-import io.harness.ccm.views.businessMapping.entities.SharedCostSplit;
+import io.harness.ccm.views.businessmapping.entities.CostTarget;
+import io.harness.ccm.views.businessmapping.entities.SharedCost;
+import io.harness.ccm.views.businessmapping.entities.SharedCostParameters;
+import io.harness.ccm.views.businessmapping.entities.SharedCostSplit;
 import io.harness.ccm.views.dto.DataPoint;
 import io.harness.ccm.views.dto.DataPoint.DataPointBuilder;
 import io.harness.ccm.views.dto.Reference;

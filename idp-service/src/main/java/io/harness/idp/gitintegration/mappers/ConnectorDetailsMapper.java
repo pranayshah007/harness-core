@@ -40,6 +40,12 @@ public class ConnectorDetailsMapper {
         .build();
   }
 
+  public ConnectorInfoResponse toResponse(CatalogConnectorEntity catalogConnectorEntity) {
+    ConnectorInfoResponse connectorInfoResponse = new ConnectorInfoResponse();
+    connectorInfoResponse.setConnectorDetails(toDTO(catalogConnectorEntity));
+    return connectorInfoResponse;
+  }
+
   public List<ConnectorInfoResponse> toResponseList(List<CatalogConnectorEntity> catalogConnectorEntities) {
     List<ConnectorInfoResponse> response = new ArrayList<>();
     catalogConnectorEntities.forEach(

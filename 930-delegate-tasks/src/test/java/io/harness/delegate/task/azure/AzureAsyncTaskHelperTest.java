@@ -33,6 +33,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
+import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
+import io.harness.artifacts.docker.service.DockerRegistryUtils;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.client.AzureAuthorizationClient;
 import io.harness.azure.client.AzureComputeClient;
@@ -49,6 +51,7 @@ import io.harness.azure.model.VirtualMachineData;
 import io.harness.azure.model.tag.TagDetails;
 import io.harness.azure.utility.AzureUtils;
 import io.harness.azurecli.AzureCliClient;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
@@ -115,6 +118,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -128,6 +132,7 @@ import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.mockito.stubbing.Answer;
 import reactor.core.publisher.Mono;
+import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDP)
 public class AzureAsyncTaskHelperTest extends CategoryTest {
@@ -140,6 +145,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Mock private AzureContainerRegistryClient azureContainerRegistryClient;
   @Mock private AzureKubernetesClient azureKubernetesClient;
   @Mock private LogCallback logCallback;
+  @Mock private DockerRegistryUtils dockerRegistryUtils;
   private static String CLIENT_ID = "clientId";
   private static String BAD_CLIENT_ID = "badclientId";
   private static String TENANT_ID = "tenantId";
@@ -154,6 +160,10 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   private static String REGISTRY = "testreg";
   private static String REGISTRY_URL = format("%s.azurecr.io", REGISTRY.toLowerCase());
   private static String WORKING_DIR = "./repository/k8s/";
+  private static final String SHA = "sha256:123456";
+  private static final Map<String, String> LABEL = Map.of("k1", "v1");
+  private static final ArtifactMetaInfo ARTIFACT_META_INFO =
+      ArtifactMetaInfo.builder().sha(SHA).shaV2(SHA).labels(LABEL).build();
 
   @Before
   public void setUp() throws Exception {
@@ -621,9 +631,16 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     when(azureContainerRegistryClient.listRepositoryTags(any(), anyString(), anyString()))
         .thenReturn(Arrays.asList("tag1", "tag2"));
 
+    Response<DockerImageManifestResponse> response = Response.success(new DockerImageManifestResponse());
+
+    when(azureContainerRegistryClient.getImageManifest(any(), eq("url"), eq("repo"), eq("tag2"), anyBoolean()))
+        .thenReturn(response);
+    when(dockerRegistryUtils.parseArtifactMetaInfoResponse(response, "repo")).thenReturn(ARTIFACT_META_INFO);
+
     BuildDetailsInternal result = azureAsyncTaskHelper.getLastSuccessfulBuildFromRegex(
         getAzureConfigSystemAssignedMSI(), "subscription", "registry", "repo", "[ab]");
     assertThat(result.getNumber().equals("tag2"));
+    assertThat(result.getArtifactMetaInfo()).isEqualTo(ARTIFACT_META_INFO);
   }
 
   @Test
@@ -640,9 +657,16 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     when(azureContainerRegistryClient.listRepositoryTags(any(), anyString(), anyString()))
         .thenReturn(Arrays.asList("tag1", "tag2", tag));
 
+    Response<DockerImageManifestResponse> response = Response.success(new DockerImageManifestResponse());
+
+    when(azureContainerRegistryClient.getImageManifest(any(), eq("url"), eq("repo"), eq(tag), anyBoolean()))
+        .thenReturn(response);
+    when(dockerRegistryUtils.parseArtifactMetaInfoResponse(response, "repo")).thenReturn(ARTIFACT_META_INFO);
+
     BuildDetailsInternal result = azureAsyncTaskHelper.verifyBuildNumber(
         getAzureConfigSystemAssignedMSI(), "subscription", "registry", "repo", tag);
     assertThat(result.getNumber().equals(tag));
+    assertThat(result.getArtifactMetaInfo()).isEqualTo(ARTIFACT_META_INFO);
   }
 
   private void testValidateSuccessConnectionWithServicePrincipal(

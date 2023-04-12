@@ -32,28 +32,54 @@ import org.springframework.data.annotation.TypeAlias;
 // @TargetModule(878-pms-coupling)
 @RecasterAlias("io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome")
 public class ArtifactoryArtifactOutcome implements ArtifactOutcome {
-  /** Artifactory hub registry connector. */
+  /**
+   * Artifactory hub registry connector.
+   */
   String connectorRef;
-  /** Artifactory registry repository name. */
+  /**
+   * Artifactory registry repository name.
+   */
   String repositoryName;
-  /** Images in repos need to be referenced via a path. */
+  /**
+   * Images in repos need to be referenced via a path.
+   */
   String artifactPath;
-  /** Artifactory registry repository format. */
+  /**
+   * Artifactory registry repository format.
+   */
   String repositoryFormat;
-  /** Tag refers to exact tag number. */
+  /**
+   * Tag refers to exact tag number.
+   */
   String tag;
-  /** Tag regex is used to get latest build from builds matching regex. */
+  /**
+   * Tag regex is used to get latest build from builds matching regex.
+   */
   String tagRegex;
-  /** Identifier for artifact. */
+  /**
+   * Identifier for artifact.
+   */
   String identifier;
-  /** Artifact type. */
+  /**
+   * Artifact type.
+   */
   String type;
-  /** Whether this config corresponds to primary artifact.*/
+  /**
+   * Whether this config corresponds to primary artifact.
+   */
   boolean primaryArtifact;
-  /** domainName/imagePath:tag */
+  /**
+   * domainName/imagePath:tag
+   */
   String image;
-  /** imagePullSecret for artifactory credentials base encoded.*/
+  /**
+   * imagePullSecret for artifactory credentials base encoded.
+   */
   String imagePullSecret;
+  /**
+   * dockerConfigJson for docker credentials base encoded.
+   */
+  String dockerConfigJsonSecret;
 
   String registryHostname;
 

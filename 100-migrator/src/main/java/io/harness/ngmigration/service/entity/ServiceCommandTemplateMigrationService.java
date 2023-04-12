@@ -192,12 +192,12 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     Response<ResponseDTO<TemplateWrapperResponseDTO>> resp =
         templateClient
-            .createTemplate(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
-                inputDTO.getProjectIdentifier(),
+            .createTemplate(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
                 RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.write(yamlFile.getYaml())))
             .execute();
     log.info("Template creation Response details {} {}", resp.code(), resp.message());

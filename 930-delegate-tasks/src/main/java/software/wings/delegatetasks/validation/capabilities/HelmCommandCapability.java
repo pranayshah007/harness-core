@@ -16,8 +16,6 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.executioncapability.CapabilityType;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 
-import software.wings.helpers.ext.helm.request.HelmCommandRequest;
-
 import java.time.Duration;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;

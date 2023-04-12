@@ -105,10 +105,12 @@ import io.harness.ccm.serviceAccount.GcpServiceAccountService;
 import io.harness.ccm.serviceAccount.GcpServiceAccountServiceImpl;
 import io.harness.ccm.utils.AccountIdentifierLogInterceptor;
 import io.harness.ccm.utils.LogAccountIdentifier;
-import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingHistoryServiceImpl;
-import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingServiceImpl;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingHistoryService;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.businessmapping.service.impl.BusinessMappingHistoryServiceImpl;
+import io.harness.ccm.views.businessmapping.service.impl.BusinessMappingServiceImpl;
+import io.harness.ccm.views.businessmapping.service.impl.BusinessMappingValidationServiceImpl;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingHistoryService;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingValidationService;
 import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
@@ -314,6 +316,7 @@ public class CENextGenModule extends AbstractModule {
     bind(AzureEntityChangeEventService.class).to(AzureEntityChangeEventServiceImpl.class);
     bind(BusinessMappingService.class).to(BusinessMappingServiceImpl.class);
     bind(BusinessMappingHistoryService.class).to(BusinessMappingHistoryServiceImpl.class);
+    bind(BusinessMappingValidationService.class).to(BusinessMappingValidationServiceImpl.class);
     bind(LicenseUsageInterface.class).to(LicenseUsageInterfaceImpl.class).in(Singleton.class);
 
     install(new CENextGenPersistenceModule());

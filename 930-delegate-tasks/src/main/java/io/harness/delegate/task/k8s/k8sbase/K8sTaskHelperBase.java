@@ -19,6 +19,7 @@ import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.filesystem.FileIo.getFilesUnderPath;
 import static io.harness.filesystem.FileIo.getFilesUnderPathMatchesFirstLine;
+import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
 import static io.harness.helm.HelmConstants.HELM_PATH_PLACEHOLDER;
 import static io.harness.helm.HelmConstants.HELM_RELEASE_LABEL;
 import static io.harness.k8s.K8sConstants.KUBERNETES_CHANGE_CAUSE_ANNOTATION;
@@ -53,7 +54,6 @@ import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 import static software.wings.beans.LogWeight.Normal;
-import static software.wings.delegatetasks.helm.HelmTaskHelper.copyManifestFilesToWorkingDir;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.lang.Boolean.FALSE;
@@ -2425,7 +2425,7 @@ public class K8sTaskHelperBase {
         return renderTemplateForHelm(k8sDelegateTaskParams.getHelmPath(),
             getManifestDirectoryForHelmChartWithSubCharts(manifestFilesDirectory, helmChartManifest),
             manifestOverrideFiles, releaseName, namespace, executionLogCallback, helmChartManifest.getHelmVersion(),
-            timeoutInMillis, helmChartManifest.getHelmCommandFlag(), helmChartManifest.getSubChartName());
+            timeoutInMillis, helmChartManifest.getHelmCommandFlag(), helmChartManifest.getSubChartPath());
 
       case KUSTOMIZE:
         KustomizeManifestDelegateConfig kustomizeManifest = (KustomizeManifestDelegateConfig) manifestDelegateConfig;
@@ -2587,6 +2587,17 @@ public class K8sTaskHelperBase {
     }
   }
 
+  public static void copyManifestFilesToWorkingDir(File src, File dest) throws IOException {
+    if (src.isDirectory()) {
+      FileUtils.copyDirectory(src, dest);
+    } else {
+      Path destFilePath = Paths.get(dest.getPath(), src.getName());
+      FileUtils.copyFile(src, destFilePath.toFile());
+    }
+    deleteDirectoryAndItsContentIfExists(src.getAbsolutePath());
+    waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
+  }
+
   private boolean downloadManifestFilesFromGit(StoreDelegateConfig storeDelegateConfig, String manifestFilesDirectory,
       LogCallback executionLogCallback, String accountId) throws Exception {
     if (!(storeDelegateConfig instanceof GitStoreDelegateConfig)) {
@@ -2683,7 +2694,7 @@ public class K8sTaskHelperBase {
     File dest = new File(workingDirectory);
     deleteDirectoryAndItsContentIfExists(dest.getAbsolutePath());
     FileUtils.copyDirectory(src, dest);
-    FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
+    waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
   }
 
   public boolean downloadFilesFromChartRepo(ManifestDelegateConfig manifestDelegateConfig, String destinationDirectory,
@@ -2900,7 +2911,7 @@ public class K8sTaskHelperBase {
 
   public List<FileData> renderTemplateForHelm(String helmPath, String manifestFilesDirectory, List<String> valuesFiles,
       String releaseName, String namespace, LogCallback executionLogCallback, HelmVersion helmVersion,
-      long timeoutInMillis, HelmCommandFlag helmCommandFlag, String subChartName) throws Exception {
+      long timeoutInMillis, HelmCommandFlag helmCommandFlag, String subChartPath) throws Exception {
     String valuesFileOptions = createValuesFileOptions(manifestFilesDirectory, valuesFiles, executionLogCallback);
     log.info("Values file options: " + valuesFileOptions);
 
@@ -2923,9 +2934,8 @@ public class K8sTaskHelperBase {
             new HelmClientException(getErrorMessageIfProcessFailed("Failed to render template. ", processResult), USER,
                 HelmCliCommandType.RENDER_CHART));
       }
-      int index = isEmpty(subChartName)
-          ? -1
-          : helmTaskHelperBase.checkForDependencyUpdateFlag(helmCommandFlag.getValueMap(), processResult.outputUTF8());
+      int index =
+          helmTaskHelperBase.checkForDependencyUpdateFlag(helmCommandFlag.getValueMap(), processResult.outputUTF8());
       result.add(
           FileData.builder()
               .fileName("manifest.yaml")
@@ -3079,10 +3089,10 @@ public class K8sTaskHelperBase {
   private String getManifestDirectoryForHelmChartWithSubCharts(
       String baseManifestDirectory, HelmChartManifestDelegateConfig helmChartManifest) {
     String manifestDir = getManifestDirectoryForHelmChart(baseManifestDirectory, helmChartManifest);
-    if (isEmpty(helmChartManifest.getSubChartName())) {
+    if (isEmpty(helmChartManifest.getSubChartPath())) {
       return manifestDir;
     }
-    return Paths.get(manifestDir, "charts", helmChartManifest.getSubChartName()).toString();
+    return Paths.get(manifestDir, helmChartManifest.getSubChartPath()).toString();
   }
 
   @NotNull

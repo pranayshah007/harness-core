@@ -120,6 +120,10 @@ if [[ "" != "$MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
   export MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MONGO_MAX_DOCUMENT_LIMIT" ]]; then
+  export MONGO_MAX_DOCUMENT_LIMIT; yq -i '.mongo.maxDocumentsToBeFetched=env(MONGO_MAX_DOCUMENT_LIMIT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$MONGO_SSL_CONFIG" ]]; then
   export MONGO_SSL_CONFIG; yq -i '.mongo.mongoSSLConfig.mongoSSLEnabled=env(MONGO_SSL_CONFIG)' $CONFIG_FILE
 fi

@@ -12,31 +12,37 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.plugin.beans.PluginInfoEntity;
 import io.harness.idp.plugin.enums.ExportType;
 import io.harness.spec.server.idp.v1.model.AppConfig;
+import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.Exports;
 import io.harness.spec.server.idp.v1.model.PluginDetailedInfo;
 
+import java.util.List;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.IDP)
 @UtilityClass
 public class PluginDetailedInfoMapper {
-  public PluginDetailedInfo toDTO(PluginInfoEntity pluginInfoEntity, AppConfig appConfig) {
+  public PluginDetailedInfo toDTO(PluginInfoEntity pluginInfoEntity, AppConfig appConfig,
+      List<BackstageEnvSecretVariable> backstageEnvSecretVariables) {
     PluginDetailedInfo pluginDetailedInfo = new PluginDetailedInfo();
-    boolean isEnabled = appConfig != null && appConfig.isEnabled();
+    boolean isConfigSaved = appConfig != null;
+    boolean isEnabled = isConfigSaved && appConfig.isEnabled();
     pluginDetailedInfo.setPluginDetails(PluginInfoMapper.toDTO(pluginInfoEntity, isEnabled));
     String config;
     if (isEnabled) {
-      config = pluginInfoEntity.getConfig();
+      config = appConfig.getConfigs();
     } else {
       config =
-          (appConfig != null && appConfig.getConfigs() != null) ? appConfig.getConfigs() : pluginInfoEntity.getConfig();
+          (isConfigSaved && appConfig.getConfigs() != null) ? appConfig.getConfigs() : pluginInfoEntity.getConfig();
     }
     Exports exports = new Exports();
     exports.setCards(getExportTypeCount(pluginInfoEntity, ExportType.CARD));
     exports.setTabContents(getExportTypeCount(pluginInfoEntity, ExportType.TAB_CONTENT));
     exports.setPages(getExportTypeCount(pluginInfoEntity, ExportType.PAGE));
+    pluginDetailedInfo.setSaved(isConfigSaved);
     pluginDetailedInfo.setExports(exports);
     pluginDetailedInfo.setConfig(config);
+    pluginDetailedInfo.setEnvVariables(backstageEnvSecretVariables);
     return pluginDetailedInfo;
   }
 

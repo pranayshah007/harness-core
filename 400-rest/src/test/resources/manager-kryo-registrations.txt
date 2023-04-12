@@ -1960,6 +1960,7 @@
 40029:com.google.protobuf.Duration
 40030:io.harness.perpetualtask.PerpetualTaskClientContext
 40031:io.harness.delegate.beans.Delegate
+40041:io.harness.delegate.beans.DelegateGroup
 40051:io.harness.ccm.cluster.entities.DirectKubernetesCluster
 40052:io.harness.ccm.cluster.entities.EcsCluster
 40053:io.harness.ccm.cluster.entities.GcpKubernetesCluster
@@ -2212,6 +2213,7 @@
 73993:io.harness.delegate.task.helm.HelmFetchChartVersionRequestNG
 73994:io.harness.delegate.beans.helm.HelmChartVersionDetails
 73995:io.harness.delegate.task.helm.HelmFetchChartVersionResponse
+74001:io.harness.delegate.beans.TaskGroup
 80302:software.wings.helpers.ext.azure.devops.AzureArtifactsFeeds
 80303:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFile
 80304:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo
@@ -2942,6 +2944,7 @@
 878019:io.harness.pms.sdk.core.execution.AsyncTimeoutResponseData
 878020:io.harness.pms.sdk.core.execution.async.AsyncProgressData
 878021:io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters
+878022:io.harness.advisers.nextstep.NextStageAdviserParameters
 930001:io.harness.licensing.beans.modules.CDModuleLicenseDTO
 930002:io.harness.licensing.beans.modules.CEModuleLicenseDTO
 930003:io.harness.licensing.beans.modules.CFModuleLicenseDTO
@@ -3026,7 +3029,13 @@
 980100:software.wings.beans.infrastructure.instance.info.K8sPodInfo
 980101:software.wings.beans.infrastructure.instance.info.K8sContainerInfo
 1010101:io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse
-
+1800003:io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionGenOneDeployRequest
+1800004:io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionGenOneDeployResponse
+1800005:io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionGenOnePrepareRollbackRequest
+1800006:io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionGenOnePrepareRollbackResponse
+1800007:io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionGenOneRollbackRequest
+1800008:io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionGenOneRollbackResponse
+1800009:io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceFetchType
 5731600:io.harness.aws.beans.AsgLoadBalancerConfig
 5731601:io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackRequest
 5731602:io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResponse
@@ -3164,3 +3173,5 @@
 10000521:io.harness.delegate.task.pcf.response.CfRouteMappingResponseNG
 10000522:io.harness.delegate.task.pcf.artifact.BambooTasArtifactRequestDetails
 10000523:io.harness.delegate.task.pcf.artifact.GoogleCloudStorageTasArtifactRequestDetails
+10000524:io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig
+10000526:io.harness.beans.HttpCertificateNG

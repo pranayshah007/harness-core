@@ -14,6 +14,7 @@ java_library(
         "//:lombok",
         "//960-api-services/src/main/java/io/harness/artifacts/beans:module",
         "//960-api-services/src/main/java/io/harness/artifacts/comparator:module",
+        "//960-api-services/src/main/java/io/harness/artifacts/gar/service:module",
         "//960-api-services/src/main/java/io/harness/nexus:module",
         "//970-api-services-beans:module",
         "//980-commons/src/main/java/io/harness/exception:module",

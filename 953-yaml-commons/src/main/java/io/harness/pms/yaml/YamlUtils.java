@@ -70,6 +70,7 @@ public class YamlUtils {
   static {
     mapper = new ObjectMapper(new YAMLFactory());
     mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    mapper.disable(DeserializationFeature.FAIL_ON_MISSING_EXTERNAL_TYPE_ID_PROPERTY);
     mapper.setSubtypeResolver(AnnotationAwareJsonSubtypeResolver.newInstance(mapper.getSubtypeResolver()));
     mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     mapper.registerModule(new Jdk8Module());
@@ -452,6 +453,16 @@ public class YamlUtils {
     }
 
     return qualifiedNames.get(0) + "." + qualifiedNames.get(1) + "." + qualifiedNames.get(2);
+  }
+
+  public boolean isStageNode(YamlNode node) {
+    if (node == null) {
+      return false;
+    }
+    if (node.getFieldName() != null && node.getFieldName().equals(YAMLFieldNameConstants.STAGE)) {
+      return true;
+    }
+    return YamlUtils.findParentNode(node, YAMLFieldNameConstants.STAGES) != null;
   }
 
   private String getQNForNode(YamlNode yamlNode, YamlNode parentNode, boolean shouldAppendStrategyExpression) {

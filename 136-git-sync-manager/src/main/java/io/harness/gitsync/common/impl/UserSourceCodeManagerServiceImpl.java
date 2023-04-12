@@ -18,6 +18,7 @@ import io.harness.gitsync.common.beans.UserSourceCodeManager;
 import io.harness.gitsync.common.dtos.UserSourceCodeManagerDTO;
 import io.harness.gitsync.common.helper.SCMMapperHelper;
 import io.harness.gitsync.common.service.UserSourceCodeManagerService;
+import io.harness.ng.userprofile.commons.SCMType;
 import io.harness.repositories.userSourceCodeManager.UserSourceCodeManagerRepository;
 
 import com.google.inject.Inject;
@@ -35,16 +36,22 @@ public class UserSourceCodeManagerServiceImpl implements UserSourceCodeManagerSe
   @Inject private SCMMapperHelper scmMapperHelper;
 
   @Override
-  public List<UserSourceCodeManagerDTO> getByType(String accountIdentifier, String userIdentifier, String type) {
+  public UserSourceCodeManagerDTO getByType(String accountIdentifier, String userIdentifier, SCMType type) {
+    UserSourceCodeManager userSourceCodeManager =
+        userSourceCodeManagerRepository.findByAccountIdentifierAndUserIdentifierAndType(
+            accountIdentifier, userIdentifier, type);
+    if (userSourceCodeManager == null) {
+      return null;
+    }
+    return scmMapperHelper.toDTO(userSourceCodeManager);
+  }
+
+  @Override
+  public List<UserSourceCodeManagerDTO> get(String accountIdentifier, String userIdentifier) {
     List<UserSourceCodeManagerDTO> userSourceCodeManagerDTOs = new ArrayList<>();
     List<UserSourceCodeManager> userSourceCodeManagerList;
-    if (type == null) {
-      userSourceCodeManagerList =
-          userSourceCodeManagerRepository.findByAccountIdentifierAndUserIdentifier(accountIdentifier, userIdentifier);
-    } else {
-      userSourceCodeManagerList = userSourceCodeManagerRepository.findByAccountIdentifierAndUserIdentifierAndType(
-          accountIdentifier, userIdentifier, type);
-    }
+    userSourceCodeManagerList =
+        userSourceCodeManagerRepository.findByAccountIdentifierAndUserIdentifier(accountIdentifier, userIdentifier);
     userSourceCodeManagerList.forEach(scm -> userSourceCodeManagerDTOs.add(scmMapperHelper.toDTO(scm)));
     return userSourceCodeManagerDTOs;
   }
@@ -69,7 +76,7 @@ public class UserSourceCodeManagerServiceImpl implements UserSourceCodeManagerSe
   }
 
   @Override
-  public long delete(String accountIdentifier, String userIdentifier, String type) {
+  public long delete(String accountIdentifier, String userIdentifier, SCMType type) {
     if (type == null) {
       return userSourceCodeManagerRepository.deleteByAccountIdentifierAndUserIdentifier(
           accountIdentifier, userIdentifier);

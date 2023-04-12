@@ -22,6 +22,7 @@ import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.ng.NextGenConfiguration.HARNESS_RESOURCE_CLASSES;
 import static io.harness.pms.contracts.plan.ExpansionRequestType.KEY;
+import static io.harness.pms.expressions.functors.KubernetesReleaseFunctor.KUBERNETES_RELEASE_FUNCTOR_NAME;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
 import static com.google.common.collect.ImmutableMap.of;
@@ -157,9 +158,11 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PipelineEventConsumerController;
 import io.harness.pms.expressions.functors.ConfigFileFunctor;
+import io.harness.pms.expressions.functors.DockerConfigJsonFunctor;
 import io.harness.pms.expressions.functors.FileStoreFunctor;
 import io.harness.pms.expressions.functors.ImagePullSecretFunctor;
 import io.harness.pms.expressions.functors.InstanceFunctor;
+import io.harness.pms.expressions.functors.KubernetesReleaseFunctor;
 import io.harness.pms.governance.EnvironmentExpansionHandler;
 import io.harness.pms.governance.EnvironmentRefExpansionHandler;
 import io.harness.pms.governance.MultiEnvironmentExpansionHandler;
@@ -544,16 +547,27 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         .microservice(Microservice.CORE)
         .migrationProviderList(new ArrayList<Class<? extends MigrationProvider>>() {
           { add(NGCoreMigrationProvider.class); } // Add all migration provider classes here
+
           { add(ProjectMigrationProvider.class); }
+
           { add(UserMembershipMigrationProvider.class); }
+
           { add(NGBeanMigrationProvider.class); }
+
           { add(InstanceMigrationProvider.class); }
+
           { add(UserMetadataMigrationProvider.class); }
+
           { add(LicenseManagerMigrationProvider.class); }
+
           { add(SourceCodeManagerMigrationProvider.class); }
+
           { add(GitSyncMigrationProvider.class); }
+
           { add(DelegateMigrationProvider.class); }
+
           { add(UserGroupMigrationProvider.class); }
+
           { add(CDMigrationProvider.class); }
         })
         .build();
@@ -730,6 +744,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   private Map<String, Class<? extends SdkFunctor>> getSdkFunctors() {
     Map<String, Class<? extends SdkFunctor>> sdkFunctorMap = new HashMap<>();
     sdkFunctorMap.put(ImagePullSecretFunctor.IMAGE_PULL_SECRET, ImagePullSecretFunctor.class);
+    sdkFunctorMap.put(DockerConfigJsonFunctor.DOCKER_CONFIG_JSON, DockerConfigJsonFunctor.class);
     sdkFunctorMap.put(VariableFunctor.VARIABLE, VariableFunctor.class);
     sdkFunctorMap.put(TerraformPlanJsonFunctor.TERRAFORM_PLAN_JSON, TerraformPlanJsonFunctor.class);
     sdkFunctorMap.put(
@@ -740,6 +755,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     sdkFunctorMap.put(InstanceFunctor.INSTANCE, InstanceFunctor.class);
     sdkFunctorMap.put(CONFIG_FILE_FUNCTOR, ConfigFileFunctor.class);
     sdkFunctorMap.put(FILE_STORE_FUNCTOR, FileStoreFunctor.class);
+    sdkFunctorMap.put(KUBERNETES_RELEASE_FUNCTOR_NAME, KubernetesReleaseFunctor.class);
     return sdkFunctorMap;
   }
 

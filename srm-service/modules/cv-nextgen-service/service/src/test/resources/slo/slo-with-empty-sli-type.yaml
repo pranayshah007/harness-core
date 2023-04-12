@@ -1,0 +1,32 @@
+---
+name: test_slo
+type: Simple
+identifier: test_slo
+userJourneyRefs:
+  - Overall_Harness
+monitoredServiceRef: $monitoredServiceRef
+healthSourceRef: $healthSourceRef
+orgIdentifier: $orgIdentifier
+projectIdentifier: $projectIdentifier
+notificationRuleRefs: []
+sloTarget:
+  sloTargetPercentage: 99
+  type: Rolling
+  spec:
+    periodLength: 1d
+spec:
+  monitoredServiceRef: $monitoredServiceRef
+  healthSourceRef: $healthSourceRef
+  serviceLevelIndicators:
+    - name: test_slo_Business_Transaction_Failure
+      identifier: test_slo_Business_Transaction_Failure
+      type: ''
+      spec:
+        sliMissingDataType: Good
+        type: Threshold
+        spec:
+          metric1: Business_Transaction_Failure
+          thresholdType: "<"
+          thresholdValue: 10
+
+

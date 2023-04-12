@@ -503,9 +503,13 @@ public class MigratorUtility {
   }
 
   public static List<GraphNode> getSteps(Workflow workflow) {
+    List<GraphNode> stepYamls = new ArrayList<>();
+    if (workflow == null || workflow.getOrchestrationWorkflow() == null
+        || !(workflow.getOrchestrationWorkflow() instanceof CanaryOrchestrationWorkflow)) {
+      return stepYamls;
+    }
     CanaryOrchestrationWorkflow orchestrationWorkflow =
         (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
-    List<GraphNode> stepYamls = new ArrayList<>();
     PhaseStep postDeploymentPhaseStep = orchestrationWorkflow.getPostDeploymentSteps();
     if (postDeploymentPhaseStep != null && EmptyPredicate.isNotEmpty(postDeploymentPhaseStep.getSteps())) {
       stepYamls.addAll(postDeploymentPhaseStep.getSteps());
@@ -585,7 +589,7 @@ public class MigratorUtility {
         .build();
   }
 
-  public static MigrationInputDTO getMigrationInput(ImportDTO importDTO) {
+  public static MigrationInputDTO getMigrationInput(String requestAuthToken, ImportDTO importDTO) {
     Map<NGMigrationEntityType, InputDefaults> defaults = new HashMap<>();
     Map<CgEntityId, BaseProvidedInput> overrides = new HashMap<>();
     Map<String, Object> expressions = new HashMap<>();
@@ -608,6 +612,10 @@ public class MigratorUtility {
     }
 
     return MigrationInputDTO.builder()
+        .destinationAccountIdentifier(StringUtils.defaultIfBlank(
+            importDTO.getDestinationDetails().getAccountIdentifier(), importDTO.getAccountIdentifier()))
+        .destinationAuthToken(
+            StringUtils.defaultIfBlank(importDTO.getDestinationDetails().getAuthToken(), requestAuthToken))
         .accountIdentifier(importDTO.getAccountIdentifier())
         .orgIdentifier(importDTO.getDestinationDetails().getOrgIdentifier())
         .projectIdentifier(importDTO.getDestinationDetails().getProjectIdentifier())

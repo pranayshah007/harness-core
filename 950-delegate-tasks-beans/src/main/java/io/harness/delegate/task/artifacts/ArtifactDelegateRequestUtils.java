@@ -42,6 +42,7 @@ import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceFetchType;
 import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
@@ -396,7 +397,8 @@ public class ArtifactDelegateRequestUtils {
   }
 
   public static GoogleCloudSourceArtifactDelegateRequest getGoogleCloudSourceArtifactDelegateRequest(String repository,
-      String project, String sourceDirectory, GcpConnectorDTO gcpConnectorDTO, String connectorRef,
+      String project, String sourceDirectory, GoogleCloudSourceFetchType googleCloudSourceFetchType, String branch,
+      String commitId, String tag, GcpConnectorDTO gcpConnectorDTO, String connectorRef,
       List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
     return GoogleCloudSourceArtifactDelegateRequest.builder()
         .repository(repository)
@@ -406,6 +408,10 @@ public class ArtifactDelegateRequestUtils {
         .connectorRef(connectorRef)
         .encryptedDataDetails(encryptedDataDetails)
         .sourceType(sourceType)
+        .googleCloudSourceFetchType(googleCloudSourceFetchType)
+        .branch(branch)
+        .commitId(commitId)
+        .tag(tag)
         .build();
   }
 

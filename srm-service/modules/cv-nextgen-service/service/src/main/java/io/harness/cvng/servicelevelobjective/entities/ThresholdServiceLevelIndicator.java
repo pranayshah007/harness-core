@@ -97,6 +97,7 @@ public class ThresholdServiceLevelIndicator extends ServiceLevelIndicator {
   @Override
   public boolean shouldReAnalysis(ServiceLevelIndicator serviceLevelIndicator) {
     try {
+      Preconditions.checkArgument(this.getSliMissingDataType().equals(serviceLevelIndicator.getSliMissingDataType()));
       ThresholdServiceLevelIndicator thresholdServiceLevelIndicator =
           (ThresholdServiceLevelIndicator) serviceLevelIndicator;
       Preconditions.checkArgument(this.getThresholdValue().equals(thresholdServiceLevelIndicator.getThresholdValue()));

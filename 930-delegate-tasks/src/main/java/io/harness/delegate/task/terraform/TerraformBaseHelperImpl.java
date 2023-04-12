@@ -12,11 +12,15 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.DelegateFile.Builder.aDelegateFile;
 import static io.harness.delegate.beans.connector.scm.GitAuthType.SSH;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.AMAZON_S3;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.ARTIFACTORY;
 import static io.harness.delegate.task.terraform.TerraformCommand.APPLY;
 import static io.harness.delegate.task.terraform.TerraformCommand.DESTROY;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Explanation.EXPLANATION_FAILED_TO_DOWNLOAD_FROM_ARTIFACTORY;
+import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Explanation.EXPLANATION_FILES_NOT_FOUND_IN_S3_CONFIG;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Explanation.EXPLANATION_NO_ARTIFACT_DETAILS_FOR_ARTIFACTORY_CONFIG;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_FAILED_TO_DOWNLOAD_FROM_ARTIFACTORY;
+import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_FILES_NOT_FOUND_IN_S3_CONFIG;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_NO_ARTIFACT_DETAILS_FOR_ARTIFACTORY_CONFIG;
 import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
@@ -49,10 +53,12 @@ import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryNgService;
+import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.cli.CliResponse;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
@@ -61,11 +67,14 @@ import io.harness.delegate.beans.DelegateFile;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig;
 import io.harness.delegate.clienttools.TerraformConfigInspectVersion;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
+import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.TerraformCommandExecutionException;
@@ -104,8 +113,14 @@ import io.harness.terraform.request.TerraformRefreshCommandRequest;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 import software.wings.beans.delegation.TerraformProvisionParameters;
+import software.wings.service.impl.AwsApiHelperService;
 
+import com.amazonaws.services.s3.model.ListObjectsV2Request;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -129,6 +144,7 @@ import java.util.zip.ZipInputStream;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.input.NullInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jgit.api.Git;
@@ -160,6 +176,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
   @Inject DelegateFileManagerBase delegateFileManager;
   @Inject ArtifactoryNgService artifactoryNgService;
   @Inject ArtifactoryRequestMapper artifactoryRequestMapper;
+  @Inject AwsApiHelperService awsApiHelperService;
+  @Inject AwsNgConfigMapper awsNgConfigMapper;
 
   @Override
   public void downloadTfStateFile(String workspace, String accountId, String currentStateFileId, String scriptDirectory)
@@ -782,6 +800,98 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     return scriptDirectory;
   }
 
+  @Override
+  public String fetchS3ConfigFilesAndPrepareScriptDir(S3StoreTFDelegateConfig s3StoreTFDelegateConfig,
+      TerraformTaskNGParameters terraformTaskNGParameters, String baseDir,
+      Map<String, Map<String, String>> keyVersionMap, LogCallback logCallback) {
+    String scriptPath = FilenameUtils.normalize(s3StoreTFDelegateConfig.getPaths().get(0));
+    logCallback.saveExecutionLog("Normalized Path: " + scriptPath, INFO, CommandExecutionStatus.RUNNING);
+    String workingDir = getWorkingDir(baseDir);
+    String folderPath = s3StoreTFDelegateConfig.getPaths().get(0);
+    String prefix;
+    if ("/".equals(folderPath)) {
+      prefix = "";
+    } else if (!folderPath.endsWith("/")) {
+      prefix = folderPath + "/";
+    } else {
+      prefix = folderPath;
+    }
+    logCallback.saveExecutionLog("Downloading S3 objects...", INFO, CommandExecutionStatus.RUNNING);
+    downloadS3Objects(s3StoreTFDelegateConfig, prefix, keyVersionMap, workingDir);
+    logCallback.saveExecutionLog("Downloading completed", INFO, CommandExecutionStatus.RUNNING);
+    String scriptDirectory = resolveScriptDirectory(workingDir, scriptPath);
+    try {
+      TerraformHelperUtils.ensureLocalCleanup(scriptDirectory);
+      downloadTfStateFile(terraformTaskNGParameters.getWorkspace(), terraformTaskNGParameters.getAccountId(),
+          terraformTaskNGParameters.getCurrentStateFileId(), scriptDirectory);
+    } catch (IOException ioException) {
+      log.warn("Exception Occurred when cleaning Terraform local directory",
+          ExceptionMessageSanitizer.sanitizeException(ioException));
+    }
+    return scriptDirectory;
+  }
+
+  private void downloadS3Objects(S3StoreTFDelegateConfig s3StoreTFDelegateConfig, String prefix,
+      Map<String, Map<String, String>> keyVersionMap, String destDir) {
+    AwsConnectorDTO awsConnectorDTO = (AwsConnectorDTO) s3StoreTFDelegateConfig.getConnectorDTO().getConnectorConfig();
+    secretDecryptionService.decrypt(
+        awsConnectorDTO.getCredential().getConfig(), s3StoreTFDelegateConfig.getEncryptedDataDetails());
+    AwsInternalConfig awsConfig = awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO);
+    String identifier = s3StoreTFDelegateConfig.getIdentifier();
+    String region = s3StoreTFDelegateConfig.getRegion();
+    String bucketName = s3StoreTFDelegateConfig.getBucketName();
+
+    ListObjectsV2Request listObjectsV2Request = new ListObjectsV2Request();
+    listObjectsV2Request.withPrefix(prefix).withBucketName(bucketName).withMaxKeys(500);
+
+    List<String> objectKeyList = Lists.newArrayList();
+    ListObjectsV2Result result;
+    do {
+      result = awsApiHelperService.listObjectsInS3(awsConfig, region, listObjectsV2Request);
+      List<String> objectKeyListForCurrentBatch = result.getObjectSummaries()
+                                                      .stream()
+                                                      .map(S3ObjectSummary::getKey)
+                                                      .filter(key -> !key.endsWith("/"))
+                                                      .collect(toList());
+      objectKeyList.addAll(objectKeyListForCurrentBatch);
+      listObjectsV2Request.setContinuationToken(result.getNextContinuationToken());
+    } while (result.isTruncated());
+
+    if (objectKeyList.isEmpty()) {
+      throw NestedExceptionUtils.hintWithExplanationException(HINT_FILES_NOT_FOUND_IN_S3_CONFIG,
+          EXPLANATION_FILES_NOT_FOUND_IN_S3_CONFIG,
+          new TerraformCommandExecutionException(
+              format("Couldn't found any object in S3 bucket: [%s] with a prefix: [%s] ", bucketName, prefix),
+              WingsException.USER));
+    }
+    boolean versioningEnabled = awsApiHelperService.isVersioningEnabledForBucket(awsConfig, bucketName, region);
+    Map<String, String> versionMap =
+        keyVersionMap.get(identifier) == null ? new HashMap<>() : keyVersionMap.get(identifier);
+    for (String objectKey : objectKeyList) {
+      String version =
+          isEmpty(s3StoreTFDelegateConfig.getVersions()) ? null : s3StoreTFDelegateConfig.getVersions().get(objectKey);
+
+      S3Object object = version != null && versioningEnabled
+          ? awsApiHelperService.getVersionedObjectFromS3(
+              awsConfig, region, bucketName, objectKey, s3StoreTFDelegateConfig.getVersions().get(objectKey))
+          : awsApiHelperService.getObjectFromS3(awsConfig, region, bucketName, objectKey);
+
+      if (versioningEnabled) {
+        versionMap.put(objectKey, object.getObjectMetadata().getVersionId());
+      }
+      if (object != null) {
+        try {
+          FileUtils.copyInputStreamToFile(object.getObjectContent(), Paths.get(destDir, objectKey).toFile());
+        } catch (IOException e) {
+          log.error("Failed to download file from S3 bucket.", ExceptionMessageSanitizer.sanitizeException(e));
+          throw new TerraformCommandExecutionException(
+              "Error encountered when copying files to provisioner specific directory", WingsException.USER);
+        }
+      }
+    }
+    keyVersionMap.put(identifier, versionMap);
+  }
+
   public String getWorkingDir(String baseDir) {
     return Paths.get(baseDir, TF_SCRIPT_DIR).toString();
   }
@@ -915,7 +1025,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
 
   public String checkoutRemoteBackendConfigFileAndConvertToFilePath(TerraformBackendConfigFileInfo configFileInfo,
       String scriptDir, LogCallback logCallback, String accountId, String tfConfigDirectory,
-      Map<String, String> commitIdToFetchedFilesMap) throws IOException {
+      Map<String, String> commitIdToFetchedFilesMap, Map<String, Map<String, String>> keyVersionMap)
+      throws IOException {
     if (configFileInfo instanceof InlineTerraformBackendConfigFileInfo
         && ((InlineTerraformBackendConfigFileInfo) configFileInfo).getBackendConfigFileContent() != null) {
       return TerraformHelperUtils.createFileFromStringContent(
@@ -925,7 +1036,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
       List<String> tfBackendConfigFilePath = new ArrayList<>();
       Path tfConfigDirAbsPath = Paths.get(tfConfigDirectory).toAbsolutePath();
       checkoutRemoteTerraformFileAndConvertToFilePath((RemoteTerraformFileInfo) configFileInfo, logCallback, accountId,
-          tfConfigDirectory, tfBackendConfigFilePath, tfConfigDirAbsPath, commitIdToFetchedFilesMap);
+          tfConfigDirectory, tfBackendConfigFilePath, tfConfigDirAbsPath, commitIdToFetchedFilesMap, keyVersionMap);
       return tfBackendConfigFilePath.get(0);
     }
     return null;
@@ -933,7 +1044,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
 
   private void checkoutRemoteTerraformFileAndConvertToFilePath(RemoteTerraformFileInfo remoteFileInfo,
       LogCallback logCallback, String accountId, String tfVarDirectory, List<String> filePaths, Path filesDirAbsPath,
-      Map<String, String> commitIdToFetchedFilesMap) throws IOException {
+      Map<String, String> commitIdToFetchedFilesMap, Map<String, Map<String, String>> keyVersionMap)
+      throws IOException {
     if (remoteFileInfo.getGitFetchFilesConfig() != null) {
       GitStoreDelegateConfig gitStoreDelegateConfig =
           remoteFileInfo.getGitFetchFilesConfig().getGitStoreDelegateConfig();
@@ -944,15 +1056,38 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
         commitIdToFetchedFilesMap.putIfAbsent(remoteFileInfo.getGitFetchFilesConfig().getIdentifier(), commitId);
       }
     } else if (remoteFileInfo.getFilestoreFetchFilesConfig() != null) {
-      ArtifactoryStoreDelegateConfig artifactoryStoreDelegateConfig =
-          (ArtifactoryStoreDelegateConfig) remoteFileInfo.getFilestoreFetchFilesConfig();
-      handleFileStorageFiles(logCallback, filesDirAbsPath, filePaths, artifactoryStoreDelegateConfig);
+      if (remoteFileInfo.getFilestoreFetchFilesConfig().getType() == ARTIFACTORY) {
+        ArtifactoryStoreDelegateConfig artifactoryStoreDelegateConfig =
+            (ArtifactoryStoreDelegateConfig) remoteFileInfo.getFilestoreFetchFilesConfig();
+        handleFileStorageFiles(logCallback, filesDirAbsPath, filePaths, artifactoryStoreDelegateConfig);
+      } else if (remoteFileInfo.getFilestoreFetchFilesConfig().getType() == AMAZON_S3) {
+        S3StoreTFDelegateConfig s3StoreTFDelegateConfig =
+            (S3StoreTFDelegateConfig) remoteFileInfo.getFilestoreFetchFilesConfig();
+        handleS3VarFiles(
+            s3StoreTFDelegateConfig, tfVarDirectory, filesDirAbsPath, filePaths, keyVersionMap, logCallback);
+      }
     }
+  }
+
+  private void handleS3VarFiles(S3StoreTFDelegateConfig s3StoreTFDelegateConfig, String tfVarDirectory,
+      Path filesDirAbsPath, List<String> filePaths, Map<String, Map<String, String>> keyVersionMap,
+      LogCallback logCallback) {
+    logCallback.saveExecutionLog(
+        format("Fetching files for %s from S3... Region: [%s], Bucket: [%s]", s3StoreTFDelegateConfig.getIdentifier(),
+            s3StoreTFDelegateConfig.getRegion(), s3StoreTFDelegateConfig.getBucketName()),
+        INFO, CommandExecutionStatus.RUNNING);
+    for (String path : s3StoreTFDelegateConfig.getPaths()) {
+      downloadS3Objects(s3StoreTFDelegateConfig, path, keyVersionMap, tfVarDirectory);
+      filePaths.add(filesDirAbsPath + "/" + path);
+    }
+    logCallback.saveExecutionLog(
+        format("Files are saved in directory: [%s]", filesDirAbsPath), INFO, CommandExecutionStatus.RUNNING);
   }
 
   public List<String> checkoutRemoteVarFileAndConvertToVarFilePaths(List<TerraformVarFileInfo> varFileInfo,
       String scriptDir, LogCallback logCallback, String accountId, String tfVarDirectory,
-      Map<String, String> commitIdToFetchedFilesMap, boolean isTerraformCloudCli) throws IOException {
+      Map<String, String> commitIdToFetchedFilesMap, boolean isTerraformCloudCli,
+      Map<String, Map<String, String>> keyVersionMap) throws IOException {
     Path tfVarDirAbsPath = Paths.get(tfVarDirectory).toAbsolutePath();
     if (EmptyPredicate.isNotEmpty(varFileInfo)) {
       List<String> varFilePaths = new ArrayList<>();
@@ -968,11 +1103,11 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
           }
         } else if (varFile instanceof RemoteTerraformVarFileInfo) {
           checkoutRemoteTerraformFileAndConvertToFilePath((RemoteTerraformFileInfo) varFile, logCallback, accountId,
-              tfVarDirectory, varFilePaths, tfVarDirAbsPath, commitIdToFetchedFilesMap);
+              tfVarDirectory, varFilePaths, tfVarDirAbsPath, commitIdToFetchedFilesMap, keyVersionMap);
         }
       }
       logCallback.saveExecutionLog(
-          format("Var File directory: [%s]", tfVarDirAbsPath, INFO, CommandExecutionStatus.RUNNING));
+          format("Var File directory: [%s]", tfVarDirAbsPath), INFO, CommandExecutionStatus.RUNNING);
       return varFilePaths;
     }
     return Collections.emptyList();

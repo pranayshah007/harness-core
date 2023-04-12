@@ -16,7 +16,7 @@ java_library(
         "//957-cg-beans:module",
         "//970-api-services-beans/src/main/java/io/harness/security/encryption:module",
         "//970-api-services-beans/src/main/java/software/wings/settings:module",
-        "//970-ng-commons:module",
+        "//970-ng-commons/src/main/java/io/harness/ng/core:module",
         "//970-rbac-core:module",
         "//980-commons/src/main/java/io/harness/annotations:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",

@@ -44,6 +44,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class NotificationRuleServiceImpl implements NotificationRuleService {
@@ -232,6 +233,32 @@ public class NotificationRuleServiceImpl implements NotificationRuleService {
             -> notificationRuleEntityToResponse(
                 notificationRule, NOTIFICATION_RULE_REF_TO_ENABLED_MAP.get(notificationRule.getIdentifier())))
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public void validateNotification(
+      List<NotificationRuleRefDTO> notificationRuleRefDTOList, ProjectParams projectParams) {
+    List<String> inputNotificationIdentifierList =
+        notificationRuleRefDTOList.stream()
+            .map(notificationRuleRefDTO -> notificationRuleRefDTO.getNotificationRuleRef())
+            .collect(Collectors.toList());
+    Set<String> dbNotificationIdentifierSet = getEntities(projectParams, inputNotificationIdentifierList)
+                                                  .stream()
+                                                  .map(notificationRule -> notificationRule.getIdentifier())
+                                                  .collect(Collectors.toSet());
+
+    inputNotificationIdentifierList.forEach(notificationIdentifier -> {
+      if (!dbNotificationIdentifierSet.contains(notificationIdentifier)) {
+      }
+    });
+    inputNotificationIdentifierList =
+        inputNotificationIdentifierList.stream()
+            .filter(notificationIdentifier -> !dbNotificationIdentifierSet.contains(notificationIdentifier))
+            .collect(Collectors.toList());
+    if (!inputNotificationIdentifierList.isEmpty()) {
+      throw new InvalidArgumentsException(String.format(
+          "NotificationRule does not exist for identifier: %s", String.join(",", inputNotificationIdentifierList)));
+    }
   }
 
   private void validateCreate(ProjectParams projectParams, NotificationRuleDTO notificationRuleDTO) {

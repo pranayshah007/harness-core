@@ -16,6 +16,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
@@ -80,6 +81,9 @@ public class CommandStepRollbackHelper extends CDStepHelper {
       return Optional.empty();
     }
 
+    boolean shouldRenderConfigFiles =
+        cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_NG_CONFIG_FILE_EXPRESSION);
+
     SshWinRmStageExecutionDetails sshWinRmExecutionDetails =
         (SshWinRmStageExecutionDetails) latestSuccessfulStageExecutionDetails.get();
     List<ArtifactOutcome> artifactsOutcome = sshWinRmExecutionDetails.getArtifactsOutcome();
@@ -87,7 +91,8 @@ public class CommandStepRollbackHelper extends CDStepHelper {
         ? sshWinRmArtifactHelper.getArtifactDelegateConfigConfig(artifactsOutcome.get(0), ambiance)
         : null;
     FileDelegateConfig fileDelegateConfig = sshWinRmExecutionDetails.getConfigFilesOutcome() != null
-        ? sshWinRmConfigFileHelper.getFileDelegateConfig(sshWinRmExecutionDetails.getConfigFilesOutcome(), ambiance)
+        ? sshWinRmConfigFileHelper.getFileDelegateConfig(
+            sshWinRmExecutionDetails.getConfigFilesOutcome(), ambiance, shouldRenderConfigFiles)
         : null;
     Map<String, String> environmentVariables =
         mergeEnvironmentVariables(sshWinRmExecutionDetails.getEnvVariables(), builtInEnvVariables);

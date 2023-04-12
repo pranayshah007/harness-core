@@ -150,7 +150,6 @@ public class K8sHelmCommonStepHelper {
       ImmutableSet.of(ManifestType.K8Manifest, ManifestType.HelmChart);
   protected static final Set<String> HELM_CHART_REPO_STORE_TYPES =
       ImmutableSet.of(ManifestStoreType.S3, ManifestStoreType.GCS, ManifestStoreType.HTTP, ManifestStoreType.OCI);
-  protected static final String SUB_CHARTS_FOLDER = "charts/";
   @Inject protected CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private K8sEntityHelper k8sEntityHelper;
@@ -416,7 +415,7 @@ public class K8sHelmCommonStepHelper {
 
     List<HelmFetchFileConfig> helmFetchFileConfigList = mapHelmChartManifestsToHelmFetchFileConfig(
         helmChartManifestOutcome.getIdentifier(), getParameterFieldValue(helmChartManifestOutcome.getValuesPaths()),
-        helmChartManifestOutcome.getType(), helmManifest.getSubChartName());
+        helmChartManifestOutcome.getType(), helmManifest.getSubChartPath());
 
     helmFetchFileConfigList.addAll(mapValuesManifestsToHelmFetchFileConfig(aggregatedValuesManifests));
     HelmValuesFetchRequest helmValuesFetchRequest =
@@ -491,9 +490,9 @@ public class K8sHelmCommonStepHelper {
       HelmChartManifestOutcome manifestOutcome = (HelmChartManifestOutcome) k8sManifestOutcome;
       valuesPaths = getParameterFieldValue(manifestOutcome.getValuesPaths());
       folderPath = getParameterFieldValue(gitStoreConfig.getFolderPath());
-      String subChartName = getParameterFieldValue(manifestOutcome.getSubChartName());
-      if (isNotEmpty(subChartName)) {
-        folderPath = Paths.get(folderPath, SUB_CHARTS_FOLDER, subChartName).toString();
+      String subChartPath = getParameterFieldValue(manifestOutcome.getSubChartPath());
+      if (isNotEmpty(subChartPath)) {
+        folderPath = Paths.get(folderPath, subChartPath).toString();
       }
     }
     List<GitFetchFilesConfig> gitFetchFilesConfigList = new ArrayList<>();
@@ -582,9 +581,9 @@ public class K8sHelmCommonStepHelper {
             .deleteRepoCacheDir(helmVersion != HelmVersion.V2)
             .skipApplyHelmDefaultValues(cdFeatureFlagHelper.isEnabled(
                 AmbianceUtils.getAccountId(ambiance), FeatureName.CDP_SKIP_DEFAULT_VALUES_YAML_NG))
-            .subChartName(
+            .subChartPath(
                 cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_CDS_HELM_SUB_CHARTS)
-                    ? getParameterFieldValue(helmChartManifestOutcome.getSubChartName())
+                    ? getParameterFieldValue(helmChartManifestOutcome.getSubChartPath())
                     : "")
             .build();
 
@@ -975,15 +974,16 @@ public class K8sHelmCommonStepHelper {
   }
 
   public static List<HelmFetchFileConfig> mapHelmChartManifestsToHelmFetchFileConfig(
-      String identifier, List<String> valuesPaths, String manifestType, String subChartName) {
+      String identifier, List<String> valuesPaths, String manifestType, String subChartPath) {
     List<HelmFetchFileConfig> helmFetchFileConfigList = new ArrayList<>();
-    if (isEmpty(subChartName)) {
-      helmFetchFileConfigList.add(
-          createHelmFetchFileConfig(identifier, manifestType, Arrays.asList(VALUES_YAML_KEY), true));
-    } else {
-      helmFetchFileConfigList.add(createHelmFetchFileConfig(identifier, manifestType,
-          Arrays.asList(Paths.get(SUB_CHARTS_FOLDER, subChartName, VALUES_YAML_KEY).toString()), true));
+
+    String defaultValuesPath = VALUES_YAML_KEY;
+    if (isNotEmpty(subChartPath)) {
+      defaultValuesPath = Paths.get(subChartPath, VALUES_YAML_KEY).toString();
     }
+    helmFetchFileConfigList.add(
+        createHelmFetchFileConfig(identifier, manifestType, Arrays.asList(defaultValuesPath), true));
+
     if (isNotEmpty(valuesPaths)) {
       helmFetchFileConfigList.add(createHelmFetchFileConfig(identifier, manifestType, valuesPaths, false));
     }

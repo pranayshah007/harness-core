@@ -25,7 +25,7 @@ import io.harness.pms.contracts.plan.YamlFieldBlob;
 import io.harness.pms.filter.creation.FilterCreationResponse;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
-import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
+import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoDecoratorImpl;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
@@ -47,7 +47,8 @@ import org.mockito.Mock;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class FilterCreatorServiceTest extends PmsSdkCoreTestBase {
   private static final String NODE_UUID = "test";
-  @Mock PipelineServiceInfoProvider pipelineServiceInfoProvider;
+
+  @Mock PipelineServiceInfoDecoratorImpl serviceInfoDecorator;
   @Mock FilterCreationResponseMerger filterCreationResponseMerger;
   @Mock PmsGitSyncHelper pmsGitSyncHelper;
 
@@ -61,7 +62,7 @@ public class FilterCreatorServiceTest extends PmsSdkCoreTestBase {
     final URL testFile = classLoader.getResource("pipeline.yaml");
     yamlContent = Resources.toString(testFile, Charsets.UTF_8);
     pipelineField = YamlUtils.extractPipelineField(YamlUtils.injectUuid(yamlContent));
-    when(pipelineServiceInfoProvider.getFilterJsonCreators()).thenReturn(Arrays.asList(new NoopFilterJsonCreator()));
+    when(serviceInfoDecorator.getFilterJsonCreators()).thenReturn(Arrays.asList(new NoopFilterJsonCreator()));
     doNothing().when(filterCreationResponseMerger).mergeFilterCreationResponse(any(), any());
   }
 
@@ -98,7 +99,7 @@ public class FilterCreatorServiceTest extends PmsSdkCoreTestBase {
     FilterCreationBlobRequest request = FilterCreationBlobRequest.newBuilder().build();
     assertThat(filterCreatorService.processNodeInternal(SetupMetadata.newBuilder().build(), pipelineField, request))
         .isEqualTo(FilterCreationResponse.builder().build());
-    verify(pipelineServiceInfoProvider).getFilterJsonCreators();
+    verify(serviceInfoDecorator).getFilterJsonCreators();
   }
 
   @Test

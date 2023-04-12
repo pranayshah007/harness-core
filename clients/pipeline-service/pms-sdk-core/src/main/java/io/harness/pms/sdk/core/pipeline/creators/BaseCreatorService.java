@@ -15,10 +15,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.Dependencies;
-import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.YamlFieldBlob;
 import io.harness.pms.sdk.PmsSdkModuleUtils;
-import io.harness.pms.sdk.core.plan.creation.creators.PlanCreatorServiceHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 
@@ -78,7 +76,6 @@ public abstract class BaseCreatorService<R extends CreatorResponse, M, N> {
 
   private void processNodes(Dependencies.Builder dependencies, R finalResponse, M metadata, N request) {
     Map<String, String> currentDependenciesMap = new HashMap<>(dependencies.getDependenciesMap());
-    Map<String, Dependency> currentDependenciesMetadataMap = new HashMap<>(dependencies.getDependencyMetadataMap());
     String currentYaml = dependencies.getYaml();
     dependencies.clearDependencies();
     dependencies.clearDependencyMetadata();
@@ -111,7 +108,9 @@ public abstract class BaseCreatorService<R extends CreatorResponse, M, N> {
       }
       mergeResponses(finalResponse, response, dependencies);
       finalResponse.addResolvedDependency(currentYaml, yamlField.getNode().getUuid(), yamlPath);
-      PlanCreatorServiceHelper.decorateCreationResponseWithServiceAffinity(response, currentServiceName, yamlField, "");
+      // (TODO: archit) onboard service affinity to filter/variable creators
+      // PlanCreatorServiceHelper.decorateCreationResponseWithServiceAffinity(response, currentServiceName, yamlField,
+      // "");
       if (isNotEmpty(response.getDependencies().getDependenciesMap())) {
         dependencies.putAllDependencies(response.getDependencies().getDependenciesMap());
         if (EmptyPredicate.isNotEmpty(response.getDependencies().getDependencyMetadataMap())) {

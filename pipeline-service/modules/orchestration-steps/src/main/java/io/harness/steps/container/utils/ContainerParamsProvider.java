@@ -14,7 +14,6 @@ import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_BUILD_ID_VARIABLE;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_CI_INDIRECT_LOG_UPLOAD_FF;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_EXECUTION_ID_VARIABLE;
-import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_LE_STATUS_REST_ENABLED;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_LOG_PREFIX_VARIABLE;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_ORG_ID_VARIABLE;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_PIPELINE_ID_VARIABLE;
@@ -119,9 +118,9 @@ public class ContainerParamsProvider {
       envVars.put(HARNESS_CI_INDIRECT_LOG_UPLOAD_FF, "true");
     }
     // Check whether FF is enabled to send LE to manager status update via rest
-    if (featureFlagHelper.isEnabled(accountID, FeatureName.CI_LE_STATUS_REST_ENABLED)) {
-      envVars.put(HARNESS_LE_STATUS_REST_ENABLED, "true");
-    }
+    //    if (featureFlagHelper.isEnabled(accountID, FeatureName.CI_LE_STATUS_REST_ENABLED)) {
+    //      envVars.put(HARNESS_LE_STATUS_REST_ENABLED, "true");
+    //    }
 
     // Add environment variables that need to be used inside the lite engine container
     envVars.put(HARNESS_WORKSPACE, workDirPath);

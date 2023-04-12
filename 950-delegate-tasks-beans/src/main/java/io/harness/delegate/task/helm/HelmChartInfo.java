@@ -21,5 +21,5 @@ public class HelmChartInfo {
   private String name;
   private String version;
   private String repoUrl;
-  private String subChartName;
+  private String subChartPath;
 }
