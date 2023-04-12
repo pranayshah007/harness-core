@@ -31,6 +31,7 @@ import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
 import java.util.Map;
+import java.util.Optional;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class IdentityStep
@@ -86,7 +87,8 @@ public class IdentityStep
   public static Ambiance modifyAmbiance(Ambiance ambiance) {
     Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
     StepCategory stepCategory = level.getStepType().getStepCategory();
-    if (AmbianceUtils.getStrategyLevelFromAmbiance(ambiance).isPresent()) {
+    Optional<Level> strategyLevel = AmbianceUtils.getStrategyLevelFromAmbiance(ambiance);
+    if (strategyLevel.isPresent() && strategyLevel.get().getNodeType().equals("IDENTITY_PLAN_NODE")) {
       String stepType = IdentityStrategyStep.STEP_TYPE.getType();
       if (stepCategory != StepCategory.STRATEGY) {
         stepType = IdentityStrategyInternalStep.STEP_TYPE.getType();
