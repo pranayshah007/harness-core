@@ -80,7 +80,7 @@ public class ExpressionDetailServiceImpl implements ExpressionDetailService {
                                                                  .isResolved(true)
                                                                  .build());
         } catch (Exception e) {
-          String suggestedExpression = handleInvalidExpressionStartingFromGroup(ambiance, expression, expandedJsonMap);
+          String suggestedExpression = calculateSuggestedExpression(ambiance, expression, expandedJsonMap);
           if (suggestedExpression.equals(expression)) {
             suggestedExpression = null;
           }
@@ -97,7 +97,7 @@ public class ExpressionDetailServiceImpl implements ExpressionDetailService {
     return expressionDetailResponse;
   }
 
-  private String handleInvalidExpressionStartingFromGroup(
+  private String calculateSuggestedExpression(
       Ambiance ambiance, String expression, Map<String, Object> expandedJsonMap) {
     expression = expression.replace(EXPR_START, "").replace(EXPR_END, "");
     List<String> expressionKeys = Arrays.asList(expression.split("\\."));
