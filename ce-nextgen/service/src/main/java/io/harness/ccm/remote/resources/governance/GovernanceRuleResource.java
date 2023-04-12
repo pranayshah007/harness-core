@@ -721,9 +721,10 @@ public class GovernanceRuleResource {
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.ENTITY_TYPE) EntityType entityType, Scope scope) throws IOException {
+    prompt = "Write a valid cloud custodian policy to " + prompt;
     String PRIMING =
         "You are a bot that has knowledge about writing cloud custodian policies for governance of cloud resources. "
-        + "Refuse to answer any question which is not related to writing cloud custodian's yaml policy. ";
+        + "Refuse to answer any question which is not related to writing cloud custodian's yaml policy or explaining a given policy.";
     // TODO: Make things configurable. Remove @Public api
     // "gpt-3.5-turbo-0301"; // "text-davinci-003"
     String APIURL = "https://api.openai.com/v1/chat/completions";
@@ -772,6 +773,7 @@ public class GovernanceRuleResource {
         response = matcher.group(0);
       }
       log.info(response);
+      response = response.replaceAll("```", "");
     }
 
     return ResponseDTO.newResponse(response);
