@@ -10,4 +10,8 @@ public enum Service {
     Service(String versionUrlKeyword) {
         this.versionUrlKeyword = versionUrlKeyword;
     }
+
+    public String getVersionUrlKeyword() {
+        return versionUrlKeyword;
+    }
 }
