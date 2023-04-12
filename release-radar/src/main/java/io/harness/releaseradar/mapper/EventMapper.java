@@ -44,6 +44,7 @@ public class EventMapper {
         .release(entity.getRelease())
         .environment(entity.getEnvironment())
         .simpleDateFormat(sdf.format(new Date(entity.getEpoch())))
+        .epoch(entity.getEpoch())
         .serviceName(entity.getServiceName())
         .versioningScheme(entity.getVersioningScheme())
         .build();

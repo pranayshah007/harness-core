@@ -25,4 +25,5 @@ public class EventResponseDTO {
   @NotNull String release;
   @NotNull String simpleDateFormat;
   @NotNull String serviceName;
+  @NotNull Long epoch;
 }
