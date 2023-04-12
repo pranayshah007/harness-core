@@ -37,7 +37,6 @@ import io.harness.execution.ExpressionTestDetails;
 import io.harness.execution.ExpressionTestRequest;
 import io.harness.execution.ExpressionTestResponse;
 import io.harness.execution.PlanExecution;
-import io.harness.execution.expansion.ExpressionTestService;
 import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -47,6 +46,7 @@ import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.expressions.ExpressionDetailService;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineResourceConstants;
@@ -100,7 +100,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   @Inject PmsEngineExpressionService pmsEngineExpressionService;
 
   @Inject PlanExpansionService planExpansionService;
-  @Inject ExpressionTestService expressionTestService;
+  @Inject ExpressionDetailService expressionTestService;
 
   @Inject private final PreflightService preflightService;
   @Inject private final PMSPipelineService pmsPipelineService;

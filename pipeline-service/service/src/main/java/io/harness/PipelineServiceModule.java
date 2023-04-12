@@ -94,6 +94,8 @@ import io.harness.pms.event.entitycrud.AccountEntityCrudStreamListener;
 import io.harness.pms.event.entitycrud.PipelineEntityCRUDStreamListener;
 import io.harness.pms.event.entitycrud.ProjectEntityCrudStreamListener;
 import io.harness.pms.event.pollingevent.PollingEventStreamListener;
+import io.harness.pms.expressions.ExpressionDetailService;
+import io.harness.pms.expressions.ExpressionDetailServiceImpl;
 import io.harness.pms.expressions.PMSExpressionEvaluatorProvider;
 import io.harness.pms.health.HealthResource;
 import io.harness.pms.health.HealthResourceImpl;
@@ -406,6 +408,7 @@ public class PipelineServiceModule extends AbstractModule {
     bind(PipelineStageYamlSchemaService.class).to(PipelineStageYamlSchemaServiceImpl.class).in(Singleton.class);
     bind(FeatureFlagYamlService.class).to(FeatureFlagYamlServiceImpl.class).in(Singleton.class);
     bind(PipelineEnforcementService.class).to(PipelineEnforcementServiceImpl.class).in(Singleton.class);
+    bind(ExpressionDetailService.class).to(ExpressionDetailServiceImpl.class).in(Singleton.class);
 
     bind(PipelineRefreshService.class).to(PipelineRefreshServiceImpl.class);
     bind(NodeTypeLookupService.class).to(NodeTypeLookupServiceImpl.class);
