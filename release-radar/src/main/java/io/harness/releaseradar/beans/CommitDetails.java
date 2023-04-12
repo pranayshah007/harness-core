@@ -20,3 +20,4 @@ public class CommitDetails {
                 .message(githubCommit.getCommit().getMessage())
                 .build();
     }
+}
