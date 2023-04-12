@@ -59,7 +59,7 @@ public class PmsStepPlanCreatorUtilsTest extends OrchestrationStepsTestBase {
 
     YamlField yamlField = YamlUtils.readTree(yaml);
     AdviserObtainment adviserObtainment =
-        PmsStepPlanCreatorUtils.getNextStepAdviserObtainment(kryoSerializer, yamlField, false);
+        PmsStepPlanCreatorUtils.getNextStepAdviserObtainment(kryoSerializer, yamlField);
     assertNull(adviserObtainment);
   }
 
@@ -91,8 +91,7 @@ public class PmsStepPlanCreatorUtilsTest extends OrchestrationStepsTestBase {
                           .asArray()
                           .get(1)
                           .getField("stage");
-    AdviserObtainment adviserObtainment =
-        PmsStepPlanCreatorUtils.getNextStepAdviserObtainment(kryoSerializer, stage, true);
+    AdviserObtainment adviserObtainment = PmsStepPlanCreatorUtils.getNextStageAdviser(kryoSerializer, stage);
     assertNull(adviserObtainment);
   }
 
