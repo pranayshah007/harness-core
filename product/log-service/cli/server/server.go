@@ -192,7 +192,6 @@ func initLogging(c config.Config) {
 	}
 }
 
-
 func scheduleGPTRCAThread(ctx context.Context, store store.Store, errorMsgChan <-chan types.KeyErrorMsg, OpenAPIToken string) {
 	logrus.Info("Starting scheduleGPTRCAThread thread")
 	go func() {
@@ -208,65 +207,68 @@ func scheduleGPTRCAThread(ctx context.Context, store store.Store, errorMsgChan <
 }
 
 func GPTRCAThread(ctx context.Context, store store.Store, keyErrorMsg types.KeyErrorMsg, OpenAPIToken string) {
+	fmt.Println(fmt.Sprintf("[RUTVIJ] IN GO THREAD: Received message %s", keyErrorMsg))
 	//upload error message to new bucket
-	if err := store.Upload(ctx, keyErrorMsg.Key + "/error-message", strings.NewReader(keyErrorMsg.ErrorMsg)); err != nil {
+	if err := store.Upload(ctx, keyErrorMsg.Key+"/error-message", strings.NewReader(keyErrorMsg.ErrorMsg)); err != nil {
 		logrus.Errorf("cannot upload error message object")
 	}
 
 	//process error message by chatgpt
 
 	// Set up the HTTP request
-    url := "https://api.openai.com/v1/chat/completions"
-	reqContent := "What caused the build to fail? Here's the error message: "+keyErrorMsg.ErrorMsg
-    requestData := map[string]interface{}{
-        "model":       "gpt-3.5-turbo",
-        "messages": []map[string]string{
-            {"role": "user", "content": reqContent},
-        },
-        "temperature": 0.7,
-    }
-    requestDataBytes, err := json.Marshal(requestData)
-    if err != nil {
-        logrus.Errorf(err.Error())
-		return
-    }
-    req, err := http.NewRequest("POST", url, bytes.NewBuffer(requestDataBytes))
-    if err != nil {
-    	logrus.Errorf(err.Error())
-    }
-    req.Header.Set("Content-Type", "application/json")
-    req.Header.Set("Authorization", "Bearer "+OpenAPIToken)
-
-    // Send the HTTP request and parse the response
-    client := http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
+	url := "https://api.openai.com/v1/chat/completions"
+	reqContent := "What caused the build to fail? Here's the error message: " + keyErrorMsg.ErrorMsg
+	requestData := map[string]interface{}{
+		"model": "gpt-3.5-turbo",
+		"messages": []map[string]string{
+			{"role": "user", "content": reqContent},
+		},
+		"temperature": 0.7,
+	}
+	requestDataBytes, err := json.Marshal(requestData)
+	if err != nil {
 		logrus.Errorf(err.Error())
-        return
-    }
-    defer resp.Body.Close()
-
-    responseBytes, err := ioutil.ReadAll(resp.Body)
-    if err != nil {
-        logrus.Errorf(err.Error())
 		return
-    }
+	}
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(requestDataBytes))
+	if err != nil {
+		logrus.Errorf(err.Error())
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+OpenAPIToken)
 
-    // // Parse the response body into a Go data structure
-    // var responseMap map[string]interface{}
-    // err = json.Unmarshal(responseBytes, &responseMap)
-    // if err != nil {
-    //     panic(err)
-    // }
+	// Send the HTTP request and parse the response
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		logrus.Errorf(err.Error())
+		return
+	}
+	defer resp.Body.Close()
 
-    // // Access the content field of each choice
-    // for _, choice := range responseMap["choices"].([]interface{}) {
-    //     message := choice.(map[string]interface{})["message"].(map[string]interface{})
-    //     content := message["content"].(string)
-    // }
+	responseBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		logrus.Errorf(err.Error())
+		return
+	}
 
+	// // Parse the response body into a Go data structure
+	// var responseMap map[string]interface{}
+	// err = json.Unmarshal(responseBytes, &responseMap)
+	// if err != nil {
+	//     panic(err)
+	// }
+
+	// // Access the content field of each choice
+	// for _, choice := range responseMap["choices"].([]interface{}) {
+	//     message := choice.(map[string]interface{})["message"].(map[string]interface{})
+	//     content := message["content"].(string)
+	// }
+
+	respString := string(responseBytes)
+	fmt.Println(fmt.Sprintf("[RUTVIJ] Printing ChatGPT response: %s", respString))
 	//upload processed message by chatgpt
-	if err := store.Upload(ctx, keyErrorMsg.Key + "/chatgpt-resp", strings.NewReader(string(responseBytes))); err != nil {
+	if err := store.Upload(ctx, keyErrorMsg.Key+"/chatgpt-resp", strings.NewReader(respString)); err != nil {
 		logrus.Errorf("cannot upload chatgpt response object")
 	}
 }

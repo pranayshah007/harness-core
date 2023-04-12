@@ -14,15 +14,15 @@ import (
 	"github.com/harness/harness-core/product/log-service/logger"
 	"github.com/harness/harness-core/product/log-service/store"
 	"github.com/harness/harness-core/product/log-service/stream"
-	"github.com/harness/harness-core/product/platform/client"
 	"github.com/harness/harness-core/product/log-service/types"
+	"github.com/harness/harness-core/product/platform/client"
 
 	"github.com/go-chi/chi"
 )
 
 // Handler returns an http.Handler that exposes the
 // service resources.
-func Handler(stream stream.Stream, store store.Store, config config.Config, ngClient *client.HTTPClient, errorMsgChan <-chan types.KeyErrorMsg) http.Handler {
+func Handler(stream stream.Stream, store store.Store, config config.Config, ngClient *client.HTTPClient, errorMsgChan chan types.KeyErrorMsg) http.Handler {
 	r := chi.NewRouter()
 	r.Use(logger.Middleware)
 

@@ -6,8 +6,15 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"github.com/harness/harness-core/product/log-service/store"
+	"github.com/harness/harness-core/product/log-service/types"
 	"net/http"
+	"regexp"
+	"strings"
 )
 
 const (
@@ -15,7 +22,30 @@ const (
 	keyParam       = "key"
 	snapshotParam  = "snapshot"
 	usePrefixParam = "prefix"
+
+	searchGpt = "searchGpt"
 )
+
+func getNudges() []Nudge {
+	// <search-term> <resolution> <error-msg>
+	return []Nudge{
+		NewNudge("[Kk]illed", "Increase memory resources for the step", errors.New("out of memory")),
+		NewNudge(".*git.* SSL certificate problem",
+			"Set sslVerify to false in CI codebase properties", errors.New("SSL certificate error")),
+		NewNudge("Cannot connect to the Docker daemon",
+			"Setup dind if it's not running. If dind is running, privileged should be set to true",
+			errors.New("could not connect to the docker daemon")),
+		NewNudge("Fatal", searchGpt, nil),
+		NewNudge("Error", searchGpt, nil),
+		//NewNudge("Fatal:", searchGpt, nil),
+		//NewNudge("Fatal:", searchGpt, nil),
+		//NewNudge("Fatal:", searchGpt, nil),
+		//NewNudge("Fatal:", searchGpt, nil),
+		//NewNudge("Fatal:", searchGpt, nil),
+	}
+}
+
+var nudges = getNudges()
 
 // writeBadRequest writes the json-encoded error message
 // to the response with a 400 bad request status code.
@@ -59,4 +89,46 @@ func writeError(w http.ResponseWriter, err error, status int) {
 		Message string `json:"error_msg"`
 	}{err.Error()}
 	WriteJSON(w, &out, status)
+}
+
+func uploadErrorLogs(ctx context.Context, store store.Store, key string, logStr string, errorMsgChan chan types.KeyErrorMsg) {
+	rcaKey := "rca-error/" + key
+	errStrings := make([]string, 0)
+	lastNLines := 50
+
+	logStrSplit := strings.Split(logStr, "\n")
+	fmt.Println(fmt.Sprintf("[RUTVIJ] Found log string with %s RCA key %s", rcaKey, logStrSplit))
+
+	size := len(logStrSplit)
+	for idx := max(0, size-lastNLines); idx < size; idx++ { //nolint:gomnd
+		line := logStrSplit[idx]
+		// Iterate over the nudges and see if we get a match
+		for _, n := range nudges {
+			r, err := regexp.Compile(n.GetSearch())
+			if err != nil {
+				continue
+			}
+			if r.MatchString(line) && n.GetResolution() == searchGpt {
+				errStrings = append(errStrings, line)
+			}
+		}
+	}
+
+	allErrStrings := strings.Join(errStrings, "\n")
+
+	elem := types.KeyErrorMsg{Key: key, ErrorMsg: allErrStrings}
+	fmt.Println(fmt.Sprintf("[RUTVIJ] Sending elem to channel %s", elem))
+	errorMsgChan <- elem
+	//fmt.Println(fmt.Sprintf("[RUTVIJ] Found some error strings %s", allErrStrings))
+	//bodyBytes := []byte(allErrStrings)
+	//ioReader := ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+
+	//store.Upload(ctx, rcaKey, ioReader)
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

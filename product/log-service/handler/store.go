@@ -6,7 +6,9 @@
 package handler
 
 import (
+	"bytes"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -17,13 +19,23 @@ import (
 
 // HandleUpload returns an http.HandlerFunc that uploads
 // a blob to the datastore.
-func HandleUpload(store store.Store, errorMsgChan <-chan types.KeyErrorMsg) http.HandlerFunc {
+func HandleUpload(store store.Store, errorMsgChan chan types.KeyErrorMsg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		st := time.Now()
 
 		accountID := r.FormValue(accountIDParam)
 		key := CreateAccountSeparatedKey(accountID, r.FormValue(keyParam))
+
+		// Read the content
+		var bodyBytes []byte
+		if r.Body != nil {
+			bodyBytes, _ = ioutil.ReadAll(r.Body)
+		}
+		// Restore the io.ReadCloser to its original state
+		r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+		// Use the content
+		bodyString := string(bodyBytes)
 
 		if err := store.Upload(ctx, key, r.Body); err != nil {
 			WriteInternalError(w, err)
@@ -33,6 +45,9 @@ func HandleUpload(store store.Store, errorMsgChan <-chan types.KeyErrorMsg) http
 				Errorln("api: cannot upload object")
 			return
 		}
+
+		// Upload RCA log object as well
+		go uploadErrorLogs(ctx, store, key, bodyString, errorMsgChan)
 
 		logger.FromRequest(r).
 			WithField("key", key).
