@@ -5,5 +5,4 @@ import lombok.Data;
 
 @Data
 @Builder
-public class EnvDeploymentStatus {
-}
+public class EnvDeploymentStatus {}

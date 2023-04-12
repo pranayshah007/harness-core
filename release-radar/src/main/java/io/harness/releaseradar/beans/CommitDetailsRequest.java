@@ -4,6 +4,6 @@ import lombok.Builder;
 
 @Builder
 public class CommitDetailsRequest {
-    String branch;
-    int pageCount;
+  String branch;
+  int pageCount;
 }
