@@ -88,6 +88,10 @@ if [[ "" != "$NG_HARNESS_MONGO_URI" ]]; then
   yq -i '.ng-harness.uri=' $CONFIG_FILE
 fi
 
+if [[ "" != "$SRM_MONGO_URI" ]]; then
+  export $SRM_MONGO_URI=${$SRM_MONGO_URI//\\&/&}; yq -i '.srm-mongo.uri=env($SRM_MONGO_URI)' $CONFIG_FILE
+fi
+
 replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"
 replace_key_value cfClientConfig.configUrl "$CF_CLIENT_CONFIG_URL"
 replace_key_value cfClientConfig.eventUrl "$CF_CLIENT_EVENT_URL"

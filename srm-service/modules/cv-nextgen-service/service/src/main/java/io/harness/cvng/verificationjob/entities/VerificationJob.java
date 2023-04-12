@@ -17,6 +17,7 @@ import static io.harness.cvng.verificationjob.CVVerificationJobConstants.SERVICE
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -70,6 +71,8 @@ import org.apache.http.client.utils.URIBuilder;
 @HarnessEntity(exportable = true)
 @SuperBuilder
 @OwnedBy(HarnessTeam.CV)
+@ChangeDataCapture(table = "verification_jobs", dataStore = "cvng",
+    fields = {VerificationJob.VerificationJobKeys.uuid, VerificationJob.VerificationJobKeys.createdAt}, handler = "")
 // Also the serialization of duration is in millis.
 public abstract class VerificationJob
     implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {

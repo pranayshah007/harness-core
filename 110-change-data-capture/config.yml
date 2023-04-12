@@ -84,3 +84,8 @@ cfClientConfig:
 featureFlagConfig:
   featureFlagSystem: LOCAL
   syncFeaturesToCF: false
+
+srm-harness:
+  uri: mongodb://localhost:27017/cvng
+  socketTimeout: 360000
+  aliasDBName: cvng

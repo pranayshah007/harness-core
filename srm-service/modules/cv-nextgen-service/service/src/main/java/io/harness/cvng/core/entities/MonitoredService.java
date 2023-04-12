@@ -8,6 +8,7 @@
 package io.harness.cvng.core.entities;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -54,6 +55,9 @@ import lombok.experimental.SuperBuilder;
 @Entity(value = "monitoredServices", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
+@ChangeDataCapture(table = "monitored_services", dataStore = "cvng",
+    fields = {MonitoredService.MonitoredServiceKeys.name, MonitoredService.MonitoredServiceKeys.createdAt},
+    handler = "")
 public final class MonitoredService
     implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware, CreatedAtAware, PersistentRegularIterable {
   public static List<MongoIndex> mongoIndexes() {
