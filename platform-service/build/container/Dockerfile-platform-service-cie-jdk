@@ -14,6 +14,7 @@ COPY --chown=65534:65534 classpath_metadata.json /opt/harness/
 COPY --chown=65534:65534 scripts /opt/harness
 COPY --chown=65534:65534 default.jfc /opt/harness/
 COPY --chown=65534:65534 profile.jfc /opt/harness/
+COPY --chown=65534:65534 embeddings.csv /opt/harness/
 
 RUN chmod +x /opt/harness/*.sh
 CMD [ "/opt/harness/run.sh" ]
