@@ -4700,6 +4700,7 @@ plain_artifacts = [
     "com.rabbitmq:amqp-client:jar:4.8.0",
     "com.bugsnag:bugsnag:3.6.2",
     "com.carrotsearch:hppc:0.8.1",
+    "com.cloudbees.thirdparty:zendesk-java-client:0.22.0",
     "com.cronutils:cron-utils:9.1.6",
     "com.datadoghq:java-dogstatsd-client:2.3",
     "com.deftlabs:mongo-java-distributed-lock:0.1.7",

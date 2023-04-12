@@ -15,6 +15,7 @@ java_library(
         "//956-feature-flag-beans:module",
         "//970-ng-commons:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:com_cloudbees_thirdparty_zendesk_java_client",
         "@maven//:com_google_inject_guice",
     ],
 )
