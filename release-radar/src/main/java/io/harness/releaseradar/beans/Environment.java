@@ -8,21 +8,21 @@
 package io.harness.releaseradar.beans;
 
 public enum Environment {
-    PRE_QA ("https://stress.harness.io/{SERVICE}/api/version"),
-    QA ("https://qa.harness.io/prod1/{SERVICE}/api/version"),
-    UAT ("https://uat.harness.io/prod1/{SERVICE}/api/version"),
-    PROD1 ("https://app.harness.io/prod1/{SERVICE}/api/version"),
-    PROD2 ("https://app.harness.io/gratis/{SERVICE}/api/version"),
-    PROD3 ("https://app3.harness.io/{SERVICE}/api/version");
+  PRE_QA("https://stress.harness.io/{SERVICE}/api/version"),
+  QA("https://qa.harness.io/prod1/{SERVICE}/api/version"),
+  UAT("https://uat.harness.io/prod1/{SERVICE}/api/version"),
+  PROD1("https://app.harness.io/prod1/{SERVICE}/api/version"),
+  PROD2("https://app.harness.io/gratis/{SERVICE}/api/version"),
+  PROD3("https://app3.harness.io/{SERVICE}/api/version");
 
-    public String getVersionUrlTemplate() {
-        return versionUrlTemplate;
-    }
+  public String getVersionUrlTemplate() {
+    return versionUrlTemplate;
+  }
 
-    String versionUrlTemplate;
-    public static String SERVICE_PLACEHOLDER = "{SERVICE}";
+  String versionUrlTemplate;
+  public static String SERVICE_PLACEHOLDER = "{SERVICE}";
 
-    Environment(String versionUrlTemplate) {
-        this.versionUrlTemplate = versionUrlTemplate;
-    }
+  Environment(String versionUrlTemplate) {
+    this.versionUrlTemplate = versionUrlTemplate;
+  }
 }

@@ -8,9 +8,14 @@
 package io.harness.releaseradar.beans;
 
 import lombok.Builder;
+import lombok.Data;
 
+@Data
 @Builder
-public class CommitDetailsRequest {
-  String branch;
-  int pageCount;
+public class EventFilter {
+  Environment environment;
+  EventType eventType;
+  String buildVersion;
+  String release;
+  String serviceName;
 }

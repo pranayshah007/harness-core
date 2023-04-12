@@ -5,12 +5,18 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.releaseradar.beans;
+package io.harness.releaseradar.dto;
 
+import io.harness.releaseradar.beans.EventFilter;
+
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
+import lombok.Data;
 
+@Data
 @Builder
-public class CommitDetailsRequest {
-  String branch;
-  int pageCount;
+public class UserSubscriptionDTO {
+  private String slackUserId;
+  private String email;
+  @NotNull private EventFilter filter;
 }

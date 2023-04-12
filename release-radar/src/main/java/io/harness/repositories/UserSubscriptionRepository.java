@@ -5,12 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.releaseradar.beans;
+package io.harness.repositories;
 
-import lombok.Builder;
+import io.harness.annotation.HarnessRepo;
+import io.harness.releaseradar.entities.UserSubscription;
 
-@Builder
-public class CommitDetailsRequest {
-  String branch;
-  int pageCount;
-}
+import org.springframework.data.repository.PagingAndSortingRepository;
+
+@HarnessRepo
+public interface UserSubscriptionRepository extends PagingAndSortingRepository<UserSubscription, String> {}
