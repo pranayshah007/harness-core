@@ -765,8 +765,8 @@ public interface PlanExecutionResource {
   ResponseDTO<ExpressionTestResponse>
   testExpression(@NotNull @PathParam(NGCommonEntityConstants.PLAN_KEY) @Parameter(
                      description = "Testing expression for given planExecutionId") String planExecutionId,
-      @RequestBody(required = true,
-          description = "InputSet reference details") @NotNull @Valid ExpressionTestRequest expressionTestRequest);
+      @RequestBody(
+          required = false, description = "InputSet reference details") ExpressionTestRequest expressionTestRequest);
 
   @GET
   @Path("fetchExpressions/{planExecutionId}")

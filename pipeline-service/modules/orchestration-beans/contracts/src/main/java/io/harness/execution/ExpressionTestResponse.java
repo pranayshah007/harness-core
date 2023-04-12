@@ -7,16 +7,15 @@
 
 package io.harness.execution;
 
+import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NonNull;
-import lombok.Singular;
 
 @Data
 @Builder
 public class ExpressionTestResponse {
-  @NonNull @Singular List<ExpressionTestDetails> expressionTestDetails;
+  List<ExpressionTestDetails> expressionTestDetails = new ArrayList<>();
 
   public void add(ExpressionTestDetails expressionTestDetail) {
     expressionTestDetails.add(expressionTestDetail);

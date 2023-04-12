@@ -7,11 +7,15 @@
 
 package io.harness.execution;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ExpressionTestDetails {
   // This will be the relative path from which we will be using expression
   String scope;

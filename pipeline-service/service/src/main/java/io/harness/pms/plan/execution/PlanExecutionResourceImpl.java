@@ -66,6 +66,7 @@ import io.harness.pms.stages.StageExecutionSelectorHelper;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.orchestrationEventLog.OrchestrationEventLogRepository;
+import io.harness.serializer.JsonUtils;
 import io.harness.utils.PipelineGitXHelper;
 import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.utils.PmsFeatureFlagService;
@@ -503,10 +504,17 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
       String planExecutionId, ExpressionTestRequest expressionTestRequest) {
     ExpressionTestResponse expressionTestResponse =
         ExpressionTestResponse.builder().expressionTestDetails(new ArrayList<>()).build();
+    PlanExecution planExecution = planExecutionService.get(planExecutionId);
     for (ExpressionTestDetails expressionTestDetails : expressionTestRequest.getExpressionTestDetails()) {
-      Ambiance ambiance = constructAmbianceForScope(planExecutionId, expressionTestDetails.getScope());
-      String expressionBlock = pmsEngineExpressionService.evaluateExpression(ambiance,
-          expressionTestDetails.getExpressionBlock(), ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+      Ambiance ambiance = constructAmbianceForScope(planExecution, expressionTestDetails.getScope());
+      String expressionBlock = "";
+      Object response = pmsEngineExpressionService.resolve(ambiance, expressionTestDetails.getExpressionBlock(),
+          ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+      try {
+        expressionBlock = JsonUtils.asJson(response);
+      } catch (Exception ex) {
+        expressionBlock = (String) response;
+      }
       expressionTestResponse.add(ExpressionTestDetails.builder()
                                      .expressionBlock(expressionBlock)
                                      .scope(expressionTestDetails.getScope())
@@ -532,13 +540,13 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
     throw new InvalidRequestException("Please execute the pipeline at lease once before dry-running the expressions");
   }
 
-  private Ambiance constructAmbianceForScope(String planExecutionId, String scope) {
+  private Ambiance constructAmbianceForScope(PlanExecution planExecution, String scope) {
     List<String> scopeSplit = Arrays.asList(scope.split("\\."));
     List<Level> levels = new ArrayList<>();
     for (String scopeInfo : scopeSplit) {
       Level level = Level.newBuilder().setIdentifier(scopeInfo).setSkipExpressionChain(false).build();
       levels.add(level);
     }
-    return Ambiance.newBuilder().setPlanExecutionId(planExecutionId).addAllLevels(levels).build();
+    return planExecution.getAmbiance().toBuilder().addAllLevels(levels).build();
   }
 }
