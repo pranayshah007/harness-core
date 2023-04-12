@@ -17,6 +17,8 @@ import io.harness.execution.NodeExecution;
 import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
@@ -32,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.ejb.Singleton;
 
 @Singleton
@@ -50,30 +53,30 @@ public class ExpressionDetailServiceImpl implements ExpressionDetailService {
 
   @Override
   public ExpressionDryRunResponse resolveExpressions(String planExecutionId, String yaml) {
-    NodeExecution nodeExecution =
-        nodeExecutionService.getPipelineNodeExecutionWithProjections(planExecutionId, NodeProjectionUtils.withAmbiance)
-            .get();
-
     ExpressionDryRunResponse expressionDetailResponse = ExpressionDryRunResponse.builder().isSuccess(true).build();
-    //    String expandedJsonString = expansionService.get(planExecutionId);
+    String expandedJsonString = expansionService.get(planExecutionId);
+    JsonNode expendedJson = JsonPipelineUtils.readTree(expandedJsonString);
+    Map<String, Ambiance> fqnToAmbianceMap = getFQNToAmbianceMap(planExecutionId);
+
     YamlConfig yamlConfig = new YamlConfig(yaml);
     Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
     fullMap.keySet().forEach(key -> {
       String value = HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(fullMap.get(key).toString());
       List<String> innerExpressions = EngineExpressionEvaluator.findExpressions(value);
       innerExpressions.forEach(expression -> {
-        //[TODO]: Handling full expressions for now. Will handle local expressions in next commit.
-        if (expression.startsWith("<+pipeline.") || expression.startsWith("<+stages.")) {
-          try {
-            Object evaluatedValue = engineExpressionService.resolve(
-                nodeExecution.getAmbiance(), expression, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-            expressionDetailResponse.addExpressionDryRUnDetail(
-                ExpressionDryRunDetail.builder().expression(expression).isResolved(true).build());
-          } catch (Exception e) {
-            expressionDetailResponse.setSuccess(false);
-            expressionDetailResponse.addExpressionDryRUnDetail(
-                ExpressionDryRunDetail.builder().expression(expression).isResolved(false).build());
-          }
+        try {
+          Object evaluatedValue = engineExpressionService.resolve(
+              fqnToAmbianceMap.get(getFQNTillLastGroup(key.getExpressionFqn(), expendedJson)), expression,
+              ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
+          expressionDetailResponse.addExpressionDryRUnDetail(ExpressionDryRunDetail.builder()
+                                                                 .expression(expression)
+                                                                 .resolvedValue((String) evaluatedValue)
+                                                                 .isResolved(true)
+                                                                 .build());
+        } catch (Exception e) {
+          expressionDetailResponse.setSuccess(false);
+          expressionDetailResponse.addExpressionDryRUnDetail(
+              ExpressionDryRunDetail.builder().expression(expression).isResolved(false).build());
         }
       });
     });
@@ -132,5 +135,37 @@ public class ExpressionDetailServiceImpl implements ExpressionDetailService {
       });
     }
     return finalList;
+  }
+
+  private Map<String, Ambiance> getFQNToAmbianceMap(String planExecutionId) {
+    Map<String, Ambiance> fqnToAmbianceMap = new HashMap<>();
+    List<NodeExecution> nodeExecutions =
+        nodeExecutionService.getByPlanExecutionIdWithProjections(planExecutionId, NodeProjectionUtils.withAmbiance);
+
+    nodeExecutions.forEach(nodeExecution -> {
+      Ambiance ambiance = nodeExecution.getAmbiance();
+
+      String fqn = ambiance.getLevelsList().stream().map(Level::getIdentifier).collect(Collectors.joining("."));
+      fqnToAmbianceMap.put(fqn, ambiance);
+    });
+    return fqnToAmbianceMap;
+  }
+
+  private String getFQNTillLastGroup(String expression, JsonNode jsonNode) {
+    JsonNode currentJsonPointer = jsonNode;
+    int latestGroupIndex = 0;
+    List<String> expressionKeys = Arrays.asList(expression.split("\\."));
+    for (int index = 0; index < expressionKeys.size() - 1; index++) {
+      String key = expressionKeys.get(index);
+      if (terminalKeys.contains(key) || currentJsonPointer.get(key) == null) {
+        break;
+      }
+      if (currentJsonPointer.get(key).get("group") != null) {
+        latestGroupIndex = index;
+      }
+      currentJsonPointer = currentJsonPointer.get(key);
+    }
+
+    return String.join(".", expressionKeys.subList(0, latestGroupIndex + 1));
   }
 }

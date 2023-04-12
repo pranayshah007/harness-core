@@ -56,6 +56,7 @@ public interface NodeExecutionService {
    */
   Optional<NodeExecution> getPipelineNodeExecutionWithProjections(@NonNull String planExecutionId, Set<String> fields);
 
+  List<NodeExecution> getByPlanExecutionIdWithProjections(@NonNull String planExecutionId, Set<String> fields);
   /**
    * Fetches nodeExecution for given planExecutionId and planNodeId
    * Uses - planExecutionId_nodeId_idx index

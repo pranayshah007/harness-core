@@ -14,5 +14,6 @@ import lombok.Data;
 @Builder
 public class ExpressionDryRunDetail {
   String expression;
+  String resolvedValue;
   boolean isResolved;
 }

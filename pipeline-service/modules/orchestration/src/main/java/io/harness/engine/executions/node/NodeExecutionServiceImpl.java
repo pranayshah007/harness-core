@@ -150,6 +150,16 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return Optional.ofNullable(mongoTemplate.findOne(query, NodeExecution.class));
   }
 
+  @Override
+  public List<NodeExecution> getByPlanExecutionIdWithProjections(@NonNull String planExecutionId, Set<String> fields) {
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .with(Sort.by(Direction.ASC, NodeExecutionKeys.createdAt));
+    for (String fieldName : fields) {
+      query.fields().include(fieldName);
+    }
+    return mongoTemplate.find(query, NodeExecution.class);
+  }
+
   // TODO (alexi) : Handle the case where multiple instances are returned
   @Override
   public NodeExecution getByPlanNodeUuid(String planNodeUuid, String planExecutionId) {
