@@ -167,8 +167,12 @@ func (r *runTask) execute(ctx context.Context, retryCount int32) (map[string]str
 		err = runCmd(ctx, cmd, r.id, cmdArgs, retryCount, start, r.logMetrics, r.addonLogger)
 	}
 
+
+
 	if err != nil {
-		return nil, err
+	    tempOutput := make(map[string]string)
+	    tempOutput["autoheal"] = "autoheal link"
+		return tempOutput, err
 	}
 
 	stepOutput := make(map[string]string)
