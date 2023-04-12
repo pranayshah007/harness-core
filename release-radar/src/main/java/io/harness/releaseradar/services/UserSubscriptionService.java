@@ -7,6 +7,7 @@
 
 package io.harness.releaseradar.services;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.data.structure.EmptyPredicate;
@@ -43,15 +44,19 @@ public class UserSubscriptionService {
   }
 
   private static boolean isSubscribed(EventFilter filter, UserSubscription userSubscription) {
-    return isNotEmpty(filter.getServiceName())
-        && filter.getServiceName().equalsIgnoreCase(userSubscription.getFilter().getServiceName())
-        || isNotEmpty(filter.getBuildVersion())
-        && filter.getBuildVersion().equalsIgnoreCase(userSubscription.getFilter().getBuildVersion())
-        || filter.getEnvironment() != null && filter.getEnvironment() == userSubscription.getFilter().getEnvironment()
-        || filter.getEventType() != null && filter.getEventType() == userSubscription.getFilter().getEventType()
-        || isNotEmpty(filter.getRelease())
-        && filter.getRelease().equalsIgnoreCase(userSubscription.getFilter().getRelease())
-        || isNotEmpty(filter.getJiraId())
-        && filter.getJiraId().equalsIgnoreCase(userSubscription.getFilter().getJiraId());
+    EventFilter userFilter = userSubscription.getFilter();
+    return (isEmpty(userFilter.getServiceName())
+               || userFilter.getServiceName().equalsIgnoreCase(filter.getServiceName()))
+
+        && (isEmpty(userFilter.getBuildVersion())
+            || userFilter.getBuildVersion().equalsIgnoreCase(filter.getBuildVersion()))
+
+        && (userFilter.getEnvironment() == null || filter.getEnvironment() == userFilter.getEnvironment())
+
+        && (userFilter.getEventType() == null || filter.getEventType() == userFilter.getEventType())
+
+        && (isEmpty(userFilter.getRelease()) || userFilter.getRelease().equalsIgnoreCase(filter.getRelease()))
+
+        && (isEmpty(userFilter.getJiraId()) || userFilter.getJiraId().equalsIgnoreCase(filter.getJiraId()));
   }
 }
