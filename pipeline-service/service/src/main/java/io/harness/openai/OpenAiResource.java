@@ -40,17 +40,15 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -116,27 +114,20 @@ public class OpenAiResource {
     OpenAiService service = new OpenAiService(OpenAiConstants.openAIKey, Duration.ofMinutes(10L));
 
     Optional<PipelineEntity> goldenPipelineEntity =
-            pmsPipelineService.getPipeline(accountId, orgId, projectId, goldenPipelineIdentifier, false, false);
+        pmsPipelineService.getPipeline(accountId, orgId, projectId, goldenPipelineIdentifier, false, false);
 
     if (goldenPipelineEntity.isEmpty()) {
       throw new InvalidRequestException("Golden Pipeline Identifier not found");
     }
 
     String queryForGPT =
-            "Given the following pipeline YAML as reference, provide verbal OPA policies that can be recommended to other similar Pipelines. \n Cover OPA policies such as manager approval, build environment, security checks, deployment type, and rollback strategy. \n"
-                    + goldenPipelineEntity.get().getYaml();
+        "Given the following pipeline YAML as reference, provide verbal OPA policies that can be recommended to other similar Pipelines. \n Cover OPA policies such as manager approval, build environment, security checks, deployment type, and rollback strategy. \n"
+        + goldenPipelineEntity.get().getYaml();
 
-    System.out.println("\nCreating completion...");
-
-    List<ChatMessage> queries = new ArrayList<>();
-    queries.add(new ChatMessage("assistant", queryForGPT));
-    ChatCompletionRequest completionRequest =
-            ChatCompletionRequest.builder().model("gpt-3.5-turbo").messages(queries).user("testing").build();
-
-    ChatCompletionResult result = service.createChatCompletion(completionRequest);
+    List<ChatCompletionChoice> result = callChatGPT(service, queryForGPT);
 
     List<String> policyRecs = new ArrayList<>();
-    for (ChatCompletionChoice choice : result.getChoices()) {
+    for (ChatCompletionChoice choice : result) {
       String message = choice.getMessage().getContent();
       List<String> policyRec = List.of(message.split(".\\n\\n"));
       policyRecs.addAll(policyRec);
@@ -144,15 +135,29 @@ public class OpenAiResource {
 
     List<Policy> policiesWithCode = new ArrayList<>();
 
-    for(String s : policyRecs){
-      policiesWithCode.add(new Policy(s, ""));
+    for (String policyRec : policyRecs) {
+      String regoCode = "";
+      if (Character.isDigit(policyRec.charAt(0))) {
+        String queryForGPTCode =
+            "Create a rego for OPA rule. Format the output to include just the rego and no other text: " + policyRec;
+        result = callChatGPT(service, queryForGPTCode);
+        regoCode = result.get(0).getMessage().getContent();
+      }
+      policiesWithCode.add(new Policy(policyRec, regoCode));
     }
-
     GoldenPipelineResponse response = GoldenPipelineResponse.builder().policyRecommendations(policiesWithCode).build();
 
     service.shutdownExecutor();
     return ResponseDTO.newResponse(response);
+  }
 
+  public List<ChatCompletionChoice> callChatGPT(OpenAiService service, String query) {
+    List<ChatMessage> queries = new ArrayList<>();
+    queries.add(new ChatMessage("assistant", query));
+    ChatCompletionRequest completionRequest =
+        ChatCompletionRequest.builder().model("gpt-3.5-turbo").messages(queries).user("testing").build();
+
+    return service.createChatCompletion(completionRequest).getChoices();
   }
 
   @GET
