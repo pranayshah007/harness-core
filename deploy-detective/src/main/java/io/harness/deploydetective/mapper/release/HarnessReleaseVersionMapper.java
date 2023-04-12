@@ -10,6 +10,7 @@ package io.harness.deploydetective.mapper.release;
 public class HarnessReleaseVersionMapper implements IReleaseVersionMapper {
   @Override
   public String parseReleaseVersion(String releaseVersion) {
-    return ReleaseVersionUtil.stripMajorMinorVersion(releaseVersion);
+    String harnessReleaseVersion = ReleaseVersionUtil.stripMajorMinorVersion(releaseVersion);
+    return harnessReleaseVersion.substring(0, harnessReleaseVersion.length() - 2);
   }
 }

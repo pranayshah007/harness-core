@@ -31,7 +31,7 @@ public class EventMapper {
         .buildVersion(dto.getBuildVersion())
         .release(parsedRelease)
         .environment(dto.getEnvironment())
-        .epoch(dto.getEpoch())
+        .epoch(System.currentTimeMillis())
         .serviceName(dto.getServiceName())
         .versioningScheme(dto.getVersioningScheme())
         .build();

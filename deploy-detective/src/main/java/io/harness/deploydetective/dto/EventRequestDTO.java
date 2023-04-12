@@ -22,6 +22,5 @@ public class EventRequestDTO {
   @NotNull EventType eventType;
   @NotNull VersioningScheme versioningScheme;
   @NotNull String buildVersion;
-  @NotNull Long epoch;
   @NotNull String serviceName;
 }
