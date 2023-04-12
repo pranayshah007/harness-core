@@ -9,6 +9,8 @@ import (
 	"context"
 	"io"
 	"time"
+	"fmt"
+	"os"
 
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/harness/harness-core/commons/go/lib/utils"
@@ -57,9 +59,33 @@ func ExecuteStepOnAddon(ctx context.Context, step *pb.UnitStep, tmpFilePath stri
 	}
 	ret, err := c.ExecuteStep(ctx, arg, grpc_retry.WithMax(maxAddonRetries))
 	if err != nil {
+        tempOutput := make(map[string]string)
+
+        file, err1 := os.Open(step.GetId() + "-autoheal.txt")
+        if err1 != nil {
+            fmt.Println(err1)
+        }
+        defer file.Close()
+
+        // read the file contents
+        stat, err1 := file.Stat()
+        if err1 != nil {
+            fmt.Println(err1)
+        }
+
+        data := make([]byte, stat.Size())
+        _, err1 = file.Read(data)
+        if err1 != nil {
+            fmt.Println(err1)
+        }
+
+        tempOutput["SELFHEAL_PULL_REQUEST_URL"] = string(data)
+		stepOutput := &output.StepOutput{}
+    	stepOutput.Output.Variables = tempOutput
+
 		log.Errorw("Execute step RPC failed", "step_id", stepID,
 			"elapsed_time_ms", utils.TimeSince(st), zap.Error(err))
-		return nil, nil, err
+		return stepOutput, nil, err
 	}
 
 	log.Infow("Successfully executed step", "step_id", stepID,

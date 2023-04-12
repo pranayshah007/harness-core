@@ -545,10 +545,20 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
       return stepResponseBuilder.status(Status.ABORTED).build();
     } else {
       String maskedError = maskTransportExceptionError(stepStatus.getError());
+      if (stepStatus.getOutput() != null) {
+        StepResponse.StepOutcome stepOutcome =
+            StepResponse.StepOutcome.builder()
+                .outcome(
+                    CIStepOutcome.builder().outputVariables(((StepMapOutput) stepStatus.getOutput()).getMap()).build())
+                .name("output")
+                .build();
+        stepResponseBuilder.stepOutcome(stepOutcome);
+      }
       return stepResponseBuilder.status(Status.FAILED)
           .failureInfo(FailureInfo.newBuilder()
                            .setErrorMessage(maskedError)
                            .addAllFailureTypes(EnumSet.of(FailureType.APPLICATION_FAILURE))
+
                            .build())
           .build();
     }

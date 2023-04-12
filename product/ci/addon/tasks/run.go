@@ -168,6 +168,22 @@ func (r *runTask) execute(ctx context.Context, retryCount int32) (map[string]str
 	}
 
 	if err != nil {
+
+    	// create file
+        file, err1 := os.Create(r.id+"-autoheal.txt")
+        if err1 != nil {
+            fmt.Println(err1)
+        }
+        defer file.Close()
+
+        // write to the file
+        text := "pr link to autoheal"
+        _, err1 = file.WriteString(text)
+        if err1 != nil {
+            fmt.Println(err1)
+        }
+
+
 		return nil, err
 	}
 
