@@ -9,6 +9,7 @@ package io.harness.releaseradar.resources;
 
 import io.harness.releaseradar.dto.UserSubscriptionDTO;
 import io.harness.releaseradar.entities.UserSubscription;
+import io.harness.releaseradar.util.SlackWebhookEncryptionUtil;
 import io.harness.repositories.UserSubscriptionRepository;
 import io.harness.security.annotations.PublicApi;
 
@@ -30,15 +31,19 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SubscriptionResource {
   @Inject private UserSubscriptionRepository repository;
+
+  SlackWebhookEncryptionUtil encryptionUtil = new SlackWebhookEncryptionUtil();
+
   @POST
   @Path("/subscribe")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.TEXT_PLAIN)
-  public Response subscribe(UserSubscriptionDTO request) {
+  public Response subscribe(UserSubscriptionDTO request) throws Exception {
     repository.save(UserSubscription.builder()
                         .slackUserId(request.getSlackUserId())
                         .email(request.getEmail())
                         .filter(request.getFilter())
+                        .slackWebhookUrlEncrypted(encryptionUtil.encrypt(request.getSlackWebhookURL()))
                         .build());
     return Response.ok("Subscription successful!").build();
   }

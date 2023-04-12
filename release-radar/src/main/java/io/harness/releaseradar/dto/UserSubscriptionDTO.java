@@ -18,5 +18,6 @@ import lombok.Data;
 public class UserSubscriptionDTO {
   private String slackUserId;
   private String email;
+  private String slackWebhookURL;
   @NotNull private EventFilter filter;
 }
