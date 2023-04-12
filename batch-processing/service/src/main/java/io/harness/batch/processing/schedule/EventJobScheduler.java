@@ -119,7 +119,7 @@ public class EventJobScheduler {
     runCloudEfficiencyEventJobs(BatchJobBucket.IN_CLUSTER_RECOMMENDATION, true);
   }
 
-  @Scheduled(cron = "0 0 */1 * * ?") // run every hour
+  @Scheduled(cron = "0 */1 * * * ?") // run every hour
   public void runCloudEfficiencyInClusterNodeRecommendationJobs() {
     runCloudEfficiencyEventJobs(BatchJobBucket.IN_CLUSTER_NODE_RECOMMENDATION, true);
   }
