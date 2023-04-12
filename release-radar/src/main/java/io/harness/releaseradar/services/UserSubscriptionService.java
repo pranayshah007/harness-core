@@ -5,18 +5,18 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.releaseradar.service;
+package io.harness.releaseradar.services;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
+import com.google.inject.Inject;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.releaseradar.beans.EventFilter;
 import io.harness.releaseradar.entities.UserSubscription;
 import io.harness.repositories.UserSubscriptionRepository;
 
-import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 public class UserSubscriptionService {
   @Inject private UserSubscriptionRepository repository;

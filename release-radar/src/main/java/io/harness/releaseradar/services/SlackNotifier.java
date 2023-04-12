@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.releaseradar.service;
+package io.harness.releaseradar.services;
 
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.releaseradar.beans.EventNotifyData;

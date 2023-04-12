@@ -11,13 +11,12 @@ import io.harness.releaseradar.dto.EventRequestDTO;
 import io.harness.releaseradar.dto.EventResponseDTO;
 import io.harness.releaseradar.entities.EventEntity;
 import io.harness.releaseradar.mapper.EventMapper;
-import io.harness.releaseradar.service.SlackNotifier;
 import io.harness.repositories.EventRepository;
 import io.harness.security.annotations.PublicApi;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
-import java.io.IOException;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
