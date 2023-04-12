@@ -115,7 +115,8 @@ public class ParallelPlanCreator extends ChildrenPlanCreator<YamlField> {
         children.stream().map(YamlField::getNode).map(YamlNode::getUuid).collect(Collectors.toList());
 
     EdgeLayoutList.Builder stagesEdgesBuilder = EdgeLayoutList.newBuilder().addAllCurrentNodeChildren(childrenUuids);
-    if (nextSibling != null) {
+    String pipelineRollbackStageId = StrategyUtils.getPipelineRollbackStageId(config);
+    if (nextSibling != null && !nextSibling.getUuid().equals(pipelineRollbackStageId)) {
       stagesEdgesBuilder.addNextIds(nextSibling.getNode().getUuid());
     }
 
