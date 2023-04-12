@@ -21,6 +21,6 @@ public final class InstanceSyncConstants {
   public static final String CONTAINER_TYPE = "containerType";
   public static final String HOSTNAMES = "hostNames";
   public static final int TIMEOUT_SECONDS = 600;
-  public static final int INTERVAL_MINUTES = 10;
+  public static final int INTERVAL_MINUTES = 2;
   public static final int VALIDATION_TIMEOUT_MINUTES = 2;
 }
