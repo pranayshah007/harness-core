@@ -7,5 +7,5 @@ import lombok.Data;
 @Data
 @Builder
 public class GoldenPipelineResponse {
-  List<String> policyRecommendations;
+  List<Policy> policyRecommendations;
 }

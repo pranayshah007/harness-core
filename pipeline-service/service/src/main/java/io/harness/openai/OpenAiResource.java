@@ -22,6 +22,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.openai.dtos.GoldenPipelineResponse;
+import io.harness.openai.dtos.Policy;
 import io.harness.openai.dtos.SimilarityResponse;
 import io.harness.openai.dtos.TemplateResponse;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -141,7 +142,13 @@ public class OpenAiResource {
       policyRecs.addAll(policyRec);
     }
 
-    GoldenPipelineResponse response = GoldenPipelineResponse.builder().policyRecommendations(policyRecs).build();
+    List<Policy> policiesWithCode = new ArrayList<>();
+
+    for(String s : policyRecs){
+      policiesWithCode.add(new Policy(s, ""));
+    }
+
+    GoldenPipelineResponse response = GoldenPipelineResponse.builder().policyRecommendations(policiesWithCode).build();
 
     service.shutdownExecutor();
     return ResponseDTO.newResponse(response);
