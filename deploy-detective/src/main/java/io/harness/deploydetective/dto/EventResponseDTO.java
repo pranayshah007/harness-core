@@ -22,6 +22,7 @@ public class EventResponseDTO {
   @NotNull EventType eventType;
   @NotNull VersioningScheme versioningScheme;
   @NotNull String buildVersion;
+  @NotNull String release;
   @NotNull String simpleDateFormat;
   @NotNull String serviceName;
 }

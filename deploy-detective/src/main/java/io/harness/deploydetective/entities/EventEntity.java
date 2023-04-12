@@ -32,6 +32,7 @@ public class EventEntity {
   @NotNull EventType eventType;
   @NotNull VersioningScheme versioningScheme;
   @NotNull String buildVersion;
+  @NotNull String release;
   @NotNull Long epoch;
   @NotNull String serviceName;
 }

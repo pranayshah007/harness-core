@@ -1,0 +1,18 @@
+<component name="ProjectRunConfigurationManager">
+    <configuration default="false" name="NextGenApp" type="Application" factoryName="Application">
+        <option name="MAIN_CLASS_NAME" value="io.harness.ng.NextGenApplication" />
+        <module name="deploy-detective" />
+        <option name="PROGRAM_PARAMETERS" value="server config.yml" />
+        <option name="VM_PARAMETERS" value="-Xbootclasspath/p:$MAVEN_REPOSITORY$/org/mortbay/jetty/alpn/alpn-boot/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar" />
+        <option name="WORKING_DIRECTORY" value="$MODULE_DIR$" />
+        <extension name="coverage">
+            <pattern>
+                <option name="PATTERN" value="io.harness.cvng.*" />
+                <option name="ENABLED" value="true" />
+            </pattern>
+        </extension>
+        <method v="2">
+            <option name="Make" enabled="true" />
+        </method>
+    </configuration>
+</component>
