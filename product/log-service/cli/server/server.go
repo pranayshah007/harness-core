@@ -217,7 +217,7 @@ func GPTRCAThread(ctx context.Context, store store.Store, keyErrorMsg types.KeyE
 
 	// Set up the HTTP request
 	url := "https://api.openai.com/v1/chat/completions"
-	reqContent := "What caused the build to fail? Here's the error message: " + keyErrorMsg.ErrorMsg
+	reqContent := "What caused the build to fail? Please give me a response with the markdown preserved. Here's the error message: " + keyErrorMsg.ErrorMsg
 	requestData := map[string]interface{}{
 		"model": "gpt-3.5-turbo",
 		"messages": []map[string]string{
