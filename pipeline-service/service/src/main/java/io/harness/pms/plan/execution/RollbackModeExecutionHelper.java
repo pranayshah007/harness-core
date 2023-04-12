@@ -25,6 +25,7 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.helpers.PrincipalInfoHelper;
@@ -61,15 +62,20 @@ public class RollbackModeExecutionHelper {
 
   public ExecutionMetadata transformExecutionMetadata(ExecutionMetadata executionMetadata, String planExecutionID,
       ExecutionTriggerInfo triggerInfo, String accountId, String orgIdentifier, String projectIdentifier,
-      ExecutionMode executionMode) {
-    return executionMetadata.toBuilder()
-        .setExecutionUuid(planExecutionID)
-        .setTriggerInfo(triggerInfo)
-        .setRunSequence(pipelineMetadataService.incrementExecutionCounter(
-            accountId, orgIdentifier, projectIdentifier, executionMetadata.getPipelineIdentifier()))
-        .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
-        .setExecutionMode(executionMode)
-        .build();
+      ExecutionMode executionMode, PipelineStageInfo parentStageInfo) {
+    ExecutionMetadata newMetadata =
+        executionMetadata.toBuilder()
+            .setExecutionUuid(planExecutionID)
+            .setTriggerInfo(triggerInfo)
+            .setRunSequence(pipelineMetadataService.incrementExecutionCounter(
+                accountId, orgIdentifier, projectIdentifier, executionMetadata.getPipelineIdentifier()))
+            .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
+            .setExecutionMode(executionMode)
+            .build();
+    if (parentStageInfo != null) {
+      newMetadata = newMetadata.toBuilder().setPipelineStageInfo(parentStageInfo).build();
+    }
+    return newMetadata;
   }
 
   public PlanExecutionMetadata transformPlanExecutionMetadata(
