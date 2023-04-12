@@ -16,6 +16,7 @@ import io.harness.security.annotations.PublicApi;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
+import java.io.IOException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -29,10 +30,11 @@ import lombok.extern.slf4j.Slf4j;
 @Produces(MediaType.APPLICATION_JSON)
 @PublicApi
 @Slf4j
-public class EventCaptureResource {
+public class ReleaseTrackerResource {
   @Inject private EventRepository eventRepository;
+
   @POST
-  public EventResponseDTO capture(EventRequestDTO request) {
+  public EventResponseDTO capture(EventRequestDTO request) throws IOException {
     EventEntity save = eventRepository.save(EventMapper.toDTO(request));
     return EventMapper.toDTO(save);
   }

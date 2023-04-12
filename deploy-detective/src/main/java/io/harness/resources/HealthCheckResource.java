@@ -9,9 +9,12 @@ package io.harness.resources;
 
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.PublicApi;
+import io.harness.services.GitService;
+import io.harness.services.GitServiceImpl;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import java.io.IOException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -26,9 +29,11 @@ import lombok.extern.slf4j.Slf4j;
 @PublicApi
 @Slf4j
 public class HealthCheckResource {
+  GitService gitService = new GitServiceImpl();
+
   @GET
   @ApiOperation(value = "an http ping API, to check if service is alive", nickname = "health")
-  public RestResponse<String> ping() {
+  public RestResponse<String> ping() throws IOException {
     return new RestResponse<>("ok");
   }
 }
