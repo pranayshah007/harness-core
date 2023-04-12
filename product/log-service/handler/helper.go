@@ -26,23 +26,55 @@ const (
 	searchGpt = "searchGpt"
 )
 
+// Error types
+var (
+	errCommon       = errors.New("common error messages")
+	errFileNotFound = errors.New("file not found")
+	errAssertion    = errors.New("assertion error")
+	errNetwork      = errors.New("network error")
+	errMemory       = errors.New("memory error")
+	errPermission   = errors.New("permission error")
+	errDependency   = errors.New("dependency error")
+	errConfig       = errors.New("configuration error")
+)
+
 func getNudges() []Nudge {
 	// <search-term> <resolution> <error-msg>
-	return []Nudge{
+	nudgesList := []Nudge{
 		NewNudge("[Kk]illed", "Increase memory resources for the step", errors.New("out of memory")),
 		NewNudge(".*git.* SSL certificate problem",
 			"Set sslVerify to false in CI codebase properties", errors.New("SSL certificate error")),
 		NewNudge("Cannot connect to the Docker daemon",
 			"Setup dind if it's not running. If dind is running, privileged should be set to true",
 			errors.New("could not connect to the docker daemon")),
-		NewNudge("Fatal", searchGpt, nil),
-		NewNudge("Error", searchGpt, nil),
-		//NewNudge("Fatal:", searchGpt, nil),
-		//NewNudge("Fatal:", searchGpt, nil),
-		//NewNudge("Fatal:", searchGpt, nil),
-		//NewNudge("Fatal:", searchGpt, nil),
-		//NewNudge("Fatal:", searchGpt, nil),
+		NewNudge("Fatal", searchGpt, errors.New("fatal error")),
+		NewNudge("Error", searchGpt, errors.New("unknown error")),
 	}
+	for _, searchStr := range []string{"SyntaxError", "TypeError", "NameError", "ValueError"} {
+		nudgesList = append(nudgesList, NewNudge(searchStr, searchGpt, errCommon))
+	}
+	for _, searchStr := range []string{"assertion failed", "assertion error", "test failed"} {
+		nudgesList = append(nudgesList, NewNudge(searchStr, searchGpt, errAssertion))
+	}
+	for _, searchStr := range []string{"No such file or directory", "File not found", "Can't open file"} {
+		nudgesList = append(nudgesList, NewNudge(searchStr, searchGpt, errFileNotFound))
+	}
+	for _, searchStr := range []string{"Connection refused", "Connection timed out", "401 Unauthorized"} {
+		nudgesList = append(nudgesList, NewNudge(searchStr, searchGpt, errNetwork))
+	}
+	for _, searchStr := range []string{"Out of memory", "MemoryError", "malloc"} {
+		nudgesList = append(nudgesList, NewNudge(searchStr, searchGpt, errMemory))
+	}
+	for _, searchStr := range []string{"Permission denied", "Access denied", "Operation not permitted"} {
+		nudgesList = append(nudgesList, NewNudge(searchStr, searchGpt, errPermission))
+	}
+	for _, searchStr := range []string{"ModuleNotFoundError", "ImportError", "Dependency not found"} {
+		nudgesList = append(nudgesList, NewNudge(searchStr, searchGpt, errDependency))
+	}
+	for _, searchStr := range []string{"Invalid configuration", "Configuration error", "Missing configuration"} {
+		nudgesList = append(nudgesList, NewNudge(searchStr, searchGpt, errCommon))
+	}
+	return nudgesList
 }
 
 var nudges = getNudges()
@@ -92,14 +124,12 @@ func writeError(w http.ResponseWriter, err error, status int) {
 }
 
 func uploadErrorLogs(ctx context.Context, store store.Store, key string, logStr string, errorMsgChan chan types.KeyErrorMsg) {
-	rcaKey := "rca-error/" + key
 	errStrings := make([]string, 0)
 	lastNLines := 50
 
 	logStrSplit := strings.Split(logStr, "\n")
-	fmt.Println(fmt.Sprintf("[RUTVIJ] Found log string with %s RCA key %s", rcaKey, logStrSplit))
-
 	size := len(logStrSplit)
+	var errType string
 	for idx := max(0, size-lastNLines); idx < size; idx++ { //nolint:gomnd
 		line := logStrSplit[idx]
 		// Iterate over the nudges and see if we get a match
@@ -109,20 +139,21 @@ func uploadErrorLogs(ctx context.Context, store store.Store, key string, logStr 
 				continue
 			}
 			if r.MatchString(line) && n.GetResolution() == searchGpt {
-				errStrings = append(errStrings, line)
+				errType = n.GetError().Error()
+				errStrings = logStrSplit
 			}
 		}
 	}
-
+	if len(errStrings) == 0 {
+		return
+	}
 	allErrStrings := strings.Join(errStrings, "\n")
-
-	elem := types.KeyErrorMsg{Key: key, ErrorMsg: allErrStrings}
+	elem := types.KeyErrorMsg{Key: key, ErrorMsg: allErrStrings, ErrorType: errType}
 	fmt.Println(fmt.Sprintf("[RUTVIJ] Sending elem to channel %s", elem))
 	errorMsgChan <- elem
 	//fmt.Println(fmt.Sprintf("[RUTVIJ] Found some error strings %s", allErrStrings))
 	//bodyBytes := []byte(allErrStrings)
 	//ioReader := ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
-
 	//store.Upload(ctx, rcaKey, ioReader)
 }
 
