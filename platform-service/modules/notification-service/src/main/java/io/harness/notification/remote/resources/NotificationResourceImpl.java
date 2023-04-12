@@ -20,7 +20,11 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.notification.Team;
 import io.harness.notification.entities.Notification;
 import io.harness.notification.remote.dto.NotificationDTO;
+import io.harness.notification.service.api.HarnessBotService;
 import io.harness.notification.service.api.NotificationService;
+
+import software.wings.beans.notification.BotQuestion;
+import software.wings.beans.notification.BotResponse;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
@@ -32,6 +36,7 @@ import org.springframework.data.domain.Page;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class NotificationResourceImpl implements NotificationResource {
   private final NotificationService notificationService;
+  private final HarnessBotService harnessBotService;
 
   public ResponseDTO<NotificationDTO> get(String id) {
     Optional<Notification> notificationOptional = notificationService.getnotification(id);
@@ -45,5 +50,10 @@ public class NotificationResourceImpl implements NotificationResource {
     }
     Page<NotificationDTO> results = notificationService.list(team, pageRequest).map(x -> toDTO(x).orElse(null));
     return ResponseDTO.newResponse(getNGPageResponse(results));
+  }
+
+  @Override
+  public ResponseDTO<BotResponse> answer(BotQuestion question) {
+    return ResponseDTO.newResponse(harnessBotService.answer(question));
   }
 }

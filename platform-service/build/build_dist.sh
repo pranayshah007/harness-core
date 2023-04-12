@@ -36,6 +36,7 @@ cp ../../platform-service/build/container/Dockerfile-platform-service-cie-jdk ./
 cp -r ../../platform-service/build/container/scripts/ .
 cp ../../platform-service/config/jfr/default.jfc .
 cp ../../platform-service/config/jfr/profile.jfc .
+cp ../../platform-service/config/embeddings.csv .
 
 java -jar platform-service-capsule.jar scan-classpath-metadata
 

@@ -21,6 +21,7 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.notification.Team;
 import io.harness.notification.remote.dto.NotificationDTO;
+import io.harness.notification.service.api.HarnessBotService;
 import io.harness.notification.service.api.NotificationService;
 import io.harness.rule.Owner;
 
@@ -36,12 +37,13 @@ import org.springframework.data.domain.PageImpl;
 
 public class NotificationResourceTest extends CategoryTest {
   @Mock private NotificationService notificationService;
+  @Mock private HarnessBotService harnessBotService;
   private NotificationResource notificationResource;
 
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
-    notificationResource = new NotificationResourceImpl(notificationService);
+    notificationResource = new NotificationResourceImpl(notificationService, harnessBotService);
   }
 
   @Test
