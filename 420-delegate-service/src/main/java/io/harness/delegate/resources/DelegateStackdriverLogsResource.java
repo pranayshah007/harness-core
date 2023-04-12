@@ -36,6 +36,7 @@ import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -72,6 +73,21 @@ public class DelegateStackdriverLogsResource {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       return new RestResponse<PageResponse<DelegateStackDriverLog>>(
           delegateStackdriverLogService.fetchPageLogs(accountId, taskIds, pageRequest, startTime, endTime));
+    }
+  }
+
+  @GET
+  @Path("errorLog")
+  @ExceptionMetered
+  @AuthRule(permissionType = LOGGED_IN)
+  public RestResponse<List<DelegateHackLog>> getWarnLog(
+      @QueryParam("accountId") String accountId, @BeanParam PageRequest pageRequest) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      long startTime = System.currentTimeMillis();
+      // Take endTime of 10mins back.
+      long endTime = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(10);
+      return new RestResponse<List<DelegateHackLog>>(
+          delegateStackdriverLogService.fetchPageLogs(accountId, pageRequest, startTime, endTime));
     }
   }
 }

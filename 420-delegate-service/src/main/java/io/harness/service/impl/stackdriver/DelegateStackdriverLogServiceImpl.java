@@ -7,6 +7,7 @@
 
 package io.harness.service.impl.stackdriver;
 
+import io.harness.delegate.resources.DelegateHackLog;
 import io.harness.delegate.resources.DelegateStackDriverLog;
 import io.harness.logging.StackdriverLoggerFactory;
 import io.harness.ng.beans.PageRequest;
@@ -20,6 +21,7 @@ import com.google.cloud.logging.LogEntry;
 import com.google.cloud.logging.Logging;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -40,7 +42,7 @@ public class DelegateStackdriverLogServiceImpl implements DelegateStackdriverLog
     Page<LogEntry> entries = logging.listLogEntries(Logging.EntryListOption.pageSize(request.getPageSize()),
         Logging.EntryListOption.pageToken(request.getPageToken()),
         Logging.EntryListOption.sortOrder(Logging.SortingField.TIMESTAMP, Logging.SortingOrder.DESCENDING),
-        Logging.EntryListOption.filter(QueryConstructor.getTasksLogQuery(accountId, taskIds, start, end)));
+        Logging.EntryListOption.filter(QueryConstructor.getErrorLogQuery(accountId, start, end)));
 
     List<DelegateStackDriverLog> logLines = StreamSupport.stream(entries.iterateAll().spliterator(), false)
                                                 .map(logEntry -> LogEntryToDelegateStackDriverLogMapper.map(logEntry))
@@ -49,6 +51,50 @@ public class DelegateStackdriverLogServiceImpl implements DelegateStackdriverLog
         .pageSize(request.getPageSize())
         .content(logLines)
         .pageToken(entries.getNextPageToken())
+        .build();
+  }
+
+  @Override
+  public List<DelegateHackLog> fetchPageLogs(String accountId, PageRequest request, long start, long end) {
+    final Logging logging = StackdriverLoggerFactory.get(infraDownloadService.getStackdriverLoggingToken());
+
+    Page<LogEntry> entries = logging.listLogEntries(Logging.EntryListOption.pageSize(request.getPageSize()),
+        Logging.EntryListOption.pageToken(request.getPageToken()),
+        Logging.EntryListOption.sortOrder(Logging.SortingField.TIMESTAMP, Logging.SortingOrder.DESCENDING),
+        Logging.EntryListOption.filter(QueryConstructor.getErrorLogQuery(accountId, start, end)));
+
+    List<DelegateStackDriverLog> logLines = StreamSupport.stream(entries.iterateAll().spliterator(), false)
+                                                .map(logEntry -> LogEntryToDelegateStackDriverLogMapper.map(logEntry))
+                                                .collect(Collectors.toList());
+
+    return logLines.stream()
+        .filter(this::containsException)
+        .map(delegateStackDriverLog -> buildDelegateHackObject(delegateStackDriverLog))
+        .collect(Collectors.toList());
+  }
+
+  private boolean containsException(DelegateStackDriverLog delegateStackDriverLog) {
+    for (ErrorHack errorHack : ErrorHack.values()) {
+      if (delegateStackDriverLog.getException().contains(errorHack.getValue())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private DelegateHackLog buildDelegateHackObject(DelegateStackDriverLog delegateStackDriverLog) {
+    ErrorHack foundError = null;
+    for (ErrorHack errorHack : ErrorHack.values()) {
+      if (delegateStackDriverLog.getException().contains(errorHack.getValue())) {
+        foundError = errorHack;
+        break;
+      }
+    }
+
+    return DelegateHackLog.builder()
+        .delegateId(delegateStackDriverLog.getDelegateId())
+        .accountId(delegateStackDriverLog.getAccountId())
+        .exceptionType(foundError)
         .build();
   }
 }

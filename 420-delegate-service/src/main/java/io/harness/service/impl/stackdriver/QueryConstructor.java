@@ -19,9 +19,21 @@ public class QueryConstructor {
       + "jsonPayload.harness.taskId=\"%s\"\n"
       + "jsonPayload.harness.accountId=\"%s\"";
 
+  private static final String GENERAL_LOG_QUERY = "severity>=ERROR\n"
+      + "resource.type=(\"k8s_container\" OR \"global\")\n"
+      + "labels.app=\"delegate\"\n"
+      + "timestamp >= \"%s\" AND timestamp <= \"%s\"\n"
+      + "jsonPayload.harness.accountId=\"%s\"";
+
   public static String getTasksLogQuery(String accountId, List<String> taskIds, long start, long end) {
     Instant endTime = Instant.ofEpochSecond(end);
     return String.format(TASKS_LOG_QUERY, EpochToUTCConverter.fromEpoch(start), EpochToUTCConverter.fromEpoch(end),
         StringUtils.join(taskIds, " OR "), accountId);
+  }
+
+  public static String getErrorLogQuery(String accountId, long start, long end) {
+    Instant endTime = Instant.ofEpochSecond(end);
+    return String.format(
+        GENERAL_LOG_QUERY, EpochToUTCConverter.fromEpoch(start), EpochToUTCConverter.fromEpoch(end), accountId);
   }
 }
