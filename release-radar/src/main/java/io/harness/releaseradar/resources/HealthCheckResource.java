@@ -7,17 +7,19 @@
 
 package io.harness.releaseradar.resources;
 
+import io.harness.releaseradar.services.HarnessEnvService;
+import io.harness.releaseradar.services.HarnessEnvServiceImpl;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.PublicApi;
-
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import lombok.extern.slf4j.Slf4j;
 
 @Api("health")
 @Path("/health")
@@ -26,6 +28,8 @@ import lombok.extern.slf4j.Slf4j;
 @PublicApi
 @Slf4j
 public class HealthCheckResource {
+  HarnessEnvService harnessEnvService = new HarnessEnvServiceImpl();
+
   @GET
   @ApiOperation(value = "an http ping API, to check if service is alive", nickname = "health")
   public RestResponse<String> ping() {
