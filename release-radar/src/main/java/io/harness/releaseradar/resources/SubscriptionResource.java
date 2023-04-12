@@ -32,8 +32,6 @@ import lombok.extern.slf4j.Slf4j;
 public class SubscriptionResource {
   @Inject private UserSubscriptionRepository repository;
 
-  SlackWebhookEncryptionUtil encryptionUtil = new SlackWebhookEncryptionUtil();
-
   @POST
   @Path("/subscribe")
   @Consumes(MediaType.APPLICATION_JSON)
@@ -43,7 +41,7 @@ public class SubscriptionResource {
                         .slackUserId(request.getSlackUserId())
                         .email(request.getEmail())
                         .filter(request.getFilter())
-                        .slackWebhookUrlEncrypted(encryptionUtil.encrypt(request.getSlackWebhookURL()))
+                        .slackWebhookUrlEncrypted(SlackWebhookEncryptionUtil.encrypt(request.getSlackWebhookURL()))
                         .build());
     return Response.ok("Subscription successful!").build();
   }
