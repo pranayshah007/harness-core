@@ -17,7 +17,7 @@ import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableMap;
 import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.openapi.models.V1beta1CronJobBuilder;
+import io.kubernetes.client.openapi.models.V1CronJobBuilder;
 import io.kubernetes.client.util.Yaml;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -51,7 +51,7 @@ public class CronJobRcdCalculatorTest extends CategoryTest {
 
   private String cronJobYaml(String cpu, String memory) {
     return Yaml.dump(
-        new V1beta1CronJobBuilder()
+        new V1CronJobBuilder()
             .withNewSpec()
             .withNewJobTemplate()
             .withNewSpec()

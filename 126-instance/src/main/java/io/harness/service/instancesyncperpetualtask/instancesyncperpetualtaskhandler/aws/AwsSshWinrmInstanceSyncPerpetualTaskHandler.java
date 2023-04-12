@@ -31,6 +31,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.helper.InstanceSyncHelper;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
@@ -59,6 +60,7 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
   @Inject private NGSecretServiceV2 ngSecretServiceV2;
   @Inject private SshEntityHelper sshEntityHelper;
   @Inject private ServerlessEntityHelper serverlessEntityHelper;
+  @Inject private InstanceSyncHelper instanceSyncHelper;
 
   @Override
   public PerpetualTaskExecutionBundle getExecutionBundle(InfrastructureMappingDTO infrastructure,
@@ -78,6 +80,7 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
                              .collect(Collectors.toList());
 
     SecretSpecDTO secretSpecDTO = secret.getSecretSpec().toDTO();
+    instanceSyncHelper.updateFeatureFlagForSsh(secretSpecDTO, infrastructure.getAccountIdentifier());
     String serviceType = awsDeploymentInfoDTOs.get(0).getType();
 
     BaseNGAccess access = BaseNGAccess.builder()

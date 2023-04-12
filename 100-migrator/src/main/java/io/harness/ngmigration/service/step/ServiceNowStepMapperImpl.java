@@ -34,6 +34,7 @@ import io.harness.steps.servicenow.update.ServiceNowUpdateStepNode;
 
 import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
+import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
 import software.wings.beans.servicenow.ServiceNowCreateUpdateParams;
 import software.wings.beans.servicenow.ServiceNowFields;
@@ -53,7 +54,7 @@ import org.apache.commons.lang3.StringUtils;
 public class ServiceNowStepMapperImpl extends StepMapper {
   @Override
   public List<CgEntityId> getReferencedEntities(
-      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+      String accountId, Workflow workflow, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     ServiceNowCreateUpdateState state = (ServiceNowCreateUpdateState) getState(graphNode);
     List<CgEntityId> refs = new ArrayList<>();
     if (StringUtils.isNotBlank(state.getServiceNowCreateUpdateParams().getSnowConnectorId())) {

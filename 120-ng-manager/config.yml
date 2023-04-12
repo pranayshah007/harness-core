@@ -132,7 +132,7 @@ ngManagerClientConfig:
   readTimeOutSeconds: 15
 
 ciManagerClientConfig:
-  baseUrl: http://localhost:7171/ci/
+  baseUrl: http://localhost:4457/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 

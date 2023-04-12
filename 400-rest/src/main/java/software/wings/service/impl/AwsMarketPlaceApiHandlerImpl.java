@@ -55,6 +55,7 @@ import java.util.Map;
 import java.util.Optional;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 @Slf4j
@@ -149,6 +150,12 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     log.info("Dimension=[{}]", dimension);
     log.info("Order Quantity=[{}]", orderQuantity);
 
+    String dimensionModule = getDimensionModule(dimension);
+
+    if (dimensionModule.equals("FF")) {
+      orderQuantity = getDimensionQuantity(dimension);
+    }
+
     Date expirationDate = entitlements.getEntitlements().get(0).getExpirationDate();
     String licenseType = getLicenseType(dimension);
     Optional<MarketPlace> marketPlaceMaybe =
@@ -175,6 +182,7 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
                         .expirationDate(expirationDate)
                         .productCode(productCode)
                         .licenseType(licenseType)
+                        .dimension(dimension)
                         .build();
       log.info("New MarketPlace=[{}]", marketPlace);
       wingsPersistence.save(marketPlace);
@@ -190,7 +198,7 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
        * This is an update to an existing order, treat this as an update
        */
       licenseService.updateLicenseForProduct(
-          marketPlace.getProductCode(), marketPlace.getAccountId(), orderQuantity, expirationDate.getTime());
+          marketPlace.getProductCode(), marketPlace.getAccountId(), orderQuantity, expirationDate.getTime(), dimension);
 
       marketPlace.setOrderQuantity(orderQuantity);
       wingsPersistence.save(marketPlace);
@@ -274,5 +282,43 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
       default:
         return 50;
     }
+  }
+
+  // Gets module from dimension string
+  private String getDimensionModule(String dimension) {
+    String module = "";
+    if (StringUtils.isNotBlank(dimension)) {
+      String[] result = dimension.split("_");
+      module = result[0];
+    }
+    return module;
+  }
+
+  // Gets quantity from dimension string
+  public Integer getDimensionQuantity(String dimension) {
+    Integer quantity = 0;
+    // split string from underscore
+    String[] result = dimension.split("_");
+    String tempQuantity = result[result.length - 1];
+
+    // Handle K (1000) and M (1000000) units
+    if (tempQuantity.contains("K")) {
+      tempQuantity = tempQuantity.replace("K", "000");
+    }
+
+    if (tempQuantity.contains("M")) {
+      tempQuantity = tempQuantity.replace("M", "000000");
+    }
+
+    try {
+      if (Integer.parseInt(tempQuantity) > 0) {
+        quantity = Integer.parseInt(tempQuantity);
+      }
+
+    } catch (Exception e) {
+      log.error("Failed to get quantity for dimension:[{}]", dimension, e);
+    }
+
+    return quantity;
   }
 }

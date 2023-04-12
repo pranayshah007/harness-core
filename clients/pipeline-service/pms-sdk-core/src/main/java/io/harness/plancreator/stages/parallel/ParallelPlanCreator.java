@@ -9,7 +9,7 @@ package io.harness.plancreator.stages.parallel;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import io.harness.advisers.nextstep.NextStepAdviserParameters;
+import io.harness.advisers.nextstep.NextStageAdviserParameters;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
@@ -150,6 +150,7 @@ public class ParallelPlanCreator extends ChildrenPlanCreator<YamlField> {
       YamlField siblingField = currentField.getNode().nextSiblingFromParentArray(currentField.getName(),
           Arrays.asList(YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.STEP, YAMLFieldNameConstants.STEP_GROUP,
               YAMLFieldNameConstants.PARALLEL));
+      String pipelineRollbackStageId = StrategyUtils.getPipelineRollbackStageId(currentField);
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
         AdviserObtainment adviserObtainment;
         YamlNode parallelNodeInStage = YamlUtils.findParentNode(currentField.getNode(), YAMLFieldNameConstants.STAGE);
@@ -157,11 +158,15 @@ public class ParallelPlanCreator extends ChildrenPlanCreator<YamlField> {
           adviserObtainment = StrategyUtils.getAdviserObtainmentsForParallelStepParent(
               currentField, kryoSerializer, siblingField.getNode().getUuid());
         } else {
+          String siblingFieldUuid = siblingField.getNode().getUuid();
           adviserObtainment =
               AdviserObtainment.newBuilder()
                   .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
                   .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                      NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
+                      NextStageAdviserParameters.builder()
+                          .nextNodeId(siblingFieldUuid.equals(pipelineRollbackStageId) ? null : siblingFieldUuid)
+                          .pipelineRollbackStageId(pipelineRollbackStageId)
+                          .build())))
                   .build();
         }
         adviserObtainments.add(adviserObtainment);

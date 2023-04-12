@@ -275,7 +275,9 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     if (useDeclarativeRollback) {
       IK8sRelease latestRelease = releaseHistory.getLatestRelease();
       if (latestRelease == null) {
-        releaseBuilder.color(HarnessLabelValues.colorDefault);
+        // Since HarnessLabelValues.colorDefault is for primary service during first time deployment
+        // for stage color we should reverse of it
+        releaseBuilder.color(k8sBGBaseHandler.getInverseColor(HarnessLabelValues.colorDefault));
       } else {
         releaseBuilder.color(k8sBGBaseHandler.getInverseColor(latestRelease.getReleaseColor()));
       }

@@ -17,6 +17,7 @@ import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.exception.InvalidRequestException;
 import io.harness.manage.GlobalContextManager;
 import io.harness.security.PrincipalContextData;
+import io.harness.security.dto.PrincipalType;
 import io.harness.security.dto.ServicePrincipal;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -24,6 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.IOException;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
@@ -62,5 +64,14 @@ public class GitSyncUtils {
       executeOnDelegate = ((ManagerExecutable) scmConnector).getExecuteOnDelegate();
     }
     return executeOnDelegate;
+  }
+
+  public Optional<String> getUserIdentifier() {
+    PrincipalContextData currentPrincipal = GlobalContextManager.get(PrincipalContextData.PRINCIPAL_CONTEXT);
+    Optional<String> userIdentifier = Optional.empty();
+    if (currentPrincipal != null && currentPrincipal.getPrincipal().getType() == PrincipalType.USER) {
+      userIdentifier = Optional.of(currentPrincipal.getPrincipal().getName());
+    }
+    return userIdentifier;
   }
 }

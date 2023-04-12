@@ -12,6 +12,7 @@ import static io.harness.artifacts.azureartifacts.beans.AzureArtifactsExceptionC
 import static io.harness.artifacts.azureartifacts.beans.AzureArtifactsExceptionConstants.DOWNLOAD_FROM_AZURE_ARTIFACTS_FAILED;
 import static io.harness.artifacts.azureartifacts.beans.AzureArtifactsExceptionConstants.DOWNLOAD_FROM_AZURE_ARTIFACTS_HINT;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.INHERIT_FROM_DELEGATE;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.BLANK_ARTIFACT_PATH_EXPLANATION;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.BLANK_ARTIFACT_PATH_HINT;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.DOWNLOAD_FROM_S3_EXPLANATION;
@@ -55,6 +56,12 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
+import io.harness.delegate.beans.connector.bamboo.BambooConnectorDTO;
+import io.harness.delegate.beans.connector.bamboo.BambooConstant;
+import io.harness.delegate.beans.connector.bamboo.BambooUserNamePasswordDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
 import io.harness.delegate.beans.connector.jenkins.JenkinsBearerTokenDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
@@ -77,6 +84,8 @@ import io.harness.delegate.task.nexus.NexusMapper;
 import io.harness.delegate.task.pcf.artifact.ArtifactoryTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.AwsS3TasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.AzureDevOpsTasArtifactRequestDetails;
+import io.harness.delegate.task.pcf.artifact.BambooTasArtifactRequestDetails;
+import io.harness.delegate.task.pcf.artifact.GoogleCloudStorageTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.JenkinsTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.NexusTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.TasArtifactRequestDetails;
@@ -85,6 +94,8 @@ import io.harness.delegate.task.pcf.request.CfDeployCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
 import io.harness.delegate.utils.CFLogCallbackFormatter;
 import io.harness.delegate.utils.NexusVersion;
+import io.harness.encryption.FieldWithPlainTextOrSecretValueHelper;
+import io.harness.encryption.SecretRefData;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
 import io.harness.exception.ExceptionUtils;
@@ -96,7 +107,10 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.exception.runtime.SecretNotFoundRuntimeException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.googlecloudstorage.GcsHelperService;
+import io.harness.googlecloudstorage.GcsInternalConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -108,9 +122,11 @@ import io.harness.pcf.model.CfCliVersion;
 import io.harness.pcf.model.CfRequestConfig;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import software.wings.beans.BambooConfig;
 import software.wings.beans.JenkinsConfig;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
+import software.wings.helpers.ext.bamboo.BambooService;
 import software.wings.helpers.ext.jenkins.Jenkins;
 import software.wings.helpers.ext.nexus.NexusService;
 import software.wings.service.impl.AwsApiHelperService;
@@ -142,6 +158,14 @@ public class CfCommandTaskHelperNG {
   private static final String NEXUS_FAILED_DOWNLOAD_EXPLANATION = "Unable to download nexus artifact due to: ";
   private static final String NEXUS_FAILED_DOWNLOAD_HINT =
       "Review artifact configuration and nexus connector details. For any intermittent network I/O issues please check delegate connectivity with Nexus server";
+  private static final String BAMBOO_FAILED_DOWNLOAD_EXPLANATION = "Unable to download bamboo artifact. ";
+  private static final String BAMBOO_FAILED_DOWNLOAD_HINT =
+      "Review artifact configuration and bamboo connector details. For any intermittent network I/O issues please check delegate connectivity with Bamboo server";
+  private static final String GOOGLE_CLOUD_STORAGE_FAILED_DOWNLOAD_EXPLANATION =
+      "Unable to download Google Cloud Storage artifact due to: ";
+  private static final String GOOGLE_CLOUD_STORAGE_FAILED_DOWNLOAD_HINT =
+      "Review artifact configuration and google cloud storage connector details. For any intermittent network I/O issues please check delegate connectivity with Google Cloud Storage server";
+
   public static final String ARTIFACT_NAME_PREFIX = "artifact-";
   private static final String APPLICATION_NAME = "APPLICATION-NAME:";
   private static final String DESIRED_INSTANCE_COUNT = "DESIRED-INSTANCE-COUNT: ";
@@ -155,8 +179,10 @@ public class CfCommandTaskHelperNG {
   @Inject private AwsApiHelperService awsApiHelperService;
   @Inject private NexusService nexusService;
   @Inject private NexusMapper nexusMapper;
+  @Inject private BambooService bambooService;
   @Inject private JenkinsUtils jenkinsUtil;
   @Inject private AzureArtifactsRegistryService azureArtifactsRegistryService;
+  @Inject private GcsHelperService gcsHelperService;
 
   public File generateWorkingDirectoryForDeployment() throws IOException {
     String workingDirecotry = UUIDGenerator.generateUuid();
@@ -191,6 +217,12 @@ public class CfCommandTaskHelperNG {
           break;
         case AZURE_ARTIFACTS:
           artifactStream = downloadFromAzureArtifacts(artifactConfig, artifactResponseBuilder, logCallback);
+          break;
+        case BAMBOO:
+          artifactStream = downloadFromBamboo(artifactConfig, artifactResponseBuilder, logCallback);
+          break;
+        case GOOGLE_CLOUD_STORAGE_ARTIFACT:
+          artifactStream = downloadFromGoogleCloudStorage(artifactConfig, artifactResponseBuilder, logCallback);
           break;
         case CUSTOM_ARTIFACT:
           break;
@@ -326,6 +358,122 @@ public class CfCommandTaskHelperNG {
     } else {
       return null;
     }
+  }
+
+  private InputStream downloadFromBamboo(TasPackageArtifactConfig artifactConfig,
+      TasArtifactDownloadResponseBuilder artifactResponseBuilder, LogCallback logCallback) {
+    if (!(artifactConfig.getArtifactDetails() instanceof BambooTasArtifactRequestDetails)) {
+      throw NestedExceptionUtils.hintWithExplanationException("Please contact harness support team",
+          format("Unexpected artifact configuration of type '%s'",
+              artifactConfig.getArtifactDetails().getClass().getSimpleName()),
+          new InvalidArgumentsException(Pair.of("artifactDetails",
+              format(
+                  "Invalid artifact details, expected '%s'", BambooTasArtifactRequestDetails.class.getSimpleName()))));
+    }
+
+    BambooTasArtifactRequestDetails bambooTasArtifactRequestDetails =
+        (BambooTasArtifactRequestDetails) artifactConfig.getArtifactDetails();
+    validateBambooArtifact(bambooTasArtifactRequestDetails, logCallback);
+    Pair<String, InputStream> pair = null;
+
+    try {
+      BambooConnectorDTO bambooConnectorDTO = (BambooConnectorDTO) artifactConfig.getConnectorConfig();
+      decryptEntity(
+          decryptionHelper, bambooConnectorDTO.getDecryptableEntities(), artifactConfig.getEncryptedDataDetails());
+      BambooConfig bambooConfig = toBambooConfig(artifactConfig);
+      logCallback.saveExecutionLog(color(
+          format("Downloading artifact [{%s}] from BAMBOO at path :[{%s}] on delegate",
+              bambooTasArtifactRequestDetails.getArtifactName(), bambooTasArtifactRequestDetails.getArtifactPath()),
+          White, Bold));
+      log.info("Downloading artifact [{}] from BAMBOO at path :[{}] on delegate",
+          bambooTasArtifactRequestDetails.getArtifactName(), bambooTasArtifactRequestDetails.getArtifactPath());
+      pair = bambooService.downloadArtifacts(bambooConfig, artifactConfig.getEncryptedDataDetails(),
+          bambooTasArtifactRequestDetails.getArtifactPaths(), bambooTasArtifactRequestDetails.getPlanKey(),
+          bambooTasArtifactRequestDetails.getBuild());
+    } catch (Exception e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Failure in downloading bamboo artifact ", sanitizedException);
+      logCallback.saveExecutionLog(ExceptionUtils.getMessage(sanitizedException));
+      throw NestedExceptionUtils.hintWithExplanationException(BAMBOO_FAILED_DOWNLOAD_HINT,
+          sanitizedException.getMessage(), new PivotalClientApiException(sanitizedException.getMessage()));
+    }
+    if (pair != null) {
+      artifactResponseBuilder.artifactType(
+          AzureArtifactUtils.detectArtifactType(bambooTasArtifactRequestDetails.getArtifactPath(), logCallback));
+      return pair.getRight();
+    } else {
+      return null;
+    }
+  }
+
+  private InputStream downloadFromGoogleCloudStorage(TasPackageArtifactConfig artifactConfig,
+      TasArtifactDownloadResponseBuilder artifactResponseBuilder, LogCallback logCallback) {
+    if (!(artifactConfig.getArtifactDetails() instanceof GoogleCloudStorageTasArtifactRequestDetails)) {
+      throw NestedExceptionUtils.hintWithExplanationException("Please contact harness support team",
+          format("Unexpected artifact configuration of type '%s'",
+              artifactConfig.getArtifactDetails().getClass().getSimpleName()),
+          new InvalidArgumentsException(Pair.of("artifactDetails",
+              format(
+                  "Invalid artifact details, expected '%s'", BambooTasArtifactRequestDetails.class.getSimpleName()))));
+    }
+
+    GoogleCloudStorageTasArtifactRequestDetails googleCloudStorageTasArtifactRequestDetails =
+        (GoogleCloudStorageTasArtifactRequestDetails) artifactConfig.getArtifactDetails();
+    validateGoogleCloudStorageArtifact(googleCloudStorageTasArtifactRequestDetails, logCallback);
+    InputStream inputStream = null;
+
+    try {
+      GcpConnectorDTO gcpConnectorDTO = (GcpConnectorDTO) artifactConfig.getConnectorConfig();
+      decryptEntity(
+          decryptionHelper, gcpConnectorDTO.getDecryptableEntities(), artifactConfig.getEncryptedDataDetails());
+      GcsInternalConfig gcsInternalConfig = getGcsInternalConfig(artifactConfig);
+      logCallback.saveExecutionLog(
+          color(format("Downloading artifact [%s] from Google Cloud Storage at path :[{%s}] on delegate",
+                    googleCloudStorageTasArtifactRequestDetails.getArtifactName(),
+                    googleCloudStorageTasArtifactRequestDetails.getArtifactPath()),
+              White, Bold));
+
+      inputStream = gcsHelperService.downloadObject(
+          gcsInternalConfig, googleCloudStorageTasArtifactRequestDetails.getArtifactPath());
+    } catch (Exception e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Failure in downloading Google Cloud Storage artifact ", sanitizedException);
+      logCallback.saveExecutionLog(format("Failed to download artifact '%s' due to: %s",
+          googleCloudStorageTasArtifactRequestDetails.getArtifactName(),
+          ExceptionUtils.getMessage(sanitizedException)));
+      throw NestedExceptionUtils.hintWithExplanationException(GOOGLE_CLOUD_STORAGE_FAILED_DOWNLOAD_HINT,
+          GOOGLE_CLOUD_STORAGE_FAILED_DOWNLOAD_EXPLANATION + sanitizedException.getMessage(),
+          new PivotalClientApiException(sanitizedException.getMessage()));
+    }
+    if (inputStream != null) {
+      artifactResponseBuilder.artifactType(AzureArtifactUtils.detectArtifactType(
+          googleCloudStorageTasArtifactRequestDetails.getArtifactPath(), logCallback));
+      return inputStream;
+    } else {
+      return null;
+    }
+  }
+
+  private BambooConfig toBambooConfig(TasPackageArtifactConfig tasPackageArtifactConfig) {
+    String password = "";
+    String username = "";
+    BambooConnectorDTO bambooConnectorDTO = (BambooConnectorDTO) tasPackageArtifactConfig.getConnectorConfig();
+    if (bambooConnectorDTO.getAuth() != null && bambooConnectorDTO.getAuth().getCredentials() != null
+        && bambooConnectorDTO.getAuth().getAuthType().getDisplayName() == BambooConstant.USERNAME_PASSWORD) {
+      BambooUserNamePasswordDTO credentials = (BambooUserNamePasswordDTO) bambooConnectorDTO.getAuth().getCredentials();
+      if (credentials.getPasswordRef() != null) {
+        password = EmptyPredicate.isNotEmpty(credentials.getPasswordRef().getDecryptedValue())
+            ? new String(credentials.getPasswordRef().getDecryptedValue())
+            : "";
+      }
+      username = FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
+          credentials.getUsername(), credentials.getUsernameRef());
+    }
+    return BambooConfig.builder()
+        .bambooUrl(bambooConnectorDTO.getBambooUrl())
+        .password(password.toCharArray())
+        .username(username)
+        .build();
   }
 
   private Jenkins configureJenkins(TasPackageArtifactConfig artifactConfig) {
@@ -488,6 +636,25 @@ public class CfCommandTaskHelperNG {
 
   private void validateJenkinsArtifact(
       JenkinsTasArtifactRequestDetails artifactRequestDetails, LogCallback logCallback) {
+    if (EmptyPredicate.isEmpty(artifactRequestDetails.getArtifactName())) {
+      logCallback.saveExecutionLog("artifact Path is blank", ERROR, CommandExecutionStatus.FAILURE);
+      throw NestedExceptionUtils.hintWithExplanationException(BLANK_ARTIFACT_PATH_HINT,
+          String.format(BLANK_ARTIFACT_PATH_EXPLANATION, artifactRequestDetails.getIdentifier()),
+          new InvalidArgumentsException("not able to find artifact Path"));
+    }
+  }
+
+  private void validateBambooArtifact(BambooTasArtifactRequestDetails artifactRequestDetails, LogCallback logCallback) {
+    if (EmptyPredicate.isEmpty(artifactRequestDetails.getArtifactName())) {
+      logCallback.saveExecutionLog("artifact Path is blank", ERROR, CommandExecutionStatus.FAILURE);
+      throw NestedExceptionUtils.hintWithExplanationException(BLANK_ARTIFACT_PATH_HINT,
+          String.format(BLANK_ARTIFACT_PATH_EXPLANATION, artifactRequestDetails.getIdentifier()),
+          new InvalidArgumentsException("not able to find artifact Path"));
+    }
+  }
+
+  private void validateGoogleCloudStorageArtifact(
+      GoogleCloudStorageTasArtifactRequestDetails artifactRequestDetails, LogCallback logCallback) {
     if (EmptyPredicate.isEmpty(artifactRequestDetails.getArtifactName())) {
       logCallback.saveExecutionLog("artifact Path is blank", ERROR, CommandExecutionStatus.FAILURE);
       throw NestedExceptionUtils.hintWithExplanationException(BLANK_ARTIFACT_PATH_HINT,
@@ -848,6 +1015,40 @@ public class CfCommandTaskHelperNG {
 
       cfServiceDataUpdated.add(cfServiceData);
     }
+  }
+
+  private GcsInternalConfig getGcsInternalConfig(TasPackageArtifactConfig tasPackageArtifactConfig) {
+    if (tasPackageArtifactConfig.getConnectorConfig() == null) {
+      throw new InvalidArgumentsException("GCP Connector cannot be null");
+    }
+    boolean isUseDelegate = false;
+    char[] serviceAccountKeyFileContent = new char[0];
+    GcpConnectorCredentialDTO credential =
+        ((GcpConnectorDTO) tasPackageArtifactConfig.getConnectorConfig()).getCredential();
+    if (credential == null) {
+      throw new InvalidArgumentsException("GCP Connector credential cannot be null");
+    }
+    if (INHERIT_FROM_DELEGATE == credential.getGcpCredentialType()) {
+      isUseDelegate = true;
+    } else {
+      SecretRefData secretRef = ((GcpManualDetailsDTO) credential.getConfig()).getSecretKeyRef();
+      if (secretRef.getDecryptedValue() == null) {
+        throw new SecretNotFoundRuntimeException("Could not find secret " + secretRef.getIdentifier()
+                + " under the scope of current " + secretRef.getScope(),
+            secretRef.getIdentifier(), secretRef.getScope().toString(),
+            ((GoogleCloudStorageTasArtifactRequestDetails) tasPackageArtifactConfig.getArtifactDetails())
+                .getConnectorRef());
+      }
+      serviceAccountKeyFileContent = secretRef.getDecryptedValue();
+    }
+    return GcsInternalConfig.builder()
+        .serviceAccountKeyFileContent(serviceAccountKeyFileContent)
+        .isUseDelegate(isUseDelegate)
+        .bucket(
+            ((GoogleCloudStorageTasArtifactRequestDetails) tasPackageArtifactConfig.getArtifactDetails()).getBucket())
+        .project(
+            ((GoogleCloudStorageTasArtifactRequestDetails) tasPackageArtifactConfig.getArtifactDetails()).getProject())
+        .build();
   }
 
   public void downSizeListOfInstancesAndUnmapRoutes(LogCallback executionLogCallback, CfRequestConfig cfRequestConfig,

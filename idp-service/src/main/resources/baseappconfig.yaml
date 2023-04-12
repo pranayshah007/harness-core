@@ -1,5 +1,5 @@
-app:
-  title: Backstage Example App
-  baseUrl: http://localhost:300
-backend:
-  baseUrl: http://localhost:7007
+proxy:
+  '/harness/prod':
+    target: 'https://app.harness.io/'
+    headers:
+      'x-api-key': ${HARNESS_QA_API_KEY}

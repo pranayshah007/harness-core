@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.STO;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlAuth;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlInstance;
 import io.harness.yaml.sto.variables.STOYamlGenericConfig;
 
@@ -37,4 +38,6 @@ public class BurpStepInfo extends STOGenericStepInfo {
   @NotNull
   @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlGenericConfig")
   protected STOYamlGenericConfig config;
+
+  @JsonProperty protected STOYamlAuth auth;
 }

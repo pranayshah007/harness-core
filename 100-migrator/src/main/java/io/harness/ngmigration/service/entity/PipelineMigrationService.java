@@ -223,14 +223,15 @@ public class PipelineMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     try {
       String yaml = getYamlString(yamlFile);
       Response<ResponseDTO<PipelineSaveResponse>> resp =
           pmsClient
-              .createPipeline(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
-                  inputDTO.getProjectIdentifier(), RequestBody.create(MediaType.parse("application/yaml"), yaml))
+              .createPipeline(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                  inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
+                  RequestBody.create(MediaType.parse("application/yaml"), yaml))
               .execute();
       log.info("Pipeline creation Response details {} {}", resp.code(), resp.message());
       if (resp.code() >= 400) {
@@ -299,8 +300,7 @@ public class PipelineMigrationService extends NgMigrationService {
             if (skipDetail != null) {
               return YamlGenerationDetails.builder().skipDetails(Collections.singletonList(skipDetail)).build();
             }
-            stage = buildWorkflowStage(
-                migrationContext, pipeline.getAccountId(), stageElement, inputDTO.getIdentifierCaseFormat());
+            stage = buildWorkflowStage(migrationContext, stageElement, inputDTO.getIdentifierCaseFormat());
           }
         } else {
           stage = buildApprovalStage(migrationContext, stageElement, inputDTO.getIdentifierCaseFormat());
@@ -505,7 +505,7 @@ public class PipelineMigrationService extends NgMigrationService {
   }
 
   private StageElementWrapperConfig buildWorkflowStage(
-      MigrationContext migrationContext, String accountId, PipelineStageElement stageElement, CaseFormat caseFormat) {
+      MigrationContext migrationContext, PipelineStageElement stageElement, CaseFormat caseFormat) {
     Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
     Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     // TODO: Handle Skip condition
@@ -528,7 +528,8 @@ public class PipelineMigrationService extends NgMigrationService {
       if (migratedEntities.containsKey(serviceEntityId)) {
         NgEntityDetail serviceDetails = migratedEntities.get(serviceEntityId).getNgEntityDetail();
         stageServiceRef = MigratorUtility.getIdentifierWithScope(serviceDetails);
-        serviceInputs = migrationTemplateUtils.getServiceInput(serviceDetails, accountId);
+        serviceInputs = migrationTemplateUtils.getServiceInput(
+            serviceDetails, migrationContext.getInputDTO().getDestinationAccountIdentifier());
         if (serviceInputs != null) {
           serviceInputs = serviceInputs.get(SERVICE_INPUTS);
         }
@@ -552,7 +553,8 @@ public class PipelineMigrationService extends NgMigrationService {
       if (migratedEntities.containsKey(infraEntityId)) {
         NgEntityDetail infraDetails = migratedEntities.get(infraEntityId).getNgEntityDetail();
         stageInfraRef = MigratorUtility.getIdentifierWithScope(migratedEntities.get(infraEntityId).getNgEntityDetail());
-        infraInputs = migrationTemplateUtils.getInfraInput(accountId, stageEnvRef, infraDetails);
+        infraInputs = migrationTemplateUtils.getInfraInput(
+            migrationContext.getInputDTO().getDestinationAccountIdentifier(), stageEnvRef, infraDetails);
         if (infraInputs != null) {
           infraInputs = infraInputs.get(INFRASTRUCTURE_DEFINITIONS);
         }
@@ -581,7 +583,8 @@ public class PipelineMigrationService extends NgMigrationService {
       return null;
     }
 
-    JsonNode templateInputs = migrationTemplateUtils.getTemplateInputs(wfTemplate.getNgEntityDetail(), accountId);
+    JsonNode templateInputs = migrationTemplateUtils.getTemplateInputs(
+        wfTemplate.getNgEntityDetail(), migrationContext.getInputDTO().getDestinationAccountIdentifier());
 
     Map<String, String> workflowVariables = stageElement.getWorkflowVariables();
     // Set common runtime inputs

@@ -292,8 +292,8 @@ public class ServiceMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     if (yamlFile.isExists()) {
       log.info("Skipping creation of service as it already exists");
       return MigrationImportSummaryDTO.builder()
@@ -313,7 +313,10 @@ public class ServiceMigrationService extends NgMigrationService {
             .yaml(getYamlString(yamlFile))
             .build();
     Response<ResponseDTO<ServiceResponse>> resp =
-        ngClient.createService(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(serviceRequestDTO)).execute();
+        ngClient
+            .createService(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                JsonUtils.asTree(serviceRequestDTO))
+            .execute();
     log.info("Service creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);
   }

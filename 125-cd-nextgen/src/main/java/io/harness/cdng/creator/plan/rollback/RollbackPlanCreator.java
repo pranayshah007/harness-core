@@ -31,6 +31,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 
+import java.util.Collections;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -86,9 +87,11 @@ public class RollbackPlanCreator {
                                           .build());
     }
 
+    String combinedRollbackNodeUuid =
+        stageNode.getUuid() + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX;
     PlanNode deploymentStageRollbackNode =
         PlanNode.builder()
-            .uuid(stageNode.getUuid() + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX)
+            .uuid(combinedRollbackNodeUuid)
             .name(NGCommonUtilPlanCreationConstants.ROLLBACK_NODE_NAME)
             .identifier(YAMLFieldNameConstants.ROLLBACK_STEPS)
             .stepType(RollbackOptionalChildChainStep.STEP_TYPE)
@@ -102,7 +105,10 @@ public class RollbackPlanCreator {
             .build();
 
     PlanCreationResponse finalResponse =
-        PlanCreationResponse.builder().node(deploymentStageRollbackNode.getUuid(), deploymentStageRollbackNode).build();
+        PlanCreationResponse.builder()
+            .node(deploymentStageRollbackNode.getUuid(), deploymentStageRollbackNode)
+            .preservedNodesInRollbackMode(Collections.singletonList(combinedRollbackNodeUuid))
+            .build();
     finalResponse.merge(executionRollbackPlanNode);
     finalResponse.merge(infraRollbackPlan);
 

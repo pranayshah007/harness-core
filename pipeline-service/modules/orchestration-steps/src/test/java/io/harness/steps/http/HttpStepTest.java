@@ -10,6 +10,7 @@ package io.harness.steps.http;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.ROHITKARELIA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -22,12 +23,14 @@ import static org.powermock.api.mockito.PowerMockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.HttpCertificateNG;
 import io.harness.category.element.UnitTests;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.http.HttpStepResponse;
 import io.harness.delegate.task.http.HttpTaskParametersNg;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
@@ -58,6 +61,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
@@ -359,5 +363,41 @@ public class HttpStepTest extends CategoryTest {
 
     // non null task request
     assertThat(httpStep.obtainTask(ambiance, stepElementParameters, null)).isEqualTo(TaskRequest.newBuilder().build());
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testCreateCertificateReturnsEmptyIfCertAndCertKeyIsEmpty() {
+    HttpStepParameters httpStepParameters = HttpStepParameters.infoBuilder()
+                                                .certificate(ParameterField.createValueField(""))
+                                                .certificateKey(ParameterField.createValueField(""))
+                                                .build();
+    Optional<HttpCertificateNG> certificate = httpStep.createCertificate(httpStepParameters);
+    assertThat(certificate).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testCreateCertificateCertKeyCanBeEmpty() {
+    HttpStepParameters httpStepParameters = HttpStepParameters.infoBuilder()
+                                                .certificate(ParameterField.createValueField("value"))
+                                                .certificateKey(ParameterField.createValueField(""))
+                                                .build();
+    Optional<HttpCertificateNG> certificate = httpStep.createCertificate(httpStepParameters);
+    assertThat(certificate).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testCreateCertificateCertCannotBeEmpty() {
+    assertThatThrownBy(()
+                           -> httpStep.createCertificate(HttpStepParameters.infoBuilder()
+                                                             .certificate(ParameterField.createValueField(""))
+                                                             .certificateKey(ParameterField.createValueField("value"))
+                                                             .build()))
+        .isInstanceOf(InvalidRequestException.class);
   }
 }

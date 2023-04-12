@@ -39,6 +39,7 @@ import io.kubernetes.client.openapi.models.V1ConfigMapKeySelector;
 import io.kubernetes.client.openapi.models.V1ConfigMapProjection;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1CronJob;
 import io.kubernetes.client.openapi.models.V1DaemonSet;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
@@ -59,7 +60,6 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeProjection;
-import io.kubernetes.client.openapi.models.V1beta1CronJob;
 import io.kubernetes.client.util.Yaml;
 import java.io.IOException;
 import java.util.Arrays;
@@ -488,8 +488,8 @@ public class KubernetesResource {
         notNullCheck(MISSING_DEPLOYMENT_CONFIG_SPEC_MSG, ((DeploymentConfig) resource).getSpec());
         return ((DeploymentConfig) resource).getSpec().getTemplate().getSpec();
       case CronJob:
-        notNullCheck(MISSING_CRON_JOB_SPEC_MSG, ((V1beta1CronJob) resource).getSpec());
-        return ((V1beta1CronJob) resource).getSpec().getJobTemplate().getSpec().getTemplate().getSpec();
+        notNullCheck(MISSING_CRON_JOB_SPEC_MSG, ((V1CronJob) resource).getSpec());
+        return ((V1CronJob) resource).getSpec().getJobTemplate().getSpec().getTemplate().getSpec();
       default:
         unhandled(this.resourceId.getKind());
     }
@@ -522,7 +522,7 @@ public class KubernetesResource {
         case DeploymentConfig:
           return Yaml.loadAs(this.spec, DeploymentConfig.class);
         case CronJob:
-          return Yaml.loadAs(this.spec, V1beta1CronJob.class);
+          return Yaml.loadAs(this.spec, V1CronJob.class);
         default:
           unhandled(this.resourceId.getKind());
           throw new KubernetesYamlException("Unhandled Kubernetes resource " + this.resourceId.getKind());

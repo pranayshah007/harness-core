@@ -14,6 +14,7 @@ import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
 import com.google.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -40,6 +41,15 @@ public class CatalogConnectorRepositoryCustomImpl implements CatalogConnectorRep
     return mongoTemplate.findAndModify(query, update, options, CatalogConnectorEntity.class);
   }
 
+  @Override
+  public CatalogConnectorEntity findOneByLastUpdatedAt(String accountIdentifier) {
+    Query query =
+        new Query(Criteria.where(CatalogConnectorEntity.CatalogConnectorKeys.accountIdentifier).is(accountIdentifier));
+    query.with(Sort.by(Sort.Direction.DESC, CatalogConnectorEntity.CatalogConnectorKeys.lastUpdatedAt));
+    query.limit(1);
+    return mongoTemplate.findOne(query, CatalogConnectorEntity.class);
+  }
+
   private CatalogConnectorEntity findOneByAccountIdentifierAndProviderType(Criteria criteria) {
     return mongoTemplate.findOne(Query.query(criteria), CatalogConnectorEntity.class);
   }
@@ -50,6 +60,7 @@ public class CatalogConnectorRepositoryCustomImpl implements CatalogConnectorRep
     update.set(CatalogConnectorEntity.CatalogConnectorKeys.connectorIdentifier,
         catalogConnectorEntity.getConnectorIdentifier());
     update.set(CatalogConnectorEntity.CatalogConnectorKeys.type, catalogConnectorEntity.getType());
+    update.set(CatalogConnectorEntity.CatalogConnectorKeys.lastUpdatedAt, System.currentTimeMillis());
     return update;
   }
 }

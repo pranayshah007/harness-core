@@ -23,7 +23,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @TypeAlias("googleFunctionPrepareRollbackOutcome")
 @JsonTypeName("googleFunctionPrepareRollbackOutcome")
-@RecasterAlias("io.harness.cdng.googlefunctions.GoogleFunctionPrepareRollbackOutcome")
+@RecasterAlias("io.harness.cdng.googlefunctions.beans.GoogleFunctionPrepareRollbackOutcome")
 public class GoogleFunctionPrepareRollbackOutcome implements Outcome, ExecutionSweepingOutput {
   boolean isFirstDeployment;
   String cloudRunServiceAsString;

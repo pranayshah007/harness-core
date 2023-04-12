@@ -99,9 +99,9 @@ public class ElastigroupConfigurationMigrationService extends NgMigrationService
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
-    return migrateFile(auth, ngClient, inputDTO, yamlFile);
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+    return migrateFile(ngClient, inputDTO, yamlFile);
   }
 
   @Override

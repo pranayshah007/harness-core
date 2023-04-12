@@ -2834,6 +2834,23 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testSendNotification_incorrectIdentifier() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
+    monitoredServiceDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder().notificationRuleRef("wrongIdentifier").enabled(true).build()));
+    assertThatThrownBy(
+        () -> monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO))
+        .hasMessage("NotificationRule does not exist for identifier: wrongIdentifier");
+  }
+
+  @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void testShouldSendNotification_withHealthScoreCondition() {
@@ -2991,6 +3008,14 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void testBeforeNotificationRuleDelete() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    notificationRuleDTO.setIdentifier("rule1");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule2");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule3");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
         "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
     monitoredServiceDTO.setNotificationRuleRefs(

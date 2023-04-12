@@ -24,7 +24,7 @@ import lombok.AllArgsConstructor;
 public class PluginMetadataResourceImpl implements PluginMetadataResource {
   @Inject PluginMetadataService pluginMetadataService;
   @Override
-  public ResponseDTO<PageResponse<PluginMetadataResponse>> list(int page, int size, String searchTerm) {
-    return ResponseDTO.newResponse(pluginMetadataService.listPlugins(searchTerm, page, size));
+  public ResponseDTO<PageResponse<PluginMetadataResponse>> list(int page, int size, String searchTerm, String kind) {
+    return ResponseDTO.newResponse(pluginMetadataService.listPlugins(searchTerm, kind, page, size));
   }
 }

@@ -27,6 +27,7 @@ import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity.BackstageEnvVariableMapper;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableType;
 import io.harness.idp.envvariable.repositories.BackstageEnvVariableRepository;
+import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.rule.LifecycleRule;
@@ -66,6 +67,7 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
   @Mock K8sClient k8sClient;
   @Mock NamespaceService namespaceService;
   @Mock SecretManagerClientService ngSecretService;
+  @Mock SetupUsageProducer setupUsageProducer;
   @Rule public LifecycleRule lifecycleRule = new LifecycleRule();
   @Rule public IdpServiceRule apiServiceRule = new IdpServiceRule(lifecycleRule.getClosingFactory());
   @Inject private Map<BackstageEnvVariableType, BackstageEnvVariableMapper> mapBinder;
@@ -75,7 +77,7 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
   public void setUp() {
     openMocks = MockitoAnnotations.openMocks(this);
     backstageEnvVariableService = new BackstageEnvVariableServiceImpl(
-        backstageEnvVariableRepository, k8sClient, ngSecretService, namespaceService, mapBinder);
+        backstageEnvVariableRepository, k8sClient, ngSecretService, namespaceService, mapBinder, setupUsageProducer);
   }
 
   @Test
@@ -108,6 +110,8 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
         .thenReturn(decryptedSecretValue);
     assertEquals(envVariable, backstageEnvVariableService.create(envVariable, TEST_ACCOUNT_IDENTIFIER));
     verify(k8sClient).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyMap(), eq(false));
+    verify(setupUsageProducer)
+        .publishEnvVariableSetupUsage(Collections.singletonList(envVariable), TEST_ACCOUNT_IDENTIFIER);
   }
 
   @Test
@@ -138,6 +142,8 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
     assertEquals(envVariable1, responseVariables.get(0));
     assertEquals(envVariable2, responseVariables.get(1));
     verify(k8sClient).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyMap(), eq(false));
+    verify(setupUsageProducer)
+        .publishEnvVariableSetupUsage(Arrays.asList(envVariable1, envVariable2), TEST_ACCOUNT_IDENTIFIER);
   }
 
   @Test
@@ -158,6 +164,10 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
         .thenReturn(decryptedSecretValue);
     assertEquals(envVariable, backstageEnvVariableService.update(envVariable, TEST_ACCOUNT_IDENTIFIER));
     verify(k8sClient).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyMap(), eq(false));
+    verify(setupUsageProducer)
+        .deleteEnvVariableSetupUsage(Collections.singletonList(envVariable), TEST_ACCOUNT_IDENTIFIER);
+    verify(setupUsageProducer)
+        .publishEnvVariableSetupUsage(Collections.singletonList(envVariable), TEST_ACCOUNT_IDENTIFIER);
   }
 
   @Test
@@ -188,6 +198,10 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
     assertEquals(envVariable1, responseVariables.get(0));
     assertEquals(envVariable2, responseVariables.get(1));
     verify(k8sClient).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyMap(), eq(false));
+    verify(setupUsageProducer)
+        .deleteEnvVariableSetupUsage(Arrays.asList(envVariable1, envVariable2), TEST_ACCOUNT_IDENTIFIER);
+    verify(setupUsageProducer)
+        .publishEnvVariableSetupUsage(Arrays.asList(envVariable1, envVariable2), TEST_ACCOUNT_IDENTIFIER);
   }
 
   @Test
@@ -216,6 +230,7 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
     backstageEnvVariableService.delete(TEST_SECRET_IDENTIFIER, TEST_ACCOUNT_IDENTIFIER);
     verify(k8sClient).removeSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyList());
     verify(backstageEnvVariableRepository).delete(envVariableEntity);
+    verify(setupUsageProducer).deleteEnvVariableSetupUsage(anyList(), eq(TEST_ACCOUNT_IDENTIFIER));
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -240,6 +255,7 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
     backstageEnvVariableService.deleteMulti(variableIds, TEST_ACCOUNT_IDENTIFIER);
     verify(k8sClient).removeSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyList());
     verify(backstageEnvVariableRepository).deleteAllById(variableIds);
+    verify(setupUsageProducer).deleteEnvVariableSetupUsage(anyList(), eq(TEST_ACCOUNT_IDENTIFIER));
   }
 
   @Test

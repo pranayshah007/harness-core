@@ -25,4 +25,11 @@ public class GARUtils {
     }
     return false;
   }
+
+  public boolean isSHA(String s) {
+    if (s.indexOf(':') == -1) {
+      return false;
+    }
+    return true;
+  }
 }

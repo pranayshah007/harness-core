@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.AGORODETKI;
 import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
+import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static software.wings.utils.WingsTestConstants.ARTIFACT_PATH;
 
@@ -369,5 +370,12 @@ public class BambooServiceTest extends WingsBaseTest {
                                   .getBasicAuthCredentials(bambooConfigPasswordEncrypted, Collections.emptyList()))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Failed to decrypt password for Bamboo connector");
+  }
+
+  @Test(expected = ArtifactServerException.class)
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void shouldDownloadArtifacts() throws FileNotFoundException {
+    bambooService.downloadArtifacts(bambooConfig, null, asList("myartifacts/todolist.war"), "TP-PLAN", "4");
   }
 }

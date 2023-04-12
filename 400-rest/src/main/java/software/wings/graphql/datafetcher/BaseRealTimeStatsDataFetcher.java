@@ -37,6 +37,7 @@ import software.wings.service.impl.instance.FlatEntitySummaryStats;
 import com.google.common.collect.Lists;
 import com.mongodb.AggregationOptions;
 import dev.morphia.aggregation.Accumulator;
+import dev.morphia.aggregation.AggregationPipeline;
 import dev.morphia.aggregation.Group;
 import dev.morphia.query.Query;
 import java.util.ArrayList;
@@ -56,19 +57,26 @@ public interface BaseRealTimeStatsDataFetcher<F> extends BaseStatsDataFetcher {
     String secondLevelAggregation = groupBy.get(1);
     String entityIdColumn = getAggregationFieldName(firstLevelAggregation);
     String secondLevelEntityIdColumn = getAggregationFieldName(secondLevelAggregation);
+    int limit = wingsPersistence.getMaxDocumentLimit(entityClass);
 
     List<TwoLevelAggregatedData> aggregatedDataList = new ArrayList<>();
-    wingsPersistence.getDatastore(query.getEntityClass())
-        .createAggregation(entityClass)
-        .match(query)
-        .group(Group.id(getFirstLevelGrouping(entityIdColumn), getFirstLevelGrouping(secondLevelEntityIdColumn)),
-            grouping("count", new Accumulator("$sum", 1)),
-            grouping("firstLevelInfo",
-                grouping("$first", projection("id", entityIdColumn), projection("name", entityIdColumn))),
-            grouping("secondLevelInfo",
-                grouping("$first", projection("id", secondLevelEntityIdColumn),
-                    projection("name", secondLevelEntityIdColumn))))
-        .sort(ascending("_id." + entityIdColumn), ascending("_id." + secondLevelEntityIdColumn), descending("count"))
+    AggregationPipeline aggregationPipeline =
+        wingsPersistence.getDatastore(query.getEntityClass())
+            .createAggregation(entityClass)
+            .match(query)
+            .group(Group.id(getFirstLevelGrouping(entityIdColumn), getFirstLevelGrouping(secondLevelEntityIdColumn)),
+                grouping("count", new Accumulator("$sum", 1)),
+                grouping("firstLevelInfo",
+                    grouping("$first", projection("id", entityIdColumn), projection("name", entityIdColumn))),
+                grouping("secondLevelInfo",
+                    grouping("$first", projection("id", secondLevelEntityIdColumn),
+                        projection("name", secondLevelEntityIdColumn))))
+            .sort(
+                ascending("_id." + entityIdColumn), ascending("_id." + secondLevelEntityIdColumn), descending("count"));
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
+    aggregationPipeline
         .aggregate(TwoLevelAggregatedData.class,
             AggregationOptions.builder()
                 .maxTime(wingsPersistence.getMaxTimeMs(entityClass), TimeUnit.MILLISECONDS)
@@ -96,12 +104,18 @@ public interface BaseRealTimeStatsDataFetcher<F> extends BaseStatsDataFetcher {
     String entityIdColumn = getAggregationFieldName(firstLevelAggregation);
     List<QLDataPoint> dataPoints = new ArrayList<>();
     List<FlatEntitySummaryStats> summaryStats = new ArrayList<>();
-    wingsPersistence.getDatastore(entityClass)
-        .createAggregation(entityClass)
-        .match(query)
-        .group(Group.id(getFirstLevelGrouping(entityIdColumn)), grouping("count", new Accumulator("$sum", 1)))
-        .project(projection("_id").suppress(), projection("entityId", "_id." + entityIdColumn),
-            projection("entityName", "_id." + entityIdColumn), projection("count"))
+    AggregationPipeline aggregationPipeline =
+        wingsPersistence.getDatastore(entityClass)
+            .createAggregation(entityClass)
+            .match(query)
+            .group(Group.id(getFirstLevelGrouping(entityIdColumn)), grouping("count", new Accumulator("$sum", 1)))
+            .project(projection("_id").suppress(), projection("entityId", "_id." + entityIdColumn),
+                projection("entityName", "_id." + entityIdColumn), projection("count"));
+    int limit = wingsPersistence.getMaxDocumentLimit(entityClass);
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
+    aggregationPipeline
         .aggregate(FlatEntitySummaryStats.class,
             AggregationOptions.builder()
                 .maxTime(wingsPersistence.getMaxTimeMs(entityClass), TimeUnit.MILLISECONDS)

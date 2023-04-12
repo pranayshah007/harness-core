@@ -187,7 +187,7 @@ public class MongoPersistence implements HPersistence {
   public void isHealthy() {
     List<AdvancedDatastore> datastores = datastoreMap.values().stream().distinct().collect(toList());
     for (AdvancedDatastore datastore : datastores) {
-      datastore.getDB().command(new BasicDBObject("dbStats", 1));
+      datastore.getDB().command(new BasicDBObject("ping", 1));
     }
   }
 
@@ -363,7 +363,7 @@ public class MongoPersistence implements HPersistence {
     }
   }
 
-  private <T extends PersistentEntity> void onSave(T entity) {
+  protected <T extends PersistentEntity> void onSave(T entity) {
     if (entity instanceof UuidAware) {
       UuidAware uuidAware = (UuidAware) entity;
       if (uuidAware.getUuid() == null) {

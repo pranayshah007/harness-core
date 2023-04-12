@@ -22,11 +22,9 @@ import io.harness.cvng.servicelevelobjective.entities.Annotation;
 import io.harness.cvng.servicelevelobjective.entities.Annotation.AnnotationKeys;
 import io.harness.cvng.servicelevelobjective.services.api.AnnotationService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
-import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 
-import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
@@ -94,6 +92,12 @@ public class AnnotationServiceImpl implements AnnotationService {
                                        .in(annotationIds)
                                        .order(Sort.ascending(AnnotationKeys.createdAt))
                                        .asList();
+    if (annotations.size() != annotationIds.size()) {
+      List<String> annotationIdsPresent = annotations.stream().map(Annotation::getUuid).collect(Collectors.toList());
+      annotationIds.removeAll(annotationIdsPresent);
+      throw new InvalidRequestException(
+          String.format("Messages with the with uuid %s doesn't exist", String.join(", ", annotationIds)));
+    }
 
     Map<Pair<Long, Long>, List<Annotation>> timeToIdentifiersMap = annotations.stream().collect(
         Collectors.groupingBy(instance -> new ImmutablePair<>(instance.getStartTime(), instance.getEndTime())));
@@ -170,12 +174,13 @@ public class AnnotationServiceImpl implements AnnotationService {
     AbstractServiceLevelObjective serviceLevelObjective =
         serviceLevelObjectiveService.getEntity(projectParams, annotationDTO.getSloIdentifier());
     if (serviceLevelObjective == null) {
-      throw new EntityNotFoundException(String.format(
+      throw new InvalidRequestException(String.format(
           "No such SLO with identifier %s and orgIdentifier %s and projectIdentifier %s is present",
           annotationDTO.getSloIdentifier(), projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
     }
-    Preconditions.checkArgument(
-        annotationDTO.getStartTime() <= annotationDTO.getEndTime(), "Start time should be greater than the end time.");
+    if (annotationDTO.getStartTime() >= annotationDTO.getEndTime()) {
+      throw new InvalidRequestException("End time should be greater than the start time for a message");
+    }
     checkIfStartTimeIsUnique(projectParams, annotationDTO);
   }
 
@@ -211,9 +216,10 @@ public class AnnotationServiceImpl implements AnnotationService {
   }
 
   private void validateUpdate(Annotation annotation, AnnotationDTO updatedAnnotationDTO) {
-    Boolean expression = annotation.getStartTime() == updatedAnnotationDTO.getStartTime()
-        && annotation.getEndTime() == updatedAnnotationDTO.getEndTime();
-    Preconditions.checkArgument(expression, "Can not update the start/end time.");
+    if (annotation.getStartTime() != updatedAnnotationDTO.getStartTime()
+        || annotation.getEndTime() != updatedAnnotationDTO.getEndTime()) {
+      throw new InvalidRequestException("Can not update the start/end time of a message");
+    }
   }
 
   private Annotation getAnnotationFromAnnotationDTO(ProjectParams projectParams, AnnotationDTO annotationDTO) {

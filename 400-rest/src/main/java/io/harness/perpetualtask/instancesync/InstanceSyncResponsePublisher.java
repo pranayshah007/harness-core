@@ -7,6 +7,10 @@
 
 package io.harness.perpetualtask.instancesync;
 
+import static io.harness.remote.client.NGRestUtils.getResponse;
+
+import static java.util.Collections.emptyList;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -49,5 +53,16 @@ public class InstanceSyncResponsePublisher {
     log.info(
         "Successfully pushed instance sync perpetual task response from CG to NG for accountIdentifier : {} and perpetualTaskId : {}",
         accountIdentifier, perpetualTaskId);
+  }
+
+  public InstanceSyncTaskDetails fetchTaskDetails(String perpetualTaskId, String accountId) {
+    try {
+      return getResponse(instanceSyncResourceClient.getInstanceSyncTaskDetails(accountId, perpetualTaskId));
+    } catch (Exception exception) {
+      log.error(
+          "Error occurred while sending fetch Task Details response from NG to CG for accountIdentifier : {} and perpetualTaskId : {}",
+          accountId, perpetualTaskId, exception);
+    }
+    return InstanceSyncTaskDetails.newBuilder().addAllDetails(emptyList()).build();
   }
 }

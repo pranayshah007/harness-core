@@ -38,11 +38,10 @@ public class DockerArtifactTaskHandler extends DelegateArtifactTaskHandler<Docke
     BuildDetailsInternal lastSuccessfulBuild;
     ArtifactMetaInfo artifactMetaInfo = null;
     List<Map<String, String>> labels;
-    if (isRegex(attributesRequest) || attributesRequest.getTag().equals(ACCEPT_ALL_REGEX)) {
-      String tagRegex = isRegex(attributesRequest) ? attributesRequest.getTagRegex() : attributesRequest.getTag();
+    if (isRegex(attributesRequest)) {
       lastSuccessfulBuild = dockerRegistryService.getLastSuccessfulBuildFromRegex(
           DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest), attributesRequest.getImagePath(),
-          tagRegex);
+          attributesRequest.getTagRegex());
       labels = dockerRegistryService.getLabels(DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest),
           attributesRequest.getImagePath(), Collections.singletonList(lastSuccessfulBuild.getNumber()));
     } else {

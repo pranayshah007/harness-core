@@ -1,0 +1,30 @@
+# Copyright 2023 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//960-api-services/src/main/java/io/harness/cli:module",
+        "//960-api-services/src/main/java/io/harness/openshift:module",
+        "//970-api-services-beans/src/main/java/io/harness/exception:module",
+        "//970-api-services-beans/src/main/java/io/harness/k8s/exception:module",
+        "//970-api-services-beans/src/main/java/io/harness/logging:module",
+        "//980-commons/src/main/java/io/harness/beans:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
+        "//980-commons/src/main/java/io/harness/filesystem:module",
+        "@maven//:com_google_inject_guice",
+        "@maven//:org_hibernate_validator_hibernate_validator",
+        "@maven//:org_yaml_snakeyaml",
+    ],
+)
+
+run_analysis_per_module()

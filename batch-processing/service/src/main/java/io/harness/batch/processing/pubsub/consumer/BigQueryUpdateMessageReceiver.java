@@ -19,9 +19,9 @@ import io.harness.batch.processing.BatchProcessingException;
 import io.harness.batch.processing.pricing.gcp.bigquery.BigQueryHelperService;
 import io.harness.batch.processing.pubsub.message.BigQueryUpdateMessage;
 import io.harness.ccm.commons.utils.BigQueryHelper;
-import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
-import io.harness.ccm.views.businessMapping.entities.BusinessMappingHistory;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingHistoryService;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessmapping.entities.BusinessMappingHistory;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingHistoryService;
 import io.harness.ccm.views.graphql.ViewsQueryBuilder;
 
 import com.google.cloud.pubsub.v1.AckReplyConsumer;

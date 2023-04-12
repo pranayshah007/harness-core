@@ -124,6 +124,11 @@ public interface HPersistence extends HealthMonitor {
   }
 
   default AdvancedDatastore getDefaultAnalyticsDatastore(Class cls) {
+    Optional<Store> secondaryStore = getSecondaryStore(cls);
+    if (secondaryStore.isPresent() && isMigrationEnabled(cls.getName())) {
+      return getDatastore(secondaryStore.get());
+    }
+
     Map<Class, Store> classStores = new HashMap<>(getClassStores());
     Store classStore = classStores.computeIfAbsent(cls,
         klass
@@ -551,6 +556,15 @@ public interface HPersistence extends HealthMonitor {
     if (datastore.getQueryFactory() instanceof QueryFactory) {
       QueryFactory queryFactory = (QueryFactory) datastore.getQueryFactory();
       return queryFactory.getMaxOperationTimeInMillis();
+    }
+    return 0;
+  }
+
+  default int getMaxDocumentLimit(Class cls) {
+    AdvancedDatastore datastore = getDatastore(cls);
+    if (datastore.getQueryFactory() instanceof QueryFactory) {
+      QueryFactory queryFactory = (QueryFactory) datastore.getQueryFactory();
+      return queryFactory.getMaxDocumentsToBeFetched();
     }
     return 0;
   }

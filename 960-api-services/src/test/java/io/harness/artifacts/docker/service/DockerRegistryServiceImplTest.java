@@ -737,4 +737,25 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
       verify(restClient, times(5)).listImageTagsByUrl(anyString(), anyString());
     }
   }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testVerifyImageTag() {
+    doReturn(dockerRegistryRestClient).when(dockerRestClientFactory).getDockerRegistryRestClient(dockerConfig);
+    wireMockRule.stubFor(get(urlEqualTo("/v2/image/manifests/latest"))
+                             .willReturn(aResponse().withStatus(401).withHeader("Www-Authenticate",
+                                 "Bearer realm=\"http://localhost:" + wireMockRule.port()
+                                     + "/oauth2/token\",service=\"test.azurecr.io\",scope=\"somevalue\"")));
+    wireMockRule.stubFor(
+        get(urlEqualTo("/v2/image/manifests/latest"))
+            .withHeader("Authorization", equalTo("Bearer dockerRegistryToken"))
+            .willReturn(aResponse().withStatus(200).withBody(JsonUtils.asJson(dockerImageTagResponse))));
+    wireMockRule.stubFor(get(urlEqualTo("/oauth2/token?service=test.azurecr.io&scope=somevalue"))
+                             .willReturn(aResponse().withStatus(200).withBody(JsonUtils.asJson(dockerRegistryToken))));
+
+    BuildDetailsInternal buildDetailsInternal =
+        dockerRegistryService.verifyBuildNumber(dockerConfig, "image", "latest");
+    assertThat(buildDetailsInternal.getNumber()).isEqualTo("latest");
+  }
 }

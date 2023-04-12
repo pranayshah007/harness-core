@@ -84,7 +84,7 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver, N
                                 ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.accountId), null, null))
                             .getValue();
     } catch (Exception ex) {
-      log.error(String.format("Could not fetch setting: %s", ENABLE_NODE_EXECUTION_AUDIT_EVENTS), ex);
+      log.debug(String.format("Could not fetch setting: %s", ENABLE_NODE_EXECUTION_AUDIT_EVENTS), ex);
       return;
     }
 

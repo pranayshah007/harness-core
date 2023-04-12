@@ -25,7 +25,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
-import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.configfile.ConfigFilesOutcome;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
@@ -37,6 +37,7 @@ import io.harness.cdng.freeze.FreezeOutcome;
 import io.harness.cdng.gitops.steps.EnvClusterRefs;
 import io.harness.cdng.gitops.steps.GitOpsEnvOutCome;
 import io.harness.cdng.helpers.NgExpressionHelper;
+import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
@@ -362,8 +363,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
     serviceStepsHelper.checkForAccessOrThrow(ambiance, secretNGVariables);
 
-    resolve(ambiance, envToEnvVariables, envToSvcVariables);
-
     GitOpsEnvOutCome gitOpsEnvOutCome = new GitOpsEnvOutCome(envToEnvVariables, envToSvcVariables);
 
     sweepingOutputService.consume(ambiance, GITOPS_ENV_OUTCOME, gitOpsEnvOutCome, StepCategory.STAGE.name());
@@ -385,6 +384,9 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     serviceStepOverrideHelper.prepareAndSaveFinalConnectionStringsMetadataToSweepingOutput(
         servicePartResponse.getNgServiceConfig(), null, null, ambiance,
         ServiceStepV3Constants.SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT);
+
+    serviceStepOverrideHelper.prepareAndSaveFinalServiceHooksMetadataToSweepingOutput(
+        servicePartResponse.getNgServiceConfig(), ambiance, ServiceStepV3Constants.SERVICE_HOOKS_SWEEPING_OUTPUT);
   }
 
   private String getEnvRefOrId(String envRef, ParameterField<String> envGroupRef, String envId) {
@@ -472,7 +474,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
             mergeSvcOverrideInputs(ngServiceOverridesEntity.get().getYaml(), parameters.getServiceOverrideInputs());
       }
 
-      resolve(ambiance, ngEnvironmentConfig, ngServiceOverrides);
       List<NGVariable> secretNGVariables = new ArrayList<>();
       if (ngEnvironmentConfig != null && ngEnvironmentConfig.getNgEnvironmentInfoConfig() != null
           && ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables() != null) {
@@ -528,6 +529,9 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       serviceStepOverrideHelper.prepareAndSaveFinalConnectionStringsMetadataToSweepingOutput(
           servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
           ServiceStepV3Constants.SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT);
+
+      serviceStepOverrideHelper.prepareAndSaveFinalServiceHooksMetadataToSweepingOutput(
+          servicePartResponse.getNgServiceConfig(), ambiance, ServiceStepV3Constants.SERVICE_HOOKS_SWEEPING_OUTPUT);
     }
   }
 
@@ -647,6 +651,16 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       stepOutcomes.add(StepResponse.StepOutcome.builder()
                            .name(OutcomeExpressionConstants.CONFIG_FILES)
                            .outcome((ConfigFilesOutcome) configFilesOutput.getOutput())
+                           .group(StepCategory.STAGE.name())
+                           .build());
+    }
+
+    final OptionalSweepingOutput serviceHooksOutput = sweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.SERVICE_HOOKS));
+    if (serviceHooksOutput.isFound()) {
+      stepOutcomes.add(StepResponse.StepOutcome.builder()
+                           .name(OutcomeExpressionConstants.SERVICE_HOOKS)
+                           .outcome((ServiceHooksOutcome) serviceHooksOutput.getOutput())
                            .group(StepCategory.STAGE.name())
                            .build());
     }

@@ -3,7 +3,7 @@ x-stoplight:
   id: q0pbqzd9uictu
 info:
   title: Harness NextGen Software Delivery Platform API Reference
-  version: '1'
+  version: '1.0'
   description: This is the Open Api Spec 3 for the IDP Service. This is under active development. Beware of the breaking change with respect to the generated code stub.
   contact:
     name: API Support
@@ -309,13 +309,16 @@ paths:
   /v1/onboarding/harness-entities:
     get:
       summary: Get Harness Entities
-      tags:
-        - OnboardingResource
+      operationId: get-harness-entities
       responses:
         '200':
           $ref: '#/components/responses/HarnessEntitiesResponse'
-      operationId: get-harness-entities
+      tags:
+        - OnboardingResource
+      x-internal: true
       description: Get Harness Entities
+      security:
+        - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Page'
@@ -323,8 +326,27 @@ paths:
         - $ref: '#/components/parameters/Sort'
         - $ref: '#/components/parameters/Order'
         - $ref: '#/components/parameters/SearchTerm'
+        - schema:
+            type: array
+            items:
+              type: string
+          in: query
+          name: projects_to_filter
+          description: This would be used to filter resources having attributes matching the project filter.
+  /v1/onboarding/harness-entities-count:
+    get:
+      summary: Get Harness Entities Count
+      operationId: get-harness-entities-count
+      responses:
+        '200':
+          $ref: '#/components/responses/HarnessEntitiesCountResponse'
+      description: Get Harness Entities Count
       security:
         - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - OnboardingResource
       x-internal: true
   /v1/onboarding/import-harness-entities:
     post:
@@ -502,9 +524,9 @@ paths:
       x-internal: true
   /v1/app-config:
     post:
-      summary: Insert Plugin Config
-      operationId: insert-plugin-app-config
-      description: Insert Plugin Config
+      summary: Save Or Update Plugin Config
+      operationId: save-or-update-plugin-app-config
+      description: Save or Update Plugin Config
       responses:
         '200':
           $ref: '#/components/responses/AppConfigResponse'
@@ -512,22 +534,6 @@ paths:
         - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-      requestBody:
-        $ref: '#/components/requestBodies/AppConfigRequest'
-      x-internal: true
-      tags:
-        - AppConfig
-    put:
-      summary: Update Plugin Config
-      operationId: update-plugin-configs
-      description: Update plugin configs
-      responses:
-        '200':
-          $ref: '#/components/responses/AppConfigResponse'
-      parameters:
-        - $ref: '#/components/parameters/AccountHeader'
-      security:
-        - x-api-key: []
       requestBody:
         $ref: '#/components/requestBodies/AppConfigRequest'
       x-internal: true
@@ -549,6 +555,20 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       x-internal: true
   /v1/connector-info:
+    get:
+      summary: 'Get Connector Info'
+      tags:
+        - ConnectorInfo
+      operationId: get-connector-info
+      responses:
+        '200':
+          $ref: '#/components/responses/ConnectorInfoResponse'
+      description: Get Connector Info
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
     post:
       summary: Create or Update Connector Info
       tags:
@@ -596,6 +616,21 @@ paths:
       description: API for retriving merged configs for enabled plugin of account.
       tags:
         - MergedPluginsConfig
+  /v1/backstage-plugins-info:
+    get:
+      summary: List Available Backstage Plugins
+      tags:
+        - PluginInfo
+      responses:
+        '200':
+          $ref: '#/components/responses/PluginInfoResponseList'
+      operationId: get-backstage-plugins
+      description: Get all backstage plugins available
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
 components:
   schemas:
     BackstageEnvVariable:
@@ -849,13 +884,13 @@ components:
         - branch
         - path
         - infra_connector
-    HarnessEntitiesResponse:
-      title: HarnessEntitiesResponse
+    HarnessEntitiesCountResponse:
+      title: HarnessEntitiesCountResponse
       x-stoplight:
-        id: 06ugy0j5318dr
+        id: ijtq5yp7m5eim
       type: object
       x-examples: {}
-      description: Response for harness entities mapping with backstage entities
+      description: Response for harness entities count that can be imported to IDP
       properties:
         org_count:
           type: integer
@@ -867,19 +902,21 @@ components:
             id: 9iy8ubk7olrqn
         service_count:
           type: integer
-          x-stoplight:
-            id: 84zw6wx50jtsi
-        harness_backstage_entities:
-          type: array
-          items:
-            $ref: '#/components/schemas/HarnessBackstageEntities'
-            x-stoplight:
-              id: y7nbp2yxgm0dk
       required:
         - org_count
         - project_count
         - service_count
-        - harness_backstage_entities
+    HarnessEntitiesResponse:
+      title: HarnessEntitiesResponse
+      x-stoplight:
+        id: 06ugy0j5318dr
+      type: array
+      x-examples: {}
+      description: Response for harness entities mapping with backstage entities
+      items:
+        $ref: '#/components/schemas/HarnessBackstageEntities'
+        x-stoplight:
+          id: xrciue3ek36e6
     ImportEntitiesResponse:
       title: ImportEntitiesResponse
       x-stoplight:
@@ -985,6 +1022,8 @@ components:
           enum:
             - Monitoring
             - CI/CD
+            - Discovery
+            - Quality
             - Security
             - Source Control Mgmt
         source:
@@ -1056,10 +1095,24 @@ components:
           $ref: '#/components/schemas/Exports'
           x-stoplight:
             id: ns1ky9089aalt
+        env_variables:
+          x-stoplight:
+            id: 4tj9fofa4b3hn
+          type: array
+          items:
+            $ref: '#/components/schemas/BackstageEnvSecretVariable'
+            x-stoplight:
+              id: v8fluu5h3dt3n
+        saved:
+          type: boolean
+          x-stoplight:
+            id: b06clr6ww9ku0
       required:
         - plugin_details
         - config
         - exports
+        - env_variables
+        - saved
     ManualImportEntityRequest:
       title: ManualImportEntityRequest
       x-stoplight:
@@ -1144,10 +1197,23 @@ components:
           x-stoplight:
             id: gjoqaxs5xj4g5
           format: int64
+        env_variables:
+          type: array
+          x-stoplight:
+            id: rbsynehqc2icl
+          items:
+            $ref: '#/components/schemas/BackstageEnvSecretVariable'
+            x-stoplight:
+              id: h8yoj2ikr9k75
+        config_name:
+          type: string
+          x-stoplight:
+            id: jqz82xb7khx5d
       required:
         - config_id
         - configs
-        - enabled
+        - env_variables
+        - config_name
     AppConfigRequest:
       title: AppConfigRequest
       x-stoplight:
@@ -1225,8 +1291,17 @@ components:
           type: string
           x-stoplight:
             id: 9tuk5lnb9qem9
+        env_variables:
+          type: array
+          x-stoplight:
+            id: rvzbk4sw9nxvp
+          items:
+            $ref: '#/components/schemas/BackstageEnvSecretVariable'
+            x-stoplight:
+              id: lv3438bpnl1d1
       required:
         - config
+        - env_variables
     MergedPluginConfigResponse:
       title: MergedPluginConfigResponse
       x-stoplight:
@@ -1326,6 +1401,9 @@ components:
           - snyk-security
           - harness-ci-cd
           - github-pull-requests-board
+          - kafka
+          - lighthouse
+          - todo
     PluginName:
       name: PluginId
       in: query
@@ -1632,6 +1710,14 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/MergedPluginConfigResponse'
+    HarnessEntitiesCountResponse:
+      description: Response for harness entities count that can be imported to IDP
+      content:
+        application/json:
+          schema:
+            properties:
+              id:
+                type: string
   securitySchemes:
     x-api-key:
       name: x-api-key

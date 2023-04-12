@@ -203,8 +203,26 @@ ciExecutionServiceConfig:
         image: harness/blackduckhub-job-runner
       - product: brakeman_default
         image: harness/brakeman-job-runner
-      - product: customingest_.*
+      - product: custom_.*
         image: harness/sto-plugin
+        entrypoint:
+          - /bin/sto_plugin
+          - "--run-strategy"
+          - single-container
+      - product: codeql_.*
+        image: harness/sto-plugin
+        entrypoint:
+          - /bin/sto_plugin
+          - "--run-strategy"
+          - single-container
+      - product: gitleaks_.*
+        image: harness/sto-plugin
+        entrypoint:
+          - /bin/sto_plugin
+          - "--run-strategy"
+          - single-container
+      - product: fossa
+        image: harness/fossa-job-runner
       - product: grype_default
         image: harness/grype-job-runner
       - product: nmap_.*
@@ -214,7 +232,7 @@ ciExecutionServiceConfig:
       - product: metasploit_.*
         image: harness/sto-plugin
       - product: owasp_default
-        image: harness/owasp-job-runner
+        image: harness/owasp-dependency-check-job-runner
       - product: snyk_default
         image: harness/snyk-job-runner
       - product: sonarqube_default
@@ -235,7 +253,7 @@ ciExecutionServiceConfig:
     # The below config is for K8 steps
     gitCloneConfig:
       # Use rootless image only for K8 git clone
-      image: harness/drone-git:1.2.8-rootless
+      image: harness/drone-git:1.3.3-rootless
       entrypoint:
         - /usr/local/bin/clone
       windowsEntrypoint:
@@ -299,7 +317,7 @@ ciExecutionServiceConfig:
         - /bin/ssca-plugin
     vmImageConfig:
       # Use root image for VM git clone
-      gitClone: harness/drone-git:1.2.8
+      gitClone: harness/drone-git:1.3.3
       buildAndPushDockerRegistry: plugins/docker:20.13.0
       buildAndPushACR: plugins/acr:20.13.0
       buildAndPushECR: plugins/ecr:20.13.0

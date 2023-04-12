@@ -116,8 +116,8 @@ public class SecretMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     if (yamlFile.isExists()) {
       log.info("Skipping creation of secret as it already exists");
       return MigrationImportSummaryDTO.builder()
@@ -130,13 +130,13 @@ public class SecretMigrationService extends NgMigrationService {
     CustomSecretRequestWrapper secretRequestWrapper = (CustomSecretRequestWrapper) yamlFile.getYaml();
     // If we have input stream that means it is secret file & we have the actual secret
     if (secretRequestWrapper.getFileContent() != null) {
-      return migrateSecretFile(auth, ngClient, inputDTO, yamlFile);
+      return migrateSecretFile(inputDTO.getDestinationAuthToken(), ngClient, inputDTO, yamlFile);
     }
     // If the secret type is SecretFile then we use the YAML API to create.
     if (secretRequestWrapper.getSecret().getType().equals(SecretType.SecretFile)) {
       Response<ResponseDTO<SecretResponseWrapper>> resp =
           ngClient
-              .createSecretUsingYaml(auth, inputDTO.getAccountIdentifier(),
+              .createSecretUsingYaml(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                   secretRequestWrapper.getSecret().getOrgIdentifier(),
                   secretRequestWrapper.getSecret().getProjectIdentifier(), JsonUtils.asTree(yamlFile.getYaml()))
               .execute();
@@ -146,7 +146,8 @@ public class SecretMigrationService extends NgMigrationService {
     // By default, we use the standard API to create the secret. Note this API fails if it is called for SecretFile
     Response<ResponseDTO<SecretResponseWrapper>> resp =
         ngClient
-            .createSecret(auth, inputDTO.getAccountIdentifier(), secretRequestWrapper.getSecret().getOrgIdentifier(),
+            .createSecret(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                secretRequestWrapper.getSecret().getOrgIdentifier(),
                 secretRequestWrapper.getSecret().getProjectIdentifier(), JsonUtils.asTree(yamlFile.getYaml()))
             .execute();
     log.info("Secret creation Response details {} {}", resp.code(), resp.message());
@@ -161,7 +162,7 @@ public class SecretMigrationService extends NgMigrationService {
         RequestBody.create(MediaType.parse("application/octet-stream"), secretRequestWrapper.getFileContent());
     Response<ResponseDTO<SecretResponseWrapper>> resp =
         ngClient
-            .createSecretFile(auth, inputDTO.getAccountIdentifier(),
+            .createSecretFile(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                 secretRequestWrapper.getSecret().getOrgIdentifier(),
                 secretRequestWrapper.getSecret().getProjectIdentifier(), content, spec)
             .execute();

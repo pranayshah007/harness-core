@@ -46,12 +46,12 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_NAME;
 import static io.harness.timescaledb.Tables.ANOMALIES;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
-import io.harness.ccm.views.businessMapping.entities.CostTarget;
-import io.harness.ccm.views.businessMapping.entities.SharedCost;
-import io.harness.ccm.views.businessMapping.entities.SharedCostSplit;
-import io.harness.ccm.views.businessMapping.entities.UnallocatedCostStrategy;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessmapping.entities.CostTarget;
+import io.harness.ccm.views.businessmapping.entities.SharedCost;
+import io.harness.ccm.views.businessmapping.entities.SharedCostSplit;
+import io.harness.ccm.views.businessmapping.entities.UnallocatedCostStrategy;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.dao.ViewCustomFieldDao;
 import io.harness.ccm.views.entities.ViewCondition;
 import io.harness.ccm.views.entities.ViewCustomField;

@@ -7,10 +7,13 @@
 
 package io.harness.cdng.infra;
 
+import static io.harness.cdng.ssh.SshWinRmConstants.HOSTNAME_HOST_ATTRIBUTE;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.common.ParameterFieldHelper.hasValueListOrExpression;
 import static io.harness.common.ParameterFieldHelper.hasValueOrExpression;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
+import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -33,11 +36,13 @@ import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.yaml.ParameterField;
 
 import com.google.inject.Singleton;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -224,12 +229,18 @@ public class InfrastructureValidator {
   }
 
   private void validateDynamicPdcInfrastructure(PdcInfrastructure infrastructure) {
-    if (!hasValueOrExpression(infrastructure.getHostObjectArray(), false)) {
-      throw new InvalidArgumentsException(Pair.of("hostObjectArray", CANNOT_BE_EMPTY_ERROR_MSG));
+    if (!hasValueOrExpression(infrastructure.getHostArrayPath(), false)) {
+      throw new InvalidArgumentsException(Pair.of("hostArrayPath", CANNOT_BE_EMPTY_ERROR_MSG));
     }
-
     if (!hasValueOrExpression(infrastructure.getHostAttributes(), false)) {
       throw new InvalidArgumentsException(Pair.of("hostAttributes", CANNOT_BE_EMPTY_ERROR_MSG));
+    }
+
+    ParameterField<Map<String, String>> hostAttributes = infrastructure.getHostAttributes();
+    if (ParameterField.isNull(hostAttributes) || hostAttributes.getValue() == null
+        || !hostAttributes.getValue().containsKey(HOSTNAME_HOST_ATTRIBUTE)) {
+      throw new InvalidRequestException(
+          format("[%s] property is mandatory for getting host names", HOSTNAME_HOST_ATTRIBUTE));
     }
   }
 
