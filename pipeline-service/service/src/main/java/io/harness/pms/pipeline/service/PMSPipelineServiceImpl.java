@@ -182,7 +182,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
       }
 
-      // Set the boolean isDefaultBranch in GitEntityInfo.
       GitContextHelper.setIsDefaultBranchInGitEntityInfo();
 
       PipelineEntityWithReferencesDTO entityWithUpdatedInfoWithReferences =
@@ -193,10 +192,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       PipelineCRUDResult pipelineCRUDResult = createPipeline(entityWithUpdatedInfo);
       createdEntity = pipelineCRUDResult.getPipelineEntity();
 
-      // Get branch from SCMGitMetadata.
       String branch = GitAwareContextHelper.getBranchFromSCMGitMetadata();
 
-      // Publishing Setup Usages.
       publishSetupUsages(createdEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), branch);
 
       try {
@@ -374,10 +371,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
         pipelineEntity = pipelineEntityWithReferences.getPipelineEntity();
 
-        // Get branch from SCMGitMetadata.
         String branch = GitAwareContextHelper.getBranchFromSCMGitMetadata();
 
-        // Publishing setup usages.
         publishSetupUsages(pipelineEntity, pipelineEntityWithReferences.getReferredEntities(), branch);
 
       } catch (IOException e) {
@@ -614,7 +609,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         entityWithUpdatedInfo = entityWithUpdatedInfoWithReferences.getPipelineEntity();
       }
 
-      // Set isDefaultBranch boolean in GitEntityInfo.
       GitContextHelper.setIsDefaultBranchInGitEntityInfo();
 
       PipelineEntity updatedResult;
@@ -625,10 +619,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         updatedResult = pmsPipelineRepository.updatePipelineYaml(entityWithUpdatedInfo);
       }
 
-      // Get branch from SCMGitMetadata.
       String branch = GitAwareContextHelper.getBranchFromSCMGitMetadata();
 
-      // Publish setup usages.
       if (pipelineEntity.getIsDraft() == null || !pipelineEntity.getIsDraft()) {
         publishSetupUsages(pipelineEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), branch);
       }
