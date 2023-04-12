@@ -37,6 +37,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.CODECOMMIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
+import static io.harness.delegate.beans.connector.ConnectorType.GITNESS;
 import static io.harness.delegate.beans.connector.scm.adapter.AzureRepoToGitMapper.mapToGitConnectionType;
 
 import static java.lang.String.format;
@@ -69,6 +70,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.gitness.GitnessDTO;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -235,10 +237,26 @@ public class CodebaseUtils {
     } else if (gitConnector.getConnectorType() == GIT) {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) gitConnector.getConnectorConfig();
       envVars = retrieveGitEnvVar(gitConfigDTO, repoName);
+    } else if (gitConnector.getConnectorType() == GITNESS) {
+      GitnessDTO gitConfigDTO = (GitnessDTO) gitConnector.getConnectorConfig();
+      envVars = retrieveGitnessEnvVar((gitConfigDTO).getUrl());
     } else {
       throw new CIStageExecutionException("Unsupported git connector type" + gitConnector.getConnectorType());
     }
 
+    return envVars;
+  }
+
+  private Map<String, String> retrieveGitnessEnvVar(String gitUrl) {
+    Map<String, String> envVars = new HashMap<>();
+    String domain = GitClientHelper.getGitSCM(gitUrl);
+    String port = GitClientHelper.getGitSCMPort(gitUrl);
+    if (port != null) {
+      envVars.put(DRONE_NETRC_PORT, port);
+    }
+
+    envVars.put(DRONE_REMOTE_URL, gitUrl);
+    envVars.put(DRONE_NETRC_MACHINE, domain);
     return envVars;
   }
 
@@ -386,7 +404,8 @@ public class CodebaseUtils {
     }
     if (gitConnector.getConnectorType() != GIT && gitConnector.getConnectorType() != ConnectorType.GITHUB
         && gitConnector.getConnectorType() != ConnectorType.GITLAB && gitConnector.getConnectorType() != BITBUCKET
-        && gitConnector.getConnectorType() != CODECOMMIT && gitConnector.getConnectorType() != AZURE_REPO) {
+        && gitConnector.getConnectorType() != CODECOMMIT && gitConnector.getConnectorType() != AZURE_REPO
+        && gitConnector.getConnectorType() != GITNESS) {
       log.error("Git connector ref is not of type git {}", gitConnector.getConnectorType());
       throw new InvalidArgumentsException(
           "Connector type is not from supported connectors list GITHUB, GITLAB, BITBUCKET, CODECOMMIT ",
@@ -463,6 +482,8 @@ public class CodebaseUtils {
     } else if (gitConnector.getConnectorType() == GIT) {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) gitConnector.getConnectorConfig();
       return gitConfigDTO.getGitConnectionType();
+    } else if (gitConnector.getConnectorType() == GITNESS) {
+      return GitConnectionType.REPO;
     } else {
       throw new CIStageExecutionException("Unsupported git connector type" + gitConnector.getConnectorType());
     }

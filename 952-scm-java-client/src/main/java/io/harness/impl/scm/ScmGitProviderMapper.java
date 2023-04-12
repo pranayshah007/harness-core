@@ -10,10 +10,12 @@ package io.harness.impl.scm;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
+import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cistatus.service.GithubAppConfig;
 import io.harness.cistatus.service.GithubService;
+import io.harness.context.GlobalContext;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
@@ -31,14 +33,22 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.gitness.GitnessDTO;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientHelper;
+import io.harness.logstreaming.LogStreamingServiceConfiguration;
+import io.harness.manage.GlobalContextManager;
 import io.harness.product.ci.scm.proto.AzureProvider;
 import io.harness.product.ci.scm.proto.BitbucketCloudProvider;
 import io.harness.product.ci.scm.proto.BitbucketServerProvider;
 import io.harness.product.ci.scm.proto.GithubProvider;
 import io.harness.product.ci.scm.proto.GitlabProvider;
+import io.harness.product.ci.scm.proto.HarnessProvider;
 import io.harness.product.ci.scm.proto.Provider;
+import io.harness.security.PrincipalContextData;
+import io.harness.security.dto.Principal;
+import io.harness.security.dto.UserPrincipal;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -50,6 +60,7 @@ import org.apache.commons.lang3.NotImplementedException;
 @OwnedBy(DX)
 public class ScmGitProviderMapper {
   @Inject(optional = true) GithubService githubService;
+  @Inject(optional = true) LogStreamingServiceConfiguration logStreamingServiceConfiguration;
   private static final String SCM_SKIP_SSL = "SCM_SKIP_SSL";
   private static final String ADDITIONAL_CERTS_PATH = "ADDITIONAL_CERTS_PATH";
 
@@ -66,6 +77,8 @@ public class ScmGitProviderMapper {
       return mapToBitbucketProvider((BitbucketConnectorDTO) scmConnector, debug);
     } else if (scmConnector instanceof AzureRepoConnectorDTO) {
       return mapToAzureRepoProvider((AzureRepoConnectorDTO) scmConnector, debug);
+    } else if (scmConnector instanceof GitnessDTO) {
+      return mapToGitness((GitnessDTO) scmConnector, debug);
     } else {
       throw new NotImplementedException(
           String.format("The scm apis for the provider type %s is not supported", scmConnector.getClass()));
@@ -256,5 +269,26 @@ public class ScmGitProviderMapper {
           "The Personal Access Token is not set. Please set the Personal Access Token in the Git Connector which has permissions to use providers API's");
     }
     return String.valueOf(githubOauthDTO.getTokenRef().getDecryptedValue());
+  }
+
+  private Provider mapToGitness(GitnessDTO githubConnector, boolean debug) {
+    boolean skipVerify = checkScmSkipVerify();
+    Principal principal = getUserPrincipalOrThrow();
+    String baseUrl = logStreamingServiceConfiguration.getBaseUrl();
+    return Provider.newBuilder()
+        .setHarness(HarnessProvider.newBuilder().build())
+        .setDebug(debug)
+        .setEndpoint(baseUrl + "/gitness")
+        .setSkipVerify(skipVerify)
+        .build();
+  }
+
+  private Principal getUserPrincipalOrThrow() {
+    GlobalContext globalContext = GlobalContextManager.obtainGlobalContext();
+    if (globalContext == null || !(globalContext.get(PRINCIPAL_CONTEXT) instanceof PrincipalContextData)
+        || !(((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal() instanceof UserPrincipal)) {
+      throw new InvalidRequestException("Not authorized to update in current context");
+    }
+    return ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
   }
 }

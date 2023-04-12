@@ -86,6 +86,8 @@ import io.harness.connector.mappers.githubconnector.GithubDTOToEntity;
 import io.harness.connector.mappers.githubconnector.GithubEntityToDTO;
 import io.harness.connector.mappers.gitlabconnector.GitlabDTOToEntity;
 import io.harness.connector.mappers.gitlabconnector.GitlabEntityToDTO;
+import io.harness.connector.mappers.gitness.GitnessDTOToEntity;
+import io.harness.connector.mappers.gitness.GitnessEntityToDTO;
 import io.harness.connector.mappers.helm.HttpHelmDTOToEntity;
 import io.harness.connector.mappers.helm.HttpHelmEntityToDTO;
 import io.harness.connector.mappers.helm.OciHelmDTOToEntity;
@@ -145,6 +147,7 @@ import io.harness.connector.task.git.GitValidationHandler;
 import io.harness.connector.task.spot.SpotValidationHandler;
 import io.harness.connector.task.tas.TasValidationHandler;
 import io.harness.connector.task.terraformcloud.TerraformCloudValidationHandler;
+import io.harness.connector.validator.AlwaysTrueConnectorValidator;
 import io.harness.connector.validator.ArtifactoryConnectionValidator;
 import io.harness.connector.validator.AwsConnectorValidator;
 import io.harness.connector.validator.AzureArtifactsConnectorValidator;
@@ -374,6 +377,10 @@ public class ConnectorRegistryFactory {
         new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, TerraformCloudConnectorValidator.class,
             TerraformCloudValidationParamsProvider.class, TerraformCloudDTOToEntity.class,
             TerraformCloudEntityToDTO.class, TerraformCloudValidationHandler.class));
+    registrar.put(ConnectorType.GITNESS,
+        new ConnectorRegistrar(ConnectorCategory.CODE_REPO, AlwaysTrueConnectorValidator.class,
+            NoOpConnectorValidationParamsProvider.class, GitnessDTOToEntity.class, GitnessEntityToDTO.class,
+            NotSupportedValidationHandler.class));
   }
 
   public static Class<? extends ConnectionValidator> getConnectorValidator(ConnectorType connectorType) {
