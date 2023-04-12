@@ -1,13 +1,20 @@
 package io.harness.releaseradar.services;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import io.harness.releaseradar.beans.CommitDetails;
 import io.harness.releaseradar.beans.CommitDetailsRequest;
 import io.harness.releaseradar.beans.EnvDeploymentStatus;
 import io.harness.releaseradar.beans.Environment;
+import io.harness.releaseradar.beans.JiraEventDetails;
 import io.harness.releaseradar.beans.JiraStatusDetails;
+import io.harness.releaseradar.beans.JiraTimeline;
 import io.harness.releaseradar.beans.Service;
+import io.harness.repositories.CommitDetailsRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,9 +22,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@Slf4j
+@Singleton
 public class JiraTrackerServiceImpl implements JiraTrackerService {
     GitService gitService = new GitServiceImpl();
     HarnessEnvService harnessEnvService = new HarnessEnvServiceImpl();
+    @Inject private CommitDetailsRepository commitDetailsRepository;
 
     @Override
     public JiraStatusDetails getJiraStatusDetails(String jiraId) {
@@ -47,7 +57,17 @@ public class JiraTrackerServiceImpl implements JiraTrackerService {
     }
 
     @Override
-    public void getJiraTimeline(String jiraId) {
-
+    public JiraTimeline getJiraTimeline(String jiraId) {
+        Map<String, List<JiraEventDetails>> jiraTimelineDetails = new HashMap<>();
+        List<io.harness.releaseradar.entities.CommitDetails> commitDetailsList = commitDetailsRepository.findByJiraIdOrderByCreatedAt(jiraId);
+        commitDetailsList.forEach(commitDetails -> {
+            if (!jiraTimelineDetails.containsKey(commitDetails.getSha())) {
+                jiraTimelineDetails.put(commitDetails.getSha(), new ArrayList<>());
+            }
+            jiraTimelineDetails.get(commitDetails.getSha()).add(JiraEventDetails.toJiraEventDetails(commitDetails));
+        });
+        return JiraTimeline.builder()
+                .jiraTimelineDetails(jiraTimelineDetails)
+                .build();
     }
 }

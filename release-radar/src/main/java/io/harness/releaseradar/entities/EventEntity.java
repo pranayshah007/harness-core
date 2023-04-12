@@ -37,4 +37,5 @@ public class EventEntity {
   @NotNull String release;
   @NotNull Long epoch;
   @NotNull String serviceName;
+  Long createdAt;
 }

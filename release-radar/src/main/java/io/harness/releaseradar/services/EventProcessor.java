@@ -16,7 +16,10 @@ import io.harness.releaseradar.util.SlackWebhookEncryptionUtil;
 import io.harness.repositories.CommitDetailsRepository;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -62,11 +65,13 @@ public class EventProcessor {
   }
 
   private void publishCommitDetails(EventEntity eventEntity) {
-      EnvDeploymentStatus deploymentStatus = harnessEnvService.getDeploymentStatus(Service.getService(eventEntity.getServiceName()), eventEntity.getEnvironment());
+      Service service = Service.getService(eventEntity.getServiceName());
+      EnvDeploymentStatus deploymentStatus = harnessEnvService.getDeploymentStatus(service, eventEntity.getEnvironment());
       List<CommitDetails> gitCommitDetailsList = gitService.getCommitList(CommitDetailsRequest.builder()
                       .branch(deploymentStatus.getBranch())
                       .maxCommits(1000)
               .build());
+      gitCommitDetailsList = filterOutDuplicates(gitCommitDetailsList);
       gitCommitDetailsList.forEach(gitCommitDetails -> {
           String jiraId = GitHelper.getJiraId(gitCommitDetails.getMessage());
           if (jiraId != null) {
@@ -77,9 +82,24 @@ public class EventProcessor {
                       .metadata(CommitDetailsMetadata.builder()
                               .sha(gitCommitDetails.getSha())
                               .timestamp(gitCommitDetails.getDate())
+                              .environment(eventEntity.getEnvironment())
+                              .service(service)
                               .build())
+                              .createdAt(eventEntity.getCreatedAt())
                       .build());
           }
       });
+  }
+
+  private List<CommitDetails> filterOutDuplicates(List<CommitDetails> commitDetailsList) {
+      List<CommitDetails> filteredList = new ArrayList<>();
+      Set<String> uniqueCommitIdList = new HashSet<>();
+      commitDetailsList.forEach(commitDetails -> {
+          if (!uniqueCommitIdList.contains(commitDetails.getSha())) {
+              filteredList.add(commitDetails);
+              uniqueCommitIdList.add(commitDetails.getSha());
+          }
+      });
+      return filteredList;
   }
 }

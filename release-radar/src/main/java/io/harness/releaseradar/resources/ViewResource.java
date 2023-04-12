@@ -10,12 +10,13 @@ package io.harness.releaseradar.resources;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import io.harness.releaseradar.beans.JiraStatusDetails;
+import io.harness.releaseradar.beans.JiraTimeline;
 import io.harness.releaseradar.dto.EventResponseDTO;
 import io.harness.releaseradar.dto.JiraStatusResponseDTO;
+import io.harness.releaseradar.dto.JiraTimelineResponseDTO;
 import io.harness.releaseradar.entities.EventEntity;
 import io.harness.releaseradar.mapper.EventMapper;
 import io.harness.releaseradar.services.JiraTrackerService;
-import io.harness.releaseradar.services.JiraTrackerServiceImpl;
 import io.harness.repositories.EventRepository;
 import io.harness.security.annotations.PublicApi;
 import io.swagger.annotations.Api;
@@ -41,7 +42,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 @Slf4j
 public class ViewResource {
   @Inject private EventRepository eventRepository;
-  private JiraTrackerService jiraTrackerService = new JiraTrackerServiceImpl();
+  @Inject JiraTrackerService jiraTrackerService;
 
   @GET
   @Path("/")
@@ -64,7 +65,7 @@ public class ViewResource {
       eventsStream = eventsStream.filter(event -> event.getBuildVersion().equalsIgnoreCase(version));
     }
 
-    return eventsStream.map(EventMapper::toDTO).collect(Collectors.toList());
+    return eventsStream.map(EventMapper::toEntity).collect(Collectors.toList());
   }
 
   @GET
@@ -73,6 +74,15 @@ public class ViewResource {
     JiraStatusDetails jiraStatusDetails = jiraTrackerService.getJiraStatusDetails(jiraId);
     return JiraStatusResponseDTO.builder()
             .commitDetailsListMap(jiraStatusDetails.getCommitDetailsListMap())
+            .build();
+  }
+
+  @GET
+  @Path("jira-timeline")
+  public JiraTimelineResponseDTO getJiraTimeline(@QueryParam("jira-id") String jiraId) {
+    JiraTimeline jiraTimeline = jiraTrackerService.getJiraTimeline(jiraId);
+    return JiraTimelineResponseDTO.builder()
+            .jiraTimelineDetails(jiraTimeline.getJiraTimelineDetails())
             .build();
   }
 }

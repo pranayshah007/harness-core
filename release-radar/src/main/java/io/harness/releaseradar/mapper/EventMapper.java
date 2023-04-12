@@ -12,15 +12,15 @@ import io.harness.releaseradar.dto.EventResponseDTO;
 import io.harness.releaseradar.entities.EventEntity;
 import io.harness.releaseradar.mapper.release.IReleaseVersionMapper;
 import io.harness.releaseradar.mapper.release.ReleaseVersionMapperFactory;
+import lombok.experimental.UtilityClass;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class EventMapper {
   private final ReleaseVersionMapperFactory releaseVersionMapperFactory = new ReleaseVersionMapperFactory();
-  public static EventEntity toDTO(EventRequestDTO dto) {
+  public static EventEntity toEntity(EventRequestDTO dto) {
     IReleaseVersionMapper releaseVersionMapper =
         releaseVersionMapperFactory.getReleaseVersionMapper(dto.getVersioningScheme());
     String parsedRelease = releaseVersionMapper.parseReleaseVersion(dto.getBuildVersion());
@@ -33,10 +33,11 @@ public class EventMapper {
         .epoch(System.currentTimeMillis())
         .serviceName(dto.getServiceName())
         .versioningScheme(dto.getVersioningScheme())
+            .createdAt(System.currentTimeMillis())
         .build();
   }
 
-  public static EventResponseDTO toDTO(EventEntity entity) {
+  public static EventResponseDTO toEntity(EventEntity entity) {
     SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
     return EventResponseDTO.builder()
         .eventType(entity.getEventType())

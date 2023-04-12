@@ -33,12 +33,11 @@ import javax.ws.rs.core.MediaType;
 public class EventResource {
   @Inject private EventRepository eventRepository;
   @Inject private EventProcessor eventProcessor;
+
   @POST
   public EventResponseDTO capture(EventRequestDTO request) {
-    EventEntity save = eventRepository.save(EventMapper.toDTO(request));
-
+    EventEntity save = eventRepository.save(EventMapper.toEntity(request));
     eventProcessor.process(save);
-
-    return EventMapper.toDTO(save);
+    return EventMapper.toEntity(save);
   }
 }

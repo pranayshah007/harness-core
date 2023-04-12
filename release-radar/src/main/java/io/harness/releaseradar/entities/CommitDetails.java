@@ -6,6 +6,7 @@ import io.harness.ng.DbAliases;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
+import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -15,9 +16,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Entity(value = "CommitDetails")
 @Document("CommitDetails")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@ToString
 public class CommitDetails {
     String eventId;
     String jiraId;
     String sha;
     CommitDetailsMetadata metadata;
+    Long createdAt;
 }

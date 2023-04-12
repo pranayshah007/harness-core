@@ -7,22 +7,22 @@
 
 package io.harness.releaseradar;
 
-import io.harness.maintenance.MaintenanceController;
-import io.harness.reflection.HarnessReflections;
-
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import io.dropwizard.Application;
 import io.dropwizard.setup.Environment;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-import javax.ws.rs.Path;
+import io.harness.maintenance.MaintenanceController;
+import io.harness.reflection.HarnessReflections;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.model.Resource;
+
+import javax.ws.rs.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class ReleaseRadarApp extends Application<AppConfig> {
@@ -43,6 +43,7 @@ public class ReleaseRadarApp extends Application<AppConfig> {
     List<Module> modules = new ArrayList<>();
     modules.add(ReleaseRadarAppModule.getInstance(configuration));
     Injector injector = Guice.createInjector(modules);
+
 
     // Will create collections and Indexes
     //    injector.getInstance(HPersistence.class);
