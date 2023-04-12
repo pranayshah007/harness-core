@@ -202,6 +202,19 @@ public class BatchJobRunner {
     }
   }
 
+  private void logDelayedBatchJobs(String accountId, BatchJobType batchJobType, Instant startInstant, Instant endInstant) {
+    Instant currentTime = Instant.now();
+    long diffMillis = currentTime.toEpochMilli() - endInstant.toEpochMilli();
+    if (diffMillis > 43200000) {
+      CacheKey cacheKey = new CacheKey(accountId, batchJobType, startInstant);
+      if (logErrorCache.getIfPresent(cacheKey) == null) {
+        log.error("Batch job is delayed for account {} {} {}", accountId, batchJobType, diffMillis);
+      } else {
+        log.error("Batch job delayed for the account {} {} {}", accountId, batchJobType, diffMillis);
+      }
+    }
+  }
+
   private void logDelayedJobs(String accountId, BatchJobType batchJobType, Instant startInstant, Instant endInstant) {
     Instant currentTime = Instant.now();
     long diffMillis = currentTime.toEpochMilli() - endInstant.toEpochMilli();

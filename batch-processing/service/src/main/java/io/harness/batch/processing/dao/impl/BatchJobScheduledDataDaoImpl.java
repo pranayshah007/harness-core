@@ -45,6 +45,16 @@ public class BatchJobScheduledDataDaoImpl implements BatchJobScheduledDataDao {
     return query.get();
   }
 
+  public BatchJobScheduledData fetchLastBatchJobScheduledDataAccount(String accountId, BatchJobType batchJobType) {
+    Query<BatchJobScheduledData> query = hPersistence.createQuery(BatchJobScheduledData.class)
+            .filter(BatchJobScheduledDataKeys.accountId, accountId)
+            .filter(BatchJobScheduledDataKeys.batchJobType, batchJobType.name());
+    query.or(query.criteria(BatchJobScheduledDataKeys.validRun).doesNotExist(),
+            query.criteria(BatchJobScheduledDataKeys.validRun).equal(true));
+    query.order(Sort.descending(BatchJobScheduledDataKeys.endAt));
+    return query.get();
+  }
+
   public void invalidateJobs(CEDataCleanupRequest ceDataCleanupRequest) {
     Query<BatchJobScheduledData> query =
         hPersistence.createQuery(BatchJobScheduledData.class)
