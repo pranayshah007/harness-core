@@ -1,0 +1,13 @@
+mongo:
+  uri: mongodb://localhost:27017/release-radar
+  connectTimeout: 30000
+  serverSelectionTimeout: 90000
+  socketTimeout: 360000
+  maxConnectionIdleTime: 600000
+  connectionsPerHost: 300
+  indexManagerMode: AUTO
+  transactionsEnabled: false
+  aliasDBName: ng-harness
+  traceMode: DISABLED
+  maxOperationTimeInMillis: 300000
+  maxDocumentsToBeFetched: 2147483647
