@@ -7,6 +7,7 @@
 
 package io.harness.releaseradar.resources;
 
+import com.google.inject.Inject;
 import io.harness.releaseradar.dto.EventRequestDTO;
 import io.harness.releaseradar.dto.EventResponseDTO;
 import io.harness.releaseradar.entities.EventEntity;
@@ -14,15 +15,14 @@ import io.harness.releaseradar.mapper.EventMapper;
 import io.harness.releaseradar.services.EventProcessor;
 import io.harness.repositories.EventRepository;
 import io.harness.security.annotations.PublicApi;
-
-import com.google.inject.Inject;
 import io.swagger.annotations.Api;
+import lombok.extern.slf4j.Slf4j;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import lombok.extern.slf4j.Slf4j;
 
 @Api("events")
 @Path("/events")
@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @Produces(MediaType.APPLICATION_JSON)
 @PublicApi
 @Slf4j
-public class EventCaptureResource {
+public class EventResource {
   @Inject private EventRepository eventRepository;
   @Inject private EventProcessor eventProcessor;
   @POST

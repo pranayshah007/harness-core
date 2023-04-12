@@ -7,27 +7,31 @@
 
 package io.harness.releaseradar.resources;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
-import io.harness.releaseradar.dto.EventResponseDTO;
-import io.harness.releaseradar.entities.EventEntity;
-import io.harness.releaseradar.mapper.EventMapper;
-import io.harness.repositories.EventRepository;
-import io.harness.security.annotations.PublicApi;
-
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import io.harness.releaseradar.beans.JiraStatusDetails;
+import io.harness.releaseradar.dto.EventResponseDTO;
+import io.harness.releaseradar.dto.JiraStatusResponseDTO;
+import io.harness.releaseradar.entities.EventEntity;
+import io.harness.releaseradar.mapper.EventMapper;
+import io.harness.releaseradar.services.JiraTrackerService;
+import io.harness.releaseradar.services.JiraTrackerServiceImpl;
+import io.harness.repositories.EventRepository;
+import io.harness.security.annotations.PublicApi;
 import io.swagger.annotations.Api;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 @Api("views")
 @Path("/views")
@@ -37,6 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ViewResource {
   @Inject private EventRepository eventRepository;
+  private JiraTrackerService jiraTrackerService = new JiraTrackerServiceImpl();
 
   @GET
   @Path("/")
@@ -60,5 +65,14 @@ public class ViewResource {
     }
 
     return eventsStream.map(EventMapper::toDTO).collect(Collectors.toList());
+  }
+
+  @GET
+  @Path("jira")
+  public JiraStatusResponseDTO getJiraDetails(@QueryParam("jira-id") String jiraId) {
+    JiraStatusDetails jiraStatusDetails = jiraTrackerService.getJiraStatusDetails(jiraId);
+    return JiraStatusResponseDTO.builder()
+            .commitDetailsListMap(jiraStatusDetails.getCommitDetailsListMap())
+            .build();
   }
 }
