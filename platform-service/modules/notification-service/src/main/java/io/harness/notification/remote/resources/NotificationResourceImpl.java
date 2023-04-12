@@ -23,6 +23,7 @@ import io.harness.notification.remote.dto.NotificationDTO;
 import io.harness.notification.service.api.HarnessBotService;
 import io.harness.notification.service.api.NotificationService;
 
+import io.harness.security.annotations.PublicApi;
 import software.wings.beans.notification.BotQuestion;
 import software.wings.beans.notification.BotResponse;
 
@@ -53,6 +54,7 @@ public class NotificationResourceImpl implements NotificationResource {
   }
 
   @Override
+  @PublicApi
   public ResponseDTO<BotResponse> answer(BotQuestion question) {
     return ResponseDTO.newResponse(harnessBotService.answer(question));
   }
