@@ -16,7 +16,6 @@ import io.harness.security.annotations.PublicApi;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -24,8 +23,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 
-@Api("event-capture")
-@Path("/event-capture")
+@Api("events")
+@Path("/events")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @PublicApi
