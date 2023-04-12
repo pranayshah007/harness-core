@@ -169,7 +169,7 @@ public class PMSPipelineDtoMapper {
   }
 
   public PipelineEntity toPipelineEntity(String accountId, String orgId, String projectId, String pipelineName,
-      String yaml, Boolean isGolden, Boolean isDraft, String pipelineVersion) {
+      String yaml, Boolean isDraft, String pipelineVersion) {
     PipelineEntity pipelineEntity;
     // Use the pipeline name from api request only for V1 yaml
     if (pipelineVersion != null && !pipelineVersion.equals(PipelineVersion.V0)) {
@@ -181,14 +181,7 @@ public class PMSPipelineDtoMapper {
     if (isDraft == null) {
       isDraft = false;
     }
-    if (isGolden == null) {
-      isGolden = false;
-    }
     pipelineEntity.setIsDraft(isDraft);
-    pipelineEntity.setIsGolden(isGolden);
-    //    if (isGolden){
-    //      createPolicies();
-    //    }
     pipelineEntity.setHarnessVersion(pipelineVersion);
     return pipelineEntity;
   }
