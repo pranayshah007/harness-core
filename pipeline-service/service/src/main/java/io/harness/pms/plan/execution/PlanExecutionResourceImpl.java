@@ -33,6 +33,7 @@ import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.execution.ExpressionDetailResponse;
+import io.harness.execution.ExpressionDryRunResponse;
 import io.harness.execution.ExpressionTestDetails;
 import io.harness.execution.ExpressionTestRequest;
 import io.harness.execution.ExpressionTestResponse;
@@ -100,7 +101,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   @Inject PmsEngineExpressionService pmsEngineExpressionService;
 
   @Inject PlanExpansionService planExpansionService;
-  @Inject ExpressionDetailService expressionTestService;
+  @Inject ExpressionDetailService expressionDetailService;
 
   @Inject private final PreflightService preflightService;
   @Inject private final PMSPipelineService pmsPipelineService;
@@ -516,7 +517,19 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
 
   @Override
   public ResponseDTO<ExpressionDetailResponse> fetchExpressionDetails(String planExecutionId, String expression) {
-    return ResponseDTO.newResponse(expressionTestService.getExpressionResponse(planExecutionId, expression));
+    return ResponseDTO.newResponse(expressionDetailService.getExpressionResponse(planExecutionId, expression));
+  }
+
+  @Override
+  public ResponseDTO<ExpressionDryRunResponse> dryRunExpressions(
+      String accountId, String orgId, String projectId, String pipelineIdentifier, String yaml) {
+    // TODO: Use projection here.
+    PlanExecution planExecution =
+        planExecutionService.getLatestPlanExecutionId(accountId, orgId, projectId, pipelineIdentifier);
+    if (planExecution != null) {
+      return ResponseDTO.newResponse(expressionDetailService.resolveExpressions(planExecution.getUuid(), yaml));
+    }
+    throw new InvalidRequestException("Please execute the pipeline at lease once before dry-running the expressions");
   }
 
   private Ambiance constructAmbianceForScope(String planExecutionId, String scope) {

@@ -35,6 +35,7 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
       @NonNull String planExecutionId, @NonNull Status status, Consumer<Update> ops, boolean forced);
 
   PlanExecution get(String planExecutionId);
+  PlanExecution getLatestPlanExecutionId(String accountId, String orgId, String projectId, String pipelineId);
 
   /**
    * @param planExecutionId planExecutionId

@@ -21,6 +21,7 @@ import io.harness.engine.executions.retry.RetryHistoryResponseDto;
 import io.harness.engine.executions.retry.RetryInfo;
 import io.harness.engine.executions.retry.RetryLatestExecutionResponseDto;
 import io.harness.execution.ExpressionDetailResponse;
+import io.harness.execution.ExpressionDryRunResponse;
 import io.harness.execution.ExpressionTestRequest;
 import io.harness.execution.ExpressionTestResponse;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -786,4 +787,27 @@ public interface PlanExecutionResource {
           description = "Fetching the expressions at various scopes for given planExecutionId and given expressionFQN")
       String planExecutionId,
       @NotNull @QueryParam("expression") String expression);
+
+  @POST
+  @Path("dryRunExpressions/{pipelineIdentifier}")
+  @ApiOperation(value = "Testing expression for given pipeline YAML", nickname = "dryRunExpressions")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @Operation(operationId = "dryRunExpressions", summary = "Test expression on given pipeline YAML",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Tests expression for given pipeline YAML")
+      })
+  @Hidden
+  ResponseDTO<ExpressionDryRunResponse>
+  dryRunExpressions(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @Parameter(
+          description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) @AccountIdentifier String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @Parameter(
+          description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @OrgIdentifier String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @Parameter(
+          description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @ProjectIdentifier String projectIdentifier,
+      @NotNull @PathParam(NGCommonEntityConstants.PIPELINE_KEY) @Parameter(
+          description = "Testing expression for given pipeline YAML") String pipelineIdentifier,
+      @RequestBody(required = true, description = "Pipeline YAML") @NotNull String yaml);
 }

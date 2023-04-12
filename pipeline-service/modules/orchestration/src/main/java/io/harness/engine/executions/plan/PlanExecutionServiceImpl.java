@@ -148,6 +148,23 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   @Override
+  public PlanExecution getLatestPlanExecutionId(String accountId, String orgId, String projectId, String pipelineId) {
+    Map<String, String> setupAbstractionSubFields = new HashMap<>();
+    setupAbstractionSubFields.put(SetupAbstractionKeys.accountId, accountId);
+    setupAbstractionSubFields.put(SetupAbstractionKeys.orgIdentifier, orgId);
+    setupAbstractionSubFields.put(SetupAbstractionKeys.projectIdentifier, projectId);
+    Criteria criteria = new Criteria().and(PlanExecutionKeys.setupAbstractions).is(setupAbstractionSubFields);
+    criteria
+        .and(PlanExecutionKeys.metadata + "."
+            + "pipelineIdentifier")
+        .is(pipelineId);
+
+    Query query = new Query();
+    query.addCriteria(criteria).with(Sort.by(Sort.Direction.DESC, "createdAt")).limit(1);
+    return mongoTemplate.findOne(query, PlanExecution.class);
+  }
+
+  @Override
   public PlanExecution getPlanExecutionMetadata(String planExecutionId) {
     PlanExecution planExecution = planExecutionRepository.getPlanExecutionWithProjections(planExecutionId,
         Lists.newArrayList(PlanExecutionKeys.metadata, PlanExecutionKeys.governanceMetadata,

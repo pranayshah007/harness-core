@@ -6,9 +6,20 @@
  */
 package io.harness.pms.expressions;
 
+import io.harness.data.structure.HarnessStringUtils;
+import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.execution.ExpressionDetailResponse;
 import io.harness.execution.ExpressionDetails;
+import io.harness.execution.ExpressionDryRunDetail;
+import io.harness.execution.ExpressionDryRunResponse;
+import io.harness.execution.NodeExecution;
 import io.harness.execution.expansion.PlanExpansionService;
+import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.common.ExpressionMode;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
+import io.harness.pms.merger.YamlConfig;
+import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.sdk.PmsSdkInstance;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.yaml.utils.JsonPipelineUtils;
@@ -27,12 +38,46 @@ import javax.ejb.Singleton;
 public class ExpressionDetailServiceImpl implements ExpressionDetailService {
   @Inject PlanExpansionService expansionService;
   @Inject PmsSdkInstanceService pmsSdkInstanceService;
+  @Inject PmsEngineExpressionService engineExpressionService;
+  @Inject NodeExecutionService nodeExecutionService;
   private Set<String> terminalKeys = Set.of("output");
   @Override
   public ExpressionDetailResponse getExpressionResponse(String planExecutionId, String expression) {
     String expandedJson = expansionService.get(planExecutionId);
     JsonNode jsonNode = JsonPipelineUtils.readTree(expandedJson);
     return ExpressionDetailResponse.builder().expressionDetails(getAllExpressions(jsonNode, expression)).build();
+  }
+
+  @Override
+  public ExpressionDryRunResponse resolveExpressions(String planExecutionId, String yaml) {
+    NodeExecution nodeExecution =
+        nodeExecutionService.getPipelineNodeExecutionWithProjections(planExecutionId, NodeProjectionUtils.withAmbiance)
+            .get();
+
+    ExpressionDryRunResponse expressionDetailResponse = ExpressionDryRunResponse.builder().build();
+    //    String expandedJsonString = expansionService.get(planExecutionId);
+    YamlConfig yamlConfig = new YamlConfig(yaml);
+    Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
+    fullMap.keySet().forEach(key -> {
+      String value = HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(fullMap.get(key).toString());
+      List<String> innerExpressions = EngineExpressionEvaluator.findExpressions(value);
+      innerExpressions.forEach(expression -> {
+        //[TODO]: Handling full expressions for now. Will handle local expressions in next commit.
+        if (expression.startsWith("<+pipeline.") || expression.startsWith("<+stages.")) {
+          try {
+            Object evaluatedValue = engineExpressionService.resolve(
+                nodeExecution.getAmbiance(), expression, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
+            expressionDetailResponse.addExpressionDryRUnDetail(
+                ExpressionDryRunDetail.builder().expression(expression).isResolved(true).build());
+          } catch (Exception e) {
+            expressionDetailResponse.addExpressionDryRUnDetail(
+                ExpressionDryRunDetail.builder().expression(expression).isResolved(false).build());
+          }
+        }
+      });
+    });
+
+    return expressionDetailResponse;
   }
 
   public List<ExpressionDetails> getAllExpressions(JsonNode jsonNode, String expression) {

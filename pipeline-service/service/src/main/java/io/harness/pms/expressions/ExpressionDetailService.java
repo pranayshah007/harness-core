@@ -7,7 +7,9 @@
 package io.harness.pms.expressions;
 
 import io.harness.execution.ExpressionDetailResponse;
+import io.harness.execution.ExpressionDryRunResponse;
 
 public interface ExpressionDetailService {
   ExpressionDetailResponse getExpressionResponse(String planExecutionId, String expression);
+  ExpressionDryRunResponse resolveExpressions(String planExecutionId, String yaml);
 }
