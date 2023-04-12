@@ -7,19 +7,30 @@
 
 package io.harness.releaseradar.services;
 
-import com.google.inject.Inject;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.releaseradar.beans.EventFilter;
 import io.harness.releaseradar.entities.UserSubscription;
 import io.harness.repositories.UserSubscriptionRepository;
 
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class UserSubscriptionService {
   @Inject private UserSubscriptionRepository repository;
+
+  public List<String> jiraTicketsSubscribed() {
+    return StreamSupport.stream(repository.findAll().spliterator(), false)
+        .filter(userSubscription
+            -> userSubscription.getFilter() != null && isNotEmpty(userSubscription.getFilter().getJiraId()))
+        .map(UserSubscription::getFilter)
+        .map(EventFilter::getJiraId)
+        .collect(Collectors.toList());
+  }
 
   public List<UserSubscription> getAllSubscriptions(EventFilter filter) {
     List<UserSubscription> subscriptions = new ArrayList<>();
@@ -38,7 +49,7 @@ public class UserSubscriptionService {
         && filter.getBuildVersion().equalsIgnoreCase(userSubscription.getFilter().getBuildVersion())
         || filter.getEnvironment() != null && filter.getEnvironment() == userSubscription.getFilter().getEnvironment()
         || filter.getEventType() != null && filter.getEventType() == userSubscription.getFilter().getEventType()
-        || EmptyPredicate.isNotEmpty(filter.getRelease())
+        || isNotEmpty(filter.getRelease())
         && filter.getRelease().equalsIgnoreCase(userSubscription.getFilter().getRelease());
   }
 }
