@@ -18,4 +18,5 @@ public class EventFilter {
   String buildVersion;
   String release;
   String serviceName;
+  String jiraId;
 }

@@ -7,18 +7,17 @@
 
 package io.harness.releaseradar.util;
 
+import lombok.experimental.UtilityClass;
+
 import java.util.Base64;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
+@UtilityClass
 public class SlackWebhookEncryptionUtil {
-  private final String secretKey;
+  private final String secretKey = "1d69b3e5f5d24a5a94a65bb5b719d209";
   private static final String ALGORITHM = "AES";
   private static final String CIPHER_TRANSFORMATION = "AES/ECB/PKCS5Padding";
-
-  public SlackWebhookEncryptionUtil() {
-    this.secretKey = String.valueOf(System.getProperty("user.name").hashCode());
-  }
 
   public String encrypt(String webhookUrl) throws Exception {
     SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getBytes(), ALGORITHM);

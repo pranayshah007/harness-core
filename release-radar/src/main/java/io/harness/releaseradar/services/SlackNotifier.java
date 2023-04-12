@@ -10,10 +10,12 @@ package io.harness.releaseradar.services;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.releaseradar.beans.EventNotifyData;
 
+import com.google.inject.Singleton;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+@Singleton
 public class SlackNotifier {
   public boolean notify(String webhookUrl, EventNotifyData data) throws IOException {
     try {
@@ -23,7 +25,7 @@ public class SlackNotifier {
       conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
       String payload = "{\"text\": \""
-          + "Release Notification"
+          + "*Release Notification*"
           + "\", \"attachments\": [{\"text\": \"" + eventDataToString(data) + "\"}]}";
 
       conn.setDoOutput(true);
@@ -44,22 +46,22 @@ public class SlackNotifier {
   private static String eventDataToString(EventNotifyData eventData) {
     StringBuilder sb = new StringBuilder();
     if (eventData.getEnvironment() != null) {
-      sb.append("Environment: ").append(eventData.getEnvironment()).append("\n");
+      sb.append("*Environment:* ").append(eventData.getEnvironment()).append("\n");
     }
     if (eventData.getEventType() != null) {
-      sb.append("Event Type: ").append(eventData.getEventType()).append("\n");
+      sb.append("*Event Type:* ").append(eventData.getEventType()).append("\n");
     }
 
     if (eventData.getBuildVersion() != null) {
-      sb.append("Build Version: ").append(eventData.getBuildVersion()).append("\n");
+      sb.append("*Build Version:* ").append(eventData.getBuildVersion()).append("\n");
     }
 
     if (EmptyPredicate.isNotEmpty(eventData.getRelease())) {
-      sb.append("Release: ").append(eventData.getRelease()).append("\n");
+      sb.append("*Release:* ").append(eventData.getRelease()).append("\n");
     }
 
     if (EmptyPredicate.isNotEmpty(eventData.getServiceName())) {
-      sb.append("Service Name: ").append(eventData.getServiceName()).append("\n");
+      sb.append("*Service Name:* ").append(eventData.getServiceName()).append("\n");
     }
     // Add any other fields as needed
     return sb.toString();

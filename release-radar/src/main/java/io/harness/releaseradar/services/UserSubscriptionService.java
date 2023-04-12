@@ -7,19 +7,31 @@
 
 package io.harness.releaseradar.services;
 
-import com.google.inject.Inject;
-import io.harness.data.structure.EmptyPredicate;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.releaseradar.beans.EventFilter;
 import io.harness.releaseradar.entities.UserSubscription;
 import io.harness.repositories.UserSubscriptionRepository;
 
+import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class UserSubscriptionService {
   @Inject private UserSubscriptionRepository repository;
+
+  public List<String> jiraTicketsSubscribed() {
+    return StreamSupport.stream(repository.findAll().spliterator(), false)
+        .filter(userSubscription
+            -> userSubscription.getFilter() != null && isNotEmpty(userSubscription.getFilter().getJiraId()))
+        .map(UserSubscription::getFilter)
+        .map(EventFilter::getJiraId)
+        .collect(Collectors.toList());
+  }
 
   public List<UserSubscription> getAllSubscriptions(EventFilter filter) {
     List<UserSubscription> subscriptions = new ArrayList<>();
@@ -31,14 +43,35 @@ public class UserSubscriptionService {
     return subscriptions;
   }
 
+  public List<UserSubscription> getAllSubscriptions(Collection<String> jiraIds) {
+    List<UserSubscription> subscriptions = new ArrayList<>();
+    repository.findAll().forEach(userSubscription -> {
+      if (isSubscribed(jiraIds, userSubscription)) {
+        subscriptions.add(userSubscription);
+      }
+    });
+    return subscriptions;
+  }
+
   private static boolean isSubscribed(EventFilter filter, UserSubscription userSubscription) {
-    return isNotEmpty(filter.getServiceName())
-        && filter.getServiceName().equalsIgnoreCase(userSubscription.getFilter().getServiceName())
-        || isNotEmpty(filter.getBuildVersion())
-        && filter.getBuildVersion().equalsIgnoreCase(userSubscription.getFilter().getBuildVersion())
-        || filter.getEnvironment() != null && filter.getEnvironment() == userSubscription.getFilter().getEnvironment()
-        || filter.getEventType() != null && filter.getEventType() == userSubscription.getFilter().getEventType()
-        || EmptyPredicate.isNotEmpty(filter.getRelease())
-        && filter.getRelease().equalsIgnoreCase(userSubscription.getFilter().getRelease());
+    EventFilter userFilter = userSubscription.getFilter();
+    return (isEmpty(userFilter.getServiceName())
+               || userFilter.getServiceName().equalsIgnoreCase(filter.getServiceName()))
+
+        && (isEmpty(userFilter.getBuildVersion())
+            || userFilter.getBuildVersion().equalsIgnoreCase(filter.getBuildVersion()))
+
+        && (userFilter.getEnvironment() == null || filter.getEnvironment() == userFilter.getEnvironment())
+
+        && (userFilter.getEventType() == null || filter.getEventType() == userFilter.getEventType())
+
+        && (isEmpty(userFilter.getRelease()) || userFilter.getRelease().equalsIgnoreCase(filter.getRelease()))
+
+        && (isEmpty(userFilter.getJiraId()) || userFilter.getJiraId().equalsIgnoreCase(filter.getJiraId()));
+  }
+
+  private static boolean isSubscribed(Collection<String> jiraIds, UserSubscription userSubscription) {
+    EventFilter userFilter = userSubscription.getFilter();
+    return isNotEmpty(userFilter.getJiraId()) && jiraIds.contains(userFilter.getJiraId());
   }
 }
