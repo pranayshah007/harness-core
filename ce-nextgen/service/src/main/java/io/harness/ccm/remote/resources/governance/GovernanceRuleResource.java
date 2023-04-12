@@ -775,4 +775,33 @@ public class GovernanceRuleResource {
 
     return ResponseDTO.newResponse(response);
   }
+
+  @NextGenManagerAuth
+  @POST
+  @Path("ruleValidate")
+  @Timed
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @ExceptionMetered
+  @ApiOperation(value = "Validate a rule", nickname = "ValidateRule")
+  @LogAccountIdentifier
+  @Operation(operationId = "ValidateRule", description = "Validate a Rule .", summary = "Validate a rule",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "newly created rule", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public void
+  validateRule(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                   NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @RequestBody(
+          required = true, description = "Request body containing Rule uuid") @Valid CreateRuleDTO generateRule) {
+    if (generateRule == null) {
+      throw new InvalidRequestException(MALFORMED_ERROR);
+    }
+    Rule validateRule = generateRule.getRule();
+    validateRule.toDTO();
+    governanceRuleService.validateAWSSchema(validateRule);
+    governanceRuleService.custodianValidate(validateRule);
+  }
 }
