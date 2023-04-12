@@ -112,7 +112,7 @@ func (r *runTask) Run(ctx context.Context) (map[string]string, int32, error) {
 				// If there's an error in collecting reports, we won't retry but
 				// the step will be marked as an error
 				r.log.Errorw("unable to collect test reports", zap.Error(err))
-				return nil, r.numRetries, err
+				return o, r.numRetries, err
 			}
 			return o, i, nil
 		}
@@ -124,9 +124,9 @@ func (r *runTask) Run(ctx context.Context) (map[string]string, int32, error) {
 		if errc != nil {
 			r.log.Errorw("error while collecting test reports", zap.Error(errc))
 		}
-		return nil, r.numRetries, err
+		return o, r.numRetries, err
 	}
-	return nil, r.numRetries, err
+	return o, r.numRetries, err
 }
 
 func (r *runTask) execute(ctx context.Context, retryCount int32) (map[string]string, error) {
@@ -168,7 +168,9 @@ func (r *runTask) execute(ctx context.Context, retryCount int32) (map[string]str
 	}
 
 	if err != nil {
-		return nil, err
+	    tempOutput := make(map[string]string)
+	    tempOutput["autoheal"] = "autoheal link"
+		return tempOutput, err
 	}
 
 	stepOutput := make(map[string]string)
@@ -176,8 +178,10 @@ func (r *runTask) execute(ctx context.Context, retryCount int32) (map[string]str
 		var err error
 		outputVars, err := fetchOutputVariables(outputFile, r.fs, r.log)
 		if err != nil {
+			tempOutput := make(map[string]string)
+        	tempOutput["autoheal"] = "autoheal link"
 			logCommandExecErr(r.log, "error encountered while fetching output of run step", r.id, cmdToExecute, retryCount, start, err)
-			return nil, err
+			return tempOutput, err
 		}
 
 		stepOutput = outputVars

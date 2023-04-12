@@ -97,8 +97,10 @@ func (e *runStep) execute(ctx context.Context) (*output.StepOutput, int32, error
 	arg := e.getExecuteStepArg()
 	ret, err := c.ExecuteStep(ctx, arg, grpc_retry.WithMax(maxAddonRetries))
 	if err != nil {
+		stepOutput := &output.StepOutput{}
+    	stepOutput.Output.Variables = ret.GetOutput()
 		e.log.Errorw("Execute run step RPC failed", "step_id", e.id, "elapsed_time_ms", utils.TimeSince(st), zap.Error(err))
-		return nil, int32(1), err
+		return stepOutput, int32(1), err
 	}
 	e.log.Infow("Successfully executed step", "elapsed_time_ms", utils.TimeSince(st))
 	stepOutput := &output.StepOutput{}
