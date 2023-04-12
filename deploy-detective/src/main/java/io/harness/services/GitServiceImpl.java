@@ -10,11 +10,11 @@ package io.harness.services;
 import io.harness.deploydetective.beans.CommitDetails;
 import io.harness.deploydetective.beans.CommitDetailsRequest;
 import io.harness.deploydetective.clients.GitHubApiClient;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class GitServiceImpl implements GitService {
@@ -27,7 +27,7 @@ public class GitServiceImpl implements GitService {
     List<CommitDetails> commitDetailsList = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
       List<GitHubApiClient.Commit> commitList =
-          gitHubApiClient.listCommits("harness", "harness-core", "GITHUB_API_KEY", i);
+          gitHubApiClient.listCommits("harness", "harness-core", GITHUB_API_KEY, i);
       githubCommitList.addAll(commitList);
     }
 
