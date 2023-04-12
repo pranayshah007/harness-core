@@ -19,11 +19,16 @@ public class HarnessEnvServiceImpl implements HarnessEnvService {
         Map<Environment, EnvDeploymentStatus> deploymentStatusMap = new HashMap<>();
 
         Arrays.stream(Environment.values()).forEach(environment -> {
-            String url = environment.getVersionUrlTemplate();
-            url = url.replace(Environment.SERVICE_PLACEHOLDER, service.getVersionUrlKeyword());
-            HarnessClient.VersionInfo versionInfo = harnessClient.getCurrentVersionStatus(url);
-            deploymentStatusMap.put(environment, EnvDeploymentStatus.toEnvDeploymentStatus(versionInfo));
+            deploymentStatusMap.put(environment, getDeploymentStatus(service, environment));
         });
         return deploymentStatusMap;
+    }
+
+    @Override
+    public EnvDeploymentStatus getDeploymentStatus(Service service, Environment environment) {
+        String url = environment.getVersionUrlTemplate();
+        url = url.replace(Environment.SERVICE_PLACEHOLDER, service.getVersionUrlKeyword());
+        HarnessClient.VersionInfo versionInfo = harnessClient.getCurrentVersionStatus(url);
+        return EnvDeploymentStatus.toEnvDeploymentStatus(versionInfo);
     }
 }

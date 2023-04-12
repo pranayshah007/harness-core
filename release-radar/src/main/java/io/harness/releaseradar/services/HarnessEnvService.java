@@ -8,4 +8,6 @@ import java.util.Map;
 
 public interface HarnessEnvService {
     Map<Environment, EnvDeploymentStatus> getDeploymentStatusForAllEnvs(Service service);
+
+    EnvDeploymentStatus getDeploymentStatus(Service service, Environment environment);
 }

@@ -5,6 +5,7 @@ import io.harness.releaseradar.beans.CommitDetailsRequest;
 import io.harness.releaseradar.clients.GitHubApiClient;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,7 @@ public class GitServiceImpl implements GitService {
         }
 
         githubCommitList.forEach(commit -> {
-            if (commit.getCommit().getMessage().contains(commitDetailsRequest.getSearchKeyword())) {
+            if (StringUtils.isEmpty(commitDetailsRequest.getSearchKeyword()) || commit.getCommit().getMessage().contains(commitDetailsRequest.getSearchKeyword())) {
                 commitDetailsList.add(CommitDetails.toCommitDetails(commit));
             }
         });

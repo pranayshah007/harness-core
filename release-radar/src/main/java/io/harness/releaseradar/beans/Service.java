@@ -14,4 +14,8 @@ public enum Service {
     public String getVersionUrlKeyword() {
         return versionUrlKeyword;
     }
+
+    public static Service getService(String serviceName) {
+        return Service.valueOf(serviceName);
+    }
 }

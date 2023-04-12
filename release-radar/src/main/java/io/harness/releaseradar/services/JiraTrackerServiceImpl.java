@@ -45,4 +45,9 @@ public class JiraTrackerServiceImpl implements JiraTrackerService {
                 .commitDetailsListMap(commitDetailsListMap)
                 .build();
     }
+
+    @Override
+    public void getJiraTimeline(String jiraId) {
+
+    }
 }
