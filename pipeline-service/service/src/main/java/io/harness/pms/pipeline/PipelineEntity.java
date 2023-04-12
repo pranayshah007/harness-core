@@ -143,6 +143,7 @@ public class PipelineEntity implements GitAware, GitSyncableEntity, PersistentEn
   @Trimmed @NotEmpty String projectIdentifier;
   @NotEmpty String identifier;
   @Wither @Setter @NonFinal Boolean isDraft;
+  @Wither @Setter @NonFinal Boolean isGolden;
 
   @Wither @NotEmpty @NonFinal @Setter String yaml;
 

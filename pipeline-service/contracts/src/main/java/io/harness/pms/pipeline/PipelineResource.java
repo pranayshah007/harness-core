@@ -151,7 +151,8 @@ public interface PipelineResource {
           hidden = true) @QueryParam(NGCommonEntityConstants.DESCRIPTION_KEY) String pipelineDescription,
       @Parameter(description = PipelineResourceConstants.PIPELINE_DRAFT_PARAM_MESSAGE, required = false,
           hidden = true) @QueryParam(NGCommonEntityConstants.DRAFT_KEY) Boolean isDraft,
-      @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo,
+      @Parameter(description = "Golden Pipeline or not", required = false, hidden = true) @QueryParam(
+          "isGolden") Boolean isGolden @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo,
       @RequestBody(required = true, description = "Pipeline YAML", content = {
         @Content(mediaType = "application/yaml",
             examples = @ExampleObject(name = "Create", summary = "Sample Create Pipeline YAML",

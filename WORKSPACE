@@ -5518,6 +5518,21 @@ maven_install(
             group = "com.coveo",
             version = "3.0.2",
         ),
+        maven.artifact(
+            artifact ="service",
+            group = "com.theokanning.openai-gpt3-java",
+            version = "0.12.0",
+        ),
+        maven.artifact(
+            artifact ="api",
+            group = "com.theokanning.openai-gpt3-java",
+            version = "0.12.0",
+        ),
+        maven.artifact(
+            artifact ="client",
+            group = "com.theokanning.openai-gpt3-java",
+            version = "0.12.0",
+        ),
         maven_test_artifact("com.github.tomakehurst:wiremock-jre8-standalone:2.27.2"),
         maven_test_artifact("com.icegreen:greenmail:1.5.0"),
         maven_test_artifact("com.squareup.okhttp3:mockwebserver:4.9.2"),
@@ -5553,6 +5568,7 @@ maven_install(
         "https://harness-artifactory.harness.io/artifactory/portal-maven",
         "https://harness.jfrog.io/artifactory/harness-internal",
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
+        "https://repo1.maven.org/maven2",
     ],
     version_conflict_policy = "pinned",
 )

@@ -109,7 +109,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       @NotNull String yaml) {
     String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
-        accountId, orgId, projectId, pipelineName, yaml, isDraft, pipelineVersion);
+        accountId, orgId, projectId, pipelineName, yaml, null, isDraft, pipelineVersion);
     log.info(String.format("Creating pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
 
@@ -121,11 +121,11 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   public ResponseDTO<PipelineSaveResponse> createPipelineV2(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId, String pipelineIdentifier,
-      String pipelineName, String pipelineDescription, Boolean isDraft, GitEntityCreateInfoDTO gitEntityCreateInfo,
-      @NotNull String yaml) {
+      String pipelineName, String pipelineDescription, Boolean isDraft, Boolean isGolden,
+      GitEntityCreateInfoDTO gitEntityCreateInfo, @NotNull String yaml) {
     String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
-        accountId, orgId, projectId, pipelineName, yaml, isDraft, pipelineVersion);
+        accountId, orgId, projectId, pipelineName, yaml, isGolden, isDraft, pipelineVersion);
     log.info(String.format("Creating pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
     PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndCreatePipeline(pipelineEntity, false);

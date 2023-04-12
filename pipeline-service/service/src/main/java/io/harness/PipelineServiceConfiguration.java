@@ -94,6 +94,8 @@ public class PipelineServiceConfiguration extends Configuration {
   public static final String NG_TRIGGER_RESOURCE_PACKAGE = "io.harness.ngtriggers";
   public static final String FILTER_PACKAGE = "io.harness.filter";
   public static final String ENFORCEMENT_PACKAGE = "io.harness.enforcement";
+  private static final String OPENAI_RESOURCE_PACKAGE = "io.harness.openai";
+
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
 
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
@@ -224,7 +226,7 @@ public class PipelineServiceConfiguration extends Configuration {
         .stream()
         .filter(klazz
             -> StringUtils.startsWithAny(klazz.getPackage().getName(), RESOURCE_PACKAGE, NG_TRIGGER_RESOURCE_PACKAGE,
-                FILTER_PACKAGE, ENFORCEMENT_PACKAGE))
+                FILTER_PACKAGE, ENFORCEMENT_PACKAGE, OPENAI_RESOURCE_PACKAGE))
         .collect(Collectors.toSet());
   }
 
