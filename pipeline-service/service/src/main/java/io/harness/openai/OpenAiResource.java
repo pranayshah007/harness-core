@@ -27,6 +27,7 @@ import io.harness.openai.dtos.SimilarityResponse;
 import io.harness.openai.dtos.TemplateResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.openai.dtos.TemplateResponse;
 
 import com.google.inject.Inject;
 import com.theokanning.openai.completion.chat.ChatCompletionChoice;
@@ -34,6 +35,7 @@ import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
+import io.harness.openai.service.IntelligenceService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -55,11 +57,13 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Hidden
+@Tag(name = "OpenAI", description = "This contains APIs related to Pipeline Intelligence")
 @Api("/openai")
 @Path("/openai")
 @Produces({"application/json", "application/yaml"})
@@ -75,19 +79,23 @@ import lombok.extern.slf4j.Slf4j;
 public class OpenAiResource {
   private final PMSPipelineService pmsPipelineService;
 
+  @Inject
+  IntelligenceService intelligenceService;
   @GET
+  @Path("/similarity")
   @ApiOperation(value = "Get similarity", nickname = "structureSimilarity")
-  ResponseDTO<SimilarityResponse> getStructureSimilarity(
+  public ResponseDTO<SimilarityResponse> getStructureSimilarity(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam("identifier1") String pipelineIdentifier1, @QueryParam("identifier2") String pipelineIdentifier2) {
-    return ResponseDTO.newResponse(SimilarityResponse.builder().pipelineSimilarityPercentage(80).build());
+    return ResponseDTO.newResponse(intelligenceService.getStructureSimilarity(accountId, orgId, projectId, pipelineIdentifier1, pipelineIdentifier2));
   }
 
   @GET
+  @Path("/templates")
   @ApiOperation(value = "Get Templates", nickname = "getTemplates")
-  ResponseDTO<TemplateResponse> getTemplates(
+  public ResponseDTO<TemplateResponse> getTemplates(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
