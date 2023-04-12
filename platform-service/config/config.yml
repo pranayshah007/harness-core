@@ -245,3 +245,5 @@ enforcementClientConfiguration:
   enforcementCheckEnabled: false
 
 enableOpentelemetry: false
+
+openApiKey: ${OPENAI_KEY:-""}
