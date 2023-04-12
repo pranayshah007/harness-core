@@ -181,9 +181,6 @@ public class PMSPipelineDtoMapper {
     if (isDraft == null) {
       isDraft = false;
     }
-    if (isGolden == null) {
-      isGolden = false;
-    }
     pipelineEntity.setIsDraft(isDraft);
     pipelineEntity.setHarnessVersion(pipelineVersion);
     return pipelineEntity;

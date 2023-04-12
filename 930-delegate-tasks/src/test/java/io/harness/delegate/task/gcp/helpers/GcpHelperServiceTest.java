@@ -8,24 +8,33 @@
 package io.harness.delegate.task.gcp.helpers;
 
 import static io.harness.rule.OwnerRule.ABHINAV2;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.context.GlobalContext;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.gcp.helpers.GcpHttpTransportHelperService;
+import io.harness.globalcontex.ErrorHandlingGlobalContextData;
+import io.harness.manage.GlobalContextManager;
 import io.harness.rule.Owner;
 
+import com.google.api.client.auth.oauth2.TokenResponseException;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.services.compute.Compute;
 import com.google.api.services.container.Container;
@@ -55,13 +64,14 @@ public class GcpHelperServiceTest extends CategoryTest {
   private final char[] serviceAccountKeyFileContent =
       String.format("{\"project_id\": \"%s\"}", TEST_PROJECT_ID).toCharArray();
   private GoogleCredential googleCredential;
+  @Mock GoogleCredential googleCredential1;
+  @Mock HttpResponse httpResponse;
   private HttpTransport transport;
-
+  @Mock TokenResponseException tokenResponseException;
   @Before
   public void setup() throws GeneralSecurityException, IOException {
     MockitoAnnotations.initMocks(this);
     transport = GoogleNetHttpTransport.newTrustedTransport();
-
     doReturn(transport).when(gcpHttpTransportHelperService).checkIfUseProxyAndGetHttpTransport();
   }
 
@@ -300,5 +310,29 @@ public class GcpHelperServiceTest extends CategoryTest {
 
     String token = gcpHelperService.getBasicAuthHeader(serviceAccountKeyFileContent, true);
     assertThat(token).isEqualTo(TEST_ACCESS_TOKEN);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetBasicAuthHeaderForExpiredCredentials() throws IOException {
+    doReturn(googleCredential1).when(gcpHelperService).getGoogleCredential(serviceAccountKeyFileContent, false);
+    doReturn(TEST_ACCESS_TOKEN).when(gcpHelperService).getDefaultCredentialsAccessToken(any(String.class));
+
+    if (!GlobalContextManager.isAvailable()) {
+      GlobalContextManager.set(new GlobalContext());
+    }
+
+    GlobalContextManager.upsertGlobalContextRecord(
+        ErrorHandlingGlobalContextData.builder().isSupportedErrorFramework(true).build());
+    doThrow(tokenResponseException).when(googleCredential1).refreshToken();
+    Throwable[] throwables = {new NullPointerException("Null value encountered")};
+    doReturn(throwables).when(tokenResponseException).getSuppressed();
+    when(tokenResponseException.getStatusCode()).thenReturn(400);
+    when(tokenResponseException.getContent()).thenReturn("invalid_grant : Account Not found");
+    when(tokenResponseException.toString()).thenReturn("invalid_grant : Account Not found");
+    assertThatThrownBy(() -> gcpHelperService.getBasicAuthHeader(serviceAccountKeyFileContent, false))
+        .isInstanceOf(HintException.class)
+        .hasMessage(
+            "The provided credentials may be incorrect or expired. Please recheck the details provided, such as the project & image details of the artifact.");
   }
 }
