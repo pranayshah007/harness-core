@@ -8,4 +8,5 @@
 package io.harness.openai;
 
 public class OpenAiConstants {
+    public static final String openAIKey = "";
 }

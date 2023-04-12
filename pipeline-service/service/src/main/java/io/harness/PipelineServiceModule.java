@@ -18,6 +18,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJEC
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
+import com.theokanning.openai.service.OpenAiService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.ResourceTypeConstants;
@@ -827,4 +828,13 @@ public class PipelineServiceModule extends AbstractModule {
   public Integer getjsonExpansionRequestBatchSize() {
     return configuration.getJsonExpansionBatchSize();
   }
+
+  @Provides
+  @Singleton
+  @Named("openAiService")
+  public OpenAiService getOpenAiService() {
+    String token = System.getenv("OPENAI_API_KEY");
+    return new OpenAiService(token, java.time.Duration.ofMinutes(1));
+  }
+
 }
