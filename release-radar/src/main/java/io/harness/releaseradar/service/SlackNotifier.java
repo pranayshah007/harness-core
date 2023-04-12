@@ -13,7 +13,6 @@ import io.harness.releaseradar.beans.EventNotifyData;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
 
 public class SlackNotifier {
   public boolean notify(String webhookUrl, EventNotifyData data) throws IOException {

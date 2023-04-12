@@ -28,5 +28,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class UserSubscription {
   private String slackUserId;
   private String email;
+  private String slackWebhookUrlEncrypted;
   @NotNull private EventFilter filter;
 }
