@@ -31,7 +31,7 @@ public class ExpandedJsonFunctorUtils {
   // Todo: Take this via evaluator
   List<String> PREFIX_COMBINATIONS = Lists.newArrayList(OUTCOME, STEP_INPUTS);
 
-  Map<String, String> GROUP_ALIASES =
+  public Map<String, String> GROUP_ALIASES =
       Map.of(YAMLFieldNameConstants.STAGE, StepOutcomeGroup.STAGE.name(), YAMLFieldNameConstants.STEP,
           StepOutcomeGroup.STEP.name(), YAMLFieldNameConstants.STEP_GROUP, StepCategory.STEP_GROUP.name());
 
@@ -190,6 +190,16 @@ public class ExpandedJsonFunctorUtils {
     if (shouldAddExpandedJsonKeyword) {
       postFix.add("expandedJson");
     }
+    postFix.add(groupExpressions);
+    postFix.addAll(expressionKeys.subList(1, expressionKeys.size()));
+    return String.join(".", postFix);
+  }
+
+  public String getSuggestedExpressionForGroup(
+      List<Level> levels, String group, List<String> expressionKeys, Map<String, String> groupExpressionToGroup) {
+    String groupExpressions = expandGroupExpression(levels, group);
+    groupExpressionToGroup.put(groupExpressions, group);
+    List<String> postFix = new ArrayList<>();
     postFix.add(groupExpressions);
     postFix.addAll(expressionKeys.subList(1, expressionKeys.size()));
     return String.join(".", postFix);

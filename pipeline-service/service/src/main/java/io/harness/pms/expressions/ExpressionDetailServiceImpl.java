@@ -6,8 +6,12 @@
  */
 package io.harness.pms.expressions;
 
+import static io.harness.expression.common.ExpressionConstants.EXPR_END;
+import static io.harness.expression.common.ExpressionConstants.EXPR_START;
+
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.expressions.functors.ExpandedJsonFunctorUtils;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.execution.ExpressionDetailResponse;
 import io.harness.execution.ExpressionDetails;
@@ -65,28 +69,52 @@ public class ExpressionDetailServiceImpl implements ExpressionDetailService {
       String value = HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(fullMap.get(key).toString());
       List<String> innerExpressions = EngineExpressionEvaluator.findExpressions(value);
       innerExpressions.forEach(expression -> {
+        String fqnTillLastGroup = getFQNTillLastGroup(key.getExpressionFqn(), expendedJson);
+        Ambiance ambiance = fqnToAmbianceMap.get(fqnTillLastGroup);
         try {
-          Object evaluatedValue = engineExpressionService.resolve(
-              fqnToAmbianceMap.get(getFQNTillLastGroup(key.getExpressionFqn(), expendedJson)), expression,
-              ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
+          Object evaluatedValue =
+              engineExpressionService.resolve(ambiance, expression, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
           expressionDetailResponse.addExpressionDryRUnDetail(ExpressionDryRunDetail.builder()
                                                                  .expression(expression)
                                                                  .resolvedValue((String) evaluatedValue)
                                                                  .isResolved(true)
                                                                  .build());
         } catch (Exception e) {
-          String suggestedExpression = ExpressionChecker.checkExpression(expression, expandedJsonMap);
+          String suggestedExpression;
+          if (expression.startsWith("<+pipeline.")) {
+            suggestedExpression = ExpressionChecker.checkExpression(expression, expandedJsonMap);
+          } else {
+            suggestedExpression = handleInvalidExpressionStartingFromGroup(ambiance, expression, expandedJsonMap);
+          }
           expressionDetailResponse.setSuccess(false);
-          expressionDetailResponse.addExpressionDryRUnDetail(ExpressionDryRunDetail.builder()
-                                                                 .expression(expression)
-                                                                 .suggestedExpression(suggestedExpression)
-                                                                 .isResolved(false)
-                                                                 .build());
+          expressionDetailResponse.addExpressionDryRUnDetail(
+              ExpressionDryRunDetail.builder()
+                  .expression(expression)
+                  .suggestedExpression(EngineExpressionEvaluator.createExpression(suggestedExpression))
+                  .isResolved(false)
+                  .build());
         }
       });
     });
 
     return expressionDetailResponse;
+  }
+
+  private String handleInvalidExpressionStartingFromGroup(
+      Ambiance ambiance, String expression, Map<String, Object> expandedJsonMap) {
+    expression = expression.replace(EXPR_START, "").replace(EXPR_END, "");
+    List<String> expressionKeys = Arrays.asList(expression.split("\\."));
+    if (ExpandedJsonFunctorUtils.GROUP_ALIASES.containsKey(expressionKeys.get(0))) {
+      Map<String, String> groupExpressionToGroupMap = new HashMap<>();
+      expression = ExpandedJsonFunctorUtils.getSuggestedExpressionForGroup(
+          new ArrayList<>(ambiance.getLevelsList()), expressionKeys.get(0), expressionKeys, groupExpressionToGroupMap);
+      expression = ExpressionChecker.checkExpression(expression, expandedJsonMap);
+
+      for (Map.Entry<String, String> entry : groupExpressionToGroupMap.entrySet()) {
+        expression = expression.replace(entry.getKey(), entry.getValue());
+      }
+    }
+    return expression;
   }
 
   public List<ExpressionDetails> getAllExpressions(JsonNode jsonNode, String expression) {
