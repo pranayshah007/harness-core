@@ -17,6 +17,8 @@ import io.harness.plancreator.execution.StepsExecutionConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.pluginstep.ContainerStepV2PluginProvider;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ConnectorDetails;
+import io.harness.pms.contracts.plan.ImageDetails;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.plan.PluginInfoProviderServiceGrpc;
@@ -26,8 +28,10 @@ import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
+import io.harness.steps.container.execution.ContainerExecutionConfig;
 import io.harness.steps.container.utils.K8sPodInitUtils;
 import io.harness.steps.plugin.InitContainerV2StepInfo;
+import io.harness.steps.plugin.StepInfo;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -38,9 +42,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -52,9 +53,10 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
   Map<ModuleType, PluginInfoProviderServiceGrpc.PluginInfoProviderServiceBlockingStub>
       pluginInfoProviderServiceBlockingStubMap;
   @Inject K8sPodInitUtils k8sPodInitUtils;
+  @Inject ContainerExecutionConfig containerExecutionConfig;
 
   @Override
-  public Map<String, PluginCreationResponse> getPluginsData(
+  public Map<StepInfo, PluginCreationResponse> getPluginsData(
       InitContainerV2StepInfo initContainerV2StepInfo, Ambiance ambiance) {
     Set<StepInfo> stepInfos = getStepInfos(initContainerV2StepInfo.getStepsExecutionConfig());
     return stepInfos.stream()
@@ -73,9 +75,28 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
             log.error("Encountered error in plugin info collection {}", pluginInfo.getError());
             throw new ContainerStepExecutionException(pluginInfo.getError().getMessagesList().toString());
           }
+          if (isEmpty(pluginInfo.getPluginDetails().getImageDetails().getConnectorDetails().getConnectorRef())) {
+            ConnectorDetails connectorDetails =
+                pluginInfo.getPluginDetails()
+                    .getImageDetails()
+                    .getConnectorDetails()
+                    .toBuilder()
+                    .setConnectorRef(containerExecutionConfig.getDefaultInternalImageConnector())
+                    .build();
+            ImageDetails imageDetails = pluginInfo.toBuilder()
+                                            .getPluginDetails()
+                                            .getImageDetails()
+                                            .toBuilder()
+                                            .setConnectorDetails(connectorDetails)
+                                            .build();
+            pluginInfo =
+                pluginInfo.toBuilder()
+                    .setPluginDetails(pluginInfo.getPluginDetails().toBuilder().setImageDetails(imageDetails).build())
+                    .build();
+          }
           return Pair.of(stepInfo, pluginInfo);
         })
-        .collect(Collectors.toMap(response -> response.getLeft().getStepUuid(), Pair::getRight));
+        .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
   }
 
   private ParallelStepElementConfig getParallelStepElementConfig(ExecutionWrapperConfig executionWrapperConfig) {
@@ -107,6 +128,7 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
                         .moduleType(moduleForStep.get())
                         .executionWrapperConfig(executionWrapperConfig)
                         .stepUuid(yamlNode.getUuid())
+                        .stepIdentifier(yamlNode.getIdentifier())
                         .build());
 
     } else if (executionWrapperConfig.getParallel() != null && !executionWrapperConfig.getParallel().isNull()) {
@@ -138,14 +160,5 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
         })
         .filter(Objects::nonNull)
         .findFirst();
-  }
-
-  @Value
-  @Builder
-  private static class StepInfo {
-    @Getter String stepUuid;
-    String stepType;
-    String moduleType;
-    ExecutionWrapperConfig executionWrapperConfig;
   }
 }

@@ -48,6 +48,13 @@ public interface DockerRegistryRestClient {
   Call<DockerImageTagResponse> listImageTagsByUrl(@Header("Authorization") String bearerAuthHeader, @Url String url);
 
   @Headers(
+      "Accept: application/vnd.docker.distribution.manifest.v1+json, application/vnd.docker.distribution.manifest.v1+prettyjws, application/vnd.docker.distribution.manifest.v2+json, application/vnd.docker.distribution.manifest.v2+prettyjws, application/vnd.oci.image.index.v2+json, application/vnd.oci.image.manifest.v2+json, application/vnd.oci.image.manifest.v1+json")
+  @GET("/v2/{imageName}/manifests/{tag}")
+  Call<DockerImageManifestResponse>
+  verifyImage(@Header("Authorization") String bearerAuthHeader,
+      @Path(value = "imageName", encoded = true) String imageName, @Path(value = "tag", encoded = true) String tag);
+
+  @Headers(
       "Accept: application/vnd.docker.distribution.manifest.v1+json, application/vnd.docker.distribution.manifest.v1+prettyjws")
   @GET("/v2/{imageName}/manifests/{tag}")
   Call<DockerImageManifestResponse>
@@ -55,7 +62,7 @@ public interface DockerRegistryRestClient {
       @Path(value = "imageName", encoded = true) String imageName, @Path(value = "tag", encoded = true) String tag);
 
   @Headers(
-      "Accept: application/vnd.docker.distribution.manifest.v2+json, application/vnd.docker.distribution.manifest.v2+prettyjws, application/vnd.oci.image.index.v2+json, application/vnd.oci.image.manifest.v2+json")
+      "Accept: application/vnd.docker.distribution.manifest.v2+json, application/vnd.docker.distribution.manifest.v2+prettyjws, application/vnd.oci.image.index.v2+json, application/vnd.oci.image.manifest.v2+json, application/vnd.oci.image.manifest.v1+json")
   @GET("/v2/{imageName}/manifests/{tag}")
   Call<DockerImageManifestResponse>
   getImageManifestV2(@Header("Authorization") String bearerAuthHeader,

@@ -13,6 +13,8 @@ import static io.harness.cvng.cdng.services.impl.CVNGNotifyEventListener.CVNG_OR
 import static io.harness.eventsframework.EventsFrameworkConstants.SRM_STATEMACHINE_EVENT;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
+import io.harness.SRMMongoPersistence;
+import io.harness.SRMPersistence;
 import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -526,6 +528,7 @@ public class CVServiceModule extends AbstractModule {
     install(new OpaClientModule(verificationConfiguration.getOpaClientConfig(),
         verificationConfiguration.getPolicyManagerSecret(), CV_NEXT_GEN.getServiceId()));
     bind(HPersistence.class).to(MongoPersistence.class);
+    bind(SRMPersistence.class).to(SRMMongoPersistence.class);
     bind(TimeSeriesRecordService.class).to(TimeSeriesRecordServiceImpl.class);
     bind(OrchestrationService.class).to(OrchestrationServiceImpl.class);
     bind(AnalysisStateMachineService.class).to(AnalysisStateMachineServiceImpl.class).in(Scopes.SINGLETON);
