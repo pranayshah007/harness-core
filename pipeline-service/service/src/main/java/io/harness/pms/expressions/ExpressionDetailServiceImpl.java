@@ -80,19 +80,16 @@ public class ExpressionDetailServiceImpl implements ExpressionDetailService {
                                                                  .isResolved(true)
                                                                  .build());
         } catch (Exception e) {
-          String suggestedExpression;
-          if (expression.startsWith("<+pipeline.")) {
-            suggestedExpression = ExpressionChecker.checkExpression(expression, expandedJsonMap);
-          } else {
-            suggestedExpression = handleInvalidExpressionStartingFromGroup(ambiance, expression, expandedJsonMap);
+          String suggestedExpression = handleInvalidExpressionStartingFromGroup(ambiance, expression, expandedJsonMap);
+          if (suggestedExpression.equals(expression)) {
+            suggestedExpression = null;
           }
           expressionDetailResponse.setSuccess(false);
-          expressionDetailResponse.addExpressionDryRUnDetail(
-              ExpressionDryRunDetail.builder()
-                  .expression(expression)
-                  .suggestedExpression(EngineExpressionEvaluator.createExpression(suggestedExpression))
-                  .isResolved(false)
-                  .build());
+          expressionDetailResponse.addExpressionDryRUnDetail(ExpressionDryRunDetail.builder()
+                                                                 .expression(expression)
+                                                                 .suggestedExpression(suggestedExpression)
+                                                                 .isResolved(false)
+                                                                 .build());
         }
       });
     });
@@ -113,8 +110,10 @@ public class ExpressionDetailServiceImpl implements ExpressionDetailService {
       for (Map.Entry<String, String> entry : groupExpressionToGroupMap.entrySet()) {
         expression = expression.replace(entry.getKey(), entry.getValue());
       }
+    } else if (expression.startsWith("pipeline.")) {
+      expression = ExpressionChecker.checkExpression(expression, expandedJsonMap);
     }
-    return expression;
+    return EngineExpressionEvaluator.createExpression(expression);
   }
 
   public List<ExpressionDetails> getAllExpressions(JsonNode jsonNode, String expression) {
