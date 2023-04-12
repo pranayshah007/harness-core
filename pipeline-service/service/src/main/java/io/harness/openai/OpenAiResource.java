@@ -22,22 +22,22 @@ import io.harness.openai.dtos.Policy;
 import io.harness.openai.dtos.SimilarityResponse;
 import io.harness.openai.dtos.TemplateResponse;
 import io.harness.openai.dtos.VerifyPoliciesResponse;
+import io.harness.openai.service.IntelligenceService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
-import io.harness.openai.dtos.TemplateResponse;
 
 import com.google.inject.Inject;
 import com.theokanning.openai.completion.chat.ChatCompletionChoice;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
-import io.harness.openai.service.IntelligenceService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -55,8 +55,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AccessLevel;
 import lombok.extern.slf4j.Slf4j;
 
@@ -76,8 +74,7 @@ public class OpenAiResource {
   @Inject PMSPipelineService pmsPipelineService;
   private Map<String, Object> policyRecsMap = new HashMap<>();
 
-  @Inject
-  IntelligenceService intelligenceService;
+  @Inject IntelligenceService intelligenceService;
   @GET
   @Path("/similarity")
   @ApiOperation(value = "Get similarity", nickname = "structureSimilarity")
@@ -86,7 +83,8 @@ public class OpenAiResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam("identifier1") String pipelineIdentifier1, @QueryParam("identifier2") String pipelineIdentifier2) {
-    return ResponseDTO.newResponse(intelligenceService.getStructureSimilarity(accountId, orgId, projectId, pipelineIdentifier1, pipelineIdentifier2));
+    return ResponseDTO.newResponse(intelligenceService.getStructureSimilarity(
+        accountId, orgId, projectId, pipelineIdentifier1, pipelineIdentifier2));
   }
 
   @GET
@@ -213,7 +211,7 @@ public class OpenAiResource {
 
   @GET
   @Path("/docs")
-  @ApiOperation(value = "Get Docs Query", nickname = "getTemplates")
+  @ApiOperation(value = "Get Docs Query", nickname = "getTemplatesOpenAI")
   public ResponseDTO<String> getDocs(@QueryParam("query") String query) {
     StringBuffer response = new StringBuffer();
     try {
