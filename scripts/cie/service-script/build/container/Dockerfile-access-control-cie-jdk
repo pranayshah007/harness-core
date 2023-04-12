@@ -6,7 +6,7 @@
 FROM us.gcr.io/platform-205701/ubi/ubi-java:8.7 as base
 
 # Add the capsule JAR and config.yml
-COPY --chown=65534:65534 access-control-capsule.jar /opt/harness/
+COPY --chown=65534:65534 accesscontrol-service-capsule.jar /opt/harness/
 COPY --chown=65534:65534 keystore.jks /opt/harness/
 COPY --chown=65534:65534 config.yml /opt/harness/
 COPY --chown=65534:65534 classpath_metadata.json /opt/harness/
