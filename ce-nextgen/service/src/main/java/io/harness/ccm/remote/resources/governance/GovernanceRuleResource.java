@@ -764,7 +764,8 @@ public class GovernanceRuleResource {
 
     String response = output;
     if (!isExplain) {
-      String regex = "(?<=```yaml)[\\s\\S]*?(?=```)";
+      output = output.replace("```yaml", "```");
+      String regex = "```([\\s\\S]*)```";
       Pattern pattern = Pattern.compile(regex);
       Matcher matcher = pattern.matcher(output);
       if (matcher.find()) {
