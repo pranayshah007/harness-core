@@ -18,7 +18,6 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJEC
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
-import com.theokanning.openai.service.OpenAiService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.ResourceTypeConstants;
@@ -232,6 +231,7 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import com.theokanning.openai.service.OpenAiService;
 import dev.morphia.converters.TypeConverter;
 import io.dropwizard.jackson.Jackson;
 import java.util.HashSet;
@@ -833,8 +833,7 @@ public class PipelineServiceModule extends AbstractModule {
   @Singleton
   @Named("openAiService")
   public OpenAiService getOpenAiService() {
-    String token = System.getenv("OPENAI_API_KEY");
+    String token = "";
     return new OpenAiService(token, java.time.Duration.ofMinutes(1));
   }
-
 }
