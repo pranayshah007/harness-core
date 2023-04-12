@@ -95,7 +95,7 @@ func (e *runStep) execute(ctx context.Context) (*output.StepOutput, int32, error
 
 	c := addonClient.Client()
 	arg := e.getExecuteStepArg()
-	ret, err := c.ExecuteStep(ctx, arg, grpc_retry.WithMax(maxAddonRetries))
+	ret, err := c.3(ctx, arg, grpc_retry.WithMax(maxAddonRetries))
 	if err != nil {
 		e.log.Errorw("Execute run step RPC failed", "step_id", e.id, "elapsed_time_ms", utils.TimeSince(st), zap.Error(err))
 		return nil, int32(1), err
