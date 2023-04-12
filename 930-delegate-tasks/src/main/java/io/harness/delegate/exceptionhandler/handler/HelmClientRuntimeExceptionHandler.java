@@ -68,6 +68,7 @@ import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 import static org.apache.commons.lang3.StringUtils.lowerCase;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.chatgpt.ChatGptApi;
 import io.harness.exception.HelmClientException;
 import io.harness.exception.HelmClientRuntimeException;
 import io.harness.exception.InvalidRequestException;
@@ -77,8 +78,10 @@ import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Singleton;
+import java.io.IOException;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.mongodb.core.aggregation.ComparisonOperators;
 
 @OwnedBy(CDP)
 @Singleton
@@ -92,8 +95,20 @@ public class HelmClientRuntimeExceptionHandler implements ExceptionHandler {
     final HelmClientRuntimeException helmClientRuntimeException = (HelmClientRuntimeException) exception;
     final HelmClientException cause = helmClientRuntimeException.getHelmClientException();
 
-    // handling common exceptions:
     final String lowerCaseMessage = lowerCase(cause.getMessage());
+
+    // over-riding using chatGPT
+    try {
+      String chatGPTResponse = ChatGptApi.askChatGpt(lowerCaseMessage);
+      return NestedExceptionUtils.hintWithExplanationException(
+          chatGPTResponse, "Not sure what the issue was so we have asked chatGPT", cause);
+    } catch (IOException e) {
+      return NestedExceptionUtils.hintWithExplanationException(
+          "Even chatGPT threw an exception. Only God can help you now", "No idea what the issue could be", cause);
+    }
+
+    /*
+    // handling common exceptions:
     if (lowerCaseMessage.contains(UNKNOWN_COMMAND_FLAG)) {
       return NestedExceptionUtils.hintWithExplanationException(
           HINT_UNKNOWN_COMMAND_FLAG, EXPLAIN_UNKNOWN_COMMAND_FLAG, cause);
@@ -121,6 +136,7 @@ public class HelmClientRuntimeExceptionHandler implements ExceptionHandler {
     }
 
     return new InvalidRequestException(defaultIfEmpty(cause.getMessage(), ""));
+     */
   }
 
   private WingsException handleRollbackException(HelmClientException helmClientException) {
