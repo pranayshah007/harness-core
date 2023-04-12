@@ -54,7 +54,7 @@ public class ExpressionDetailServiceImpl implements ExpressionDetailService {
         nodeExecutionService.getPipelineNodeExecutionWithProjections(planExecutionId, NodeProjectionUtils.withAmbiance)
             .get();
 
-    ExpressionDryRunResponse expressionDetailResponse = ExpressionDryRunResponse.builder().build();
+    ExpressionDryRunResponse expressionDetailResponse = ExpressionDryRunResponse.builder().isSuccess(true).build();
     //    String expandedJsonString = expansionService.get(planExecutionId);
     YamlConfig yamlConfig = new YamlConfig(yaml);
     Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
@@ -70,6 +70,7 @@ public class ExpressionDetailServiceImpl implements ExpressionDetailService {
             expressionDetailResponse.addExpressionDryRUnDetail(
                 ExpressionDryRunDetail.builder().expression(expression).isResolved(true).build());
           } catch (Exception e) {
+            expressionDetailResponse.setSuccess(false);
             expressionDetailResponse.addExpressionDryRUnDetail(
                 ExpressionDryRunDetail.builder().expression(expression).isResolved(false).build());
           }

@@ -16,7 +16,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.execution.ExpressionDetails;
-import io.harness.execution.expansion.ExpressionTestServiceImpl;
+import io.harness.pms.expressions.ExpressionDetailServiceImpl;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -30,8 +30,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @OwnedBy(PIPELINE)
-public class ExpressionTestServiceTest extends CategoryTest {
-  ExpressionTestServiceImpl expressionTestService = new ExpressionTestServiceImpl();
+public class ExpressionTestServiceDetail extends CategoryTest {
+  ExpressionDetailServiceImpl expressionTestService = new ExpressionDetailServiceImpl();
 
   @Before
   public void setUp() {}
