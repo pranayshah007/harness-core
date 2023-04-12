@@ -17,6 +17,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.openai.dtos.SimilarityResponse;
+import io.harness.openai.dtos.TemplateResponse;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -56,5 +57,16 @@ public class OpenAiResource {
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam("identifier1") String pipelineIdentifier1, @QueryParam("identifier2") String pipelineIdentifier2) {
     return ResponseDTO.newResponse(SimilarityResponse.builder().pipelineSimilarityPercentage(80).build());
+  }
+
+  @GET
+  @ApiOperation(value = "Get Templates", nickname = "getTemplates")
+  ResponseDTO<TemplateResponse> getTemplates(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @QueryParam("identifier1") String pipelineIdentifier1, @QueryParam("identifier2") String pipelineIdentifier2) {
+    return ResponseDTO.newResponse(
+        TemplateResponse.builder().templateYaml("").pipelineYaml1("sample").pipelineYaml2("sample").build());
   }
 }
