@@ -50,6 +50,8 @@ public class UserSubscriptionService {
         || filter.getEnvironment() != null && filter.getEnvironment() == userSubscription.getFilter().getEnvironment()
         || filter.getEventType() != null && filter.getEventType() == userSubscription.getFilter().getEventType()
         || isNotEmpty(filter.getRelease())
-        && filter.getRelease().equalsIgnoreCase(userSubscription.getFilter().getRelease());
+        && filter.getRelease().equalsIgnoreCase(userSubscription.getFilter().getRelease())
+        || isNotEmpty(filter.getJiraId())
+        && filter.getJiraId().equalsIgnoreCase(userSubscription.getFilter().getJiraId());
   }
 }

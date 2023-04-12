@@ -10,10 +10,12 @@ package io.harness.releaseradar.services;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.releaseradar.beans.EventNotifyData;
 
+import com.google.inject.Singleton;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+@Singleton
 public class SlackNotifier {
   public boolean notify(String webhookUrl, EventNotifyData data) throws IOException {
     try {

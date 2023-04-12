@@ -11,6 +11,7 @@ import io.harness.releaseradar.dto.EventRequestDTO;
 import io.harness.releaseradar.dto.EventResponseDTO;
 import io.harness.releaseradar.entities.EventEntity;
 import io.harness.releaseradar.mapper.EventMapper;
+import io.harness.releaseradar.services.EventProcessor;
 import io.harness.repositories.EventRepository;
 import io.harness.security.annotations.PublicApi;
 
@@ -31,9 +32,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EventCaptureResource {
   @Inject private EventRepository eventRepository;
+  @Inject private EventProcessor eventProcessor;
   @POST
   public EventResponseDTO capture(EventRequestDTO request) {
     EventEntity save = eventRepository.save(EventMapper.toDTO(request));
+
+    eventProcessor.process(save);
+
     return EventMapper.toDTO(save);
   }
 }
