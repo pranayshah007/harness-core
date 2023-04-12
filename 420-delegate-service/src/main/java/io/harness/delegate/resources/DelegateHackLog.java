@@ -14,5 +14,5 @@ public class DelegateHackLog {
   String delegateName;
   String delegateId;
   String accountId;
-  ErrorHack exceptionType;
+  String exceptionType;
 }

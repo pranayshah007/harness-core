@@ -26,6 +26,7 @@ import io.harness.logging.AutoLogContext;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.rest.RestResponse;
+import io.harness.security.annotations.PublicApi;
 import io.harness.service.intfc.DelegateStackdriverLogService;
 
 import software.wings.security.annotations.AuthRule;
@@ -79,15 +80,15 @@ public class DelegateStackdriverLogsResource {
   @GET
   @Path("errorLog")
   @ExceptionMetered
-  @AuthRule(permissionType = LOGGED_IN)
+  @PublicApi
   public RestResponse<List<DelegateHackLog>> getWarnLog(
       @QueryParam("accountId") String accountId, @BeanParam PageRequest pageRequest) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
-      long startTime = System.currentTimeMillis();
+      long endTime = System.currentTimeMillis();
       // Take endTime of 10mins back.
-      long endTime = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(10);
+      long startTime = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(1);
       return new RestResponse<List<DelegateHackLog>>(
-          delegateStackdriverLogService.fetchPageLogs(accountId, pageRequest, startTime, endTime));
+          delegateStackdriverLogService.fetchPageLogs(accountId, pageRequest, startTime / 1000, endTime / 1000));
     }
   }
 }

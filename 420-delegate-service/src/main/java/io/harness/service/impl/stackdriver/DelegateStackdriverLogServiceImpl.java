@@ -7,6 +7,8 @@
 
 package io.harness.service.impl.stackdriver;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 import io.harness.delegate.resources.DelegateHackLog;
 import io.harness.delegate.resources.DelegateStackDriverLog;
 import io.harness.logging.StackdriverLoggerFactory;
@@ -21,6 +23,7 @@ import com.google.cloud.logging.LogEntry;
 import com.google.cloud.logging.Logging;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,6 +36,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(onConstructor = @__({ @Inject }))
 public class DelegateStackdriverLogServiceImpl implements DelegateStackdriverLogService {
   private final InfraDownloadService infraDownloadService;
+
+  List<String> exceptionTypes;
 
   @Override
   public PageResponse<DelegateStackDriverLog> fetchPageLogs(
@@ -63,9 +68,19 @@ public class DelegateStackdriverLogServiceImpl implements DelegateStackdriverLog
         Logging.EntryListOption.sortOrder(Logging.SortingField.TIMESTAMP, Logging.SortingOrder.DESCENDING),
         Logging.EntryListOption.filter(QueryConstructor.getErrorLogQuery(accountId, start, end)));
 
+    String exceptionFromConfig = System.getenv("exceptionTypes");
+    if (isBlank(exceptionFromConfig)) {
+      exceptionTypes = Arrays.asList("Check your Azure credentials");
+    } else {
+      exceptionTypes = Arrays.asList(exceptionFromConfig.split(","));
+      log.info("Exception types from config are: {}", exceptionTypes);
+    }
+
     List<DelegateStackDriverLog> logLines = StreamSupport.stream(entries.iterateAll().spliterator(), false)
                                                 .map(logEntry -> LogEntryToDelegateStackDriverLogMapper.map(logEntry))
                                                 .collect(Collectors.toList());
+
+    log.info("Checking logLines {}", logLines.size());
 
     return logLines.stream()
         .filter(this::containsException)
@@ -74,8 +89,8 @@ public class DelegateStackdriverLogServiceImpl implements DelegateStackdriverLog
   }
 
   private boolean containsException(DelegateStackDriverLog delegateStackDriverLog) {
-    for (ErrorHack errorHack : ErrorHack.values()) {
-      if (delegateStackDriverLog.getException().contains(errorHack.getValue())) {
+    for (String errorMessage : exceptionTypes) {
+      if (delegateStackDriverLog.getException().contains(errorMessage)) {
         return true;
       }
     }
@@ -83,10 +98,11 @@ public class DelegateStackdriverLogServiceImpl implements DelegateStackdriverLog
   }
 
   private DelegateHackLog buildDelegateHackObject(DelegateStackDriverLog delegateStackDriverLog) {
-    ErrorHack foundError = null;
-    for (ErrorHack errorHack : ErrorHack.values()) {
-      if (delegateStackDriverLog.getException().contains(errorHack.getValue())) {
-        foundError = errorHack;
+    //  ErrorHack foundError = null;
+    String foundError = null;
+    for (String errorMessage : exceptionTypes) {
+      if (delegateStackDriverLog.getException().contains(errorMessage)) {
+        foundError = errorMessage;
         break;
       }
     }
