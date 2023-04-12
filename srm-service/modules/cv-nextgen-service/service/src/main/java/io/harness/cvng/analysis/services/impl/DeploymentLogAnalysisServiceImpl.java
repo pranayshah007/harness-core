@@ -672,6 +672,8 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
           getRadarChartLogAnalysisResult(deploymentLogAnalysis, deploymentLogAnalysisFilter));
     }
     Collections.sort(allLogAnalysisRadarChartListDTOs);
+    // chatGPT API.....
+
     if (allLogAnalysisRadarChartListDTOs.size() > 0) {
       setAngleAndRadiusForRadarChart(allLogAnalysisRadarChartListDTOs);
     }

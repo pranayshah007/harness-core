@@ -79,6 +79,8 @@ import io.harness.cvng.cdng.services.impl.ConfiguredVerifyStepMonitoredServiceRe
 import io.harness.cvng.cdng.services.impl.DefaultVerifyStepMonitoredServiceResolutionServiceImpl;
 import io.harness.cvng.cdng.services.impl.TemplateVerifyStepMonitoredServiceResolutionServiceImpl;
 import io.harness.cvng.cdng.services.impl.VerifyStepDemoServiceImpl;
+import io.harness.cvng.chatgpt.ChatGPTService;
+import io.harness.cvng.chatgpt.ChatGPTServiceImpl;
 import io.harness.cvng.client.ErrorTrackingService;
 import io.harness.cvng.client.ErrorTrackingServiceImpl;
 import io.harness.cvng.client.NextGenService;
@@ -1072,6 +1074,7 @@ public class CVServiceModule extends AbstractModule {
     bind(ServiceLevelIndicatorEntityAndDTOTransformer.class);
     bind(CompositeSLOService.class).to(CompositeSLOServiceImpl.class);
     bind(DebugService.class).to(DebugServiceImpl.class).in(Singleton.class);
+    bind(ChatGPTService.class).to(ChatGPTServiceImpl.class);
 
     MapBinder<String, ServiceLevelIndicatorTransformer> serviceLevelIndicatorFQDITransformerMapBinder =
         MapBinder.newMapBinder(binder(), String.class, ServiceLevelIndicatorTransformer.class);

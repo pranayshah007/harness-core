@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 public class LogAnalysisRadarChartListDTO implements Comparable<LogAnalysisRadarChartListDTO> {
   String message;
   String clusterId;
+  //
   /**
    * @deprecated
    */
