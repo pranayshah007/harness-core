@@ -49,6 +49,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
@@ -89,7 +90,7 @@ public class OpenAiResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam("identifier1") String pipelineIdentifier1, @QueryParam("identifier2") String pipelineIdentifier2) {
-    return ResponseDTO.newResponse(intelligenceService.getStructureSimilarity(accountId, orgId, projectId, pipelineIdentifier1, pipelineIdentifier2));
+    return ResponseDTO.newResponse(SimilarityResponse.builder().response(Arrays.asList("Similarity is 60%")).build());
   }
 
   @GET
@@ -100,8 +101,11 @@ public class OpenAiResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam("identifier1") String pipelineIdentifier1, @QueryParam("identifier2") String pipelineIdentifier2) {
-    return ResponseDTO.newResponse(
-        TemplateResponse.builder().templateYaml("").pipelineYaml1("sample").pipelineYaml2("sample").build());
+    return ResponseDTO.newResponse(TemplateResponse.builder()
+                                       .templateYaml("sample template")
+                                       .pipelineYaml1("sample yaml1")
+                                       .pipelineYaml2("sample yaml2")
+                                       .build());
   }
 
   @GET
@@ -119,44 +123,11 @@ public class OpenAiResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam("goldenPipelineId") String goldenPipelineIdentifier) {
-    OpenAiService service = new OpenAiService(OpenAiConstants.openAIKey, Duration.ofMinutes(10L));
-
-    Optional<PipelineEntity> goldenPipelineEntity =
-        pmsPipelineService.getPipeline(accountId, orgId, projectId, goldenPipelineIdentifier, false, false);
-
-    if (goldenPipelineEntity.isEmpty()) {
-      throw new InvalidRequestException("Golden Pipeline Identifier not found");
-    }
-
-    String queryForGPT =
-        "Given the following pipeline YAML as reference, provide verbal OPA policies that can be recommended to other similar Pipelines. \n Cover OPA policies such as manager approval, build environment, security checks, deployment type, and rollback strategy. \n"
-        + goldenPipelineEntity.get().getYaml();
-
-    List<ChatCompletionChoice> result = callChatGPT(service, queryForGPT);
-
-    List<String> policyRecs = new ArrayList<>();
-    for (ChatCompletionChoice choice : result) {
-      String message = choice.getMessage().getContent();
-      List<String> policyRec = List.of(message.split(".\\n\\n"));
-      policyRecs.addAll(policyRec);
-    }
-
-    List<Policy> policiesWithCode = new ArrayList<>();
-
-    for (String policyRec : policyRecs) {
-      String regoCode = "";
-      if (Character.isDigit(policyRec.charAt(0))) {
-        String queryForGPTCode =
-            "Create a rego for OPA rule. Format the output to include just the rego and no other text: " + policyRec;
-        result = callChatGPT(service, queryForGPTCode);
-        regoCode = result.get(0).getMessage().getContent();
-      }
-      policiesWithCode.add(new Policy(policyRec, regoCode));
-    }
-    GoldenPipelineResponse response = GoldenPipelineResponse.builder().policyRecommendations(policiesWithCode).build();
-
-    service.shutdownExecutor();
-    return ResponseDTO.newResponse(response);
+    return ResponseDTO.newResponse(
+        GoldenPipelineResponse.builder()
+            .policyRecommendations(
+                Arrays.asList(Policy.builder().response("Harness Approval Policy").regoCode("rego").build()))
+            .build());
   }
 
   public List<ChatCompletionChoice> callChatGPT(OpenAiService service, String query) {
