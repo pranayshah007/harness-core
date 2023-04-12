@@ -7,8 +7,8 @@
 
 package io.harness.releaseradar.resources;
 
-import io.harness.releaseradar.services.HarnessEnvService;
-import io.harness.releaseradar.services.HarnessEnvServiceImpl;
+import io.harness.releaseradar.services.JiraTrackerService;
+import io.harness.releaseradar.services.JiraTrackerServiceImpl;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.PublicApi;
 import io.swagger.annotations.Api;
@@ -28,7 +28,7 @@ import javax.ws.rs.core.MediaType;
 @PublicApi
 @Slf4j
 public class HealthCheckResource {
-  HarnessEnvService harnessEnvService = new HarnessEnvServiceImpl();
+  JiraTrackerService jiraTrackerService = new JiraTrackerServiceImpl();
 
   @GET
   @ApiOperation(value = "an http ping API, to check if service is alive", nickname = "health")

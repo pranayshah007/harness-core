@@ -8,13 +8,16 @@
 package io.harness.releaseradar.beans;
 
 import io.harness.releaseradar.clients.GitHubApiClient;
+import lombok.Builder;
+import lombok.Data;
+import lombok.ToString;
 
 import java.util.Date;
-import lombok.Builder;
-import lombok.ToString;
+import java.util.Objects;
 
 @Builder
 @ToString
+@Data
 public class CommitDetails {
   String sha;
   String message;
@@ -26,5 +29,18 @@ public class CommitDetails {
         .sha(githubCommit.getSha())
         .message(githubCommit.getCommit().getMessage())
         .build();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    CommitDetails that = (CommitDetails) o;
+    return Objects.equals(sha, that.sha);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(sha);
   }
 }

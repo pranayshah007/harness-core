@@ -8,9 +8,12 @@
 package io.harness.releaseradar.beans;
 
 import lombok.Builder;
+import lombok.Data;
 
 @Builder
+@Data
 public class CommitDetailsRequest {
   String branch;
-  int pageCount;
+  int maxCommits;
+  String searchKeyword;
 }
