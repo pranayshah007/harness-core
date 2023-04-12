@@ -112,7 +112,7 @@ func (e *unitExecutor) Run(ctx context.Context, step *pb.UnitStep, so output.Sta
 	}
 	statusErr := e.updateStepStatus(ctx, step, stepStatus, errMsg, numRetries, stepOutput, accountID, time.Since(start))
 	if statusErr != nil {
-		return nil, statusErr
+		return stepOutput, statusErr
 	}
 	return stepOutput, err
 }
