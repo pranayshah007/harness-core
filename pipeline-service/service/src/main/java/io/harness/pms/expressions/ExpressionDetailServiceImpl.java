@@ -17,6 +17,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
+import io.harness.expression.functors.ExpressionChecker;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
@@ -57,7 +58,7 @@ public class ExpressionDetailServiceImpl implements ExpressionDetailService {
     String expandedJsonString = expansionService.get(planExecutionId);
     JsonNode expendedJson = JsonPipelineUtils.readTree(expandedJsonString);
     Map<String, Ambiance> fqnToAmbianceMap = getFQNToAmbianceMap(planExecutionId);
-
+    Map<String, Object> expandedJsonMap = JsonPipelineUtils.jsonNodeToMap(expendedJson);
     YamlConfig yamlConfig = new YamlConfig(yaml);
     Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
     fullMap.keySet().forEach(key -> {
@@ -74,9 +75,13 @@ public class ExpressionDetailServiceImpl implements ExpressionDetailService {
                                                                  .isResolved(true)
                                                                  .build());
         } catch (Exception e) {
+          String suggestedExpression = ExpressionChecker.checkExpression(expression, expandedJsonMap);
           expressionDetailResponse.setSuccess(false);
-          expressionDetailResponse.addExpressionDryRUnDetail(
-              ExpressionDryRunDetail.builder().expression(expression).isResolved(false).build());
+          expressionDetailResponse.addExpressionDryRUnDetail(ExpressionDryRunDetail.builder()
+                                                                 .expression(expression)
+                                                                 .suggestedExpression(suggestedExpression)
+                                                                 .isResolved(false)
+                                                                 .build());
         }
       });
     });

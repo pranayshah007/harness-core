@@ -7,6 +7,8 @@
 
 package io.harness.expression.functors;
 
+import io.harness.data.structure.EmptyPredicate;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,18 +30,21 @@ public class ExpressionChecker {
       }
     }
 
-    if (minDistance <= 2) {
-      return closestMatch;
-    } else {
-      return null;
-    }
+    return closestMatch;
   }
 
   private static void getAllExpressions(List<String> expressions, Map<String, Object> map, String partialExpression) {
     for (Map.Entry<String, Object> entry : map.entrySet()) {
-      String tmpExpression = partialExpression + "." + entry.getKey();
+      String tmpExpression = partialExpression;
+      if (!entry.getKey().equals("stepInputs")) {
+        if (EmptyPredicate.isEmpty(partialExpression)) {
+          tmpExpression = entry.getKey();
+        } else {
+          tmpExpression = partialExpression + "." + entry.getKey();
+        }
+      }
       if (entry.getValue() instanceof Map) {
-        getAllExpressions(expressions, map, tmpExpression);
+        getAllExpressions(expressions, (Map<String, Object>) entry.getValue(), tmpExpression);
       } else {
         expressions.add(tmpExpression);
       }
