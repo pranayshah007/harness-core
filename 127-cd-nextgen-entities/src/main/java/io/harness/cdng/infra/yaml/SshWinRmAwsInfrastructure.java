@@ -16,7 +16,7 @@ import io.harness.cdng.infra.beans.AwsInstanceFilter;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfraMapping;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfraMapping.SshWinRmAwsInfraMappingBuilder;
-import io.harness.filters.ConnectorRefExtractorHelper;
+import io.harness.filters.GenericEntityRefExtractorHelper;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -45,7 +45,7 @@ import org.springframework.data.annotation.TypeAlias;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName(InfrastructureKind.SSH_WINRM_AWS)
-@SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
+@SimpleVisitorHelper(helperClass = GenericEntityRefExtractorHelper.class)
 @TypeAlias("SshWinRmAwsInfrastructure")
 @RecasterAlias("io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure")
 public class SshWinRmAwsInfrastructure extends InfrastructureDetailsAbstract implements SshWinRmInfrastructure {
@@ -142,5 +142,10 @@ public class SshWinRmAwsInfrastructure extends InfrastructureDetailsAbstract imp
   @Override
   public Map<String, ParameterField<String>> extractConnectorRefs() {
     return Collections.singletonMap(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
+  }
+
+  @Override
+  public Map<String, ParameterField<String>> extractSecretRefs() {
+    return Collections.singletonMap(YAMLFieldNameConstants.CREDENTIALS_REF, credentialsRef);
   }
 }

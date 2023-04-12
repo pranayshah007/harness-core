@@ -11,6 +11,7 @@ option java_multiple_files = true;
 
 import "io/harness/pms/contracts/plan/plan_creation_service.proto";
 import "io/harness/pms/contracts/ambiance/ambiance.proto";
+import "google/protobuf/wrappers.proto";
 
 service PluginInfoProviderService {
   rpc getPluginInfos(PluginCreationRequest) returns (PluginCreationResponse);
@@ -22,6 +23,7 @@ message PluginCreationRequest {
   io.harness.pms.contracts.ambiance.Ambiance ambiance = 3;
   string accountId = 4;
   string osType = 5;
+  PortDetails usedPortDetails = 6;
 }
 
 message PluginCreationResponse {
@@ -39,24 +41,42 @@ message PluginDetails {
   map<string, string> envVariables = 3;
   bool privileged = 4;
   int32 runAsUser = 5;
+  PortDetails totalPortUsedDetails = 6;
+  repeated int32 portUsed = 7;
+  repeated SecretVariable secretVariable = 8;
 }
 
 message PluginContainerResources {
-  string cpu = 1;
-  string memory = 2;
+  int32 cpu = 1;
+  int32 memory = 2;
 }
 
 message ImageDetails {
-  string imageName = 1;
-  ImagePullPolicy imagePullPolicy = 2;
-  ConnectorDetails connectorDetails = 3;
+  ConnectorDetails connectorDetails = 1;
+  ImageInformation imageInformation = 2;
+}
+message ImageInformation {
+  google.protobuf.StringValue imageName = 1;
+  google.protobuf.StringValue imagePullPolicy = 2;
+  google.protobuf.StringValue imageTag = 3;
+  google.protobuf.StringValue sourceName = 4;
+  google.protobuf.StringValue registryUrl = 5;
+  google.protobuf.StringValue username = 6;
+  google.protobuf.StringValue usernameRef = 7;
+  google.protobuf.StringValue password = 8;
+  google.protobuf.StringValue domainName = 9;
 }
 
 message ConnectorDetails {
   string connectorRef = 1;
 }
-enum ImagePullPolicy {
-  ALWAYS = 0;
-  IF_NOT_PRESENT = 1;
-  NEVER = 2;
+
+message PortDetails {
+  repeated int32 usedPorts = 1;
+}
+
+message SecretVariable {
+  // get value as toSecretRefStringValue
+  string name = 1;
+  string value = 2;
 }

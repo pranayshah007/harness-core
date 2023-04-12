@@ -37,4 +37,5 @@ public interface NotificationRuleService {
   List<NotificationRuleRefDTO> getNotificationRuleRefDTOs(List<NotificationRuleRef> notificationRuleRefs);
   List<NotificationRuleResponse> getNotificationRuleResponse(
       ProjectParams projectParams, List<NotificationRuleRef> notificationRuleRefList);
+  void validateNotification(List<NotificationRuleRefDTO> notificationRuleRefDTOList, ProjectParams projectParams);
 }

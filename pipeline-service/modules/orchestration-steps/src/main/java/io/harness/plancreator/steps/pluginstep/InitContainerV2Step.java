@@ -26,6 +26,7 @@ import io.harness.steps.container.ContainerStepInitHelper;
 import io.harness.steps.executable.TaskExecutableWithRbac;
 import io.harness.steps.plugin.ContainerStepConstants;
 import io.harness.steps.plugin.InitContainerV2StepInfo;
+import io.harness.steps.plugin.StepInfo;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.SerializationFormat;
@@ -63,7 +64,7 @@ public class InitContainerV2Step implements TaskExecutableWithRbac<InitContainer
       Ambiance ambiance, InitContainerV2StepInfo stepParameters, StepInputPackage inputPackage) {
     String logPrefix = getLogPrefix(ambiance);
 
-    Map<String, PluginCreationResponse> pluginsData =
+    Map<StepInfo, PluginCreationResponse> pluginsData =
         containerStepV2PluginProvider.getPluginsData(stepParameters, ambiance);
     stepParameters.setPluginsData(pluginsData);
     CIInitializeTaskParams buildSetupTaskParams =

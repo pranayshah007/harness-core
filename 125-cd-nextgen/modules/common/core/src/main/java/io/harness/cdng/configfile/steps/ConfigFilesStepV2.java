@@ -213,6 +213,15 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
         new ConfigFilesStepV2SweepingOutput(gitConfigFileOutcomesMapTaskIds, harnessConfigFilesOutcome),
         StepCategory.STAGE.name());
 
+    if (isEmpty(taskIds)) {
+      ConfigFilesOutcome configFilesOutcomes = new ConfigFilesOutcome();
+      for (ConfigFileOutcome fileOutcome : harnessConfigFilesOutcome) {
+        configFilesOutcomes.put(fileOutcome.getIdentifier(), fileOutcome);
+      }
+      sweepingOutputService.consume(
+          ambiance, OutcomeExpressionConstants.CONFIG_FILES, configFilesOutcomes, StepCategory.STAGE.name());
+    }
+
     return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).setStatus(Status.SUCCEEDED).build();
   }
 

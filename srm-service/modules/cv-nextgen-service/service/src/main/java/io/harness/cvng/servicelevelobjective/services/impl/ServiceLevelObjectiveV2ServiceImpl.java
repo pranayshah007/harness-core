@@ -10,6 +10,8 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateId;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.BURN_RATE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.COOL_OFF_DURATION;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ORG_NAME;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.PROJECT_NAME;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.REMAINING_MINUTES;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.REMAINING_PERCENTAGE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_NAME;
@@ -281,7 +283,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
           simpleServiceLevelObjectiveSpec.getMonitoredServiceRef(),
           simpleServiceLevelObjectiveSpec.getHealthSourceRef(), timePeriod, currentTimePeriod);
     } else {
-      validateCompositeSLO(serviceLevelObjectiveDTO);
+      validateCompositeSLO(serviceLevelObjectiveDTO, projectParams);
       CompositeServiceLevelObjective compositeServiceLevelObjective =
           (CompositeServiceLevelObjective) serviceLevelObjective;
       AbstractServiceLevelObjective newCompositeServiceLevelObjective =
@@ -750,8 +752,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             getNotificationData(serviceLevelObjective, condition);
         if (notificationData.shouldSendNotification()) {
           NotificationRule.CVNGNotificationChannel notificationChannel = notificationRule.getNotificationMethod();
-          String templateId = getNotificationTemplateId(
-              notificationRule.getType(), serviceLevelObjective.getType(), notificationChannel.getType());
+          String templateId = getNotificationTemplateId(notificationRule.getType(), serviceLevelObjective.getType(),
+              ScopedInformation.getLowerCaseScope(projectParams), notificationChannel.getType());
           Optional<String> monitoredServiceIdentifierOptional =
               serviceLevelObjective.mayBeGetMonitoredServiceIdentifier();
           MonitoredService monitoredService = null;
@@ -770,10 +772,15 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                       serviceLevelObjective.getIdentifier(), serviceIdentifier,
                       monitoredServiceIdentifierOptional.orElse(null), condition,
                       notificationData.getTemplateDataMap());
+          List<String> fieldsCantBeNull = new ArrayList<>();
           if (serviceLevelObjective.getType() == ServiceLevelObjectiveType.COMPOSITE) {
-            // Removing service name here since linked hash map doesnt accept null as a value.
-            templateData.remove(SERVICE_NAME);
+            fieldsCantBeNull.add(SERVICE_NAME);
           }
+          if (ScopedInformation.getLowerCaseScope(projectParams).equals("account")) {
+            fieldsCantBeNull.add(ORG_NAME);
+            fieldsCantBeNull.add(PROJECT_NAME);
+          }
+          templateData = removeIfNull(templateData, fieldsCantBeNull);
           try {
             NotificationResult notificationResult =
                 notificationClient.sendNotificationAsync(notificationChannel.toNotificationChannel(
@@ -791,6 +798,15 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     }
     updateNotificationRuleRefInSLO(
         projectParams, serviceLevelObjective, new ArrayList<>(notificationRuleRefsWithChange));
+  }
+
+  private Map<String, String> removeIfNull(Map<String, String> templateData, List<String> fieldsCantBeNull) {
+    for (String field : fieldsCantBeNull) {
+      if (templateData.containsKey(field) && Objects.isNull(templateData.get(field))) {
+        templateData.remove(field);
+      }
+    }
+    return templateData;
   }
 
   @Override
@@ -1057,7 +1073,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     return serviceLevelObjectiveV2;
   }
 
-  private void validateCompositeSLO(ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO) {
+  private void validateCompositeSLO(ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO, ProjectParams projectParams) {
     CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec =
         (CompositeServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec();
     double sum = compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
@@ -1085,6 +1101,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
         != compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails().size()) {
       throw new InvalidRequestException(String.format("An SLO can't be referenced more than once"));
     }
+    notificationRuleService.validateNotification(serviceLevelObjectiveDTO.getNotificationRuleRefs(), projectParams);
   }
 
   private void checkIfValidSLOPresent(ServiceLevelObjectiveDetailsDTO serviceLevelObjectiveDetailsDTO,
@@ -1139,13 +1156,14 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     if (sloCreateDTO.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
       validateSimpleSLO(sloCreateDTO, projectParams);
     } else {
-      validateCompositeSLO(sloCreateDTO);
+      validateCompositeSLO(sloCreateDTO, projectParams);
     }
   }
 
   private void validateSimpleSLO(ServiceLevelObjectiveV2DTO sloCreateDTO, ProjectParams projectParams) {
     monitoredServiceService.get(
         projectParams, ((SimpleServiceLevelObjectiveSpec) sloCreateDTO.getSpec()).getMonitoredServiceRef());
+    notificationRuleService.validateNotification(sloCreateDTO.getNotificationRuleRefs(), projectParams);
   }
 
   public PageResponse<ServiceLevelObjectiveV2Response> get(

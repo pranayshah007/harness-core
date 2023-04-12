@@ -10,10 +10,11 @@ package io.harness.plancreator.steps.pluginstep;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.steps.plugin.InitContainerV2StepInfo;
+import io.harness.steps.plugin.StepInfo;
 
 import java.util.Map;
 
 public interface ContainerStepV2PluginProvider {
-  Map<String, PluginCreationResponse> getPluginsData(
+  Map<StepInfo, PluginCreationResponse> getPluginsData(
       InitContainerV2StepInfo initContainerV2StepInfo, Ambiance ambiance);
 }
