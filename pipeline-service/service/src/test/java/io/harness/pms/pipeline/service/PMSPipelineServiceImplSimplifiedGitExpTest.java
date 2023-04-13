@@ -88,7 +88,6 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Mock private ProjectClient projectClient;
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
   @Mock private PipelineSetupUsageHelper pipelineSetupUsageHelper;
-
   @Mock private AccountClient accountClient;
   @Mock NGSettingsClient settingsClient;
 
@@ -101,10 +100,11 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.openMocks(this);
-    pipelineService = new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper,
-        pmsPipelineTemplateHelper, null, null, gitSyncSdkService, null, null, null,
-        new NoopPipelineSettingServiceImpl(), entitySetupUsageClient, pipelineAsyncValidationService,
-        pipelineValidationService, projectClient, pmsFeatureFlagService, pipelineSetupUsageHelper, accountClient, settingsClient);
+    pipelineService =
+        new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper, pmsPipelineTemplateHelper, null,
+            null, gitSyncSdkService, null, null, null, new NoopPipelineSettingServiceImpl(), entitySetupUsageClient,
+            pipelineAsyncValidationService, pipelineValidationService, projectClient, pmsFeatureFlagService,
+            pipelineSetupUsageHelper, accountClient, settingsClient);
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
     doNothing().when(pipelineSetupUsageHelper).publishSetupUsageEvent(any(), any(), any());
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())

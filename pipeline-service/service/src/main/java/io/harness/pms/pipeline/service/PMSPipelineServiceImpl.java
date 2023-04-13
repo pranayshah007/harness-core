@@ -57,6 +57,8 @@ import io.harness.grpc.utils.StringValueUtils;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.contracts.steps.StepInfo;
+import io.harness.pms.filter.creation.FilterCreatorMergeService;
+import io.harness.pms.filter.creation.FilterCreatorMergeServiceResponse;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.helpers.PipelineCloneHelper;
@@ -100,11 +102,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import javax.ws.rs.InternalServerErrorException;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -148,6 +146,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject @Named("PRIVILEGED") private ProjectClient projectClient;
   @Inject PmsFeatureFlagService pmsFeatureFlagService;
   private final PipelineSetupUsageHelper pipelineSetupUsageHelper;
+
+  @Inject private final FilterCreatorMergeService filterCreatorMergeService;
 
   @Inject private final AccountClient accountClient;
   @Inject NGSettingsClient settingsClient;
@@ -366,14 +366,15 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       return optionalPipelineEntity;
     } else if (pipelineEntity.getStoreType() == StoreType.REMOTE) {
       try {
-        PipelineEntityWithReferencesDTO pipelineEntityWithReferences =
-            pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
-
-        pipelineEntity = pipelineEntityWithReferences.getPipelineEntity();
+        FilterCreatorMergeServiceResponse filtersAndStageCount =
+            FilterCreatorMergeServiceResponse.builder().referredEntities(new ArrayList<>()).build();
+        if (pipelineEntity.getHarnessVersion().equals(PipelineVersion.V0)) {
+          filtersAndStageCount = filterCreatorMergeService.getPipelineInfo(pipelineEntity);
+        }
 
         String branch = GitAwareContextHelper.getBranchFromSCMGitMetadata();
 
-        publishSetupUsages(pipelineEntity, pipelineEntityWithReferences.getReferredEntities(), branch);
+        publishSetupUsages(pipelineEntity, filtersAndStageCount.getReferredEntities(), branch);
 
       } catch (IOException e) {
         log.error("Failed to update the pipeline info for the gitX enabled pipeline while reloading from git.");
