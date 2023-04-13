@@ -168,8 +168,8 @@ public class ArtifactServiceImpl implements ArtifactService {
                 "Artifact stream has been deleted");
         artifactStreamEntry.getValue().forEach(artifact -> artifact.setArtifactStreamName(artifactStream.getName()));
         if (featureFlagService.isEnabled(SPG_ALLOW_FILTER_BY_PATHS_GCS, artifactStream.getAccountId())) {
-          artifacts = buildSourceService.listArtifactByArtifactStreamAndFilterPath(
-              artifactStreamEntry.getValue().stream().collect(toList()), artifactStream);
+          artifacts.addAll(buildSourceService.listArtifactByArtifactStreamAndFilterPath(
+              artifactStreamEntry.getValue().stream().collect(toList()), artifactStream));
         } else {
           artifacts.addAll(artifactStreamEntry.getValue().stream().collect(toList()));
         }
