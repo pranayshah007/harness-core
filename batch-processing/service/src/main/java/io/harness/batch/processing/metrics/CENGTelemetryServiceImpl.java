@@ -38,10 +38,14 @@ import io.harness.remote.client.NGRestUtils;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.TableResult;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
@@ -109,7 +113,7 @@ public class CENGTelemetryServiceImpl implements CENGTelemetryService {
     String gcpProjectId = config.getGcpConfig().getGcpProjectId();
     String cloudProviderTableName = format("%s.%s.%s", gcpProjectId, DATA_SET_NAME, TABLE_NAME);
     long endOfDay = Instant.now().plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS).toEpochMilli();
-    long licenseStartTime = getLicenseStartTime(accountIdentifier);
+    long licenseStartTime = getLicenseStartTime(accountIdentifier, endOfDay);
     String query = format(QUERY_TEMPLATE, cloudProviderTableName, licenseStartTime, endOfDay, accountIdentifier);
 
     BigQuery bigQuery = bigQueryService.get();
@@ -128,6 +132,25 @@ public class CENGTelemetryServiceImpl implements CENGTelemetryService {
             CCMLicenseUsageHelper.getActiveSpendResultSetDTOs(result)));
     properties.put("ccm_license_startTime", licenseStartTime);
     return properties;
+  }
+
+  @VisibleForTesting
+  public long getLicenseStartTime(String accountId, long endOfDay) {
+    ZonedDateTime licenseStartTime = Instant.ofEpochMilli(getLicenseStartTime(accountId)).atZone(ZoneOffset.UTC);
+    ZonedDateTime currentTime = Instant.ofEpochMilli(endOfDay).atZone(ZoneOffset.UTC);
+    int licenseYear = licenseStartTime.getYear();
+    int currentYear = currentTime.getYear();
+    if (currentYear == licenseYear) {
+      return licenseStartTime.toInstant().toEpochMilli();
+    } else {
+      Instant lastYearLicenseStartTime = licenseStartTime.withYear(currentYear - 1).toInstant();
+      Instant lastLastYearLicenseStartTime = licenseStartTime.withYear(currentYear - 2).toInstant();
+      if (lastLastYearLicenseStartTime.compareTo(licenseStartTime.toInstant()) >= 0
+          && Duration.between(lastYearLicenseStartTime, currentTime).toDays() < 365) {
+        return lastLastYearLicenseStartTime.toEpochMilli();
+      }
+      return lastYearLicenseStartTime.toEpochMilli();
+    }
   }
 
   private long getLicenseStartTime(String accountId) {

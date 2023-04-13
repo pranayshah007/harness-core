@@ -7,11 +7,7 @@
 
 package io.harness.iacm.plan.creator;
 
-import static io.harness.pms.yaml.YAMLFieldNameConstants.SPEC;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -27,7 +23,6 @@ import io.harness.ci.plancreator.V1.ActionStepPlanCreatorV1;
 import io.harness.ci.plancreator.V1.BackgroundStepPlanCreatorV1;
 import io.harness.ci.plancreator.V1.RunStepPlanCreatorV1;
 import io.harness.ci.plancreator.V1.TestStepPlanCreator;
-import io.harness.filters.EmptyAnyFilterJsonCreator;
 import io.harness.filters.ExecutionPMSFilterJsonCreator;
 import io.harness.iacm.IACMStepType;
 import io.harness.iacm.creator.variables.IACMStageVariableCreator;
@@ -46,12 +41,9 @@ import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
-import io.harness.pms.sdk.core.variables.EmptyAnyVariableCreator;
 import io.harness.pms.sdk.core.variables.EmptyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.variables.ExecutionVariableCreator;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -98,7 +90,6 @@ public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvi
     filterJsonCreators.add(new IACMStageFilterJsonCreator()); // Filter for the Stage
     filterJsonCreators.add(new IACMStepFilterJsonCreatorV2()); // Filter for the supported stages in the stage
     filterJsonCreators.add(new ExecutionPMSFilterJsonCreator()); // Filter for the Execution step
-    filterJsonCreators.add(new EmptyAnyFilterJsonCreator(Set.of(STEPS, SPEC, STRATEGY))); // ??
 
     // V1 Filters
     filterJsonCreators.add(new IACMPMSStepFilterJsonCreatorV1()); // Step filters for V1
@@ -113,15 +104,11 @@ public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvi
     List<VariableCreator> variableCreators = new ArrayList<>();
     variableCreators.add(new IACMStageVariableCreator()); // Variable creator for the stage
     variableCreators.add(new IACMStepVariableCreator()); // V1 step variable creator for external steps
-    variableCreators.add(new ExecutionVariableCreator()); // variable creator for the execution
     variableCreators.add(new PluginStepVariableCreator()); // variable creator for the plugin step
     variableCreators.add(new IACMTerraformPlanStepVariableCreator());
     variableCreators.add(new IACMTemplateStepVariableCreator());
     variableCreators.add(new RunStepVariableCreator());
     variableCreators.add(new ActionStepVariableCreator()); // variable creator for the action step
-
-    variableCreators.add(
-        new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS, SPEC, STEP_GROUP))); // ??
     variableCreators.add(new EmptyVariableCreator(STEP, Set.of(LITE_ENGINE_TASK)));
 
     return variableCreators;

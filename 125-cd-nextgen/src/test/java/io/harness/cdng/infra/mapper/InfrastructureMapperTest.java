@@ -51,7 +51,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                        .orgIdentifier("orgId")
                                        .projectIdentifier("projectId")
                                        .description("description")
-                                       .environmentRef("envRef")
+                                       .environmentRef("envId")
                                        .name("my_infra_name")
                                        .type(InfrastructureType.KUBERNETES_DIRECT)
                                        .tags(Map.of("k", "v"))
@@ -86,20 +86,13 @@ public class InfrastructureMapperTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
-  public void toInfrastructureEntityInvalid_0() {
+  public void toInfrastructureEntityWithJustYaml() {
     InfrastructureRequestDTO dto = InfrastructureRequestDTO.builder()
-                                       .identifier("id1")
-                                       .orgIdentifier("orgId")
-                                       .projectIdentifier("projectId")
-                                       .description("description")
-                                       .environmentRef("envRef")
-                                       .name("my_infra_name")
-                                       .type(InfrastructureType.KUBERNETES_DIRECT)
-                                       .tags(Map.of("k", "v"))
                                        .yaml("infrastructureDefinition:\n"
                                            + "  name: \"my_infra_name\"\n"
                                            + "  identifier: \"id1\"\n"
                                            + "  description: \"description\"\n"
+                                           + "  deploymentType: \"Kubernetes\"\n"
                                            + "  tags: \n"
                                            + "    k: v\n"
                                            + "  orgIdentifier: orgId\n"
@@ -113,44 +106,14 @@ public class InfrastructureMapperTest extends CategoryTest {
                                            + "  allowSimultaneousDeployments: false")
                                        .build();
 
-    assertThatExceptionOfType(InvalidRequestException.class)
-        .isThrownBy(() -> InfrastructureMapper.toInfrastructureEntity("accountId", dto))
-        .withMessageContaining("deploymentType: must not be null");
-  }
+    InfrastructureEntity infrastructureEntity = InfrastructureMapper.toInfrastructureEntity("accountId", dto);
 
-  @Test
-  @Owner(developers = OwnerRule.TATHAGAT)
-  @Category(UnitTests.class)
-  public void toInfrastructureEntityInvalid_1() {
-    InfrastructureRequestDTO dto = InfrastructureRequestDTO.builder()
-                                       .identifier("id1")
-                                       .name("my_infra_name")
-                                       .orgIdentifier("orgId")
-                                       .projectIdentifier("projectId")
-                                       .description("description")
-                                       .type(InfrastructureType.KUBERNETES_DIRECT)
-                                       .tags(Map.of("k", "v"))
-                                       .yaml("infrastructureDefinition:\n"
-                                           + "  name: \"my_infra_name\"\n"
-                                           + "  identifier: \"id1\"\n"
-                                           + "  description: \"description\"\n"
-                                           + "  tags: \n"
-                                           + "    k: v\n"
-                                           + "  orgIdentifier: orgId\n"
-                                           + "  projectIdentifier: projectId\n"
-                                           + "  environmentRef: envId\n"
-                                           + "  type: KubernetesDirect\n"
-                                           + "  spec:\n"
-                                           + "    connectorRef: <+input>\n"
-                                           + "    namespace: default\n"
-                                           + "    releaseName: release-<+INFRA_KEY>\n"
-                                           + "  allowSimultaneousDeployments: false")
-                                       .build();
-
-    assertThatExceptionOfType(InvalidRequestException.class)
-        .isThrownBy(() -> InfrastructureMapper.toInfrastructureEntity("accountId", dto))
-        .withMessageContaining("deploymentType: must not be null")
-        .withMessageContaining("environmentRef: must not be empty");
+    assertThat(infrastructureEntity.getYaml()).isEqualTo(dto.getYaml());
+    assertThat(infrastructureEntity.getOrgIdentifier()).isEqualTo("orgId");
+    assertThat(infrastructureEntity.getProjectIdentifier()).isEqualTo("projectId");
+    assertThat(infrastructureEntity.getEnvIdentifier()).isEqualTo("envId");
+    assertThat(infrastructureEntity.getTags()).containsExactly(NGTag.builder().key("k").value("v").build());
+    assertThat(infrastructureEntity.getAccountId()).isEqualTo("accountId");
   }
 
   @Test

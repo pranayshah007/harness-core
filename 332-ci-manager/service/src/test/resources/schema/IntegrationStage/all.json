@@ -3482,7 +3482,6 @@
         {
           "type": "object",
           "required": [
-            "auth",
             "config",
             "mode",
             "target"
@@ -3783,7 +3782,7 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "GitLeaksStepInfo": {
+    "GitleaksStepInfo": {
       "allOf": [
         {
           "$ref": "#/definitions/StepSpecType"
@@ -8464,7 +8463,10 @@
               "type": "string",
               "enum": [
                 "apiKey",
-                "usernamePassword"
+                "usernamePassword",
+                "aws",
+                "azure",
+                "gcp"
               ]
             },
             {
@@ -10432,14 +10434,14 @@
           "if": {
             "properties": {
               "type": {
-                "const": "GitLeaks"
+                "const": "Gitleaks"
               }
             }
           },
           "then": {
             "properties": {
               "spec": {
-                "$ref": "#/definitions/GitLeaksStepInfo"
+                "$ref": "#/definitions/GitleaksStepInfo"
               }
             }
           }

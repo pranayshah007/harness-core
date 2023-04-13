@@ -62,10 +62,11 @@ public class CVNGStepInfo implements CVStepInfoBase {
   MonitoredServiceNode monitoredService;
 
   @Builder
-  @ConstructorProperties({"type", "spec"})
-  public CVNGStepInfo(String type, VerificationJobSpec spec) {
+  @ConstructorProperties({"type", "spec", "monitoredService"})
+  public CVNGStepInfo(String type, VerificationJobSpec spec, MonitoredServiceNode monitoredService) {
     this.type = spec.getType();
     this.spec = spec;
+    this.monitoredService = monitoredService;
   }
 
   @Override

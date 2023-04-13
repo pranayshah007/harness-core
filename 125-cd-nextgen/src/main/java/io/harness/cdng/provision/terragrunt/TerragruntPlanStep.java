@@ -26,6 +26,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
+import io.harness.cdng.provision.terraform.TerraformStepHelper;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
 import io.harness.cdng.provision.terragrunt.outcome.TerragruntPlanOutcome;
 import io.harness.cdng.provision.terragrunt.outcome.TerragruntPlanOutcome.TerragruntPlanOutcomeBuilder;
@@ -79,6 +80,7 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private StepHelper stepHelper;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private TerraformStepHelper terraformStepHelper;
 
   @Override
   public Class getStepParametersClass() {
@@ -117,6 +119,7 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
     entityDetail = EntityDetail.builder().type(EntityType.CONNECTORS).entityRef(identifierRef).build();
     entityDetailList.add(entityDetail);
 
+    terraformStepHelper.validateSecretManager(ambiance, accountId, orgIdentifier, projectIdentifier, secretManagerRef);
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetailList, true);
   }
 

@@ -3297,7 +3297,8 @@
       ],
       "properties": {
         "identifier": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         },
         "spec": {
           "$ref": "#/definitions/ConfigFileAttributes"
@@ -6287,6 +6288,25 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "GoogleCloudFunctionGenOneDefinitionManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "GoogleCloudFunctionsServiceSpec": {
       "allOf": [
         {
@@ -6294,7 +6314,11 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {
+            "environmentType": {
+              "type": "string"
+            }
+          }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6308,13 +6332,28 @@
           "type": "object",
           "required": [
             "connectorRef",
+            "fetchType",
             "project",
             "repository",
             "sourceDirectory"
           ],
           "properties": {
+            "branch": {
+              "type": "string"
+            },
+            "commitId": {
+              "type": "string"
+            },
             "connectorRef": {
               "type": "string"
+            },
+            "fetchType": {
+              "type": "string",
+              "enum": [
+                "Branch",
+                "Commit",
+                "Tag"
+              ]
             },
             "project": {
               "type": "string"
@@ -6323,6 +6362,9 @@
               "type": "string"
             },
             "sourceDirectory": {
+              "type": "string"
+            },
+            "tag": {
               "type": "string"
             }
           }
@@ -8921,7 +8963,8 @@
       ],
       "properties": {
         "identifier": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         },
         "type": {
           "type": "string",
@@ -8951,7 +8994,8 @@
             "GoogleCloudFunctionDefinition",
             "AwsLambdaFunctionDefinition",
             "AwsLambdaFunctionAliasDefinition",
-            "AwsSamDirectory"
+            "AwsSamDirectory",
+            "GoogleCloudFunctionGenOneDefinition"
           ]
         }
       },
@@ -9161,6 +9205,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GoogleCloudFunctionDefinitionManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleCloudFunctionGenOneDefinition"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudFunctionGenOneDefinitionManifest"
               }
             }
           }

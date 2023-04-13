@@ -28,7 +28,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class K8sDirectInfra implements StepGroupInfra {
   @Builder.Default @NotNull @Getter private Type type = Type.KUBERNETES_DIRECT;
-  @NotNull private ContainerInfraYamlSpec spec;
+  @Getter @NotNull private ContainerInfraYamlSpec spec;
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

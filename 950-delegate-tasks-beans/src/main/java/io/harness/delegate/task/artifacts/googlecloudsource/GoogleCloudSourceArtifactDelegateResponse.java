@@ -24,14 +24,23 @@ public class GoogleCloudSourceArtifactDelegateResponse extends ArtifactDelegateR
   String repository;
   /** refers to sourceDirectory in GCS repository*/
   String sourceDirectory;
+  /** refers to branch in GCS repository*/
+  String branch;
+  /** refers to commitId in GCS repository*/
+  String commitId;
+  /** refers to tag in GCS repository*/
+  String tag;
 
   @Builder
   public GoogleCloudSourceArtifactDelegateResponse(ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType,
-      String project, String repository, String sourceDirectory) {
+      String project, String repository, String sourceDirectory, String branch, String commitId, String tag) {
     super(buildDetails, sourceType);
 
     this.project = project;
     this.repository = repository;
     this.sourceDirectory = sourceDirectory;
+    this.branch = branch;
+    this.commitId = commitId;
+    this.tag = tag;
   }
 }

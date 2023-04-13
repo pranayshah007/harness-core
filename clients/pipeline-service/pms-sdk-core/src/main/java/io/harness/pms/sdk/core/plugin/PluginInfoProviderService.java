@@ -13,13 +13,15 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.pms.contracts.plan.ErrorResponse;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
-import io.harness.pms.contracts.plan.PluginInfoServiceGrpc.PluginInfoServiceImplBase;
+import io.harness.pms.contracts.plan.PluginInfoProviderServiceGrpc.PluginInfoProviderServiceImplBase;
 
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-public class PluginInfoProviderService extends PluginInfoServiceImplBase {
+@Slf4j
+public class PluginInfoProviderService extends PluginInfoProviderServiceImplBase {
   @Inject PluginInfoProviderHelper pluginInfoProvider;
 
   @Override
@@ -28,6 +30,7 @@ public class PluginInfoProviderService extends PluginInfoServiceImplBase {
     try {
       pluginCreationResponse = pluginInfoProvider.getPluginInfo(request);
     } catch (Exception ex) {
+      log.error("Got error in getting plugin info", ex);
       pluginCreationResponse =
           PluginCreationResponse.newBuilder()
               .setError(ErrorResponse.newBuilder().addMessages(ExceptionUtils.getMessage(ex)).build())

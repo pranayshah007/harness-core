@@ -39,7 +39,6 @@ import software.wings.delegatetasks.validation.capabilities.SSHHostValidationCap
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.utils.WingsTestConstants;
 
-import com.jcraft.jsch.JSchException;
 import java.util.ArrayList;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -91,7 +90,7 @@ public class SSHHostValidationCapabilityCheckTest extends WingsBaseTest {
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
-  public void shouldPerformCapabilityCheck() throws JSchException {
+  public void shouldPerformCapabilityCheck() throws Exception {
     doNothing().when(sshHostValidationCapabilityCheck).performTest(any(SshSessionConfig.class));
     CapabilityResponse capabilityResponse =
         sshHostValidationCapabilityCheck.performCapabilityCheck(validationCapability);

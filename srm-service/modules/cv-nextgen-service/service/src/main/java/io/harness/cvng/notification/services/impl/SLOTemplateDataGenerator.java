@@ -14,19 +14,30 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.entities.SLONotificationRule.SLONotificationRuleCondition;
 import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
+import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 
+import com.google.inject.Inject;
 import java.time.Instant;
 import java.util.Map;
 
 public abstract class SLOTemplateDataGenerator<T extends SLONotificationRuleCondition>
     extends NotificationRuleTemplateDataGenerator<T> {
+  @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   public static final String MONITORED_SERVICE_URL = "MONITORED_SERVICE_URL";
 
   private static final String MONITORED_SERVICE_URL_FORMAT =
       "%s/account/%s/%s/orgs/%s/projects/%s/monitoringservices/edit/%s?tab=ServiceHealth&notificationTime=%s";
 
-  private static final String SLO_URL_FORMAT =
+  private static final String PROJECT_SIMPLE_SLO_URL_FORMAT =
       "%s/account/%s/%s/orgs/%s/projects/%s/slos/%s?tab=Details&sloType=Simple&notificationTime=%s";
+
+  private static final String PROJECT_COMPOSITE_SLO_URL_FORMAT =
+      "%s/account/%s/%s/orgs/%s/projects/%s/slos/%s?tab=Details&sloType=Composite&notificationTime=%s";
+
+  private static final String ACCOUNT_COMPOSITE_SLO_URL_FORMAT =
+      "%s/account/%s/%s/slos/%s?tab=Details&sloType=Composite&notificationTime=%s";
   @Override
   public String getEntityName() {
     return SLO_NAME;
@@ -35,7 +46,17 @@ public abstract class SLOTemplateDataGenerator<T extends SLONotificationRuleCond
   @Override
   public String getUrl(
       String baseUrl, ProjectParams projectParams, String identifier, NotificationRuleType type, Long endTime) {
-    return String.format(SLO_URL_FORMAT, baseUrl, projectParams.getAccountIdentifier(), MODULE_NAME,
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, identifier);
+    if (serviceLevelObjective.getType() == ServiceLevelObjectiveType.COMPOSITE) {
+      if (projectParams.getProjectIdentifier() == null) {
+        return String.format(ACCOUNT_COMPOSITE_SLO_URL_FORMAT, baseUrl, projectParams.getAccountIdentifier(),
+            MODULE_NAME, identifier, endTime);
+      }
+      return String.format(PROJECT_COMPOSITE_SLO_URL_FORMAT, baseUrl, projectParams.getAccountIdentifier(), MODULE_NAME,
+          projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), identifier, endTime);
+    }
+    return String.format(PROJECT_SIMPLE_SLO_URL_FORMAT, baseUrl, projectParams.getAccountIdentifier(), MODULE_NAME,
         projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), identifier, endTime);
   }
 

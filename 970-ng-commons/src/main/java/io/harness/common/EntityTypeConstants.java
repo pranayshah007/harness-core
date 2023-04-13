@@ -97,7 +97,7 @@ public interface EntityTypeConstants {
   String EXTERNAL = "External";
   String FORTIFY_ON_DEMAND = "FortifyOnDemand";
   String FOSSA = "Fossa";
-  String GIT_LEAKS = "GitLeaks";
+  String GIT_LEAKS = "Gitleaks";
   String GRYPE = "Grype";
   String JFROG_XRAY = "JfrogXray";
   String MEND = "Mend";
@@ -212,6 +212,8 @@ public interface EntityTypeConstants {
   String GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC = "DeployCloudFunctionWithNoTraffic";
   String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT = "CloudFunctionTrafficShift";
   String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = "CloudFunctionRollback";
+  String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY = "DeployCloudFunctionGenOne";
+  String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK = "RollbackCloudFunctionGenOne";
 
   String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
   String TAS_ROLLING_ROLLBACK = "TasRollingRollback";

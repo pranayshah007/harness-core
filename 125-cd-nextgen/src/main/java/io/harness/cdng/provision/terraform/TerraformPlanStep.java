@@ -130,6 +130,8 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
           IdentifierRefHelper.getIdentifierRef(secretManagerRef, accountId, orgIdentifier, projectIdentifier);
       entityDetail = EntityDetail.builder().type(EntityType.CONNECTORS).entityRef(identifierRef).build();
       entityDetailList.add(entityDetail);
+
+      helper.validateSecretManager(ambiance, accountId, orgIdentifier, projectIdentifier, secretManagerRef);
     }
 
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetailList, true);

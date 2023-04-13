@@ -363,7 +363,7 @@ public class MongoPersistence implements HPersistence {
     }
   }
 
-  private <T extends PersistentEntity> void onSave(T entity) {
+  protected <T extends PersistentEntity> void onSave(T entity) {
     if (entity instanceof UuidAware) {
       UuidAware uuidAware = (UuidAware) entity;
       if (uuidAware.getUuid() == null) {

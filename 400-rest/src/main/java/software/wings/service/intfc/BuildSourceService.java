@@ -537,5 +537,5 @@ public interface BuildSourceService {
    * @param artifactStream the artifact stream source
    * @return the list of builds artifacts
    */
-  List<BuildDetails> listArtifactByArtifactStreamAndFilterPath(List<Artifact> artifacts, ArtifactStream artifactStream);
+  List<Artifact> listArtifactByArtifactStreamAndFilterPath(List<Artifact> artifacts, ArtifactStream artifactStream);
 }

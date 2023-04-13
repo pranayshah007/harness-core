@@ -11,6 +11,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.spec.server.idp.v1.MergedPluginsConfigApi;
+import io.harness.spec.server.idp.v1.model.MergedPluginConfigResponse;
 import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 
 import javax.ws.rs.core.Response;
@@ -29,7 +30,9 @@ public class MergedPluginsConfigApiImpl implements MergedPluginsConfigApi {
     try {
       MergedPluginConfigs mergedEnabledPluginAppConfigsForAccount =
           configManagerService.mergeEnabledPluginConfigsForAccount(accountIdentifier);
-      return Response.status(Response.Status.OK).entity(mergedEnabledPluginAppConfigsForAccount).build();
+      MergedPluginConfigResponse mergedPluginConfigResponse = new MergedPluginConfigResponse();
+      mergedPluginConfigResponse.setMergedConfig(mergedEnabledPluginAppConfigsForAccount);
+      return Response.status(Response.Status.OK).entity(mergedPluginConfigResponse).build();
     } catch (Exception e) {
       log.error(e.getMessage());
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)

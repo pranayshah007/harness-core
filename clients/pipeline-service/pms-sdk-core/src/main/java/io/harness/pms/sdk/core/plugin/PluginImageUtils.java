@@ -8,55 +8,35 @@
 package io.harness.pms.sdk.core.plugin;
 
 import io.harness.beans.yaml.extended.ImagePullPolicy;
-import io.harness.exception.UnexpectedException;
+import io.harness.grpc.utils.StringValueUtils;
 import io.harness.pms.contracts.plan.ConnectorDetails;
+import io.harness.pms.contracts.plan.ImageInformation;
 import io.harness.yaml.extended.ci.container.ImageDetails;
 
+import com.google.protobuf.StringValue;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class PluginImageUtils {
-  io.harness.pms.contracts.plan.ImagePullPolicy getImagePullPolicy(ImagePullPolicy imagePullPolicy) {
-    switch (imagePullPolicy) {
-      case NEVER:
-        return io.harness.pms.contracts.plan.ImagePullPolicy.NEVER;
-      case ALWAYS:
-        return io.harness.pms.contracts.plan.ImagePullPolicy.ALWAYS;
-      case IFNOTPRESENT:
-        return io.harness.pms.contracts.plan.ImagePullPolicy.IF_NOT_PRESENT;
-      default:
-        throw new UnexpectedException();
-    }
-  }
-
-  ImagePullPolicy getImagePullPolicy(io.harness.pms.contracts.plan.ImagePullPolicy imagePullPolicy) {
-    if (imagePullPolicy == io.harness.pms.contracts.plan.ImagePullPolicy.NEVER) {
-      return ImagePullPolicy.NEVER;
-    } else if (io.harness.pms.contracts.plan.ImagePullPolicy.ALWAYS == imagePullPolicy) {
-      return ImagePullPolicy.ALWAYS;
-    } else if (imagePullPolicy == io.harness.pms.contracts.plan.ImagePullPolicy.IF_NOT_PRESENT) {
-      return ImagePullPolicy.IFNOTPRESENT;
-    } else {
-      throw new UnexpectedException();
-    }
-  }
-
   ImageDetails getImageDetails(io.harness.pms.contracts.plan.ImageDetails imageDetails) {
     return ImageDetails.builder()
-        .imageName(imageDetails.getImageName())
+        .imageName(StringValueUtils.getStringFromStringValue(imageDetails.getImageInformation().getImageName()))
         .connectorDetails(ImageDetails.ConnectorDetails.builder()
                               .connectorRef(imageDetails.getConnectorDetails().getConnectorRef())
                               .build())
-        .imagePullPolicy(getImagePullPolicy(imageDetails.getImagePullPolicy()))
+        .imagePullPolicy(ImagePullPolicy.fromString(
+            StringValueUtils.getStringFromStringValue(imageDetails.getImageInformation().getImagePullPolicy())))
         .build();
   }
 
   io.harness.pms.contracts.plan.ImageDetails getImageDetails(ImageDetails imageDetails) {
     return io.harness.pms.contracts.plan.ImageDetails.newBuilder()
-        .setImageName(imageDetails.getImageName())
+        .setImageInformation(ImageInformation.newBuilder()
+                                 .setImageName(StringValue.of(imageDetails.getImageName()))
+                                 .setImagePullPolicy(StringValue.of(imageDetails.getImagePullPolicy().getYamlName()))
+                                 .build())
         .setConnectorDetails(
             ConnectorDetails.newBuilder().setConnectorRef(imageDetails.getConnectorDetails().getConnectorRef()).build())
-        .setImagePullPolicy(getImagePullPolicy(imageDetails.getImagePullPolicy()))
         .build();
   }
 }

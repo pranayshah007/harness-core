@@ -28,7 +28,7 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /320-ci-execution/src/main/java/io/harness/ci/plan/creator/CIPipelineServiceInfoProvider.java prashant.sharma@harness.io vaibhav.si@harness.io sahil.hindwani@harness.io
 /300-cv-nextgen/src/main/java* praveen.sugavanam@harness.io abhijith.pradeep@harness.io deepak.chhikara@harness.io
 /pipeline-service/service/src/main/java/**/*Resource*.java vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io ankit.tiwari@harness.io mohit.garg@harness.io
-/332-ci-manager/ harsh.jain@harness.io
+/332-ci-manager/ harsh.jain@harness.io shubham.agrawal@harness.io hemanth.mantri@harness.io tianyi.li@harness.io
 
 /pipeline-service/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io ankit.tiwari@harness.io mohit.garg@harness.io
 /dockerization/pipeline-service/ prashant.sharma@harness.io archit.singla@harness.io sanyasi.naidu@harness.io

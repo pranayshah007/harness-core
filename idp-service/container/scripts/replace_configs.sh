@@ -213,3 +213,5 @@ replace_key_value accessControlClient.accessControlServiceSecret "$ACCESS_CONTRO
 replace_key_value backstageHttpClientConfig.baseUrl "$BACKSTAGE_BASE_URL"
 replace_key_value backstageServiceSecret "$BACKSTAGE_SERVICE_SECRET"
 replace_key_value onboardingModuleConfig.harnessCiCdAnnotations.projectUrl "$ONBOARDING_MODULE_CONFIG_HARNESS_CI_CD_ANNOTATIONS_PROJECT_URL"
+replace_key_value env "$ENV"
+replace_key_value prEnvDefaultBackstageNamespace "$DEFAULT_BACKSTAGE_NAMESPACE"

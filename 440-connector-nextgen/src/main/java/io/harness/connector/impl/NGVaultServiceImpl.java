@@ -13,6 +13,7 @@ import static io.harness.beans.FeatureName.DO_NOT_RENEW_APPROLE_TOKEN;
 import static io.harness.beans.FeatureName.ENABLE_CERT_VALIDATION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eraro.ErrorCode.INTERNAL_SERVER_ERROR;
 import static io.harness.eraro.ErrorCode.INVALID_AZURE_VAULT_CONFIGURATION;
 import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
@@ -69,6 +70,7 @@ import io.harness.encryptors.DelegateTaskUtils;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AzureServiceException;
 import io.harness.exception.DelegateServiceDriverException;
+import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.exception.SecretManagementException;
@@ -758,6 +760,11 @@ public class NGVaultServiceImpl implements NGVaultService {
         }
         return ((NGAzureKeyVaultFetchEngineResponse) delegateResponseData).getSecretEngines();
       } catch (WingsException e) {
+        if (e.getCause() instanceof GeneralException && "Null Pointer Exception".equals(e.getCause().getMessage())
+            && azureVaultConfig.getUseManagedIdentity() && azureVaultConfig.getSecretKey() == null) {
+          throw new WingsException(INTERNAL_SERVER_ERROR,
+              "Listing secret engines failed. Please check if delegate version is 791xx or later.");
+        }
         failedAttempts++;
         log.warn("Azure Key Vault Decryption failed for list secret engines. trial num: {}", failedAttempts, e);
         if (failedAttempts == NUM_OF_RETRIES) {

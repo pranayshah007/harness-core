@@ -555,6 +555,20 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       x-internal: true
   /v1/connector-info:
+    get:
+      summary: 'Get Connector Info'
+      tags:
+        - ConnectorInfo
+      operationId: get-connector-info
+      responses:
+        '200':
+          $ref: '#/components/responses/ConnectorInfoResponse'
+      description: Get Connector Info
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
     post:
       summary: Create or Update Connector Info
       tags:
@@ -602,6 +616,21 @@ paths:
       description: API for retriving merged configs for enabled plugin of account.
       tags:
         - MergedPluginsConfig
+  /v1/backstage-plugins-info:
+    get:
+      summary: List Available Backstage Plugins
+      tags:
+        - PluginInfo
+      responses:
+        '200':
+          $ref: '#/components/responses/PluginInfoResponseList'
+      operationId: get-backstage-plugins
+      description: Get all backstage plugins available
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
 components:
   schemas:
     BackstageEnvVariable:
@@ -1229,6 +1258,8 @@ components:
           $ref: '#/components/schemas/ConnectorDetails'
           x-stoplight:
             id: ictqwjgoxe2bc
+      required:
+        - connector_details
     Exports:
       title: Exports
       x-stoplight:
@@ -1686,9 +1717,7 @@ components:
       content:
         application/json:
           schema:
-            properties:
-              id:
-                type: string
+            $ref: '#/components/schemas/HarnessEntitiesCountResponse'
   securitySchemes:
     x-api-key:
       name: x-api-key

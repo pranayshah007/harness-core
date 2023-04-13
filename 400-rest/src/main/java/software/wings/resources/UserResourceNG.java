@@ -567,6 +567,8 @@ public class UserResourceNG {
     }
     User user = userService.getUserByEmail(userInfo.getEmail());
     user.setName(userInfo.getName());
+    user.setFamilyName(userInfo.getFamilyName());
+    user.setGivenName(userInfo.getGivenName());
     return user;
   }
 

@@ -16,6 +16,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 
+import software.wings.beans.Account;
 import software.wings.beans.User;
 import software.wings.beans.UserInvite;
 import software.wings.beans.security.UserGroup;
@@ -72,9 +73,12 @@ public class UserGroupQueryHelper {
     });
 
     List<String> emailIds = new ArrayList<>();
+    List<String> pendingAccounts = new ArrayList<>();
     try (HIterator<User> iterator = new HIterator<>(userQuery.fetch())) {
       while (iterator.hasNext()) {
-        emailIds.add(iterator.next().getEmail());
+        User user = iterator.next();
+        emailIds.add(user.getEmail());
+        pendingAccounts.addAll(user.getPendingAccounts().stream().map(Account::getUuid).collect(Collectors.toList()));
       }
     }
 
@@ -84,15 +88,20 @@ public class UserGroupQueryHelper {
     Set<String> userGroups = new HashSet<>();
     try (HIterator<UserInvite> iterator = new HIterator<>(userInviteQuery.fetch())) {
       while (iterator.hasNext()) {
-        userGroups.addAll(iterator.next().getUserGroups().stream().map(UserGroup::getUuid).collect(Collectors.toSet()));
+        UserInvite userInvite = iterator.next();
+        if (pendingAccounts.contains(userInvite.getAccountId())) {
+          userGroups.addAll(userInvite.getUserGroups().stream().map(UserGroup::getUuid).collect(Collectors.toSet()));
+        }
       }
     }
 
     Query<UserGroup> userGroupsQuery = populateAccountFilter(UserGroup.class);
     CriteriaContainer userGroupsCriteria = userGroupsQuery.criteria("_id").in(userGroups);
+
     if (memberIdsCriteria == null) {
       return;
     }
+
     query.or(memberIdsCriteria, userGroupsCriteria);
   }
 

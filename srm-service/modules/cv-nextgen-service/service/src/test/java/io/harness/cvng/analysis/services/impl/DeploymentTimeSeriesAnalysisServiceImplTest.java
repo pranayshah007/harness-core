@@ -1067,7 +1067,8 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
         .isEqualTo(AnalysisResult.UNHEALTHY);
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAnalysisReason())
         .isEqualTo(AnalysisReason.ML_ANALYSIS);
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAppliedThresholds()).isNull();
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAppliedThresholds())
+        .isEqualTo(List.of("thresholdId"));
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlNodeIdentifier()).isEqualTo("node3");
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlDataType())
         .isEqualTo(ControlDataType.MINIMUM_DEVIATION);
@@ -1318,7 +1319,7 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     DeploymentTimeSeriesAnalysisDTO.HostData hostData1 =
         createHostData("node1", -1, 0.0, List.of(1D), List.of(1D), List.of("thresholdId"), "node3");
     DeploymentTimeSeriesAnalysisDTO.HostData hostData2 =
-        createHostData("node2", 2, 2.0, List.of(1D), List.of(1D), Collections.emptyList(), "node3");
+        createHostData("node2", 2, 2.0, List.of(1D), List.of(1D), List.of("thresholdId"), "node3");
     DeploymentTimeSeriesAnalysisDTO.TransactionMetricHostData transactionMetricHostData1 =
         createTransactionMetricHostData("txn", "identifier", 2, 0.5, Arrays.asList(hostData1, hostData2));
 

@@ -13,6 +13,7 @@ import static io.harness.logging.LogLevel.WARN;
 import static io.harness.provision.TerraformConstants.TERRAFORM_PLAN_FILE_OUTPUT_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_PLAN_JSON_FILE_NAME;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.JELENA;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
@@ -42,6 +43,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryNgService;
+import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.beans.FileData;
 import io.harness.category.element.UnitTests;
 import io.harness.cli.CliResponse;
@@ -54,11 +56,17 @@ import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthenticationDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
+import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
+import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.filesystem.FileIo;
 import io.harness.git.GitClientHelper;
@@ -84,6 +92,13 @@ import io.harness.terraform.request.TerraformInitCommandRequest;
 import io.harness.terraform.request.TerraformPlanCommandRequest;
 import io.harness.terraform.request.TerraformRefreshCommandRequest;
 
+import software.wings.service.impl.AwsApiHelperService;
+
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -98,6 +113,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
+import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -126,6 +144,11 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
   @Mock private DelegateFileManagerBase delegateFileManagerBase;
   @Mock ArtifactoryNgService artifactoryNgService;
   @Mock ArtifactoryRequestMapper artifactoryRequestMapper;
+  @Mock AwsApiHelperService awsApiHelperService;
+  @Mock AwsNgConfigMapper awsNgConfigMapper;
+  @Mock ListObjectsV2Result listObjectsV2Result;
+  @Mock S3Object s3Object;
+  @Mock ObjectMetadata objectMetadata;
 
   private File tfBackendConfig;
   private final EncryptedRecordData encryptedPlanContent =
@@ -736,7 +759,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     doReturn("varFilesCommitId").when(gitClient).downloadFiles(any());
 
     List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
-        getGitTerraformFileInfoList(), scriptDirectory, logCallback, "accountId", tfvarDir, commitIdMap, false);
+        getGitTerraformFileInfoList(), scriptDirectory, logCallback, "accountId", tfvarDir, commitIdMap, false, null);
     assertThat(varFilePaths.size()).isEqualTo(2);
     assertThat(varFilePaths.get(0))
         .isEqualTo(Paths.get(tfvarDir).toAbsolutePath() + "/"
@@ -755,8 +778,9 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     FileIo.createDirectoryIfDoesNotExist(tfvarDir);
     doReturn("varFilesCommitId").when(gitClient).downloadFiles(any());
 
-    List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
-        getGitTerraformFileInfoListInline(), scriptDirectory, logCallback, "accountId", tfvarDir, commitIdMap, true);
+    List<String> varFilePaths =
+        terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(getGitTerraformFileInfoListInline(),
+            scriptDirectory, logCallback, "accountId", tfvarDir, commitIdMap, true, null);
     assertThat(varFilePaths.size()).isEqualTo(1);
     assertThat(varFilePaths.get(0)).contains(scriptDirectory);
     assertThat(varFilePaths.get(0)).contains(".auto.tfvars");
@@ -782,7 +806,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     doReturn("backendConfigCommitId").when(gitClient).downloadFiles(any());
 
     String filePath = terraformBaseHelper.checkoutRemoteBackendConfigFileAndConvertToFilePath(
-        configFile, scriptDirectory, logCallback, "accountId", configDir, commitIdMap);
+        configFile, scriptDirectory, logCallback, "accountId", configDir, commitIdMap, null);
 
     assertThat(filePath).isNotNull();
     assertThat(filePath).isEqualTo(Paths.get(configDir).toAbsolutePath() + "/"
@@ -827,7 +851,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
         Arrays.asList(
             RemoteTerraformVarFileInfo.builder().filestoreFetchFilesConfig(artifactoryStoreDelegateConfig).build()),
-        scriptDirectory, logCallback, "accountId", tfvarDir, new HashMap<>(), false);
+        scriptDirectory, logCallback, "accountId", tfvarDir, new HashMap<>(), false, null);
 
     verify(artifactoryNgService, times(2)).downloadArtifacts(any(), any(), any(), any(), any());
     assertThat(varFilePaths.size()).isEqualTo(2);
@@ -874,7 +898,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
         RemoteTerraformVarFileInfo.builder().filestoreFetchFilesConfig(artifactoryStoreDelegateConfig).build());
 
     List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
-        terraformVarFileInfos, scriptDirectory, logCallback, "accountId", tfvarDir, new HashMap<>(), false);
+        terraformVarFileInfos, scriptDirectory, logCallback, "accountId", tfvarDir, new HashMap<>(), false, null);
 
     assertThat(varFilePaths.size()).isEqualTo(3);
   }
@@ -904,6 +928,180 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     assertThat(delegateFile.getFileName()).isEqualTo(format(TERRAFORM_PLAN_JSON_FILE_NAME, "planName"));
 
     FileIo.deleteFileIfExists(tfPlanJsonFile.getAbsolutePath());
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testFetchS3ConfigFilesAndPrepareScriptDirWithVersioning() throws IOException {
+    Map<String, Map<String, String>> keyVersionMap = new HashMap<>();
+    Map<String, String> versions = new HashMap<>();
+    versions.put("terraform/file1.tf", "v1");
+    versions.put("terraform/file2.tf", "v2");
+    S3StoreTFDelegateConfig s3StoreTFDelegateConfig =
+        getDefaultS3StoreTFDelegateConfig("TF_CONFIG_FILES", Collections.singletonList("terraform"), versions);
+    List<S3ObjectSummary> summaries =
+        getS3ObjectSummaries(List.of("terraform/", "terraform/file1.tf", "terraform/file2.tf"));
+    TerraformTaskNGParameters taskNGParameters = getTerraformTaskNgParams();
+    doReturn(null).when(secretDecryptionService).decrypt(any(), any());
+    doReturn(new ByteArrayInputStream("test".getBytes()))
+        .when(delegateFileManagerBase)
+        .downloadByFileId(any(), any(), any());
+    doReturn(AwsInternalConfig.builder().build()).when(awsNgConfigMapper).createAwsInternalConfig(any());
+    doReturn(listObjectsV2Result).when(awsApiHelperService).listObjectsInS3(any(), any(), any());
+    doReturn(summaries).when(listObjectsV2Result).getObjectSummaries();
+    doReturn(true).when(awsApiHelperService).isVersioningEnabledForBucket(any(), any(), any());
+    doReturn(s3Object).when(awsApiHelperService).getVersionedObjectFromS3(any(), any(), any(), any(), any());
+    doReturn(objectMetadata).when(s3Object).getObjectMetadata();
+    doReturn("v1", "v2").when(objectMetadata).getVersionId();
+    doReturn(new S3ObjectInputStream(new ByteArrayInputStream("test".getBytes()), null))
+        .when(s3Object)
+        .getObjectContent();
+
+    terraformBaseHelper.fetchS3ConfigFilesAndPrepareScriptDir(
+        s3StoreTFDelegateConfig, taskNGParameters, "baseDir", keyVersionMap, logCallback);
+
+    verify(awsApiHelperService, times(1)).isVersioningEnabledForBucket(any(), any(), any());
+    verify(awsApiHelperService, times(1))
+        .getVersionedObjectFromS3(any(), eq("region"), eq("bucket"), eq("terraform/file1.tf"), eq("v1"));
+    verify(awsApiHelperService, times(1))
+        .getVersionedObjectFromS3(any(), eq("region"), eq("bucket"), eq("terraform/file2.tf"), eq("v2"));
+    assertThat(FileUtils.getFile("baseDir/script-repository/terraform/file1.tf")).exists();
+    assertThat(FileUtils.getFile("baseDir/script-repository/terraform/file2.tf")).exists();
+    assertThat(keyVersionMap).isNotEmpty();
+    assertThat(keyVersionMap.get("TF_CONFIG_FILES")).containsEntry("terraform/file1.tf", "v1");
+    assertThat(keyVersionMap.get("TF_CONFIG_FILES")).containsEntry("terraform/file2.tf", "v2");
+    FileUtils.deleteDirectory(Paths.get("baseDir").toFile());
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testFetchS3ConfigFilesAndPrepareScriptDirWithoutVersioning() throws IOException {
+    Map<String, Map<String, String>> keyVersionMap = new HashMap<>();
+    S3StoreTFDelegateConfig s3StoreTFDelegateConfig =
+        getDefaultS3StoreTFDelegateConfig("TF_CONFIG_FILES", Collections.singletonList("terraform"), null);
+    List<S3ObjectSummary> summaries =
+        getS3ObjectSummaries(List.of("terraform/", "terraform/file1.tf", "terraform/file2.tf"));
+    TerraformTaskNGParameters taskNGParameters = getTerraformTaskNgParams();
+    doReturn(null).when(secretDecryptionService).decrypt(any(), any());
+    doReturn(new ByteArrayInputStream("test".getBytes()))
+        .when(delegateFileManagerBase)
+        .downloadByFileId(any(), any(), any());
+    doReturn(AwsInternalConfig.builder().build()).when(awsNgConfigMapper).createAwsInternalConfig(any());
+    doReturn(listObjectsV2Result).when(awsApiHelperService).listObjectsInS3(any(), any(), any());
+    doReturn(summaries).when(listObjectsV2Result).getObjectSummaries();
+    doReturn(false).when(awsApiHelperService).isVersioningEnabledForBucket(any(), any(), any());
+    doReturn(s3Object).when(awsApiHelperService).getObjectFromS3(any(), any(), any(), any());
+    doReturn(new S3ObjectInputStream(new ByteArrayInputStream("test".getBytes()), null))
+        .when(s3Object)
+        .getObjectContent();
+
+    terraformBaseHelper.fetchS3ConfigFilesAndPrepareScriptDir(
+        s3StoreTFDelegateConfig, taskNGParameters, "baseDir", keyVersionMap, logCallback);
+
+    verify(awsApiHelperService, times(1)).isVersioningEnabledForBucket(any(), any(), any());
+    verify(awsApiHelperService, times(1)).getObjectFromS3(any(), eq("region"), eq("bucket"), eq("terraform/file1.tf"));
+    verify(awsApiHelperService, times(1)).getObjectFromS3(any(), eq("region"), eq("bucket"), eq("terraform/file2.tf"));
+    assertThat(FileUtils.getFile("baseDir/script-repository/terraform/file1.tf")).exists();
+    assertThat(FileUtils.getFile("baseDir/script-repository/terraform/file2.tf")).exists();
+    assertThat(keyVersionMap.get("TF_CONFIG_FILES")).isEmpty();
+    FileUtils.deleteDirectory(Paths.get("baseDir").toFile());
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void checkoutRemoteVarFileAndConvertToVarFilePathsS3() throws IOException {
+    Map<String, String> versions1 = new HashMap<>();
+    versions1.put("var1/file1", "v1");
+    versions1.put("var1/file2", "v2");
+    Map<String, String> versions2 = new HashMap<>();
+    versions2.put("var2/file1", "v3");
+    List<S3ObjectSummary> summaries1 = getS3ObjectSummaries(List.of("var1/file1"));
+    List<S3ObjectSummary> summaries2 = getS3ObjectSummaries(List.of("var1/file2"));
+    List<S3ObjectSummary> summaries3 = getS3ObjectSummaries(List.of("var2/file1"));
+    List<TerraformVarFileInfo> varFileInfo = List.of(RemoteTerraformVarFileInfo.builder()
+                                                         .filestoreFetchFilesConfig(getDefaultS3StoreTFDelegateConfig(
+                                                             "VAR1", List.of("var1/file1", "var1/file2"), versions1))
+                                                         .build(),
+        RemoteTerraformVarFileInfo.builder()
+            .filestoreFetchFilesConfig(
+                getDefaultS3StoreTFDelegateConfig("VAR2", Collections.singletonList("var2/file1"), versions2))
+            .build());
+    Map<String, Map<String, String>> keyVersionMap = new HashMap<>();
+
+    doReturn(null).when(secretDecryptionService).decrypt(any(), any());
+    doReturn(AwsInternalConfig.builder().build()).when(awsNgConfigMapper).createAwsInternalConfig(any());
+    doReturn(listObjectsV2Result).when(awsApiHelperService).listObjectsInS3(any(), any(), any());
+    doReturn(summaries1, summaries2, summaries3).when(listObjectsV2Result).getObjectSummaries();
+    doReturn(true).when(awsApiHelperService).isVersioningEnabledForBucket(any(), any(), any());
+    doReturn(s3Object).when(awsApiHelperService).getVersionedObjectFromS3(any(), any(), any(), any(), any());
+    doReturn(objectMetadata).when(s3Object).getObjectMetadata();
+    doReturn("v1", "v2", "v3").when(objectMetadata).getVersionId();
+    doReturn(new S3ObjectInputStream(new ByteArrayInputStream("test".getBytes()), null))
+        .when(s3Object)
+        .getObjectContent();
+
+    List<String> paths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
+        varFileInfo, null, logCallback, "accountID", "tfVarDirectory", new HashMap<>(), false, keyVersionMap);
+
+    verify(awsApiHelperService, times(3)).isVersioningEnabledForBucket(any(), any(), any());
+    verify(awsApiHelperService, times(1))
+        .getVersionedObjectFromS3(any(), eq("region"), eq("bucket"), eq("var1/file1"), eq("v1"));
+    verify(awsApiHelperService, times(1))
+        .getVersionedObjectFromS3(any(), eq("region"), eq("bucket"), eq("var1/file2"), eq("v2"));
+    verify(awsApiHelperService, times(1))
+        .getVersionedObjectFromS3(any(), eq("region"), eq("bucket"), eq("var2/file1"), eq("v3"));
+    assertThat(FileUtils.getFile("tfVarDirectory/var1/file1")).exists();
+    assertThat(FileUtils.getFile("tfVarDirectory/var1/file2")).exists();
+    assertThat(FileUtils.getFile("tfVarDirectory/var2/file1")).exists();
+    assertThat(keyVersionMap).isNotEmpty();
+    assertThat(keyVersionMap.get("VAR1")).containsEntry("var1/file1", "v1");
+    assertThat(keyVersionMap.get("VAR1")).containsEntry("var1/file2", "v2");
+    assertThat(keyVersionMap.get("VAR2")).containsEntry("var2/file1", "v3");
+    assertThat(paths.size()).isEqualTo(3);
+    FileUtils.deleteDirectory(Paths.get("baseDir").toFile());
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void checkoutRemoteBackendConfigFileAndConvertToFilePathS3() throws IOException {
+    Map<String, String> versions1 = new HashMap<>();
+    versions1.put("terraform/backend/backend.tf", "v1");
+    List<S3ObjectSummary> summaries1 = getS3ObjectSummaries(List.of("terraform/backend/backend.tf"));
+    RemoteTerraformBackendConfigFileInfo remoteTerraformBackendConfigFileInfo =
+        RemoteTerraformBackendConfigFileInfo.builder()
+            .filestoreFetchFilesConfig(getDefaultS3StoreTFDelegateConfig(
+                "TF_BACKEND_FILE", List.of("terraform/backend/backend.tf"), versions1))
+            .build();
+    Map<String, Map<String, String>> keyVersionMap = new HashMap<>();
+
+    doReturn(null).when(secretDecryptionService).decrypt(any(), any());
+    doReturn(AwsInternalConfig.builder().build()).when(awsNgConfigMapper).createAwsInternalConfig(any());
+    doReturn(listObjectsV2Result).when(awsApiHelperService).listObjectsInS3(any(), any(), any());
+    doReturn(summaries1).when(listObjectsV2Result).getObjectSummaries();
+    doReturn(true).when(awsApiHelperService).isVersioningEnabledForBucket(any(), any(), any());
+    doReturn(s3Object).when(awsApiHelperService).getVersionedObjectFromS3(any(), any(), any(), any(), any());
+    doReturn(objectMetadata).when(s3Object).getObjectMetadata();
+    doReturn("v1").when(objectMetadata).getVersionId();
+    doReturn(new S3ObjectInputStream(new ByteArrayInputStream("test".getBytes()), null))
+        .when(s3Object)
+        .getObjectContent();
+
+    String path =
+        terraformBaseHelper.checkoutRemoteBackendConfigFileAndConvertToFilePath(remoteTerraformBackendConfigFileInfo,
+            null, logCallback, "accountID", "tfBeDirectory", new HashMap<>(), keyVersionMap);
+
+    verify(awsApiHelperService, times(1)).isVersioningEnabledForBucket(any(), any(), any());
+    verify(awsApiHelperService, times(1))
+        .getVersionedObjectFromS3(any(), eq("region"), eq("bucket"), eq("terraform/backend/backend.tf"), eq("v1"));
+    assertThat(FileUtils.getFile("tfBeDirectory/terraform/backend/backend.tf")).exists();
+    assertThat(keyVersionMap).isNotEmpty();
+    assertThat(keyVersionMap.get("TF_BACKEND_FILE")).containsEntry("terraform/backend/backend.tf", "v1");
+    assertThat(path).endsWith("tfBeDirectory/terraform/backend/backend.tf");
+    FileUtils.deleteDirectory(Paths.get("baseDir").toFile());
   }
 
   private List<TerraformVarFileInfo> getGitTerraformFileInfoList() {
@@ -956,5 +1154,46 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
         .planJsonLogOutputStream(planJsonLogOutputStream)
         .planLogOutputStream(planLogOutputStream)
         .skipTerraformRefresh(false);
+  }
+
+  private S3StoreTFDelegateConfig getDefaultS3StoreTFDelegateConfig(
+      String identifier, List<String> paths, Map<String, String> versions) {
+    return S3StoreTFDelegateConfig.builder()
+        .identifier(identifier)
+        .region("region")
+        .bucketName("bucket")
+        .paths(paths)
+        .versions(versions)
+        .encryptedDataDetails(Collections.singletonList(mock(EncryptedDataDetail.class)))
+        .connectorDTO(ConnectorInfoDTO.builder()
+                          .connectorConfig(AwsConnectorDTO.builder()
+                                               .credential(AwsCredentialDTO.builder()
+                                                               .awsCredentialType(AwsCredentialType.MANUAL_CREDENTIALS)
+                                                               .config(AwsManualConfigSpecDTO.builder().build())
+                                                               .build())
+                                               .build())
+                          .build())
+        .build();
+  }
+
+  @NotNull
+  private List<S3ObjectSummary> getS3ObjectSummaries(List<String> keys) {
+    return keys.stream()
+        .map(key -> {
+          S3ObjectSummary objectSummary = new S3ObjectSummary();
+          objectSummary.setKey(key);
+          return objectSummary;
+        })
+        .collect(Collectors.toList());
+  }
+
+  private TerraformTaskNGParameters getTerraformTaskNgParams() {
+    return TerraformTaskNGParameters.builder()
+        .entityId("entity-id")
+        .workspace("ws")
+        .accountId("accountId")
+        .currentStateFileId("stateFieldId")
+        .taskType(TFTaskType.PLAN)
+        .build();
   }
 }

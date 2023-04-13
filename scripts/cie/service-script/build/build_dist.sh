@@ -46,5 +46,10 @@ cp ../../${MODULE}/service/src/main/resources/key.pem .
 cp ../../${MODULE}/service/src/main/resources/cert.pem .
 
 java -jar ${MODULE}-capsule.jar scan-classpath-metadata
+
+if [ -f access-control-capsule.jar ]; then
+  mv ./access-control-capsule.jar  ./accesscontrol-service-capsule.jar
+fi
+
 cd ../..
 echo ${IMAGE_TAG}

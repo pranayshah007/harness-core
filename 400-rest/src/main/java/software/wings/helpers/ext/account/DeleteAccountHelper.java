@@ -23,10 +23,10 @@ import io.harness.event.timeseries.processor.TimescaleDataCleanup;
 import io.harness.ff.FeatureFlagService;
 import io.harness.limits.checker.rate.UsageBucket;
 import io.harness.limits.checker.rate.UsageBucket.UsageBucketKeys;
+import io.harness.mongo.MongoPersistence;
 import io.harness.perpetualtask.PerpetualTaskService;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.HIterator;
-import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
 import io.harness.scheduler.PersistentScheduler;
 
@@ -80,7 +80,7 @@ public class DeleteAccountHelper {
   @Inject ServiceClassLocator serviceClassLocator;
   @Inject private SSOSettingServiceImpl ssoSettingService;
   @Inject private UserService userService;
-  @Inject private HPersistence hPersistence;
+  @Inject private MongoPersistence hPersistence;
   @Inject @Named("BackgroundJobScheduler") private PersistentScheduler persistentScheduler;
   @Inject private PerpetualTaskService perpetualTaskService;
 

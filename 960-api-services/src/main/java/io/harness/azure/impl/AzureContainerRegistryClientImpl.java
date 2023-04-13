@@ -16,6 +16,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.azure.AzureClient;
 import io.harness.azure.client.AzureContainerRegistryClient;
 import io.harness.azure.client.AzureContainerRegistryRestClient;
@@ -138,6 +139,49 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
     } catch (IOException e) {
       throw new InvalidRequestException(
           "Unable to list repository tags for registryHost:" + registryHost + " and repositoryName:" + repositoryName);
+    }
+  }
+
+  @Override
+  public Response<DockerImageManifestResponse> getImageManifest(
+      AzureConfig azureConfig, final String registryHost, final String repositoryName, String tag, boolean isV1) {
+    AzureContainerRegistryRestClient azureContainerRegistryRestClient =
+        getAzureContainerRegistryRestClient(registryHost);
+    try {
+      String authHeader;
+      if (azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_CERT
+          || azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.MANAGED_IDENTITY_SYSTEM_ASSIGNED
+          || azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.MANAGED_IDENTITY_USER_ASSIGNED) {
+        String azureAccessToken =
+            getAuthenticationTokenCredentials(azureConfig)
+                .getToken(AzureUtils.getTokenRequestContext(ScopeUtil.resourceToScopes(
+                    AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint())))
+                .block()
+                .getToken();
+        String acrAccessToken =
+            getAcrAccessToken(registryHost, azureAccessToken, format(REPOSITORY_SCOPE, repositoryName));
+
+        authHeader = getAzureBearerAuthHeader(acrAccessToken);
+      } else {
+        authHeader = getAzureBasicAuthHeader(azureConfig.getClientId(), String.valueOf(azureConfig.getKey()));
+      }
+
+      Response<DockerImageManifestResponse> execute;
+      if (isV1) {
+        execute = azureContainerRegistryRestClient.getImageManifestV1(authHeader, repositoryName, tag).execute();
+      } else {
+        execute = azureContainerRegistryRestClient.getImageManifestV2(authHeader, repositoryName, tag).execute();
+      }
+
+      if (execute.errorBody() != null) {
+        throw new InvalidRequestException(String.format(
+            "Could not fetch manifest for registryHost:%s repository:%s tag:%s", registryHost, repositoryName, tag));
+      }
+
+      return execute;
+    } catch (IOException e) {
+      throw new InvalidRequestException(String.format(
+          "Could not fetch manifest for registryHost:%s repository:%s tag:%s", registryHost, repositoryName, tag));
     }
   }
 

@@ -15,10 +15,21 @@ import io.harness.client.NgConnectorManagerClient;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.idp.common.Constants;
+import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.provision.ProvisionModuleConfig;
 import io.harness.idp.settings.service.BackstagePermissionsService;
+import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.SecretRequestWrapper;
+import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
+import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.retry.RetryHelper;
+import io.harness.secretmanagerclient.SecretType;
+import io.harness.secretmanagerclient.ValueType;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.SecurityContextBuilder;
+import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
+import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.BackstagePermissions;
 
 import com.google.inject.Inject;
@@ -26,6 +37,8 @@ import com.google.inject.name.Named;
 import io.github.resilience4j.retry.Retry;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
@@ -42,6 +55,9 @@ import org.springframework.dao.DuplicateKeyException;
 
 @Slf4j
 public class ProvisionServiceImpl implements ProvisionService {
+  private static final String ALPHANUMERIC = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  private static SecureRandom rnd = new SecureRandom();
+  private static final int SECRET_LENGTH = 32;
   @Inject @Named(PROVISION_MODULE_CONFIG) ProvisionModuleConfig provisionModuleConfig;
   private final Retry retry = buildRetryAndRegisterListeners();
   private final MediaType APPLICATION_JSON = MediaType.parse("application/json");
@@ -49,9 +65,12 @@ public class ProvisionServiceImpl implements ProvisionService {
   private static final List<String> permissions =
       List.of("user_read", "user_update", "user_delete", "owner_read", "owner_update", "owner_delete", "all_create");
   @Inject BackstagePermissionsService backstagePermissionsService;
+  @Inject BackstageEnvVariableService backstageEnvVariableService;
+  @Inject @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
 
   @Override
   public void triggerPipelineAndCreatePermissions(String accountIdentifier, String namespace) {
+    createBackstageBackendSecret(accountIdentifier);
     createDefaultPermissions(accountIdentifier);
     makeTriggerApi(accountIdentifier, namespace);
   }
@@ -69,6 +88,43 @@ public class ProvisionServiceImpl implements ProvisionService {
       log.error(e.getMessage());
       throw new InvalidRequestException(e.getMessage());
     }
+  }
+
+  public void createBackstageBackendSecret(String accountIdentifier) {
+    String actualSecret = generateEncodedSecret();
+    SecretRequestWrapper secretRequestWrapper =
+        SecretRequestWrapper.builder()
+            .secret(SecretDTOV2.builder()
+                        .identifier(Constants.IDP_BACKEND_SECRET)
+                        .name(Constants.IDP_BACKEND_SECRET)
+                        .description("Auto Generated Secret for Backstage Backend")
+                        .type(SecretType.SecretText)
+                        .spec(SecretTextSpecDTO.builder()
+                                  .secretManagerIdentifier("harnessSecretManager")
+                                  .value(actualSecret)
+                                  .valueType(ValueType.Inline)
+                                  .build())
+                        .build())
+            .build();
+    SecretResponseWrapper dto = ngSecretService.create(accountIdentifier, null, null, true, secretRequestWrapper);
+    BackstageEnvSecretVariable backstageEnvSecretVariable = new BackstageEnvSecretVariable();
+    backstageEnvSecretVariable.setEnvName(Constants.BACKEND_SECRET);
+    backstageEnvSecretVariable.setHarnessSecretIdentifier(dto.getSecret().getIdentifier());
+    backstageEnvSecretVariable.setType(BackstageEnvVariable.TypeEnum.SECRET);
+    backstageEnvVariableService.create(backstageEnvSecretVariable, accountIdentifier);
+    log.info("Created BACKEND_SECRET for account Id - {}", accountIdentifier);
+  }
+
+  public static String generateEncodedSecret() {
+    return Base64.getEncoder().encodeToString(generateSecret().getBytes());
+  }
+
+  static String generateSecret() {
+    StringBuilder sb = new StringBuilder(SECRET_LENGTH);
+    for (int i = 0; i < SECRET_LENGTH; i++) {
+      sb.append(ALPHANUMERIC.charAt(rnd.nextInt(ALPHANUMERIC.length())));
+    }
+    return sb.toString();
   }
 
   @Override

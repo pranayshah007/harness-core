@@ -43,11 +43,10 @@ public class PmsStepFilterJsonCreatorV2Test extends CategoryTest {
     Set<String> strings = pmsStepFilterJsonCreatorV2.getSupportedStepTypes();
     Set<String> strings2 = Sets.newHashSet(StepSpecTypeConstants.HTTP, StepSpecTypeConstants.JIRA_CREATE,
         StepSpecTypeConstants.CUSTOM_APPROVAL, StepSpecTypeConstants.JIRA_UPDATE, StepSpecTypeConstants.JIRA_APPROVAL,
-        StepSpecTypeConstants.SHELL_SCRIPT, StepSpecTypeConstants.SERVICENOW_APPROVAL, StepSpecTypeConstants.BARRIER,
-        StepSpecTypeConstants.POLICY_STEP, StepSpecTypeConstants.SERVICENOW_CREATE,
-        StepSpecTypeConstants.SERVICENOW_UPDATE, StepSpecTypeConstants.SERVICENOW_IMPORT_SET,
-        StepSpecTypeConstants.QUEUE, StepSpecTypeConstants.EMAIL, StepSpecTypeConstants.WAIT_STEP,
-        StepSpecTypeConstants.CONTAINER_STEP);
+        StepSpecTypeConstants.SERVICENOW_APPROVAL, StepSpecTypeConstants.BARRIER, StepSpecTypeConstants.POLICY_STEP,
+        StepSpecTypeConstants.SERVICENOW_CREATE, StepSpecTypeConstants.SERVICENOW_UPDATE,
+        StepSpecTypeConstants.SERVICENOW_IMPORT_SET, StepSpecTypeConstants.QUEUE, StepSpecTypeConstants.EMAIL,
+        StepSpecTypeConstants.WAIT_STEP, StepSpecTypeConstants.CONTAINER_STEP);
     assertThat(strings).isEqualTo(strings2);
     assertThat(strings).contains(StepSpecTypeConstants.JIRA_CREATE);
   }
