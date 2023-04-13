@@ -36,7 +36,8 @@ public class ChatGPTResource {
   @Timed
   @ExceptionMetered
   @Path("/chat")
-  public String getChatResponse(@QueryParam("apiPath") String apiPath) throws IOException {
-    return chatGPTService.getChatGPTResponse(apiPath);
+  public String getChatResponse(@QueryParam("apiPath") String apiPath, @QueryParam("logs") String logs)
+      throws IOException {
+    return chatGPTService.getChatGPTResponse(apiPath, logs);
   }
 }

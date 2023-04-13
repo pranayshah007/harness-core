@@ -14,10 +14,10 @@ import java.io.IOException;
 public class ChatGPTServiceImpl implements ChatGPTService {
   ChatGPTClient chatGPTClient = new ChatGPTClient();
 
-  private final String apiToken = "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";
+  private final String apiToken = "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";
 
   @Override
-  public String getChatGPTResponse(String apiPath) throws IOException {
-    return chatGPTClient.chatGPTResponse(this.apiToken, apiPath);
+  public String getChatGPTResponse(String apiPath, String logs) throws IOException {
+    return chatGPTClient.chatGPTResponse(this.apiToken, apiPath, logs);
   }
 }

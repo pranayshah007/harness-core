@@ -46,6 +46,7 @@ import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.cdng.beans.v2.ClusterAnalysisOverview;
+import io.harness.cvng.chatgpt.ChatGPTService;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentLogAnalysisFilter;
 import io.harness.cvng.core.entities.CVConfig;
@@ -72,6 +73,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -95,6 +97,8 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Inject private FeatureFlagService featureFlagService;
+
+  @Inject private ChatGPTService chatGPTService;
 
   @Override
   public void save(DeploymentLogAnalysis deploymentLogAnalysis) {
@@ -672,12 +676,44 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
           getRadarChartLogAnalysisResult(deploymentLogAnalysis, deploymentLogAnalysisFilter));
     }
     Collections.sort(allLogAnalysisRadarChartListDTOs);
-    // chatGPT API.....
+
+    String logs = "";
+    int i = 1;
+    for (LogAnalysisRadarChartListDTO logAnalysisRadarChartListDTO : allLogAnalysisRadarChartListDTOs) {
+      logs = logs + String.format("Log message %d: %s ", i, logAnalysisRadarChartListDTO.getMessage());
+      i++;
+    }
+    String severity = null;
+    try {
+      severity = chatGPTService.getChatGPTResponse("/completions", logs);
+    } catch (Exception e) {
+    }
+
+    List<Integer> chatGPTSeverityList = processSeverity(severity);
+
+    if (chatGPTSeverityList.size() == allLogAnalysisRadarChartListDTOs.size()) {
+      for (int index = 0; index < allLogAnalysisRadarChartListDTOs.size(); index++) {
+        allLogAnalysisRadarChartListDTOs.get(index).setChatGPTSeverity(chatGPTSeverityList.get(index));
+      }
+    }
 
     if (allLogAnalysisRadarChartListDTOs.size() > 0) {
       setAngleAndRadiusForRadarChart(allLogAnalysisRadarChartListDTOs);
     }
     return allLogAnalysisRadarChartListDTOs;
+  }
+
+  List<Integer> processSeverity(String str) {
+    List<Integer> severityList = new ArrayList<>();
+
+    str = str.replaceAll("[^0-9]", " ");
+    str = str.replaceAll(" +", " ");
+    Arrays.stream(str.split(" ")).forEach(s -> {
+      if (!s.isEmpty() && s.charAt(0) >= '0' && s.charAt(0) <= '9') {
+        severityList.add(Integer.parseInt(s));
+      }
+    });
+    return severityList;
   }
 
   private void setAngleAndRadiusForRadarChart(List<LogAnalysisRadarChartListDTO> logAnalysisRadarChartListDTOS) {

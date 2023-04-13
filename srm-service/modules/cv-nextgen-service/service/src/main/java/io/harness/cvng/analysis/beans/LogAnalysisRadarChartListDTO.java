@@ -40,6 +40,7 @@ public class LogAnalysisRadarChartListDTO implements Comparable<LogAnalysisRadar
   DeploymentLogAnalysisDTO.ClusterType clusterType;
   DeploymentLogAnalysisDTO.ClusterType previousClusterType;
   int count;
+  int chatGPTSeverity;
 
   List<HostFrequencyData> testHostFrequencyData;
 

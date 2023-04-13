@@ -10,5 +10,5 @@ package io.harness.cvng.chatgpt;
 import java.io.IOException;
 
 public interface ChatGPTService {
-  String getChatGPTResponse(String apiPath) throws IOException;
+  String getChatGPTResponse(String apiPath, String logs) throws IOException;
 }
