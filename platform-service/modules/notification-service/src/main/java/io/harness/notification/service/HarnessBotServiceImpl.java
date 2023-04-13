@@ -30,21 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PL)
 public class HarnessBotServiceImpl implements HarnessBotService {
-  private static final OpenAiService service = new OpenAiService(getOpenAIKey());
+  private static final OpenAiService service = new OpenAiService(System.getenv("OPENAI_KEY"));
   private static final List<Embedding> embeddings = readEmbeddings("/opt/harness/embeddings.csv");
-
-  private static String getOpenAIKey() {
-    if (System.getenv("OPENAI_KEY") != null && !System.getenv("OPENAI_KEY").isEmpty()) {
-      log.info("Reading OpenAI Key from Env Variable");
-      return System.getenv("OPENAI_KEY");
-    }
-    if (System.getProperty("openaikey") != null && !System.getProperty("openaikey").isEmpty()) {
-      log.info("Reading OpenAI Key from System Property");
-      return System.getProperty("openaikey");
-    }
-    log.info("Reading hardcoded OpenAI Key");
-    return "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";
-  }
 
   private static List<Embedding> readEmbeddings(String filePath) {
     List<Embedding> result = new ArrayList<>();
