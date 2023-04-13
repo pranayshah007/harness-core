@@ -33,7 +33,6 @@ import io.harness.models.ActiveServiceInstanceInfoV2;
 import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.EnvBuildInstanceCount;
-import io.harness.models.EnvironmentInstanceCountAndEnvironmentGroupModel;
 import io.harness.models.EnvironmentInstanceCountModel;
 import io.harness.models.InstanceDetailGroupedByPipelineExecutionList;
 import io.harness.models.InstanceDetailsByBuildId;
@@ -132,7 +131,6 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import java.math.BigInteger;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;

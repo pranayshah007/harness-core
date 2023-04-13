@@ -15,7 +15,6 @@ import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.BuildsByEnvironment;
 import io.harness.models.EnvBuildInstanceCount;
-import io.harness.models.EnvironmentInstanceCountAndEnvironmentGroupModel;
 import io.harness.models.EnvironmentInstanceCountModel;
 import io.harness.models.InstanceDetailGroupedByPipelineExecutionList;
 import io.harness.models.InstanceDetailsByBuildId;
@@ -43,8 +42,6 @@ public interface InstanceDashboardService {
       String displayName, boolean isGitOps, boolean filterOnArtifact);
   List<EnvironmentInstanceCountModel> getInstanceCountForEnvironmentFilteredByService(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean isGitOps);
-  List<EnvironmentInstanceCountAndEnvironmentGroupModel> getInstanceCountAndEnvironmentGroupForEnvironmentFilteredByService(String accountIdentifier,
-                                                                                                                            String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean isGitOps);
   List<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
   List<InstanceDetailsByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,

@@ -25,7 +25,6 @@ import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.CountByOrgIdProjectIdAndServiceId;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
-import io.harness.models.EnvironmentInstanceCountAndEnvironmentGroupModel;
 import io.harness.models.EnvironmentInstanceCountModel;
 import io.harness.models.InstanceGroupedByPipelineExecution;
 import io.harness.models.InstancesByBuildId;
@@ -424,28 +423,6 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   }
 
   @Override
-  public AggregationResults<EnvironmentInstanceCountAndEnvironmentGroupModel>
-  getInstanceCountAndEnvironmentGroupForEnvironmentFilteredByService(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String serviceIdentifier, boolean isGitOps) {
-    Criteria criteria =
-        getCriteriaForActiveInstancesV2(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
-
-    addCriteriaForGitOpsCheck(criteria, isGitOps);
-
-    MatchOperation matchStage = Aggregation.match(criteria);
-
-    GroupOperation groupOperation = group(InstanceKeys.envIdentifier, InstanceKeys.envGroupRef)
-                                        .first(InstanceKeys.envIdentifier)
-                                        .as(InstanceKeys.envIdentifier)
-                                        .first(InstanceKeys.envGroupRef)
-                                        .as(InstanceKeys.envGroupRef)
-                                        .count()
-                                        .as(InstanceSyncConstants.COUNT);
-    return mongoTemplate.aggregate(newAggregation(matchStage, groupOperation), INSTANCE_NG_COLLECTION,
-        EnvironmentInstanceCountAndEnvironmentGroupModel.class);
-  }
-
-  @Override
   public AggregationResults<ArtifactDeploymentDetailModel> getLastDeployedInstance(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean isEnvironmentCard,
       boolean isGitOps) {
@@ -454,9 +431,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     addCriteriaForGitOpsCheck(criteria, isGitOps);
     MatchOperation matchOperation = Aggregation.match(criteria);
     SortOperation sortOperation = Aggregation.sort(Sort.by(Sort.Direction.DESC, InstanceKeys.lastDeployedAt));
-    ProjectionOperation projectionOperation =
-        Aggregation.project(InstanceKeys.envIdentifier, InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME,
-            InstanceKeys.lastDeployedAt, InstanceKeys.lastPipelineExecutionId);
+    ProjectionOperation projectionOperation = Aggregation.project(
+        InstanceKeys.envIdentifier, InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME, InstanceKeys.lastDeployedAt, InstanceKeys.lastPipelineExecutionId);
     GroupOperation groupOperation;
 
     if (isEnvironmentCard) {
@@ -471,8 +447,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                          .as(DISPLAY_NAME)
                          .first(InstanceKeys.lastDeployedAt)
                          .as(InstanceKeys.lastDeployedAt)
-                         .first(InstanceKeys.lastPipelineExecutionId)
-                         .as(InstanceKeys.lastPipelineExecutionId);
+            .first(InstanceKeys.lastPipelineExecutionId)
+            .as(InstanceKeys.lastPipelineExecutionId);
     return mongoTemplate.aggregate(newAggregation(sortOperation, matchOperation, projectionOperation, groupOperation),
         INSTANCE_NG_COLLECTION, ArtifactDeploymentDetailModel.class);
   }
