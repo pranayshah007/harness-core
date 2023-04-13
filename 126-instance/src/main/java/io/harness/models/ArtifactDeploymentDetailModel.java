@@ -18,4 +18,5 @@ public class ArtifactDeploymentDetailModel {
   private String envIdentifier;
   private String displayName;
   private long lastDeployedAt;
+  private String lastPipelineExecutionId;
 }

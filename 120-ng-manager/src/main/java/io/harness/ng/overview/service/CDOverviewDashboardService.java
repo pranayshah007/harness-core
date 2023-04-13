@@ -43,6 +43,7 @@ import io.harness.ng.overview.dto.ServiceDetailsInfoDTO;
 import io.harness.ng.overview.dto.ServiceDetailsInfoDTOV2;
 import io.harness.ng.overview.dto.ServiceHeaderInfo;
 import io.harness.ng.overview.dto.ServicePipelineInfo;
+import io.harness.ng.overview.dto.ServicePipelineWithRevertInfo;
 import io.harness.ng.overview.dto.TimeValuePairListDTO;
 
 import java.util.List;
@@ -132,6 +133,8 @@ public interface CDOverviewDashboardService {
   OpenTaskDetails getOpenTasks(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String serviceIdentifier, long startInterval);
 
+  List<String> getPipelineExecutionsWhereRollbackOccurred(List<String> pipelineExecutionIdList);
+
   InstancesByBuildIdList getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, String envId, List<String> buildIds, String infraId, String clusterId,
       String pipelineExecutionId);
@@ -163,6 +166,8 @@ public interface CDOverviewDashboardService {
       Set<String> serviceIds, Set<String> envIds);
 
   Map<String, ServicePipelineInfo> getPipelineExecutionDetails(List<String> pipelineExecutionIdList);
+
+  Map<String, ServicePipelineWithRevertInfo> getPipelineExecutionDetailsWithRevertInfo(List<String> pipelineExecutionIdList);
 
   PipelineExecutionCountInfo getPipelineExecutionCountInfo(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, Long startInterval, Long endInterval, String artifactPath,

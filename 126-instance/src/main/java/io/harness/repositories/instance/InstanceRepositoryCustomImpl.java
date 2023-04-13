@@ -424,25 +424,25 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   }
 
   @Override
-  public AggregationResults<EnvironmentInstanceCountAndEnvironmentGroupModel> getInstanceCountAndEnvironmentGroupForEnvironmentFilteredByService(
-          String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
-          boolean isGitOps) {
+  public AggregationResults<EnvironmentInstanceCountAndEnvironmentGroupModel>
+  getInstanceCountAndEnvironmentGroupForEnvironmentFilteredByService(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, boolean isGitOps) {
     Criteria criteria =
-            getCriteriaForActiveInstancesV2(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
+        getCriteriaForActiveInstancesV2(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
 
     addCriteriaForGitOpsCheck(criteria, isGitOps);
 
     MatchOperation matchStage = Aggregation.match(criteria);
 
     GroupOperation groupOperation = group(InstanceKeys.envIdentifier, InstanceKeys.envGroupRef)
-            .first(InstanceKeys.envIdentifier)
-            .as(InstanceKeys.envIdentifier)
-            .first(InstanceKeys.envGroupRef)
-            .as(InstanceKeys.envGroupRef)
-            .count()
-            .as(InstanceSyncConstants.COUNT);
-    return mongoTemplate.aggregate(
-            newAggregation(matchStage, groupOperation), INSTANCE_NG_COLLECTION, EnvironmentInstanceCountAndEnvironmentGroupModel.class);
+                                        .first(InstanceKeys.envIdentifier)
+                                        .as(InstanceKeys.envIdentifier)
+                                        .first(InstanceKeys.envGroupRef)
+                                        .as(InstanceKeys.envGroupRef)
+                                        .count()
+                                        .as(InstanceSyncConstants.COUNT);
+    return mongoTemplate.aggregate(newAggregation(matchStage, groupOperation), INSTANCE_NG_COLLECTION,
+        EnvironmentInstanceCountAndEnvironmentGroupModel.class);
   }
 
   @Override
@@ -454,8 +454,9 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     addCriteriaForGitOpsCheck(criteria, isGitOps);
     MatchOperation matchOperation = Aggregation.match(criteria);
     SortOperation sortOperation = Aggregation.sort(Sort.by(Sort.Direction.DESC, InstanceKeys.lastDeployedAt));
-    ProjectionOperation projectionOperation = Aggregation.project(
-        InstanceKeys.envIdentifier, InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME, InstanceKeys.lastDeployedAt);
+    ProjectionOperation projectionOperation =
+        Aggregation.project(InstanceKeys.envIdentifier, InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME,
+            InstanceKeys.lastDeployedAt, InstanceKeys.lastPipelineExecutionId);
     GroupOperation groupOperation;
 
     if (isEnvironmentCard) {
@@ -469,7 +470,9 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                          .first(DISPLAY_NAME)
                          .as(DISPLAY_NAME)
                          .first(InstanceKeys.lastDeployedAt)
-                         .as(InstanceKeys.lastDeployedAt);
+                         .as(InstanceKeys.lastDeployedAt)
+                         .first(InstanceKeys.lastPipelineExecutionId)
+                         .as(InstanceKeys.lastPipelineExecutionId);
     return mongoTemplate.aggregate(newAggregation(sortOperation, matchOperation, projectionOperation, groupOperation),
         INSTANCE_NG_COLLECTION, ArtifactDeploymentDetailModel.class);
   }

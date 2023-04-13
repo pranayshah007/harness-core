@@ -110,6 +110,7 @@ import io.harness.ng.overview.dto.ServiceDetailsInfoDTO;
 import io.harness.ng.overview.dto.ServiceDetailsInfoDTOV2;
 import io.harness.ng.overview.dto.ServiceHeaderInfo;
 import io.harness.ng.overview.dto.ServicePipelineInfo;
+import io.harness.ng.overview.dto.ServicePipelineWithRevertInfo;
 import io.harness.ng.overview.dto.TimeAndStatusDeployment;
 import io.harness.ng.overview.dto.TimeValuePair;
 import io.harness.ng.overview.dto.TimeValuePairListDTO;
@@ -130,6 +131,8 @@ import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+
+import java.math.BigInteger;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -1278,6 +1281,71 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     return pipelineExecutionDetailsMap;
   }
 
+  @Override
+  public Map<String, ServicePipelineWithRevertInfo> getPipelineExecutionDetailsWithRevertInfo(List<String> planExecutionIdList) {
+    return getPipelineExecutionDetailsWithRevertInfo(planExecutionIdList, null);
+  }
+
+  public Map<String, ServicePipelineWithRevertInfo> getPipelineExecutionDetailsWithRevertInfo(
+          List<String> planExecutionIdList, List<String> statusList) {
+    Map<String, ServicePipelineWithRevertInfo> pipelineExecutionDetailsMap = new HashMap<>();
+    int totalTries = 0;
+    boolean successfulOperation = false;
+    String sql;
+    if (EmptyPredicate.isNotEmpty(statusList)) {
+      sql = "select * from " + tableNameCD + " where planexecutionid = any (?) and status = any (?);";
+    } else {
+      sql = "select * from " + tableNameCD + " where planexecutionid = any (?);";
+    }
+
+    while (!successfulOperation && totalTries <= MAX_RETRY_COUNT) {
+      ResultSet resultSet = null;
+      try (Connection connection = timeScaleDBService.getDBConnection();
+           PreparedStatement statement = connection.prepareStatement(sql)) {
+        final Array array = connection.createArrayOf("VARCHAR", planExecutionIdList.toArray());
+        statement.setArray(1, array);
+        if (EmptyPredicate.isNotEmpty(statusList)) {
+          final Array statusArray = connection.createArrayOf("VARCHAR", statusList.toArray());
+          statement.setArray(2, statusArray);
+        }
+        resultSet = statement.executeQuery();
+        while (resultSet != null && resultSet.next()) {
+          String pipelineExecutionId = resultSet.getString(NGPipelineSummaryCDConstants.ID);
+          String pipelineName = resultSet.getString(NGPipelineSummaryCDConstants.NAME);
+          String pipelineId = resultSet.getString(NGPipelineSummaryCDConstants.PIPELINE_IDENTIFIER);
+          String status = resultSet.getString(NGPipelineSummaryCDConstants.STATUS);
+          String planExecutionId = resultSet.getString(NGPipelineSummaryCDConstants.PLAN_EXECUTION_ID);
+          Boolean isRevertExecution = resultSet.getBoolean(NGPipelineSummaryCDConstants.REVERT_EXECUTION);
+          String deployedByName = resultSet.getString(NGPipelineSummaryCDConstants.AUTHOR_NAME);
+          String deployedById = resultSet.getString(NGPipelineSummaryCDConstants.AUTHOR_ID);
+
+          long executionTime = Long.parseLong(resultSet.getString(NGPipelineSummaryCDConstants.START_TS));
+          if (!pipelineExecutionDetailsMap.containsKey(planExecutionId)) {
+            pipelineExecutionDetailsMap.put(planExecutionId,
+                    ServicePipelineWithRevertInfo.builder()
+                            .identifier(pipelineId)
+                            .pipelineExecutionId(pipelineExecutionId)
+                            .name(pipelineName)
+                            .lastExecutedAt(executionTime)
+                            .status(status)
+                            .planExecutionId(planExecutionId)
+                            .deployedByName(deployedByName)
+                            .deployedById(deployedById)
+                            .isRevertExecution(isRevertExecution)
+                            .build());
+          }
+        }
+        successfulOperation = true;
+      } catch (SQLException ex) {
+        log.error("%s after total tries = %s", ex, totalTries);
+        totalTries++;
+      } finally {
+        DBUtils.close(resultSet);
+      }
+    }
+    return pipelineExecutionDetailsMap;
+  }
+
   public Map<String, String> getPipelineExecutionStatusMap(List<String> pipelineExecutionIdList, String query) {
     Map<String, String> executionStatusMap = new HashMap<>();
     int totalTries = 0;
@@ -1321,6 +1389,29 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
             ids.add(id);
           }
         }
+        successfulOperation = true;
+      } catch (SQLException ex) {
+        log.error("{} after total tries = {}", ex, totalTries);
+        totalTries++;
+      } finally {
+        DBUtils.close(resultSet);
+      }
+    }
+    return ids.stream().collect(Collectors.toList());
+  }
+
+  public List<String> getPipelineExecutionsWhereRollbackOccurred(String query) {
+    Set<String> ids = new HashSet<>();
+    int totalTries = 0;
+    boolean successfulOperation = false;
+    ResultSet resultSet = null;
+    while (!successfulOperation && totalTries <= MAX_RETRY_COUNT) {
+      try (Connection connection = timeScaleDBService.getDBConnection();
+           PreparedStatement statement = connection.prepareStatement(query)) {
+        resultSet = statement.executeQuery();
+        while (resultSet != null && resultSet.next()) {
+           ids.add(resultSet.getString(PIPELINE_EXECUTION_SUMMARY_CD_ID));
+          }
         successfulOperation = true;
       } catch (SQLException ex) {
         log.error("{} after total tries = {}", ex, totalTries);
@@ -2897,9 +2988,11 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, true, isGitOps);
     Map<String, ArtifactDeploymentDetail> artifactDeploymentDetailsMap =
         DashboardServiceHelper.constructEnvironmentToArtifactDeploymentMap(artifactDeploymentDetails, envIdToEnvNameMap);
-
+    Map<String, ServicePipelineWithRevertInfo> pipelineExecutionDetailsMap =
+            getPipelineExecutionDetailsWithRevertInfo(artifactDeploymentDetailsMap.values().stream().map(artifactDeploymentDetail -> artifactDeploymentDetail.getLastPipelineExecutionId()).collect(Collectors.toList()));
+    List<String> pipelineExecutionIdsWhereRollbackOccurred = getPipelineExecutionsWhereRollbackOccurred(pipelineExecutionDetailsMap.values().stream().map(servicePipelineWithRevertInfo -> servicePipelineWithRevertInfo.getPipelineExecutionId()).collect(Collectors.toList()));
     return DashboardServiceHelper.getEnvironmentInstanceDetailsFromMap(
-        artifactDeploymentDetailsMap, envToCountMap, envIdToEnvNameMap, envIdToEnvTypeMap, environmentGroupEntities, environmentFilterPropertiesDTO);
+        artifactDeploymentDetailsMap, envToCountMap, envIdToEnvNameMap, envIdToEnvTypeMap, environmentGroupEntities, environmentFilterPropertiesDTO, pipelineExecutionDetailsMap, pipelineExecutionIdsWhereRollbackOccurred);
   }
 
   @Override
@@ -2944,6 +3037,13 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<ServicePipelineInfo> servicePipelineInfoList = new ArrayList<>(servicePipelineInfoMap.values());
     DashboardServiceHelper.sortServicePipelineInfoList(servicePipelineInfoList);
     return OpenTaskDetails.builder().pipelineDeploymentDetails(servicePipelineInfoList).build();
+  }
+
+  @Override
+  public List<String> getPipelineExecutionsWhereRollbackOccurred(List<String> pipelineExecutionIdList) {
+    String query = DashboardServiceHelper.buildRollbackDurationQuery(
+            pipelineExecutionIdList);
+    return getPipelineExecutionsWhereRollbackOccurred(query);
   }
 
   private List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> groupedByArtifacts(

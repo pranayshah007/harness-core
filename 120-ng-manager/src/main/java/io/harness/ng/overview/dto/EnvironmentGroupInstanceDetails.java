@@ -31,5 +31,7 @@ public class EnvironmentGroupInstanceDetails {
     @NotNull Boolean isDrift;
     @Min(1) Integer count;
     List<ArtifactDeploymentDetail> artifactDeploymentDetails;
+    Boolean isRollback;
+    Boolean isRevert;
   }
 }

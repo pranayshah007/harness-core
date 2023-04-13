@@ -25,6 +25,7 @@ import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
 import io.harness.ng.overview.dto.PipelineExecutionCountInfo;
 import io.harness.ng.overview.dto.ServiceArtifactExecutionDetail;
 import io.harness.ng.overview.dto.ServicePipelineInfo;
+import io.harness.ng.overview.dto.ServicePipelineWithRevertInfo;
 import io.harness.utils.IdentifierRefHelper;
 
 import java.util.ArrayList;
@@ -629,7 +630,8 @@ public class DashboardServiceHelper {
 
   public EnvironmentGroupInstanceDetails getEnvironmentInstanceDetailsFromMap(
           Map<String, ArtifactDeploymentDetail> artifactDeploymentDetailsMap, Map<String, Integer> envToCountMap,
-          Map<String, String> envIdToEnvNameMap, Map<String, EnvironmentType> envIdToEnvTypeMap, List<EnvironmentGroupEntity> environmentGroupEntities, EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO) {
+          Map<String, String> envIdToEnvNameMap, Map<String, EnvironmentType> envIdToEnvTypeMap, List<EnvironmentGroupEntity> environmentGroupEntities, EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO
+  , Map<String, ServicePipelineWithRevertInfo> pipelineExecutionDetailsMap, List<String> pipelineExecutionIdsWhereRollbackOccurred) {
     List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> environmentGroupInstanceDetailList = new ArrayList<>();
 
     Set<String> envIds = new HashSet<>();
@@ -676,6 +678,8 @@ public class DashboardServiceHelper {
                     .isEnvGroup(true)
                     .count(totalCount)
                     .isDrift((artifacts.size() > 1) || (artifacts.size() == 1 && artifactDeploymentDetailList.size() != envGroupEntity.getEnvIdentifiers().size()))
+                    .isRevert(pipelineExecutionDetailsMap.get(artifactDeploymentDetailList.isEmpty() ? false : artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()).getIsRevertExecution())
+                    .isRollback(pipelineExecutionIdsWhereRollbackOccurred.contains(pipelineExecutionDetailsMap.get(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()).getPipelineExecutionId()))
                     .build());
           }
         }
@@ -703,6 +707,8 @@ public class DashboardServiceHelper {
                 .isEnvGroup(false)
                 .count(count)
                 .isDrift(false)
+                .isRevert(pipelineExecutionDetailsMap.get(artifactDeploymentDetail.getLastPipelineExecutionId()).getIsRevertExecution())
+                .isRollback(pipelineExecutionIdsWhereRollbackOccurred.contains(pipelineExecutionDetailsMap.get(artifactDeploymentDetail.getLastPipelineExecutionId())))
                 .build());
       }
     }
@@ -738,6 +744,7 @@ public class DashboardServiceHelper {
                   .envName(envIdToEnvNameMap.getOrDefault(envId, ""))
                   .envId(envId)
               .lastDeployedAt(artifactDeploymentDetail.getLastDeployedAt())
+                  .lastPipelineExecutionId(artifactDeploymentDetail.getLastPipelineExecutionId())
               .build());
     }
     return map;
@@ -748,6 +755,17 @@ public class DashboardServiceHelper {
     return String.format(
         "select pipeline_execution_summary_cd_id from service_infra_info where accountid = '%s' and orgidentifier = '%s' and projectidentifier = '%s' and service_id = '%s' and service_startts > %s",
         accountId, orgId, projectId, serviceId, startInterval);
+  }
+
+  public String buildRollbackDurationQuery(
+          List<String> pipelineExecutionIdList) {
+    String statement =
+            "select pipeline_execution_summary_cd_id from service_infra_info where rollback_duration > 0 and pipeline_execution_summary_cd_id in (''";
+    for(String id: pipelineExecutionIdList) {
+      statement += String.format(",'%s'", id);
+    }
+    statement += ")";
+    return statement;
   }
 
   public String queryToFetchExecutionIdAndArtifactDetails(String accountId, String orgId, String projectId,
