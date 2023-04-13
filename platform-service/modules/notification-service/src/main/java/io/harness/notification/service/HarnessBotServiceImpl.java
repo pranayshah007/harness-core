@@ -35,11 +35,14 @@ public class HarnessBotServiceImpl implements HarnessBotService {
 
   private static String getOpenAIKey() {
     if (System.getenv("OPENAI_KEY") != null && !System.getenv("OPENAI_KEY").isEmpty()) {
+      log.info("Reading OpenAI Key from Env Variable");
       return System.getenv("OPENAI_KEY");
     }
     if (System.getProperty("openaikey") != null && !System.getProperty("openaikey").isEmpty()) {
+      log.info("Reading OpenAI Key from System Property");
       return System.getProperty("openaikey");
     }
+    log.info("Reading hardcoded OpenAI Key");
     return "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";
   }
 
