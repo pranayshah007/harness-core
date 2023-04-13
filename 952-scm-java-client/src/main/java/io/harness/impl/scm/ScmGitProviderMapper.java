@@ -37,7 +37,6 @@ import io.harness.delegate.beans.connector.scm.gitness.GitnessDTO;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientHelper;
-import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.manage.GlobalContextManager;
 import io.harness.product.ci.scm.proto.AzureProvider;
 import io.harness.product.ci.scm.proto.BitbucketCloudProvider;
@@ -52,6 +51,7 @@ import io.harness.security.dto.UserPrincipal;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 
@@ -60,12 +60,12 @@ import org.apache.commons.lang3.NotImplementedException;
 @OwnedBy(DX)
 public class ScmGitProviderMapper {
   @Inject(optional = true) GithubService githubService;
-  @Inject(optional = true) LogStreamingServiceConfiguration logStreamingServiceConfiguration;
+  @Inject(optional = true) @Named("baseUrl") String logStreamingServiceConfiguration;
   private static final String SCM_SKIP_SSL = "SCM_SKIP_SSL";
   private static final String ADDITIONAL_CERTS_PATH = "ADDITIONAL_CERTS_PATH";
 
   public Provider mapToSCMGitProvider(ScmConnector scmConnector) {
-    return mapToSCMGitProvider(scmConnector, false);
+    return mapToSCMGitProvider(scmConnector, true);
   }
 
   public Provider mapToSCMGitProvider(ScmConnector scmConnector, boolean debug) {
@@ -274,11 +274,11 @@ public class ScmGitProviderMapper {
   private Provider mapToGitness(GitnessDTO githubConnector, boolean debug) {
     boolean skipVerify = checkScmSkipVerify();
     Principal principal = getUserPrincipalOrThrow();
-    String baseUrl = logStreamingServiceConfiguration.getBaseUrl();
+    String baseUrl = logStreamingServiceConfiguration;
     return Provider.newBuilder()
         .setHarness(HarnessProvider.newBuilder().build())
         .setDebug(debug)
-        .setEndpoint(baseUrl + "/gitness")
+        .setEndpoint(baseUrl + "/git")
         .setSkipVerify(skipVerify)
         .build();
   }

@@ -427,6 +427,13 @@ public class NextGenModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("baseUrl")
+  String getbaseurl() {
+    return appConfig.getLogStreamingServiceConfig().getBaseUrl();
+  }
+
+  @Provides
+  @Singleton
   Supplier<DelegateCallbackToken> getDelegateCallbackTokenSupplier(
       DelegateServiceGrpcClient delegateServiceGrpcClient) {
     return Suppliers.memoize(() -> getDelegateCallbackToken(delegateServiceGrpcClient, appConfig));

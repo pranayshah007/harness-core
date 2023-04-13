@@ -36,6 +36,7 @@ import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitness.GitnessDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.git.GitClientHelper;
@@ -169,7 +170,13 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       String projectIdentifier, String connectorRef, PageRequest pageRequest, String searchTerm) {
     ScmConnector scmConnector =
         gitSyncConnectorHelper.getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
-
+    if (scmConnector instanceof GitnessDTO) {
+      String[] split = scmConnector.getUrl().split("/");
+      String s = split[split.length - 1];
+      String[] split1 = s.split("\\.");
+      String s1 = split1[0];
+      return Collections.singletonList(GitRepositoryResponseDTO.builder().name(s1).build());
+    }
     GetUserReposResponse response = scmOrchestratorService.processScmRequestUsingConnectorSettings(
         scmClientFacilitatorService
         -> scmClientFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector,
@@ -722,6 +729,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         return GitClientHelper.getCompleteHTTPRepoUrlForAzureRepoSaas(gitConnectionUrl);
       case GITLAB:
         return GitClientHelper.getCompleteHTTPUrlForGitLab(gitConnectionUrl);
+      case GITNESS:
+        return gitConnectionUrl;
       default:
         throw new InvalidRequestException(
             format("Connector of given type : %s isn't supported", scmConnector.getConnectorType()));

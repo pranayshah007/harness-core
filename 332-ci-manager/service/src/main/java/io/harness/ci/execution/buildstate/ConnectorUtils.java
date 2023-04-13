@@ -292,6 +292,8 @@ public class ConnectorUtils {
       case CODECOMMIT:
       case AZURE_REPO:
         connectorDetails = getGitConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
+      case GITNESS:
+        connectorDetails = getGitnessDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
         break;
       case GCP:
         connectorDetails = getGcpConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
@@ -311,6 +313,11 @@ public class ConnectorUtils {
     log.info("Successfully fetched encryption details for  connector id:[{}] type:[{}] scope:[{}]",
         connectorRef.getIdentifier(), connectorType, connectorRef.getScope());
     return connectorDetails;
+  }
+
+  private ConnectorDetails getGitnessDetails(
+      NGAccess ngAccess, ConnectorDTO connectorDTO, ConnectorDetailsBuilder connectorDetailsBuilder) {
+    return null;
   }
 
   public String fetchUserName(ConnectorDetails gitConnector) {

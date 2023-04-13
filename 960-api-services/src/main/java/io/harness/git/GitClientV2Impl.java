@@ -1460,8 +1460,8 @@ public class GitClientV2Impl implements GitClientV2 {
       UsernamePasswordAuthRequest authRequest = (UsernamePasswordAuthRequest) gitBaseRequest.getAuthRequest();
       Preconditions.checkState(EmptyPredicate.isNotEmpty(authRequest.getUsername()),
           "The user is null in git config for the git connector " + gitBaseRequest.getConnectorId());
-      Preconditions.checkState(EmptyPredicate.isNotEmpty(authRequest.getPassword()),
-          "The password is null in git config for the git connector " + gitBaseRequest.getConnectorId());
+      //      Preconditions.checkState(EmptyPredicate.isNotEmpty(authRequest.getPassword()),
+      //          "The password is null in git config for the git connector " + gitBaseRequest.getConnectorId());
       gitCommand.setCredentialsProvider(new UsernamePasswordCredentialsProviderWithSkipSslVerify(
           authRequest.getUsername(), authRequest.getPassword()));
       gitCommand.setTransportConfigCallback(transport -> {

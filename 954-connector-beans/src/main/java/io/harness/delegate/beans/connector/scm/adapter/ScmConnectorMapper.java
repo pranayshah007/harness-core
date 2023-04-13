@@ -10,12 +10,14 @@ package io.harness.delegate.beans.connector.scm.adapter;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitness.GitnessDTO;
 
 import lombok.experimental.UtilityClass;
 
@@ -31,6 +33,8 @@ public class ScmConnectorMapper {
       return BitbucketToGitMapper.mapToGitConfigDTO((BitbucketConnectorDTO) scmConnector);
     } else if (scmConnector instanceof AzureRepoConnectorDTO) {
       return AzureRepoToGitMapper.mapToGitConfigDTO((AzureRepoConnectorDTO) scmConnector);
+    } else if (scmConnector instanceof GitnessDTO) {
+      return GitConfigDTO.builder().url(scmConnector.getUrl()).gitAuthType(GitAuthType.HTTP).build();
     } else {
       return (GitConfigDTO) scmConnector;
     }

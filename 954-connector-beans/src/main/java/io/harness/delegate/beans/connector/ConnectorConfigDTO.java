@@ -52,6 +52,7 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitness.GitnessDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
@@ -116,6 +117,7 @@ import java.util.List;
       @JsonSubTypes.Type(value = TasConnectorDTO.class, name = "Tas"),
       @JsonSubTypes.Type(value = BambooConnectorDTO.class, name = "Bamboo"),
       @JsonSubTypes.Type(value = TerraformCloudConnectorDTO.class, name = "TerraformCloud"),
+      @JsonSubTypes.Type(value = GitnessDTO.class, name = "Gitness")
 })
 @OwnedBy(DX)
 @Schema(name = "ConnectorConfig", description = "This is the view of the ConnectorConfig entity defined in Harness")

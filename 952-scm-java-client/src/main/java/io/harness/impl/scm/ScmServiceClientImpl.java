@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.git.GitClientHelper.isBitBucketSAAS;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
 
 import static java.util.stream.Collectors.toList;
 
@@ -33,8 +34,10 @@ import io.harness.beans.response.GitFileBatchResponse;
 import io.harness.beans.response.GitFileResponse;
 import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.constants.Constants;
+import io.harness.context.GlobalContext;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.gitness.GitnessDTO;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ConnectException;
 import io.harness.exception.ExceptionUtils;
@@ -43,10 +46,16 @@ import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.git.GitClientHelper;
+import io.harness.git.GitClientV2Impl;
+import io.harness.git.UsernamePasswordAuthRequest;
+import io.harness.git.model.FetchFilesByPathRequest;
+import io.harness.git.model.FetchFilesResult;
+import io.harness.git.model.GitBaseRequest;
 import io.harness.impl.ScmResponseStatusUtils;
 import io.harness.logger.RepoBranchLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.ResponseTimeRecorder;
+import io.harness.manage.GlobalContextManager;
 import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.CompareCommitsRequest;
 import io.harness.product.ci.scm.proto.CompareCommitsResponse;
@@ -108,10 +117,14 @@ import io.harness.product.ci.scm.proto.PageRequest;
 import io.harness.product.ci.scm.proto.Provider;
 import io.harness.product.ci.scm.proto.RefreshTokenRequest;
 import io.harness.product.ci.scm.proto.RefreshTokenResponse;
+import io.harness.product.ci.scm.proto.Repository;
 import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.product.ci.scm.proto.Signature;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
 import io.harness.product.ci.scm.proto.WebhookResponse;
+import io.harness.security.PrincipalContextData;
+import io.harness.security.dto.Principal;
+import io.harness.security.dto.UserPrincipal;
 import io.harness.service.ScmServiceClient;
 import io.harness.utils.FilePathUtils;
 import io.harness.utils.ScmGrpcClientUtils;
@@ -120,6 +133,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -130,6 +144,7 @@ import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.jgit.lib.Ref;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -138,7 +153,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ScmServiceClientImpl implements ScmServiceClient {
   ScmGitProviderMapper scmGitProviderMapper;
   ScmGitProviderHelper scmGitProviderHelper;
-
+  GitClientV2Impl gitClientV2;
   @Override
   public CreateFileResponse createFile(ScmConnector scmConnector, GitFileDetails gitFileDetails,
       SCMGrpc.SCMBlockingStub scmBlockingStub, boolean useGitClient) {
@@ -245,6 +260,23 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     try (ResponseTimeRecorder ignore1 = new ResponseTimeRecorder("getFileContent")) {
       Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
       String slug = scmGitProviderHelper.getSlug(scmConnector);
+      if (scmConnector instanceof GitnessDTO) {
+        try {
+          FetchFilesResult fetchFilesResult = gitClientV2.fetchFilesByPath(
+              FetchFilesByPathRequest.builder()
+                  .filePaths(Collections.singletonList(gitFilePathDetails.getFilePath()))
+                  .authRequest(
+                      UsernamePasswordAuthRequest.builder().username(getUserPrincipalOrThrow().getName()).build())
+                  .accountId("accountId")
+                  .connectorId("gitness")
+                  .repoUrl(scmConnector.getUrl())
+                  .branch(gitFilePathDetails.getBranch())
+                  .build());
+          return FileContent.newBuilder().setContent(fetchFilesResult.getFiles().get(0).getFileContent()).build();
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      }
       final GetFileRequest.Builder gitFileRequestBuilder =
           GetFileRequest.newBuilder().setPath(gitFilePathDetails.getFilePath()).setProvider(gitProvider).setSlug(slug);
       if (isNotEmpty(gitFilePathDetails.getBranch())) {
@@ -263,6 +295,15 @@ public class ScmServiceClientImpl implements ScmServiceClient {
       }
       return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getFile, gitFileRequestBuilder.build());
     }
+  }
+
+  private Principal getUserPrincipalOrThrow() {
+    GlobalContext globalContext = GlobalContextManager.obtainGlobalContext();
+    if (globalContext == null || !(globalContext.get(PRINCIPAL_CONTEXT) instanceof PrincipalContextData)
+        || !(((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal() instanceof UserPrincipal)) {
+      throw new InvalidRequestException("Not authorized to update in current context");
+    }
+    return ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
   }
 
   private boolean checkIfBranchIsHavingSlashForBB(ScmConnector scmConnector, String branchName) {
@@ -407,6 +448,32 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     final String slug = scmGitProviderHelper.getSlug(scmConnector);
     final Provider provider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
     int pageNumber = 1;
+    if (scmConnector instanceof GitnessDTO) {
+      Map<String, Ref> stringRefMap = gitClientV2.listRemote(
+          GitBaseRequest.builder()
+              .authRequest(UsernamePasswordAuthRequest.builder().username(getUserPrincipalOrThrow().getName()).build())
+              .repoUrl(scmConnector.getUrl())
+              .build());
+      Ref head = stringRefMap.get("HEAD");
+      Optional<Map.Entry<String, Ref>> first = stringRefMap.entrySet()
+                                                   .stream()
+                                                   .filter(stringRef
+                                                       -> stringRef.getValue().getObjectId().equals(head.getObjectId())
+                                                           && !"HEAD".equals(stringRef.getKey()))
+                                                   .findAny();
+      Map<String, Ref> stringRefMap1 = new HashMap<>(stringRefMap);
+      stringRefMap1.remove("HEAD");
+      List<String> collect = stringRefMap1.entrySet()
+                                 .stream()
+                                 .map(stringRef -> stringRef.getKey().substring(11))
+                                 .map(CharSequence::toString)
+                                 .collect(toList());
+      return ListBranchesWithDefaultResponse.newBuilder()
+          .addAllBranches(collect)
+          .setStatus(200)
+          .setDefaultBranch(first.get().getKey().substring(11))
+          .build();
+    }
     ListBranchesWithDefaultRequest listBranchesWithDefaultRequest =
         ListBranchesWithDefaultRequest.newBuilder()
             .setSlug(slug)
@@ -965,6 +1032,14 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     try (ResponseTimeRecorder ignore1 = new ResponseTimeRecorder("getRepoDetails")) {
       String slug = scmGitProviderHelper.getSlug(scmConnector);
       Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
+      if (scmConnector instanceof GitnessDTO) {
+        ListBranchesWithDefaultResponse listBranchesWithDefaultResponse =
+            listBranchesWithDefault(scmConnector, PageRequestDTO.builder().build(), scmBlockingStub);
+        return GetUserRepoResponse.newBuilder()
+            .setStatus(200)
+            .setRepo(Repository.newBuilder().setBranch(listBranchesWithDefaultResponse.getDefaultBranch()).build())
+            .build();
+      }
       return ScmGrpcClientUtils.retryAndProcessException(
           scmBlockingStub::getUserRepo, GetUserRepoRequest.newBuilder().setSlug(slug).setProvider(gitProvider).build());
     }
@@ -1176,6 +1251,24 @@ public class ScmServiceClientImpl implements ScmServiceClient {
       ScmConnector scmConnector, SCMGrpc.SCMBlockingStub scmBlockingStub, String branch, String filepath) {
     try (ResponseTimeRecorder ignore1 = new ResponseTimeRecorder("getLatestCommitOnFile")) {
       Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector, true);
+      if (scmConnector instanceof GitnessDTO) {
+        Map<String, Ref> stringRefMap = gitClientV2.listRemote(
+            GitBaseRequest.builder()
+                .authRequest(
+                    UsernamePasswordAuthRequest.builder().username(getUserPrincipalOrThrow().getName()).build())
+                .accountId("accountId")
+                .repoUrl(scmConnector.getUrl())
+                .connectorId("gitness")
+                .build());
+        Optional<Map.Entry<String, Ref>> first =
+            stringRefMap.entrySet()
+                .stream()
+                .filter(stringRefEntry -> ("refs/heads/" + branch).equals(stringRefEntry.getKey()))
+                .findFirst();
+        GetLatestCommitOnFileResponse getLatestCommitOnFileResponse =
+            GetLatestCommitOnFileResponse.newBuilder().setCommitId(first.get().getValue().getObjectId().name()).build();
+        return getLatestCommitOnFileResponse;
+      }
       String slug = scmGitProviderHelper.getSlug(scmConnector);
       return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getLatestCommitOnFile,
           GetLatestCommitOnFileRequest.newBuilder()

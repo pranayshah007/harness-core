@@ -15,6 +15,7 @@ import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitness.GitnessDTO;
 import io.harness.git.GitClientHelper;
 
 import com.google.inject.Inject;
@@ -37,6 +38,8 @@ public class ScmGitProviderHelper {
       return getSlugFromUrlForBitbucket(((BitbucketConnectorDTO) scmConnector).getUrl());
     } else if (scmConnector instanceof AzureRepoConnectorDTO) {
       return getSlugFromUrlForAzureRepo(((AzureRepoConnectorDTO) scmConnector).getUrl());
+    } else if (scmConnector instanceof GitnessDTO) {
+      return scmConnector.getUrl();
     } else {
       throw new NotImplementedException(
           String.format("The scm apis for the provider type %s is not supported", scmConnector.getClass()));

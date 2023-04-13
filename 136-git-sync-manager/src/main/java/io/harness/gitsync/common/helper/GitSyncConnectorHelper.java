@@ -378,6 +378,8 @@ public class GitSyncConnectorHelper {
               AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) connectorDTO;
               azureRepoConnectorDTO.setApiAccess(azureRepoSCMDTO.getApiAccess());
               break;
+            case GITNESS:
+              break;
             default:
               log.info("OAUTH not supported for connector type: {}", connectorDTO.getConnectorType());
           }

@@ -23,6 +23,7 @@ import io.harness.gitsync.beans.GitRepositoryDTO;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Collections;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -39,20 +40,17 @@ import lombok.experimental.FieldDefaults;
 @ApiModel("GithubConnector")
 @OwnedBy(HarnessTeam.DX)
 @Schema(name = "GithubConnector", description = "This contains details of Github connectors")
-public class GitnessDTO extends ConnectorConfigDTO implements ScmConnector, ManagerExecutable {
+public class GitnessDTO extends ConnectorConfigDTO implements ScmConnector, ManagerExecutable, DecryptableEntity {
   String url;
 
-  ConnectorType connectorType = ConnectorType.GITNESS;
-
   @Builder
-  public GitnessDTO(String url, ConnectorType connectorType) {
+  public GitnessDTO(String url) {
     this.url = url;
-    this.connectorType = connectorType;
   }
 
   @Override
   public ConnectorType getConnectorType() {
-    return null;
+    return ConnectorType.GITNESS;
   }
 
   @Override
@@ -67,7 +65,7 @@ public class GitnessDTO extends ConnectorConfigDTO implements ScmConnector, Mana
 
   @Override
   public String getGitConnectionUrl() {
-    return null;
+    return url;
   }
 
   @Override
@@ -90,12 +88,12 @@ public class GitnessDTO extends ConnectorConfigDTO implements ScmConnector, Mana
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
-    return null;
+    return Collections.emptyList();
   }
 
   @Override
   public Boolean getExecuteOnDelegate() {
-    return null;
+    return Boolean.FALSE;
   }
 
   @Override

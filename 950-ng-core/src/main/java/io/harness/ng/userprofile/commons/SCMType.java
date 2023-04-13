@@ -23,7 +23,8 @@ public enum SCMType {
   GITHUB(ConnectorType.GITHUB),
   GITLAB(ConnectorType.GITLAB),
   AWS_CODE_COMMIT(ConnectorType.CODECOMMIT),
-  AZURE_REPO(ConnectorType.AZURE_REPO);
+  AZURE_REPO(ConnectorType.AZURE_REPO),
+  GITNESS(ConnectorType.GITNESS);
 
   private final ConnectorType connectorType;
 
