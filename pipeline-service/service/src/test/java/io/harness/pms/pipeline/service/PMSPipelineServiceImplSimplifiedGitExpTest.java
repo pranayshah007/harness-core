@@ -46,6 +46,8 @@ import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.pms.filter.creation.FilterCreatorMergeService;
+import io.harness.pms.filter.creation.FilterCreatorMergeServiceResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntityWithReferencesDTO;
 import io.harness.pms.pipeline.PipelineSetupUsageHelper;
@@ -64,6 +66,7 @@ import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.validator.InvalidYamlException;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -88,6 +91,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Mock private ProjectClient projectClient;
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
   @Mock private PipelineSetupUsageHelper pipelineSetupUsageHelper;
+  @Mock private FilterCreatorMergeService filterCreatorMergeService;
   @Mock private AccountClient accountClient;
   @Mock NGSettingsClient settingsClient;
 
@@ -104,7 +108,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
         new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper, pmsPipelineTemplateHelper, null,
             null, gitSyncSdkService, null, null, null, new NoopPipelineSettingServiceImpl(), entitySetupUsageClient,
             pipelineAsyncValidationService, pipelineValidationService, projectClient, pmsFeatureFlagService,
-            pipelineSetupUsageHelper, accountClient, settingsClient);
+            pipelineSetupUsageHelper, filterCreatorMergeService, accountClient, settingsClient);
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
     doNothing().when(pipelineSetupUsageHelper).publishSetupUsageEvent(any(), any(), any());
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
@@ -314,6 +318,10 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO =
         PipelineEntityWithReferencesDTO.builder().pipelineEntity(pipelineEntity).build();
 
+    FilterCreatorMergeServiceResponse filtersAndStageCount =
+        FilterCreatorMergeServiceResponse.builder().referredEntities(new ArrayList<>()).build();
+    doReturn(filtersAndStageCount).when(filterCreatorMergeService).getPipelineInfo(any());
+
     doReturn(pipelineEntityWithReferencesDTO).when(pipelineServiceHelper).updatePipelineInfo(any(), any());
 
     doReturn(Optional.of(pipelineEntity))
@@ -340,6 +348,10 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
 
     PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO =
         PipelineEntityWithReferencesDTO.builder().pipelineEntity(pipelineEntity).build();
+
+    FilterCreatorMergeServiceResponse filtersAndStageCount =
+        FilterCreatorMergeServiceResponse.builder().referredEntities(new ArrayList<>()).build();
+    doReturn(filtersAndStageCount).when(filterCreatorMergeService).getPipelineInfo(any());
 
     doReturn(Optional.of(pipelineEntity))
         .when(pipelineRepository)
