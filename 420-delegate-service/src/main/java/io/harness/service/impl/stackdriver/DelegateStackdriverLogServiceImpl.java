@@ -112,12 +112,14 @@ public class DelegateStackdriverLogServiceImpl implements DelegateStackdriverLog
       }
     }
 
+    Delegate delegate = persistence.createQuery(Delegate.class)
+                            .filter(Delegate.DelegateKeys.uuid, delegateStackDriverLog.getDelegateId())
+                            .get();
+    String delegateName = delegate != null ? delegate.getDelegateName() : null;
+
     return DelegateHackLog.builder()
         .delegateId(delegateStackDriverLog.getDelegateId())
-        .delegateName(persistence.createQuery(Delegate.class)
-                          .filter(Delegate.DelegateKeys.uuid, delegateStackDriverLog.getDelegateId())
-                          .get()
-                          .getDelegateName())
+        .delegateName(delegateName)
         .accountId(delegateStackDriverLog.getAccountId())
         .exceptionType(foundError)
         .build();
