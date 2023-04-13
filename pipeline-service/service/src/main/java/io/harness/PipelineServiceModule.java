@@ -834,7 +834,7 @@ public class PipelineServiceModule extends AbstractModule {
   @Named("openAiService")
   public OpenAiService getOpenAiService() {
     String token = System.getenv("OPENAI_API_KEY");
-    return new OpenAiService(token, java.time.Duration.ofMinutes(1));
+    return new OpenAiService(token, java.time.Duration.ofMinutes(10));
   }
 
 }

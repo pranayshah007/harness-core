@@ -35,10 +35,10 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -94,7 +94,7 @@ public class OpenAiResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
-      @QueryParam("identifier1") String pipelineIdentifier1, @QueryParam("identifier2") String pipelineIdentifier2) {
+      @QueryParam("identifier1") String pipelineIdentifier1, @QueryParam("identifier2") String pipelineIdentifier2) throws IOException {
     return ResponseDTO.newResponse(intelligenceService.getTemplates(accountId, orgId, projectId, pipelineIdentifier1, pipelineIdentifier2));
   }
 
