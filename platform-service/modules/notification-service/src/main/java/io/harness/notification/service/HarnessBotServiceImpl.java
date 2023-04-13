@@ -70,12 +70,11 @@ public class HarnessBotServiceImpl implements HarnessBotService {
 
     try {
       String prompt = String.format(
-          "Answer the question based on the context below, and if the question can't be answered based on the context, say \"I don't know\"\n\nContext: %s\n\n---\n\nQuestion: %s\nAnswer:",
+              "Answer the question based on the context below, and if the question can't be answered based on the context, say \"I don't know\". Try to include source of the response. \n\nContext: %s\n\n---\n\nQuestion: %s\nAnswer:",
           context, question);
       CompletionRequest completionRequest = CompletionRequest.builder()
                                                 .prompt(prompt)
                                                 .model("text-davinci-003")
-                                                .topP(1.0)
                                                 .temperature(0.0)
                                                 .maxTokens(500)
                                                 .build();
