@@ -57,6 +57,7 @@ import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo;
 import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo.ExecutionStatusEnum;
+import io.harness.spec.server.pipeline.v1.model.TemplateValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.YAMLSchemaErrorWrapper;
 import io.harness.utils.ApiUtils;
 
@@ -450,6 +451,10 @@ public class PipelinesApiUtils {
                 ? null
                 : buildGovernanceMetadataFromProto(event.getResult().getGovernanceMetadata()))
         .startTs(event.getStartTs())
+        .templateValidationResponse(
+            new TemplateValidationResponseBody()
+                .validYaml(event.getResult().getTemplateValidationResponse().isValidYaml())
+                .exceptionMessage(event.getResult().getTemplateValidationResponse().getExceptionMessage()))
         .endTs(event.getEndTs());
   }
 

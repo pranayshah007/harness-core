@@ -80,6 +80,11 @@ public class CDStepsPlanCreator extends GenericStepsNodePlanCreator {
                                           .setType(NextStepAdviser.ADVISER_TYPE)
                                           .setParameters(adviserParamsBytes)
                                           .build()))
+        .advisorObtainmentForExecutionMode(ExecutionMode.PIPELINE_ROLLBACK,
+            Collections.singletonList(AdviserObtainment.newBuilder()
+                                          .setType(NextStepAdviser.ADVISER_TYPE)
+                                          .setParameters(adviserParamsBytes)
+                                          .build()))
         .build();
   }
 }

@@ -37,12 +37,16 @@ import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.contracts.plan.TriggerType;
+import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.instrumentaion.PipelineTelemetryHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.plan.execution.beans.ExecArgs;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.RunStageRequestDTO;
+import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
@@ -69,6 +73,8 @@ public class PipelineExecutorTest extends CategoryTest {
   @Mock PlanExecutionService planExecutionService;
   @Mock RollbackModeExecutionHelper rollbackModeExecutionHelper;
   @Mock PlanExecutionMetadataService planExecutionMetadataService;
+
+  @Mock PMSExecutionService pmsExecutionService;
 
   String accountId = "accountId";
   String orgId = "orgId";
@@ -353,5 +359,45 @@ public class PipelineExecutorTest extends CategoryTest {
     assertThat(pipelineExecutor.startPipelineRollback(accountId, orgId, projectId, originalExecutionId))
         .isEqualTo(planExecution);
     mockSettings.close();
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testSetTriggerInfo() {
+    ExecutionTriggerInfo triggerInfo = ExecutionTriggerInfo.newBuilder().build();
+    String jsonPayload = "jsonPayload";
+    String accountId = "acc";
+    String projectId = "pro";
+    String orgId = "org";
+    String pipelineId = "pipelineId";
+    String planExecutionId = "planId";
+    TriggerPayload triggerPayload = TriggerPayload.newBuilder().build();
+    PipelineStageInfo info = PipelineStageInfo.newBuilder()
+                                 .setExecutionId(planExecutionId)
+                                 .setProjectId(projectId)
+                                 .setOrgId(orgId)
+                                 .setIdentifier(pipelineId)
+                                 .build();
+
+    doReturn(Optional.of(PlanExecutionMetadata.builder().triggerJsonPayload(jsonPayload).build()))
+        .when(planExecutionMetadataService)
+        .findByPlanExecutionId(planExecutionId);
+
+    doReturn(PipelineExecutionSummaryEntity.builder()
+                 .executionTriggerInfo(ExecutionTriggerInfo.newBuilder().build())
+                 .build())
+        .when(pmsExecutionService)
+        .getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecutionId);
+
+    ExecArgs execArgs = ExecArgs.builder()
+                            .metadata(ExecutionMetadata.newBuilder().build())
+                            .planExecutionMetadata(PlanExecutionMetadata.builder().build())
+                            .build();
+    pipelineExecutor.setTriggerInfo(info, execArgs, accountId);
+
+    assertThat(execArgs.getMetadata().getTriggerInfo()).isEqualTo(triggerInfo);
+    assertThat(execArgs.getPlanExecutionMetadata().getTriggerJsonPayload()).isEqualTo(jsonPayload);
+    assertThat(execArgs.getPlanExecutionMetadata().getTriggerPayload()).isEqualTo(triggerPayload);
   }
 }

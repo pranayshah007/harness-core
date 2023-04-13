@@ -60,7 +60,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.expiringmap.ExpirationPolicy;
@@ -275,10 +274,9 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
   @Override
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(
       DockerInternalConfig dockerConfig, String imageName, String tagRegex) {
-    Pattern pattern = Pattern.compile(tagRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
     List<BuildDetailsInternal> builds = getBuilds(dockerConfig, imageName, MAX_NUMBER_OF_BUILDS, tagRegex);
     builds = builds.stream()
-                 .filter(build -> pattern.matcher(build.getNumber()).find())
+                 .filter(build -> new RegexFunctor().match(tagRegex, build.getNumber()))
                  .sorted(new BuildDetailsInternalComparatorDescending())
                  .collect(Collectors.toList());
 
@@ -341,7 +339,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
       String authHeader = getBasicAuthHeader(dockerConfig, true);
       Function<Headers, String> getToken = headers -> getToken(dockerConfig, headers, registryRestClient);
       // Note: We try & fetch the labels. If we cannot fetch the labels that means the image does not exist
-      DockerRegistryUtils.getSingleTagLabels(dockerConfig, registryRestClient, getToken, authHeader, imageName, tag);
+      DockerRegistryUtils.verifyImageTag(dockerConfig, registryRestClient, getToken, authHeader, imageName, tag);
       return processBuildResponse(dockerConfig.getDockerRegistryUrl(), imageName, tag);
     } catch (Exception e) {
       throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the given tag for the image",
@@ -387,7 +385,8 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
         registryRestClient = dockerRestClientFactory.getDockerRegistryRestClient(dockerConfig);
         basicAuthHeader = getBasicAuthHeader(dockerConfig, true);
         response = registryRestClient.getApiVersion(basicAuthHeader).execute();
-        if (DockerRegistryUtils.fallbackToTokenAuth(response.code(), dockerConfig)) { // unauthorized
+        if (DockerRegistryUtils.fallbackToTokenAuth(response.code(),
+                dockerConfig)) { // unauthorized
           dockerRegistryToken = fetchToken(dockerConfig, registryRestClient, response.headers());
           if (dockerRegistryToken != null) {
             String token = dockerRegistryToken.getToken();
@@ -479,7 +478,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
     }
   }
 
-  private String getToken(
+  public String getToken(
       DockerInternalConfig dockerConfig, Headers headers, DockerRegistryRestClient registryRestClient) {
     String authHeaderValue = headers.get(AUTHENTICATE_HEADER);
     if (!cachedBearerTokens.containsKey(authHeaderValue)) {

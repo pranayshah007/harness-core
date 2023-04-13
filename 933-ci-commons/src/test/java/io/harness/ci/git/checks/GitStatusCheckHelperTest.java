@@ -7,6 +7,7 @@
 
 package io.harness.ci.git.checks;
 
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SHUBHAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,6 +42,7 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.delegate.task.ci.GitSCMType;
+import io.harness.encryption.SecretRefData;
 import io.harness.git.GitTokenRetriever;
 import io.harness.git.checks.GitStatusCheckHelper;
 import io.harness.git.checks.GitStatusCheckParams;
@@ -177,6 +179,42 @@ public class GitStatusCheckHelperTest extends CategoryTest {
                                                          .connectorDetails(connectorDetails)
                                                          .build());
 
+    assertThat(actual).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testPushStatusForBitbucketTokenAndUsernameRef() {
+    BitbucketConnectorDTO gitConnectorDTO =
+        BitbucketConnectorDTO.builder()
+            .url("https://bitbucket.org")
+            .apiAccess(BitbucketApiAccessDTO.builder()
+                           .type(BitbucketApiAccessType.USERNAME_AND_TOKEN)
+                           .spec(BitbucketUsernameTokenApiAccessDTO.builder()
+                                     .usernameRef(SecretRefData.builder().identifier("id").build())
+                                     .build())
+                           .build())
+            .build();
+    ConnectorDetails connectorDetails = ConnectorDetails.builder().connectorConfig(gitConnectorDTO).build();
+    when(gitTokenRetriever.retrieveAuthToken(GitSCMType.BITBUCKET, connectorDetails)).thenReturn(TOKEN);
+    when(gitTokenRetriever.retrieveBitbucketUsernameFromAPIAccess(any(), any())).thenReturn(USERNAME);
+    when(bitbucketService.sendStatus(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(true);
+
+    boolean actual = gitStatusCheckHelper.sendStatus(GitStatusCheckParams.builder()
+                                                         .sha(SHA)
+                                                         .identifier(IDENTIFIER)
+                                                         .buildNumber(BUILD_NUMBER)
+                                                         .gitSCMType(GitSCMType.BITBUCKET)
+                                                         .owner(OWNER)
+                                                         .repo(REPO)
+                                                         .state(STATE)
+                                                         .title(TITLE)
+                                                         .target_url(TARGET_URL)
+                                                         .desc(DESC)
+                                                         .connectorDetails(connectorDetails)
+                                                         .userName(USERNAME)
+                                                         .build());
     assertThat(actual).isEqualTo(true);
   }
 

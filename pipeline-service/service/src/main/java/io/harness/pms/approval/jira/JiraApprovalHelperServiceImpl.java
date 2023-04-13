@@ -144,9 +144,10 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
           String.format("Jira url: %s", jiraTaskNGParameters.getJiraConnectorDTO().getJiraUrl()));
 
       log.info("Queuing delegate task");
-      String taskId = queueTask(ambiance, instanceId, jiraTaskNGParameters);
+      String taskName = "Jira Task: Get Issue";
+      String taskId = queueTask(ambiance, instanceId, jiraTaskNGParameters, taskName);
 
-      sendTaskIdProgressUpdate(taskId, instanceId, waitNotifyEngine);
+      sendTaskIdProgressUpdate(taskId, taskName, instanceId, waitNotifyEngine);
 
       log.info("Jira Approval Instance queued task with taskId - {}", taskId);
       logCallback.saveExecutionLog(String.format("Jira task: %s", taskId));
@@ -190,8 +191,9 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
         .build();
   }
 
-  private String queueTask(Ambiance ambiance, String approvalInstanceId, JiraTaskNGParameters jiraTaskNGParameters) {
-    TaskRequest jiraTaskRequest = prepareJiraTaskRequest(ambiance, jiraTaskNGParameters);
+  private String queueTask(
+      Ambiance ambiance, String approvalInstanceId, JiraTaskNGParameters jiraTaskNGParameters, String taskName) {
+    TaskRequest jiraTaskRequest = prepareJiraTaskRequest(ambiance, jiraTaskNGParameters, taskName);
     String taskId =
         ngDelegate2TaskExecutor.queueTask(ambiance.getSetupAbstractionsMap(), jiraTaskRequest, Duration.ofSeconds(0));
     NotifyCallback callback = JiraApprovalCallback.builder().approvalInstanceId(approvalInstanceId).build();
@@ -199,7 +201,8 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
     return taskId;
   }
 
-  private TaskRequest prepareJiraTaskRequest(Ambiance ambiance, JiraTaskNGParameters jiraTaskNGParameters) {
+  private TaskRequest prepareJiraTaskRequest(
+      Ambiance ambiance, JiraTaskNGParameters jiraTaskNGParameters, String taskName) {
     TaskDetails taskDetails =
         TaskDetails.newBuilder()
             .setKryoParameters(
@@ -217,7 +220,7 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
                                        .map(s -> TaskSelector.newBuilder().setSelector(s).build())
                                        .collect(Collectors.toList());
 
-    return TaskRequestsUtils.prepareTaskRequest(ambiance, taskDetails, new ArrayList<>(), selectors, null, false);
+    return TaskRequestsUtils.prepareTaskRequest(ambiance, taskDetails, new ArrayList<>(), selectors, taskName, false);
   }
 
   @Override

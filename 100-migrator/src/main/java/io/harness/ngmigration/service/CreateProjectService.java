@@ -7,7 +7,6 @@
 
 package io.harness.ngmigration.service;
 
-import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -66,7 +65,6 @@ public class CreateProjectService {
                                    .color("#0063f7")
                                    .description(app.getDescription())
                                    .identifier(identifier)
-                                   .modules(Collections.singletonList(ModuleType.CD))
                                    .name(name)
                                    .tags(new HashMap<>())
                                    .build())

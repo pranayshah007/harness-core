@@ -12,6 +12,7 @@ import static io.harness.azure.AzureEnvironmentType.AZURE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;
+import io.harness.delegate.beans.connector.azureconnector.AzureManagedIdentityType;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -39,6 +40,9 @@ public class AzureKeyVaultConfigDTO extends SecretManagerConfigDTO {
   private String vaultName;
   private String subscription;
   private Set<String> delegateSelectors;
+  private Boolean useManagedIdentity;
+  private AzureManagedIdentityType azureManagedIdentityType;
+  private String managedClientId;
 
   @Builder.Default AzureEnvironmentType azureEnvironmentType = AZURE;
 }

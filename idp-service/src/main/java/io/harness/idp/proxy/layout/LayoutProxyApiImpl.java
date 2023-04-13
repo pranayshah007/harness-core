@@ -21,7 +21,6 @@ import io.harness.spec.server.idp.v1.LayoutProxyApi;
 import io.harness.spec.server.idp.v1.model.LayoutRequest;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import javax.validation.Valid;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
@@ -33,44 +32,37 @@ import lombok.experimental.FieldDefaults;
 @NextGenManagerAuth
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class LayoutProxyApiImpl implements LayoutProxyApi {
-  static final String BEARER_TOKEN_FORMAT = "Bearer %s";
-  @Inject @Named("backstageServiceSecret") private String backstageServiceSecret;
-  @Inject BackstageResourceClient backstageResourceClient;
+  BackstageResourceClient backstageResourceClient;
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
   public Response createLayout(@Valid LayoutRequest body, @AccountIdentifier String harnessAccount) {
-    Object entity = getGeneralResponse(backstageResourceClient.createLayout(
-        body, String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret), harnessAccount));
+    Object entity = getGeneralResponse(backstageResourceClient.createLayout(body, harnessAccount));
     return Response.ok(entity).build();
   }
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
   public Response deleteLayout(@Valid LayoutRequest body, @AccountIdentifier String harnessAccount) {
-    Object entity = getGeneralResponse(backstageResourceClient.deleteLayout(
-        body, String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret), harnessAccount));
+    Object entity = getGeneralResponse(backstageResourceClient.deleteLayout(body, harnessAccount));
     return Response.ok(entity).build();
   }
 
   @Override
   public Response getAllLayouts(String harnessAccount) {
-    Object entity = getGeneralResponse(backstageResourceClient.getAllLayouts(
-        String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret), harnessAccount));
+    Object entity = getGeneralResponse(backstageResourceClient.getAllLayouts(harnessAccount));
     return Response.ok(entity).build();
   }
 
   @Override
   public Response getLayout(String layoutIdentifier, String harnessAccount) {
-    Object entity = getGeneralResponse(backstageResourceClient.getLayout(
-        String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret), harnessAccount, layoutIdentifier));
+    Object entity = getGeneralResponse(backstageResourceClient.getLayout(harnessAccount, layoutIdentifier));
     return Response.ok(entity).build();
   }
 
   @Override
   public Response getLayoutHealth(String harnessAccount) {
-    Object entity = getGeneralResponse(
-        backstageResourceClient.getHealth(String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret), harnessAccount));
+    Object entity = getGeneralResponse(backstageResourceClient.getHealth(harnessAccount));
     return Response.ok(entity).build();
   }
 }

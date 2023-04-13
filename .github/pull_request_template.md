@@ -61,6 +61,7 @@ You can run multiple PR check triggers by comma separating them in a single comm
 - GitLeaks: `trigger gitleaks`
 - Trigger all Checks: `trigger smartchecks`
 - Go Build: `trigger gobuild`
+- Validate_Reviews: `trigger review`
 </details>
 
 ## PR check failures and solutions

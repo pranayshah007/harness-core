@@ -10,7 +10,6 @@ package io.harness.delegate.task.artifacts.artifactory;
 import static io.harness.artifactory.service.ArtifactoryRegistryService.DEFAULT_ARTIFACT_DIRECTORY;
 import static io.harness.artifactory.service.ArtifactoryRegistryService.DEFAULT_ARTIFACT_FILTER;
 import static io.harness.artifactory.service.ArtifactoryRegistryService.MAX_NO_OF_TAGS_PER_ARTIFACT;
-import static io.harness.delegate.task.artifacts.ArtifactServiceConstant.ACCEPT_ALL_REGEX;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -62,11 +61,10 @@ public class ArtifactoryArtifactTaskHandler extends DelegateArtifactTaskHandler<
     ArtifactoryConfigRequest artifactoryConfig =
         ArtifactoryRequestResponseMapper.toArtifactoryInternalConfig(attributesRequest);
 
-    if (isRegex(attributesRequest) || attributesRequest.getTag().equals(ACCEPT_ALL_REGEX)) {
-      String tagRegex = isRegex(attributesRequest) ? attributesRequest.getTagRegex() : attributesRequest.getTag();
+    if (isRegex(attributesRequest)) {
       lastSuccessfulBuild = artifactoryRegistryService.getLastSuccessfulBuildFromRegex(artifactoryConfig,
           attributesRequest.getRepositoryName(), attributesRequest.getArtifactPath(),
-          attributesRequest.getRepositoryFormat(), tagRegex);
+          attributesRequest.getRepositoryFormat(), attributesRequest.getTagRegex());
 
     } else {
       lastSuccessfulBuild =

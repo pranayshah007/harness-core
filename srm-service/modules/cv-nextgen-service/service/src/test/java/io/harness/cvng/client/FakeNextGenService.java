@@ -7,7 +7,6 @@
 
 package io.harness.cvng.client;
 
-import io.harness.ModuleType;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -20,7 +19,6 @@ import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -105,7 +103,6 @@ public class FakeNextGenService implements NextGenService {
         .orgIdentifier(orgIdentifier)
         .identifier(projectIdentifier)
         .name("Mocked project name")
-        .modules(Collections.singletonList(ModuleType.CV))
         .build();
   }
 

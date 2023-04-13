@@ -28,6 +28,7 @@ import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse
 import io.harness.rule.Owner;
 
 import java.io.IOException;
+import java.util.Map;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,6 +45,7 @@ public class GARArtifactTaskHandlerTest extends CategoryTest {
 
   private static final String VERSION = "version";
   private static final String SHA_V2 = "shaV2";
+  private static final String SHA = "sha";
   private static final String TOKEN = "token";
 
   @Test
@@ -52,16 +54,17 @@ public class GARArtifactTaskHandlerTest extends CategoryTest {
   public void getLastSuccessfulBuildTest_versionArtifactMetaInfo() throws IOException {
     GARArtifactTaskHandler garArtifactTaskHandler1 = spy(garArtifactTaskHandler);
     GarDelegateRequest garDelegateRequest = GarDelegateRequest.builder().version(VERSION).build();
-    BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().build();
-    ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().shaV2(SHA_V2).build();
+    ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().sha(SHA).shaV2(SHA_V2).build();
+    BuildDetailsInternal buildDetailsInternal =
+        BuildDetailsInternal.builder().artifactMetaInfo(artifactMetaInfo).build();
     doReturn(TOKEN).when(garArtifactTaskHandler1).getToken(any(), anyBoolean());
     when(garApiService.verifyBuildNumber(any(), anyString())).thenReturn(buildDetailsInternal);
-    when(garApiService.getArtifactMetaInfo(any(), anyString())).thenReturn(artifactMetaInfo);
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
         garArtifactTaskHandler1.getLastSuccessfulBuild(garDelegateRequest);
-    assertThat(artifactTaskExecutionResponse.getArtifactDelegateResponses().get(0).getBuildDetails().getMetadata().get(
-                   ArtifactMetadataKeys.SHAV2))
-        .isEqualTo(SHA_V2);
+    Map<String, String> map =
+        artifactTaskExecutionResponse.getArtifactDelegateResponses().get(0).getBuildDetails().getMetadata();
+    assertThat(map.get(ArtifactMetadataKeys.SHAV2)).isEqualTo(SHA_V2);
+    assertThat(map.get(ArtifactMetadataKeys.SHA)).isEqualTo(SHA);
   }
 
   @Test
@@ -70,15 +73,16 @@ public class GARArtifactTaskHandlerTest extends CategoryTest {
   public void getLastSuccessfulBuildTest_regexArtifactMetaInfo() throws IOException {
     GARArtifactTaskHandler garArtifactTaskHandler1 = spy(garArtifactTaskHandler);
     GarDelegateRequest garDelegateRequest = GarDelegateRequest.builder().versionRegex(VERSION).build();
-    BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().number(VERSION).build();
-    ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().shaV2(SHA_V2).build();
+    ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().sha(SHA).shaV2(SHA_V2).build();
+    BuildDetailsInternal buildDetailsInternal =
+        BuildDetailsInternal.builder().artifactMetaInfo(artifactMetaInfo).build();
     doReturn(TOKEN).when(garArtifactTaskHandler1).getToken(any(), anyBoolean());
     when(garApiService.getLastSuccessfulBuildFromRegex(any(), anyString())).thenReturn(buildDetailsInternal);
-    when(garApiService.getArtifactMetaInfo(any(), anyString())).thenReturn(artifactMetaInfo);
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
         garArtifactTaskHandler1.getLastSuccessfulBuild(garDelegateRequest);
-    assertThat(artifactTaskExecutionResponse.getArtifactDelegateResponses().get(0).getBuildDetails().getMetadata().get(
-                   ArtifactMetadataKeys.SHAV2))
-        .isEqualTo(SHA_V2);
+    Map<String, String> map =
+        artifactTaskExecutionResponse.getArtifactDelegateResponses().get(0).getBuildDetails().getMetadata();
+    assertThat(map.get(ArtifactMetadataKeys.SHAV2)).isEqualTo(SHA_V2);
+    assertThat(map.get(ArtifactMetadataKeys.SHA)).isEqualTo(SHA);
   }
 }

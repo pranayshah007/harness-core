@@ -24,7 +24,7 @@ import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.sdk.core.pipeline.creators.BaseCreatorService;
-import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
+import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoDecorator;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -44,14 +44,14 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class FilterCreatorService
     extends BaseCreatorService<FilterCreationResponse, SetupMetadata, FilterCreationBlobRequest> {
-  private final PipelineServiceInfoProvider pipelineServiceInfoProvider;
+  private final PipelineServiceInfoDecorator serviceInfoDecorator;
   private final FilterCreationResponseMerger filterCreationResponseMerger;
   private final PmsGitSyncHelper pmsGitSyncHelper;
 
   @Inject
-  public FilterCreatorService(@NotNull PipelineServiceInfoProvider pipelineServiceInfoProvider,
+  public FilterCreatorService(@NotNull PipelineServiceInfoDecorator serviceInfoDecorator,
       @NotNull FilterCreationResponseMerger filterCreationResponseMerger, PmsGitSyncHelper pmsGitSyncHelper) {
-    this.pipelineServiceInfoProvider = pipelineServiceInfoProvider;
+    this.serviceInfoDecorator = serviceInfoDecorator;
     this.filterCreationResponseMerger = filterCreationResponseMerger;
     this.pmsGitSyncHelper = pmsGitSyncHelper;
   }
@@ -82,7 +82,7 @@ public class FilterCreatorService
   public FilterCreationResponse processNodeInternal(
       SetupMetadata setupMetadata, YamlField yamlField, FilterCreationBlobRequest request) {
     Optional<FilterJsonCreator> filterCreatorOptional =
-        findFilterCreator(pipelineServiceInfoProvider.getFilterJsonCreators(), yamlField);
+        findFilterCreator(serviceInfoDecorator.getFilterJsonCreators(), yamlField);
 
     if (!filterCreatorOptional.isPresent()) {
       return null;

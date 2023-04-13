@@ -2,10 +2,10 @@ integrations:
   github:
     - host: HOST_VALUE
       apps:
-        - appId: ${GITHUB_APP_ID}
+        - appId: ${HARNESS_GITHUB_APP_APPLICATION_ID}
           clientId: dummy
           clientSecret: dummy
           webhookSecret: dummy
           privateKey: |
-            ${GITHUB_PRIVATE_KEY}
+            ${HARNESS_GITHUB_APP_PRIVATE_KEY_REF}
 

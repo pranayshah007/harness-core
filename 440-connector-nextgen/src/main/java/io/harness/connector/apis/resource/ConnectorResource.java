@@ -171,9 +171,18 @@ public class ConnectorResource {
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     Optional<ConnectorResponseDTO> connectorResponseDTO =
         connectorService.get(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
+    String connectorNotFountErrorMsg =
+        String.format("Connector with identifier [%s] not found in project [%s] and org [%s].", connectorIdentifier,
+            projectIdentifier, orgIdentifier);
+    if (null == orgIdentifier) {
+      connectorNotFountErrorMsg = String.format(
+          "Connector with identifier [%s] not found in account [%s].", connectorIdentifier, accountIdentifier);
+    } else if (null == projectIdentifier) {
+      connectorNotFountErrorMsg =
+          String.format("Connector with identifier [%s] not found in org [%s].", connectorIdentifier, orgIdentifier);
+    }
     if (!connectorResponseDTO.isPresent()) {
-      throw new NotFoundException(String.format("Connector with identifier [%s] in project [%s], org [%s] not found",
-          connectorIdentifier, projectIdentifier, orgIdentifier));
+      throw new NotFoundException(connectorNotFountErrorMsg);
     }
     return ResponseDTO.newResponse(connectorResponseDTO.get());
   }

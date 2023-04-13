@@ -18,11 +18,11 @@ import io.harness.perpetualtask.k8s.watch.K8sWorkloadSpec;
 
 import com.google.protobuf.Timestamp;
 import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1beta1CronJob;
+import io.kubernetes.client.openapi.models.V1CronJob;
 import java.util.List;
 
 @TargetModule(HarnessModule._420_DELEGATE_AGENT)
-public class V1beta1CronJobHandler extends BaseHandler<V1beta1CronJob> {
+public class V1beta1CronJobHandler extends BaseHandler<V1CronJob> {
   public V1beta1CronJobHandler(EventPublisher eventPublisher, ClusterDetails clusterDetails) {
     super(eventPublisher, clusterDetails);
   }
@@ -38,7 +38,7 @@ public class V1beta1CronJobHandler extends BaseHandler<V1beta1CronJob> {
   }
 
   @Override
-  protected void publishWorkloadSpecOnAdd(V1beta1CronJob cronJob, Timestamp occurredAt) {
+  protected void publishWorkloadSpecOnAdd(V1CronJob cronJob, Timestamp occurredAt) {
     if (cronJob.getMetadata() != null && cronJob.getSpec() != null
         && cronJob.getSpec().getJobTemplate().getSpec() != null
         && cronJob.getSpec().getJobTemplate().getSpec().getTemplate().getSpec() != null) {
@@ -61,7 +61,7 @@ public class V1beta1CronJobHandler extends BaseHandler<V1beta1CronJob> {
 
   @Override
   protected void publishWorkloadSpecIfChangedOnUpdate(
-      V1beta1CronJob oldCronJob, V1beta1CronJob newCronJob, Timestamp occurredAt) {
+      V1CronJob oldCronJob, V1CronJob newCronJob, Timestamp occurredAt) {
     if (oldCronJob.getSpec() != null && newCronJob.getSpec() != null
         && oldCronJob.getSpec().getJobTemplate().getSpec() != null
         && newCronJob.getSpec().getJobTemplate().getSpec() != null

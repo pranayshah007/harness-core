@@ -9,6 +9,7 @@ package io.harness.ssca.beans.entities;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.remote.client.ServiceHttpClientConfig;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -21,7 +22,9 @@ import lombok.Value;
 @Builder
 @OwnedBy(HarnessTeam.SSCA)
 public class SSCAServiceConfig {
-  String baseUrl;
-  String globalToken;
-  String internalUrl;
+  ServiceHttpClientConfig httpClientConfig;
+  String serviceSecret;
+  @Deprecated String baseUrl;
+  @Deprecated String globalToken;
+  @Deprecated String internalUrl;
 }

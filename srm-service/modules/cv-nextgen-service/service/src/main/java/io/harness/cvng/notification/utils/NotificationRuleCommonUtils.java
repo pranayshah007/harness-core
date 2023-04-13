@@ -60,9 +60,10 @@ public class NotificationRuleCommonUtils {
   }
 
   public static String getNotificationTemplateId(NotificationRuleType notificationRuleType,
-      ServiceLevelObjectiveType serviceLevelObjectiveType, CVNGNotificationChannelType notificationChannelType) {
-    return String.format("cvng_%s_%s_%s", notificationRuleType.getTemplateSuffixIdentifier().toLowerCase(),
-        serviceLevelObjectiveType.toString().toLowerCase(),
+      ServiceLevelObjectiveType serviceLevelObjectiveType, String scope,
+      CVNGNotificationChannelType notificationChannelType) {
+    return String.format("cvng_%s_%s_%s_%s", notificationRuleType.getTemplateSuffixIdentifier().toLowerCase(),
+        serviceLevelObjectiveType.toString().toLowerCase(), scope,
         notificationChannelType.getTemplateSuffixIdentifier().toLowerCase());
   }
 }

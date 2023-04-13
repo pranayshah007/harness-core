@@ -18,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.retry.RetryExecutionParameters;
+import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
@@ -29,13 +30,16 @@ import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
+import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.instrumentaion.PipelineTelemetryHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.plan.execution.beans.ExecArgs;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.RunStageRequestDTO;
+import io.harness.pms.plan.execution.service.PMSExecutionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -64,6 +68,7 @@ public class PipelineExecutor {
   PipelineTelemetryHelper pipelineTelemetryHelper;
   PlanExecutionService planExecutionService;
   RollbackModeExecutionHelper rollbackModeExecutionHelper;
+  PMSExecutionService pmsExecutionService;
 
   public PlanExecutionResponseDto runPipelineWithInputSetPipelineYaml(@NotNull String accountId,
       @NotNull String orgIdentifier, @NotNull String projectIdentifier, @NotNull String pipelineIdentifier,
@@ -319,10 +324,44 @@ public class PipelineExecutor {
     if (info != null) {
       execArgs.setMetadata(execArgs.getMetadata().toBuilder().setPipelineStageInfo(info).build());
 
-      // Need to set triggerJsonPayload from parent to child to resolve trigger expression in child
-      execArgs.setPlanExecutionMetadata(
-          execArgs.getPlanExecutionMetadata().withTriggerJsonPayload(info.getTriggerJsonPayload()));
+      // Setting payload, trigger info to support trigger expression in child pipeline
+      setTriggerInfo(info, execArgs, accountId);
     }
     return getPlanExecutionResponseDto(accountId, orgIdentifier, projectIdentifier, useV2, pipelineEntity, execArgs);
+  }
+
+  public void setTriggerInfo(PipelineStageInfo info, ExecArgs execArgs, String accountId) {
+    // Need to set triggerJsonPayload from parent to child to resolve trigger expression in child
+    PlanExecutionMetadata planExecutionMetadata =
+        planExecutionMetadataService.findByPlanExecutionId(info.getExecutionId())
+            .orElseThrow(()
+                             -> new InternalServerErrorException(
+                                 "PlanExecution metadata null for planExecutionId " + info.getExecutionId(), null));
+
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
+        pmsExecutionService.getPipelineExecutionSummaryEntity(
+            accountId, info.getOrgId(), info.getProjectId(), info.getExecutionId());
+
+    String triggerJsonPayload = "";
+    TriggerPayload triggerPayload = TriggerPayload.newBuilder().build();
+
+    if (planExecutionMetadata.getTriggerPayload() != null) {
+      triggerPayload = planExecutionMetadata.getTriggerPayload();
+    }
+
+    if (planExecutionMetadata.getTriggerJsonPayload() != null) {
+      triggerJsonPayload = planExecutionMetadata.getTriggerJsonPayload();
+    }
+
+    execArgs.setPlanExecutionMetadata(execArgs.getPlanExecutionMetadata().withTriggerJsonPayload(triggerJsonPayload));
+
+    // To support expression related to PR_NUMBER, branch name etc
+    execArgs.setPlanExecutionMetadata(execArgs.getPlanExecutionMetadata().withTriggerPayload(triggerPayload));
+
+    // To support expression like - <+pipeline.triggeredBy.name>
+    execArgs.setMetadata(execArgs.getMetadata()
+                             .toBuilder()
+                             .setTriggerInfo(pipelineExecutionSummaryEntity.getExecutionTriggerInfo())
+                             .build());
   }
 }

@@ -73,6 +73,7 @@ java_library(
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/featureFlag:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/gitops/constants:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/helpers:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/hooks/steps:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/infra:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/infra/beans:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/infra/mapper:module",

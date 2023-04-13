@@ -11,8 +11,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
-import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.TemplateValidationResponseDTO;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
@@ -56,7 +56,7 @@ public class PipelineAsyncValidationHandler implements Runnable {
         validateTemplatesAndUpdateResult(pipelineEntity);
     ValidationResult templateValidationResult = templateValidation.getFirst();
     TemplateMergeResponseDTO templateMergeResponse = templateValidation.getSecond();
-    if (!templateValidationResult.getTemplateInputsResponse().isValidYaml()) {
+    if (!templateValidationResult.getTemplateValidationResponse().isValidYaml()) {
       return;
     }
 
@@ -67,11 +67,24 @@ public class PipelineAsyncValidationHandler implements Runnable {
   Pair<ValidationResult, TemplateMergeResponseDTO> validateTemplatesAndUpdateResult(PipelineEntity pipelineEntity) {
     ValidationResult templateValidationResult;
 
-    TemplateMergeResponseDTO templateMergeResponse =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, true, loadFromCache);
+    TemplateMergeResponseDTO templateMergeResponse = null;
+    try {
+      templateMergeResponse = pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, true, loadFromCache);
+    } catch (Exception ex) {
+      log.error(String.format("Error occurred while resolving template!"), ex);
+
+      templateValidationResult =
+          ValidationResult.builder()
+              .templateValidationResponse(
+                  TemplateValidationResponseDTO.builder().validYaml(false).exceptionMessage(ex.getMessage()).build())
+              .build();
+      validationService.updateEvent(validationEvent.getUuid(), ValidationStatus.FAILURE, templateValidationResult);
+      return new Pair<>(templateValidationResult, templateMergeResponse);
+    }
+
     templateValidationResult =
         ValidationResult.builder()
-            .templateInputsResponse(ValidateTemplateInputsResponseDTO.builder().validYaml(true).build())
+            .templateValidationResponse(TemplateValidationResponseDTO.builder().validYaml(true).build())
             .build();
     validationService.updateEvent(validationEvent.getUuid(), ValidationStatus.IN_PROGRESS, templateValidationResult);
     // Add Template Module Info temporarily to Pipeline Entity

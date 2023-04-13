@@ -2,7 +2,7 @@
    {
      "moduleName": "CI",
      "displayName": "Continuous Integration",
-     "version": "Coming Soon",
+     "version": "",
      "lastModifiedAt": "",
      "versionUrl": "",
      "releaseNotesLink": "https://developer.harness.io/release-notes/continuous-integration",
@@ -42,7 +42,7 @@
    {
      "moduleName": "SRM",
      "displayName": "Service Reliability Management",
-     "version": "Coming Soon",
+     "version": "",
      "lastModifiedAt": "",
      "versionUrl": "",
      "releaseNotesLink": "https://developer.harness.io/release-notes/service-reliability-management",

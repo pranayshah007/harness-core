@@ -17,6 +17,7 @@ import lombok.Data;
 @OwnedBy(HarnessTeam.PIPELINE)
 public abstract class UserSourceCodeManagerResponseDTO {
   String accountIdentifier;
+  String userIdentifier;
   SCMType type;
 
   public abstract SCMType getType();

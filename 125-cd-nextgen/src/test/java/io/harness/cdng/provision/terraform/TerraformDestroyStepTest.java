@@ -543,7 +543,7 @@ public class TerraformDestroyStepTest extends CategoryTest {
     StepInputPackage stepInputPackage = StepInputPackage.builder().build();
     doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
     doReturn(null).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
-    doReturn(fileStoreFetchFilesConfig).when(terraformStepHelper).getFileStoreFetchFilesConfig(any(), any(), any());
+    doReturn(fileStoreFetchFilesConfig).when(terraformStepHelper).prepareTerraformConfigFileInfo(any(), any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
 
     Mockito.mockStatic(TaskRequestsUtils.class);

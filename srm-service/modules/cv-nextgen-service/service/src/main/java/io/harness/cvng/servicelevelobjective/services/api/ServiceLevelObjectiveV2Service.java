@@ -25,6 +25,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Respon
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.ng.beans.PageResponse;
 
@@ -65,7 +66,8 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
 
   List<AbstractServiceLevelObjective> get(ProjectParams projectParams, List<String> identifiers);
 
-  List<AbstractServiceLevelObjective> getWithChildResource(ProjectParams projectParams, List<String> identifiers);
+  List<AbstractServiceLevelObjective> getSimpleSLOWithChildResource(
+      ProjectParams projectParams, List<String> identifiers);
 
   List<AbstractServiceLevelObjective> getByMonitoredServiceIdentifier(
       ProjectParams projectParams, String monitoredServiceIdentifier);
@@ -96,6 +98,12 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
 
   Map<AbstractServiceLevelObjective, SLIEvaluationType> getEvaluationType(
       ProjectParams projectParams, List<AbstractServiceLevelObjective> serviceLevelObjectiveList);
+
+  String getScopedIdentifier(AbstractServiceLevelObjective abstractServiceLevelObjective);
+
+  String getScopedIdentifier(ServiceLevelObjectivesDetail serviceLevelObjectivesDetail);
+
+  String getScopedIdentifierForSLI(SimpleServiceLevelObjective serviceLevelObjective);
 
   List<SLOErrorBudgetResetDTO> getErrorBudgetResetHistory(ProjectParams projectParams, String sloIdentifier);
   SLOErrorBudgetResetDTO resetErrorBudget(ProjectParams projectParams, SLOErrorBudgetResetDTO resetDTO);

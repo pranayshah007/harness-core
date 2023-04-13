@@ -115,10 +115,16 @@ java_library(
     exported_plugins = [":lombok_plugin"],
     visibility = ["//visibility:public"],
     exports = [
+        ":lombok_maven_only",
         "@maven//:com_google_code_findbugs_annotations",
-        "@maven//:org_projectlombok_lombok",
         "@maven//:org_slf4j_slf4j_api",
     ],
+)
+
+java_library(
+    name = "lombok_maven_only",
+    neverlink = 1,
+    exports = ["@maven//:org_projectlombok_lombok"],
 )
 
 filegroup(

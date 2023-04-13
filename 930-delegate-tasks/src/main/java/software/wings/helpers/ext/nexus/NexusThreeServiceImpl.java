@@ -63,6 +63,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Credentials;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -765,6 +767,18 @@ public class NexusThreeServiceImpl {
   public Pair<String, InputStream> downloadArtifactByUrl(
       NexusRequest nexusConfig, String artifactName, String artifactUrl) {
     try {
+      if (nexusConfig.isHasCredentials()) {
+        OkHttpClient okHttpClient =
+            Http.getUnsafeOkHttpClient(artifactUrl, HTTP_CLIENT_TIMOUT_SECONDS, HTTP_CLIENT_TIMOUT_SECONDS);
+        Request request = new Request.Builder()
+                              .url(artifactUrl)
+                              .header("Authorization",
+                                  Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())))
+                              .build();
+
+        return ImmutablePair.of(artifactName, okHttpClient.newCall(request).execute().body().byteStream());
+      }
+
       return ImmutablePair.of(artifactName,
           Http.getResponseStreamFromUrl(artifactUrl, HTTP_CLIENT_TIMOUT_SECONDS, HTTP_CLIENT_TIMOUT_SECONDS));
     } catch (Exception ex) {

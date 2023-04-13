@@ -3161,7 +3161,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                         .helmVersion(HelmVersion.V3)
                                         .storeDelegateConfig(GitStoreDelegateConfig.builder().build())
                                         .helmCommandFlag(TEST_HELM_COMMAND)
-                                        .subChartName("")
+                                        .subChartPath("")
                                         .build(),
         "manifest", "manifest");
   }
@@ -3175,7 +3175,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                         .storeDelegateConfig(HttpHelmStoreDelegateConfig.builder().build())
                                         .helmCommandFlag(TEST_HELM_COMMAND)
                                         .chartName("chart-name")
-                                        .subChartName("")
+                                        .subChartPath("")
                                         .build(),
         "manifest", "manifest/chart-name");
 
@@ -3184,7 +3184,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                            .storeDelegateConfig(HttpHelmStoreDelegateConfig.builder().build())
                                            .helmCommandFlag(HELM_DEPENDENCY_UPDATE)
                                            .chartName("chart-name")
-                                           .subChartName("first-child")
+                                           .subChartPath("charts/first-child")
                                            .build(),
         "manifest", "manifest/chart-name/charts/first-child");
   }
@@ -3220,7 +3220,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(renderedFiles)
         .when(spyHelper)
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE, "first-child");
+            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE, "charts/first-child");
 
     List<FileData> result = spyHelper.renderTemplate(K8sDelegateTaskParams.builder().helmPath(helmPath).build(),
         manifestDelegateConfig, manifestDirectory, valuesList, "release", "namespace", executionLogCallback, 10);
@@ -3228,7 +3228,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isEqualTo(renderedFiles);
     verify(spyHelper, times(1))
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE, "first-child");
+            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE, "charts/first-child");
   }
 
   @Test

@@ -189,7 +189,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     infrastructureValidator.validate(infrastructure);
 
     final InfrastructureOutcome infrastructureOutcome =
-        infrastructureOutcomeProvider.getOutcome(infrastructure, environmentOutcome, serviceOutcome,
+        infrastructureOutcomeProvider.getOutcome(ambiance, infrastructure, environmentOutcome, serviceOutcome,
             ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
     executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_OUTPUT,

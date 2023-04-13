@@ -14,6 +14,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.connector.entities.Connector;
+import io.harness.delegate.beans.connector.azureconnector.AzureManagedIdentityType;
 import io.harness.ng.DbAliases;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -44,6 +45,9 @@ public class AzureKeyVaultConnector extends Connector {
   String secretKeyRef;
   String subscription;
   boolean isDefault;
+  Boolean useManagedIdentity;
+  AzureManagedIdentityType azureManagedIdentityType;
+  String managedClientId;
 
   @Builder.Default AzureEnvironmentType azureEnvironmentType = AZURE;
 }

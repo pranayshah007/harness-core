@@ -273,6 +273,7 @@ public class SettingsServiceImpl implements SettingsService {
 
   private static final String OPEN_SSH = "OPENSSH";
 
+  // Used by migration
   @Override
   public List<String> getSettingIdsForAccount(String accountId) {
     return wingsPersistence.createQuery(SettingAttribute.class)
@@ -284,10 +285,12 @@ public class SettingsServiceImpl implements SettingsService {
         .collect(toList());
   }
 
+  // Used only for Cloud provider
   public List<SettingAttribute> list(String accountId, SettingCategory category) {
     return settingAttributeDao.list(accountId, category);
   }
 
+  // Used externally
   @Override
   public PageResponse<SettingAttribute> list(
       PageRequest<SettingAttribute> req, String appIdFromRequest, String accountIdFromRequest) {
@@ -306,6 +309,7 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // used externally
   @Override
   public PageResponse<SettingAttribute> list(
       PageRequest<SettingAttribute> req, String appIdFromRequest, String envIdFromRequest, boolean forUsageInNewApp) {
@@ -330,6 +334,7 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // used by yaml service
   @Override
   public List<SettingAttribute> listAllSettingAttributesByType(String accountId, String type) {
     List<SettingAttribute> settingAttributeList = new ArrayList<>();
@@ -351,6 +356,7 @@ public class SettingsServiceImpl implements SettingsService {
     return settingAttributeList;
   }
 
+  // used externally
   @Override
   public PageResponse<SettingAttribute> list(PageRequest<SettingAttribute> req, String appIdFromRequest,
       String envIdFromRequest, String accountId, boolean gitSshConfigOnly, boolean withArtifactStreamCount,
@@ -404,6 +410,7 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // internal
   private List<SettingAttribute> filterSettingsAndArtifactStreamsWithCount(String accountId,
       String artifactStreamSearchString, int maxArtifactStreams, ArtifactType artifactType,
       List<SettingAttribute> filteredSettingAttributes) {
@@ -453,6 +460,7 @@ public class SettingsServiceImpl implements SettingsService {
    * @param forUsageInNewApp
    * @return
    */
+  // internal
   Map<String, SecretState> extractAllSecretIdsWithState(Collection<SettingAttribute> settingAttributes,
       String accountId, String appIdFromRequest, String envIdFromRequest, boolean forUsageInNewApp) {
     // useInApp
@@ -478,6 +486,7 @@ public class SettingsServiceImpl implements SettingsService {
     return Collections.emptyMap();
   }
 
+  // used externally
   @Override
   public List<SettingAttribute> getFilteredSettingAttributes(List<SettingAttribute> inputSettingAttributes,
       String appIdFromRequest, String envIdFromRequest, boolean forUsageInNewApp) {
@@ -524,6 +533,7 @@ public class SettingsServiceImpl implements SettingsService {
     return filteredSettingAttributes;
   }
 
+  // internal
   private void checkGitConnectorsUsageWithinLimit(SettingAttribute settingAttribute) {
     int maxGitConnectorsAllowed = gitOpsFeature.getMaxUsageAllowedForAccount(settingAttribute.getAccountId());
     PageRequest<SettingAttribute> request =
@@ -540,6 +550,7 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // internal
   private void getFilteredHelmRepoSettingAttributes(String appIdFromRequest, String envIdFromRequest, String accountId,
       boolean forUsageInNewApp, List<SettingAttribute> filteredSettingAttributes,
       Map<String, Set<String>> appEnvMapFromUserPermissions, UsageRestrictions restrictionsFromUserPermissions,
@@ -582,6 +593,7 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // internal
   @VisibleForTesting
   public boolean isFilteredSettingAttribute(String appIdFromRequest, String envIdFromRequest, String accountId,
       boolean forUsageInNewApp, Map<String, Set<String>> appEnvMapFromUserPermissions,
@@ -615,12 +627,14 @@ public class SettingsServiceImpl implements SettingsService {
     return false;
   }
 
+  // internal
   private boolean isSettingAttributeReferencingCloudProvider(SettingAttribute settingAttribute) {
     return SettingCategory.HELM_REPO == settingAttribute.getCategory()
         && (AMAZON_S3_HELM_REPO.name().equals(settingAttribute.getValue().getType())
             || GCS_HELM_REPO.name().equals(settingAttribute.getValue().getType()));
   }
 
+  // internal
   private UsageRestrictions getUsageRestrictions(SettingAttribute settingAttribute) {
     SettingValue settingValue = settingAttribute.getValue();
     if (isSettingAttributeReferencingCloudProvider(settingAttribute)) {
@@ -635,6 +649,7 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // create query
   @Override
   @ValidationGroups(Create.class)
   public SettingAttribute save(SettingAttribute settingAttribute) {
@@ -646,12 +661,14 @@ public class SettingsServiceImpl implements SettingsService {
     return save(settingAttribute, true);
   }
 
+  // create query
   @Override
   public SettingAttribute saveWithPruning(SettingAttribute settingAttribute, String appId, String accountId) {
     prePruneSettingAttribute(appId, accountId, settingAttribute);
     return save(settingAttribute);
   }
 
+  // create query flow
   private void prePruneSettingAttribute(final String appId, final String accountId, final SettingAttribute variable) {
     variable.setName(StringUtils.trim(variable.getName()));
     variable.setAppId(appId);
@@ -674,12 +691,14 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // save flow
   @Override
   @ValidationGroups(Create.class)
   public SettingAttribute forceSave(SettingAttribute settingAttribute) {
     return forceSave(settingAttribute, false);
   }
 
+  // save flow
   private SettingAttribute forceSave(SettingAttribute settingAttribute, boolean alreadyUpdatedReferencedSecrets) {
     String accountId = settingAttribute.getAccountId();
 
@@ -724,6 +743,7 @@ public class SettingsServiceImpl implements SettingsService {
     return settingAttribute;
   }
 
+  // k8s specific
   @Override
   public CEK8sDelegatePrerequisite validateCEDelegateSetting(String accountId, String delegateName) {
     List<SettingAttribute> settingAttributeList =
@@ -747,11 +767,13 @@ public class SettingsServiceImpl implements SettingsService {
     return settingValidationService.validateCEK8sDelegateSetting(settingAttribute);
   }
 
+  // its a check
   @Override
   public boolean isSettingValueGcp(SettingAttribute settingAttribute) {
     return settingAttribute.getValue() instanceof GcpConfig;
   }
 
+  // its a check
   @Override
   public boolean hasDelegateSelectorProperty(SettingAttribute settingAttribute) {
     return settingAttribute.getValue() instanceof GcpConfig || settingAttribute.getValue() instanceof DockerConfig
@@ -759,6 +781,7 @@ public class SettingsServiceImpl implements SettingsService {
         || settingAttribute.getValue() instanceof ArtifactoryConfig;
   }
 
+  // delegate selectors
   @Override
   public List<String> getDelegateSelectors(SettingAttribute settingAttribute) {
     List<String> selectors = new ArrayList<>();
@@ -785,6 +808,7 @@ public class SettingsServiceImpl implements SettingsService {
                               : selectors.stream().filter(StringUtils::isNotBlank).distinct().collect(toList());
   }
 
+  // no use
   @Override
   public List<SettingAttribute> getSettingAttributeByReferencedConnector(
       String accountId, String settingAttributeUuid) {
@@ -795,6 +819,7 @@ public class SettingsServiceImpl implements SettingsService {
         .asList();
   }
 
+  // UPDATED
   @Override
   public ValidationResult validateConnectivity(SettingAttribute settingAttribute) {
     try {
@@ -823,6 +848,7 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // UPDATED
   @Override
   public ValidationResult validateConnectivityWithPruning(
       SettingAttribute settingAttribute, String appId, String accountId) {
@@ -830,6 +856,7 @@ public class SettingsServiceImpl implements SettingsService {
     return validateConnectivity(settingAttribute);
   }
 
+  // Internal
   private ValidationResult validateInternal(final SettingAttribute settingAttribute) {
     try {
       settingServiceHelper.updateReferencedSecrets(settingAttribute);
@@ -839,17 +866,20 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // UPDATED
   @Override
   public ValidationResult validate(final SettingAttribute settingAttribute) {
     return validateInternal(settingAttribute);
   }
 
+  // UPDATED
   @Override
   public ValidationResult validateWithPruning(final SettingAttribute settingAttribute, String appId, String accountId) {
     prePruneSettingAttribute(appId, accountId, settingAttribute);
     return validateInternal(settingAttribute);
   }
 
+  // UPDATED
   @Override
   public ValidationResult validate(final String varId) {
     final SettingAttribute settingAttribute = get(varId);
@@ -860,16 +890,19 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // No use
   @Override
   public Map<String, String> listAccountDefaults(String accountId) {
     return listAccountOrAppDefaults(accountId, GLOBAL_APP_ID);
   }
 
+  // No use
   @Override
   public Map<String, String> listAppDefaults(String accountId, String appId) {
     return listAccountOrAppDefaults(accountId, appId);
   }
 
+  // No use
   private Map<String, String> listAccountOrAppDefaults(String accountId, String appId) {
     List<SettingAttribute> settingAttributes =
         wingsPersistence.createQuery(SettingAttribute.class)
@@ -884,6 +917,7 @@ public class SettingsServiceImpl implements SettingsService {
         (a, b) -> b));
   }
 
+  // Save flow
   @Override
   @ValidationGroups(Create.class)
   public SettingAttribute save(SettingAttribute settingAttribute, boolean pushToGit) {
@@ -927,6 +961,7 @@ public class SettingsServiceImpl implements SettingsService {
     return newSettingAttribute;
   }
 
+  // Save flow
   @VisibleForTesting
   void checkCeTrialLimit(SettingAttribute settingAttribute) {
     String accountId = settingAttribute.getAccountId();
@@ -945,6 +980,7 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // CRUD flow
   @VisibleForTesting
   void validateAndUpdateCEDetails(SettingAttribute settingAttribute, boolean isSave) {
     if (CE_CONNECTOR == settingAttribute.getCategory()) {
@@ -1035,6 +1071,7 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // Internal
   private void syncCEInfra(SettingAttribute settingAttribute) {
     try {
       if (CE_CONNECTOR == settingAttribute.getCategory()) {
@@ -1047,6 +1084,7 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // Internal
   private void autoGenerateFieldsIfRequired(SettingAttribute settingAttribute) {
     if (settingAttribute.getValue() instanceof GitConfig) {
       GitConfig gitConfig = (GitConfig) settingAttribute.getValue();
@@ -1061,6 +1099,7 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // Internal
   private boolean shouldBeSynced(SettingAttribute settingAttribute, boolean pushToGit) {
     String type = settingAttribute.getValue().getType();
 
@@ -1071,6 +1110,7 @@ public class SettingsServiceImpl implements SettingsService {
     return pushToGit && !skip;
   }
 
+  // Covered
   /* (non-Javadoc)
    * @see software.wings.service.intfc.SettingsService#get(java.lang.String, java.lang.String)
    */
@@ -1079,6 +1119,7 @@ public class SettingsServiceImpl implements SettingsService {
     return get(appId, GLOBAL_ENV_ID, varId);
   }
 
+  // Covered
   @Override
   public SettingAttribute get(String appId, String envId, String varId) {
     SettingAttribute settingAttribute = wingsPersistence.createQuery(SettingAttribute.class)
@@ -1087,9 +1128,11 @@ public class SettingsServiceImpl implements SettingsService {
                                             .filter(ID_KEY, varId)
                                             .get();
     setCertValidationRequired(settingAttribute);
+    setFeatureFlagIfRequired(settingAttribute);
     return settingAttribute;
   }
 
+  // Covered
   /* (non-Javadoc)
    * @see software.wings.service.intfc.SettingsService#get(java.lang.String)
    */
@@ -1101,12 +1144,26 @@ public class SettingsServiceImpl implements SettingsService {
     return settingAttribute;
   }
 
+  // Covered
   private SettingAttribute getById(String varId) {
     SettingAttribute settingAttribute = wingsPersistence.get(SettingAttribute.class, varId);
     setCertValidationRequired(settingAttribute);
+    setFeatureFlagIfRequired(settingAttribute);
     return settingAttribute;
   }
 
+  // New logic
+  private void setFeatureFlagIfRequired(SettingAttribute settingAttribute) {
+    try {
+      if (settingAttribute != null && settingAttribute.getValue() != null) {
+        settingServiceHelper.setFeatureFlagIfRequired(settingAttribute.getValue(), settingAttribute.getAccountId());
+      }
+    } catch (Exception ex) {
+      log.error("Failed to set Feature Flags for HostConnectionAttributes", ex);
+    }
+  }
+
+  // Covered
   @Override
   public SettingAttribute getWithRbac(String id) {
     final SettingAttribute settingAttribute = getById(id);
@@ -1122,6 +1179,7 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // Covered
   @Override
   @Nullable
   public SettingAttribute getByAccount(String accountId, String varId) {
@@ -1132,6 +1190,7 @@ public class SettingsServiceImpl implements SettingsService {
     return settingAttribute.getAccountId().equals(accountId) ? settingAttribute : null;
   }
 
+  // Migration specific
   @Override
   public SettingAttribute getByAccountAndId(String accountId, String settingId) {
     SettingAttribute settingAttribute = wingsPersistence.createQuery(SettingAttribute.class)
@@ -1142,6 +1201,7 @@ public class SettingsServiceImpl implements SettingsService {
     return settingAttribute;
   }
 
+  // Internal
   private void setInternal(SettingAttribute settingAttribute) {
     if (settingAttribute != null && settingAttribute.getValue() instanceof GitConfig) {
       GitConfig gitConfig = (GitConfig) settingAttribute.getValue();
@@ -1149,12 +1209,14 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // Internal
   private void setCertValidationRequired(SettingAttribute settingAttribute) {
     if (settingAttribute != null && settingAttribute.getAccountId() != null) {
       settingServiceHelper.setCertValidationRequired(settingAttribute.getAccountId(), settingAttribute);
     }
   }
 
+  // No use
   @Override
   public SettingAttribute getOnlyConnectivityError(String settingId) {
     return wingsPersistence.createQuery(SettingAttribute.class, excludeAuthority)
@@ -1163,6 +1225,7 @@ public class SettingsServiceImpl implements SettingsService {
         .get();
   }
 
+  // Wide usage, added for safety
   @Override
   public SettingAttribute getSettingAttributeByName(String accountId, String settingAttributeName) {
     SettingAttribute settingAttribute = wingsPersistence.createQuery(SettingAttribute.class)
@@ -1170,9 +1233,11 @@ public class SettingsServiceImpl implements SettingsService {
                                             .filter(SettingAttributeKeys.accountId, accountId)
                                             .get();
     setCertValidationRequired(settingAttribute);
+    setFeatureFlagIfRequired(settingAttribute);
     return settingAttribute;
   }
 
+  // No usage
   @Override
   public void checkRbacOnSettingAttribute(String appId, SettingAttribute settingAttribute) {
     if (featureFlagService.isEnabled(FeatureName.USAGE_SCOPE_RBAC, settingAttribute.getAccountId())) {
@@ -1184,6 +1249,7 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // Internal
   private void resetUnchangedEncryptedFields(
       SettingAttribute existingSettingAttribute, SettingAttribute newSettingAttribute) {
     if (EncryptableSetting.class.isInstance(existingSettingAttribute.getValue())) {
@@ -1199,6 +1265,7 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // CRUD flow
   @Override
   public SettingAttribute update(SettingAttribute settingAttribute, boolean updateConnectivity, boolean pushToGit) {
     if (isOpenSSHKeyUsed(settingAttribute)) {
@@ -1342,6 +1409,7 @@ public class SettingsServiceImpl implements SettingsService {
     return updatedSettingAttribute;
   }
 
+  // CRUD flow
   @VisibleForTesting
   void validateSettingAttribute(SettingAttribute settingAttribute, SettingAttribute existingSettingAttribute) {
     if (settingAttribute != null && existingSettingAttribute != null) {
@@ -1365,6 +1433,7 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // CRUD flow
   @Override
   public void updateUsageRestrictionsInternal(String uuid, UsageRestrictions usageRestrictions) {
     ImmutableMap.Builder<String, Object> fields =
@@ -1375,12 +1444,13 @@ public class SettingsServiceImpl implements SettingsService {
   /* (non-Javadoc)
    * @see software.wings.service.intfc.SettingsService#update(software.wings.beans.SettingAttribute)
    */
-
+  // CRUD flow
   @Override
   public SettingAttribute update(SettingAttribute settingAttribute) {
     return update(settingAttribute, true, true);
   }
 
+  // CRUD flow
   @Override
   public SettingAttribute updateWithSettingFields(SettingAttribute settingAttribute, String attrId, String appId) {
     settingAttribute.setUuid(attrId);
@@ -1394,11 +1464,13 @@ public class SettingsServiceImpl implements SettingsService {
     return update(settingAttribute);
   }
 
+  // CRUD flow
   @Override
   public SettingAttribute update(SettingAttribute settingAttribute, boolean updateConnectivity) {
     return update(settingAttribute, updateConnectivity, true);
   }
 
+  // CRUD flow
   /* (non-Javadoc)
    * @see software.wings.service.intfc.SettingsService#delete(java.lang.String, java.lang.String)
    */
@@ -1407,6 +1479,7 @@ public class SettingsServiceImpl implements SettingsService {
     delete(appId, varId, true, false);
   }
 
+  // CRUD flow
   /* (non-Javadoc)
    * @see software.wings.service.intfc.SettingsService#delete(java.lang.String, java.lang.String)
    */
@@ -1458,6 +1531,7 @@ public class SettingsServiceImpl implements SettingsService {
    * Retain only the selected
    * @param selectedGitConnectors List of setting attribute Names of Git connectors to be retained
    */
+  // No usage
   @Override
   public boolean retainSelectedGitConnectorsAndDeleteRest(String accountId, List<String> selectedGitConnectors) {
     if (EmptyPredicate.isNotEmpty(selectedGitConnectors)) {
@@ -1472,11 +1546,13 @@ public class SettingsServiceImpl implements SettingsService {
     return false;
   }
 
+  // No usage
   @Override
   public void deleteByYamlGit(String appId, String settingAttributeId, boolean syncFromGit) {
     delete(appId, settingAttributeId, true, syncFromGit);
   }
 
+  // No usage
   @VisibleForTesting
   void ensureSettingAttributeSafeToDelete(SettingAttribute settingAttribute) {
     if (settingAttribute.getCategory() == SettingCategory.CLOUD_PROVIDER) {
@@ -1494,6 +1570,7 @@ public class SettingsServiceImpl implements SettingsService {
     ensureNotReferencedInServiceGuard(settingAttribute);
   }
 
+  // No usage
   private void ensureHelmConnectorSafeToDelete(SettingAttribute settingAttribute) {
     final int entityNamesLimit = 5;
     final String accountId = settingAttribute.getAccountId();
@@ -1531,10 +1608,12 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // No usage
   private List<String> trimList(List<String> strings, int n) {
     return strings.stream().limit(n).collect(toList());
   }
 
+  // No usage
   private void ensureSettingSafeToDelete(SettingAttribute settingAttribute) {
     List<String> infraDefinitionNames = infrastructureDefinitionService.listNamesByConnectionAttr(
         settingAttribute.getAccountId(), settingAttribute.getUuid());
@@ -1551,6 +1630,7 @@ public class SettingsServiceImpl implements SettingsService {
     // TODO:: workflow scan for finding out usage in Steps/expression ???
   }
 
+  // Internal
   private void ensureConnectorSafeToDelete(SettingAttribute connectorSetting) {
     if (SettingVariableTypes.ELB.name().equals(connectorSetting.getValue().getType())) {
       List<InfrastructureMapping> infrastructureMappings =
@@ -1608,6 +1688,7 @@ public class SettingsServiceImpl implements SettingsService {
     // TODO:: workflow scan for finding out usage in Steps ???
   }
 
+  // Internal
   private void ensureCloudProviderSafeToDelete(SettingAttribute cloudProviderSetting) {
     String accountId = cloudProviderSetting.getAccountId();
     List<String> infraDefinitionNames =
@@ -1632,6 +1713,7 @@ public class SettingsServiceImpl implements SettingsService {
     // TODO:: workflow scan for finding out usage in Steps ???
   }
 
+  // Internal
   private void ensureAzureArtifactsConnectorSafeToDelete(SettingAttribute connectorSetting) {
     List<ArtifactStream> artifactStreams = artifactStreamService.listBySettingId(connectorSetting.getUuid());
     if (isEmpty(artifactStreams)) {
@@ -1648,6 +1730,7 @@ public class SettingsServiceImpl implements SettingsService {
         USER);
   }
 
+  // Internal
   private void ensureNotReferencedInServiceGuard(SettingAttribute settingAttribute) {
     final List<CVConfiguration> cvConfigurations =
         wingsPersistence.createQuery(CVConfiguration.class)
@@ -1667,21 +1750,25 @@ public class SettingsServiceImpl implements SettingsService {
   /* (non-Javadoc)
    * @see software.wings.service.intfc.SettingsService#getByName(java.lang.String, java.lang.String)
    */
+  // Covered
   @Override
   public SettingAttribute getByName(String accountId, String appId, String attributeName) {
     return getByName(accountId, appId, GLOBAL_ENV_ID, attributeName);
   }
 
+  // Covered
   @Override
   public SettingAttribute getByName(String accountId, String appId, String envId, String attributeName) {
     return getByNameAndCategory(accountId, appId, envId, attributeName, null);
   }
 
+  // Covered
   @Override
   public SettingAttribute getConnectorByName(String accountId, String appId, String attributeName) {
     return getByNameAndCategory(accountId, appId, GLOBAL_ENV_ID, attributeName, SettingCategory.CONNECTOR);
   }
 
+  // Covered
   private SettingAttribute getByNameAndCategory(
       String accountId, String appId, String envId, String attributeName, SettingCategory category) {
     final Query<SettingAttribute> query = wingsPersistence.createQuery(SettingAttribute.class)
@@ -1694,24 +1781,32 @@ public class SettingsServiceImpl implements SettingsService {
     if (category != null) {
       query.filter(SettingAttributeKeys.category, category);
     }
-    return query.get();
+    SettingAttribute settingAttribute = query.get();
+    if (null != settingAttribute) {
+      setFeatureFlagIfRequired(settingAttribute);
+    }
+    return settingAttribute;
   }
 
+  // Covered
   @Override
   public SettingAttribute fetchSettingAttributeByName(
       String accountId, String attributeName, SettingVariableTypes settingVariableTypes) {
-    return wingsPersistence.createQuery(SettingAttribute.class)
-        .filter(SettingAttributeKeys.accountId, accountId)
-        .filter(SettingAttributeKeys.appId, GLOBAL_APP_ID)
-        .filter(SettingAttributeKeys.envId, GLOBAL_ENV_ID)
-        .filter(SettingAttributeKeys.name, attributeName)
-        .filter(SettingAttributeKeys.value_type, settingVariableTypes.name())
-        .get();
+    SettingAttribute settingAttribute = wingsPersistence.createQuery(SettingAttribute.class)
+                                            .filter(SettingAttributeKeys.accountId, accountId)
+                                            .filter(SettingAttributeKeys.appId, GLOBAL_APP_ID)
+                                            .filter(SettingAttributeKeys.envId, GLOBAL_ENV_ID)
+                                            .filter(SettingAttributeKeys.name, attributeName)
+                                            .filter(SettingAttributeKeys.value_type, settingVariableTypes.name())
+                                            .get();
+    setFeatureFlagIfRequired(settingAttribute);
+    return settingAttribute;
   }
 
   /* (non-Javadoc)
    * @see software.wings.service.intfc.SettingsService#createDefaultApplicationSettings(java.lang.String)
    */
+  // No usage
   @Override
   public void createDefaultApplicationSettings(String appId, String accountId, boolean syncFromGit) {
     SettingAttribute settingAttribute1 = aSettingAttribute()
@@ -1764,17 +1859,20 @@ public class SettingsServiceImpl implements SettingsService {
    * @see software.wings.service.intfc.SettingsService#getSettingAttributesByType(java.lang.String,
    * software.wings.settings.SettingValue.SettingVariableTypes)
    */
+  // No usage
   @Override
   public List<SettingAttribute> getSettingAttributesByType(String appId, String type) {
     return getSettingAttributesByType(appId, GLOBAL_ENV_ID, type);
   }
 
+  // No usage
   @Override
   public List<SettingAttribute> getFilteredSettingAttributesByType(
       String appId, String type, String currentAppId, String currentEnvId) {
     return getFilteredSettingAttributesByType(appId, GLOBAL_ENV_ID, type, currentAppId, currentEnvId);
   }
 
+  // Internal
   @Override
   public List<SettingAttribute> getSettingAttributesByType(String appId, String envId, String type) {
     PageRequest<SettingAttribute> pageRequest;
@@ -1796,6 +1894,7 @@ public class SettingsServiceImpl implements SettingsService {
     return wingsPersistence.query(SettingAttribute.class, pageRequest).getResponse();
   }
 
+  // Internal
   @Override
   public List<SettingAttribute> getFilteredSettingAttributesByType(
       String appId, String envId, String type, String currentAppId, String currentEnvId) {
@@ -1803,6 +1902,7 @@ public class SettingsServiceImpl implements SettingsService {
     return getFilteredSettingAttributes(settingAttributeList, currentAppId, currentEnvId, false);
   }
 
+  // YAML Flows
   @Override
   public List<SettingAttribute> getSettingAttributesByType(String accountId, String appId, String envId, String type) {
     List<SettingAttribute> settingAttributes = new ArrayList<>();
@@ -1826,9 +1926,14 @@ public class SettingsServiceImpl implements SettingsService {
   public List<SettingAttribute> getGlobalSettingAttributesByType(String accountId, String type) {
     PageRequest<SettingAttribute> pageRequest =
         aPageRequest().addFilter("accountId", EQ, accountId).addFilter("value.type", EQ, type).build();
-    return wingsPersistence.query(SettingAttribute.class, pageRequest).getResponse();
+    List<SettingAttribute> response = wingsPersistence.query(SettingAttribute.class, pageRequest).getResponse();
+    if (isNotEmpty(response)) {
+      response.forEach(r -> setFeatureFlagIfRequired(r));
+    }
+    return response;
   }
 
+  // No usage
   @Override
   public List<SettingAttribute> getFilteredGlobalSettingAttributesByType(
       String accountId, String type, String currentAppId, String currentEnvId) {
@@ -1836,6 +1941,7 @@ public class SettingsServiceImpl implements SettingsService {
     return getFilteredSettingAttributes(settingAttributeList, currentAppId, currentEnvId, false);
   }
 
+  // covered
   @Override
   public SettingValue getSettingValueById(String accountId, String id) {
     SettingAttribute settingAttribute = wingsPersistence.createQuery(SettingAttribute.class)
@@ -1843,17 +1949,20 @@ public class SettingsServiceImpl implements SettingsService {
                                             .filter(SettingAttributeKeys.accountId, accountId)
                                             .get();
     if (settingAttribute != null) {
+      setFeatureFlagIfRequired(settingAttribute);
       return settingAttribute.getValue();
     }
     return null;
   }
 
+  // No usage
   @Override
   public void deleteByAccountId(String accountId) {
     wingsPersistence.delete(
         wingsPersistence.createQuery(SettingAttribute.class).filter(SettingAttributeKeys.accountId, accountId));
   }
 
+  // No usage
   @Override
   public void deleteSettingAttributesByType(String accountId, String appId, String envId, String type) {
     wingsPersistence.delete(wingsPersistence.createQuery(SettingAttribute.class)
@@ -1863,12 +1972,14 @@ public class SettingsServiceImpl implements SettingsService {
                                 .filter("value.type", type));
   }
 
+  // No usage
   @Override
   public void pruneByApplication(String appId) {
     wingsPersistence.delete(
         wingsPersistence.createQuery(SettingAttribute.class).filter(SettingAttributeKeys.appId, appId));
   }
 
+  // Covered
   @Override
   public GitConfig fetchGitConfigFromConnectorId(String gitConnectorId) {
     if (isBlank(gitConnectorId)) {
@@ -1886,6 +1997,7 @@ public class SettingsServiceImpl implements SettingsService {
     return gitConfig;
   }
 
+  // No usage
   @Override
   public String fetchAccountIdBySettingId(String settingId) {
     SettingAttribute settingAttribute = wingsPersistence.createQuery(SettingAttribute.class)
@@ -1898,6 +2010,7 @@ public class SettingsServiceImpl implements SettingsService {
     return settingAttribute.getAccountId();
   }
 
+  // No usage
   @Override
   public UsageRestrictions getUsageRestrictionsForSettingId(String settingId) {
     SettingAttribute settingAttribute = get(settingId);
@@ -1910,6 +2023,7 @@ public class SettingsServiceImpl implements SettingsService {
     return getUsageRestrictions(settingAttribute);
   }
 
+  // No usage
   @Override
   public void pruneBySettingAttribute(String appId, String settingId) {
     // Delete all artifact stream bindings and artifact streams
@@ -1925,6 +2039,7 @@ public class SettingsServiceImpl implements SettingsService {
         });
   }
 
+  // No usage
   private void removeArtifactStreamBindings(ArtifactStream artifactStream) {
     // TODO: Might require extra yaml push.
     List<ServiceVariable> serviceVariables =
@@ -1966,6 +2081,7 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // No usage
   @Override
   public void openConnectivityErrorAlert(
       String accountId, String settingId, String settingCategory, String connectivityError) {
@@ -1978,12 +2094,14 @@ public class SettingsServiceImpl implements SettingsService {
     alertService.openAlert(accountId, null, AlertType.SETTING_ATTRIBUTE_VALIDATION_FAILED, alertData);
   }
 
+  // No usage
   @Override
   public void closeConnectivityErrorAlert(String accountId, String settingId) {
     AlertData alertData = SettingAttributeValidationFailedAlert.builder().settingId(settingId).build();
     alertService.closeAllAlerts(accountId, null, AlertType.SETTING_ATTRIBUTE_VALIDATION_FAILED, alertData);
   }
 
+  // No usage
   @Override
   @VisibleForTesting
   public boolean isOpenSSHKeyUsed(SettingAttribute settingAttribute) {
@@ -1993,6 +2111,7 @@ public class SettingsServiceImpl implements SettingsService {
         && null != ((HostConnectionAttributes) settingAttribute.getValue()).getKey();
   }
 
+  // No usage
   @VisibleForTesting
   @Override
   public void restrictOpenSSHKey(SettingAttribute settingAttribute) {
@@ -2003,12 +2122,14 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
+  // No usage
   @Override
   public String getSSHKeyName(String sshSettingId) {
     SettingAttribute settingAttribute = getById(sshSettingId);
     return settingAttribute.getName();
   }
 
+  // No usage
   @Override
   public String getSSHSettingId(String accountId, String sshKeyName) {
     SettingAttribute settingAttributeByName = getSettingAttributeByName(accountId, sshKeyName);

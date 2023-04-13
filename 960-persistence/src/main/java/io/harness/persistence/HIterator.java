@@ -34,8 +34,11 @@ public class HIterator<T> implements AutoCloseable, Iterable<T>, Iterator<T> {
   private final long slowProcessing;
   private final long dangerouslySlowProcessing;
 
+  private long count;
+
   public HIterator(MorphiaIterator<T, T> iterator, long slowProcessing, long dangerouslySlowProcessing) {
     watch.start();
+    count = 0;
     this.iterator = iterator;
     this.slowProcessing = slowProcessing;
     this.dangerouslySlowProcessing = dangerouslySlowProcessing;
@@ -61,6 +64,11 @@ public class HIterator<T> implements AutoCloseable, Iterable<T>, Iterator<T> {
         }
       }
     }
+
+    if (count > 20000) {
+      log.warn("Iterator query {} returns {} items for collection {}.", iterator.getCursor().getQuery().toString(),
+          count, iterator.getCollection(), new Exception());
+    }
   }
 
   @Override
@@ -71,6 +79,7 @@ public class HIterator<T> implements AutoCloseable, Iterable<T>, Iterator<T> {
   @Override
   public T next() {
     try (AutoLogContext ignore = new CollectionLogContext(iterator.getCollection(), OVERRIDE_ERROR)) {
+      count++;
       return HPersistence.retry(() -> iterator.next());
     }
   }

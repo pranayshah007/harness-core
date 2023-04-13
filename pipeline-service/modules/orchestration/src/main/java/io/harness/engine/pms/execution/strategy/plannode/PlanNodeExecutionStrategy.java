@@ -230,11 +230,9 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
         // After resuming, pipeline status need to be set. Ex: Pipeline waiting on approval step, pipeline status is
         // waiting, after approval, node execution is marked as running and,  similarly we are marking for pipeline.
         // Earlier pipeline status was marked from step itself.
-        Status planStatus =
-            planExecutionService.calculateStatusExcluding(ambiance.getPlanExecutionId(), nodeExecutionId);
-        if (!StatusUtils.isFinalStatus(planStatus)) {
-          planExecutionService.updateStatus(ambiance.getPlanExecutionId(), planStatus);
-        }
+
+        // Please refer the explanation added above the method - calculateAndUpdateRunningStatus(
+        planExecutionService.calculateAndUpdateRunningStatus(ambiance.getPlanExecutionId(), nodeExecutionId);
       } else {
         // This will happen if the node is not in any paused or waiting statuses.
         log.debug("NodeExecution with id {} is already in Running status", nodeExecutionId);

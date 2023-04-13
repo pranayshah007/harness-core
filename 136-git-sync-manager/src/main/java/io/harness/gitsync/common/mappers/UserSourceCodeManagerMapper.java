@@ -62,6 +62,7 @@ public abstract class UserSourceCodeManagerMapper<D extends UserSourceCodeManage
   private void setServiceDTOCommonFields(R requestDTO, D dto) {
     dto.setType(requestDTO.getType());
     dto.setAccountIdentifier(requestDTO.getAccountIdentifier());
+    dto.setUserIdentifier(requestDTO.getUserIdentifier());
   }
 
   public T toResponseDTO(D dto) {
@@ -75,5 +76,6 @@ public abstract class UserSourceCodeManagerMapper<D extends UserSourceCodeManage
   private void setResponseCommonFields(D dto, T responseDTO) {
     responseDTO.setType(dto.getType());
     responseDTO.setAccountIdentifier(dto.getAccountIdentifier());
+    responseDTO.setUserIdentifier(dto.getUserIdentifier());
   }
 }

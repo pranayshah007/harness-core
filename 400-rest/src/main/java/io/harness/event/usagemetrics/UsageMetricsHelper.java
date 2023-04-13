@@ -13,11 +13,6 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 
-import static dev.morphia.aggregation.Accumulator.accumulator;
-import static dev.morphia.aggregation.Group.grouping;
-import static dev.morphia.aggregation.Group.id;
-import static dev.morphia.aggregation.Projection.projection;
-
 import io.harness.beans.PageRequest;
 import io.harness.beans.SearchFilter.Operator;
 
@@ -30,20 +25,14 @@ import software.wings.beans.Environment.EnvironmentKeys;
 import software.wings.beans.Service;
 import software.wings.beans.Service.ServiceKeys;
 import software.wings.beans.Workflow;
-import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.dl.WingsPersistence;
 import software.wings.verification.CVConfiguration;
 import software.wings.verification.CVConfiguration.CVConfigurationKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.mongodb.AggregationOptions;
 import dev.morphia.annotations.Id;
-import dev.morphia.query.Query;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -90,25 +79,6 @@ public class UsageMetricsHelper {
                                            .addFilter(EnvironmentKeys.appId, Operator.EQ, GLOBAL_APP_ID)
                                            .build();
     return wingsPersistence.getAllEntities(pageRequest, () -> wingsPersistence.query(Account.class, pageRequest));
-  }
-
-  public Map<String, Integer> getAllValidInstanceCounts() {
-    Map<String, Integer> instanceCountMap = new HashMap<>();
-    Query<Instance> query = wingsPersistence.createQuery(Instance.class);
-    query.criteria("isDeleted").equal(false);
-    int maxOperationTimeInMillis = wingsPersistence.getMaxTimeMs(Instance.class);
-    wingsPersistence.getDatastore(Instance.class)
-        .createAggregation(Instance.class)
-        .match(query)
-        .project(projection("accountId"))
-        .group(id(grouping("accountId")), grouping("count", accumulator("$sum", 1)))
-        .aggregate(InstanceCount.class,
-            AggregationOptions.builder()
-                .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
-                .build())
-        .forEachRemaining(
-            instanceCount -> instanceCountMap.put(instanceCount.getId().getAccountId(), instanceCount.getCount()));
-    return instanceCountMap;
   }
 
   public CVConfiguration getCVConfig(String cvConfigId) {

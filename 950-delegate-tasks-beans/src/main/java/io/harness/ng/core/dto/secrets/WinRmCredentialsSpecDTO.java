@@ -10,8 +10,10 @@ package io.harness.ng.core.dto.secrets;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
 import io.harness.ng.core.models.SecretSpec;
 import io.harness.ng.core.models.WinRmCredentialsSpec;
+import io.harness.secretmanagerclient.WinRmAuthScheme;
 
 import software.wings.stencils.DefaultValue;
 
@@ -51,6 +53,18 @@ public class WinRmCredentialsSpecDTO extends SecretSpecDTO {
   @Override
   public SecretSpec toEntity() {
     return WinRmCredentialsSpec.builder().port(getPort()).auth(this.auth.toEntity()).parameters(parameters).build();
+  }
+
+  @Override
+  public Optional<List<DecryptableEntity>> getDecryptableEntities() {
+    if (auth.getAuthScheme() == WinRmAuthScheme.NTLM) {
+      NTLMConfigDTO spec = (NTLMConfigDTO) auth.getSpec();
+      return Optional.of(List.of(spec));
+    } else if (auth.getAuthScheme() == WinRmAuthScheme.Kerberos) {
+      KerberosWinRmConfigDTO spec = (KerberosWinRmConfigDTO) auth.getSpec();
+      return Optional.ofNullable(spec.getSpec().getDecryptableEntities());
+    }
+    return Optional.empty();
   }
 
   @Builder

@@ -15,6 +15,10 @@ import static io.harness.delegate.task.googlefunction.GoogleFunctionUtils.FIELD_
 import static io.harness.delegate.task.googlefunction.GoogleFunctionUtils.GET_FUNCTION_FAILURE_ERROR;
 import static io.harness.delegate.task.googlefunction.GoogleFunctionUtils.GET_FUNCTION_FAILURE_EXPLAIN;
 import static io.harness.delegate.task.googlefunction.GoogleFunctionUtils.GET_FUNCTION_FAILURE_HINT;
+import static io.harness.delegate.task.googlefunction.GoogleFunctionUtils.GOOGLE_CLOUD_SOURCE_ARTIFACT_BRANCH_FORMAT;
+import static io.harness.delegate.task.googlefunction.GoogleFunctionUtils.GOOGLE_CLOUD_SOURCE_ARTIFACT_COMMIT_FORMAT;
+import static io.harness.delegate.task.googlefunction.GoogleFunctionUtils.GOOGLE_CLOUD_SOURCE_ARTIFACT_TAG_FORMAT;
+import static io.harness.delegate.task.googlefunction.GoogleFunctionUtils.GOOGLE_CLOUD_STORAGE_ARTIFACT_FORMAT;
 import static io.harness.delegate.task.googlefunction.GoogleFunctionUtils.UPDATE_FUNCTION_GEN_ONE_FAILURE_HINT;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
@@ -30,7 +34,10 @@ import static java.time.Duration.ofSeconds;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceFetchType;
 import io.harness.delegate.task.googlefunctionbeans.GcpGoogleFunctionInfraConfig;
+import io.harness.delegate.task.googlefunctionbeans.GoogleCloudSourceArtifactConfig;
+import io.harness.delegate.task.googlefunctionbeans.GoogleCloudStorageArtifactConfig;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunction;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionArtifactConfig;
 import io.harness.exception.InvalidRequestException;
@@ -59,6 +66,7 @@ import com.google.cloud.functions.v1.CreateFunctionRequest;
 import com.google.cloud.functions.v1.DeleteFunctionRequest;
 import com.google.cloud.functions.v1.GetFunctionRequest;
 import com.google.cloud.functions.v1.OperationMetadataV1;
+import com.google.cloud.functions.v1.SourceRepository;
 import com.google.cloud.functions.v1.UpdateFunctionRequest;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
@@ -87,8 +95,8 @@ public class GoogleFunctionGenOneCommandTaskHelper {
 
   public CloudFunction deployFunction(GcpGoogleFunctionInfraConfig googleFunctionInfraConfig,
       String googleFunctionDeployManifestContent, String updateFieldMaskContent,
-      GoogleFunctionArtifactConfig googleFunctionArtifactConfig, Long timeout, LogCallback logCallback)
-      throws ExecutionException, InterruptedException {
+      GoogleFunctionArtifactConfig googleFunctionArtifactConfig, Long timeout, LogCallback logCallback,
+      boolean isRollback) throws ExecutionException, InterruptedException {
     CreateFunctionRequest.Builder createFunctionRequestBuilder = CreateFunctionRequest.newBuilder();
     parseStringContentAsClassBuilder(
         googleFunctionDeployManifestContent, createFunctionRequestBuilder, logCallback, "createFunctionRequest");
@@ -109,12 +117,19 @@ public class GoogleFunctionGenOneCommandTaskHelper {
     createFunctionRequestBuilder.setLocation(googleFunctionCommandTaskHelper.getFunctionParent(
         googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion()));
 
+    CloudFunction.Builder cloudFunctionBuilder = createFunctionRequestBuilder.getFunctionBuilder();
+    // set function name
+    cloudFunctionBuilder.setName(functionName);
+
+    if (!isRollback) {
+      // set artifact source
+      setArtifactSource(googleFunctionArtifactConfig, cloudFunctionBuilder);
+    }
+
     // check if function already exists
     Optional<CloudFunction> existingFunctionOptional =
         getFunction(functionName, googleFunctionInfraConfig, logCallback);
     googleFunctionCommandTaskHelper.printManifestContent(googleFunctionDeployManifestContent, logCallback);
-
-    // todo: set artifact config here
 
     if (existingFunctionOptional.isEmpty()) {
       // create new function
@@ -145,6 +160,39 @@ public class GoogleFunctionGenOneCommandTaskHelper {
                                        googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion()),
           LogLevel.INFO);
       return function;
+    }
+  }
+
+  private void setArtifactSource(
+      GoogleFunctionArtifactConfig googleFunctionArtifactConfig, CloudFunction.Builder cloudFunctionBuilder) {
+    if (googleFunctionArtifactConfig instanceof GoogleCloudStorageArtifactConfig) {
+      GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =
+          (GoogleCloudStorageArtifactConfig) googleFunctionArtifactConfig;
+      cloudFunctionBuilder.setSourceArchiveUrl(String.format(GOOGLE_CLOUD_STORAGE_ARTIFACT_FORMAT,
+          googleCloudStorageArtifactConfig.getBucket(), googleCloudStorageArtifactConfig.getFilePath()));
+    } else if (googleFunctionArtifactConfig instanceof GoogleCloudSourceArtifactConfig) {
+      GoogleCloudSourceArtifactConfig googleCloudSourceArtifactConfig =
+          (GoogleCloudSourceArtifactConfig) googleFunctionArtifactConfig;
+      String url;
+      if (GoogleCloudSourceFetchType.BRANCH.getName().equals(
+              googleCloudSourceArtifactConfig.getGoogleCloudSourceFetchType().getName())) {
+        url = String.format(GOOGLE_CLOUD_SOURCE_ARTIFACT_BRANCH_FORMAT, googleCloudSourceArtifactConfig.getProject(),
+            googleCloudSourceArtifactConfig.getRepository(), googleCloudSourceArtifactConfig.getBranch(),
+            googleCloudSourceArtifactConfig.getSourceDirectory());
+      } else if (GoogleCloudSourceFetchType.TAG.getName().equals(
+                     googleCloudSourceArtifactConfig.getGoogleCloudSourceFetchType().getName())) {
+        url = String.format(GOOGLE_CLOUD_SOURCE_ARTIFACT_TAG_FORMAT, googleCloudSourceArtifactConfig.getProject(),
+            googleCloudSourceArtifactConfig.getRepository(), googleCloudSourceArtifactConfig.getTag(),
+            googleCloudSourceArtifactConfig.getSourceDirectory());
+      } else {
+        url = String.format(GOOGLE_CLOUD_SOURCE_ARTIFACT_COMMIT_FORMAT, googleCloudSourceArtifactConfig.getProject(),
+            googleCloudSourceArtifactConfig.getRepository(), googleCloudSourceArtifactConfig.getCommitId(),
+            googleCloudSourceArtifactConfig.getSourceDirectory());
+      }
+      SourceRepository sourceRepository = SourceRepository.newBuilder().setUrl(url).build();
+      cloudFunctionBuilder.setSourceRepository(sourceRepository);
+    } else {
+      throw new InvalidRequestException("Invalid Artifact Source.");
     }
   }
 
@@ -299,12 +347,15 @@ public class GoogleFunctionGenOneCommandTaskHelper {
           Operation operation = googleCloudFunctionGenOneClient.getOperation(operationName,
               googleFunctionCommandTaskHelper.getGcpInternalConfig(gcpGoogleFunctionInfraConfig.getGcpConnectorDTO(),
                   gcpGoogleFunctionInfraConfig.getRegion(), gcpGoogleFunctionInfraConfig.getProject()));
-          if (operation.getDone() && Operation.ResultCase.ERROR.equals(operation.getResultCase())) {
-            logCallback.saveExecutionLog(color("Function Deployment failed...", LogColor.Red));
-            logCallback.saveExecutionLog(color(operation.getError().getMessage(), LogColor.Red));
-            throw NestedExceptionUtils.hintWithExplanationException(CREATE_FUNCTION_GEN_ONE_FAILURE_HINT,
-                "Cloud Function Deployment failed.",
-                new InvalidRequestException("Function couldn't able to achieve steady state."));
+          if (operation.getDone()) {
+            if (Operation.ResultCase.ERROR.equals(operation.getResultCase())) {
+              logCallback.saveExecutionLog(color("Function Deployment failed...", LogColor.Red));
+              logCallback.saveExecutionLog(color(operation.getError().getMessage(), LogColor.Red));
+              throw NestedExceptionUtils.hintWithExplanationException(CREATE_FUNCTION_GEN_ONE_FAILURE_HINT,
+                  "Cloud Function Deployment failed.",
+                  new InvalidRequestException("Function couldn't able to achieve steady state."));
+            }
+            return false;
           }
           logCallback.saveExecutionLog(
               format("Function deployment in progress: %s", color(functionName, LogColor.Yellow)));
@@ -357,25 +408,36 @@ public class GoogleFunctionGenOneCommandTaskHelper {
     }
   }
 
-  public GoogleFunction getGoogleFunction(
-      CloudFunction function, GcpGoogleFunctionInfraConfig googleFunctionInfraConfig, LogCallback logCallback)
+  public GoogleFunction getGoogleFunction(CloudFunction function, LogCallback logCallback)
       throws InvalidProtocolBufferException {
     saveLogs(logCallback, color("Updated Functions details: ", Blue, Bold), INFO);
     saveLogs(logCallback, JsonFormat.printer().print(function), INFO);
     GoogleFunction.GoogleCloudRunService googleCloudRunService = GoogleFunction.GoogleCloudRunService.builder().build();
 
+    String source;
+    if (EmptyPredicate.isNotEmpty(function.getSourceArchiveUrl())) {
+      source = function.getSourceArchiveUrl();
+    } else {
+      source = function.getSourceRepository().getUrl();
+    }
+    String url = "";
+    if (function.hasHttpsTrigger() && function.getHttpsTrigger() != null) {
+      url = function.getHttpsTrigger().getUrl();
+    }
+
     return GoogleFunction.builder()
         .functionName(function.getName())
         .state(function.getStatus().toString())
         .runtime(function.getRuntime())
-        //                .source(getSourceAsString(function.getBuildConfig().getSource()))
-        //                .updatedTime(function.getUpdateTime().getSeconds() * 1000)
-        .environment("GEN_ONE")
+        .source(source)
+        .updatedTime(function.getUpdateTime().getSeconds())
+        .environment(GoogleFunctionUtils.ENVIRONMENT_TYPE_GEN_ONE)
         .cloudRunService(googleCloudRunService)
         .activeCloudRunRevisions(Lists.newArrayList())
-        //                .url(function.get)
+        .url(url)
         .build();
-    // todo: add url and other fields
+    // todo: change time format
+    // todo: make env a constant
   }
 
   private void saveLogs(LogCallback executionLogCallback, String message, LogLevel logLevel) {
