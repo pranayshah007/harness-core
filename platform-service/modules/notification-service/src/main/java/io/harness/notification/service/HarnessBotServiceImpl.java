@@ -40,7 +40,7 @@ public class HarnessBotServiceImpl implements HarnessBotService {
     if (System.getProperty("openaikey") != null && !System.getProperty("openaikey").isEmpty()) {
       return System.getProperty("openaikey");
     }
-    return "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"
+    return "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";
   }
 
   private static List<Embedding> readEmbeddings(String filePath) {
