@@ -1,0 +1,28 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: deny-delete-and-update
+spec:
+  background: false
+  validationFailureAction: Enforce
+  rules:
+    - name: secure-harness-ng-ns
+      match:
+        resources:
+          kinds:
+            - "*"
+          namespaces:
+            - "harness-ng*"
+            - "harness-delegate-ng*"
+            - "ingress-nginx-130"
+      validate:
+        message: "Deleting {{request.oldObject.kind}}/{{request.oldObject.metadata.name}} is not allowed"
+        deny:
+          conditions:
+            any:
+              - key: "{{request.operation}}"
+                operator: Equals
+                value: DELETE
+              - key: "{{request.operation}}"
+                operator: In
+                value: UPDATE
