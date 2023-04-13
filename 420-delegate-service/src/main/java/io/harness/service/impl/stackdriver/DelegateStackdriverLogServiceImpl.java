@@ -9,11 +9,13 @@ package io.harness.service.impl.stackdriver;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.resources.DelegateHackLog;
 import io.harness.delegate.resources.DelegateStackDriverLog;
 import io.harness.logging.StackdriverLoggerFactory;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
+import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.DelegateStackdriverLogService;
 
 import software.wings.service.impl.infra.InfraDownloadService;
@@ -36,6 +38,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(onConstructor = @__({ @Inject }))
 public class DelegateStackdriverLogServiceImpl implements DelegateStackdriverLogService {
   private final InfraDownloadService infraDownloadService;
+
+  @Inject HPersistence persistence;
 
   List<String> exceptionTypes;
 
@@ -70,7 +74,7 @@ public class DelegateStackdriverLogServiceImpl implements DelegateStackdriverLog
 
     String exceptionFromConfig = System.getenv("exceptionTypes");
     if (isBlank(exceptionFromConfig)) {
-      exceptionTypes = Arrays.asList("Check your Azure credentials");
+      exceptionTypes = Arrays.asList("Exception");
     } else {
       exceptionTypes = Arrays.asList(exceptionFromConfig.split(","));
       log.info("Exception types from config are: {}", exceptionTypes);
@@ -97,6 +101,7 @@ public class DelegateStackdriverLogServiceImpl implements DelegateStackdriverLog
     return false;
   }
 
+  @SuppressWarnings("checkstyle:RepetitiveName")
   private DelegateHackLog buildDelegateHackObject(DelegateStackDriverLog delegateStackDriverLog) {
     //  ErrorHack foundError = null;
     String foundError = null;
@@ -109,6 +114,10 @@ public class DelegateStackdriverLogServiceImpl implements DelegateStackdriverLog
 
     return DelegateHackLog.builder()
         .delegateId(delegateStackDriverLog.getDelegateId())
+        .delegateName(persistence.createQuery(Delegate.class)
+                          .filter(Delegate.DelegateKeys.uuid, delegateStackDriverLog.getDelegateId())
+                          .get()
+                          .getDelegateName())
         .accountId(delegateStackDriverLog.getAccountId())
         .exceptionType(foundError)
         .build();
