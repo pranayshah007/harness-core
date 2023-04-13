@@ -131,8 +131,6 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
   public void setUp() throws Exception {
     mockClientLogger = mock(Logger.class);
     mockServerLogger = mock(Logger.class);
-    setStaticFieldValue(DelegateServiceGrpcClient.class, "log", mockClientLogger);
-    setStaticFieldValue(DelegateServiceGrpcClient.class, "log", mockServerLogger);
 
     String serverName = InProcessServerBuilder.generateName();
     Channel channel = grpcCleanup.register(InProcessChannelBuilder.forName(serverName).build());
