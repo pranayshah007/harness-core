@@ -2606,6 +2606,22 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     assertThat(releaseNameCaptor.getValue()).isEqualTo(RELEASE_NAME);
   }
 
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testGetReleaseHistoryPrefix() {
+    doReturn(false)
+        .when(cdFeatureFlagHelper)
+        .isEnabled("test-account", FeatureName.CDS_RENAME_HARNESS_RELEASE_HISTORY_RESOURCE_NATIVE_HELM_NG);
+    assertThat(nativeHelmStepHelper.getReleaseHistoryPrefix(ambiance)).isNullOrEmpty();
+
+    doReturn(true)
+        .when(cdFeatureFlagHelper)
+        .isEnabled("test-account", FeatureName.CDS_RENAME_HARNESS_RELEASE_HISTORY_RESOURCE_NATIVE_HELM_NG);
+    assertThat(nativeHelmStepHelper.getReleaseHistoryPrefix(ambiance))
+        .isEqualTo(NativeHelmStepHelper.RELEASE_HISTORY_PREFIX);
+  }
+
   public Ambiance getAmbiance() {
     Map<String, String> setupAbstractions = new HashMap<>();
 

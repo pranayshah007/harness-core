@@ -700,7 +700,10 @@ public enum FeatureName {
   CDS_AWS_BACKOFF_STRATEGY("Enable AWS SDK Client Backoff Strategy", HarnessTeam.CDP),
   PIE_GITX_OAUTH("Use users' oauth creds to fetch and commit in git", HarnessTeam.PIPELINE),
   CDS_NG_CONFIG_FILE_EXPRESSION(
-      "Enable Harness variable rendering in Hanress config files (SSH/WinRM)", HarnessTeam.CDP);
+      "Enable Harness variable rendering in Hanress config files (SSH/WinRM)", HarnessTeam.CDP),
+  CDS_RENAME_HARNESS_RELEASE_HISTORY_RESOURCE_NATIVE_HELM_NG(
+      "Use a prefix for internal harness release history for native helm deployment. Feature Flag will be removed as part of the epic: https://harness.atlassian.net/browse/CDS-46915",
+      HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {
