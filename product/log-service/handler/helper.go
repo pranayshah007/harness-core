@@ -50,6 +50,7 @@ func getNudges() []Nudge {
 		NewNudge("Fatal", searchGpt, errors.New("fatal error")),
 		NewNudge("Error", searchGpt, errors.New("unknown error")),
 		NewNudge("fail", searchGpt, errors.New("unknown error")),
+		NewNudge("Name or service not known", searchGpt, errors.New("unknown error")),
 	}
 	for _, searchStr := range []string{"SyntaxError", "TypeError", "NameError", "ValueError"} {
 		nudgesList = append(nudgesList, NewNudge(searchStr, searchGpt, errCommon))
@@ -135,11 +136,11 @@ func uploadErrorLogs(ctx context.Context, store store.Store, key string, logStr 
 		line := logStrSplit[idx]
 		// Iterate over the nudges and see if we get a match
 		for _, n := range nudges {
-			r, err := regexp.Compile(n.GetSearch())
+			r, err := regexp.Compile(strings.ToLower(n.GetSearch()))
 			if err != nil {
 				continue
 			}
-			if r.MatchString(line) && n.GetResolution() == searchGpt {
+			if r.MatchString(strings.ToLower(line)) && n.GetResolution() == searchGpt {
 				errType = n.GetError().Error()
 				errStrings = logStrSplit
 			}
