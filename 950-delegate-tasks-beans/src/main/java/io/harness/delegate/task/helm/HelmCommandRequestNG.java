@@ -76,6 +76,7 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
   private String commandName;
   private boolean useLatestKubectlVersion;
   private String gcpKeyPath;
+  private String releaseHistoryPrefix;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
