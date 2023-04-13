@@ -193,7 +193,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
                                                             .releaseName("releaseName-statusCheck")
                                                             .useDeclarativeRollback(true)
                                                             .build();
-    K8sDelegateTaskParams taskParams = K8sDelegateTaskParams.builder().build();
+    K8sDelegateTaskParams taskParams = K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build();
 
     doReturn(false).when(k8sTaskHelperBase).doStatusCheck(any(), any(), any(), any());
     K8sTaskExecutionResponse response = spyHandler.executeTaskInternal(deployTaskParams, taskParams);
@@ -248,7 +248,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
 
     K8sBlueGreenDeployTaskParameters deployTaskParams =
         K8sBlueGreenDeployTaskParameters.builder().releaseName("releaseName-statusCheck").build();
-    K8sDelegateTaskParams taskParams = K8sDelegateTaskParams.builder().build();
+    K8sDelegateTaskParams taskParams = K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build();
 
     doReturn(false).when(k8sTaskHelperBase).doStatusCheck(any(), any(), any(), any());
     K8sTaskExecutionResponse response = spyHandler.executeTaskInternal(deployTaskParams, taskParams);
@@ -965,7 +965,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
                                                             .releaseName("releaseName-statusCheck")
                                                             .useDeclarativeRollback(true)
                                                             .build();
-    K8sDelegateTaskParams taskParams = K8sDelegateTaskParams.builder().build();
+    K8sDelegateTaskParams taskParams = K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build();
 
     doReturn(false).when(k8sTaskHelperBase).doStatusCheck(any(), any(), any(), any());
     K8sTaskExecutionResponse response = spyHandler.executeTaskInternal(deployTaskParams, taskParams);

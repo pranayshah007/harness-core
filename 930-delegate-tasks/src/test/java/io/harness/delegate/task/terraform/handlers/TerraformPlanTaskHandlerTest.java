@@ -95,6 +95,7 @@ public class TerraformPlanTaskHandlerTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
+    when(terraformBaseHelper.getBaseDir(any())).thenReturn("./some/dir/entityId");
   }
 
   @Test

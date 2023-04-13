@@ -410,6 +410,7 @@ public class AwsLambdaTaskHelperTest extends CategoryTest {
     ArtifactoryConnectorDTO artifactoryConnectorDTO = ArtifactoryConnectorDTO.builder().auth(auth).build();
     AwsLambdaArtifactoryArtifactConfig awsLambdaArtifactConfig = AwsLambdaArtifactoryArtifactConfig.builder()
                                                                      .connectorConfig(artifactoryConnectorDTO)
+                                                                     .repository("repo")
                                                                      .artifactPaths(Arrays.asList("path"))
                                                                      .identifier("PACKAGE")
                                                                      .build();

@@ -263,7 +263,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
         K8sRollingDeployTaskParameters.builder()
             .k8sDelegateManifestConfig(K8sDelegateManifestConfig.builder().build())
             .build(),
-        K8sDelegateTaskParams.builder().build());
+        K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
     verify(k8sTaskHelper, times(1))
         .fetchManifestFilesAndWriteToDirectory(
             any(K8sDelegateManifestConfig.class), any(), any(ExecutionLogCallback.class), anyLong());
@@ -301,7 +301,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
                                     .skipAddingSelectorToDeployment(false)
                                     .useDeclarativeRollback(true)
                                     .build(),
-        K8sDelegateTaskParams.builder().build());
+        K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
 
     verify(k8sTaskHelper, times(1))
         .fetchManifestFilesAndWriteToDirectory(
@@ -349,7 +349,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
                                     .skipAddingSelectorToDeployment(true)
                                     .useDeclarativeRollback(true)
                                     .build(),
-        K8sDelegateTaskParams.builder().build());
+        K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
 
     verify(k8sTaskHelper, times(1))
         .fetchManifestFilesAndWriteToDirectory(
@@ -413,7 +413,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
                                 .isInCanaryWorkflow(true)
                                 .useDeclarativeRollback(true)
                                 .build(),
-                            K8sDelegateTaskParams.builder().build()))
+                            K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build()))
         .withMessageContaining("reason");
 
     verify(executionLogCallback, times(1)).saveExecutionLog("Invalid argument(s): reason", ERROR, FAILURE);
@@ -603,7 +603,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
                                     .isInCanaryWorkflow(false)
                                     .useDeclarativeRollback(true)
                                     .build(),
-        K8sDelegateTaskParams.builder().build());
+        K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
     ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
     verify(k8sTaskHelperBase, times(1))
         .applyManifests(any(Kubectl.class), captor.capture(), any(K8sDelegateTaskParams.class),
@@ -619,7 +619,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
                                     .isInCanaryWorkflow(false)
                                     .useDeclarativeRollback(false)
                                     .build(),
-        K8sDelegateTaskParams.builder().build());
+        K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
     captor = ArgumentCaptor.forClass(List.class);
     verify(k8sTaskHelperBase, times(2))
         .applyManifests(any(Kubectl.class), captor.capture(), any(K8sDelegateTaskParams.class),
@@ -635,7 +635,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
                                     .useDeclarativeRollback(false)
                                     .isInCanaryWorkflow(false)
                                     .build(),
-        K8sDelegateTaskParams.builder().build());
+        K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
     captor = ArgumentCaptor.forClass(List.class);
     verify(k8sTaskHelperBase, times(3))
         .applyManifests(any(Kubectl.class), captor.capture(), any(K8sDelegateTaskParams.class),
@@ -678,7 +678,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
                                     .skipVersioningForAllK8sObjects(true)
                                     .useDeclarativeRollback(true)
                                     .build(),
-        K8sDelegateTaskParams.builder().build());
+        K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
 
     ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
     verify(releaseHandler).getReleaseHistory(any(), any());
@@ -729,7 +729,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
                                     .inheritManifests(true)
                                     .useDeclarativeRollback(true)
                                     .build(),
-        K8sDelegateTaskParams.builder().build());
+        K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
 
     ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
     verify(handler, times(0)).init(any(), any(), any());
@@ -778,7 +778,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
                                         .skipVersioningForAllK8sObjects(true)
                                         .exportManifests(true)
                                         .build(),
-            K8sDelegateTaskParams.builder().build());
+            K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
     assertThat(k8sTaskExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(((K8sRollingDeployResponse) k8sTaskExecutionResponse.getK8sTaskResponse()).getResources()).isNotNull();
 
@@ -807,7 +807,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
                                    .isInCanaryWorkflow(false)
                                    .useDeclarativeRollback(true)
                                    .build(),
-                               K8sDelegateTaskParams.builder().build()))
+                               K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build()))
         .isEqualTo(thrownException);
   }
 
