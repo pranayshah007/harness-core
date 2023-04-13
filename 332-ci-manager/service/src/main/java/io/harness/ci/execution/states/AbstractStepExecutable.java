@@ -413,7 +413,7 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
                 .setLevel(Level.ERROR.name())
                 .setCode(GENERAL_ERROR.name())
                 .setMessage(emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
-                    new CILiteEngineException(((ErrorNotifyResponseData) responseData).getErrorMessage())))))
+                    new CILitEngineException(((ErrorNotifyResponseData) responseData).getErrorMessage())))))
                 .build();
 
         return StepResponse.builder()
