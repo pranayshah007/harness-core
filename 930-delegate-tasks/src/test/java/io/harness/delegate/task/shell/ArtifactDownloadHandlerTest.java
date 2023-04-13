@@ -183,8 +183,18 @@ public class ArtifactDownloadHandlerTest extends CategoryTest {
 
     assertThat(commandString)
         .isEqualTo("[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n"
-            + " $ProgressPreference = 'SilentlyContinue'\n"
-            + "Invoke-WebRequest -Uri \"http://hostname/repo_name/artifact_path\" -OutFile \"testdestination\\artifact_path\"");
+            + "$ProgressPreference = 'SilentlyContinue'\n"
+            + "$var1 = $env:HARNESS_ENV_PROXY\n"
+            + "$var2 = $env:HTTP_PROXY\n"
+            + "if ( ([string]::IsNullOrEmpty($var2)) -and  (\"true\" -eq $var1) ) {\n"
+            + " Write-Host \"HTTP_PROXY environment variable not found or empty\"\n"
+            + "}\n"
+            + "if ( (-not [string]::IsNullOrEmpty($var2)) -and  (\"true\" -eq $var1) ) {\n"
+            + " Write-Host \"Using HTTP_PROXY environment variable\"\n"
+            + " Invoke-WebRequest -Uri \"http://hostname/repo_name/artifact_path\" -OutFile \"testdestination\\artifact_path\" -Proxy \"$env:HTTP_PROXY\"\n"
+            + "} else {\n"
+            + " Invoke-WebRequest -Uri \"http://hostname/repo_name/artifact_path\" -OutFile \"testdestination\\artifact_path\"\n"
+            + "}");
   }
 
   @Test
@@ -209,9 +219,19 @@ public class ArtifactDownloadHandlerTest extends CategoryTest {
         .isEqualTo("$Headers = @{\n"
             + "    Authorization = \"Basic dXNlcm5hbWU6dGVzdA==\"\n"
             + "}\n"
-            + " [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n"
-            + " $ProgressPreference = 'SilentlyContinue'\n"
-            + " Invoke-WebRequest -Uri \"http://hostname/repo_name/artifact_path\" -Headers $Headers -OutFile \"testdestination\\artifact_path\"");
+            + "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n"
+            + "$ProgressPreference = 'SilentlyContinue'\n"
+            + "$var1 = $env:HARNESS_ENV_PROXY\n"
+            + "$var2 = $env:HTTP_PROXY\n"
+            + "if ( ([string]::IsNullOrEmpty($var2)) -and  (\"true\" -eq $var1) ) {\n"
+            + " Write-Host \"HTTP_PROXY environment variable not found or empty\"\n"
+            + "}\n"
+            + "if ( (-not [string]::IsNullOrEmpty($var2)) -and  (\"true\" -eq $var1) ) {\n"
+            + " Write-Host \"Using HTTP_PROXY environment variable\"\n"
+            + " Invoke-WebRequest -Uri \"http://hostname/repo_name/artifact_path\" -Headers $Headers -OutFile \"testdestination\\artifact_path\" -Proxy \"$env:HTTP_PROXY\"\n"
+            + "} else {\n"
+            + " Invoke-WebRequest -Uri \"http://hostname/repo_name/artifact_path\" -Headers $Headers -OutFile \"testdestination\\artifact_path\"\n"
+            + "}");
   }
 
   @Test
@@ -272,11 +292,20 @@ public class ArtifactDownloadHandlerTest extends CategoryTest {
         artifactDelegateConfig, "testdestination", ScriptType.POWERSHELL);
 
     assertThat(commandString)
-        .isEqualTo("$webClient = New-Object System.Net.WebClient \n"
-            + "$webClient.Headers[[System.Net.HttpRequestHeader]::Authorization] = \"null\";\n"
-            + "$url = \"http://hostname/job/job_name/build_number54/artifact/artifact_path\" \n"
-            + "$localfilename = \"testdestination\\artifact_path\" \n"
-            + "$webClient.DownloadFile($url, $localfilename)");
+        .isEqualTo("$var1 = $env:HARNESS_ENV_PROXY\n"
+            + "$var2 = $env:HTTP_PROXY\n"
+            + "$webClient = New-Object System.Net.WebClient\n"
+            + "if ( ([string]::IsNullOrEmpty($var2)) -and  (\"true\" -eq $var1) ) {\n"
+            + " Write-Host \"HTTP_PROXY environment variable not found or empty\"\n"
+            + "}\n"
+            + "if ( (-not [string]::IsNullOrEmpty($var2)) -and  (\"true\" -eq $var1) ) {\n"
+            + " Write-Host \"Using HTTP_PROXY environment variable\"\n"
+            + " $webProxy = New-Object System.Net.WebProxy(\"$env:HTTP_PROXY\",$true)\n"
+            + " $webClient.Proxy = $webProxy\n"
+            + "}\n"
+            + "$url = \"http://hostname/job/job_name/build_number54/artifact/artifact_path\"\n"
+            + "$localfilename = \"testdestination\\artifact_path\"\n"
+            + "$webClient.DownloadFile($url, $localfilename)\n");
   }
 
   @Test
@@ -295,11 +324,21 @@ public class ArtifactDownloadHandlerTest extends CategoryTest {
         artifactDelegateConfig, "testdestination", ScriptType.POWERSHELL);
 
     assertThat(commandString)
-        .isEqualTo("$webClient = New-Object System.Net.WebClient \n"
-            + "$webClient.Headers[[System.Net.HttpRequestHeader]::Authorization] = \"Basic dXNlcm5hbWU6dGVzdA==\";\n"
-            + "$url = \"http://hostname/job/job_name/build_number54/artifact/artifact_path\" \n"
-            + "$localfilename = \"testdestination\\artifact_path\" \n"
-            + "$webClient.DownloadFile($url, $localfilename)");
+        .isEqualTo("$var1 = $env:HARNESS_ENV_PROXY\n"
+            + "$var2 = $env:HTTP_PROXY\n"
+            + "$webClient = New-Object System.Net.WebClient\n"
+            + "if ( ([string]::IsNullOrEmpty($var2)) -and  (\"true\" -eq $var1) ) {\n"
+            + " Write-Host \"HTTP_PROXY environment variable not found or empty\"\n"
+            + "}\n"
+            + "if ( (-not [string]::IsNullOrEmpty($var2)) -and  (\"true\" -eq $var1) ) {\n"
+            + " Write-Host \"Using HTTP_PROXY environment variable\"\n"
+            + " $webProxy = New-Object System.Net.WebProxy(\"$env:HTTP_PROXY\",$true)\n"
+            + " $webClient.Proxy = $webProxy\n"
+            + "}\n"
+            + "$url = \"http://hostname/job/job_name/build_number54/artifact/artifact_path\"\n"
+            + "$localfilename = \"testdestination\\artifact_path\"\n"
+            + "$webClient.Headers[[System.Net.HttpRequestHeader]::Authorization] = \"Basic dXNlcm5hbWU6dGVzdA==\"\n"
+            + "$webClient.DownloadFile($url, $localfilename)\n");
   }
 
   @Test
@@ -326,10 +365,21 @@ public class ArtifactDownloadHandlerTest extends CategoryTest {
 
     assertThat(commandString)
         .startsWith("$Headers = @{\n"
-            + "    Authorization = \"AWS4-HMAC-SHA256 Credential=accessKey");
+            + "    Authorization = \"AWS4-HMAC-SHA256 Credential");
+
     assertThat(commandString)
-        .endsWith(
-            " Invoke-WebRequest -Uri \"https://bucket.s3-us-east-2.amazonaws.com/artifact/name\" -Headers $Headers -OutFile (New-Item -Path \"testdestination\\name\" -Force)");
+        .contains("$ProgressPreference = 'SilentlyContinue'\n"
+            + "$var1 = $env:HARNESS_ENV_PROXY\n"
+            + "$var2 = $env:HTTP_PROXY\n"
+            + "if ( ([string]::IsNullOrEmpty($var2)) -and  (\"true\" -eq $var1) ) {\n"
+            + " Write-Host \"HTTP_PROXY environment variable not found or empty\"\n"
+            + "}\n"
+            + "if ( (-not [string]::IsNullOrEmpty($var2)) -and  (\"true\" -eq $var1) ) {\n"
+            + " Write-Host \"Using HTTP_PROXY environment variable\"\n"
+            + " Invoke-WebRequest -Uri \"https://bucket.s3-us-east-2.amazonaws.com/artifact/name\" -Headers $Headers -OutFile (New-Item -Path \"testdestination\\name\" -Force) -Proxy \"$env:HTTP_PROXY\"\n"
+            + "} else {\n"
+            + " Invoke-WebRequest -Uri \"https://bucket.s3-us-east-2.amazonaws.com/artifact/name\" -Headers $Headers -OutFile (New-Item -Path \"testdestination\\name\" -Force)\n"
+            + "}");
   }
 
   @Test
@@ -602,10 +652,19 @@ public class ArtifactDownloadHandlerTest extends CategoryTest {
         .isEqualTo("$Headers = @{\n"
             + "    Authorization = \"Basic OnRlc3Q=\"\n"
             + "}\n"
-            + " [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n"
-            + " $ProgressPreference = 'SilentlyContinue'\n"
-            + " Invoke-WebRequest -Uri \"azure.test.url/test-project/_apis/packaging/feeds/feed/maven/groupId/artifactId/1.0.0/artifact_filename/content?api-version=5.1-preview.1\""
-            + " -Headers $Headers -OutFile \"testdestination\\artifact_filename\"");
+            + "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n"
+            + "$ProgressPreference = 'SilentlyContinue'\n"
+            + "$var1 = $env:HARNESS_ENV_PROXY\n"
+            + "$var2 = $env:HTTP_PROXY\n"
+            + "if ( ([string]::IsNullOrEmpty($var2)) -and  (\"true\" -eq $var1) ) {\n"
+            + " Write-Host \"HTTP_PROXY environment variable not found or empty\"\n"
+            + "}\n"
+            + "if ( (-not [string]::IsNullOrEmpty($var2)) -and  (\"true\" -eq $var1) ) {\n"
+            + " Write-Host \"Using HTTP_PROXY environment variable\"\n"
+            + " Invoke-WebRequest -Uri \"azure.test.url/test-project/_apis/packaging/feeds/feed/maven/groupId/artifactId/1.0.0/artifact_filename/content?api-version=5.1-preview.1\" -Headers $Headers -OutFile \"testdestination\\artifact_filename\" -Proxy \"$env:HTTP_PROXY\"\n"
+            + "} else {\n"
+            + " Invoke-WebRequest -Uri \"azure.test.url/test-project/_apis/packaging/feeds/feed/maven/groupId/artifactId/1.0.0/artifact_filename/content?api-version=5.1-preview.1\" -Headers $Headers -OutFile \"testdestination\\artifact_filename\"\n"
+            + "}");
   }
 
   @Test
@@ -666,10 +725,19 @@ public class ArtifactDownloadHandlerTest extends CategoryTest {
         .isEqualTo("$Headers = @{\n"
             + "    Authorization = \"Basic OnRlc3Q=\"\n"
             + "}\n"
-            + " [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n"
-            + " $ProgressPreference = 'SilentlyContinue'\n"
-            + " Invoke-WebRequest -Uri \"azure.test.url/test-project/_apis/packaging/feeds/feed/nuget/packages/groupId:artifactId/versions/1.0.0/content?api-version=5.1-preview.1\""
-            + " -Headers $Headers -OutFile \"testdestination\\artifact_filename\"");
+            + "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n"
+            + "$ProgressPreference = 'SilentlyContinue'\n"
+            + "$var1 = $env:HARNESS_ENV_PROXY\n"
+            + "$var2 = $env:HTTP_PROXY\n"
+            + "if ( ([string]::IsNullOrEmpty($var2)) -and  (\"true\" -eq $var1) ) {\n"
+            + " Write-Host \"HTTP_PROXY environment variable not found or empty\"\n"
+            + "}\n"
+            + "if ( (-not [string]::IsNullOrEmpty($var2)) -and  (\"true\" -eq $var1) ) {\n"
+            + " Write-Host \"Using HTTP_PROXY environment variable\"\n"
+            + " Invoke-WebRequest -Uri \"azure.test.url/test-project/_apis/packaging/feeds/feed/nuget/packages/groupId:artifactId/versions/1.0.0/content?api-version=5.1-preview.1\" -Headers $Headers -OutFile \"testdestination\\artifact_filename\" -Proxy \"$env:HTTP_PROXY\"\n"
+            + "} else {\n"
+            + " Invoke-WebRequest -Uri \"azure.test.url/test-project/_apis/packaging/feeds/feed/nuget/packages/groupId:artifactId/versions/1.0.0/content?api-version=5.1-preview.1\" -Headers $Headers -OutFile \"testdestination\\artifact_filename\"\n"
+            + "}");
   }
 
   private ConnectorInfoDTO getArtifactoryConnectorInfoDTOWithSecret() {

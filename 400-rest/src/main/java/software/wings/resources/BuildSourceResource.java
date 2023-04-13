@@ -259,7 +259,11 @@ public class BuildSourceResource {
 
         if (featureFlagService.isEnabled(SPG_ALLOW_FILTER_BY_PATHS_GCS, artifactStream.getAccountId())
             && artifactStream.getArtifactStreamType().equals(ArtifactStreamType.GCS.name())) {
-          buildDetails = buildSourceService.listArtifactByArtifactStreamAndFilterPath(artifacts, artifactStream);
+          buildDetails =
+              buildSourceService.listArtifactByArtifactStreamAndFilterPath(artifacts, artifactStream)
+                  .stream()
+                  .map(artifact -> BuildDetails.Builder.aBuildDetails().withNumber(artifact.getBuildNo()).build())
+                  .collect(toList());
         } else {
           buildDetails =
               artifacts.stream()
