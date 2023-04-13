@@ -49,6 +49,7 @@ func getNudges() []Nudge {
 			errors.New("could not connect to the docker daemon")),
 		NewNudge("Fatal", searchGpt, errors.New("fatal error")),
 		NewNudge("Error", searchGpt, errors.New("unknown error")),
+		NewNudge("fail", searchGpt, errors.New("unknown error")),
 	}
 	for _, searchStr := range []string{"SyntaxError", "TypeError", "NameError", "ValueError"} {
 		nudgesList = append(nudgesList, NewNudge(searchStr, searchGpt, errCommon))
