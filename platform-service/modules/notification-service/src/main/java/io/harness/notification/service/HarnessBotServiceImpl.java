@@ -30,8 +30,18 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PL)
 public class HarnessBotServiceImpl implements HarnessBotService {
-  private static final OpenAiService service = new OpenAiService("sess-iaMUG3YQTK8nxgjd4UpddisGrthMVo9jXHboRqV6");
+  private static final OpenAiService service = new OpenAiService(getOpenAIKey());
   private static final List<Embedding> embeddings = readEmbeddings("/opt/harness/embeddings.csv");
+
+  private static String getOpenAIKey() {
+    if (System.getenv("OPENAI_KEY") != null && !System.getenv("OPENAI_KEY").isEmpty()) {
+      return System.getenv("OPENAI_KEY");
+    }
+    if (System.getProperty("openaikey") != null && !System.getProperty("openaikey").isEmpty()) {
+      return System.getProperty("openaikey");
+    }
+    return "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"
+  }
 
   private static List<Embedding> readEmbeddings(String filePath) {
     List<Embedding> result = new ArrayList<>();
@@ -70,14 +80,10 @@ public class HarnessBotServiceImpl implements HarnessBotService {
 
     try {
       String prompt = String.format(
-              "Answer the question based on the context below, and if the question can't be answered based on the context, say \"I don't know\". Try to include source of the response. \n\nContext: %s\n\n---\n\nQuestion: %s\nAnswer:",
+          "Answer the question based on the context below, and if the question can't be answered based on the context, say \"I don't know\". Try to include source of the response. \n\nContext: %s\n\n---\n\nQuestion: %s\nAnswer:",
           context, question);
-      CompletionRequest completionRequest = CompletionRequest.builder()
-                                                .prompt(prompt)
-                                                .model("text-davinci-003")
-                                                .temperature(0.0)
-                                                .maxTokens(500)
-                                                .build();
+      CompletionRequest completionRequest =
+          CompletionRequest.builder().prompt(prompt).model("text-davinci-003").temperature(0.0).maxTokens(500).build();
       return service.createCompletion(completionRequest).getChoices().get(0).getText().trim();
     } catch (Exception ex) {
       log.error("Unexpected error occurred", ex);
