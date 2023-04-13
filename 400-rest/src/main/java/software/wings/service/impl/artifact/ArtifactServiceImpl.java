@@ -167,7 +167,8 @@ public class ArtifactServiceImpl implements ArtifactService {
             Preconditions.checkNotNull(wingsPersistence.get(ArtifactStream.class, artifactStreamEntry.getKey()),
                 "Artifact stream has been deleted");
         artifactStreamEntry.getValue().forEach(artifact -> artifact.setArtifactStreamName(artifactStream.getName()));
-        if (featureFlagService.isEnabled(SPG_ALLOW_FILTER_BY_PATHS_GCS, artifactStream.getAccountId())) {
+        if (featureFlagService.isEnabled(SPG_ALLOW_FILTER_BY_PATHS_GCS, artifactStream.getAccountId())
+            && ArtifactStreamType.GCS.name().equals(artifactStream.getArtifactStreamType())) {
           artifacts.addAll(buildSourceService.listArtifactByArtifactStreamAndFilterPath(
               artifactStreamEntry.getValue().stream().collect(toList()), artifactStream));
         } else {

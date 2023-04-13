@@ -57,6 +57,7 @@ public class GcbExecutionData extends StateExecutionData implements DelegateTask
   @Nullable private String artifactLocation;
   @Nullable private List<String> artifacts;
   @Nullable private String gcpConfigId;
+  @Nullable private List<Map<String, Object>> secrets;
 
   @NotNull
   public GcbExecutionData withDelegateResponse(@NotNull final GcbDelegateResponse delegateResponse) {
@@ -75,6 +76,7 @@ public class GcbExecutionData extends StateExecutionData implements DelegateTask
       createTime = buildDetails.getCreateTime();
       substitutions = buildDetails.getSubstitutions();
       logUrl = buildDetails.getLogUrl();
+      secrets = buildDetails.getSecrets();
       final GcbArtifacts gcbArtifacts = buildDetails.getArtifacts();
       if (gcbArtifacts != null) {
         images = gcbArtifacts.getImages();
@@ -121,6 +123,10 @@ public class GcbExecutionData extends StateExecutionData implements DelegateTask
 
     if (isNotEmpty(substitutions)) {
       executionDetails.put("substitutions", executionDataValue("Substitutions", removeNullValues(substitutions)));
+    }
+
+    if (isNotEmpty(secrets)) {
+      executionDetails.put("secrets", executionDataValue("Secrets", secrets));
     }
 
     if (isNotEmpty(buildNo)) {
