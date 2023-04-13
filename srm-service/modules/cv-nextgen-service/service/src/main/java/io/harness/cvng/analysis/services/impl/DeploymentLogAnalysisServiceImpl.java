@@ -697,6 +697,8 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
       }
     }
 
+    allLogAnalysisRadarChartListDTOs.sort(Comparator.comparing(LogAnalysisRadarChartListDTO::getChatGPTSeverity));
+
     if (allLogAnalysisRadarChartListDTOs.size() > 0) {
       setAngleAndRadiusForRadarChart(allLogAnalysisRadarChartListDTOs);
     }
