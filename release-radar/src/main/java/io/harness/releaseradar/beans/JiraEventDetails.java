@@ -17,6 +17,7 @@ public class JiraEventDetails {
                 .sha(commitDetails.getSha())
                 .environment(commitDetails.getMetadata().getEnvironment())
                 .service(commitDetails.getMetadata().getService())
+                .createdAt(commitDetails.getCreatedAt())
                 .build();
     }
 }
