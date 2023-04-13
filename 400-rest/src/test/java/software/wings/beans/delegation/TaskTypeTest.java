@@ -479,6 +479,7 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(439, "TERRAFORM_TASK_NG_V6");
     taskTypeOrdinalMapping.put(440, "RANCHER_TEST_CONNECTION_TASK_NG");
 
+
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
   }

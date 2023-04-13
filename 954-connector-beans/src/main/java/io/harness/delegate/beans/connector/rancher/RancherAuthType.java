@@ -14,8 +14,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-@AllArgsConstructor
 @Getter
+@AllArgsConstructor
 public enum RancherAuthType {
   @JsonProperty(RancherConstants.BEARER_TOKEN_AUTH) BEARER_TOKEN(RancherConstants.BEARER_TOKEN_AUTH);
 

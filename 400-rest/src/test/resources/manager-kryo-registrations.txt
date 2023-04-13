@@ -3175,6 +3175,11 @@
 10000523:io.harness.delegate.task.pcf.artifact.GoogleCloudStorageTasArtifactRequestDetails
 10000524:io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig
 10000526:io.harness.beans.HttpCertificateNG
+10000527:io.harness.delegate.beans.connector.rancher.RancherTaskParams
+10000528:io.harness.delegate.beans.connector.rancher.RancherDelegateTaskResponse
+10000529:io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskParams
+10000530:io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskResponse
+10000531:io.harness.delegate.beans.connector.rancher.RancherTaskType
 20000501:io.harness.delegate.beans.connector.rancher.RancherAuthType
 20000502:io.harness.delegate.beans.connector.rancher.RancherConfigType
 20000503:io.harness.delegate.beans.connector.rancher.RancherConnectorBearerTokenAuthenticationDTO
@@ -3184,8 +3189,3 @@
 20000507:io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthenticationSpecDTO
 20000508:io.harness.delegate.beans.connector.rancher.RancherConnectorConfigDTO
 20000509:io.harness.delegate.beans.connector.rancher.RancherConnectorDTO
-10000527:io.harness.delegate.beans.connector.rancher.RancherTaskParams
-10000528:io.harness.delegate.beans.connector.rancher.RancherDelegateTaskResponse
-10000529:io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskParams
-10000530:io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskResponse
-10000531:io.harness.delegate.beans.connector.rancher.RancherTaskType

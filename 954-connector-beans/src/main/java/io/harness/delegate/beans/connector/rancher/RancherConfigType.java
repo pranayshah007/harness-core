@@ -14,8 +14,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-@AllArgsConstructor
 @Getter
+@AllArgsConstructor
 public enum RancherConfigType {
   @JsonProperty(RancherConstants.MANUAL_CONFIG) MANUAL_CONFIG(RancherConstants.MANUAL_CONFIG);
 

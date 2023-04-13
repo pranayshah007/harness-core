@@ -19,10 +19,10 @@ import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.rancher.RancherConnectorDTO;
 import io.harness.delegate.beans.connector.rancher.RancherTaskParams;
 import io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskParams;
+import io.harness.delegate.task.rancher.RancherHelperServiceDelegate;
 import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.ng.core.dto.ErrorDetail;
-import io.harness.rancher.RancherHelperServiceDelegate;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import com.google.common.collect.Lists;

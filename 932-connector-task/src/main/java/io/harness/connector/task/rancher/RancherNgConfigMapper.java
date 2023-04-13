@@ -43,9 +43,6 @@ public class RancherNgConfigMapper {
           rancherConnectorConfigAuthDTO.getCredentials();
       RancherConnectorBearerTokenAuthenticationDTO rancherConnectorBearerTokenAuthenticationDTO =
           (RancherConnectorBearerTokenAuthenticationDTO) rancherConnectorConfigAuthCredentialsDTO.getAuth();
-
-      // SpotPermanentTokenConfigSpecDTO config = (SpotPermanentTokenConfigSpecDTO) credential.getConfig();
-      // config = (SpotPermanentTokenConfigSpecDTO) decryptionHelper.decrypt(config, encryptionDetails);
       ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
           rancherConnectorBearerTokenAuthenticationDTO, encryptionDetails);
       rancherConfig =
@@ -73,7 +70,7 @@ public class RancherNgConfigMapper {
 
   private String getDecryptedValueWithNullCheck(SecretRefData passwordRef) {
     if (passwordRef != null && passwordRef.getDecryptedValue() != null) {
-      return new String(passwordRef.getDecryptedValue());
+      return String.valueOf(passwordRef.getDecryptedValue());
     }
     return null;
   }

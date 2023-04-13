@@ -5,12 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.rancher;
+package io.harness.delegate.task.rancher;
 
 import io.harness.connector.task.rancher.RancherConfig;
 
 import java.io.IOException;
 
 public interface RancherHelperServiceDelegate {
-  public void testRancherConnection(final RancherConfig rancherConfig) throws IOException;
+  void testRancherConnection(RancherConfig rancherConfig) throws IOException;
 }
