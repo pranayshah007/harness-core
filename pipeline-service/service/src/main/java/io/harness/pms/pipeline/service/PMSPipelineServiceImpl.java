@@ -382,7 +382,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         publishSetupUsages(pipelineEntity, filtersAndStageCount.getReferredEntities(), branch);
 
       } catch (IOException e) {
-        log.error("Failed to update the pipeline info for the gitX enabled pipeline while reloading from git.");
+        log.error("Failed to update the pipeline info for the gitX enabled pipeline while reloading from git.", e);
         throw new InvalidRequestException(
             "Failed to update the pipeline info for the gitX enabled pipeline while reloading from git.");
       }
