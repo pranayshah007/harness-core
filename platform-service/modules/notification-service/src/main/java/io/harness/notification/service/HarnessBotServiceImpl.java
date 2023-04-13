@@ -43,7 +43,7 @@ public class HarnessBotServiceImpl implements HarnessBotService {
       return System.getProperty("openaikey");
     }
     log.info("Reading hardcoded OpenAI Key");
-    return "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";
+    return "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";
   }
 
   private static List<Embedding> readEmbeddings(String filePath) {
