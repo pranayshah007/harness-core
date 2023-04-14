@@ -187,7 +187,7 @@ notificationConfig:
 aggregatorModuleConfig:
   debezium:
     name: ${DEBEZIUM_NAME:-aggregator}
-    offset.storage.file.filename: ${OFFSET_STORAGE_FILE_FILENAME:-mongodb://127.0.0.1:27018,127.0.0.1:27019,127.0.0.1:27020/accesscontrol?replicaSet=rs0}
+    offset.storage.file.filename: ${OFFSET_STORAGE_FILE_FILENAME:-localhost:27018,localhost:27019,localhost:27020}
     key.converter.schemas.enable: ${KEY_CONVERTER_SCHEMAS_ENABLE:-false}
     value.converter.schemas.enable: ${VALUE_CONVERTER_SCHEMAS_ENABLE:-false}
     offset.flush.interval.ms: ${OFFSET_FLUSH_INTERVAL_MS:-5000}
@@ -195,7 +195,7 @@ aggregatorModuleConfig:
     connect.backoff.max.delay.ms: ${CONNECT_BACKOFF_MAX_DELAY_MS:-10000}
     connect.max.attempts: ${CONNECT_MAX_ATTEMPTS:-3}
     mongodb.hosts: ${MONGODB_HOSTS:-rs0/localhost:27018,rs0/localhost:27019,rs0/127.0.0.1:27020}
-    mongodb.name: ${MONGODB_NAME:-access_control_db}
+    mongodb.name: ${MONGODB_NAME:-accesscontrol}
     mongodb.user: ${MONGODB_USER:-""}
     mongodb.password: ${MONGODB_PASSWORD:-""}
     mongodb.ssl.enabled: ${MONGODB_SSL_ENABLED:-false}
