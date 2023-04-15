@@ -203,13 +203,17 @@ public class MongoPersistence implements HPersistence {
 
   @Override
   public AdvancedDatastore getDatastore(Store store) {
-    return datastoreMap.computeIfAbsent(store.getName(), key -> {
-      Info info = storeInfo.get(store.getName());
-      if (info == null || isEmpty(info.getUri())) {
-        return getDatastore(DEFAULT_STORE);
-      }
-      return MongoModule.createDatastore(morphia, info.getUri(), store.getName(), harnessConnectionPoolListener);
-    });
+    if (datastoreMap.containsKey(store.getName())) {
+      return datastoreMap.get(store.getName());
+    }
+    Info info = storeInfo.get(store.getName());
+    if (info == null || isEmpty(info.getUri())) {
+      return getDatastore(DEFAULT_STORE);
+    }
+
+    datastoreMap.put(store.getName(),
+        MongoModule.createDatastore(morphia, info.getUri(), store.getName(), harnessConnectionPoolListener));
+    return datastoreMap.get(store.getName());
   }
 
   @Override
