@@ -3001,20 +3001,37 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<ArtifactDeploymentDetailModel> artifactDeploymentDetails = instanceDashboardService.getLastDeployedInstance(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, false, isGitOps);
 
-    List<String> envIds = new ArrayList<>();
+    Set<String> envIds = new HashSet<>();
 
     Map<String, Map<String, ArtifactDeploymentDetail>> artifactDeploymentDetailsMap =
         DashboardServiceHelper.constructArtifactToLastDeploymentMap(artifactDeploymentDetails, envIds);
 
+    List<EnvironmentGroupEntity> environmentGroupEntities = null;
+    Criteria criteria = environmentGroupService.formCriteria(accountIdentifier, orgIdentifier, projectIdentifier, false,
+            "", "", null,
+            true);
+    Page<EnvironmentGroupEntity> environmentGroupEntitiesPage =
+            environmentGroupService.list(criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier);
+    if (environmentGroupEntitiesPage != null) {
+      environmentGroupEntities = environmentGroupEntitiesPage.getContent();
+      for(EnvironmentGroupEntity environmentGroupEntity: environmentGroupEntities) {
+        if(EmptyPredicate.isNotEmpty(environmentGroupEntity.getEnvIdentifiers())) {
+          envIds.addAll(environmentGroupEntity.getEnvIdentifiers());
+        }
+      }
+    }
+
     List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(
-        accountIdentifier, orgIdentifier, projectIdentifier, envIds);
+        accountIdentifier, orgIdentifier, projectIdentifier, new ArrayList<>(envIds));
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
     Map<String, EnvironmentType> envIdToEnvTypeMap = new HashMap<>();
 
     DashboardServiceHelper.constructEnvironmentNameAndTypeMap(environments, envIdToEnvNameMap, envIdToEnvTypeMap);
+    Map<String, ArtifactDeploymentDetail> envToArtifactMap =
+            DashboardServiceHelper.constructEnvironmentToArtifactDeploymentMap(artifactDeploymentDetails, envIdToEnvNameMap);
 
     return DashboardServiceHelper.getArtifactInstanceDetailsFromMap(
-        artifactDeploymentDetailsMap, envIdToEnvNameMap, envIdToEnvTypeMap);
+        artifactDeploymentDetailsMap, envIdToEnvNameMap, envIdToEnvTypeMap, environmentGroupEntities, envToArtifactMap);
   }
 
   @Override

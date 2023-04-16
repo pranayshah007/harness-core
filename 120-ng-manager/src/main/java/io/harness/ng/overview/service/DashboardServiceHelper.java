@@ -18,7 +18,9 @@ import io.harness.ng.core.environment.beans.EnvironmentFilterPropertiesDTO;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.overview.dto.ArtifactDeploymentDetail;
 import io.harness.ng.overview.dto.ArtifactInstanceDetails;
+import io.harness.ng.overview.dto.ArtifactInstanceDetails.ArtifactInstanceDetail;
 import io.harness.ng.overview.dto.EnvironmentGroupInstanceDetails;
+import io.harness.ng.overview.dto.EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail;
 import io.harness.ng.overview.dto.EnvironmentInstanceDetails;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
@@ -29,6 +31,7 @@ import io.harness.ng.overview.dto.ServicePipelineWithRevertInfo;
 import io.harness.utils.IdentifierRefHelper;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -406,44 +409,128 @@ public class DashboardServiceHelper {
 
   public ArtifactInstanceDetails  getArtifactInstanceDetailsFromMap(
       Map<String, Map<String, ArtifactDeploymentDetail>> artifactDeploymentDetailsMap,
-      Map<String, String> envIdToEnvNameMap, Map<String, EnvironmentType> envIdToEnvTypeMap) {
-    List<ArtifactInstanceDetails.ArtifactInstanceDetail> artifactInstanceDetails = new ArrayList<>();
-    for (Map.Entry<String, Map<String, ArtifactDeploymentDetail>> entry : artifactDeploymentDetailsMap.entrySet()) {
-      final String displayName = entry.getKey();
-      List<EnvironmentInstanceDetails.EnvironmentInstanceDetail> environmentInstanceDetailList = new ArrayList<>();
-      for (Map.Entry<String, ArtifactDeploymentDetail> entry1 : entry.getValue().entrySet()) {
-        final String envId = entry1.getKey();
-        final ArtifactDeploymentDetail artifactDeploymentDetail = entry1.getValue();
-        if (envId == null || artifactDeploymentDetail == null) {
+      Map<String, String> envIdToEnvNameMap, Map<String, EnvironmentType> envIdToEnvTypeMap, List<EnvironmentGroupEntity> environmentGroupEntities, Map<String, ArtifactDeploymentDetail> envToArtifactMap) {
+
+    Map<String, EnvironmentGroupInstanceDetails> artifactToEnvGroupMap = new HashMap<>();
+
+    Set<String> envIds = new HashSet<>();
+    if(environmentGroupEntities != null) {
+      for (EnvironmentGroupEntity envGroupEntity : environmentGroupEntities) {
+        List<ArtifactDeploymentDetail> artifactDeploymentDetailList = new ArrayList<>();
+        Set<EnvironmentType> envTypes = new HashSet<>();
+        Set<String> artifacts = new HashSet<>();
+        if(EmptyPredicate.isEmpty(envGroupEntity.getEnvIdentifiers())) {
           continue;
         }
-        final String envName = envIdToEnvNameMap.get(envId);
-        final EnvironmentType environmentType = envIdToEnvTypeMap.get(envId);
-        EnvironmentInstanceDetails.EnvironmentInstanceDetail environmentInstanceDetail =
-            EnvironmentInstanceDetails.EnvironmentInstanceDetail.builder()
-                .envId(envId)
-                .envName(envName)
-                .environmentType(environmentType)
-                .artifactDeploymentDetail(artifactDeploymentDetail)
-                .build();
-        environmentInstanceDetailList.add(environmentInstanceDetail);
-      }
+        for (String envId : envGroupEntity.getEnvIdentifiers()) {
+          final ArtifactDeploymentDetail artifactDeploymentDetail = envToArtifactMap.get(envId);
+          final EnvironmentType envType = envIdToEnvTypeMap.get(envId);
 
-      if (EmptyPredicate.isEmpty(environmentInstanceDetailList)) {
-        continue;
+          envIds.add(envId);
+          if(envType != null) {
+            envTypes.add(envType);
+          }
+          if(artifactDeploymentDetail != null) {
+            artifactDeploymentDetailList.add(artifactDeploymentDetail);
+            artifacts.add(artifactDeploymentDetail.getArtifact());
+          }
+        }
+        Set<String> uniqueArtifacts = new HashSet<>();
+        if(EmptyPredicate.isNotEmpty(artifactDeploymentDetailList)) {
+          DashboardServiceHelper.sortArtifactDeploymentDetailList(artifactDeploymentDetailList);
+            EnvironmentGroupInstanceDetail environmentGroupInstanceDetail = EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
+                    .name(envGroupEntity.getName())
+                    .id(envGroupEntity.getIdentifier())
+                    .environmentTypes(new ArrayList<>(envTypes))
+                    .artifactDeploymentDetails(artifactDeploymentDetailList)
+                    .isEnvGroup(true)
+                    .isDrift((artifacts.size() > 1) || (artifacts.size() == 1 && artifactDeploymentDetailList.size() != envGroupEntity.getEnvIdentifiers().size()))
+                    .build();
+            for(ArtifactDeploymentDetail artifactDeploymentDetail : environmentGroupInstanceDetail.getArtifactDeploymentDetails()) {
+              if(uniqueArtifacts.contains(artifactDeploymentDetail.getArtifact())) {
+                continue;
+              }
+              uniqueArtifacts.add(artifactDeploymentDetail.getArtifact());
+              if(artifactToEnvGroupMap.containsKey(artifactDeploymentDetail.getArtifact())) {
+                artifactToEnvGroupMap.get(artifactDeploymentDetail.getArtifact()).getEnvironmentGroupInstanceDetails().add(environmentGroupInstanceDetail);
+              } else {
+                artifactToEnvGroupMap.put(artifactDeploymentDetail.getArtifact(), EnvironmentGroupInstanceDetails.builder().environmentGroupInstanceDetails(new ArrayList<>(Arrays.asList(environmentGroupInstanceDetail))).build());
+              }
+            }
+        }
       }
-
-      sortEnvironmentInstanceDetailList(environmentInstanceDetailList);
-      artifactInstanceDetails.add(
-          ArtifactInstanceDetails.ArtifactInstanceDetail.builder()
-              .artifact(displayName)
-              .environmentInstanceDetails(EnvironmentInstanceDetails.builder()
-                                              .environmentInstanceDetails(environmentInstanceDetailList)
-                                              .build())
-              .build());
     }
+
+    for (Map.Entry<String, String> entry : envIdToEnvNameMap.entrySet()) {
+      final String envId = entry.getKey();
+      if(!envIds.contains(envId)) {
+        final EnvironmentType envType = envIdToEnvTypeMap.get(envId);
+        final String envName = entry.getValue();
+        final ArtifactDeploymentDetail artifactDeploymentDetail = envToArtifactMap.get(envId);
+        if (artifactDeploymentDetail == null) {
+          continue;
+        }
+        EnvironmentGroupInstanceDetail environmentGroupInstanceDetail = EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
+                .name(envName)
+                .id(envId)
+                .environmentTypes(envType == null ? null : Collections.singletonList(envType))
+                .artifactDeploymentDetails(Collections.singletonList(artifactDeploymentDetail))
+                .isEnvGroup(false)
+                .isDrift(false)
+                .build();
+        if(artifactToEnvGroupMap.containsKey(artifactDeploymentDetail.getArtifact())) {
+          artifactToEnvGroupMap.get(artifactDeploymentDetail.getArtifact()).getEnvironmentGroupInstanceDetails().add(environmentGroupInstanceDetail);
+        } else {
+          artifactToEnvGroupMap.put(artifactDeploymentDetail.getArtifact(), EnvironmentGroupInstanceDetails.builder().environmentGroupInstanceDetails(new ArrayList<>(Arrays.asList(environmentGroupInstanceDetail))).build());
+        }
+      }
+    }
+
+    List<ArtifactInstanceDetails.ArtifactInstanceDetail> artifactInstanceDetails = new ArrayList<>();
+    for(Map.Entry<String, EnvironmentGroupInstanceDetails> entry : artifactToEnvGroupMap.entrySet()) {
+      artifactInstanceDetails.add(ArtifactInstanceDetails.ArtifactInstanceDetail.builder().artifact(entry.getKey()).environmentGroupInstanceDetails(entry.getValue()).build());
+    }
+
     sortArtifactInstanceDetailList(artifactInstanceDetails);
     return ArtifactInstanceDetails.builder().artifactInstanceDetails(artifactInstanceDetails).build();
+
+    //    List<ArtifactInstanceDetails.ArtifactInstanceDetail> artifactInstanceDetails = new ArrayList<>();
+//    for (Map.Entry<String, Map<String, ArtifactDeploymentDetail>> entry : artifactDeploymentDetailsMap.entrySet()) {
+//      final String displayName = entry.getKey();
+//      List<EnvironmentInstanceDetails.EnvironmentInstanceDetail> environmentInstanceDetailList = new ArrayList<>();
+//      for (Map.Entry<String, ArtifactDeploymentDetail> entry1 : entry.getValue().entrySet()) {
+//        final String envId = entry1.getKey();
+//        final ArtifactDeploymentDetail artifactDeploymentDetail = entry1.getValue();
+//        if (envId == null || artifactDeploymentDetail == null) {
+//          continue;
+//        }
+//        final String envName = envIdToEnvNameMap.get(envId);
+//        final EnvironmentType environmentType = envIdToEnvTypeMap.get(envId);
+//        EnvironmentInstanceDetails.EnvironmentInstanceDetail environmentInstanceDetail =
+//            EnvironmentInstanceDetails.EnvironmentInstanceDetail.builder()
+//                .envId(envId)
+//                .envName(envName)
+//                .environmentType(environmentType)
+//                .artifactDeploymentDetail(artifactDeploymentDetail)
+//                .build();
+//        environmentInstanceDetailList.add(environmentInstanceDetail);
+//      }
+//
+//      if (EmptyPredicate.isEmpty(environmentInstanceDetailList)) {
+//        continue;
+//      }
+//
+//      sortEnvironmentInstanceDetailList(environmentInstanceDetailList);
+//      artifactInstanceDetails.add(
+//          ArtifactInstanceDetails.ArtifactInstanceDetail.builder()
+//              .artifact(displayName)
+//              .environmentInstanceDetails(EnvironmentInstanceDetails.builder()
+//                                              .environmentInstanceDetails(environmentInstanceDetailList)
+//                                              .build())
+//              .build());
+//    }
+//    sortArtifactInstanceDetailList(artifactInstanceDetails);
+//    return ArtifactInstanceDetails.builder().artifactInstanceDetails(artifactInstanceDetails).build();
   }
 
   private void sortArtifactInstanceDetailList(
@@ -606,7 +693,7 @@ public class DashboardServiceHelper {
   }
 
   public Map<String, Map<String, ArtifactDeploymentDetail>> constructArtifactToLastDeploymentMap(
-      List<ArtifactDeploymentDetailModel> artifactDeploymentDetails, List<String> envIds) {
+      List<ArtifactDeploymentDetailModel> artifactDeploymentDetails, Set<String> envIds) {
     Map<String, Map<String, ArtifactDeploymentDetail>> map = new HashMap<>();
     Set<String> envIdSet = new HashSet<>();
     for (ArtifactDeploymentDetailModel artifactDeploymentDetail : artifactDeploymentDetails) {

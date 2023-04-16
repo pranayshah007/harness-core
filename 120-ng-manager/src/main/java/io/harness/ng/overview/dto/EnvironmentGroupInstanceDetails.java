@@ -29,7 +29,7 @@ public class EnvironmentGroupInstanceDetails {
     List<EnvironmentType> environmentTypes;
     @NotNull Boolean isEnvGroup;
     @NotNull Boolean isDrift;
-    @Min(1) Integer count;
+    Integer count;
     List<ArtifactDeploymentDetail> artifactDeploymentDetails;
     Boolean isRollback;
     Boolean isRevert;
