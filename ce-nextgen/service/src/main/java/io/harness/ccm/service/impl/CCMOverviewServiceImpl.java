@@ -22,7 +22,7 @@ public class CCMOverviewServiceImpl implements CCMOverviewService {
 
   @Override
   public CcmOverviewDTO getCCMAccountOverviewData(
-      String accountId, long startTime, long endTime, , QLCEViewTimeGroupType groupBy) {
+      String accountId, long startTime, long endTime, QLCEViewTimeGroupType groupBy) {
     CostOverviewDTO costOverview = getTotalCostStats(accountId, startTime, endTime);
     return CcmOverviewDTO.builder()
         .costPerDay(getCostTimeSeriesData(accountId, startTime, endTime, groupBy))

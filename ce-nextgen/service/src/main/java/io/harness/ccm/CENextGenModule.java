@@ -76,27 +76,8 @@ import io.harness.ccm.remote.mapper.anomaly.AnomalyFilterPropertiesMapper;
 import io.harness.ccm.remote.mapper.governance.ExecutionFilterPropertyMapper;
 import io.harness.ccm.remote.mapper.recommendation.CCMRecommendationFilterPropertiesMapper;
 import io.harness.ccm.scheduler.SchedulerClientModule;
-import io.harness.ccm.service.impl.AWSBucketPolicyHelperServiceImpl;
-import io.harness.ccm.service.impl.AWSOrganizationHelperServiceImpl;
-import io.harness.ccm.service.impl.AnomalyServiceImpl;
-import io.harness.ccm.service.impl.AwsEntityChangeEventServiceImpl;
-import io.harness.ccm.service.impl.AzureEntityChangeEventServiceImpl;
-import io.harness.ccm.service.impl.CCMActiveSpendServiceImpl;
-import io.harness.ccm.service.impl.CCMConnectorDetailsServiceImpl;
-import io.harness.ccm.service.impl.CCMNotificationServiceImpl;
-import io.harness.ccm.service.impl.CEYamlServiceImpl;
-import io.harness.ccm.service.impl.GCPEntityChangeEventServiceImpl;
-import io.harness.ccm.service.impl.LicenseUsageInterfaceImpl;
-import io.harness.ccm.service.intf.AWSBucketPolicyHelperService;
-import io.harness.ccm.service.intf.AWSOrganizationHelperService;
-import io.harness.ccm.service.intf.AnomalyService;
-import io.harness.ccm.service.intf.AwsEntityChangeEventService;
-import io.harness.ccm.service.intf.AzureEntityChangeEventService;
-import io.harness.ccm.service.intf.CCMActiveSpendService;
-import io.harness.ccm.service.intf.CCMConnectorDetailsService;
-import io.harness.ccm.service.intf.CCMNotificationService;
-import io.harness.ccm.service.intf.CEYamlService;
-import io.harness.ccm.service.intf.GCPEntityChangeEventService;
+import io.harness.ccm.service.impl.*;
+import io.harness.ccm.service.intf.*;
 import io.harness.ccm.serviceAccount.CEGcpServiceAccountService;
 import io.harness.ccm.serviceAccount.CEGcpServiceAccountServiceImpl;
 import io.harness.ccm.serviceAccount.GcpResourceManagerService;
@@ -406,6 +387,7 @@ public class CENextGenModule extends AbstractModule {
     bind(CurrencyPreferenceService.class).to(CurrencyPreferenceServiceImpl.class);
     bind(BudgetGroupService.class).to(BudgetGroupServiceImpl.class);
     bind(ClickHouseService.class).to(ClickHouseServiceImpl.class);
+    bind(CCMOverviewService.class).to(CCMOverviewServiceImpl.class);
 
     if (configuration.isClickHouseEnabled()) {
       bind(ViewsBillingService.class).to(ClickHouseViewsBillingServiceImpl.class);
