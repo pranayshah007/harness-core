@@ -54,6 +54,7 @@ import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.SLOValue;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsRefDTO;
@@ -272,6 +273,20 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       if (isNotEmpty(referencedCompositeSLOIdentifiers) && !target.equals(simpleServiceLevelObjective.getTarget())) {
         throw new InvalidRequestException(String.format(
             "Can't update the compliance time period for SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s as it is associated with Composite SLO with identifier%s %s.",
+            identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+            projectParams.getProjectIdentifier(), referencedCompositeSLOIdentifiers.size() > 1 ? "s" : "",
+            String.join(", ", referencedCompositeSLOIdentifiers)));
+      }
+
+      ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
+          ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec()).getServiceLevelIndicators().get(0);
+
+      if (isNotEmpty(referencedCompositeSLOIdentifiers)
+          && !serviceLevelIndicatorDTO.getType().equals(
+              getEvaluationType(projectParams, Collections.singletonList(simpleServiceLevelObjective))
+                  .get(simpleServiceLevelObjective))) {
+        throw new InvalidRequestException(String.format(
+            "Can't update the SLI evaluation type for SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s as it is associated with Composite SLO with identifier%s %s.",
             identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier(), referencedCompositeSLOIdentifiers.size() > 1 ? "s" : "",
             String.join(", ", referencedCompositeSLOIdentifiers)));
@@ -517,6 +532,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .monitoredServiceIdentifier(sloDashboardApiFilter.getMonitoredServiceIdentifier())
             .targetTypes(sloDashboardApiFilter.getTargetTypes())
             .sliTypes(sloDashboardApiFilter.getSliTypes())
+            .sliEvaluationType(sloDashboardApiFilter.getEvaluationType())
             .searchFilter(sloDashboardApiFilter.getSearchFilter())
             .build());
     List<SLOHealthIndicator> sloHealthIndicators = sloHealthIndicatorService.getBySLOIdentifiers(projectParams,
@@ -810,6 +826,32 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   }
 
   @Override
+  public List<AbstractServiceLevelObjective> getAllReferredSLOs(
+      ProjectParams projectParams, CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec) {
+    List<ServiceLevelObjectiveDetailsDTO> serviceLevelObjectiveDetailDTOList =
+        compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails();
+    List<String> identifierList =
+        serviceLevelObjectiveDetailDTOList.stream()
+            .map(serviceLevelObjectivesDetail -> serviceLevelObjectivesDetail.getServiceLevelObjectiveRef())
+            .collect(Collectors.toList());
+    List<AbstractServiceLevelObjective> serviceLevelObjectiveList =
+        getSimpleSLOWithChildResource(projectParams, identifierList);
+
+    Set<String> scopedIdentifierSet =
+        serviceLevelObjectiveDetailDTOList.stream()
+            .map(serviceLevelObjectiveDetailsDTO
+                -> ScopedInformation.getScopedInformation(serviceLevelObjectiveDetailsDTO.getAccountId(),
+                    serviceLevelObjectiveDetailsDTO.getOrgIdentifier(),
+                    serviceLevelObjectiveDetailsDTO.getProjectIdentifier(),
+                    serviceLevelObjectiveDetailsDTO.getServiceLevelObjectiveRef()))
+            .collect(Collectors.toSet());
+
+    return serviceLevelObjectiveList.stream()
+        .filter(serviceLevelObjective -> scopedIdentifierSet.contains(getScopedIdentifier(serviceLevelObjective)))
+        .collect(Collectors.toList());
+  }
+
+  @Override
   public String getScopedIdentifier(AbstractServiceLevelObjective serviceLevelObjective) {
     return ScopedInformation.getScopedInformation(serviceLevelObjective.getAccountId(),
         serviceLevelObjective.getOrgIdentifier(), serviceLevelObjective.getProjectIdentifier(),
@@ -1087,6 +1129,16 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
           "The weightage percentage of all the SLOs constituting the Composite SLO with identifier %s is %s. It should sum up to 100.",
           serviceLevelObjectiveDTO.getIdentifier(), sum));
     }
+
+    List<AbstractServiceLevelObjective> serviceLevelObjectiveList =
+        getAllReferredSLOs(projectParams, compositeServiceLevelObjectiveSpec);
+    getEvaluationType(projectParams, serviceLevelObjectiveList).values().stream().forEach(sliEvaluationType -> {
+      if (sliEvaluationType != compositeServiceLevelObjectiveSpec.getEvaluationType()) {
+        throw new InvalidRequestException(String.format(
+            "The evaluation type of all the SLOs constituting the Composite SLO with identifier %s should be %s.",
+            serviceLevelObjectiveDTO.getIdentifier(), compositeServiceLevelObjectiveSpec.getEvaluationType()));
+      }
+    });
 
     Set<String> scopedReferencedSimpleSLOs =
         compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()

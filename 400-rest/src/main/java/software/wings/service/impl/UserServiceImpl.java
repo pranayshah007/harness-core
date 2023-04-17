@@ -19,7 +19,11 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.ng.core.account.AuthenticationMechanism.USER_PASSWORD;
+import static io.harness.ng.core.common.beans.Generation.CG;
 import static io.harness.ng.core.common.beans.Generation.NG;
+import static io.harness.ng.core.common.beans.UserSource.LDAP;
+import static io.harness.ng.core.common.beans.UserSource.MANUAL;
+import static io.harness.ng.core.common.beans.UserSource.SCIM;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.ACCOUNT_INVITE_ACCEPTED;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.ACCOUNT_INVITE_ACCEPTED_NEED_PASSWORD;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.FAIL;
@@ -39,6 +43,7 @@ import static software.wings.beans.AccountRole.AccountRoleBuilder.anAccountRole;
 import static software.wings.beans.ApplicationRole.ApplicationRoleBuilder.anApplicationRole;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.User.Builder.anUser;
+import static software.wings.beans.UserInviteSource.SourceType.SSO;
 import static software.wings.security.JWT_CATEGORY.INVITE_SECRET;
 import static software.wings.security.PermissionAttribute.ResourceType.APPLICATION;
 import static software.wings.security.PermissionAttribute.ResourceType.ARTIFACT;
@@ -115,6 +120,7 @@ import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.account.OauthProviderType;
 import io.harness.ng.core.common.beans.Generation;
+import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.dto.UserInviteDTO;
 import io.harness.ng.core.invites.dto.InviteDTO;
 import io.harness.ng.core.invites.dto.InviteOperationResponse;
@@ -425,28 +431,32 @@ public class UserServiceImpl implements UserService {
     return savedUser;
   }
 
-  private User createNewUser(User user, String accountId) {
+  private User createNewUser(User user, String accountId, Generation generation) {
     user.setAppId(GLOBAL_APP_ID);
 
     List<UserGroup> accountAdminGroups = getAccountAdminGroup(accountId);
 
-    User savedUser = createUser(user, accountId);
-
+    User savedUser = null;
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      savedUser = createUserWithAccountLevelData(user, accountId, MANUAL, generation);
+    } else {
+      savedUser = createUser(user, accountId);
+    }
     addUserToUserGroups(accountId, user, accountAdminGroups, false, false);
 
     return savedUser;
   }
 
   @Override
-  public User createNewUserAndSignIn(User user, String accountId) {
-    User savedUser = createNewUser(user, accountId);
+  public User createNewUserAndSignIn(User user, String accountId, Generation generation) {
+    User savedUser = createNewUser(user, accountId, generation);
 
     return authenticationManager.defaultLoginUsingPasswordHash(savedUser.getEmail(), savedUser.getPasswordHash());
   }
 
   @Override
   public User createNewOAuthUser(User user, String accountId) {
-    User savedUser = createNewUser(user, accountId);
+    User savedUser = createNewUser(user, accountId, NG);
 
     createSSOSettingsAndMarkAsDefaultAuthMechanism(accountId);
 
@@ -620,7 +630,7 @@ public class UserServiceImpl implements UserService {
                     .utmInfo(userInvite.getUtmInfo())
                     .build();
     completeUserInviteForSignup(userInvite, createdAccount.getUuid());
-    return createNewUserAndSignIn(user, createdAccount.getUuid());
+    return createNewUserAndSignIn(user, createdAccount.getUuid(), NG);
   }
 
   @Override
@@ -660,7 +670,7 @@ public class UserServiceImpl implements UserService {
                     .utmInfo(userInvite.getUtmInfo())
                     .build();
     completeUserInviteForSignup(userInvite, createdAccount.getUuid());
-    return createNewUserAndSignIn(user, createdAccount.getUuid());
+    return createNewUserAndSignIn(user, createdAccount.getUuid(), NG);
   }
 
   @Override
@@ -938,6 +948,11 @@ public class UserServiceImpl implements UserService {
     newAccounts.add(account);
     UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
     updateOperations.set(UserKeys.accounts, newAccounts);
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
+        && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
+      userServiceHelper.populateAccountToUserMapping(user, accountId, NG, MANUAL);
+      updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
+    }
     updateUser(user.getUuid(), updateOperations);
   }
 
@@ -1055,13 +1070,22 @@ public class UserServiceImpl implements UserService {
         user.setPasswordHash(hashed);
         user.setPasswordChangedAt(System.currentTimeMillis());
         user.setRoles(newArrayList(roleService.getAccountAdminRole(account.getUuid())));
-        return createUser(user, accountId);
+        if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+          return createUserWithAccountLevelData(user, accountId, MANUAL, CG);
+        } else {
+          return createUser(user, accountId);
+        }
       });
 
     } else {
       UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
       updateOperations.set(UserKeys.name, user.getName());
       updateOperations.set(UserKeys.passwordHash, hashpw(new String(user.getPassword()), BCrypt.gensalt()));
+      if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
+          && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
+        userServiceHelper.populateAccountToUserMapping(user, accountId, NG, MANUAL);
+        updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
+      }
       updateUser(existingUser.getUuid(), updateOperations);
       return existingUser;
     }
@@ -1510,7 +1534,12 @@ public class UserServiceImpl implements UserService {
     user.setImported(userInvite.getImportedByScim());
     user.setExternalUserId(userInvite.getExternalUserId());
 
-    user = createUser(user, accountId);
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      UserSource userSource = getUserSource(userInvite.getImportedByScim(), SSO == userInvite.getSource().getType());
+      user = createUserWithAccountLevelData(user, accountId, userSource, CG);
+    } else {
+      user = createUser(user, accountId);
+    }
     user = checkIfTwoFactorAuthenticationIsEnabledForAccount(user, account);
 
     if (!isInviteAcceptanceRequired || isPLNoEmailForSamlAccountInvitesEnabled) {
@@ -2021,6 +2050,11 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  public void completeNGInviteWithAccountLevelData(
+      UserInviteDTO userInvite, boolean shouldSendTwoFactorAuthResetEmail) {
+    completeNGInvite(userInvite, SCIM == userInvite.getUserSource(), shouldSendTwoFactorAuthResetEmail);
+  }
+  @Override
   public void completeNGInvite(
       UserInviteDTO userInvite, boolean isScimInvite, boolean shouldSendTwoFactorAuthResetEmail) {
     String accountId = userInvite.getAccountId();
@@ -2056,7 +2090,14 @@ public class UserServiceImpl implements UserService {
 
       user.setPasswordHash(hashpw(userInvite.getPassword(), BCrypt.gensalt()));
     }
-    user = createUser(user, accountId);
+
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      UserSource userSource = null == userInvite.getUserSource() ? MANUAL : userInvite.getUserSource();
+      createUserWithAccountLevelData(user, accountId, userSource, NG);
+    } else {
+      user = createUser(user, accountId);
+    }
+
     if (shouldSendTwoFactorAuthResetEmail) {
       user = checkIfTwoFactorAuthenticationIsEnabledForAccount(user, account);
       if (user.isTwoFactorAuthenticationEnabled()) {
@@ -2067,6 +2108,16 @@ public class UserServiceImpl implements UserService {
     moveAccountFromPendingToConfirmed(user, account, Collections.emptyList(), true);
     eventPublishHelper.publishUserRegistrationCompletionEvent(userInvite.getAccountId(), user);
     NGRestUtils.getResponse(ngInviteClient.completeInvite(userInvite.getToken()));
+  }
+
+  private UserSource getUserSource(boolean isScimInvite, boolean isLDAPInvite) {
+    UserSource userSource = MANUAL;
+    if (isScimInvite) {
+      userSource = SCIM;
+    } else if (isLDAPInvite) {
+      userSource = LDAP;
+    }
+    return userSource;
   }
 
   private boolean validateNgInvite(UserInviteDTO userInvite) {
@@ -2164,8 +2215,11 @@ public class UserServiceImpl implements UserService {
     user.setEmailVerified(true);
     user.getAccounts().add(account);
     user.setUserGroups(accountAdminGroups);
-
-    createUser(user, account.getUuid());
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, account.getUuid())) {
+      createUserWithAccountLevelData(user, account.getUuid(), MANUAL, CG);
+    } else {
+      createUser(user, account.getUuid());
+    }
 
     addUserToUserGroups(account.getUuid(), user, accountAdminGroups, false, false);
   }
@@ -2329,7 +2383,11 @@ public class UserServiceImpl implements UserService {
     user.setAppId(GLOBAL_APP_ID);
     user.getAccounts().add(account);
     user.setUserGroups(accountAdminGroups);
-    user = createUser(user, account.getUuid());
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, account.getUuid())) {
+      createUserWithAccountLevelData(user, account.getUuid(), MANUAL, CG);
+    } else {
+      user = createUser(user, account.getUuid());
+    }
 
     addUserToUserGroups(account.getUuid(), user, accountAdminGroups, false, false);
 
@@ -2689,6 +2747,13 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  public User createUserWithAccountLevelData(
+      User user, String accountId, UserSource userSource, Generation generation) {
+    userServiceHelper.populateAccountToUserMapping(user, accountId, generation, userSource);
+    return createUser(user, accountId);
+  }
+
+  @Override
   public User createUser(User user, String accountId) {
     boolean isExistingUser = user.getUuid() != null;
     user = wingsPersistence.saveAndGet(User.class, user);
@@ -2973,6 +3038,37 @@ public class UserServiceImpl implements UserService {
     return !isEmpty(userGroups);
   }
 
+  @Override
+  public boolean delete(String accountId, String userId, Generation generation) {
+    User user = get(userId);
+    if (userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
+      if (CG.equals(generation)) {
+        removeAllUserGroupsFromUser(user, accountId);
+        updateUserAccountLevelData(accountId, userId, generation, user);
+        if (!userServiceHelper.isUserProvisionedInThisAccount(user, accountId)) {
+          delete(accountId, userId);
+        }
+      } else if (NG.equals(generation) && isUserPresent(userId)
+          && userServiceHelper.isUserActiveInNG(user, accountId)) {
+        userServiceHelper.deleteUserFromNG(userId, accountId, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
+        updateUserAccountLevelData(accountId, userId, generation, user);
+        if (!userServiceHelper.isUserProvisionedInThisAccount(user, accountId)) {
+          delete(accountId, userId);
+        }
+      }
+      return true;
+    } else {
+      log.warn("FF PL_USER_ACCOUNT_LEVEL_DATA_FLOW is not enabled or Data is still not populated. No update done.");
+      return false;
+    }
+  }
+
+  private void updateUserAccountLevelData(String accountId, String userId, Generation generation, User user) {
+    UpdateOperations<User> updateOp = wingsPersistence.createUpdateOperations(User.class);
+    userServiceHelper.removeUserProvisioningFromGenerationInAccount(accountId, user, updateOp, generation);
+    updateUser(userId, updateOp);
+  }
+
   /* (non-Javadoc)
    * @see software.wings.service.intfc.UserService#delete(java.lang.String)
    */
@@ -2987,6 +3083,9 @@ public class UserServiceImpl implements UserService {
       } else {
         log.warn("User is removed from all user groups in CG");
         removeAllUserGroupsFromUser(user, accountId);
+        if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+          updateUserAccountLevelData(accountId, userId, CG, user);
+        }
         log.error(
             "User {} cannot be deleted in CG, since it is active on NG in account {}", user.getEmail(), accountId);
       }
@@ -3051,6 +3150,8 @@ public class UserServiceImpl implements UserService {
       if (defaultAccountId != null) {
         updateOp.set(UserKeys.defaultAccountId, defaultAccountId);
       }
+      userServiceHelper.removeUserAccountLevelDataForThisAccount(accountId, user, updateOp);
+
       updateUser(user.getUuid(), updateOp);
     });
     auditServiceHelper.reportDeleteForAuditingUsingAccountId(accountId, user);

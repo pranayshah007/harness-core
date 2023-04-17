@@ -2048,6 +2048,9 @@
 50031:software.wings.persistence.artifact.Artifact.Status
 50032:com.mongodb.MongoExecutionTimeoutException
 50033:com.amazonaws.services.kms.model.AWSKMSException
+50034:io.harness.ng.core.user.UserAccountLevelData
+50035:io.harness.ng.core.common.beans.Generation
+50036:io.harness.ng.core.common.beans.UserSource
 54320:io.harness.ng.core.entities.Organization
 54321:io.harness.ng.core.entities.Project
 54322:io.harness.ng.core.entities.SampleEncryptableSettingImplementation

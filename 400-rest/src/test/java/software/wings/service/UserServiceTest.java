@@ -15,6 +15,8 @@ import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.beans.SearchFilter.Operator.HAS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
+import static io.harness.ng.core.common.beans.Generation.CG;
+import static io.harness.ng.core.common.beans.Generation.NG;
 import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.GEORGE;
@@ -24,6 +26,7 @@ import static io.harness.rule.OwnerRule.NANDAN;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.RUSHABH;
+import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 import static io.harness.rule.OwnerRule.UNKNOWN;
 import static io.harness.rule.OwnerRule.UTKARSH;
@@ -116,9 +119,11 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.limits.LimitCheckerFactory;
 import io.harness.ng.core.account.AuthenticationMechanism;
+import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.invites.dto.InviteOperationResponse;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -222,6 +227,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.springframework.security.crypto.bcrypt.BCrypt;
@@ -304,7 +310,7 @@ public class UserServiceTest extends WingsBaseTest {
   @Inject WingsPersistence realWingsPersistence;
   @Mock PortalConfig portalConfig;
 
-  @Mock UserServiceHelper userServiceHelper;
+  @Inject @InjectMocks UserServiceHelper userServiceHelper;
 
   @InjectMocks private HarnessUserGroupService harnessUserGroupService = mock(HarnessUserGroupServiceImpl.class);
   @InjectMocks private AccessRequestService accessRequestService = mock(AccessRequestServiceImpl.class);
@@ -664,14 +670,12 @@ public class UserServiceTest extends WingsBaseTest {
     when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
         .thenReturn(aPageResponse().build());
     when(subdomainUrlHelper.getPortalBaseUrl(ACCOUNT_ID)).thenReturn(PORTAL_URL + "/");
-
     userService.register(userBuilder.build());
 
     verify(wingsPersistence).saveAndGet(eq(User.class), userArgumentCaptor.capture());
     assertThat(BCrypt.checkpw(new String(PASSWORD), userArgumentCaptor.getValue().getPasswordHash())).isTrue();
     assertThat(userArgumentCaptor.getValue().isEmailVerified()).isFalse();
     assertThat(userArgumentCaptor.getValue().getCompanyName()).isEqualTo(COMPANY_NAME);
-
     verify(emailDataNotificationService).send(emailDataArgumentCaptor.capture());
     assertThat(emailDataArgumentCaptor.getValue().getTo().get(0)).isEqualTo(USER_EMAIL);
     assertThat(emailDataArgumentCaptor.getValue().getTemplateName()).isEqualTo(SIGNUP_EMAIL_TEMPLATE_NAME);
@@ -957,20 +961,63 @@ public class UserServiceTest extends WingsBaseTest {
    * Should delete user flow V2.
    */
   @Test
-  @Owner(developers = BOOPESH)
+  @Owner(developers = {BOOPESH, SHASHANK})
   @Category(UnitTests.class)
-  public void shouldDeleteUserV2() {
-    when(wingsPersistence.get(User.class, USER_ID)).thenReturn(userBuilder.uuid(USER_ID).build());
+  public void shouldDeleteUserV2WithAccountLevelDataFFOff() {
+    when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(false);
+    Account account = Account.Builder.anAccount()
+                          .withAccountName(ACCOUNT_NAME)
+                          .withCompanyName(COMPANY_NAME)
+                          .withUuid(ACCOUNT_ID)
+                          .build();
+    User user = userBuilder.uuid(USER_ID).accounts(Arrays.asList(account)).build();
+    userServiceHelper.populateAccountToUserMapping(user, ACCOUNT_ID, CG, UserSource.MANUAL);
+    when(wingsPersistence.get(User.class, USER_ID)).thenReturn(user);
     when(wingsPersistence.delete(User.class, USER_ID)).thenReturn(true);
-    when(wingsPersistence.findAndDelete(any(), any())).thenReturn(userBuilder.uuid(USER_ID).build());
-    when(userGroupService.list(ACCOUNT_ID,
-             aPageRequest().withLimit("0").addFilter(UserGroupKeys.memberIds, HAS, USER_ID).build(), true, null, null))
-        .thenReturn(aPageResponse().withResponse(Collections.emptyList()).withTotal(0).withLimit("0").build());
-    when(userServiceHelper.isUserActiveInNG(any(), anyString())).thenReturn(false);
+    when(wingsPersistence.findAndDelete(any(), any())).thenReturn(user);
+    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
+        .thenReturn(aPageResponse().build());
     userService.delete(ACCOUNT_ID, USER_ID);
     verify(wingsPersistence).findAndDelete(any(), any());
     verify(cache).remove(USER_ID);
     verify(auditServiceHelper, times(1)).reportDeleteForAuditingUsingAccountId(eq(ACCOUNT_ID), any(User.class));
+    mockRestStatic.close();
+  }
+
+  @Test
+  @Owner(developers = SHASHANK)
+  @Category(UnitTests.class)
+  public void shouldDeleteUserV2WithAccountLevelDataFFOn() {
+    when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(false);
+    Account account = Account.Builder.anAccount()
+                          .withAccountName(ACCOUNT_NAME)
+                          .withCompanyName(COMPANY_NAME)
+                          .withUuid(ACCOUNT_ID)
+                          .build();
+    User user = userBuilder.uuid(USER_ID).accounts(Arrays.asList(account)).build();
+    when(featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, ACCOUNT_ID)).thenReturn(true);
+    userServiceHelper.populateAccountToUserMapping(user, ACCOUNT_ID, CG, UserSource.MANUAL);
+    when(wingsPersistence.get(User.class, USER_ID)).thenReturn(user);
+    when(wingsPersistence.delete(User.class, USER_ID)).thenReturn(true);
+    when(wingsPersistence.findAndDelete(any(), any())).thenReturn(user);
+    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
+        .thenReturn(aPageResponse().build());
+    userService.delete(ACCOUNT_ID, USER_ID);
+    verify(wingsPersistence).findAndDelete(any(), any());
+    verify(cache).remove(USER_ID);
+    verify(auditServiceHelper, times(1)).reportDeleteForAuditingUsingAccountId(eq(ACCOUNT_ID), any(User.class));
+
+    user.getUserAccountLevelDataMap().remove(ACCOUNT_ID);
+    userServiceHelper.populateAccountToUserMapping(user, ACCOUNT_ID, NG, UserSource.MANUAL);
+    userService.delete(ACCOUNT_ID, USER_ID);
+    verify(wingsPersistence, times(1)).findAndDelete(any(), any());
+    verify(cache, times(2)).remove(USER_ID);
+    verify(auditServiceHelper, times(1)).reportDeleteForAuditingUsingAccountId(eq(ACCOUNT_ID), any(User.class));
+    mockRestStatic.close();
   }
   /**
    * Should fetch user.

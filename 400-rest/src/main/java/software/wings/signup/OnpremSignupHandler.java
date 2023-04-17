@@ -9,6 +9,7 @@ package software.wings.signup;
 
 import static io.harness.annotations.dev.HarnessModule._950_NG_SIGNUP;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.ng.core.common.beans.Generation.CG;
 
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
@@ -56,7 +57,7 @@ public class OnpremSignupHandler implements SignupHandler {
     Optional<Account> defaultAccount = fetchDefaultAccount();
     if (defaultAccount.isPresent()) {
       userService.createNewUserAndSignIn(
-          mapUserInviteToUser(userInvite, defaultAccount.get()), defaultAccount.get().getUuid());
+          mapUserInviteToUser(userInvite, defaultAccount.get()), defaultAccount.get().getUuid(), CG);
     } else {
       userService.saveUserInvite(userInvite);
       userService.completeTrialSignupAndSignIn(userInvite);
