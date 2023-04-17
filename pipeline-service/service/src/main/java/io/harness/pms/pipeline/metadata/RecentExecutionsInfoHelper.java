@@ -96,15 +96,15 @@ public class RecentExecutionsInfoHelper {
    * @param planExecution -> planExecution has only entity metadata
    */
   public void onExecutionUpdate(Ambiance ambiance, PlanExecution planExecution) {
-    String accountId = AmbianceUtils.getAccountId(ambiance);
-    String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
-    String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
     ExecutionMetadata executionMetadata = ambiance.getMetadata();
-    String pipelineIdentifier = executionMetadata.getPipelineIdentifier();
-    String planExecutionId = planExecution.getUuid();
     if (ExecutionModeUtils.isRollbackMode(executionMetadata.getExecutionMode())) {
       return;
     }
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+    String pipelineIdentifier = executionMetadata.getPipelineIdentifier();
+    String planExecutionId = planExecution.getUuid();
     Informant0<List<RecentExecutionInfo>> subject = (List<RecentExecutionInfo> recentExecutionInfoList) -> {
       if (recentExecutionInfoList == null) {
         return;
