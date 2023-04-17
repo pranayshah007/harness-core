@@ -51,6 +51,7 @@ import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.beans.RollbackExecutionInfo;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
@@ -1008,6 +1009,22 @@ public class RetryExecuteHelperTest extends CategoryTest {
     assertThat(retryInfo.getErrorMessage())
         .isEqualTo(
             "This execution is not the latest of all retried execution. You can only retry the latest execution.");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testValidateRetryForExecutionsThatHaveUndergonePRB() {
+    doReturn(PipelineExecutionSummaryEntity.builder()
+                 .isLatestExecution(true)
+                 .rollbackExecutionInfo(RollbackExecutionInfo.builder().rollbackModeExecutionId("something").build())
+                 .build())
+        .when(executionService)
+        .getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecId, false);
+    RetryInfo retryInfo = retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId);
+    assertThat(retryInfo.isResumable()).isFalse();
+    assertThat(retryInfo.getErrorMessage())
+        .isEqualTo("This execution has undergone Pipeline Rollback, and hence cannot be retried.");
   }
 
   @Test
