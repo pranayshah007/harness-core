@@ -16,7 +16,7 @@ import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
 import io.harness.plancreator.stages.parallel.v1.ParallelPlanCreatorV1;
 import io.harness.plancreator.steps.NGStageStepsPlanCreator;
 import io.harness.plancreator.steps.SpecNodePlanCreator;
-import io.harness.plancreator.steps.StepGroupPMSPlanCreator;
+import io.harness.plancreator.steps.StepGroupPMSPlanCreatorV2;
 import io.harness.plancreator.steps.v1.StepsPlanCreatorV1;
 import io.harness.plancreator.strategy.StrategyConfigPlanCreator;
 import io.harness.plancreator.strategy.v1.StrategyConfigPlanCreatorV1;
@@ -42,7 +42,8 @@ public interface PipelineServiceInfoDecorator extends PipelineServiceInfoProvide
     planCreators.add(new NGStageStepsPlanCreator());
     planCreators.add(new StepsPlanCreatorV1());
     planCreators.add(new ExecutionPmsPlanCreator());
-    planCreators.add(new StepGroupPMSPlanCreator());
+    //    planCreators.add(new StepGroupPMSPlanCreator());
+    planCreators.add(new StepGroupPMSPlanCreatorV2());
     planCreators.add(new StrategyConfigPlanCreator());
     planCreators.add(new StrategyConfigPlanCreatorV1());
     planCreators.add(new SpecNodePlanCreator());
