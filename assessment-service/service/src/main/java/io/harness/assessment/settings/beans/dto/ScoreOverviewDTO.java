@@ -7,17 +7,23 @@
 
 package io.harness.assessment.settings.beans.dto;
 
+import io.harness.assessment.settings.beans.entities.Score;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class BenchmarkDTO {
-  @NotNull String benchmarkId;
-  @NotNull String benchmarkName;
-  @Valid @Size(min = 1, max = 200) List<ScoreDTO> scores;
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class ScoreOverviewDTO {
+  Score selfScore;
+  Score organizationScore;
+  Score benchmarkScore;
+  Long numberOfResponses;
+  Integer percentageDiffOrg;
+  Integer percentageDiffBenchmark;
+  List<UserResponsesResponse> best;
+  List<UserResponsesResponse> worst;
 }
