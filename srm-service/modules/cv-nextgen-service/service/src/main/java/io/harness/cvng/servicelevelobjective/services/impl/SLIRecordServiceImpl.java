@@ -33,7 +33,6 @@ import com.mongodb.ReadPreference;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Sort;
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -155,12 +154,17 @@ public class SLIRecordServiceImpl implements SLIRecordService {
 
   @Override
   public List<SLIRecord> getSLIRecordsForLookBackDuration(String sliId, long lookBackDuration) {
-    Instant startTime = clock.instant().minusMillis(lookBackDuration);
-    Instant endTime = clock.instant().minusMillis(Duration.ofMinutes(1).toMillis());
+    SLIRecord latestSLIRecord = getLatestSLIRecord(sliId);
+    if (latestSLIRecord == null) {
+      return new ArrayList<>();
+    }
+    Instant endTime = latestSLIRecord.getTimestamp();
+    Instant startTime = endTime.minusMillis(lookBackDuration).plus(1, ChronoUnit.MINUTES);
     List<Instant> minutes = new ArrayList<>();
     minutes.add(startTime);
-    minutes.add(endTime);
-    return getSLIRecordsOfMinutes(sliId, minutes);
+    List<SLIRecord> sliRecords = getSLIRecordsOfMinutes(sliId, minutes);
+    sliRecords.add(latestSLIRecord);
+    return sliRecords;
   }
 
   @Override
