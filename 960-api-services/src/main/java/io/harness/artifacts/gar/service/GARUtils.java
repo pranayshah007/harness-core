@@ -32,4 +32,11 @@ public class GARUtils {
     }
     return true;
   }
+
+  public String getImageName(String image, String tag) {
+    if (isSHA(tag)) {
+      return String.format("%s@%s", image, tag);
+    }
+    return String.format("%s:%s", image, tag);
+  }
 }

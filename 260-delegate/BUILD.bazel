@@ -78,6 +78,7 @@ springboot(
         "@maven//:org_mongodb_mongodb_driver_core",
         "@maven//:org_mongodb_mongodb_driver_sync",
         "@maven//:org_mongodb_mongodb_driver_legacy",
+        "@maven//:org_springframework_spring_web",
     ],
     java_library = ":module",
     visibility = ["//visibility:public"],

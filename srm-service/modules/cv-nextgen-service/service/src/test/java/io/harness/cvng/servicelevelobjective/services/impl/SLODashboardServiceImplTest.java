@@ -912,6 +912,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
                        .name("requestComposite")
                        .identifier("requestComposite")
                        .spec(CompositeServiceLevelObjectiveSpec.builder()
+                                 .evaluationType(SLIEvaluationType.REQUEST)
                                  .serviceLevelObjectivesDetails(Arrays.asList(
                                      ServiceLevelObjectiveDetailsDTO.builder()
                                          .serviceLevelObjectiveRef("new_five")
@@ -1033,6 +1034,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
                        .name("requestComposite")
                        .identifier("requestComposite")
                        .spec(CompositeServiceLevelObjectiveSpec.builder()
+                                 .evaluationType(SLIEvaluationType.REQUEST)
                                  .serviceLevelObjectivesDetails(Arrays.asList(
                                      ServiceLevelObjectiveDetailsDTO.builder()
                                          .serviceLevelObjectiveRef("new_five")
