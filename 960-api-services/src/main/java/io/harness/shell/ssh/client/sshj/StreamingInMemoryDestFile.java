@@ -12,10 +12,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import net.schmizz.sshj.xfer.InMemoryDestFile;
 
-@Data
 @AllArgsConstructor
 public class StreamingInMemoryDestFile extends InMemoryDestFile implements Closeable {
   private ByteArrayOutputStream outputStream;
@@ -26,12 +24,12 @@ public class StreamingInMemoryDestFile extends InMemoryDestFile implements Close
   }
 
   @Override
-  public ByteArrayOutputStream getOutputStream() throws IOException {
+  public ByteArrayOutputStream getOutputStream() {
     return this.outputStream;
   }
 
   @Override
-  public OutputStream getOutputStream(boolean append) throws IOException {
+  public OutputStream getOutputStream(boolean append) {
     return this.outputStream;
   }
 

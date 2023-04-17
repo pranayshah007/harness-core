@@ -16,19 +16,17 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.ExecutionException;
-import lombok.Data;
 import net.schmizz.sshj.xfer.InMemorySourceFile;
 
-@Data
 public class StreamingInMemorySourceFile extends InMemorySourceFile implements Closeable {
-  private ByteArrayOutputStream byteArrayOutputStream;
-  private BufferedInputStream inputStream;
-  private String fileName;
+  private final ByteArrayOutputStream byteArrayOutputStream;
+  private final BufferedInputStream inputStream;
+  private final String fileName;
 
   public StreamingInMemorySourceFile(AbstractScriptExecutor.FileProvider fileProvider)
       throws IOException, ExecutionException {
     this.fileName = fileProvider.getInfo().getKey();
-    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    this.byteArrayOutputStream = new ByteArrayOutputStream();
     fileProvider.downloadToStream(byteArrayOutputStream);
     this.inputStream = new BufferedInputStream(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
   }
