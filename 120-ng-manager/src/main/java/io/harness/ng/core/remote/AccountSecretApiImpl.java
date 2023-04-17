@@ -102,8 +102,8 @@ public class AccountSecretApiImpl implements AccountSecretApi {
 
   @Override
   public Response getAccountScopedSecrets(List<String> secret, List<String> type, Boolean recursive, String searchTerm,
-      Integer page, Integer limit, String account) {
-    return getSecrets(account, secret, type, recursive, searchTerm, page, limit);
+      Integer page, Integer limit, String account, String sort, String order) {
+    return getSecrets(account, secret, type, recursive, searchTerm, page, limit, sort, order);
   }
 
   @Override
@@ -201,10 +201,10 @@ public class AccountSecretApiImpl implements AccountSecretApi {
   }
 
   private Response getSecrets(String account, List<String> secret, List<String> type, Boolean recursive,
-      String searchTerm, Integer page, Integer limit) {
+      String searchTerm, Integer page, Integer limit, String sort, String order) {
     List<SecretType> secretTypes = secretApiUtils.toSecretTypes(type);
-    Page<SecretResponseWrapper> secretPage =
-        ngSecretService.list(account, null, null, secret, secretTypes, recursive, searchTerm, page, limit, null, false);
+    Page<SecretResponseWrapper> secretPage = ngSecretService.list(account, null, null, secret, secretTypes, recursive,
+        searchTerm, null, false, ApiUtils.getPageRequest(page, limit, sort, order));
     List<SecretResponseWrapper> content = getNGPageResponse(secretPage).getContent();
 
     List<SecretResponse> secretResponse =

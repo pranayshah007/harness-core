@@ -15,6 +15,8 @@ import io.harness.cache.HarnessCacheManager;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.execution.ExecutionSummaryModuleInfoProvider;
 import io.harness.pms.sdk.core.pipeline.filters.FilterCreationResponseMerger;
+import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoDecorator;
+import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoDecoratorImpl;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
 import io.harness.pms.sdk.core.resolver.expressions.EngineGrpcExpressionService;
 import io.harness.version.VersionInfoManager;
@@ -56,6 +58,7 @@ class PmsSdkProviderModule extends AbstractModule {
     }
     if (config.getPipelineServiceInfoProviderClass() != null) {
       bind(PipelineServiceInfoProvider.class).to(config.getPipelineServiceInfoProviderClass()).in(Singleton.class);
+      bind(PipelineServiceInfoDecorator.class).to(PipelineServiceInfoDecoratorImpl.class).in(Singleton.class);
     }
   }
 

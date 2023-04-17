@@ -7,8 +7,8 @@
 
 package io.harness.notification.senders;
 
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.apache.http.entity.mime.MIME.CONTENT_TYPE;
-import static org.springframework.util.MimeTypeUtils.APPLICATION_JSON_VALUE;
 
 import io.harness.delegate.beans.NotificationProcessingResponse;
 
@@ -25,13 +25,13 @@ import okhttp3.Response;
 public class MSTeamsSenderImpl {
   private final OkHttpClient okHttpClient = new OkHttpClient.Builder().retryOnConnectionFailure(true).build();
 
-  private static final MediaType APPLICATION_JSON = MediaType.parse(APPLICATION_JSON_VALUE);
+  private static final MediaType APPLICATION_JSON_VALUE = MediaType.parse(APPLICATION_JSON);
 
   public int sendMessage(String message, String webhookUrl) {
     try {
-      RequestBody body = RequestBody.create(APPLICATION_JSON, message);
+      RequestBody body = RequestBody.create(APPLICATION_JSON_VALUE, message);
       Request request =
-          new Request.Builder().url(webhookUrl).post(body).addHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE).build();
+          new Request.Builder().url(webhookUrl).post(body).addHeader(CONTENT_TYPE, APPLICATION_JSON).build();
       try (Response response = okHttpClient.newCall(request).execute()) {
         if (!response.isSuccessful()) {
           String bodyString = (null != response.body()) ? response.body().string() : "null";

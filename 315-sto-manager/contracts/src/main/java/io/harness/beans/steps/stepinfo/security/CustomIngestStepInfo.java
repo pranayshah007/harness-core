@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.STO;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
-import io.harness.yaml.sto.variables.STOYamlGenericConfig;
+import io.harness.yaml.sto.variables.STOYamlCustomIngestConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -21,6 +21,7 @@ import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.TypeAlias;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -30,7 +31,15 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.CustomIngestStepInfo")
 public class CustomIngestStepInfo extends STOGenericStepInfo {
+  private static final String PRODUCT_NAME = "custom";
+
   @NotNull
-  @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlGenericConfig")
-  protected STOYamlGenericConfig config;
+  @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlCustomIngestConfig")
+  @Field(name = "customIngestConfig")
+  protected STOYamlCustomIngestConfig config;
+
+  @ApiModelProperty(hidden = true)
+  public String getProductName() {
+    return PRODUCT_NAME;
+  }
 }

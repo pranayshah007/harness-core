@@ -60,6 +60,7 @@ public interface UserClient {
   String USER_SAFE_DELETE = "ng/user/safeDelete/{userId}";
   String UPDATE_USER_API = "ng/user/user";
   String CREATE_USER_VIA_INVITE = "ng/user/invites/create-user";
+  String CREATE_USER_WITH_ACCOUNT_LEVEL_DATA_VIA_INVITE = "ng/user/invites/user";
   String CHECK_USER_LIMIT = "ng/user/limit-check";
   String USER_TWO_FACTOR_AUTH_SETTINGS = "ng/user/two-factor-auth/{auth-mechanism}";
   String USER_ENABLE_TWO_FACTOR_AUTH = "ng/user/enable-two-factor-auth";
@@ -130,7 +131,9 @@ public interface UserClient {
   Call<RestResponse<Boolean>> createUserAndCompleteNGInvite(@Body UserInviteDTO userInviteDTO,
       @Query("isScimInvite") boolean isScimInvite,
       @Query("shouldSendTwoFactorAuthResetEmail") boolean shouldSendTwoFactorAuthResetEmail);
-
+  @PUT(CREATE_USER_WITH_ACCOUNT_LEVEL_DATA_VIA_INVITE)
+  Call<RestResponse<Boolean>> createUserWithAccountLevelDataAndCompleteNGInvite(@Body UserInviteDTO userInviteDTO,
+      @Query("shouldSendTwoFactorAuthResetEmail") boolean shouldSendTwoFactorAuthResetEmail);
   @GET(USER_IN_ACCOUNT_VERIFICATION)
   Call<RestResponse<Boolean>> isUserInAccount(
       @Query(value = "accountId") String accountId, @Query(value = "userId") String userId);

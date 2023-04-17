@@ -237,8 +237,10 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
             .configFile(helper.getGitFetchFilesConfig(
                 inheritOutput.getConfigFiles(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
             .tfModuleSourceInheritSSH(inheritOutput.isUseConnectorCredentials())
-            .fileStoreConfigFiles(helper.getFileStoreFetchFilesConfig(
-                inheritOutput.getFileStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
+            .fileStoreConfigFiles(inheritOutput.getFileStorageConfigDTO() != null
+                    ? helper.prepareTerraformConfigFileInfo(inheritOutput.getFileStorageConfigDTO(), ambiance)
+                    : helper.getFileStoreFetchFilesConfig(
+                        inheritOutput.getFileStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
             .varFileInfos(helper.prepareTerraformVarFileInfo(inheritOutput.getVarFileConfigs(), ambiance))
             .backendConfig(inheritOutput.getBackendConfig())
             .backendConfigFileInfo(helper.prepareTerraformBackendConfigFileInfo(

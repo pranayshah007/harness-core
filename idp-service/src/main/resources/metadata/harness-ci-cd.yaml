@@ -1,0 +1,30 @@
+identifier: harness-ci-cd
+name: Harness CI/CD
+description: This plugin lets you view Harness pipeline execution details inside Backstage.
+createdBy: harness.io
+category: CI/CD
+core: true
+source: https://github.com/harness/backstage-plugins/tree/main/plugins/harness-ci-cd
+iconUrl: https://static.harness.io/ng-static/images/favicon.png
+imageUrl: ''
+config: |-
+  proxy:
+    '/harness':
+      target: 'https://app.harness.io/'
+      headers:
+        'x-api-key': ${HARNESS_TOKEN}
+environmentVariables:
+  - HARNESS_TOKEN
+exports:
+  defaultEntityTypes:
+    - service
+  exportDetails:
+    - type: TAB_CONTENT
+      name: EntityHarnessCiCdContent
+      addByDefault: true
+      defaultRoute: /ci-cd
+      layoutSchemaSpecs:
+        name: EntityHarnessCiCdContent
+        title: CI/CD
+        contents:
+          - component: EntityHarnessCiCdContent

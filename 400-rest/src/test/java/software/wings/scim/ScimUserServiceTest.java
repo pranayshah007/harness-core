@@ -9,6 +9,8 @@ package software.wings.scim;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.ng.core.common.beans.Generation.CG;
+import static io.harness.ng.core.common.beans.UserSource.SCIM;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.TEJAS;
@@ -42,6 +44,7 @@ import software.wings.beans.User.UserKeys;
 import software.wings.beans.UserInvite;
 import software.wings.beans.security.UserGroup;
 import software.wings.dl.WingsPersistence;
+import software.wings.service.impl.UserServiceHelper;
 import software.wings.service.intfc.UserService;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -50,6 +53,7 @@ import com.google.gson.JsonObject;
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateOpsImpl;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -81,6 +85,7 @@ public class ScimUserServiceTest extends WingsBaseTest {
   @Mock private FeatureFlagService featureFlagService;
 
   @Inject @InjectMocks ScimUserService scimUserService;
+  @Inject @InjectMocks UserServiceHelper userServiceHelper;
 
   UpdateOperations<User> updateOperations;
   Query<User> userQuery;
@@ -403,11 +408,19 @@ public class ScimUserServiceTest extends WingsBaseTest {
     UserInvite userInvite = new UserInvite();
     userInvite.setUuid(generateUuid());
 
+    userServiceHelper.populateAccountToUserMapping(user, account.getUuid(), CG, SCIM);
     when(userService.get(account.getUuid(), user.getUuid())).thenReturn(user);
     when(wingsPersistence.createUpdateOperations(User.class)).thenReturn(updateOperations);
+
     Response response = scimUserService.updateUser(user.getUuid(), account.getUuid(), scimUser);
     verify(userService, times(1)).updateUser(user.getUuid(), updateOperations);
+    assertThat(((UpdateOpsImpl) updateOperations).getOps().toString().contains("userAccountLevelDataMap")).isFalse();
+    assertThat(response.getStatus()).isNotNull();
 
+    when(featureFlagService.isEnabled(eq(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW), any())).thenReturn(true);
+    response = scimUserService.updateUser(user.getUuid(), account.getUuid(), scimUser);
+    verify(userService, times(2)).updateUser(user.getUuid(), updateOperations);
+    assertThat(((UpdateOpsImpl) updateOperations).getOps().toString().contains("userAccountLevelDataMap")).isTrue();
     assertThat(response.getStatus()).isNotNull();
   }
 

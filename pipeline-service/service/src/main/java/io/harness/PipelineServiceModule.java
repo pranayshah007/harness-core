@@ -69,6 +69,7 @@ import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.plancreator.steps.pluginstep.ContainerStepV2PluginProvider;
 import io.harness.pms.approval.ApprovalResourceService;
 import io.harness.pms.approval.ApprovalResourceServiceImpl;
 import io.harness.pms.approval.custom.CustomApprovalHelperServiceImpl;
@@ -149,6 +150,7 @@ import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.plan.execution.service.PMSExecutionServiceImpl;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryServiceImpl;
+import io.harness.pms.plugin.ContainerStepV2PluginProviderImpl;
 import io.harness.pms.preflight.service.PreflightService;
 import io.harness.pms.preflight.service.PreflightServiceImpl;
 import io.harness.pms.rbac.validator.PipelineRbacService;
@@ -463,6 +465,7 @@ public class PipelineServiceModule extends AbstractModule {
     bind(ServiceNowApprovalHelperService.class).to(ServiceNowApprovalHelperServiceImpl.class);
     bind(ServiceNowStepHelperService.class).to(ServiceNowStepHelperServiceImpl.class);
     bind(GithubService.class).to(GithubServiceImpl.class);
+    bind(ContainerStepV2PluginProvider.class).to(ContainerStepV2PluginProviderImpl.class);
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));

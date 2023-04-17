@@ -35,6 +35,7 @@ import io.harness.execution.PlanExecution;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitx.USER_FLOW;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -52,6 +53,7 @@ import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.stages.StageExecutionResponse;
 import io.harness.pms.stages.StageExecutionSelectorHelper;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.orchestrationEventLog.OrchestrationEventLogRepository;
 import io.harness.utils.PipelineGitXHelper;
 import io.harness.utils.PmsFeatureFlagHelper;
@@ -89,6 +91,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   @Inject private final PMSPipelineTemplateHelper pipelineTemplateHelper;
   @Inject PmsFeatureFlagHelper pmsFeatureFlagHelper;
   @Inject private final PmsFeatureFlagService pmsFeatureFlagService;
+  @Inject private NGSettingsClient settingsClient;
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
@@ -300,6 +303,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
         PipelineRbacPermissions.PIPELINE_EXECUTE);
 
     checkIfInterruptIsDeprecated(accountId, executionInterruptType);
+    checkIfInterruptIsBehindSettingsAndIsEnabled(accountId, orgId, projectId, executionInterruptType);
     return ResponseDTO.newResponse(
         pmsExecutionService.registerInterrupt(executionInterruptType, planExecutionId, null));
   }
@@ -310,6 +314,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
       @NotNull String projectId, @NotNull PlanExecutionInterruptType executionInterruptType,
       @NotNull String planExecutionId, @NotNull String nodeExecutionId) {
     checkIfInterruptIsDeprecated(accountId, executionInterruptType);
+    checkIfInterruptIsBehindSettingsAndIsEnabled(accountId, orgId, projectId, executionInterruptType);
     return ResponseDTO.newResponse(
         pmsExecutionService.registerInterrupt(executionInterruptType, planExecutionId, nodeExecutionId));
   }
@@ -443,6 +448,30 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
         && pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.PIE_DEPRECATE_PAUSE_INTERRUPT_NG)) {
       throw new InvalidRequestException(
           "The given interrupt type is deprecated. Please contact Harness for further support.");
+    }
+  }
+
+  private void checkIfInterruptIsBehindSettingsAndIsEnabled(@NotNull String accountId, @NotNull String orgId,
+      @NotNull String projectId, PlanExecutionInterruptType executionInterruptType) {
+    String allowUserToMarkStepAsFailedExplicitlySettingsStatus = null;
+    String allowUserToMarkStepAsFailedExplicitly = "allow_user_to_mark_step_as_failed_explicitly";
+    String allowUserToMarkStepAsFailedExplicitlyTrueValue = "true";
+    if (PlanExecutionInterruptType.UserMarkedFailure.equals(executionInterruptType)) {
+      try {
+        allowUserToMarkStepAsFailedExplicitlySettingsStatus =
+            NGRestUtils
+                .getResponse(
+                    settingsClient.getSetting(allowUserToMarkStepAsFailedExplicitly, accountId, orgId, projectId))
+                .getValue();
+      } catch (Exception ex) {
+        log.error(String.format("Could not fetch setting [%s]", allowUserToMarkStepAsFailedExplicitly), ex);
+        throw new InvalidRequestException(
+            "Could not fetch [Allow user to mark the step as failed explicitly] Settings, Please contact Harness for further support.");
+      }
+      if (!allowUserToMarkStepAsFailedExplicitlyTrueValue.equals(allowUserToMarkStepAsFailedExplicitlySettingsStatus)) {
+        throw new InvalidRequestException(
+            "[Allow user to mark the step as failed explicitly] Settings is not enabled, Please enable this setting if you want to use this product.");
+      }
     }
   }
 }

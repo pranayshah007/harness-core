@@ -20,6 +20,7 @@ import io.harness.beans.steps.stepinfo.security.BlackDuckStepInfo;
 import io.harness.beans.steps.stepinfo.security.BurpStepInfo;
 import io.harness.beans.steps.stepinfo.security.CheckmarxStepInfo;
 import io.harness.beans.steps.stepinfo.security.FortifyOnDemandStepInfo;
+import io.harness.beans.steps.stepinfo.security.FossaStepInfo;
 import io.harness.beans.steps.stepinfo.security.GrypeStepInfo;
 import io.harness.beans.steps.stepinfo.security.MendStepInfo;
 import io.harness.beans.steps.stepinfo.security.MetasploitStepInfo;
@@ -73,6 +74,8 @@ public final class STOSettingsUtils {
   public static final String SECURITY_ENV_PREFIX = "SECURITY_";
   public static final String PRODUCT_PROJECT_VERSION = "product_project_version";
 
+  public static final String AWS_ACCOUNT = "aws_account";
+  public static final String CONFIGURATION_TYPE = "configuration_type";
   public static final String PRODUCT_PROJECT_KEY = "product_project_key";
   public static final String PRODUCT_PROJECT_NAME = "product_project_name";
   public static final String PRODUCT_PROJECT_TOKEN = "product_project_token";
@@ -260,7 +263,6 @@ public final class STOSettingsUtils {
           map.put(getSTOKey("repository_branch"), targetVariant);
           break;
         case CONFIGURATION:
-          map.put(getSTOKey("configuration_type"), targetName);
           map.put(getSTOKey("configuration_environment"), targetVariant);
           break;
         default:
@@ -339,6 +341,7 @@ public final class STOSettingsUtils {
   private static Map<String, String> processSTOBurpFields(BurpStepInfo stepInfo, String stepType, String identifier) {
     Map<String, String> map = new HashMap<>();
 
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
     map.putAll(processSTOInstanceFields(stepInfo.getInstance(), stepType, identifier));
 
     return map;
@@ -449,6 +452,14 @@ public final class STOSettingsUtils {
     return map;
   }
 
+  private static Map<String, String> processSTOFossaFields(FossaStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
+
+    return map;
+  }
+
   private static Map<String, String> processSTOAquaTrivyFields(
       AquaTrivyStepInfo stepInfo, String stepType, String identifier) {
     Map<String, String> map = new HashMap<>();
@@ -482,7 +493,6 @@ public final class STOSettingsUtils {
           resolveStringParameter(TOOL_PRODUCT_NAME, stepType, identifier, toolData.getProductName(), false));
       map.put(getSTOKey(PRODUCT_PRODUCT_TOKEN),
           resolveStringParameter(TOOL_PRODUCT_TOKEN, stepType, identifier, toolData.getProductToken(), false));
-
       map.put(getSTOKey(PRODUCT_EXCLUDE),
           resolveStringParameter(TOOL_EXCLUDE, stepType, identifier, toolData.getExclude(), false));
       map.put(getSTOKey(PRODUCT_INCLUDE),
@@ -523,6 +533,7 @@ public final class STOSettingsUtils {
       AwsSecurityHubStepInfo stepInfo, String stepType, String identifier) {
     Map<String, String> map = new HashMap<>();
 
+    map.put(getSTOKey(CONFIGURATION_TYPE), AWS_ACCOUNT);
     map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
 
     return map;
@@ -557,6 +568,7 @@ public final class STOSettingsUtils {
       ProwlerStepInfo stepInfo, String stepType, String identifier) {
     Map<String, String> map = new HashMap<>();
 
+    map.put(getSTOKey(CONFIGURATION_TYPE), AWS_ACCOUNT);
     map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
 
     return map;
@@ -638,6 +650,9 @@ public final class STOSettingsUtils {
         break;
       case FORTIFY_ON_DEMAND:
         map.putAll(processSTOFODFields((FortifyOnDemandStepInfo) stepInfo, stepType, identifier));
+        break;
+      case FOSSA:
+        map.putAll(processSTOFossaFields((FossaStepInfo) stepInfo, stepType, identifier));
         break;
       case MEND:
         map.putAll(processSTOMendFields((MendStepInfo) stepInfo, stepType, identifier));

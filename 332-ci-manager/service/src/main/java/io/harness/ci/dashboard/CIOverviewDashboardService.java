@@ -15,6 +15,7 @@ import io.harness.app.beans.entities.DashboardBuildExecutionInfo;
 import io.harness.app.beans.entities.DashboardBuildRepositoryInfo;
 import io.harness.app.beans.entities.DashboardBuildsHealthInfo;
 import io.harness.licensing.usage.beans.UsageDataDTO;
+import io.harness.pms.dashboards.GroupBy;
 
 import java.util.List;
 
@@ -25,7 +26,7 @@ public interface CIOverviewDashboardService {
       long startInterval, long endInterval, long previousStartInterval);
 
   DashboardBuildExecutionInfo getBuildExecutionBetweenIntervals(
-      String accountId, String orgId, String projectId, long startInterval, long endInterval);
+      String accountId, String orgId, String projectId, GroupBy groupBy, long startInterval, long endInterval);
 
   List<BuildFailureInfo> getDashboardBuildFailureInfo(String accountId, String orgId, String projectId, long days);
 

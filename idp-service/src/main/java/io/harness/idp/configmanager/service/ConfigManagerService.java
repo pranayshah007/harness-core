@@ -14,6 +14,7 @@ import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.AppConfigRequest;
 import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 
+import java.util.List;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.IDP)
@@ -23,7 +24,10 @@ public interface ConfigManagerService {
 
   AppConfig saveConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType) throws Exception;
 
-  AppConfig updateConfigForAccount(AppConfigRequest appConfigRequest, String accountIdentifier, ConfigType configType)
+  AppConfig saveOrUpdateConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType)
+      throws Exception;
+
+  AppConfig updateConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType)
       throws Exception;
 
   AppConfig toggleConfigForAccount(String accountIdentifier, String configId, Boolean isEnabled, ConfigType configType);
@@ -31,4 +35,6 @@ public interface ConfigManagerService {
   MergedAppConfigEntity mergeAndSaveAppConfig(String accountIdentifier) throws Exception;
 
   MergedPluginConfigs mergeEnabledPluginConfigsForAccount(String accountIdentifier) throws Exception;
+
+  List<AppConfigEntity> deleteDisabledPluginsConfigsDisabledMoreThanAWeekAgo();
 }

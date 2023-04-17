@@ -19,7 +19,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Collation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.repository.support.PageableExecutionUtils;
@@ -33,7 +32,6 @@ public class VariableRepositoryCustomImpl implements VariableRepositoryCustom {
   @Override
   public Page<Variable> findAll(Criteria criteria, Pageable pageable) {
     Query query = new Query(criteria).with(pageable);
-    query.collation(Collation.of("en").strength(Collation.ComparisonLevel.secondary()));
     List<Variable> variables = mongoTemplate.find(query, Variable.class);
 
     return PageableExecutionUtils.getPage(

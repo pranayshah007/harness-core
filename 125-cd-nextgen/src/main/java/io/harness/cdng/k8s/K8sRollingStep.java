@@ -109,7 +109,6 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
         k8sStepHelper.renderValues(k8sManifestOutcome, ambiance, manifestOverrideContents);
     boolean isOpenshiftTemplate = ManifestType.OpenshiftTemplate.equals(k8sManifestOutcome.getType());
     final String accountId = AmbianceUtils.getAccountId(ambiance);
-
     boolean isCanaryWorkflow = false;
     String canaryStepFqn = k8sRollingStepParameters.getCanaryStepFqn();
     if (canaryStepFqn != null) {

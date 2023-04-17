@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PL_NEW_SCIM_STANDARDS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.common.beans.Generation.CG;
+import static io.harness.ng.core.common.beans.UserSource.SCIM;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -33,6 +35,7 @@ import software.wings.beans.UserInvite.UserInviteBuilder;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.security.UserGroup.UserGroupKeys;
 import software.wings.dl.WingsPersistence;
+import software.wings.service.impl.UserServiceHelper;
 import software.wings.service.intfc.UserService;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -62,6 +65,7 @@ public class ScimUserServiceImpl implements ScimUserService {
   @Inject private UserService userService;
   @Inject private WingsPersistence wingsPersistence;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private UserServiceHelper userServiceHelper;
 
   private static final Integer MAX_RESULT_COUNT = 20;
   private static final String GIVEN_NAME = "givenName";
@@ -460,6 +464,13 @@ public class ScimUserServiceImpl implements ScimUserService {
 
       if (userUpdate) {
         updateOperations.set(UserKeys.imported, true);
+
+        if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
+            && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
+          userServiceHelper.populateAccountToUserMapping(user, accountId, CG, SCIM);
+          updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
+        }
+
         userService.updateUser(user.getUuid(), updateOperations);
       }
       log.info("SCIM: user {} was updated {} with updateOperations {} in account: {}", user.getUuid(), userUpdate,

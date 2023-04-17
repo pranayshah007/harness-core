@@ -13,6 +13,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.pms.contracts.plan.SetupMetadata;
 import io.harness.pms.exception.runtime.InvalidYamlRuntimeException;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.yaml.ParameterField;
@@ -33,8 +34,14 @@ public class ShellScriptStepFilterJsonCreatorV2Test extends CategoryTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void testShellScriptFilterJson() {
-    FilterCreationContext context =
-        FilterCreationContext.builder().currentField(new YamlField("script", new YamlNode(null))).build();
+    FilterCreationContext context = FilterCreationContext.builder()
+                                        .currentField(new YamlField("script", new YamlNode(null)))
+                                        .setupMetadata(SetupMetadata.newBuilder()
+                                                           .setAccountId("accountId")
+                                                           .setOrgId("orgId")
+                                                           .setProjectId("projectId")
+                                                           .build())
+                                        .build();
     ShellScriptStepFilterJsonCreatorV2 creator = new ShellScriptStepFilterJsonCreatorV2();
     ShellScriptStepNode scriptStepNode = new ShellScriptStepNode();
 

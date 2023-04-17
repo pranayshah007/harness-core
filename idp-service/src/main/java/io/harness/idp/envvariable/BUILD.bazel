@@ -24,6 +24,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/morphia:module",
         "//999-annotations:module",
         "//idp-service/contracts/openapi/v1:idp-service-server-spec-module",
+        "//idp-service/src/main/java/io/harness/idp/common:module",
         "//idp-service/src/main/java/io/harness/idp/events/producers:module",
         "//idp-service/src/main/java/io/harness/idp/k8s:module",
         "//idp-service/src/main/java/io/harness/idp/namespace:module",

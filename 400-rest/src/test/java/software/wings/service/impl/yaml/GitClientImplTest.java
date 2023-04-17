@@ -306,7 +306,7 @@ public class GitClientImplTest extends WingsBaseTest {
 
         try {
           session = getSSHSession(newConfig);
-        } catch (JSchException jse) {
+        } catch (Exception jse) {
           log.info("Could not get SSH session : " + jse.getMessage());
         }
       }

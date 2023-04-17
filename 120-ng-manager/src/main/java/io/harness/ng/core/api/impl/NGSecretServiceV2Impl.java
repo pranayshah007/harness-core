@@ -85,7 +85,6 @@ import io.serializer.HObjectMapper;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -417,10 +416,7 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
     if (unpagedSecrets.isEmpty()) {
       return Page.empty();
     }
-    List<Secret> secrets = new ArrayList<>(unpagedSecrets);
-    secrets.sort(Comparator.comparing(Secret::getCreatedAt).reversed());
-    // This method is used because here list of secrets have unpaginated results
-    return PageUtils.getPage(secrets, page, size);
+    return PageUtils.getPage(unpagedSecrets, page, size);
   }
 
   private Collection<Secret> checkAccess(List<Secret> secrets) {

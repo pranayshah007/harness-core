@@ -41,6 +41,7 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryRawConfig;
 import io.harness.cdng.expressionEvaluator.CustomScriptSecretExpressionEvaluator;
 import io.harness.cdng.expressionEvaluator.NgCustomSecretExpressionEvaluator;
 import io.harness.data.algorithm.HashGenerator;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -67,6 +68,7 @@ import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceFetchType;
 import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
@@ -91,8 +93,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
@@ -107,12 +107,15 @@ public class ArtifactConfigToDelegateReqMapper {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
+
     if (isRegex(tag)) {
       tagRegex = getTagRegex(tag);
     }
+
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
+
     boolean shouldFetchDockerV2DigestSHA256 =
         artifactConfig.getDigest() != null && isNotEmpty(artifactConfig.getDigest().getValue());
     return ArtifactDelegateRequestUtils.getDockerDelegateRequest(artifactConfig.getImagePath().getValue(), tag,
@@ -121,10 +124,9 @@ public class ArtifactConfigToDelegateReqMapper {
   }
 
   public boolean isRegex(String tag) {
-    try {
-      Pattern.compile(tag);
+    if (EmptyPredicate.isNotEmpty(tag) && tag.equals(ACCEPT_ALL_REGEX)) {
       return true;
-    } catch (PatternSyntaxException e) {
+    } else {
       return false;
     }
   }
@@ -138,11 +140,6 @@ public class ArtifactConfigToDelegateReqMapper {
     String bucket = artifactConfig.getBucketName().getValue();
     String filePath = artifactConfig.getFilePath().getValue();
     String filePathRegex = artifactConfig.getFilePathRegex().getValue();
-
-    if (isRegex(filePath)) {
-      filePathRegex = filePath.equals(ACCEPT_ALL_REGEX) ? "*" : filePath;
-      filePath = "";
-    }
 
     if (StringUtils.isBlank(bucket)) {
       throw new InvalidRequestException("Please input bucketName.");
@@ -159,7 +156,6 @@ public class ArtifactConfigToDelegateReqMapper {
     if (StringUtils.isBlank(filePathRegex)) {
       filePathRegex = "";
     }
-
     return ArtifactDelegateRequestUtils.getAmazonS3DelegateRequest(artifactConfig.getBucketName().getValue(), filePath,
         filePathRegex, null, connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.AMAZONS3,
         artifactConfig.getRegion() != null ? artifactConfig.getRegion().getValue() : "us-east-1");
@@ -362,6 +358,9 @@ public class ArtifactConfigToDelegateReqMapper {
     String project = artifactConfig.getProject().getValue();
     String repository = artifactConfig.getRepository().getValue();
     String sourceDirectory = artifactConfig.getSourceDirectory().getValue();
+    String branch = artifactConfig.getBranch().getValue();
+    String commitId = artifactConfig.getCommitId().getValue();
+    String tag = artifactConfig.getTag().getValue();
     if (StringUtils.isBlank(project)) {
       throw new InvalidRequestException("Please input project name.");
     }
@@ -371,8 +370,13 @@ public class ArtifactConfigToDelegateReqMapper {
     if (StringUtils.isBlank(sourceDirectory)) {
       throw new InvalidRequestException("Please input sourceDirectory path.");
     }
+    if (StringUtils.isAllBlank(branch, commitId, tag)) {
+      throw new InvalidRequestException("Please input one of these three, branch, commitId, Tag.");
+    }
     return ArtifactDelegateRequestUtils.getGoogleCloudSourceArtifactDelegateRequest(repository, project,
-        sourceDirectory, gcpConnectorDTO, connectorRef, encryptedDataDetails,
+        sourceDirectory,
+        GoogleCloudSourceFetchType.valueOf(StringUtils.upperCase(artifactConfig.getFetchType().getName())), branch,
+        commitId, tag, gcpConnectorDTO, connectorRef, encryptedDataDetails,
         ArtifactSourceType.GOOGLE_CLOUD_SOURCE_ARTIFACT);
   }
 

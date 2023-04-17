@@ -8,11 +8,15 @@
 package io.harness.steps.http;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.exception.WingsException.USER;
 
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.HttpCertificateNG;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
@@ -57,6 +61,7 @@ import io.harness.utils.PmsFeatureFlagHelper;
 
 import software.wings.beans.TaskType;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
@@ -65,6 +70,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
@@ -117,10 +123,17 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     if (httpStepParameters.getRequestBody() != null) {
       httpTaskParametersNgBuilder.body((String) httpStepParameters.getRequestBody().fetchFinalValue());
     }
-
-    boolean shouldAvoidCapabilityUsingHeaders = pmsFeatureFlagHelper.isEnabled(
-        AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_NOT_USE_HEADERS_FOR_HTTP_CAPABILITY);
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    boolean shouldAvoidCapabilityUsingHeaders =
+        pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_NOT_USE_HEADERS_FOR_HTTP_CAPABILITY);
     httpTaskParametersNgBuilder.shouldAvoidHeadersInCapability(shouldAvoidCapabilityUsingHeaders);
+
+    httpTaskParametersNgBuilder.isCertValidationRequired(
+        pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.ENABLE_CERT_VALIDATION));
+
+    if (pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_HTTP_STEP_NG_CERTIFICATE)) {
+      createCertificate(httpStepParameters).ifPresent(cert -> { httpTaskParametersNgBuilder.certificateNG(cert); });
+    }
 
     final TaskData taskData =
         TaskData.builder()
@@ -135,6 +148,25 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
             StepUtils.generateLogAbstractions(ambiance), Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT))),
         null, null, TaskSelectorYaml.toTaskSelector(httpStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
+  }
+
+  @VisibleForTesting
+  protected Optional<HttpCertificateNG> createCertificate(HttpStepParameters httpStepParameters) {
+    if (isEmpty(httpStepParameters.getCertificate().getValue())
+        && isEmpty(httpStepParameters.getCertificateKey().getValue())) {
+      return Optional.empty();
+    }
+
+    if (isEmpty(httpStepParameters.getCertificate().getValue())
+        && isNotEmpty(httpStepParameters.getCertificateKey().getValue())) {
+      throw new InvalidRequestException(
+          "Only certificateKey is provided, we need both certificate and certificateKey or only certificate", USER);
+    }
+
+    return Optional.of(HttpCertificateNG.builder()
+                           .certificate(httpStepParameters.getCertificate().getValue())
+                           .certificateKey(httpStepParameters.getCertificateKey().getValue())
+                           .build());
   }
 
   @Override
@@ -206,7 +238,7 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
 
     HttpExpressionEvaluator evaluator = new HttpExpressionEvaluator(httpStepResponse);
     String assertion = (String) stepParameters.getAssertion().fetchFinalValue();
-    if (assertion == null || EmptyPredicate.isEmpty(assertion.trim())) {
+    if (assertion == null || isEmpty(assertion.trim())) {
       return true;
     }
 

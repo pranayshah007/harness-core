@@ -32,7 +32,7 @@ public class SumoStepMapperImpl extends VerificationBaseService {
   @Override
   public AbstractStepNode getSpec(
       MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
-    return getVerifySpec(graphNode, context.getIdentifierCaseFormat());
+    return getVerifySpec(migrationContext, context, graphNode);
   }
 
   @Override

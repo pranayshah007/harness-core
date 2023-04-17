@@ -489,7 +489,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
     Secret secret3 =
         Secret.builder().name("name3").type(SecretType.SecretText).identifier("id3").createdAt((long) 3).build();
     Page<Secret> paginatedResult = secretServiceV2.getPaginatedResult(Arrays.asList(secret1, secret2, secret3), 1, 2);
-    assertThat(paginatedResult.getNumberOfElements()).isEqualTo(1);
-    assertThat(paginatedResult.getContent()).isEqualTo(Arrays.asList(secret1));
+    assertThat(paginatedResult.getContent().size()).isEqualTo(1);
+    assertThat(paginatedResult.getContent()).isEqualTo(Arrays.asList(secret3));
   }
 }

@@ -7,11 +7,14 @@
 
 package io.harness.ng.core.dto.secrets;
 
+import io.harness.beans.DecryptableEntity;
 import io.harness.ng.core.models.SecretSpec;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import java.util.Optional;
 
 @JsonTypeInfo(
@@ -28,4 +31,9 @@ public abstract class SecretSpecDTO {
   public abstract Optional<String> getErrorMessageForInvalidYaml();
 
   public abstract SecretSpec toEntity();
+
+  @JsonIgnore
+  public Optional<List<DecryptableEntity>> getDecryptableEntities() {
+    return Optional.empty();
+  }
 }

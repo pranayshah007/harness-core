@@ -12,6 +12,7 @@ import io.harness.ng.core.models.TGTGenerationSpec;
 import io.harness.ng.core.models.TGTKeyTabFilePathSpec;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -22,6 +23,11 @@ import lombok.EqualsAndHashCode;
 @JsonTypeName("KeyTabFilePath")
 public class TGTKeyTabFilePathSpecDTO extends TGTGenerationSpecDTO implements DecryptableEntity {
   private String keyPath;
+
+  @Override
+  public List<DecryptableEntity> getDecryptableEntities() {
+    return List.of(this);
+  }
 
   @Override
   public TGTGenerationSpec toEntity() {

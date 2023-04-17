@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.core.common.beans.UserSource;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -39,4 +40,5 @@ public class UserInviteDTO {
   private String externalId;
 
   @Transient @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) @NotNull private String password;
+  private UserSource userSource;
 }

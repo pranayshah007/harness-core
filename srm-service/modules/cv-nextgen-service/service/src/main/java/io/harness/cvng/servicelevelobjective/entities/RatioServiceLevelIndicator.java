@@ -100,6 +100,7 @@ public class RatioServiceLevelIndicator extends ServiceLevelIndicator {
   @Override
   public boolean shouldReAnalysis(ServiceLevelIndicator serviceLevelIndicator) {
     try {
+      Preconditions.checkArgument(this.getSliMissingDataType().equals(serviceLevelIndicator.getSliMissingDataType()));
       RatioServiceLevelIndicator ratioServiceLevelIndicator = (RatioServiceLevelIndicator) serviceLevelIndicator;
       Preconditions.checkArgument(this.getEventType().equals(ratioServiceLevelIndicator.getEventType()));
       Preconditions.checkArgument(this.getThresholdValue().equals(ratioServiceLevelIndicator.getThresholdValue()));

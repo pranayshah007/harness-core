@@ -19,5 +19,6 @@ import lombok.Value;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class WaiterConfiguration {
   public enum PersistenceLayer { SPRING, MORPHIA }
+  public boolean versioningDisabled;
   @Default PersistenceLayer persistenceLayer = PersistenceLayer.MORPHIA;
 }

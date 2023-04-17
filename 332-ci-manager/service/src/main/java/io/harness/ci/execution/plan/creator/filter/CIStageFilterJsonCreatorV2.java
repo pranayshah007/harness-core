@@ -22,6 +22,8 @@ import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.beans.yaml.extended.runtime.Runtime;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
@@ -117,28 +119,32 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
       }
     }
 
-    validateStage(stageNode);
+    validateStage(stageNode, accountId);
 
     log.info("Successfully created filter for integration stage {}", stageNode.getIdentifier());
     return ciFilterBuilder.build();
   }
 
-  private void validateRuntime(IntegrationStageConfig integrationStageConfig) {
+  private void validateRuntime(IntegrationStageConfig integrationStageConfig, String accountId) {
     Runtime runtime = integrationStageConfig.getRuntime();
-    if (runtime != null && (runtime.getType() == Runtime.Type.CLOUD || runtime.getType() == Runtime.Type.DOCKER)) {
+    if (runtime != null && runtime.getType() == Runtime.Type.DOCKER) {
       return;
+    } else if (runtime != null && runtime.getType() == Runtime.Type.CLOUD) {
+      Platform platform = integrationStageConfig.getPlatform().getValue();
+      OSType os = platform.getOs().getValue();
+      validationUtils.validateHostedStage(integrationStageConfig.getExecution(), os, accountId);
     } else {
       throw new CIStageExecutionException(
           "Infrastructure or runtime field with type Cloud (for vm) or type Docker (for docker) is mandatory for execution");
     }
   }
 
-  private void validateStage(IntegrationStageNode stageNode) {
+  private void validateStage(IntegrationStageNode stageNode, String accountId) {
     IntegrationStageConfig integrationStageConfig = stageNode.getIntegrationStageConfig();
 
     Infrastructure infrastructure = integrationStageConfig.getInfrastructure();
     if (infrastructure == null) {
-      validateRuntime(integrationStageConfig);
+      validateRuntime(integrationStageConfig, accountId);
     } else {
       if (infrastructure.getType() == Infrastructure.Type.VM) {
         validationUtils.validateVmInfraDependencies(integrationStageConfig.getServiceDependencies().getValue());
@@ -176,7 +182,7 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
 
     IntegrationStageConfig integrationStage = stageNode.getIntegrationStageConfig();
     if (integrationStage.getInfrastructure() == null) {
-      validateRuntime(integrationStage);
+      validateRuntime(integrationStage, accountIdentifier);
     } else {
       if (integrationStage.getInfrastructure().getType() == KUBERNETES_DIRECT) {
         K8sDirectInfraYaml k8sDirectInfraYaml = (K8sDirectInfraYaml) integrationStage.getInfrastructure();

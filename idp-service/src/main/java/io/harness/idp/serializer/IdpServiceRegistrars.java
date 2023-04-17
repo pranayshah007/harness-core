@@ -14,6 +14,11 @@ import io.harness.idp.serializer.kryo.IdpServiceKryoRegistrar;
 import io.harness.idp.serializer.morphia.IdpServiceMorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.serializer.kryo.ApiServiceBeansKryoRegister;
+import io.harness.serializer.kryo.CommonsKryoRegistrar;
+import io.harness.serializer.kryo.DelegateBeansKryoRegistrar;
+import io.harness.serializer.kryo.DelegateTasksBeansKryoRegister;
+import io.harness.serializer.kryo.NGCommonsKryoRegistrar;
 
 import com.google.common.collect.ImmutableSet;
 import lombok.experimental.UtilityClass;
@@ -22,7 +27,14 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(IDP)
 public class IdpServiceRegistrars {
   public static final ImmutableSet<Class<? extends KryoRegistrar>> kryoRegistrars =
-      ImmutableSet.<Class<? extends KryoRegistrar>>builder().add(IdpServiceKryoRegistrar.class).build();
+      ImmutableSet.<Class<? extends KryoRegistrar>>builder()
+          .add(IdpServiceKryoRegistrar.class)
+          .add(DelegateTasksBeansKryoRegister.class)
+          .add(NGCommonsKryoRegistrar.class)
+          .add(CommonsKryoRegistrar.class)
+          .add(ApiServiceBeansKryoRegister.class)
+          .add(DelegateBeansKryoRegistrar.class)
+          .build();
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
       ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().add(IdpServiceMorphiaRegistrar.class).build();
 }

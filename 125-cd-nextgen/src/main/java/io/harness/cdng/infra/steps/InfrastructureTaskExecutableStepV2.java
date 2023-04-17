@@ -31,6 +31,7 @@ import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
@@ -398,7 +399,8 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
     if (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome
         || infrastructureOutcome instanceof K8sDirectInfrastructureOutcome
-        || infrastructureOutcome instanceof K8sAzureInfrastructureOutcome) {
+        || infrastructureOutcome instanceof K8sAzureInfrastructureOutcome
+        || infrastructureOutcome instanceof K8sAwsInfrastructureOutcome) {
       publishK8sInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
     }
 

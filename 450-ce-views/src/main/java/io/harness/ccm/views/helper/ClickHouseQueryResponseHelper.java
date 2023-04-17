@@ -11,7 +11,7 @@ import static io.harness.ccm.commons.constants.DataTypeConstants.DATE;
 import static io.harness.ccm.commons.constants.DataTypeConstants.DATETIME;
 import static io.harness.ccm.commons.constants.DataTypeConstants.FLOAT64;
 import static io.harness.ccm.commons.constants.DataTypeConstants.STRING;
-import static io.harness.ccm.views.businessMapping.entities.UnallocatedCostStrategy.HIDE;
+import static io.harness.ccm.views.businessmapping.entities.UnallocatedCostStrategy.HIDE;
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantClusterCost;
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantCost;
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantIdleCost;
@@ -44,12 +44,12 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_AGGREGATED_MEMORY
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
-import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
-import io.harness.ccm.views.businessMapping.entities.CostTarget;
-import io.harness.ccm.views.businessMapping.entities.SharedCost;
-import io.harness.ccm.views.businessMapping.entities.SharedCostParameters;
-import io.harness.ccm.views.businessMapping.entities.UnallocatedCostStrategy;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessmapping.entities.CostTarget;
+import io.harness.ccm.views.businessmapping.entities.SharedCost;
+import io.harness.ccm.views.businessmapping.entities.SharedCostParameters;
+import io.harness.ccm.views.businessmapping.entities.UnallocatedCostStrategy;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.dto.DataPoint;
 import io.harness.ccm.views.dto.PerspectiveTimeSeriesData;
 import io.harness.ccm.views.dto.Reference;

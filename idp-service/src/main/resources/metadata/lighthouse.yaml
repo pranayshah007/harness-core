@@ -1,0 +1,32 @@
+identifier: lighthouse
+name: Lighthouse
+description: Google's Lighthouse tool is a great resource for benchmarking and improving the accessibility, performance, SEO, and best practices of your website.
+createdBy: Spotify
+category: Quality
+source: https://github.com/backstage/backstage/tree/master/plugins/lighthouse
+iconUrl: https://seeklogo.com/images/G/google-lighthouse-logo-1C7FA08580-seeklogo.com.png
+imageUrl: ''
+config: |-
+  lighthouse:
+    baseUrl: ${LIGHTHOUSE_BASE_URL}
+environmentVariables:
+  - LIGHTHOUSE_BASE_URL
+exports:
+  defaultEntityTypes:
+    - service
+  exportDetails:
+    - type: CARD
+      name: EntityLastLighthouseAuditCard
+      addByDefault: true
+      layoutSchemaSpecs:
+        gridProps:
+          md: 6
+    - type: TAB_CONTENT
+      name: EntityLighthouseContent
+      addByDefault: true
+      defaultRoute: /lighthouse
+      layoutSchemaSpecs:
+        name: EntityLighthouseContent
+        title: Lighthouse
+        contents:
+          - component: EntityLighthouseContent

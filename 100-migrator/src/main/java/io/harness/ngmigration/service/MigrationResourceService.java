@@ -74,50 +74,50 @@ public class MigrationResourceService {
   @Inject WorkflowHandlerFactory workflowHandlerFactory;
   @Inject UsergroupImportService usergroupImportService;
 
-  private DiscoveryResult discover(String authToken, ImportDTO importDTO) {
+  private DiscoveryResult discover(ImportDTO importDTO) {
     // Migrate referenced entities as well.
     importDTO.setMigrateReferencedEntities(true);
     Filter filter = importDTO.getFilter();
     if (importDTO.getEntityType().equals(NGMigrationEntityType.USER_GROUP)) {
-      return usergroupImportService.discover(authToken, importDTO);
+      return usergroupImportService.discover(importDTO);
     }
     if (filter instanceof ConnectorFilter) {
-      return connectorImportService.discover(authToken, importDTO);
+      return connectorImportService.discover(importDTO);
     }
     if (filter instanceof SecretManagerFilter) {
-      return secretManagerImportService.discover(authToken, importDTO);
+      return secretManagerImportService.discover(importDTO);
     }
     if (filter instanceof SecretFilter) {
-      return secretsImportService.discover(authToken, importDTO);
+      return secretsImportService.discover(importDTO);
     }
     if (filter instanceof ApplicationFilter) {
-      return appImportService.discover(authToken, importDTO);
+      return appImportService.discover(importDTO);
     }
     if (filter instanceof ServiceFilter) {
-      return serviceImportService.discover(authToken, importDTO);
+      return serviceImportService.discover(importDTO);
     }
     if (filter instanceof TemplateFilter) {
-      return templateImportService.discover(authToken, importDTO);
+      return templateImportService.discover(importDTO);
     }
     if (filter instanceof WorkflowFilter) {
-      return workflowImportService.discover(authToken, importDTO);
+      return workflowImportService.discover(importDTO);
     }
     if (filter instanceof PipelineFilter) {
-      return pipelineImportService.discover(authToken, importDTO);
+      return pipelineImportService.discover(importDTO);
     }
     if (filter instanceof TriggerFilter) {
-      return triggerImportService.discover(authToken, importDTO);
+      return triggerImportService.discover(importDTO);
     }
     return DiscoveryResult.builder().build();
   }
 
   public SaveSummaryDTO save(String authToken, ImportDTO importDTO) {
-    DiscoveryResult discoveryResult = discover(authToken, importDTO);
+    DiscoveryResult discoveryResult = discover(importDTO);
     if (discoveryResult == null) {
       return SaveSummaryDTO.builder().build();
     }
     SaveSummaryDTO saveSummaryDTO =
-        discoveryService.migrateEntity(authToken, getMigrationInput(importDTO), discoveryResult);
+        discoveryService.migrateEntities(getMigrationInput(authToken, importDTO), discoveryResult);
     postMigrationHandler(authToken, importDTO, discoveryResult, saveSummaryDTO);
     return saveSummaryDTO;
   }
@@ -133,7 +133,7 @@ public class MigrationResourceService {
   }
 
   public StreamingOutput exportYaml(String authToken, ImportDTO importDTO) {
-    return discoveryService.exportYamlFilesAsZip(getMigrationInput(importDTO), discover(authToken, importDTO));
+    return discoveryService.exportYamlFilesAsZip(getMigrationInput(authToken, importDTO), discover(importDTO));
   }
 
   public List<Set<SimilarWorkflowDetail>> listSimilarWorkflow(String accountId) {

@@ -24,10 +24,10 @@ public class HelmReleaseHistoryCommandRequestNG extends HelmCommandRequestNG {
       boolean k8SteadyStateCheckEnabled, boolean shouldOpenFetchFilesLogStream,
       CommandUnitsProgress commandUnitsProgress, LogCallback logCallback, String namespace, HelmVersion helmVersion,
       String commandFlags, String repoName, String workingDir, String kubeConfigLocation, String ocPath,
-      String commandName, boolean useLatestKubectlVersion, String gcpKeyPath) {
+      String commandName, boolean useLatestKubectlVersion, String gcpKeyPath, String releaseHistoryPrefix) {
     super(releaseName, HelmCommandType.RELEASE_HISTORY, valuesYamlList, k8sInfraDelegateConfig, manifestDelegateConfig,
         accountId, k8SteadyStateCheckEnabled, shouldOpenFetchFilesLogStream, commandUnitsProgress, logCallback,
         namespace, helmVersion, commandFlags, repoName, workingDir, kubeConfigLocation, ocPath, commandName,
-        useLatestKubectlVersion, gcpKeyPath);
+        useLatestKubectlVersion, gcpKeyPath, releaseHistoryPrefix);
   }
 }

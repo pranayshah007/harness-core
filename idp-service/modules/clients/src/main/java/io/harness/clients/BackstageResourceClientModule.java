@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.IDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ServiceHttpClientConfig;
-import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
 
 import com.google.inject.AbstractModule;
@@ -23,23 +22,16 @@ import com.google.inject.Singleton;
 @OwnedBy(IDP)
 public class BackstageResourceClientModule extends AbstractModule {
   private final ServiceHttpClientConfig backstageClientConfig;
-  private final String serviceSecret;
-  private final String clientId;
 
   @Inject
-  public BackstageResourceClientModule(
-      ServiceHttpClientConfig backstageClientConfig, String serviceSecret, String clientId) {
+  public BackstageResourceClientModule(ServiceHttpClientConfig backstageClientConfig) {
     this.backstageClientConfig = backstageClientConfig;
-    this.serviceSecret = serviceSecret;
-    this.clientId = clientId;
   }
 
   @Provides
   @Singleton
-  private BackstageResourceClientHttpFactory backstageResourceClientHttpFactory(
-      KryoConverterFactory kryoConverterFactory) {
-    return new BackstageResourceClientHttpFactory(
-        this.backstageClientConfig, this.serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);
+  private BackstageResourceClientHttpFactory backstageResourceClientHttpFactory() {
+    return new BackstageResourceClientHttpFactory(this.backstageClientConfig);
   }
 
   @Override

@@ -142,7 +142,8 @@ public class TestMongoModule extends AbstractModule implements MongoRuleMixin {
 
     AdvancedDatastore datastore = (AdvancedDatastore) morphia.createDatastore(mongoClient, databaseName);
     MongoConfig mongoConfig = MongoConfig.builder().build();
-    datastore.setQueryFactory(new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis()));
+    datastore.setQueryFactory(new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis(),
+        mongoConfig.getMaxDocumentsToBeFetched()));
     ((HObjectFactory) objectFactory).setDatastore(datastore);
     return datastore;
   }

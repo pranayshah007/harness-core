@@ -9,16 +9,17 @@ package io.harness.cdng.infra.mapper;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
+import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
 import io.harness.ng.core.infrastructure.dto.InfrastructureResponse;
 import io.harness.ng.core.infrastructure.dto.InfrastructureResponseDTO;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
-import io.harness.validation.JavaxValidator;
 
 import lombok.experimental.UtilityClass;
 
@@ -27,33 +28,58 @@ import lombok.experimental.UtilityClass;
 public class InfrastructureMapper {
   public InfrastructureEntity toInfrastructureEntity(
       String accountId, InfrastructureRequestDTO infrastructureRequestDTO) {
-    // TODO: refactor code to populate infrastructureEntity from yaml rather than infrastructureRequestDTO
-    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
-                                                    .identifier(infrastructureRequestDTO.getIdentifier())
-                                                    .accountId(accountId)
-                                                    .orgIdentifier(infrastructureRequestDTO.getOrgIdentifier())
-                                                    .projectIdentifier(infrastructureRequestDTO.getProjectIdentifier())
-                                                    .envIdentifier(infrastructureRequestDTO.getEnvironmentRef())
-                                                    .name(infrastructureRequestDTO.getName())
-                                                    .description(infrastructureRequestDTO.getDescription())
-                                                    .tags(convertToList(infrastructureRequestDTO.getTags()))
-                                                    .yaml(infrastructureRequestDTO.getYaml())
-                                                    .type(infrastructureRequestDTO.getType())
-                                                    .build();
+    final InfrastructureConfig infrastructureConfig =
+        InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureRequestDTO.getYaml());
+    setMissingFieldsFromRequestDTO(infrastructureConfig, infrastructureRequestDTO);
+    InfrastructureEntityConfigMapper.checkForFieldMismatch(infrastructureConfig, infrastructureRequestDTO);
+    return getInfrastructureEntity(
+        accountId, infrastructureRequestDTO.getYaml(), infrastructureConfig.getInfrastructureDefinitionConfig());
+  }
 
-    InfrastructureConfig infrastructureConfig =
-        InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity);
+  private static InfrastructureEntity getInfrastructureEntity(
+      String accountId, String yaml, InfrastructureDefinitionConfig infrastructureDefinitionConfig) {
+    return InfrastructureEntity.builder()
+        .identifier(infrastructureDefinitionConfig.getIdentifier())
+        .accountId(accountId)
+        .orgIdentifier(infrastructureDefinitionConfig.getOrgIdentifier())
+        .projectIdentifier(infrastructureDefinitionConfig.getProjectIdentifier())
+        .envIdentifier(infrastructureDefinitionConfig.getEnvironmentRef())
+        .name(infrastructureDefinitionConfig.getName())
+        .description(infrastructureDefinitionConfig.getDescription())
+        .tags(convertToList(infrastructureDefinitionConfig.getTags()))
+        .yaml(yaml)
+        .type(infrastructureDefinitionConfig.getType())
+        .deploymentType(infrastructureDefinitionConfig.getDeploymentType())
+        .build();
+  }
 
-    JavaxValidator.validateOrThrow(infrastructureConfig.getInfrastructureDefinitionConfig());
-
-    if (isEmpty(infrastructureRequestDTO.getYaml())) {
-      infrastructureEntity.setYaml(InfrastructureEntityConfigMapper.toYaml(infrastructureConfig));
+  private static void setMissingFieldsFromRequestDTO(
+      InfrastructureConfig fromYaml, InfrastructureRequestDTO requestDTO) {
+    InfrastructureDefinitionConfig configFromYaml = fromYaml.getInfrastructureDefinitionConfig();
+    if (isEmpty(configFromYaml.getOrgIdentifier()) && isNotEmpty(requestDTO.getOrgIdentifier())) {
+      configFromYaml.setOrgIdentifier(requestDTO.getOrgIdentifier());
     }
-    if (infrastructureConfig.getInfrastructureDefinitionConfig().getDeploymentType() != null) {
-      infrastructureEntity.setDeploymentType(
-          infrastructureConfig.getInfrastructureDefinitionConfig().getDeploymentType());
+
+    if (isEmpty(configFromYaml.getProjectIdentifier()) && isNotEmpty(requestDTO.getProjectIdentifier())) {
+      configFromYaml.setProjectIdentifier(requestDTO.getProjectIdentifier());
     }
-    return infrastructureEntity;
+    if (isEmpty(configFromYaml.getName()) && isNotEmpty(requestDTO.getName())) {
+      configFromYaml.setName(requestDTO.getName());
+    }
+    if (isEmpty(configFromYaml.getIdentifier()) && isNotEmpty(requestDTO.getIdentifier())) {
+      configFromYaml.setIdentifier(requestDTO.getIdentifier());
+    }
+    if (isEmpty(configFromYaml.getEnvironmentRef()) && isNotEmpty(requestDTO.getEnvironmentRef())) {
+      configFromYaml.setEnvironmentRef(requestDTO.getEnvironmentRef());
+    }
+
+    if (isEmpty(configFromYaml.getDescription()) && isNotEmpty(requestDTO.getDescription())) {
+      configFromYaml.setDescription(requestDTO.getDescription());
+    }
+
+    if (isEmpty(configFromYaml.getTags()) && isNotEmpty(requestDTO.getTags())) {
+      configFromYaml.setTags(requestDTO.getTags());
+    }
   }
 
   public InfrastructureResponse toResponseWrapper(InfrastructureEntity infrastructureEntity) {

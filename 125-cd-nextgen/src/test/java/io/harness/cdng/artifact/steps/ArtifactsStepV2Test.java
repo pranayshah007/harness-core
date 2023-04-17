@@ -995,7 +995,6 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                         .imagePath("nginx")
                         .connectorRef("connector")
                         .tag(tag)
-                        .tagRegex(tag)
                         .encryptedDataDetails(List.of())
                         .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
                         .dockerConnectorDTO(

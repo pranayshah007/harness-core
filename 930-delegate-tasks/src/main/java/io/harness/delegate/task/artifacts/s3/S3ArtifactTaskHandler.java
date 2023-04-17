@@ -65,11 +65,12 @@ public class S3ArtifactTaskHandler extends DelegateArtifactTaskHandler<S3Artifac
       List<BuildDetails> builds =
           awsApiHelperService.listBuilds(awsInternalConfig, s3ArtifactDelegateRequest.getRegion(),
               s3ArtifactDelegateRequest.getBucketName(), s3ArtifactDelegateRequest.getFilePathRegex());
-      builds = builds.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList());
 
       if (builds.isEmpty()) {
         throw new InvalidRequestException("No last successful build");
       }
+
+      builds = builds.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList());
 
       buildDetails = builds.get(builds.size() - 1);
     }

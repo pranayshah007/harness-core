@@ -8,10 +8,12 @@
 package io.harness.idp.envvariable.service;
 
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
+import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.commons.lang3.tuple.Pair;
 
 public interface BackstageEnvVariableService {
   Optional<BackstageEnvVariable> findByIdAndAccountIdentifier(String identifier, String accountIdentifier);
@@ -24,4 +26,7 @@ public interface BackstageEnvVariableService {
   void processSecretUpdate(EntityChangeDTO entityChangeDTO);
   void delete(String secretIdentifier, String harnessAccount);
   void sync(List<BackstageEnvVariable> environmentSecrets, String accountIdentifier);
+  List<BackstageEnvSecretVariable> getAllSecretIdentifierForMultipleEnvVariablesInAccount(
+      String accountIdentifier, List<String> envVariables);
+  void deleteMultiUsingEnvNames(List<String> envNames, String accountIdentifier);
 }

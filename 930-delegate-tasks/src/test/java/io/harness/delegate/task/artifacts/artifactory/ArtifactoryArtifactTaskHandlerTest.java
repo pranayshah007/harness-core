@@ -26,6 +26,7 @@ import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryNgService;
 import io.harness.artifactory.service.ArtifactoryRegistryService;
 import io.harness.artifacts.beans.BuildDetailsInternal;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthenticationDTO;
@@ -49,7 +50,6 @@ import java.util.Map;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -73,6 +73,11 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
   private static String ARTIFACT_PATH = "path";
   private static String COMBINED_ARTIFACT_PATH = ARTIFACT_DIRECTORY + "/" + ARTIFACT_PATH;
   private static int MAX_NO_OF_TAGS_PER_IMAGE = 10000;
+  private static final Map<String, String> LABEL = Map.of("K1", "V1");
+  private static final String SHA = "sha256:12345";
+  private static final String SHA_V2 = "sha256:334534";
+  private static final ArtifactMetaInfo ARTIFACT_META_INFO =
+      ArtifactMetaInfo.builder().sha(SHA).shaV2(SHA_V2).labels(LABEL).build();
 
   @Mock ArtifactoryRegistryService artifactoryRegistryService;
   @InjectMocks ArtifactoryArtifactTaskHandler artifactoryArtifactService;
@@ -365,8 +370,11 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
 
     ArtifactoryConnectorDTO artifactoryConnectorDTO = createArtifactoryConnector(artifactoryUsernamePasswordAuthDTO);
 
-    BuildDetailsInternal buildDetailsInternal =
-        BuildDetailsInternal.builder().number(IMAGE_TAG).metadata(createBuildMetadata()).build();
+    BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder()
+                                                    .artifactMetaInfo(ARTIFACT_META_INFO)
+                                                    .number(IMAGE_TAG)
+                                                    .metadata(createBuildMetadata())
+                                                    .build();
 
     ArtifactoryConfigRequest artifactoryInternalConfig =
         ArtifactoryConfigRequest.builder()
@@ -390,43 +398,18 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
         .when(artifactoryRegistryService)
         .verifyBuildNumber(any(), any(), any(), any(), any());
 
-    // hashmap for labels
-    Map<String, String> labels = new HashMap<>();
-
-    labels.put("multi.key.value", "abc");
-    labels.put("build_date", "2017-09-05");
-    labels.put("maintainer", "dev@someproject.org");
-
-    List<Map<String, String>> labelsList = new ArrayList<>();
-
-    labelsList.add(labels);
-
-    doReturn(labelsList).when(artifactoryRegistryService).getLabels(any(), any(), any(), any());
-
     ArtifactTaskExecutionResponse lastSuccessfulBuild =
         artifactoryArtifactService.getLastSuccessfulBuild(sourceAttributes);
 
     ArtifactoryArtifactDelegateResponse attributes =
         (ArtifactoryArtifactDelegateResponse) lastSuccessfulBuild.getArtifactDelegateResponses().get(0);
 
-    // Argument Captor for artifactory internal config
-    ArgumentCaptor<ArtifactoryConfigRequest> configRequestArgumentCaptor =
-        ArgumentCaptor.forClass(ArtifactoryConfigRequest.class);
-
-    // Argument Captor for artifactory build
-    ArgumentCaptor<String> stringArgumentCaptor = ArgumentCaptor.forClass(String.class);
-
-    verify(artifactoryRegistryService)
-        .getLabels(configRequestArgumentCaptor.capture(), any(), any(), stringArgumentCaptor.capture());
-
-    // verifying artifactoryInternalConfig
-    assertThat(configRequestArgumentCaptor.getValue()).isEqualTo(artifactoryInternalConfig);
-
-    // verifying imageTag
-    assertThat(stringArgumentCaptor.getValue()).isEqualTo("imageTag");
-
     // verifying the labels fetched
-    assertThat(attributes.getLabel()).isEqualTo(labels);
+    assertThat(attributes.getLabel()).isEqualTo(LABEL);
+
+    Map<String, String> metadata = attributes.getBuildDetails().getMetadata();
+    assertThat(metadata.get(ArtifactMetadataKeys.SHA)).isEqualTo(SHA);
+    assertThat(metadata.get(ArtifactMetadataKeys.SHAV2)).isEqualTo(SHA_V2);
   }
 
   @Test
@@ -445,7 +428,8 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
             .auth(ArtifactoryAuthenticationDTO.builder().credentials(artifactoryUsernamePasswordAuthDTO).build())
             .build();
 
-    BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().number(IMAGE_TAG).build();
+    BuildDetailsInternal buildDetailsInternal =
+        BuildDetailsInternal.builder().artifactMetaInfo(ARTIFACT_META_INFO).number(IMAGE_TAG).build();
     ArtifactoryConfigRequest artifactoryInternalConfig =
         ArtifactoryConfigRequest.builder()
             .artifactoryUrl(artifactoryConnectorDTO.getArtifactoryServerUrl())
@@ -469,43 +453,18 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
         .getLastSuccessfulBuildFromRegex(
             artifactoryInternalConfig, REPO_NAME, IMAGE_NAME, RepositoryFormat.docker.name(), IMAGE_TAG_REGEX);
 
-    Map<String, String> labels = new HashMap<>();
-
-    // hashmap for labels
-    labels.put("multi.key.value", "abc");
-    labels.put("build_date", "2017-09-05");
-    labels.put("maintainer", "dev@someproject.org");
-
-    List<Map<String, String>> labelsList = new ArrayList<>();
-
-    labelsList.add(labels);
-
-    doReturn(labelsList).when(artifactoryRegistryService).getLabels(any(), any(), any(), any());
-
     ArtifactTaskExecutionResponse lastSuccessfulBuild =
         artifactoryArtifactService.getLastSuccessfulBuild(sourceAttributes);
 
     ArtifactoryArtifactDelegateResponse attributes =
         (ArtifactoryArtifactDelegateResponse) lastSuccessfulBuild.getArtifactDelegateResponses().get(0);
 
-    // Argument Captor for artifactory internal config
-    ArgumentCaptor<ArtifactoryConfigRequest> configRequestArgumentCaptor =
-        ArgumentCaptor.forClass(ArtifactoryConfigRequest.class);
-
-    // Argument Captor for artifactory build
-    ArgumentCaptor<String> stringArgumentCaptor = ArgumentCaptor.forClass(String.class);
-
-    verify(artifactoryRegistryService)
-        .getLabels(configRequestArgumentCaptor.capture(), any(), any(), stringArgumentCaptor.capture());
-
-    // verifying artifactoryInternalConfig
-    assertThat(configRequestArgumentCaptor.getValue()).isEqualTo(artifactoryInternalConfig);
-
-    // verifying imageTag
-    assertThat(stringArgumentCaptor.getValue()).isEqualTo("imageTag");
-
     // verifying the labels fetched
-    assertThat(attributes.getLabel()).isEqualTo(labels);
+    assertThat(attributes.getLabel()).isEqualTo(LABEL);
+
+    Map<String, String> metadata = attributes.getBuildDetails().getMetadata();
+    assertThat(metadata.get(ArtifactMetadataKeys.SHA)).isEqualTo(SHA);
+    assertThat(metadata.get(ArtifactMetadataKeys.SHAV2)).isEqualTo(SHA_V2);
   }
 
   @Test
