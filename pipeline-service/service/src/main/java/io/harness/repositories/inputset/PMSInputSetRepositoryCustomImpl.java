@@ -474,13 +474,18 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
   }
 
   private void setConnectorRefForRemoteEntity(InputSetEntity inputSetEntity, GitEntityInfo gitEntityInfo) {
-    String defaultConnectorForGitX =
-        gitXSettingsHelper.getDefaultConnectorForGitX(inputSetEntity.getAccountIdentifier(),
-            inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
-    if (gitEntityInfo.getConnectorRef() == null && defaultConnectorForGitX != null) {
-      inputSetEntity.setConnectorRef(defaultConnectorForGitX);
-    } else {
+    if (gitEntityInfo.getConnectorRef() != null) {
       inputSetEntity.setConnectorRef(gitEntityInfo.getConnectorRef());
+    } else {
+      try {
+        String defaultConnectorForGitX =
+            gitXSettingsHelper.getDefaultConnectorForGitX(inputSetEntity.getAccountIdentifier(),
+                inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
+        inputSetEntity.setConnectorRef(defaultConnectorForGitX);
+      } catch (Exception ex) {
+        log.warn(
+            String.format("No ConnectorRef provided for InputSet with id: %s", inputSetEntity.getIdentifier()), ex);
+      }
     }
   }
 }

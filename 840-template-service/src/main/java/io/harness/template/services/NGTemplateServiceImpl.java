@@ -173,7 +173,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     if (TemplateRefHelper.hasTemplateRef(templateEntity.getYaml())) {
       TemplateUtils.setupGitParentEntityDetails(templateEntity.getAccountIdentifier(),
           templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(), templateEntity.getRepo(),
-          templateEntity.getConnectorRef());
+          getConnectorRefForRemoteEntity(templateEntity));
     }
 
     if (!validateIdentifierIsUnique(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
@@ -1474,5 +1474,20 @@ public class NGTemplateServiceImpl implements NGTemplateService {
             .storeType(StoreType.REMOTE)
             .repoName(moveConfigDTO.getRepoName())
             .build());
+  }
+
+  private String getConnectorRefForRemoteEntity(TemplateEntity templateEntity) {
+    if (templateEntity.getConnectorRef() == null) {
+      try {
+        String defaultConnectorForGitX =
+            gitXSettingsHelper.getDefaultConnectorForGitX(templateEntity.getAccountIdentifier(),
+                templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
+        templateEntity.setConnectorRef(defaultConnectorForGitX);
+      } catch (Exception ex) {
+        log.warn(
+            String.format("No ConnectorRef provided for template with id: %s", templateEntity.getIdentifier()), ex);
+      }
+    }
+    return templateEntity.getConnectorRef();
   }
 }
