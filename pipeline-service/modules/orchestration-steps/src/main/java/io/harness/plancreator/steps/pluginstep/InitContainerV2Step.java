@@ -15,6 +15,7 @@ import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.encryption.Scope;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
@@ -56,7 +57,8 @@ public class InitContainerV2Step implements TaskExecutableWithRbac<InitContainer
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, InitContainerV2StepInfo stepParameters,
       ThrowingSupplier<K8sTaskExecutionResponse> responseDataSupplier) throws Exception {
-    return null;
+    // todo :implement
+    return StepResponse.builder().status(Status.SUCCEEDED).build();
   }
 
   @Override

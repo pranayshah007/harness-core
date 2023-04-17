@@ -110,6 +110,6 @@ public class YAMLFieldNameConstants {
 
   public final String SERVICE_CONFIG = "serviceConfig";
   // todo(abhinav): make this step group once battle tested
-  public final String STEP_GROUP_V2 = "stepGroupv2";
+  public final String STEP_GROUP_V2 = "stepGroup";
   public final String STEP_GROUP_CHILD_NODE_ID = "stepsChildNodeId";
 }
