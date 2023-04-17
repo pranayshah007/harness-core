@@ -313,6 +313,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   private SecretResponseWrapper createSecretInternal(String accountIdentifier, SecretDTOV2 dto, boolean draft) {
     secretEntityReferenceHelper.createSetupUsageForSecretManager(accountIdentifier, dto.getOrgIdentifier(),
         dto.getProjectIdentifier(), dto.getIdentifier(), dto.getName(), getSecretManagerIdentifier(dto));
+    secretEntityReferenceHelper.createSetupUsageForSecret(accountIdentifier, dto);
     Secret secret = ngSecretService.create(accountIdentifier, dto, draft);
     return getResponseWrapper(secret);
   }
@@ -516,9 +517,8 @@ public class SecretCrudServiceImpl implements SecretCrudService {
             ngSecretService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, forceDelete);
       }
       if (remoteDeletionSuccess && localDeletionSuccess) {
-        secretEntityReferenceHelper.deleteSecretEntityReferenceWhenSecretGetsDeleted(accountIdentifier, orgIdentifier,
-            projectIdentifier, identifier, getSecretManagerIdentifier(optionalSecret.get().getSecret()));
-
+        secretEntityReferenceHelper.deleteExistingSetupUsage(
+            accountIdentifier, orgIdentifier, projectIdentifier, identifier);
         publishEvent(accountIdentifier, orgIdentifier, projectIdentifier, identifier,
             EventsFrameworkMetadataConstants.DELETE_ACTION);
         return true;
@@ -541,8 +541,8 @@ public class SecretCrudServiceImpl implements SecretCrudService {
         boolean deletionSuccess =
             ngSecretService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
         if (deletionSuccess) {
-          secretEntityReferenceHelper.deleteSecretEntityReferenceWhenSecretGetsDeleted(accountIdentifier, orgIdentifier,
-              projectIdentifier, identifier, getSecretManagerIdentifier(optionalSecret.get().getSecret()));
+          secretEntityReferenceHelper.deleteExistingSetupUsage(
+              accountIdentifier, orgIdentifier, projectIdentifier, identifier);
           encryptedDataService.hardDelete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
           publishEvent(accountIdentifier, orgIdentifier, projectIdentifier, identifier,
               EventsFrameworkMetadataConstants.DELETE_ACTION);
@@ -622,6 +622,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     }
     Secret updatedSecret = null;
     if (remoteUpdateSuccess) {
+      secretEntityReferenceHelper.createSetupUsageForSecret(accountIdentifier, dto);
       updatedSecret = ngSecretService.update(accountIdentifier, dto, false);
     }
     secretResponseWrapper = processAndGetSecret(remoteUpdateSuccess, updatedSecret);
@@ -658,6 +659,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     }
     Secret updatedSecret = null;
     if (remoteUpdateSuccess) {
+      secretEntityReferenceHelper.createSetupUsageForSecret(accountIdentifier, dto);
       updatedSecret = ngSecretService.update(accountIdentifier, dto, true);
     }
     secretResponseWrapper = processAndGetSecret(remoteUpdateSuccess, updatedSecret);

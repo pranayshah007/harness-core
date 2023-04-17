@@ -154,6 +154,6 @@ public class GoogleFunctionsDeployStep
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return googleFunctionsHelper.startChainLink(this, ambiance, stepParameters);
+    return googleFunctionsHelper.startChainLink(ambiance, stepParameters);
   }
 }

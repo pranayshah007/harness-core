@@ -8,34 +8,73 @@
 package io.harness.clients;
 
 import static io.harness.annotations.dev.HarnessTeam.IDP;
+import static io.harness.network.Http.getSslContext;
+import static io.harness.network.Http.getTrustManagers;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.remote.client.AbstractHttpClientFactory;
-import io.harness.remote.client.ClientMode;
+import io.harness.network.Http;
+import io.harness.network.NoopHostnameVerifier;
 import io.harness.remote.client.ServiceHttpClientConfig;
-import io.harness.security.ServiceTokenGenerator;
-import io.harness.serializer.kryo.KryoConverterFactory;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
+import com.google.protobuf.ExtensionRegistryLite;
+import java.util.concurrent.TimeUnit;
+import javax.net.ssl.X509TrustManager;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
+import retrofit2.Retrofit;
+import retrofit2.converter.jackson.JacksonConverterFactory;
+import retrofit2.converter.protobuf.ProtoConverterFactory;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Singleton
 @Slf4j
 @OwnedBy(IDP)
-public class BackstageResourceClientHttpFactory
-    extends AbstractHttpClientFactory implements Provider<BackstageResourceClient> {
-  public BackstageResourceClientHttpFactory(ServiceHttpClientConfig backstageClientConfig, String serviceSecret,
-      ServiceTokenGenerator tokenGenerator, KryoConverterFactory kryoConverterFactory, String clientId) {
-    super(backstageClientConfig, serviceSecret, tokenGenerator, kryoConverterFactory, clientId, false,
-        ClientMode.PRIVILEGED);
+public class BackstageResourceClientHttpFactory implements Provider<BackstageResourceClient> {
+  private final ServiceHttpClientConfig backstageClientConfig;
+  private final OkHttpClient httpClient;
+  private static final ObjectMapper mapper = new ObjectMapper()
+                                                 .registerModule(new Jdk8Module())
+                                                 .registerModule(new GuavaModule())
+                                                 .registerModule(new JavaTimeModule());
+  public BackstageResourceClientHttpFactory(ServiceHttpClientConfig backstageClientConfig) {
+    this.backstageClientConfig = backstageClientConfig;
+    this.httpClient = this.getSafeOkHttpClient();
   }
-
   @Override
   public BackstageResourceClient get() {
-    return getRetrofit().create(BackstageResourceClient.class);
+    var retrofit =
+        new Retrofit.Builder()
+            .baseUrl(this.backstageClientConfig.getBaseUrl())
+            .client(httpClient)
+            .addConverterFactory(ProtoConverterFactory.createWithRegistry(ExtensionRegistryLite.newInstance()))
+            .addConverterFactory(JacksonConverterFactory.create(mapper))
+            .build();
+    return retrofit.create(BackstageResourceClient.class);
+  }
+
+  private OkHttpClient getSafeOkHttpClient() {
+    try {
+      return this.getHttpClient();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private OkHttpClient getHttpClient() {
+    return Http.getOkHttpClientWithProxyAuthSetup()
+        .hostnameVerifier(new NoopHostnameVerifier())
+        .sslSocketFactory(getSslContext().getSocketFactory(), (X509TrustManager) getTrustManagers()[0])
+        .connectTimeout(backstageClientConfig.getConnectTimeOutSeconds(), TimeUnit.SECONDS)
+        .readTimeout(backstageClientConfig.getReadTimeOutSeconds(), TimeUnit.SECONDS)
+        .addInterceptor(new BackstageAuthInterceptor())
+        .build();
   }
 }

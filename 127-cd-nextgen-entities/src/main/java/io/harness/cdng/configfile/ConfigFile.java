@@ -17,6 +17,7 @@ import io.harness.cdng.visitor.helpers.configfile.ConfigFileVisitorHelper;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
@@ -27,6 +28,7 @@ import io.swagger.annotations.ApiModelProperty;
 import java.io.Serializable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -46,7 +48,7 @@ public class ConfigFile implements OverridesApplier<ConfigFile>, WithIdentifier,
   @ApiModelProperty(hidden = true)
   private String uuid;
 
-  @NotNull @EntityIdentifier String identifier;
+  @NotNull @EntityIdentifier @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN) String identifier;
 
   @NotNull @JsonProperty("spec") @Valid ConfigFileAttributes spec;
 

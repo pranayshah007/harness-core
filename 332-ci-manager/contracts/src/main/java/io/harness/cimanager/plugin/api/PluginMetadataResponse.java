@@ -34,6 +34,7 @@ public class PluginMetadataResponse {
   String image;
   String uses;
   List<Input> inputs;
+  List<Output> outputs;
 
   /**
    * Plugin metadata api input attribute response format
@@ -44,9 +45,21 @@ public class PluginMetadataResponse {
   public static class Input {
     String name;
     String description;
+    String type;
     boolean required;
     boolean secret;
     @JsonProperty("default") String defaultVal;
     @JsonProperty("allowed_values") List<String> allowedValues;
+  }
+
+  /**
+   * Plugin metadata api output attribute response format
+   */
+  @Value
+  @Builder
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public static class Output {
+    String name;
+    String description;
   }
 }

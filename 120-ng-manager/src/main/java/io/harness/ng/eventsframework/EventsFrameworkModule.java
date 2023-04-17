@@ -9,6 +9,7 @@ package io.harness.ng.eventsframework;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.eventsframework.EventsFrameworkConstants.CDNG_ORCHESTRATION_EVENT_CONSUMER;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_BRANCH_HOOK_EVENT_STREAM;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_BRANCH_HOOK_EVENT_STREAM_MAX_TOPIC_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_CONFIG_STREAM;
@@ -20,8 +21,11 @@ import static io.harness.eventsframework.EventsFrameworkConstants.GIT_PUSH_EVENT
 import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_STATS;
 import static io.harness.eventsframework.EventsFrameworkConstants.MODULE_LICENSES_REDIS_EVENT_CONSUMER;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER_CD;
+import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_ORCHESTRATION_EVENT_BATCH_SIZE;
+import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_ORCHESTRATION_EVENT_TOPIC;
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_EVENTS_STREAM;
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_EVENTS_STREAM_MAX_TOPIC_SIZE;
+import static io.harness.pms.events.PmsEventFrameworkConstants.MAX_PROCESSING_TIME_SECONDS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.HarnessCacheManager;
@@ -126,6 +130,10 @@ public class EventsFrameworkModule extends AbstractModule {
           .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
       bind(Consumer.class)
           .annotatedWith(Names.named(INSTANCE_STATS))
+          .toInstance(
+              NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
+      bind(Consumer.class)
+          .annotatedWith(Names.named(CDNG_ORCHESTRATION_EVENT_CONSUMER))
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
     } else {
@@ -252,6 +260,11 @@ public class EventsFrameworkModule extends AbstractModule {
           .toInstance(RedisConsumer.of(debeziumConsumersConfigs.getModuleLicensesStreaming().getTopic(),
               NG_MANAGER.getServiceId(), redissonClient, EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME,
               debeziumConsumersConfigs.getPlanExecutionsSummaryStreaming().getBatchSize(),
+              redisConfig.getEnvNamespace()));
+      bind(Consumer.class)
+          .annotatedWith(Names.named(CDNG_ORCHESTRATION_EVENT_CONSUMER))
+          .toInstance(RedisConsumer.of(PIPELINE_ORCHESTRATION_EVENT_TOPIC, NG_MANAGER.getServiceId(), redissonClient,
+              java.time.Duration.ofSeconds(MAX_PROCESSING_TIME_SECONDS), PIPELINE_ORCHESTRATION_EVENT_BATCH_SIZE,
               redisConfig.getEnvNamespace()));
     }
   }

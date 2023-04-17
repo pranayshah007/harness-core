@@ -38,6 +38,7 @@ import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
+import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.common.steps.stepgroup.StepGroupStep;
 import io.harness.steps.common.steps.stepgroup.StepGroupStepParameters;
 import io.harness.steps.plugin.ContainerStepSpec;
@@ -84,8 +85,8 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
         ((ContainerStepSpec) stepElementParameters.getSpec()).setIdentifier(config.getIdentifier());
       }
     }
-    PlanNode initPlanNode =
-        InitContainerStepPlanCreater.createPlanForField(initStepNodeId, stepParameters, advisorParametersInitStep);
+    PlanNode initPlanNode = InitContainerStepPlanCreater.createPlanForField(
+        initStepNodeId, stepParameters, advisorParametersInitStep, StepSpecTypeConstants.INIT_CONTAINER_STEP);
     PlanNode stepPlanNode = createPlanForStep(stepNodeId, stepParameters);
 
     planCreationResponseMap.put(

@@ -56,6 +56,7 @@ import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -82,6 +83,7 @@ import io.harness.exception.UnexpectedException;
 import io.harness.logging.LogCallback;
 import io.harness.pcf.CfCliDelegateResolver;
 import io.harness.pcf.CfDeploymentManager;
+import io.harness.pcf.PcfUtils;
 import io.harness.pcf.PivotalClientApiException;
 import io.harness.pcf.model.CfAppAutoscalarRequestData;
 import io.harness.pcf.model.CfCliVersion;
@@ -525,6 +527,7 @@ public class PcfCommandTaskBaseHelper {
 
     // For existing
     ApplicationSummary activeApplication = previousReleases.get(previousReleases.size() - 1);
+    boolean logPrinted = false;
     List<ApplicationSummary> activeVersions = new ArrayList<>();
     for (int i = previousReleases.size() - 1; i >= 0; i--) {
       ApplicationSummary applicationSummary = previousReleases.get(i);
@@ -533,6 +536,10 @@ public class PcfCommandTaskBaseHelper {
       if (pcfDeploymentManager.isActiveApplication(cfRequestConfig, executionLogCallback)) {
         activeApplication = applicationSummary;
         activeVersions.add(applicationSummary);
+        logPrinted = true;
+        executionLogCallback.saveExecutionLog(
+            String.format("Found current Active App: [%s], as it has HARNESS__STATUS__IDENTIFIER set as ACTIVE",
+                PcfUtils.encodeColor(applicationSummary.getName())));
       }
     }
 
@@ -548,6 +555,11 @@ public class PcfCommandTaskBaseHelper {
       throw new InvalidPcfStateException(msgBuilder.toString(), INVALID_INFRA_STATE, USER_SRE);
     }
 
+    if (!logPrinted) {
+      executionLogCallback.saveExecutionLog(
+          String.format("Found current Active App: [%s], as it's most recent application",
+              PcfUtils.encodeColor(activeApplication.getName())));
+    }
     return activeApplication;
   }
 
@@ -568,6 +580,9 @@ public class PcfCommandTaskBaseHelper {
       if (pcfDeploymentManager.isInActiveApplication(cfRequestConfig)) {
         inActiveApplication = applicationSummary;
         inActiveVersions.add(applicationSummary);
+        executionLogCallback.saveExecutionLog(
+            String.format("Found current In-active App: [%s], as it has HARNESS__STATUS__IDENTIFIER set as STAGE",
+                PcfUtils.encodeColor(applicationSummary.getName())));
       }
     }
     if (inActiveApplication == null) {
@@ -575,6 +590,11 @@ public class PcfCommandTaskBaseHelper {
                              .filter(app -> app.getName().endsWith(PcfConstants.INACTIVE_APP_NAME_SUFFIX))
                              .collect(toList());
       inActiveApplication = isEmpty(inActiveVersions) ? null : inActiveVersions.get(0);
+      if (!isNull(inActiveApplication)) {
+        executionLogCallback.saveExecutionLog(
+            String.format("Found current In-active App: [%s], as it has __INACTIVE suffix in the name",
+                PcfUtils.encodeColor(inActiveApplication.getName())));
+      }
     }
     if (isNotEmpty(inActiveVersions) && inActiveVersions.size() > 1) {
       StringBuilder msgBuilder =
@@ -717,6 +737,10 @@ public class PcfCommandTaskBaseHelper {
                                      .filter(applicationSummary -> applicationSummary.getInstances() > 0)
                                      .reduce((first, second) -> second)
                                      .orElse(null);
+      if (!isNull(currentActiveApplication)) {
+        executionLogCallback.saveExecutionLog(
+            String.format("Found current Active App: [%s]", PcfUtils.encodeColor(currentActiveApplication.getName())));
+      }
     }
 
     // All applications have 0 instances

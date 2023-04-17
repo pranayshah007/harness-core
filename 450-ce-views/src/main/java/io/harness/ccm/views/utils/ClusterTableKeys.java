@@ -18,6 +18,7 @@ public class ClusterTableKeys {
   public static final String CLUSTER_TABLE_AGGREGRATED = "clusterDataAggregated";
   public static final String CLUSTER_TABLE_HOURLY_AGGREGRATED = "clusterDataHourlyAggregated";
   public static final String CLUSTER_TABLE_HOURLY_AGGREGRATED_CH = "ccm.clusterDataHourlyAggregated";
+  public static final String CLUSTER_TABLE_AGGREGRATED_CH = "ccm.clusterDataAggregated";
   public static final String START_TIME = "starttime";
   public static final String END_TIME = "endtime";
   public static final String ACCOUNT_ID = "accountid";

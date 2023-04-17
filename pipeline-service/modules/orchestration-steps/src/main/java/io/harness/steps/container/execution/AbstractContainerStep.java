@@ -25,7 +25,6 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.data.Outcome;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
@@ -130,11 +129,11 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
   public StepResponse handleAsyncResponse(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     containerStepCleanupHelper.sendCleanupRequest(ambiance);
-    Outcome outcome = produceOutcome(ambiance, stepParameters);
+    StepResponse.StepOutcome outcome = produceOutcome(ambiance, stepParameters);
     return containerStepExecutionResponseHelper.handleAsyncResponseInternal(ambiance, responseDataMap, outcome);
   }
 
-  public Outcome produceOutcome(Ambiance ambiance, StepElementParameters stepParameters) {
+  public StepResponse.StepOutcome produceOutcome(Ambiance ambiance, StepElementParameters stepParameters) {
     return null;
   }
 

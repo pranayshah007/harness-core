@@ -8,8 +8,10 @@
 package io.harness.pms.pipeline.service;
 
 import static io.harness.rule.OwnerRule.SAMARTH;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
@@ -20,9 +22,10 @@ import static org.mockito.Mockito.mock;
 import io.harness.PipelineServiceTestBase;
 import io.harness.PipelineSettingsService;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.HintException;
 import io.harness.filter.service.FilterService;
 import io.harness.gitsync.persistance.GitSyncSdkService;
-import io.harness.gitx.GitXSettingsHandler;
+import io.harness.gitx.GitXSettingsHelper;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -70,7 +73,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
   @Inject private PipelineMetadataService pipelineMetadataService;
 
   @Mock private PipelineSettingsService pipelineSettingsService;
-  @Mock GitXSettingsHandler gitXSettingsHandler;
+  @Mock GitXSettingsHelper gitXSettingsHelper;
   @InjectMocks private PMSPipelineServiceImpl pmsPipelineService;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
 
@@ -132,7 +135,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
     doReturn(TemplateMergeResponseDTO.builder().build())
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipeline(any(), anyBoolean(), anyBoolean());
-    doNothing().when(gitXSettingsHandler).enforceGitExperienceIfApplicable(any(), any(), any());
+    doNothing().when(gitXSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
     MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
     aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
@@ -156,5 +159,35 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
     assertThat(queriedPipelineEntity.getYaml()).isEqualTo(updatedPipelineEntity.getYaml());
     assertThat(queriedPipelineEntity.getStageCount()).isEqualTo(updatedPipelineEntity.getStageCount());
     assertThat(queriedPipelineEntity.getStageNames()).isEqualTo(updatedPipelineEntity.getStageNames());
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testFormCriteriaInvalidModuleType() throws IOException {
+    doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
+    on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
+    doReturn(outboxEvent).when(outboxService).save(any());
+    doReturn(updatedPipelineEntity)
+        .when(pmsPipelineServiceHelperMocked)
+        .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
+    doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
+        .when(pmsPipelineServiceHelperMocked)
+        .resolveTemplatesAndValidatePipeline(any(), anyBoolean(), anyBoolean());
+    doReturn(TemplateMergeResponseDTO.builder().build())
+        .when(pipelineTemplateHelper)
+        .resolveTemplateRefsInPipeline(any(), anyBoolean(), anyBoolean());
+    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
+    Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
+    aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
+        .thenReturn(projDTOCall);
+    pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
+
+    final Throwable ex = catchThrowable(()
+                                            -> pmsPipelineServiceHelper.formCriteria(accountId, ORG_IDENTIFIER,
+                                                PROJ_IDENTIFIER, null, null, false, "cn", "my"));
+    assertThat(ex).isInstanceOf(HintException.class);
+    assertThat(ex.getMessage()).isEqualTo("Invalid module type [cn]");
   }
 }

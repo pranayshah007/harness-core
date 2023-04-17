@@ -26,4 +26,8 @@ public class PortFinder {
     }
     return startingPort++;
   }
+
+  public Set<Integer> getUsedPorts() {
+    return this.usedPorts;
+  }
 }

@@ -16,6 +16,7 @@ import io.harness.beans.DecryptedSecretValue;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.NGAccessWithEncryptionConsumer;
+import io.harness.ng.core.dto.secrets.SecretRequestWrapper;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.remote.client.NGRestClientExecutor;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
@@ -62,5 +63,12 @@ public class NonPrivilegedSecretNGManagerClientServiceImpl implements SecretMana
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
     return getResponse(
         secretManagerClient.getDecryptedSecretValue(identifier, accountIdentifier, orgIdentifier, projectIdentifier));
+  }
+
+  @Override
+  public SecretResponseWrapper create(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      boolean privateSecret, SecretRequestWrapper dto) {
+    return getResponse(
+        secretManagerClient.create(accountIdentifier, orgIdentifier, projectIdentifier, privateSecret, dto));
   }
 }

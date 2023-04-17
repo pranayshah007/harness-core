@@ -34,7 +34,6 @@ import software.wings.delegatetasks.validation.capabilities.ShellConnectionCapab
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.utils.WingsTestConstants;
 
-import com.jcraft.jsch.JSchException;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -49,7 +48,7 @@ public class ShellConnectionCapabilityCheckTest extends WingsBaseTest {
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
-  public void performCapabilityCheck() throws JSchException {
+  public void performCapabilityCheck() throws Exception {
     doNothing().when(shellConnectionCapabilityCheck).performTest(any(SshSessionConfig.class));
     CapabilityResponse capabilityResponse = shellConnectionCapabilityCheck.performCapabilityCheck(
         ShellConnectionCapability.builder()

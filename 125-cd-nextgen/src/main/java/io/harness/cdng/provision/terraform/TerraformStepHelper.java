@@ -7,6 +7,7 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.beans.FeatureName.CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_S3_NG;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
@@ -100,6 +101,7 @@ import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -176,6 +178,7 @@ public class TerraformStepHelper {
 
   @Inject private FileStoreService fileStoreService;
   @Inject DelegateServiceGrpcClient delegateServiceGrpcClient;
+  @Inject private NGEncryptedDataService ngEncryptedDataService;
 
   public static Optional<EntityDetail> prepareEntityDetailForBackendConfigFiles(
       String accountId, String orgIdentifier, String projectIdentifier, TerraformBackendConfig config) {
@@ -1284,5 +1287,18 @@ public class TerraformStepHelper {
         validationMessage = format("Var Files with identifier: %s", identifier);
     }
     cdStepHelper.validateManifest(storeKind, connectorDTO, validationMessage);
+  }
+
+  public void validateSecretManager(
+      Ambiance ambiance, String accountId, String orgIdentifier, String projectIdentifier, String secretManagerRef) {
+    if (cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN)) {
+      boolean isSecretManagerReadOnly =
+          ngEncryptedDataService.isSecretManagerReadOnly(accountId, orgIdentifier, projectIdentifier, secretManagerRef);
+      if (isSecretManagerReadOnly) {
+        throw new InvalidRequestException(
+            "Please configure a secret manager which allows to store terraform plan as a secret. Read-only secret manager is not allowed.");
+      }
+    }
   }
 }

@@ -17,6 +17,7 @@ import io.harness.pms.contracts.expression.RemoteFunctorServiceGrpc;
 import io.harness.pms.contracts.governance.JsonExpansionServiceGrpc;
 import io.harness.pms.contracts.plan.PlanCreationServiceGrpc;
 import io.harness.pms.contracts.plan.PlanCreationServiceGrpc.PlanCreationServiceBlockingStub;
+import io.harness.pms.contracts.plan.PluginInfoProviderServiceGrpc;
 import io.harness.pms.plan.execution.data.service.expressions.EngineExpressionGrpcServiceImpl;
 import io.harness.pms.plan.execution.data.service.outcome.OutcomeServiceGrpcServerImpl;
 import io.harness.pms.plan.execution.data.service.outputs.SweepingOutputServiceImpl;
@@ -125,6 +126,21 @@ public class PipelineServiceGrpcModule extends AbstractModule {
     }
     map.put(ModuleType.PMS,
         JsonExpansionServiceGrpc.newBlockingStub(InProcessChannelBuilder.forName("pmsSdkInternal").build()));
+    return map;
+  }
+
+  @Provides
+  @Singleton
+  public Map<ModuleType, PluginInfoProviderServiceGrpc.PluginInfoProviderServiceBlockingStub>
+  getPluginInfoProviderClients(PipelineServiceConfiguration configuration) throws SSLException {
+    Map<ModuleType, PluginInfoProviderServiceGrpc.PluginInfoProviderServiceBlockingStub> map = new HashMap<>();
+    for (Map.Entry<String, GrpcClientConfig> entry : configuration.getGrpcClientConfigs().entrySet()) {
+      map.put(ModuleType.fromString(entry.getKey()),
+          PluginInfoProviderServiceGrpc.newBlockingStub(
+              getChannel(entry.getValue(), configuration.getGrpcNegotiationType())));
+    }
+    map.put(ModuleType.PMS,
+        PluginInfoProviderServiceGrpc.newBlockingStub(InProcessChannelBuilder.forName("pmsSdkInternal").build()));
     return map;
   }
 

@@ -32,7 +32,7 @@ public class ServiceImportService implements ImportService {
   @Inject DiscoveryService discoveryService;
   @Inject ServiceResourceService serviceResourceService;
 
-  public DiscoveryResult discover(String authToken, ImportDTO importConnectorDTO) {
+  public DiscoveryResult discover(ImportDTO importConnectorDTO) {
     ServiceFilter filter = (ServiceFilter) importConnectorDTO.getFilter();
     String accountId = importConnectorDTO.getAccountIdentifier();
     String appId = filter.getAppId();

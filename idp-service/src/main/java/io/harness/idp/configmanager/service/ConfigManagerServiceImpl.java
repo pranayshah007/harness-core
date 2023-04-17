@@ -61,7 +61,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
   private static final String CONFIG_DATA_NAME = "config";
 
-  private static final String CONFIG_NAME = "app-config";
+  private static final String CONFIG_NAME = "backstage-override-config";
 
   private static final String INVALID_PLUGIN_CONFIG_PROVIDED = "Invalid plugin config provided for Plugin id - %s";
   private static final String MERGED_APP_CONFIG_JSON_SCHEMA_PATH = "configs/json-schemas/merged-app-config-schema.json";
@@ -70,6 +70,8 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
   private static final String INVALID_MERGED_APP_CONFIG_SCHEMA =
       "Invalid schema for merged app-config.yaml for account - %s";
+
+  private static final long baseTimeStamp = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000;
 
   @Override
   public Map<String, Boolean> getAllPluginIdsMap(String accountIdentifier) {
@@ -96,6 +98,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setConfigType(configType);
     appConfigEntity.setEnabledDisabledAt(System.currentTimeMillis());
+    appConfigEntity.setEnabled(false);
     List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
         configEnvVariablesService.insertConfigEnvVariables(appConfig, accountIdentifier);
     AppConfigEntity insertedData = appConfigRepository.save(appConfigEntity);
@@ -212,6 +215,11 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
         .envVariables(envVariableAndSecretList);
   }
 
+  @Override
+  public List<AppConfigEntity> deleteDisabledPluginsConfigsDisabledMoreThanAWeekAgo() {
+    return appConfigRepository.deleteDisabledPluginsConfigBasedOnTimestampsForEnabledDisabledTime(baseTimeStamp);
+  }
+
   private String mergeAppConfigs(List<String> configs) throws Exception {
     String baseAppConfig = ConfigManagerUtils.readFile(BASE_APP_CONFIG_PATH);
     JsonNode baseConfig = ConfigManagerUtils.asJsonNode(baseAppConfig);
@@ -236,7 +244,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     List<AppConfigEntity> allEnabledConfigEntity =
         appConfigRepository.findAllByAccountIdentifierAndEnabled(accountIdentifier, true);
     if (allEnabledConfigEntity.isEmpty()) {
-      throw new InvalidRequestException(format(NO_PLUGIN_ENABLED_FOR_ACCOUNT, accountIdentifier));
+      log.info(format(NO_PLUGIN_ENABLED_FOR_ACCOUNT, accountIdentifier));
     }
     return allEnabledConfigEntity.stream().map(entity -> entity.getConfigs()).collect(Collectors.toList());
   }
@@ -265,7 +273,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
         appConfigRepository.findAllByAccountIdentifierAndConfigTypeAndEnabled(
             accountIdentifier, ConfigType.PLUGIN, true);
     if (allEnabledPluginConfigEntity.isEmpty()) {
-      throw new InvalidRequestException(format(NO_PLUGIN_ENABLED_FOR_ACCOUNT, accountIdentifier));
+      log.info(format(NO_PLUGIN_ENABLED_FOR_ACCOUNT, accountIdentifier));
     }
     return allEnabledPluginConfigEntity;
   }

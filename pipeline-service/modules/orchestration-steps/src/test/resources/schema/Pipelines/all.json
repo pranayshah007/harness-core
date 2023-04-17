@@ -2886,6 +2886,18 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "PipelineRollbackStageConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StageInfoConfig"
+        },
+        {
+          "type": "object",
+          "properties": { }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "PipelineStageConfig": {
       "allOf": [
         {
@@ -4390,6 +4402,22 @@
                 "properties": {
                   "spec": {
                     "$ref": "#/definitions/PipelineStageConfig"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "PipelineRollback"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/PipelineRollbackStageConfig"
                   }
                 }
               }

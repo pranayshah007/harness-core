@@ -758,14 +758,14 @@ io.harness.cdng.googlefunctions.trafficShift.GoogleFunctionsTrafficShiftStepInfo
 io.harness.cdng.googlefunctions.rollback.GoogleFunctionsRollbackStepParameters
 io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStepNode
 io.harness.cdng.googlefunctions.GoogleFunctionsStepExceptionPassThroughData
-io.harness.cdng.googlefunctions.GoogleFunctionPrepareRollbackOutcome
+io.harness.cdng.googlefunctions.beans.GoogleFunctionPrepareRollbackOutcome
 io.harness.cdng.googlefunctions.trafficShift.GoogleFunctionsTrafficShiftStepNode
 io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStepInfo
 io.harness.cdng.googlefunctions.GoogleFunctionsStepPassThroughData
 io.harness.cdng.googlefunctions.rollback.GoogleFunctionsRollbackStepInfo
 io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStepNode
 io.harness.cdng.googlefunctions.trafficShift.GoogleFunctionsTrafficShiftStepParameters
-io.harness.cdng.googlefunctions.GoogleFunctionStepOutcome
+io.harness.cdng.googlefunctions.beans.GoogleFunctionStepOutcome
 io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStepInfo
 io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStepParameters
 io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStepParameters
@@ -827,6 +827,8 @@ io.harness.cdng.infra.beans.K8sAwsInfraMapping
 io.harness.cdng.hooks.ServiceHook
 io.harness.cdng.hooks.ServiceHookWrapper
 io.harness.cdng.hooks.ServiceHookOutcome
+io.harness.cdng.hooks.steps.ServiceHooksOutcome
+io.harness.cdng.hooks.steps.ServiceHooksMetadataSweepingOutput
 io.harness.cdng.tas.TasRouteType
 io.harness.cdng.tas.TasRouteMappingStepInfo
 io.harness.cdng.tas.TasRouteMappingStepParameters
@@ -843,3 +845,11 @@ io.harness.cdng.googlefunctions.deploygenone.GoogleFunctionsGenOneDeployStepPara
 io.harness.cdng.googlefunctions.deploygenone.GoogleFunctionsGenOneDeployStepNode
 io.harness.cdng.googlefunctions.rollbackgenone.GoogleFunctionsGenOneRollbackStepParameters
 io.harness.cdng.googlefunctions.deploygenone.GoogleFunctionsGenOneDeployStepInfo
+io.harness.cdng.deploymentmetadata.GoogleCloudFunctionDeploymentMetaData
+io.harness.cdng.manifest.yaml.kinds.GoogleCloudFunctionGenOneDefinitionManifest
+io.harness.cdng.manifest.yaml.GoogleCloudFunctionGenOneDefinitionManifestOutcome
+io.harness.cdng.googlefunctions.GoogleFunctionGenOnePrepareRollbackOutcome
+io.harness.cdng.googlefunctions.GoogleFunctionGenOneStepOutcome
+io.harness.cdng.service.steps.sweepingoutput.GoogleFunctionsServiceCustomSweepingOutput
+io.harness.pms.sdk.core.steps.io.EmptyStepParameters
+io.harness.cdng.configfile.steps.ConfigFilesStepV2SweepingOutput
