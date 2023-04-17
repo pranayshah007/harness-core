@@ -67,7 +67,7 @@ rules:
     resources:
       - events
     verbs:
-      - create      
+      - create
 
 ---
 apiVersion: v1
