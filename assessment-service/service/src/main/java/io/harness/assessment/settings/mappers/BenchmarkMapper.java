@@ -30,6 +30,7 @@ public class BenchmarkMapper {
                                .score(scoreDTO.getScore())
                                .scoreType(scoreDTO.getScoreType())
                                .entityId(scoreDTO.getEntityId())
+                               .maxScore(scoreDTO.getMaxScore())
                                .build())
                     .collect(Collectors.toList()))
         .build();

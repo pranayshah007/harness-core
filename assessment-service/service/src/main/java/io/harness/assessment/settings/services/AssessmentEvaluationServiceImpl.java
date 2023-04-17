@@ -82,8 +82,7 @@ public class AssessmentEvaluationServiceImpl implements AssessmentEvaluationServ
     User user = userOptional.get();
     // check all responses are there
     List<UserResponseRequestItem> userResponses = userResponseRequest.getResponses();
-    Map<String, List<String>> userResponseQuestionMap = userResponses.stream().collect(
-        Collectors.toMap(UserResponseRequestItem::getQuestionId, UserResponseRequestItem::getResponseIds));
+    Map<String, List<String>> userResponseQuestionMap = getQuestionUserResponsesMap(userResponses);
     // compare the two sets
     validateQuestionResponses(assessment, userResponses, userResponseQuestionMap);
     Optional<AssessmentResponse> previouslySubmittedResponse =
@@ -140,6 +139,12 @@ public class AssessmentEvaluationServiceImpl implements AssessmentEvaluationServ
 
     // TODO org score calculations
     return AssessmentResponseMapper.toDTO(assessmentResponseInDb);
+  }
+
+  @NotNull
+  private static Map<String, List<String>> getQuestionUserResponsesMap(List<UserResponseRequestItem> userResponses) {
+    return userResponses.stream().collect(
+        Collectors.toMap(UserResponseRequestItem::getQuestionId, UserResponseRequestItem::getResponseIds));
   }
 
   private static List<UserResponse> getUserResponses(
@@ -275,7 +280,7 @@ public class AssessmentEvaluationServiceImpl implements AssessmentEvaluationServ
 
   @Override
   public UserAssessmentDTO saveAssessmentResponse(UserResponsesRequest userResponsesRequest, String token) {
-    // check if this user has already a entry for this assessment, then update it.
+    // check if this user has already an entry for this assessment, then update it.
     Optional<UserInvitation> userInvitationOptional = userInvitationRepository.findOneByGeneratedCode(token);
     if (userInvitationOptional.isEmpty()) {
       throw new RuntimeException("Token error");
@@ -297,14 +302,26 @@ public class AssessmentEvaluationServiceImpl implements AssessmentEvaluationServ
         && previouslySubmittedResponse.get().getStatus() == AssessmentResponseStatus.COMPLETED) {
       throw new RuntimeException("Assessment is already completed for this version");
     }
-    // TODO fix below code.
+    Map<String, List<String>> userResponseQuestionMap =
+        getQuestionUserResponsesMap(userResponsesRequest.getResponses());
     List<UserResponse> userResponseEntity =
-        userResponsesRequest.getResponses()
+        assessment.getQuestions()
             .stream()
-            .map(userResponseRequestItem
+            .map(question
                 -> UserResponse.builder()
-                       .questionId(userResponseRequestItem.getQuestionId())
-                       //                                                           .responses()
+                       .questionId(question.getQuestionId())
+                       .responses(question.getPossibleResponses()
+                                      .stream()
+                                      .map(option -> {
+                                        boolean isSelected = userResponseQuestionMap.containsKey(option.getOptionId());
+                                        return UserResponseItem.builder()
+                                            .optionId(option.getOptionId())
+                                            .isSelected(isSelected)
+                                            .build();
+                                      })
+                                      .collect(Collectors.toList()))
+                       .sectionId(question.getSectionId())
+                       .maxScore(question.getMaxScore())
                        .build())
             .collect(Collectors.toList());
     AssessmentResponse assessmentResponse = AssessmentResponse.builder()
@@ -318,8 +335,8 @@ public class AssessmentEvaluationServiceImpl implements AssessmentEvaluationServ
                                                 .build();
     assessmentResponseRepository.save(assessmentResponse);
     UserAssessmentDTO userAssessmentDTO = AssessmentMapper.toDTO(assessment);
-    // should fetch user response from db. TODO
-    //    userAssessmentDTO.setUserResponse(Optional.of(userResponsesRequest));
+    // should fetch user response from db. TODO Important
+    userAssessmentDTO.setUserResponse(userResponsesRequest.getResponses());
     return userAssessmentDTO;
   }
 

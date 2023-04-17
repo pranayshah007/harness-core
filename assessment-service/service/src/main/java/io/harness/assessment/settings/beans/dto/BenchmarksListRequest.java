@@ -16,7 +16,6 @@ import lombok.Data;
 @Data
 @Builder
 public class BenchmarksListRequest {
-  @NotNull String assessmentId;
   @NotNull Long version;
   @Size(min = 1, max = 50) List<BenchmarkDTO> benchmarks;
 }

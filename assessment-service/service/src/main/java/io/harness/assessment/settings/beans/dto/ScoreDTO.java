@@ -9,12 +9,13 @@ package io.harness.assessment.settings.beans.dto;
 
 import io.harness.assessment.settings.beans.entities.ScoreType;
 
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class ScoreDTO {
-  ScoreType scoreType;
+  @NotNull ScoreType scoreType;
   String entityId; //
-  Double score;
-  Long maxScore;
+  @NotNull Double score;
+  @NotNull Long maxScore;
 }

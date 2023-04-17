@@ -8,6 +8,8 @@
 package io.harness.assessment.settings.services;
 
 import io.harness.assessment.settings.beans.dto.AssessmentResultsResponse;
+import io.harness.assessment.settings.beans.dto.ScoreOverviewDTO;
+import io.harness.assessment.settings.beans.dto.UserResponsesResponse;
 import io.harness.assessment.settings.beans.entities.Assessment;
 import io.harness.assessment.settings.beans.entities.AssessmentResponse;
 import io.harness.assessment.settings.beans.entities.Benchmark;
@@ -23,6 +25,8 @@ import io.harness.assessment.settings.repositories.BenchmarkRepository;
 import io.harness.assessment.settings.repositories.OrganizationEvaluationRepository;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -35,6 +39,7 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class AssessmentResultServiceImpl implements AssessmentResultService {
+  public static final int TOP_BOTTOM_ENTRY_COUNT = 3;
   private AssessmentResponseRepository assessmentResponseRepository;
   private OrganizationEvaluationRepository organizationEvaluationRepository;
   private AssessmentRepository assessmentRepository;
@@ -102,6 +107,64 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
         optionResponse.setOptionText(questionOption.getOptionText());
       });
     });
+    // Adding section to set overview.
+    Long numOfResponses = organizationEvaluation.getNumOfResponses();
+    setResultsOverview(benchmarkId, assessmentResultsResponse, numOfResponses);
     return assessmentResultsResponse;
+  }
+
+  private void setResultsOverview(
+      String benchmarkId, AssessmentResultsResponse assessmentResultsResponse, Long numOfResponses) {
+    ScoreOverviewDTO scoreOverviewDTO =
+        ScoreOverviewDTO.builder()
+            .selfScore(assessmentResultsResponse.getUserScores()
+                           .stream()
+                           .filter(x -> x.getScoreType() == ScoreType.ASSESSMENT_LEVEL)
+                           .findFirst()
+                           .orElse(null))
+            .organizationScore(assessmentResultsResponse.getOrganizationScores()
+                                   .stream()
+                                   .filter(x -> x.getScoreType() == ScoreType.ASSESSMENT_LEVEL)
+                                   .findFirst()
+                                   .orElse(null))
+            .build();
+    assessmentResultsResponse.setScoreOverview(scoreOverviewDTO);
+    scoreOverviewDTO.setNumberOfResponses(numOfResponses);
+    Integer percentageDiffOrg = Math.toIntExact(
+        Math.round(((scoreOverviewDTO.getSelfScore().getScore() - scoreOverviewDTO.getOrganizationScore().getScore())
+                       / scoreOverviewDTO.getSelfScore().getMaxScore())
+            * 100));
+    scoreOverviewDTO.setPercentageDiffOrg(percentageDiffOrg);
+    // Duplicate get code fix - TODO
+    if (StringUtils.isNotEmpty(benchmarkId)) {
+      Optional<Benchmark> benchmarkOptional = benchmarkRepository.findOneByAssessmentIdAndVersionAndBenchmarkId(
+          assessmentResultsResponse.getAssessmentId(), assessmentResultsResponse.getVersion(), benchmarkId);
+      log.info("{}", benchmarkOptional);
+      if (benchmarkOptional.isEmpty()) {
+        throw new RuntimeException("Invalid benchmark Id");
+      }
+      Benchmark benchmark = benchmarkOptional.get();
+      Score benchmarkScore = benchmark.getScores()
+                                 .stream()
+                                 .filter(score -> score.getScoreType() == ScoreType.ASSESSMENT_LEVEL)
+                                 .findFirst()
+                                 .orElse(null);
+      scoreOverviewDTO.setBenchmarkScore(benchmarkScore);
+      Integer percentageDiffBenchmark = Math.toIntExact(
+          Math.round(((scoreOverviewDTO.getSelfScore().getScore() - scoreOverviewDTO.getBenchmarkScore().getScore())
+                         / scoreOverviewDTO.getSelfScore().getMaxScore())
+              * 100));
+      scoreOverviewDTO.setPercentageDiffBenchmark(percentageDiffBenchmark);
+    }
+    setTopAndBottomN(assessmentResultsResponse);
+  }
+
+  private void setTopAndBottomN(AssessmentResultsResponse assessmentResultsResponse) {
+    ArrayList<UserResponsesResponse> responseArrayList = new ArrayList<>(assessmentResultsResponse.getResponses());
+    responseArrayList.sort(Comparator.comparingDouble(x -> (x.getUserScore() - x.getMaxScore())));
+    assessmentResultsResponse.getScoreOverview().setWorst(
+        responseArrayList.stream().limit(TOP_BOTTOM_ENTRY_COUNT).collect(Collectors.toList()));
+    assessmentResultsResponse.getScoreOverview().setBest(responseArrayList.subList(
+        Math.max(responseArrayList.size() - TOP_BOTTOM_ENTRY_COUNT, 0), responseArrayList.size()));
   }
 }

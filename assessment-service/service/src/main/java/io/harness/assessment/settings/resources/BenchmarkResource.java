@@ -26,10 +26,12 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Path("/v1/benchmark")
 @Api("benchmark")
+@Slf4j
 public class BenchmarkResource {
   // get list of benchmark for assessment id
   // upload a benchmark against a assessment id.
@@ -46,6 +48,7 @@ public class BenchmarkResource {
     try {
       return Response.status(Response.Status.OK).entity(benchmarkService.uploadBenchmark(body, assessmentId)).build();
     } catch (Exception e) {
+      log.error("error {}", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();
