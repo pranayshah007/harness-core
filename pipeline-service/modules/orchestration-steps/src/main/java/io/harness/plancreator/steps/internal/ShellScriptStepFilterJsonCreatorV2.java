@@ -54,6 +54,12 @@ public class ShellScriptStepFilterJsonCreatorV2 extends GenericStepPMSFilterJson
             "Execution target ssh connection attribute details cannot be null for step %s. Please add it & try again.",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
       }
+    } else {
+      if (scriptStepInfo.getExecutionTarget() != null) {
+        throw new InvalidYamlRuntimeException(
+            format("Execution target details cannot be set when running script on delegate, step %s.",
+                YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+      }
     }
 
     return super.handleNode(filterCreationContext, yamlField);
