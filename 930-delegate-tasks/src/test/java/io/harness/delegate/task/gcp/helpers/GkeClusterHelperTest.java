@@ -504,7 +504,7 @@ public class GkeClusterHelperTest extends CategoryTest {
                        .command(GCP_AUTH_PLUGIN_BINARY)
                        .apiVersion(API_VERSION)
                        .installHint(GCP_AUTH_PLUGIN_INSTALL_HINT)
-                       .provideClusterInfo(true)
+                       .provideClusterInfo(false)
                        .env(List.of(new EnvVariable(K8sConstants.CLOUDSDK_CONFIG,
                                         Paths.get(WORK_DIR, K8sConstants.GKE_LOGIN_CREDENTIALS_PATH)
                                             .normalize()
@@ -556,7 +556,7 @@ public class GkeClusterHelperTest extends CategoryTest {
                        .command(GCP_AUTH_PLUGIN_BINARY)
                        .apiVersion(API_VERSION)
                        .installHint(GCP_AUTH_PLUGIN_INSTALL_HINT)
-                       .provideClusterInfo(true)
+                       .provideClusterInfo(false)
                        .env(List.of(new EnvVariable(K8sConstants.CLOUDSDK_CONFIG,
                                         Paths.get(WORK_DIR, K8sConstants.GKE_LOGIN_CREDENTIALS_PATH)
                                             .normalize()
