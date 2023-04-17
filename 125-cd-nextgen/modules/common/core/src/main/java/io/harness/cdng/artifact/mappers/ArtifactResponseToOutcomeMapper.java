@@ -522,6 +522,7 @@ public class ArtifactResponseToOutcomeMapper {
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
         .dockerConfigJsonSecret(createDockerConfigJsonSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
         .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
+        .metadata(useDelegateResponse ? getMetadata(artifactDelegateResponse) : null)
         .label(getArtifactoryLabels(artifactDelegateResponse))
         .build();
   }

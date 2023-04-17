@@ -14,6 +14,8 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -23,6 +25,9 @@ import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.NoResultFoundException;
 import io.harness.ipallowlist.IPAllowlistResourceUtils;
 import io.harness.ipallowlist.entity.IPAllowlistEntity;
+import io.harness.ipallowlist.events.IPAllowlistConfigCreateEvent;
+import io.harness.ipallowlist.events.IPAllowlistConfigDeleteEvent;
+import io.harness.ipallowlist.events.IPAllowlistConfigUpdateEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.ipallowlist.spring.IPAllowlistRepository;
 import io.harness.rule.Owner;
@@ -78,6 +83,7 @@ public class IPAllowlistServiceImplTest extends CategoryTest {
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
     IPAllowlistEntity result = ipAllowlistService.create(ipAllowlistEntity);
+    verify(outboxService, times(1)).save(any(IPAllowlistConfigCreateEvent.class));
     assertThat(result).isNotNull();
     assertThat(result).isEqualToComparingFieldByField(ipAllowlistEntity);
   }
@@ -119,6 +125,53 @@ public class IPAllowlistServiceImplTest extends CategoryTest {
     exceptionRule.expect(NoResultFoundException.class);
     exceptionRule.expectMessage(String.format("IP Allowlist config with identifier [%s] not found.", IDENTIFIER));
     ipAllowlistService.get(ACCOUNT_IDENTIFIER, IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testUpdate() {
+    IPAllowlistEntity ipAllowlistEntity = getIPAllowlistEntity();
+    Optional<IPAllowlistEntity> ipAllowlistEntityOptional = Optional.ofNullable(getIPAllowlistEntity());
+    when(ipAllowlistRepository.findByAccountIdentifierAndIdentifier(ACCOUNT_IDENTIFIER, IDENTIFIER))
+        .thenReturn(ipAllowlistEntityOptional);
+    when(ipAllowlistRepository.save(ipAllowlistEntity)).thenReturn(ipAllowlistEntity);
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    IPAllowlistEntity result = ipAllowlistService.update(IDENTIFIER, ipAllowlistEntity);
+    verify(outboxService, times(1)).save(any(IPAllowlistConfigUpdateEvent.class));
+    assertThat(result).isNotNull();
+    assertThat(result).isEqualToComparingFieldByField(ipAllowlistEntity);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete() {
+    Optional<IPAllowlistEntity> ipAllowlistEntity = Optional.ofNullable(getIPAllowlistEntity());
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(ipAllowlistRepository.findByAccountIdentifierAndIdentifier(ACCOUNT_IDENTIFIER, IDENTIFIER))
+        .thenReturn(ipAllowlistEntity);
+    boolean result = ipAllowlistService.delete(ACCOUNT_IDENTIFIER, IDENTIFIER);
+    verify(outboxService, times(1)).save(any(IPAllowlistConfigDeleteEvent.class));
+    assertThat(result).isNotNull();
+    assertThat(result).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_notFound() {
+    when(ipAllowlistRepository.findByAccountIdentifierAndIdentifier(ACCOUNT_IDENTIFIER, IDENTIFIER))
+        .thenReturn(Optional.empty());
+    exceptionRule.expect(NoResultFoundException.class);
+    exceptionRule.expectMessage(String.format("IP Allowlist config with identifier [%s] not found.", IDENTIFIER));
+    ipAllowlistService.delete(ACCOUNT_IDENTIFIER, IDENTIFIER);
   }
 
   private IPAllowlistEntity getIPAllowlistEntity() {

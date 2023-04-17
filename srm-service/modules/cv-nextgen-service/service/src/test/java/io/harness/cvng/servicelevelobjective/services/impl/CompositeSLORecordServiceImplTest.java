@@ -66,6 +66,8 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
   @Before
   public void setup() {
     builderFactory = BuilderFactory.getDefault();
+    builderFactory.getContext().setOrgIdentifier("orgIdentifier");
+    builderFactory.getContext().setProjectIdentifier("project");
     MockitoAnnotations.initMocks(this);
     MonitoredServiceDTO monitoredServiceDTO1 =
         builderFactory.monitoredServiceDTOBuilder().sources(MonitoredServiceDTO.Sources.builder().build()).build();

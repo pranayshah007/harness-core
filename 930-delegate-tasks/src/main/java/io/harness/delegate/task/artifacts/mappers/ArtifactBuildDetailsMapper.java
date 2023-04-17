@@ -90,15 +90,10 @@ public class ArtifactBuildDetailsMapper {
     if (buildDetails == null) {
       return ArtifactBuildDetailsNG.builder().build();
     }
-    Map<String, String> metadata = buildDetails.getMetadata() == null ? new HashMap<>() : buildDetails.getMetadata();
-    if (buildDetails.getBuildFullDisplayName() != null) {
-      metadata.put(ArtifactMetadataKeys.SHA, buildDetails.getBuildFullDisplayName());
-      metadata.put(ArtifactMetadataKeys.SHAV2, buildDetails.getBuildFullDisplayName());
-    }
 
     return ArtifactBuildDetailsNG.builder()
         .buildUrl(buildDetails.getBuildUrl())
-        .metadata(metadata)
+        .metadata(buildDetails.getMetadata())
         .number(buildDetails.getNumber())
         .uiDisplayName(buildDetails.getUiDisplayName())
         .build();

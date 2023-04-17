@@ -17,6 +17,7 @@ java_library(
         "//:lombok",
         "//120-ng-manager/contracts/openapi/v1:ng-manager-server-spec-module",
         "//120-ng-manager/modules/ip-allowlist/contracts:module",
+        "//120-ng-manager/src/main/java/io/harness/utils/featureflaghelper:module",
         "//930-ng-core-clients:module",
         "//930-ng-license-manager:module",
         "//940-feature-flag:module",

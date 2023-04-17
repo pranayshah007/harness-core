@@ -18,6 +18,9 @@ import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.NoResultFoundException;
 import io.harness.ipallowlist.IPAllowlistResourceUtils;
 import io.harness.ipallowlist.entity.IPAllowlistEntity;
+import io.harness.ipallowlist.events.IPAllowlistConfigCreateEvent;
+import io.harness.ipallowlist.events.IPAllowlistConfigDeleteEvent;
+import io.harness.ipallowlist.events.IPAllowlistConfigUpdateEvent;
 import io.harness.ipallowlist.service.IPAllowlistService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.ipallowlist.spring.IPAllowlistRepository;
@@ -52,7 +55,8 @@ public class IPAllowlistServiceImpl implements IPAllowlistService {
     try {
       return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         IPAllowlistEntity savedIpAllowlistEntity = ipAllowlistRepository.save(ipAllowlistEntity);
-
+        outboxService.save(new IPAllowlistConfigCreateEvent(savedIpAllowlistEntity.getAccountIdentifier(),
+            ipAllowlistResourceUtil.toIPAllowlistConfig(savedIpAllowlistEntity)));
         return savedIpAllowlistEntity;
       }));
     } catch (DuplicateKeyException exception) {
@@ -79,5 +83,41 @@ public class IPAllowlistServiceImpl implements IPAllowlistService {
     }
 
     return optionalIPAllowlistEntity.get();
+  }
+
+  @Override
+  public IPAllowlistEntity update(String ipConfigIdentifier, IPAllowlistEntity ipAllowlistEntity) {
+    IPAllowlistEntity existingIPAllowlist = get(ipAllowlistEntity.getAccountIdentifier(), ipConfigIdentifier);
+
+    ipAllowlistEntity.setCreated(existingIPAllowlist.getCreated());
+    ipAllowlistEntity.setUpdated(existingIPAllowlist.getUpdated());
+    ipAllowlistEntity.setCreatedBy(existingIPAllowlist.getCreatedBy());
+    ipAllowlistEntity.setId(existingIPAllowlist.getId());
+    try {
+      return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+        IPAllowlistEntity savedIpAllowlistEntity = ipAllowlistRepository.save(ipAllowlistEntity);
+        outboxService.save(new IPAllowlistConfigUpdateEvent(savedIpAllowlistEntity.getAccountIdentifier(),
+
+            ipAllowlistResourceUtil.toIPAllowlistConfig(savedIpAllowlistEntity),
+            ipAllowlistResourceUtil.toIPAllowlistConfig(existingIPAllowlist)));
+        return savedIpAllowlistEntity;
+      }));
+    } catch (DuplicateKeyException exception) {
+      String message =
+          String.format("IP Allowlist config with identifier [%s] already exists.", ipAllowlistEntity.getIdentifier());
+      log.error(message, exception);
+      throw new DuplicateFieldException(message);
+    }
+  }
+
+  @Override
+  public boolean delete(String accountIdentifier, String identifier) {
+    IPAllowlistEntity ipAllowlistEntity = get(accountIdentifier, identifier);
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+      ipAllowlistRepository.deleteByAccountIdentifierAndIdentifier(accountIdentifier, identifier);
+      outboxService.save(new IPAllowlistConfigDeleteEvent(
+          ipAllowlistEntity.getAccountIdentifier(), ipAllowlistResourceUtil.toIPAllowlistConfig(ipAllowlistEntity)));
+      return true;
+    }));
   }
 }

@@ -29,6 +29,7 @@ public enum FeatureName {
   SPG_ALLOW_GET_BUILD_SYNC("Allow get builds sync from gcs", HarnessTeam.SPG),
   SPG_ALLOW_FILTER_BY_PATHS_GCS("Enables filtering by path on database GCS-type stream artifacts.", HarnessTeam.SPG),
   SPG_ENABLE_SHARING_FILTERS("Enables account admin share deployments filter using usergroups", HarnessTeam.SPG),
+  SPG_ENABLE_STATUS_OF_DEPLOYMENTS("Enables a way to see deployments status by env", HarnessTeam.SPG),
   SPG_REMOVE_REDUNDANT_UPDATE_IN_AUDIT("It removes a redudant update on the audit", HarnessTeam.SPG),
   SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE("Enables refresh pipeline when trigger "
           + "continue pipeline execution",
@@ -721,7 +722,11 @@ public enum FeatureName {
       "Enable the check if Vault secret manager is read only", HarnessTeam.CDP),
   CDS_RENAME_HARNESS_RELEASE_HISTORY_RESOURCE_NATIVE_HELM_NG(
       "Use a prefix for internal harness release history for native helm deployment. Feature Flag will be removed as part of the epic: https://harness.atlassian.net/browse/CDS-46915",
-      HarnessTeam.CDP);
+      HarnessTeam.CDP),
+  PL_USER_ACCOUNT_LEVEL_DATA_FLOW(
+      "Enables the new flow for all User CRUD where User's Account level Data is also considered.", HarnessTeam.PL),
+  PL_USER_ACCOUNT_LEVEL_DATA_MIGRATION(
+      "Enables Migration to create user account level data map for this account", HarnessTeam.PL);
 
   @Deprecated
   FeatureName() {
