@@ -3,6 +3,7 @@ package io.harness.gitx;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -39,17 +40,17 @@ public class GitXSettingsHelperTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+    if (!GlobalContextManager.isAvailable()) {
+      GlobalContextManager.set(new GlobalContext());
+    }
   }
 
   @Test
   @Owner(developers = VIVEK_DIXIT)
   @Category(UnitTests.class)
-  public void testEnforceGitExperienceIfApplicable() {
-    GitEntityInfo branchInfo = GitEntityInfo.builder().storeType(StoreType.INLINE).build();
-    if (!GlobalContextManager.isAvailable()) {
-      GlobalContextManager.set(new GlobalContext());
-    }
-    GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(branchInfo).build());
+  public void testEnforceGitExperienceIfApplicableWithInlineStoreType() {
+    GitEntityInfo gitEntityInfo = GitEntityInfo.builder().storeType(StoreType.INLINE).build();
+    GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(gitEntityInfo).build());
     doReturn(true).when(gitXSettingsHelper).isGitExperienceEnforcedInSettings(any(), any(), any());
 
     assertThatThrownBy(
@@ -57,6 +58,17 @@ public class GitXSettingsHelperTest extends CategoryTest {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
             "Git Experience is enforced for the current scope with accountId: accountId, orgIdentifier: orgId and projIdentifier: projId. Hence Interaction with INLINE entities is forbidden.");
-    ;
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testEnforceGitExperienceIfApplicableWithRemoteEntities() {
+    GitEntityInfo gitEntityInfo = GitEntityInfo.builder().storeType(StoreType.REMOTE).build();
+    GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(gitEntityInfo).build());
+
+    assertThatCode(
+        () -> gitXSettingsHelper.enforceGitExperienceIfApplicable(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER))
+        .doesNotThrowAnyException();
   }
 }
