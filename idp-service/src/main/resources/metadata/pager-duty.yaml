@@ -1,6 +1,6 @@
 identifier: pager-duty
 name: PagerDuty
-description: This plugin lets you view Harness pipeline execution details inside Backstage.
+description: PagerDuty offers a simple way to identify any active incidents for an entity and the escalation policy.
 createdBy: Spotify
 category: Monitoring
 source: https://github.com/backstage/backstage/tree/master/plugins/pagerduty

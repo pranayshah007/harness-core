@@ -141,12 +141,12 @@ public class StepGroupPMSPlanCreatorV2 extends ChildrenPlanCreator<StepGroupElem
 
       String stepsNodeId = stepsField.getNode().getUuid();
       Map<String, YamlField> stepsYamlFieldMap = new HashMap<>();
+      stepsYamlFieldMap.put(stepsNodeId, stepsField);
       Dependencies dependencies = DependenciesUtils.toDependenciesProto(stepsYamlFieldMap);
 
       if (stepsChildNodeId != null) {
         dependencies = dependencies.toBuilder().putDependencyMetadata(stepsNodeId, stepsChildNodeId).build();
       }
-      stepsYamlFieldMap.put(stepsNodeId, stepsField);
       responseMap.put(stepsNodeId, PlanCreationResponse.builder().dependencies(dependencies).build());
     }
     addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, config.getUuid(), config.getName(), config.getIdentifier(),

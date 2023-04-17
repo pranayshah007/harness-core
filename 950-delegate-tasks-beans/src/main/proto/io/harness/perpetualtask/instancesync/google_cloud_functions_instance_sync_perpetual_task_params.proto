@@ -18,4 +18,5 @@ message GoogleFunctionDeploymentRelease {
   bytes google_functions_infra_config = 1;
   string function = 2;
   string region = 3;
+  string environment_type = 4;
 }

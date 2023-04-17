@@ -49,6 +49,15 @@ public class HealthResource {
   }
 
   @GET
+  @Path("ping")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "an http ping API, to check if service is alive", nickname = "srmPing")
+  public RestResponse<String> ping() throws Exception {
+    return new RestResponse<>("pong");
+  }
+
+  @GET
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get health for CVNG service", nickname = "getCvHealthStatus")

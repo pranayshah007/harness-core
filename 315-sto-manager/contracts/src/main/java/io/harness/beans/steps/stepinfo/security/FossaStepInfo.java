@@ -36,5 +36,5 @@ public class FossaStepInfo extends STOGenericStepInfo {
   @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlGenericConfig")
   protected STOYamlGenericConfig config;
 
-  @NotNull @JsonProperty protected STOYamlAuth auth;
+  @JsonProperty protected STOYamlAuth auth;
 }

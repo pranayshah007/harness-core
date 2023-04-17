@@ -68,6 +68,7 @@ import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceFetchType;
 import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
@@ -357,6 +358,9 @@ public class ArtifactConfigToDelegateReqMapper {
     String project = artifactConfig.getProject().getValue();
     String repository = artifactConfig.getRepository().getValue();
     String sourceDirectory = artifactConfig.getSourceDirectory().getValue();
+    String branch = artifactConfig.getBranch().getValue();
+    String commitId = artifactConfig.getCommitId().getValue();
+    String tag = artifactConfig.getTag().getValue();
     if (StringUtils.isBlank(project)) {
       throw new InvalidRequestException("Please input project name.");
     }
@@ -366,8 +370,13 @@ public class ArtifactConfigToDelegateReqMapper {
     if (StringUtils.isBlank(sourceDirectory)) {
       throw new InvalidRequestException("Please input sourceDirectory path.");
     }
+    if (StringUtils.isAllBlank(branch, commitId, tag)) {
+      throw new InvalidRequestException("Please input one of these three, branch, commitId, Tag.");
+    }
     return ArtifactDelegateRequestUtils.getGoogleCloudSourceArtifactDelegateRequest(repository, project,
-        sourceDirectory, gcpConnectorDTO, connectorRef, encryptedDataDetails,
+        sourceDirectory,
+        GoogleCloudSourceFetchType.valueOf(StringUtils.upperCase(artifactConfig.getFetchType().getName())), branch,
+        commitId, tag, gcpConnectorDTO, connectorRef, encryptedDataDetails,
         ArtifactSourceType.GOOGLE_CLOUD_SOURCE_ARTIFACT);
   }
 

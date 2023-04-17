@@ -566,6 +566,16 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     return isValidationSuccess;
   }
 
+  @Override
+  public boolean isSecretManagerReadOnly(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String secretManagerId) {
+    SecretManagerConfigDTO secretManager;
+
+    secretManager =
+        getSecretManagerOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, secretManagerId, false);
+    return isReadOnlySecretManager(secretManager);
+  }
+
   private byte[] getInputBytes(InputStream inputStream) {
     byte[] inputBytes = new byte[0];
     if (inputStream != null) {

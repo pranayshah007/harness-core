@@ -25,7 +25,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
-import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.configfile.ConfigFilesOutcome;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
@@ -363,8 +363,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
     serviceStepsHelper.checkForAccessOrThrow(ambiance, secretNGVariables);
 
-    resolve(ambiance, envToEnvVariables, envToSvcVariables);
-
     GitOpsEnvOutCome gitOpsEnvOutCome = new GitOpsEnvOutCome(envToEnvVariables, envToSvcVariables);
 
     sweepingOutputService.consume(ambiance, GITOPS_ENV_OUTCOME, gitOpsEnvOutCome, StepCategory.STAGE.name());
@@ -476,7 +474,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
             mergeSvcOverrideInputs(ngServiceOverridesEntity.get().getYaml(), parameters.getServiceOverrideInputs());
       }
 
-      resolve(ambiance, ngEnvironmentConfig, ngServiceOverrides);
       List<NGVariable> secretNGVariables = new ArrayList<>();
       if (ngEnvironmentConfig != null && ngEnvironmentConfig.getNgEnvironmentInfoConfig() != null
           && ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables() != null) {

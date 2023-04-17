@@ -75,6 +75,7 @@ public class GcrApiServiceImpl implements GcrApiService {
   public static final int RETRIES = 10; // TODO:: read from config
   String ERROR_MESSAGE = "There was an error reaching the Google container registry";
   String CONNECTION_ERROR_MESSAGE = "The connector or the artifact source may not be setup correctly.";
+  private static final String COULD_NOT_FETCH_IMAGE_MANIFEST = "Could not fetch image manifest";
 
   public Retry retry;
 
@@ -268,8 +269,11 @@ public class GcrApiServiceImpl implements GcrApiService {
     } catch (Exception e) {
       exception = e;
     }
-    if (EmptyPredicate.isEmpty(artifactMetaInfo.getSha()) && EmptyPredicate.isEmpty(artifactMetaInfo.getShaV2())
-        && exception != null) {
+    if (EmptyPredicate.isEmpty(artifactMetaInfo.getSha()) && EmptyPredicate.isEmpty(artifactMetaInfo.getShaV2())) {
+      if (exception == null) {
+        throw NestedExceptionUtils.hintWithExplanationException(COULD_NOT_FETCH_IMAGE_MANIFEST,
+            CONNECTION_ERROR_MESSAGE, new ArtifactServerException(CONNECTION_ERROR_MESSAGE));
+      }
       if (exception instanceof IOException) {
         log.error("verifyBuildNumber has thrown IOException for registryHostname ["
                 + gcrInternalConfig.getRegistryHostname() + "], imageName [" + imageName + "]",

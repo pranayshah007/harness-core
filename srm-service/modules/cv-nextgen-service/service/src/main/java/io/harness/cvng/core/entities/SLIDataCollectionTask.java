@@ -27,6 +27,8 @@ import lombok.experimental.SuperBuilder;
 public class SLIDataCollectionTask extends DataCollectionTask {
   public static final Duration SLI_MAX_DATA_COLLECTION_DURATION = DATA_COLLECTION_TIME_RANGE_FOR_SLI;
 
+  public static final Duration SLI_MAX_DATA_RETRY_DURATION = Duration.ofHours(28);
+
   @VisibleForTesting public static int MAX_RETRY_COUNT = 10;
 
   private static final List<Duration> RETRY_WAIT_DURATIONS =
@@ -50,7 +52,7 @@ public class SLIDataCollectionTask extends DataCollectionTask {
 
   @Override
   public boolean eligibleForRetry(Instant currentTime) {
-    return getStartTime().isAfter(getDataCollectionPastTimeCutoff(currentTime)) && getRetryCount() < MAX_RETRY_COUNT;
+    return getStartTime().isAfter(getDataCollectionPastRetryTime(currentTime)) && getRetryCount() < MAX_RETRY_COUNT;
   }
 
   @Override
@@ -60,5 +62,9 @@ public class SLIDataCollectionTask extends DataCollectionTask {
 
   public Instant getDataCollectionPastTimeCutoff(Instant currentTime) {
     return DateTimeUtils.roundDownTo5MinBoundary(currentTime).minus(SLI_MAX_DATA_COLLECTION_DURATION);
+  }
+
+  public Instant getDataCollectionPastRetryTime(Instant currentTime) {
+    return DateTimeUtils.roundDownTo5MinBoundary(currentTime).minus(SLI_MAX_DATA_RETRY_DURATION);
   }
 }

@@ -62,6 +62,18 @@ public class ProjectsChangeDataHandler extends AbstractChangeDataHandler {
     return columnValueMapping;
   }
 
+  public boolean shouldDelete() {
+    return false;
+  }
+
+  @Override
+  public Map<String, String> getColumnValueMappingForDelete() {
+    Map<String, String> columnValueMapping = new HashMap<>();
+    columnValueMapping.put("deleted", "true");
+    columnValueMapping.put("deleted_at", String.valueOf(System.currentTimeMillis()));
+    return columnValueMapping;
+  }
+
   @Override
   public List<String> getPrimaryKeys() {
     return asList("id");

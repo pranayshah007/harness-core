@@ -70,7 +70,7 @@ public class CDPipelineEndEventHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
-  public void testHandleEvent() {
+  public void testHandleEventPmsEndPipelineEvent() {
     String panExecutionId = "panExecutionId";
     TFPlanExecutionDetailsKey tfPlanExecutionDetailsKey = mock(TFPlanExecutionDetailsKey.class);
     List<TerraformPlanExecutionDetails> terraformPlanExecutionDetailsList =
@@ -104,7 +104,7 @@ public class CDPipelineEndEventHandlerTest extends CategoryTest {
         .listAllPipelineTFCloudPlanExecutionDetails(any(), any());
 
     cdPipelineEndEventHandler.handleEvent(
-        OrchestrationEvent.builder().status(Status.SUCCEEDED).ambiance(ambiance).build());
+        OrchestrationEvent.builder().serviceName("pms").status(Status.SUCCEEDED).ambiance(ambiance).build());
 
     verify(helper).createTFPlanExecutionDetailsKey(ambiance);
     verify(helper).getAllPipelineTFPlanExecutionDetails(tfPlanExecutionDetailsKey);

@@ -25,7 +25,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(CDP)
 public class GoogleFunctionDeploymentInfoDTO extends DeploymentInfoDTO {
-  @NotNull private String revision;
+  private String environmentType;
   @NotNull private String functionName;
   @NotNull private String project;
   @NotNull private String region;

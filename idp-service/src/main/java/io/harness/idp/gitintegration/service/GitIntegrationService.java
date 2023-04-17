@@ -29,4 +29,5 @@ public interface GitIntegrationService {
   List<CatalogConnectorEntity> getAllConnectorDetails(String accountIdentifier);
   Optional<CatalogConnectorEntity> findByAccountIdAndProviderType(String accountIdentifier, String providerType);
   CatalogConnectorEntity saveConnectorDetails(String accountIdentifier, ConnectorDetails connectorDetails);
+  CatalogConnectorEntity findDefaultConnectorDetails(String accountIdentifier);
 }

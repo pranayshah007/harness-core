@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.encryption.EncryptionReflectUtils.getEncryptedRefField;
 import static io.harness.encryption.EncryptionReflectUtils.isSecretReference;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.persistence.HQuery.allChecks;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -253,6 +254,7 @@ public class WingsMongoPersistence extends MongoPersistence implements WingsPers
 
   @Override
   public <T extends PersistentEntity> boolean delete(Query<T> query) {
+    query.limit(NO_LIMIT);
     try (HIterator<T> records = new HIterator<>(query.fetch())) {
       while (records.hasNext()) {
         deleteEncryptionReferenceIfNecessary(records.next());

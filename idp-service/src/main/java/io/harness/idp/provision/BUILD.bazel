@@ -15,9 +15,13 @@ java_library(
     deps = [
         "//:lombok",
         "//878-ng-common-utilities:module",
+        "//930-ng-core-clients:module",
+        "//940-secret-manager-client:module",
         "//960-api-services/src/main/java/io/harness/k8s:module",
         "//980-commons/src/main/java/io/harness/serializer:module",
         "//idp-service/contracts/openapi/v1:idp-service-server-spec-module",
+        "//idp-service/src/main/java/io/harness/idp/common:module",
+        "//idp-service/src/main/java/io/harness/idp/envvariable:module",
         "//idp-service/src/main/java/io/harness/idp/namespace:module",
         "//idp-service/src/main/java/io/harness/idp/settings:module",
         "@maven//:com_google_inject_guice",

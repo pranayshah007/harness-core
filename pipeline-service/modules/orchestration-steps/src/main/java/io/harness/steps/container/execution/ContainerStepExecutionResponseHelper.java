@@ -28,8 +28,6 @@ import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.data.Outcome;
-import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
@@ -53,7 +51,7 @@ public class ContainerStepExecutionResponseHelper {
   @Inject private KryoSerializer referenceFalseKryoSerializer;
 
   public StepResponse handleAsyncResponseInternal(
-      Ambiance ambiance, Map<String, ResponseData> responseDataMap, Outcome outcome) {
+      Ambiance ambiance, Map<String, ResponseData> responseDataMap, StepResponse.StepOutcome outcome) {
     // If any of the responses are in serialized format, deserialize them
     for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
       entry.setValue(serializedResponseDataHelper.deserialize(entry.getValue()));
@@ -68,7 +66,7 @@ public class ContainerStepExecutionResponseHelper {
   }
 
   private StepResponse handleK8AsyncResponse(
-      Ambiance ambiance, Map<String, ResponseData> responseDataMap, Outcome outcome) {
+      Ambiance ambiance, Map<String, ResponseData> responseDataMap, StepResponse.StepOutcome outcome) {
     String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
     log.info("Received response for step {}", stepIdentifier);
 
@@ -116,8 +114,8 @@ public class ContainerStepExecutionResponseHelper {
         .orElse(null);
   }
 
-  public StepResponse finalizeStepResponse(
-      Ambiance ambiance, StepElementParameters stepParameters, ResponseData responseData, Outcome outcome) {
+  public StepResponse finalizeStepResponse(Ambiance ambiance, StepElementParameters stepParameters,
+      ResponseData responseData, StepResponse.StepOutcome outcome) {
     String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
     log.info("Received response for step {}", stepIdentifier);
 
@@ -152,7 +150,7 @@ public class ContainerStepExecutionResponseHelper {
     return buildAndReturnStepResponse(stepStatusTaskResponseData, ambiance, stepIdentifier, outcome);
   }
   private StepResponse buildAndReturnStepResponse(StepStatusTaskResponseData stepStatusTaskResponseData,
-      Ambiance ambiance, String stepIdentifier, Outcome outcome) {
+      Ambiance ambiance, String stepIdentifier, StepResponse.StepOutcome outcome) {
     long startTime = AmbianceUtils.getCurrentLevelStartTs(ambiance);
     long currentTime = System.currentTimeMillis();
 
@@ -175,12 +173,7 @@ public class ContainerStepExecutionResponseHelper {
       }
 
       if (outcome != null) {
-        StepResponse.StepOutcome stepOutcome = StepResponse.StepOutcome.builder()
-                                                   .outcome(outcome)
-                                                   .name("artifact")
-                                                   .group(StepOutcomeGroup.STEP.name())
-                                                   .build();
-        stepResponseBuilder.stepOutcome(stepOutcome);
+        stepResponseBuilder.stepOutcome(outcome);
       }
 
       return stepResponseBuilder.status(Status.SUCCEEDED).build();

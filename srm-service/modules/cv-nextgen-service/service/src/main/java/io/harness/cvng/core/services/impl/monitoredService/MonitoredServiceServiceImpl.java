@@ -247,7 +247,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                                                      .environmentIdentifier(monitoredServiceDTO.getEnvironmentRef())
                                                      .build();
 
-    validate(monitoredServiceDTO);
+    validate(monitoredServiceDTO, accountId);
     checkIfAlreadyPresent(accountId, environmentParams, monitoredServiceDTO.getIdentifier(),
         monitoredServiceDTO.getSources(), monitoredServiceDTO.getType());
 
@@ -394,7 +394,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     monitoredServiceHandlers.forEach(baseMonitoredServiceHandler
         -> baseMonitoredServiceHandler.beforeUpdate(
             environmentParams, existingMonitoredServiceDTO, monitoredServiceDTO));
-    validate(monitoredServiceDTO);
+    validate(monitoredServiceDTO, accountId);
 
     updateHealthSources(monitoredService, monitoredServiceDTO);
     changeSourceService.update(MonitoredServiceParams.builderWithProjectParams(environmentParams)
@@ -1253,7 +1253,12 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
             monitoredService.getIdentifier()));
   }
 
-  private void validate(MonitoredServiceDTO monitoredServiceDTO) {
+  private void validate(MonitoredServiceDTO monitoredServiceDTO, String accountId) {
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier(accountId)
+                                      .orgIdentifier(monitoredServiceDTO.getOrgIdentifier())
+                                      .projectIdentifier(monitoredServiceDTO.getProjectIdentifier())
+                                      .build();
     if (monitoredServiceDTO.getType().equals(MonitoredServiceType.APPLICATION)) {
       Preconditions.checkState(monitoredServiceDTO.getEnvironmentRefList().size() == 1,
           "Application monitored service cannot be attached to more than one environment");
@@ -1268,6 +1273,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         healthSource.getSpec().validate();
       });
     }
+    notificationRuleService.validateNotification(monitoredServiceDTO.getNotificationRuleRefs(), projectParams);
   }
 
   @Override

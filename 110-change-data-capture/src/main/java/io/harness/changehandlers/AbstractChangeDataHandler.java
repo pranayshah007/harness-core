@@ -60,7 +60,13 @@ public abstract class AbstractChangeDataHandler implements ChangeHandler {
         }
         break;
       case DELETE:
-        dbOperation(deleteSQL(tableName, Collections.singletonMap("id", changeEvent.getUuid())));
+        if (shouldDelete()) {
+          dbOperation(deleteSQL(tableName, Collections.singletonMap("id", changeEvent.getUuid())));
+        } else {
+          if (columnValueMapping != null) {
+            dbOperation(updateDeletedFieldsSQL(tableName, getColumnValueMappingForDelete(), changeEvent.getUuid()));
+          }
+        }
         break;
       default:
         log.info("Change Event Type not Handled: {}", changeEvent.getChangeType());
@@ -97,6 +103,14 @@ public abstract class AbstractChangeDataHandler implements ChangeHandler {
   }
 
   public abstract Map<String, String> getColumnValueMapping(ChangeEvent<?> changeEvent, String[] fields);
+
+  public Map<String, String> getColumnValueMappingForDelete() {
+    return Collections.emptyMap();
+  }
+
+  public boolean shouldDelete() {
+    return true;
+  }
 
   public abstract List<String> getPrimaryKeys();
 
@@ -200,6 +214,27 @@ public abstract class AbstractChangeDataHandler implements ChangeHandler {
     }
 
     updateQueryBuilder = new StringBuilder(updateQueryBuilder.subSequence(0, updateQueryBuilder.length() - 1));
+
+    // Returning the generated UPDATE SQL Query as a String...
+    return updateQueryBuilder.toString();
+  }
+
+  public static String updateDeletedFieldsSQL(String tableName, Map<String, String> columnValueMapping, String id) {
+    StringBuilder updateQueryBuilder = new StringBuilder(2048);
+
+    /* Making the UPDATE Query */
+    updateQueryBuilder.append(String.format("UPDATE %s SET ", tableName));
+
+    if (!columnValueMapping.isEmpty()) {
+      for (Map.Entry<String, String> entry : columnValueMapping.entrySet()) {
+        updateQueryBuilder.append(
+            String.format("%s=%s,", entry.getKey(), String.format("'%s'", escapeSql(entry.getValue()))));
+      }
+    }
+
+    updateQueryBuilder = new StringBuilder(updateQueryBuilder.subSequence(0, updateQueryBuilder.length() - 1));
+    /* Making the UPDATE Query */
+    updateQueryBuilder.append(String.format(" WHERE id = '%s'", id));
 
     // Returning the generated UPDATE SQL Query as a String...
     return updateQueryBuilder.toString();

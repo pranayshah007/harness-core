@@ -26,6 +26,7 @@ import io.harness.pms.contracts.service.SweepingOutputServiceGrpc.SweepingOutput
 import io.harness.pms.sdk.core.execution.expression.RemoteFunctorService;
 import io.harness.pms.sdk.core.governance.JsonExpansionService;
 import io.harness.pms.sdk.core.plan.creation.creators.PlanCreatorService;
+import io.harness.pms.sdk.core.plugin.PluginInfoProviderService;
 
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
@@ -77,12 +78,14 @@ public class PmsSdkGrpcModule extends AbstractModule {
   @Singleton
   @Named("pms-sdk-grpc-service")
   public Service pmsSdkGrpcService(HealthStatusManager healthStatusManager, PlanCreatorService planCreatorService,
-      RemoteFunctorService remoteFunctorService, JsonExpansionService jsonExpansionService) {
+      RemoteFunctorService remoteFunctorService, JsonExpansionService jsonExpansionService,
+      PluginInfoProviderService pluginInfoService) {
     Set<BindableService> sdkServices = new HashSet<>();
     sdkServices.add(healthStatusManager.getHealthService());
     sdkServices.add(planCreatorService);
     sdkServices.add(remoteFunctorService);
     sdkServices.add(jsonExpansionService);
+    sdkServices.add(pluginInfoService);
     if (config.getSdkDeployMode() == SdkDeployMode.REMOTE_IN_PROCESS) {
       return new GrpcInProcessServer("pmsSdkInternal", sdkServices, Collections.emptySet(), healthStatusManager);
     }

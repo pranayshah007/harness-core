@@ -39,8 +39,13 @@ import io.harness.gitsync.common.impl.GitSyncSettingsServiceImpl;
 import io.harness.gitsync.common.impl.GitToHarnessProgressServiceImpl;
 import io.harness.gitsync.common.impl.HarnessToGitHelperServiceImpl;
 import io.harness.gitsync.common.impl.ScmOrchestratorServiceImpl;
+import io.harness.gitsync.common.impl.UserSourceCodeManagerServiceImpl;
 import io.harness.gitsync.common.impl.YamlGitConfigServiceImpl;
 import io.harness.gitsync.common.impl.gittoharness.GitToHarnessProcessorServiceImpl;
+import io.harness.gitsync.common.mappers.AzureRepoSCMMapper;
+import io.harness.gitsync.common.mappers.GithubSCMMapper;
+import io.harness.gitsync.common.mappers.GitlabSCMMapper;
+import io.harness.gitsync.common.mappers.UserSourceCodeManagerMapper;
 import io.harness.gitsync.common.service.GitBranchService;
 import io.harness.gitsync.common.service.GitBranchSyncService;
 import io.harness.gitsync.common.service.GitEntityService;
@@ -48,6 +53,7 @@ import io.harness.gitsync.common.service.GitSyncSettingsService;
 import io.harness.gitsync.common.service.GitToHarnessProgressService;
 import io.harness.gitsync.common.service.HarnessToGitHelperService;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
+import io.harness.gitsync.common.service.UserSourceCodeManagerService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.gitsync.common.service.gittoharness.GitToHarnessProcessorService;
 import io.harness.gitsync.core.fullsync.GitFullSyncConfigService;
@@ -78,6 +84,7 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.NGCoreModule;
 import io.harness.ng.core.api.SecretCrudService;
 import io.harness.ng.core.entitysetupusage.EntitySetupUsageModule;
+import io.harness.ng.userprofile.commons.SCMType;
 import io.harness.ng.userprofile.services.api.SourceCodeManagerService;
 import io.harness.ng.webhook.services.api.WebhookEventService;
 import io.harness.outbox.api.OutboxService;
@@ -115,6 +122,7 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
+import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
@@ -186,6 +194,7 @@ public class GitSyncTestRule implements InjectorRuleMixin, MethodRule, MongoRule
         bind(YamlChangeSetService.class).toInstance(mock(YamlChangeSetServiceImpl.class));
         bind(YamlChangeSetLifeCycleManagerService.class)
             .toInstance(mock(YamlChangeSetLifeCycleManagerServiceImpl.class));
+        bind(UserSourceCodeManagerService.class).toInstance(mock(UserSourceCodeManagerServiceImpl.class));
         bind(GitBranchService.class).toInstance(mock(GitBranchServiceImpl.class));
         bind(GitBranchSyncService.class).toInstance(mock(GitBranchSyncServiceImpl.class));
         bind(GitToHarnessProgressService.class).toInstance(mock(GitToHarnessProgressServiceImpl.class));
@@ -202,6 +211,11 @@ public class GitSyncTestRule implements InjectorRuleMixin, MethodRule, MongoRule
         bind(GitFullSyncConfigService.class).toInstance(mock(GitFullSyncConfigServiceImpl.class));
         bind(FullSyncJobService.class).toInstance(mock(FullSyncJobServiceImpl.class));
         bind(ScmClient.class).toInstance(mock(SCMServiceGitClientImpl.class));
+        MapBinder<SCMType, UserSourceCodeManagerMapper> sourceCodeManagerMapBinder =
+            MapBinder.newMapBinder(binder(), SCMType.class, UserSourceCodeManagerMapper.class);
+        sourceCodeManagerMapBinder.addBinding(SCMType.GITHUB).to(GithubSCMMapper.class);
+        sourceCodeManagerMapBinder.addBinding(SCMType.GITLAB).to(GitlabSCMMapper.class);
+        sourceCodeManagerMapBinder.addBinding(SCMType.AZURE_REPO).to(AzureRepoSCMMapper.class);
         bind(QueueController.class).toInstance(new QueueController() {
           @Override
           public boolean isPrimary() {

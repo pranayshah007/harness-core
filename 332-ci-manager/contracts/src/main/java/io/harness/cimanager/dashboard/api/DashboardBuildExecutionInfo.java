@@ -14,5 +14,7 @@ import lombok.Value;
 @Value
 @Builder
 public class DashboardBuildExecutionInfo {
+  @Builder.Default double buildRate = CIDashboardHelper.MAX_VALUE;
+  @Builder.Default double buildRateChangeRate = CIDashboardHelper.MAX_VALUE;
   private List<BuildExecutionInfo> buildExecutionInfoList;
 }

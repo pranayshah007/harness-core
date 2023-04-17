@@ -465,8 +465,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         ? IK8sRelease.Status.Succeeded
         : IK8sRelease.Status.Failed;
     releaseHistory.setReleaseStatus(releaseStatus);
-    k8sTaskHelperBase.saveReleaseHistory(
-        kubernetesConfig, commandRequest.getReleaseName(), releaseHistory.getAsYaml(), true);
+    String releaseHistoryName = getOverridenReleaseHistoryName(commandRequest);
+    k8sTaskHelperBase.saveReleaseHistory(kubernetesConfig, releaseHistoryName, releaseHistory.getAsYaml(), true);
   }
 
   private ReleaseHistory createNewRelease(HelmCommandRequestNG commandRequest, List<KubernetesResourceId> workloads,
@@ -482,8 +482,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
   private ReleaseHistory fetchReleaseHistory(HelmCommandRequestNG commandRequest, KubernetesConfig kubernetesConfig)
       throws IOException {
-    String releaseHistoryData =
-        k8sTaskHelperBase.getReleaseHistoryFromSecret(kubernetesConfig, commandRequest.getReleaseName());
+    String releaseHistoryName = getOverridenReleaseHistoryName(commandRequest);
+    String releaseHistoryData = k8sTaskHelperBase.getReleaseHistoryFromSecret(kubernetesConfig, releaseHistoryName);
     if (StringUtils.isEmpty(releaseHistoryData)) {
       return ReleaseHistory.createNew();
     }
@@ -1182,5 +1182,13 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       }
     }
     return Optional.empty();
+  }
+
+  private String getOverridenReleaseHistoryName(HelmCommandRequestNG commandRequestNG) {
+    if (isNotEmpty(commandRequestNG.getReleaseHistoryPrefix())) {
+      return commandRequestNG.getReleaseHistoryPrefix() + commandRequestNG.getReleaseName();
+    }
+
+    return commandRequestNG.getReleaseName();
   }
 }

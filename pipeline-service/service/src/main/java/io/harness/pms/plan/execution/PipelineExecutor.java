@@ -162,23 +162,23 @@ public class PipelineExecutor {
   public PlanExecution startPostExecutionRollback(
       String accountId, String orgIdentifier, String projectIdentifier, String originalExecutionId) {
     return startRollbackModeExecution(
-        accountId, orgIdentifier, projectIdentifier, originalExecutionId, ExecutionMode.POST_EXECUTION_ROLLBACK);
+        accountId, orgIdentifier, projectIdentifier, originalExecutionId, ExecutionMode.POST_EXECUTION_ROLLBACK, null);
   }
 
-  public PlanExecution startPipelineRollback(
-      String accountId, String orgIdentifier, String projectIdentifier, String originalExecutionId) {
-    return startRollbackModeExecution(
-        accountId, orgIdentifier, projectIdentifier, originalExecutionId, ExecutionMode.PIPELINE_ROLLBACK);
+  public PlanExecution startPipelineRollback(String accountId, String orgIdentifier, String projectIdentifier,
+      String originalExecutionId, PipelineStageInfo parentStageInfo) {
+    return startRollbackModeExecution(accountId, orgIdentifier, projectIdentifier, originalExecutionId,
+        ExecutionMode.PIPELINE_ROLLBACK, parentStageInfo);
   }
 
   PlanExecution startRollbackModeExecution(String accountId, String orgIdentifier, String projectIdentifier,
-      String originalExecutionId, ExecutionMode executionMode) {
+      String originalExecutionId, ExecutionMode executionMode, PipelineStageInfo parentStageInfo) {
     String executionId = generateUuid();
     ExecutionTriggerInfo triggerInfo = executionHelper.buildTriggerInfo(null);
     ExecutionMetadata originalExecutionMetadata = planExecutionService.get(originalExecutionId).getMetadata();
     ExecutionMetadata executionMetadata =
         rollbackModeExecutionHelper.transformExecutionMetadata(originalExecutionMetadata, executionId, triggerInfo,
-            accountId, orgIdentifier, projectIdentifier, executionMode);
+            accountId, orgIdentifier, projectIdentifier, executionMode, parentStageInfo);
 
     Optional<PlanExecutionMetadata> optPlanExecutionMetadata =
         planExecutionMetadataService.findByPlanExecutionId(originalExecutionId);

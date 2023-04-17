@@ -7,8 +7,6 @@
 
 package io.harness.ccm.views.dao;
 
-import static io.harness.ccm.commons.entities.CCMField.RULE_NAME;
-
 import io.harness.ccm.commons.entities.CCMSort;
 import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.views.entities.Rule;
@@ -20,6 +18,8 @@ import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.client.model.Collation;
+import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
@@ -32,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 public class RuleDAO {
   @Inject private HPersistence hPersistence;
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
+  private static final String LOCALE_EN = "en";
 
   public boolean save(Rule rule) {
     log.info("created: {}", hPersistence.save(rule));
@@ -78,10 +79,13 @@ public class RuleDAO {
         }
       }
     }
+    final FindOptions options = new FindOptions();
+    options.collation(Collation.builder().locale(LOCALE_EN).build());
+    options.limit(governancePolicyFilter.getLimit());
+    options.skip(governancePolicyFilter.getOffset());
     ruleList.setTotalItems(rules.asList().size());
 
-    ruleList.setRules(
-        rules.limit(governancePolicyFilter.getLimit()).offset(governancePolicyFilter.getOffset()).asList());
+    ruleList.setRules(rules.asList(options));
     return ruleList;
   }
 

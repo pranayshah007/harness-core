@@ -71,6 +71,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
+  private static final String SHA = "sha256:12345";
+  private static final String SHA_V2 = "sha256:43442523";
+  private static final Map<String, String> METADATA =
+      Map.of(ArtifactMetadataKeys.SHA, SHA, ArtifactMetadataKeys.SHAV2, SHA_V2);
+
+  private static Map<String, String> label = Map.of("1", "2", "3", "4");
+
   @Test
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
@@ -252,14 +259,21 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
             .artifactPath(ParameterField.createValueField("IMAGE"))
             .repositoryFormat(ParameterField.createValueField(RepositoryFormat.docker.name()))
             .build();
-    ArtifactDelegateResponse artifactDelegateResponse = ArtifactoryArtifactDelegateResponse.builder().build();
+    ArtifactDelegateResponse artifactDelegateResponse =
+        ArtifactoryArtifactDelegateResponse.builder()
+            .buildDetails(ArtifactBuildDetailsNG.builder().metadata(METADATA).build())
+            .label(label)
+            .build();
 
-    ArtifactOutcome artifactOutcome =
-        ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponse, true);
+    ArtifactoryArtifactOutcome artifactOutcome =
+        (ArtifactoryArtifactOutcome) ArtifactResponseToOutcomeMapper.toArtifactOutcome(
+            artifactConfig, artifactDelegateResponse, true);
 
     assertThat(artifactOutcome).isNotNull();
     assertThat(artifactOutcome).isInstanceOf(ArtifactoryArtifactOutcome.class);
     assertThat(artifactOutcome.getArtifactType()).isEqualTo(ArtifactSourceType.ARTIFACTORY_REGISTRY.getDisplayName());
+    assertThat(artifactOutcome.getLabel()).isEqualTo(label);
+    assertThat(artifactOutcome.getMetadata()).isEqualTo(METADATA);
   }
 
   @Test
@@ -345,14 +359,22 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
                                         .repository(ParameterField.createValueField("REPO_NAME"))
                                         .tag(ParameterField.createValueField("TAG"))
                                         .build();
-    ArtifactDelegateResponse artifactDelegateResponse = AcrArtifactDelegateResponse.builder().build();
 
-    ArtifactOutcome artifactOutcome =
-        ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponse, true);
+    ArtifactDelegateResponse artifactDelegateResponse =
+        AcrArtifactDelegateResponse.builder()
+            .label(label)
+            .buildDetails(ArtifactBuildDetailsNG.builder().metadata(METADATA).build())
+            .build();
+
+    AcrArtifactOutcome artifactOutcome = (AcrArtifactOutcome) ArtifactResponseToOutcomeMapper.toArtifactOutcome(
+        artifactConfig, artifactDelegateResponse, true);
 
     assertThat(artifactOutcome).isNotNull();
     assertThat(artifactOutcome).isInstanceOf(AcrArtifactOutcome.class);
     assertThat(artifactOutcome.getArtifactType()).isEqualTo(ArtifactSourceType.ACR.getDisplayName());
+    assertThat(artifactOutcome.getLabel()).isEqualTo(label);
+    assertThat(artifactOutcome.getMetadata().get(ArtifactMetadataKeys.SHA)).isEqualTo(SHA);
+    assertThat(artifactOutcome.getMetadata().get(ArtifactMetadataKeys.SHAV2)).isEqualTo(SHA_V2);
   }
 
   @Test
@@ -559,9 +581,6 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     Map<String, String> metaData = new HashMap<>();
     metaData.put(ArtifactMetadataKeys.REGISTRY_HOSTNAME, ArtifactMetadataKeys.REGISTRY_HOSTNAME);
     metaData.put(ArtifactMetadataKeys.IMAGE, ArtifactMetadataKeys.IMAGE);
-    Map<String, String> label = new HashMap<>();
-    label.put("1", "2");
-    label.put("3", "4");
     GarDelegateResponse garDelegateResponse =
         GarDelegateResponse.builder()
             .version(versionRegex)
@@ -607,9 +626,6 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
             .build();
     Map<String, String> metaData = new HashMap<>();
     metaData.put(ArtifactMetadataKeys.IMAGE, ArtifactMetadataKeys.IMAGE);
-    Map<String, String> label = new HashMap<>();
-    label.put("1", "2");
-    label.put("3", "4");
     GcrArtifactDelegateResponse gcrArtifactDelegateResponse =
         GcrArtifactDelegateResponse.builder()
             .tag(versionRegex)

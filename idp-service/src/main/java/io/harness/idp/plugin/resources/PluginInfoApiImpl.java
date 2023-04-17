@@ -15,6 +15,7 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
+import io.harness.idp.annotations.IdpServiceAuthIfHasApiKey;
 import io.harness.idp.plugin.mappers.PluginInfoMapper;
 import io.harness.idp.plugin.services.PluginInfoService;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -56,5 +57,12 @@ public class PluginInfoApiImpl implements PluginInfoApi {
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();
     }
+  }
+
+  @Override
+  @IdpServiceAuthIfHasApiKey
+  public Response getBackstagePlugins(String harnessAccount) {
+    List<PluginInfo> plugins = pluginInfoService.getAllPluginsInfo(harnessAccount);
+    return Response.status(Response.Status.OK).entity(PluginInfoMapper.toResponseList(plugins)).build();
   }
 }

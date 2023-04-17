@@ -40,6 +40,7 @@ import io.harness.plancreator.steps.pluginstep.ContainerStepVariableCreator;
 import io.harness.plancreator.steps.resourceconstraint.QueueStepPlanCreator;
 import io.harness.plancreator.steps.resourceconstraint.ResourceConstraintStepPlanCreator;
 import io.harness.pms.contracts.steps.StepInfo;
+import io.harness.pms.pipelinerollback.PipelineRollbackStagePlanCreator;
 import io.harness.pms.pipelinestage.PipelineStageFilterCreator;
 import io.harness.pms.pipelinestage.plancreator.PipelineStagePlanCreator;
 import io.harness.pms.pipelinestage.v1.plancreator.PipelineStagePlanCreatorV1;
@@ -49,6 +50,7 @@ import io.harness.pms.sdk.core.pipeline.variables.ApprovalStageVariableCreator;
 import io.harness.pms.sdk.core.pipeline.variables.PipelineVariableCreator;
 import io.harness.pms.sdk.core.pipeline.variables.StepGroupVariableCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
+import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoDecoratorImpl;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
 import io.harness.rule.Owner;
@@ -89,6 +91,7 @@ import io.harness.steps.wait.WaitStepVariableCreator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -98,11 +101,12 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PIPELINE)
 public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
-  public static final int PLAN_CREATOR_NUMBER = 35;
-  public static final int FILTER_JSON_CREATOR_NUMBER = 14;
+  public static final int PLAN_CREATOR_NUMBER = 36;
+  public static final int FILTER_JSON_CREATOR_NUMBER = 13;
   public static final int VARIABLE_CREATOR_NUMBER = 25;
 
   @InjectMocks PipelineServiceInternalInfoProvider pipelineServiceInternalInfoProvider;
+  @InjectMocks PipelineServiceInfoDecoratorImpl serviceInfoDecorator;
   @Mock InjectorUtils injectorUtils;
 
   @Before
@@ -114,7 +118,8 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
   public void shouldValidatePlanCreatorFilterAndVariable() {
-    PmsSdkInitValidator.validatePlanCreators(pipelineServiceInternalInfoProvider);
+    Reflect.on(serviceInfoDecorator).set("pipelineServiceInfoProvider", pipelineServiceInternalInfoProvider);
+    PmsSdkInitValidator.validatePlanCreators(serviceInfoDecorator);
   }
 
   @Test
@@ -155,6 +160,7 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
     assertThat(planCreatorClasses.contains(GroupPlanCreatorV1.class)).isTrue();
     assertThat(planCreatorClasses.contains(PMSStepPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(CdSscaOrchestrationStepPlanCreator.class)).isTrue();
+    assertThat(planCreatorClasses.contains(PipelineRollbackStagePlanCreator.class)).isTrue();
   }
 
   @Test

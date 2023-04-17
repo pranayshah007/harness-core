@@ -7,23 +7,34 @@
 
 package io.harness.artifacts.githubpackages;
 
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.VED;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifact.ArtifactMetadataKeys;
+import io.harness.artifacts.docker.DockerRegistryRestClient;
+import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
+import io.harness.artifacts.docker.service.DockerRegistryServiceImpl;
+import io.harness.artifacts.docker.service.DockerRegistryUtils;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClient;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryServiceImpl;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
@@ -37,8 +48,10 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import okhttp3.Headers;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -57,9 +70,22 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
   @InjectMocks GithubPackagesRegistryServiceImpl githubPackagesRegistryService;
   @Mock private GithubPackagesRestClientFactory githubPackagesRestClientFactory;
   @Mock private GithubPackagesRestClient githubPackagesRestClient;
+  @Mock private DockerRegistryRestClient dockerRegistryRestClient;
+  @Mock private DockerRegistryServiceImpl dockerRegistryService;
+  @Mock private DockerRegistryUtils dockerRegistryUtils;
+
+  private static final String SHA = "sha256:12345";
+  private static final String SHA_V2 = "sha256:223232";
+  private static Map<String, String> label;
+  private static final Map<String, String> METADATA =
+      Map.of(ArtifactMetadataKeys.SHA, SHA, ArtifactMetadataKeys.SHAV2, SHA_V2);
 
   @Before
-  public void before() {}
+  public void before() {
+    label = new HashMap<>();
+    label.put("k1", "v1");
+    label.put("k2", "v2");
+  }
 
   @Test
   @Owner(developers = VED)
@@ -463,17 +489,27 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
 
     doReturn(Response.success(list)).when(executeCall).execute();
 
-    BuildDetails build = githubPackagesRegistryService.getLastSuccessfulBuildFromRegex(
+    GithubPackagesRegistryServiceImpl githubPackagesRegistryServiceSpy = spy(githubPackagesRegistryService);
+
+    ArtifactMetaInfo artifactMetaInfoSchemaVersion1 = ArtifactMetaInfo.builder().sha(SHA).labels(label).build();
+    ArtifactMetaInfo artifactMetaInfoSchemaVersion2 = ArtifactMetaInfo.builder().sha(SHA_V2).labels(label).build();
+    doReturn(artifactMetaInfoSchemaVersion1)
+        .when(githubPackagesRegistryServiceSpy)
+        .getArtifactMetaInfo(githubPackagesInternalConfig, packageName, "5", org, true);
+    doReturn(artifactMetaInfoSchemaVersion2)
+        .when(githubPackagesRegistryServiceSpy)
+        .getArtifactMetaInfo(githubPackagesInternalConfig, packageName, "5", org, false);
+
+    BuildDetails build = githubPackagesRegistryServiceSpy.getLastSuccessfulBuildFromRegex(
         githubPackagesInternalConfig, packageName, packageType, versionRegex, org);
 
     assertThat(build.getNumber()).isEqualTo("5");
     assertThat(build.getArtifactPath()).isEqualTo("ghcr.io/username/helloworld:5");
-    assertThat(build.getBuildUrl()).isEqualTo("https://github.com/username/packages/container/helloworld/39008634");
     assertThat(build.getBuildDisplayName()).isEqualTo("helloworld: 5");
-    assertThat(build.getBuildFullDisplayName())
-        .isEqualTo("sha256:49f75d46899bf47edbf3558890e1557a008a20b78e3d0b22e9d18cf00d27699d");
+    assertThat(build.getBuildFullDisplayName()).isEqualTo(SHA_V2);
     assertThat(build.getUiDisplayName()).isEqualTo("Tag# 5");
     assertThat(build.getStatus()).isEqualTo(BuildStatus.SUCCESS);
+    assertThat(build.getMetadata()).isEqualTo(METADATA);
   }
 
   @Test
@@ -521,18 +557,27 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
 
     doReturn(Response.success(list)).when(executeCall).execute();
 
-    BuildDetails build = githubPackagesRegistryService.getLastSuccessfulBuildFromRegex(
+    GithubPackagesRegistryServiceImpl githubPackagesRegistryServiceSpy = spy(githubPackagesRegistryService);
+
+    ArtifactMetaInfo artifactMetaInfoSchemaVersion1 = ArtifactMetaInfo.builder().sha(SHA).labels(label).build();
+    ArtifactMetaInfo artifactMetaInfoSchemaVersion2 = ArtifactMetaInfo.builder().sha(SHA_V2).labels(label).build();
+    doReturn(artifactMetaInfoSchemaVersion1)
+        .when(githubPackagesRegistryServiceSpy)
+        .getArtifactMetaInfo(githubPackagesInternalConfig, packageName, "5", org, true);
+    doReturn(artifactMetaInfoSchemaVersion2)
+        .when(githubPackagesRegistryServiceSpy)
+        .getArtifactMetaInfo(githubPackagesInternalConfig, packageName, "5", org, false);
+
+    BuildDetails build = githubPackagesRegistryServiceSpy.getLastSuccessfulBuildFromRegex(
         githubPackagesInternalConfig, packageName, packageType, versionRegex, org);
 
     assertThat(build.getNumber()).isEqualTo("5");
     assertThat(build.getArtifactPath()).isEqualTo("ghcr.io/org-vtxorxwitty/helloworld:5");
-    assertThat(build.getBuildUrl())
-        .isEqualTo("https://github.com/orgs/org-vtxorxwitty/packages/container/helloworld/39008634");
     assertThat(build.getBuildDisplayName()).isEqualTo("helloworld: 5");
-    assertThat(build.getBuildFullDisplayName())
-        .isEqualTo("sha256:49f75d46899bf47edbf3558890e1557a008a20b78e3d0b22e9d18cf00d27699d");
+    assertThat(build.getBuildFullDisplayName()).isEqualTo(SHA_V2);
     assertThat(build.getUiDisplayName()).isEqualTo("Tag# 5");
     assertThat(build.getStatus()).isEqualTo(BuildStatus.SUCCESS);
+    assertThat(build.getMetadata()).isEqualTo(METADATA);
   }
 
   @Test
@@ -580,17 +625,27 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
 
     doReturn(Response.success(list)).when(executeCall).execute();
 
+    GithubPackagesRegistryServiceImpl githubPackagesRegistryServiceSpy = spy(githubPackagesRegistryService);
+
+    ArtifactMetaInfo artifactMetaInfoSchemaVersion1 = ArtifactMetaInfo.builder().sha(SHA).labels(label).build();
+    ArtifactMetaInfo artifactMetaInfoSchemaVersion2 = ArtifactMetaInfo.builder().sha(SHA_V2).labels(label).build();
+    doReturn(artifactMetaInfoSchemaVersion1)
+        .when(githubPackagesRegistryServiceSpy)
+        .getArtifactMetaInfo(githubPackagesInternalConfig, packageName, "2", org, true);
+    doReturn(artifactMetaInfoSchemaVersion2)
+        .when(githubPackagesRegistryServiceSpy)
+        .getArtifactMetaInfo(githubPackagesInternalConfig, packageName, "2", org, false);
+
     BuildDetails build =
-        githubPackagesRegistryService.getBuild(githubPackagesInternalConfig, packageName, packageType, version, org);
+        githubPackagesRegistryServiceSpy.getBuild(githubPackagesInternalConfig, packageName, packageType, version, org);
 
     assertThat(build.getNumber()).isEqualTo("2");
     assertThat(build.getArtifactPath()).isEqualTo("ghcr.io/username/helloworld:2");
-    assertThat(build.getBuildUrl()).isEqualTo("https://github.com/username/packages/container/helloworld/39008500");
     assertThat(build.getBuildDisplayName()).isEqualTo("helloworld: 2");
-    assertThat(build.getBuildFullDisplayName())
-        .isEqualTo("sha256:08cde8fece645d8b60bc13cf85691f0a092238a270c1a95554fc71714cd25237");
+    assertThat(build.getBuildFullDisplayName()).isEqualTo(SHA_V2);
     assertThat(build.getUiDisplayName()).isEqualTo("Tag# 2");
     assertThat(build.getStatus()).isEqualTo(BuildStatus.SUCCESS);
+    assertThat(build.getMetadata()).isEqualTo(METADATA);
   }
 
   @Test
@@ -638,18 +693,27 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
 
     doReturn(Response.success(list)).when(executeCall).execute();
 
-    BuildDetails build = githubPackagesRegistryService.getLastSuccessfulBuildFromRegex(
+    GithubPackagesRegistryServiceImpl githubPackagesRegistryServiceSpy = spy(githubPackagesRegistryService);
+
+    ArtifactMetaInfo artifactMetaInfoSchemaVersion1 = ArtifactMetaInfo.builder().sha(SHA).labels(label).build();
+    ArtifactMetaInfo artifactMetaInfoSchemaVersion2 = ArtifactMetaInfo.builder().sha(SHA_V2).labels(label).build();
+    doReturn(artifactMetaInfoSchemaVersion1)
+        .when(githubPackagesRegistryServiceSpy)
+        .getArtifactMetaInfo(githubPackagesInternalConfig, packageName, "3", org, true);
+    doReturn(artifactMetaInfoSchemaVersion2)
+        .when(githubPackagesRegistryServiceSpy)
+        .getArtifactMetaInfo(githubPackagesInternalConfig, packageName, "3", org, false);
+
+    BuildDetails build = githubPackagesRegistryServiceSpy.getLastSuccessfulBuildFromRegex(
         githubPackagesInternalConfig, packageName, packageType, versionRegex, org);
 
     assertThat(build.getNumber()).isEqualTo("3");
     assertThat(build.getArtifactPath()).isEqualTo("ghcr.io/org-vtxorxwitty/helloworld:3");
-    assertThat(build.getBuildUrl())
-        .isEqualTo("https://github.com/orgs/org-vtxorxwitty/packages/container/helloworld/39008548");
     assertThat(build.getBuildDisplayName()).isEqualTo("helloworld: 3");
-    assertThat(build.getBuildFullDisplayName())
-        .isEqualTo("sha256:54fc6c7e4927da8e3a6ae3e2bf3ec97481d860455adab48b8cff5f6916a69652");
+    assertThat(build.getBuildFullDisplayName()).isEqualTo(SHA_V2);
     assertThat(build.getUiDisplayName()).isEqualTo("Tag# 3");
     assertThat(build.getStatus()).isEqualTo(BuildStatus.SUCCESS);
+    assertThat(build.getMetadata()).isEqualTo(METADATA);
   }
 
   @Test
@@ -749,16 +813,61 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
 
     doReturn(Response.success(list)).when(executeCall).execute();
 
-    BuildDetails build = githubPackagesRegistryService.getLastSuccessfulBuildFromRegex(
+    GithubPackagesRegistryServiceImpl githubPackagesRegistryServiceSpy = spy(githubPackagesRegistryService);
+
+    ArtifactMetaInfo artifactMetaInfoSchemaVersion1 = ArtifactMetaInfo.builder().sha(SHA).labels(label).build();
+    ArtifactMetaInfo artifactMetaInfoSchemaVersion2 = ArtifactMetaInfo.builder().sha(SHA_V2).labels(label).build();
+    doReturn(artifactMetaInfoSchemaVersion1)
+        .when(githubPackagesRegistryServiceSpy)
+        .getArtifactMetaInfo(githubPackagesInternalConfig, packageName, "3", org, true);
+    doReturn(artifactMetaInfoSchemaVersion2)
+        .when(githubPackagesRegistryServiceSpy)
+        .getArtifactMetaInfo(githubPackagesInternalConfig, packageName, "3", org, false);
+
+    BuildDetails build = githubPackagesRegistryServiceSpy.getLastSuccessfulBuildFromRegex(
         githubPackagesInternalConfig, packageName, packageType, versionRegex, org);
 
     assertThat(build.getNumber()).isEqualTo("3");
     assertThat(build.getArtifactPath()).isEqualTo("ghcr.io/username/helloworld:3");
-    assertThat(build.getBuildUrl()).isEqualTo("https://github.com/username/packages/container/helloworld/39008548");
     assertThat(build.getBuildDisplayName()).isEqualTo("helloworld: 3");
-    assertThat(build.getBuildFullDisplayName())
-        .isEqualTo("sha256:54fc6c7e4927da8e3a6ae3e2bf3ec97481d860455adab48b8cff5f6916a69652");
+    assertThat(build.getBuildFullDisplayName()).isEqualTo(SHA_V2);
     assertThat(build.getUiDisplayName()).isEqualTo("Tag# 3");
     assertThat(build.getStatus()).isEqualTo(BuildStatus.SUCCESS);
+    assertThat(build.getMetadata()).isEqualTo(METADATA);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetArtifactMetaInfo() throws IOException {
+    GithubPackagesInternalConfig githubPackagesInternalConfig = GithubPackagesInternalConfig.builder()
+                                                                    .githubPackagesUrl("https://github.com/username")
+                                                                    .authMechanism("UsernameToken")
+                                                                    .username("username")
+                                                                    .token("token")
+                                                                    .build();
+
+    String packageName = "helloworld";
+    String org = "";
+    String version = "2";
+
+    doReturn(dockerRegistryRestClient)
+        .when(githubPackagesRestClientFactory)
+        .getGithubPackagesDockerRestClient(githubPackagesInternalConfig);
+
+    Call<DockerImageManifestResponse> executeCall = mock(Call.class);
+
+    doReturn(executeCall).when(dockerRegistryRestClient).getImageManifest(anyString(), anyString(), anyString());
+
+    DockerImageManifestResponse dockerImageManifestResponse = new DockerImageManifestResponse();
+    Response response = Response.success(dockerImageManifestResponse, Headers.of("Docker-Content-Digest", SHA));
+    doReturn(response).when(executeCall).execute();
+    when(dockerRegistryService.getToken(any(), any(), eq(dockerRegistryRestClient))).thenReturn("token");
+    when(dockerRegistryUtils.parseArtifactMetaInfoResponse(response, packageName))
+        .thenReturn(ArtifactMetaInfo.builder().sha(SHA).labels(label).build());
+    ArtifactMetaInfo artifactMetaInfo = githubPackagesRegistryService.getArtifactMetaInfo(
+        githubPackagesInternalConfig, packageName, version, org, true);
+    assertThat(artifactMetaInfo.getSha()).isEqualTo(SHA);
+    assertThat(artifactMetaInfo.getLabels()).isEqualTo(label);
   }
 }

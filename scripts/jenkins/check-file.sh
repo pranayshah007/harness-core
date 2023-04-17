@@ -44,6 +44,7 @@ function compile_check() {
     fi
   done
   echo "$compile"
+
 }
 
 function print_log() {
@@ -62,7 +63,30 @@ function print_log() {
   echo "false" >/tmp/COMPILE
 }
 
+function CodeformatRequired() {
+  Total_Files=${#merge_summary[@]}
+  General_Files=0
+
+  for file in "${merge_summary[@]}";do
+    case "${file##*.}" in
+        MD|md|txt)
+          General_Files=`expr $General_Files + 1`
+          ;;
+    esac
+  done
+
+  echo ${General_Files}
+  echo ${Total_Files}
+  if [ $General_Files == $Total_Files ]; then
+    PR_Name+=("SmartPRChecks-CodeformatCheckstyle")
+    echo "false" > /tmp/codeformatcheck
+  fi
+}
+
 function send_webhook() {
+# function call to check if codeformat check is required or not
+  CodeformatRequired
+
   for i in "${PR_Name[@]}"; do
     curl --silent --output /dev/null --location --request POST 'https://api.github.com/repos/harness/harness-core/statuses/'"$COMMIT_SHA"'' \
       --header 'Accept: application/vnd.github+json' \

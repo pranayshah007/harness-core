@@ -71,6 +71,8 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   private static final String INVALID_MERGED_APP_CONFIG_SCHEMA =
       "Invalid schema for merged app-config.yaml for account - %s";
 
+  private static final long baseTimeStamp = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000;
+
   @Override
   public Map<String, Boolean> getAllPluginIdsMap(String accountIdentifier) {
     List<AppConfigEntity> allPluginConfig =
@@ -96,6 +98,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setConfigType(configType);
     appConfigEntity.setEnabledDisabledAt(System.currentTimeMillis());
+    appConfigEntity.setEnabled(false);
     List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
         configEnvVariablesService.insertConfigEnvVariables(appConfig, accountIdentifier);
     AppConfigEntity insertedData = appConfigRepository.save(appConfigEntity);
@@ -210,6 +213,11 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
     return mergedPluginConfigs.config(ConfigManagerUtils.asYaml(mergedPluginConfig.toString()))
         .envVariables(envVariableAndSecretList);
+  }
+
+  @Override
+  public List<AppConfigEntity> deleteDisabledPluginsConfigsDisabledMoreThanAWeekAgo() {
+    return appConfigRepository.deleteDisabledPluginsConfigBasedOnTimestampsForEnabledDisabledTime(baseTimeStamp);
   }
 
   private String mergeAppConfigs(List<String> configs) throws Exception {

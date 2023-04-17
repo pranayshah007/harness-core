@@ -97,6 +97,7 @@ public class WorkflowMigrationService extends NgMigrationService {
   @Inject private InfraMigrationService infraMigrationService;
   @Inject private EnvironmentMigrationService environmentMigrationService;
   @Inject private ServiceMigrationService serviceMigrationService;
+  @Inject private MonitoredServiceMigrationService monitoredServiceMigrationService;
   @Inject private WorkflowService workflowService;
   @Inject private RollingWorkflowYamlHandler rollingWorkflowYamlHandler;
   @Inject private ApplicationManifestService applicationManifestService;
@@ -201,6 +202,7 @@ public class WorkflowMigrationService extends NgMigrationService {
     Set<CgEntityId> children = new HashSet<>();
     List<CgEntityId> referencedEntities =
         workflowHandlerFactory.getWorkflowHandler(workflow).getReferencedEntities(stepMapperFactory, workflow);
+
     if (isNotEmpty(referencedEntities)) {
       children.addAll(referencedEntities);
     }
