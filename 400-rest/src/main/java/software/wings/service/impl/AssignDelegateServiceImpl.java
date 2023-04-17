@@ -289,14 +289,15 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
         DelegateEntityOwnerHelper.extractOrgIdFromOwnerIdentifier(taskSetupAbstractions.get(NgSetupFields.OWNER));
     String taskProjectIdentifier =
         DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(taskSetupAbstractions.get(NgSetupFields.OWNER));
-
+    log.info("TASK OWNER {},  {}", taskOrgIdentifier, taskProjectIdentifier);
     String delegateOrgIdentifier =
         DelegateEntityOwnerHelper.extractOrgIdFromOwnerIdentifier(delegateOwner.getIdentifier());
     String delegateProjectIdentifier =
         DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(delegateOwner.getIdentifier());
-
+    log.info("DELEGATE OWNER {},  {}", delegateOrgIdentifier, delegateProjectIdentifier);
     // Match org. When owner is specified, at org must be there.
     if (!StringUtils.equals(taskOrgIdentifier, delegateOrgIdentifier)) {
+      log.info("Owner mismatched {}, ",delegate.getUuid());
       return false;
     }
 
