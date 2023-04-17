@@ -178,7 +178,7 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
 
     ArgumentCaptor<List> referredEntitiesArgumentCapture = ArgumentCaptor.forClass(List.class);
     verify(templateSetupUsageHelper)
-        .publishSetupUsageEvent(eq(templateEntity), referredEntitiesArgumentCapture.capture());
+        .publishSetupUsageEvent(eq(templateEntity), referredEntitiesArgumentCapture.capture(), any());
     List<EntityDetailProtoDTO> referredEntities = referredEntitiesArgumentCapture.getValue();
     assertThat(referredEntities).isNotNull().hasSize(4);
     assertThat(referredEntities).containsExactlyInAnyOrderElementsOf(getStageTemplateProtoReferences());
