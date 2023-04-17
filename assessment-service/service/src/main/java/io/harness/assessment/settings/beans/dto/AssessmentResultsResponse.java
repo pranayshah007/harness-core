@@ -21,11 +21,13 @@ import lombok.Data;
 public class AssessmentResultsResponse {
   String assessmentId;
   String assessmentName;
+  Long version;
   AssessmentResponseStatus status;
   List<UserResponsesResponse> responses;
   // TODO also add total scores
   List<Score> userScores;
   List<Score> organizationScores;
   List<BenchmarkDTO> benchmarks;
+  ScoreOverviewDTO scoreOverview;
   String resultLink;
 }
