@@ -259,14 +259,21 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
             .artifactPath(ParameterField.createValueField("IMAGE"))
             .repositoryFormat(ParameterField.createValueField(RepositoryFormat.docker.name()))
             .build();
-    ArtifactDelegateResponse artifactDelegateResponse = ArtifactoryArtifactDelegateResponse.builder().build();
+    ArtifactDelegateResponse artifactDelegateResponse =
+        ArtifactoryArtifactDelegateResponse.builder()
+            .buildDetails(ArtifactBuildDetailsNG.builder().metadata(METADATA).build())
+            .label(label)
+            .build();
 
-    ArtifactOutcome artifactOutcome =
-        ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponse, true);
+    ArtifactoryArtifactOutcome artifactOutcome =
+        (ArtifactoryArtifactOutcome) ArtifactResponseToOutcomeMapper.toArtifactOutcome(
+            artifactConfig, artifactDelegateResponse, true);
 
     assertThat(artifactOutcome).isNotNull();
     assertThat(artifactOutcome).isInstanceOf(ArtifactoryArtifactOutcome.class);
     assertThat(artifactOutcome.getArtifactType()).isEqualTo(ArtifactSourceType.ARTIFACTORY_REGISTRY.getDisplayName());
+    assertThat(artifactOutcome.getLabel()).isEqualTo(label);
+    assertThat(artifactOutcome.getMetadata()).isEqualTo(METADATA);
   }
 
   @Test
