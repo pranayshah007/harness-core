@@ -12,11 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.gcp.helpers.GcpHelperService.ALL_LOCATIONS;
 import static io.harness.delegate.task.gcp.helpers.GcpHelperService.LOCATION_DELIMITER;
 import static io.harness.eraro.ErrorCode.CLUSTER_NOT_FOUND;
-import static io.harness.k8s.K8sConstants.API_VERSION;
-import static io.harness.k8s.K8sConstants.CLOUDSDK_CONFIG;
-import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_BINARY;
-import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_INSTALL_HINT;
-import static io.harness.k8s.K8sConstants.USE_GKE_GCLOUD_AUTH_PLUGIN;
 import static io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable;
 import static io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper.saveLogs;
 import static io.harness.threading.Morpheus.sleep;
@@ -258,7 +253,7 @@ public class GkeClusterHelper {
       }
       kubernetesConfigBuilder.serviceAccountTokenSupplier(tokenSupplier);
     }
-    if (isExecAuthPluginBinaryAvailable(GCP_AUTH_PLUGIN_BINARY, logCallback)) {
+    if (isExecAuthPluginBinaryAvailable(K8sConstants.GCP_AUTH_PLUGIN_BINARY, logCallback)) {
       kubernetesConfigBuilder.authType(KubernetesClusterAuthType.EXEC_OAUTH);
       kubernetesConfigBuilder.exec(getGkeUserExecConfig(serviceAccountKeyFileContent, workingDirectory, logCallback));
     }
@@ -340,26 +335,27 @@ public class GkeClusterHelper {
   private Exec getGkeUserExecConfig(
       char[] serviceAccountKeyFileContent, String workingDirectory, LogCallback logCallback) {
     return Exec.builder()
-        .apiVersion(API_VERSION)
-        .command(GCP_AUTH_PLUGIN_BINARY)
+        .apiVersion(K8sConstants.API_VERSION)
+        .command(K8sConstants.GCP_AUTH_PLUGIN_BINARY)
         .interactiveMode(InteractiveMode.NEVER)
         .env(getEnvVariablesForGkeKubeconfig(serviceAccountKeyFileContent, workingDirectory, logCallback))
         .provideClusterInfo(false)
-        .installHint(GCP_AUTH_PLUGIN_INSTALL_HINT)
+        .installHint(K8sConstants.GCP_AUTH_PLUGIN_INSTALL_HINT)
         .build();
   }
 
   private List<EnvVariable> getEnvVariablesForGkeKubeconfig(
       char[] serviceAccountKeyFileContent, String workingDirectory, LogCallback logCallback) {
     List<EnvVariable> envVariableList = new ArrayList<>();
+    String absoluteWorkingDirectory =
+        Paths.get(workingDirectory, K8sConstants.GKE_LOGIN_CREDENTIALS_PATH).normalize().toAbsolutePath().toString();
     try {
-      if (serviceAccountKeyFileContent != null && workingDirectory != null) {
-        String gcpKeyFilePath =
-            Paths.get(workingDirectory, K8sConstants.GCP_JSON_KEY_FILE_NAME).normalize().toAbsolutePath().toString();
+      if (serviceAccountKeyFileContent != null && absoluteWorkingDirectory != null) {
+        String gcpKeyFilePath = Paths.get(absoluteWorkingDirectory, K8sConstants.GCP_JSON_KEY_FILE_NAME).toString();
         FileIo.writeUtf8StringToFile(gcpKeyFilePath, String.valueOf(serviceAccountKeyFileContent));
-        GcpCliClient.loginToGcpCluster(gcpKeyFilePath, getGkeEnv(workingDirectory), logCallback);
-        envVariableList.add(new EnvVariable(CLOUDSDK_CONFIG, workingDirectory));
-        envVariableList.add(new EnvVariable(USE_GKE_GCLOUD_AUTH_PLUGIN, "true"));
+        GcpCliClient.loginToGcpCluster(gcpKeyFilePath, getGkeEnv(absoluteWorkingDirectory), logCallback);
+        envVariableList.add(new EnvVariable(K8sConstants.CLOUDSDK_CONFIG, absoluteWorkingDirectory));
+        envVariableList.add(new EnvVariable(K8sConstants.USE_GKE_GCLOUD_AUTH_PLUGIN, "true"));
       }
     } catch (IOException ex) {
       saveLogs(
@@ -371,7 +367,7 @@ public class GkeClusterHelper {
 
   private Map<String, String> getGkeEnv(String workingDirectory) {
     Map<String, String> gkeEnvForGcloudCli = new HashMap<>();
-    gkeEnvForGcloudCli.put(CLOUDSDK_CONFIG, workingDirectory);
+    gkeEnvForGcloudCli.put(K8sConstants.CLOUDSDK_CONFIG, workingDirectory);
     return gkeEnvForGcloudCli;
   }
 }

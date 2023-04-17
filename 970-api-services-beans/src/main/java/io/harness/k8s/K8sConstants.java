@@ -198,6 +198,7 @@ public interface K8sConstants {
   String GOOGLE_APPLICATION_CREDENTIALS = "GOOGLE_APPLICATION_CREDENTIALS";
   String USE_GKE_GCLOUD_AUTH_PLUGIN = "USE_GKE_GCLOUD_AUTH_PLUGIN";
   String CLOUDSDK_CONFIG = "CLOUDSDK_CONFIG";
+  String GKE_LOGIN_CREDENTIALS_PATH = ".gcloud";
   String GCP_AUTH_PLUGIN_BINARY = "gke-gcloud-auth-plugin";
   String GCP_AUTH_CMD = "gcloud";
   String GCP_AUTH_PLUGIN_INSTALL_HINT = "gke-gcloud-auth-plugin is required to authenticate to the current cluster.\n"

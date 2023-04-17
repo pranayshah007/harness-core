@@ -33,6 +33,8 @@ public class AuthCommand extends AbstractExecutable {
       command.append(GcpCliClient.option(Option.KEY_FILE, this.keyFile));
     }
 
+    command.append(GcpCliClient.option(Option.QUIET));
+
     return command.toString().trim();
   }
 }
