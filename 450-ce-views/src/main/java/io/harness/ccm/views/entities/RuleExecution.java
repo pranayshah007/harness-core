@@ -57,6 +57,8 @@ public final class RuleExecution implements PersistentEntity, UuidAware, Created
   @Schema(description = "cloudProvider") RuleCloudProviderType cloudProvider;
   @Schema(description = "isDryRun") Boolean isDryRun;
   @Schema(description = "targetAccounts") String targetAccount;
+  @Schema(description = "potentialSavings") Number potentialSavings;
+  @Schema(description = "realizedSavings") Number realizedSavings;
   @Schema(description = "targetRegions") List<String> targetRegions;
   @Schema(description = "executionLogPath") String executionLogPath;
   @Schema(description = "resourceCount") long resourceCount;
@@ -118,7 +120,9 @@ public final class RuleExecution implements PersistentEntity, UuidAware, Created
         .createdAt(getCreatedAt())
         .lastUpdatedAt(getLastUpdatedAt())
         .executionStatus(getExecutionStatus())
-        .ruleEnforcementName(getRuleEnforcementName())
+        .ruleEnforcementName(getRuleEnforcementName()
+                .realizedSavings(getRealizedSavings())
+                .potentialSavings(getPotentialSavings())
         .errorMessage(getErrorMessage())
         .ruleName(getRuleName())
         .OOTB(getOOTB())
