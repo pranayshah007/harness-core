@@ -32,7 +32,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -130,6 +129,7 @@ public abstract class SshClient implements AutoCloseable {
   public abstract SshConnection getConnection() throws SshClientException;
   protected abstract Object getExecSession(SshConnection sshConnection) throws SshClientException;
   protected abstract Object getSftpSession(SshConnection sshConnection) throws SshClientException;
+  protected abstract Object getScpSession(SshConnection sshConnection) throws SshClientException;
   protected String getKeyPath() {
     String userhome = System.getProperty("user.home");
     String keyPath = userhome + File.separator + ".ssh" + File.separator + "id_rsa";

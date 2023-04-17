@@ -74,6 +74,7 @@ import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
@@ -525,6 +526,12 @@ public class JschClient extends SshClient {
       }
       throw new JschClientException(SSH_CONNECTION_ERROR, jsch);
     }
+  }
+
+  @Override
+  protected Object getScpSession(SshConnection sshConnection) throws SshClientException {
+    // SCP in JSCH is done via exec channel so this is not required.
+    throw new NotImplementedException();
   }
 
   private Session getJschSession() {

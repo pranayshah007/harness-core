@@ -30,8 +30,10 @@ import io.harness.shell.ssh.sftp.SftpResponse;
 import io.harness.shell.ssh.xfer.ScpRequest;
 import io.harness.shell.ssh.xfer.ScpResponse;
 
+import com.google.common.base.Charsets;
 import com.hierynomus.sshj.userauth.keyprovider.OpenSSHKeyV1KeyFile;
 import com.jcraft.jsch.JSchException;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -44,6 +46,7 @@ import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.common.IOUtils;
 import net.schmizz.sshj.connection.ConnectionException;
 import net.schmizz.sshj.connection.channel.direct.Session;
+import net.schmizz.sshj.sftp.SFTPClient;
 import net.schmizz.sshj.transport.TransportException;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import net.schmizz.sshj.userauth.UserAuthException;
@@ -90,14 +93,34 @@ public class SshjClient extends SshClient {
   }
 
   @Override
-  protected ScpResponse scpUploadInternal(ScpRequest commandData, SshConnection connection) throws SshClientException {
+  protected ScpResponse scpUploadInternal(ScpRequest scpRequest, SshConnection connection) throws SshClientException {
+    try (SshjScpSession scpSession = getScpSession(connection)) {
+      try (StreamingInMemorySourceFile sourceFile = new StreamingInMemorySourceFile(scpRequest.getFileProvider())) {
+        scpSession.getScpFileTransfer().upload(sourceFile, scpRequest.getRemoteFilePath());
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
     throw new NotImplementedException("Not implemented");
   }
 
   @Override
-  protected SftpResponse sftpDownloadInternal(SftpRequest commandData, SshConnection connection)
+  protected SftpResponse sftpDownloadInternal(SftpRequest sftpRequest, SshConnection connection)
       throws SshClientException {
-    throw new NotImplementedException("Not implemented");
+    try (SshjSftpSession sftpSession = getSftpSession(connection)) {
+      SFTPClient sftpClient = sftpSession.getSftpClient();
+      try (StreamingInMemoryDestFile dest = new StreamingInMemoryDestFile(new ByteArrayOutputStream())) {
+        String path = sftpClient.canonicalize(sftpRequest.getDirectory() + "/" + sftpRequest.getFileName());
+        sftpClient.get(path, dest);
+        String content = dest.getOutputStream().toString(Charsets.UTF_8);
+        if (sftpRequest.isCleanup()) {
+          sftpClient.getSFTPEngine().remove(path);
+        }
+        return SftpResponse.builder().success(true).content(content).status(SUCCESS).exitCode(0).build();
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
@@ -260,7 +283,6 @@ public class SshjClient extends SshClient {
   protected SshjExecSession getExecSession(SshConnection sshConnection) throws SshClientException {
     try {
       SSHClient client = ((SshjConnection) sshConnection).getClient();
-      ;
       return SshjExecSession.builder().session(client.startSession()).build();
     } catch (TransportException e) {
       log.error("Transport exception", e);
@@ -272,7 +294,22 @@ public class SshjClient extends SshClient {
   }
 
   @Override
-  protected Object getSftpSession(SshConnection sshConnection) throws SshClientException {
-    throw new NotImplementedException("Not implemented");
+  protected SshjSftpSession getSftpSession(SshConnection sshConnection) throws SshClientException {
+    try {
+      SSHClient client = ((SshjConnection) sshConnection).getClient();
+      return SshjSftpSession.builder().sftpClient(client.newSFTPClient()).build();
+    } catch (TransportException e) {
+      log.error("Transport exception", e);
+      throw new SshjClientException("Transport exception " + e.getMessage(), e);
+    } catch (IOException e) {
+      log.error("Connection exception", e);
+      throw new SshjClientException("Connection exception " + e.getMessage(), e);
+    }
+  }
+
+  @Override
+  protected SshjScpSession getScpSession(SshConnection sshConnection) throws SshClientException {
+    SSHClient client = ((SshjConnection) sshConnection).getClient();
+    return SshjScpSession.builder().scpFileTransfer(client.newSCPFileTransfer()).build();
   }
 }
