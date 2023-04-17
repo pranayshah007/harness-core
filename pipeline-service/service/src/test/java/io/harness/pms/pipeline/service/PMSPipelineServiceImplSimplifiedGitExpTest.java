@@ -55,7 +55,6 @@ import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationS
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.project.remote.ProjectClient;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
@@ -88,7 +87,6 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
   @Mock private GitXSettingsHelper gitXSettingsHelper;
   @Mock private OrganizationClient organizationClient;
-
   @Mock private AccountClient accountClient;
   @Mock NGSettingsClient settingsClient;
 
@@ -543,8 +541,6 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeletePipeline() {
     doReturn(getResponseDTOCall(false)).when(entitySetupUsageClient).isEntityReferenced(any(), any(), any());
-    MockedStatic<CGRestUtils> cgStatic = Mockito.mockStatic(CGRestUtils.class);
-    cgStatic.when(() -> CGRestUtils.getResponse(any())).thenReturn(false);
     boolean delete = pipelineService.delete(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, null);
     assertThat(delete).isTrue();
 

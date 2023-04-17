@@ -26,7 +26,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
-import io.harness.gitx.GitXSettingsHandler;
+import io.harness.gitx.GitXSettingsHelper;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.events.InputSetCreateEvent;
@@ -73,7 +73,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
   private final GitSyncSdkService gitSyncSdkService;
   private final GitAwareEntityHelper gitAwareEntityHelper;
   private final TransactionHelper transactionHelper;
-  private final GitXSettingsHandler gitXSettingsHandler;
+  private final GitXSettingsHelper gitXSettingsHelper;
 
   @Override
   public List<InputSetEntity> findAll(Criteria criteria) {
@@ -475,7 +475,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
 
   private void setConnectorRefForRemoteEntity(InputSetEntity inputSetEntity, GitEntityInfo gitEntityInfo) {
     String defaultConnectorForGitX =
-        gitXSettingsHandler.getDefaultConnectorForGitX(inputSetEntity.getAccountIdentifier(),
+        gitXSettingsHelper.getDefaultConnectorForGitX(inputSetEntity.getAccountIdentifier(),
             inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
     if (gitEntityInfo.getConnectorRef() == null && defaultConnectorForGitX != null) {
       inputSetEntity.setConnectorRef(defaultConnectorForGitX);

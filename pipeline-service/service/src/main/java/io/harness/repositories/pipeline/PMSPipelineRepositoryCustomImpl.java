@@ -29,7 +29,7 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.persistance.GitSyncableHarnessRepo;
 import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
 import io.harness.gitsync.sdk.EntityGitDetails;
-import io.harness.gitx.GitXSettingsHandler;
+import io.harness.gitx.GitXSettingsHelper;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.events.PipelineCreateEvent;
 import io.harness.pms.events.PipelineDeleteEvent;
@@ -79,7 +79,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   private final OutboxService outboxService;
   private final GitSyncSdkService gitSyncSdkService;
   private final PipelineEntityReadHelper pipelineEntityReadHelper;
-  private final GitXSettingsHandler gitXSettingsHandler;
+  private final GitXSettingsHelper gitXSettingsHelper;
 
   @Override
   public Page<PipelineEntity> findAll(Criteria criteria, Pageable pageable, String accountIdentifier,
@@ -447,7 +447,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
 
   private void setConnectorRefForRemoteEntity(PipelineEntity pipelineToSave, GitEntityInfo gitEntityInfo) {
     String defaultConnectorForGitX =
-        gitXSettingsHandler.getDefaultConnectorForGitX(pipelineToSave.getAccountIdentifier(),
+        gitXSettingsHelper.getDefaultConnectorForGitX(pipelineToSave.getAccountIdentifier(),
             pipelineToSave.getOrgIdentifier(), pipelineToSave.getProjectIdentifier());
     if (gitEntityInfo.getConnectorRef() == null && defaultConnectorForGitX != null) {
       pipelineToSave.setConnectorRef(defaultConnectorForGitX);
