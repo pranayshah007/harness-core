@@ -9,6 +9,7 @@ package io.harness.delegate.task.terraform.handlers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.AMAZON_S3;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.ARTIFACTORY;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Explanation.EXPLANATION_NO_CONFIG_SET;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_NO_CONFIG_SET;
@@ -27,6 +28,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig;
 import io.harness.delegate.task.terraform.TerraformBackendConfigFileInfo;
 import io.harness.delegate.task.terraform.TerraformBaseHelper;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
@@ -69,6 +71,7 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
     String scriptDirectory;
     String baseDir = terraformBaseHelper.getBaseDir(taskParameters.getEntityId());
     Map<String, String> commitIdToFetchedFilesMap = new HashMap<>();
+    Map<String, Map<String, String> > keyVersionMap = new HashMap<>();
 
     if (taskParameters.getConfigFile() != null) {
       GitStoreDelegateConfig conFileFileGitStore = taskParameters.getConfigFile().getGitStoreDelegateConfig();
@@ -113,6 +116,20 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
       scriptDirectory = terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(artifactoryStoreDelegateConfig,
           taskParameters.getAccountId(), taskParameters.getWorkspace(), taskParameters.getCurrentStateFileId(),
           logCallback, baseDir);
+    } else if (taskParameters.getFileStoreConfigFiles() != null
+        && taskParameters.getFileStoreConfigFiles().getType() == AMAZON_S3) {
+      S3StoreTFDelegateConfig s3StoreTFDelegateConfig =
+          (S3StoreTFDelegateConfig) taskParameters.getFileStoreConfigFiles();
+      if (isNotEmpty(s3StoreTFDelegateConfig.getRegion()) && isNotEmpty(s3StoreTFDelegateConfig.getBucketName())
+          && isNotEmpty(s3StoreTFDelegateConfig.getPaths()) && isNotEmpty(s3StoreTFDelegateConfig.getPaths().get(0))) {
+        logCallback.saveExecutionLog(
+            format("Fetching config files from S3. Region: [%s]  Bucket: [%s]  Folder path: [%s]",
+                s3StoreTFDelegateConfig.getRegion(), s3StoreTFDelegateConfig.getBucketName(),
+                s3StoreTFDelegateConfig.getPaths().get(0)),
+            INFO, CommandExecutionStatus.RUNNING);
+      }
+      scriptDirectory = terraformBaseHelper.fetchS3ConfigFilesAndPrepareScriptDir(
+          s3StoreTFDelegateConfig, taskParameters, baseDir, keyVersionMap, logCallback);
     } else {
       throw NestedExceptionUtils.hintWithExplanationException(HINT_NO_CONFIG_SET, EXPLANATION_NO_CONFIG_SET,
           new TerraformCommandExecutionException("No Terraform config set", WingsException.USER));
@@ -121,7 +138,7 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
     String tfVarDirectory = Paths.get(baseDir, TF_VAR_FILES_DIR).toString();
     List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
         taskParameters.getVarFileInfos(), scriptDirectory, logCallback, taskParameters.getAccountId(), tfVarDirectory,
-        commitIdToFetchedFilesMap, taskParameters.isTerraformCloudCli());
+        commitIdToFetchedFilesMap, taskParameters.isTerraformCloudCli(), keyVersionMap);
 
     if (taskParameters.isTerraformCloudCli() && !varFilePaths.isEmpty()) {
       logCallback.saveExecutionLog(format("Var files are moved in %s having a suffix: .auto.tfvars", scriptDirectory),
@@ -140,9 +157,9 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
     TerraformBackendConfigFileInfo configFileInfo = null;
     if (taskParameters.getBackendConfigFileInfo() != null) {
       configFileInfo = taskParameters.getBackendConfigFileInfo();
-      backendConfigFile =
-          terraformBaseHelper.checkoutRemoteBackendConfigFileAndConvertToFilePath(configFileInfo, scriptDirectory,
-              logCallback, taskParameters.getAccountId(), tfBackendConfigDirectory, commitIdToFetchedFilesMap);
+      backendConfigFile = terraformBaseHelper.checkoutRemoteBackendConfigFileAndConvertToFilePath(configFileInfo,
+          scriptDirectory, logCallback, taskParameters.getAccountId(), tfBackendConfigDirectory,
+          commitIdToFetchedFilesMap, keyVersionMap);
     }
     try (PlanJsonLogOutputStream planJsonLogOutputStream = new PlanJsonLogOutputStream();
          PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream();
@@ -196,6 +213,7 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
       return TerraformTaskNGResponse.builder()
           .outputs(new String(Files.readAllBytes(tfOutputsFile.toPath()), Charsets.UTF_8))
           .commitIdForConfigFilesMap(commitIdToFetchedFilesMap)
+          .keyVersionMap(keyVersionMap)
           .encryptedTfPlan(taskParameters.getEncryptedTfPlan())
           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
           .stateFileId(stateFileId)

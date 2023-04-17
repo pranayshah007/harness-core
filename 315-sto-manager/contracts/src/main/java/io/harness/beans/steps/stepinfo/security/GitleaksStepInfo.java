@@ -24,12 +24,12 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-@JsonTypeName("GitLeaks")
+@JsonTypeName("Gitleaks")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @TypeAlias("gitleaksStepInfo")
 @OwnedBy(STO)
-@RecasterAlias("io.harness.beans.steps.stepinfo.security.GitLeaksStepInfo")
-public class GitLeaksStepInfo extends STOGenericStepInfo {
+@RecasterAlias("io.harness.beans.steps.stepinfo.security.GitleaksStepInfo")
+public class GitleaksStepInfo extends STOGenericStepInfo {
   @NotNull
   @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlGenericConfig")
   protected STOYamlGenericConfig config;

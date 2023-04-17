@@ -5,22 +5,25 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.configfile.steps;
+package io.harness.cdng.configfile;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.Builder;
+import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(CDC)
+@Value
+@Builder
 @JsonTypeName("ConfigFilesOutcome")
 @TypeAlias("configFilesOutcome")
 @RecasterAlias("io.harness.cdng.configfile.steps.ConfigFilesOutcome")

@@ -40,6 +40,7 @@ import io.harness.plancreator.steps.pluginstep.ContainerStepVariableCreator;
 import io.harness.plancreator.steps.resourceconstraint.QueueStepPlanCreator;
 import io.harness.plancreator.steps.resourceconstraint.ResourceConstraintStepPlanCreator;
 import io.harness.pms.contracts.steps.StepInfo;
+import io.harness.pms.pipelinerollback.PipelineRollbackStagePlanCreator;
 import io.harness.pms.pipelinestage.PipelineStageFilterCreator;
 import io.harness.pms.pipelinestage.plancreator.PipelineStagePlanCreator;
 import io.harness.pms.pipelinestage.v1.plancreator.PipelineStagePlanCreatorV1;
@@ -100,7 +101,7 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PIPELINE)
 public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
-  public static final int PLAN_CREATOR_NUMBER = 35;
+  public static final int PLAN_CREATOR_NUMBER = 36;
   public static final int FILTER_JSON_CREATOR_NUMBER = 13;
   public static final int VARIABLE_CREATOR_NUMBER = 25;
 
@@ -159,6 +160,7 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
     assertThat(planCreatorClasses.contains(GroupPlanCreatorV1.class)).isTrue();
     assertThat(planCreatorClasses.contains(PMSStepPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(CdSscaOrchestrationStepPlanCreator.class)).isTrue();
+    assertThat(planCreatorClasses.contains(PipelineRollbackStagePlanCreator.class)).isTrue();
   }
 
   @Test

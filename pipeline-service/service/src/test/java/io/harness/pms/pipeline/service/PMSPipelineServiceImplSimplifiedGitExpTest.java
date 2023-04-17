@@ -46,6 +46,7 @@ import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
@@ -86,6 +87,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Mock private ProjectClient projectClient;
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
   @Mock private GitXSettingsHelper gitXSettingsHelper;
+  @Mock private OrganizationClient organizationClient;
 
   @Mock private AccountClient accountClient;
   @Mock NGSettingsClient settingsClient;

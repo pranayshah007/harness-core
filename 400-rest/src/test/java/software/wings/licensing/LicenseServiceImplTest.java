@@ -12,6 +12,8 @@ import static io.harness.ccm.license.CeLicenseType.LIMITED_TRIAL;
 import static io.harness.rule.OwnerRule.HANTANG;
 import static io.harness.rule.OwnerRule.MTRAN;
 
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Offset.offset;
 import static org.mockito.Matchers.eq;
@@ -125,5 +127,18 @@ public class LicenseServiceImplTest extends CategoryTest {
     assertThat(licenseService.getModuleLicenseType(dimension1, plan1)).isEqualTo(LicenseType.PAID);
     assertThat(licenseService.getModuleLicenseType(dimension2, plan2)).isEqualTo(LicenseType.PAID);
     assertThat(licenseService.getModuleLicenseType(dimension3, plan3)).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = MTRAN)
+  @Category(UnitTests.class)
+  public void shouldGetExpectedPremierSupportFromDimension() {
+    String dimension1 = "FF_TEAM_PRMR_50";
+    String dimension2 = "FF_ENTERPRISE_PRMR_50";
+    String dimension3 = "FF_ENTERPRISE_50";
+
+    assertTrue(licenseService.hasPremierSupport(dimension1));
+    assertTrue(licenseService.hasPremierSupport(dimension2));
+    assertFalse(licenseService.hasPremierSupport(dimension3));
   }
 }

@@ -52,7 +52,7 @@ public enum CIStepInfoType {
   CUSTOM_INGEST(CI_LITE_ENGINE, "CustomIngest"),
   FORTIFY_ON_DEMAND(CI_LITE_ENGINE, "FortifyOnDemand"),
   FOSSA(CI_LITE_ENGINE, "Fossa"),
-  GIT_LEAKS(CI_LITE_ENGINE, "GitLeaks"),
+  GIT_LEAKS(CI_LITE_ENGINE, "Gitleaks"),
   GRYPE(CI_LITE_ENGINE, "Grype"),
   JFROG_XRAY(CI_LITE_ENGINE, "JfrogXray"),
   MEND(CI_LITE_ENGINE, "Mend"),

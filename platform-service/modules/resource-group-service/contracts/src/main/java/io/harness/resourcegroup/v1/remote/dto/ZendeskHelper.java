@@ -19,9 +19,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
@@ -32,7 +30,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
 @Slf4j
@@ -49,9 +46,9 @@ public class ZendeskHelper {
   }
 
   public ZendeskResponseDTO create(String emailId, TicketType ticketType, ZendeskPriority priority, String subject,
-      ZendeskDescription description, List<FormDataBodyPart> fileParts) {
+      ZendeskDescription description, InputStream inputStream, FormDataContentDisposition formDataContentDisposition) {
     try {
-      List<String> uploadTokens = uploadFile(fileParts);
+      String uploadToken = uploadFile(inputStream, formDataContentDisposition);
       String ticketDescription = createDescription(emailId, ticketType, priority, subject, description);
       Map<String, Object> ticketData = new HashMap<>();
       Map<String, Object> ticketRoot = new HashMap<>();
@@ -59,8 +56,8 @@ public class ZendeskHelper {
 
       comment.put("body", ticketDescription);
       comment.put("public", "True");
-      if (!isEmpty(uploadTokens)) {
-        comment.put("uploads", uploadTokens);
+      if (!isEmpty(uploadToken)) {
+        comment.put("uploads", uploadToken);
       }
       ticketData.put("subject", subject);
       ticketData.put("comment", comment);
@@ -139,40 +136,38 @@ public class ZendeskHelper {
       return ZendeskResponseDTO.builder().message(ExceptionUtils.getMessage(e)).code(400).build();
     }
   }
-  private List<String> uploadFile(List<FormDataBodyPart> fileParts) throws IOException {
-    List<String> tokens = new ArrayList<>();
-    for (FormDataBodyPart filePart : fileParts) {
-      FormDataContentDisposition contentDisposition = filePart.getFormDataContentDisposition();
-      String fileName = contentDisposition.getFileName();
-      byte[] binaryData = getInputBytes(filePart.getValueAs(InputStream.class));
-      RequestBody requestBody = new MultipartBody.Builder()
-                                    .setType(MultipartBody.FORM)
-                                    .addFormDataPart("filename", fileName)
-                                    .addFormDataPart("uploaded_data", fileName,
-                                        RequestBody.create(binaryData, MediaType.parse("application/octet-stream")))
-                                    .build();
-
-      Request request = new Request.Builder()
-                            .url(zendeskConfig.baseUrl + "/api/v2/uploads")
-                            .addHeader("Authorization", "Basic " + zendeskConfig.token)
-                            .post(requestBody)
-                            .build();
-
-      Response response = okHttpClient.newCall(request).execute();
-
-      if (!response.isSuccessful()) {
-        String bodyString = (null != response.body()) ? response.body().string() : "null";
-        log.error("Response not Successful. Response body: {}", bodyString);
-      }
-
-      InputStream responseBodyStream = response.body().byteStream();
-      String responseBodyString = new Scanner(responseBodyStream, "UTF-8").useDelimiter("\\A").next();
-      ObjectMapper objectMapper = new ObjectMapper();
-      HashMap<String, Object> responseMap = objectMapper.readValue(responseBodyString, HashMap.class);
-      HashMap<String, String> uploadMap = (HashMap<String, String>) responseMap.get("upload");
-      tokens.add(uploadMap.get("token"));
+  private String uploadFile(InputStream inputStream, FormDataContentDisposition formDataContentDisposition)
+      throws IOException {
+    byte[] binaryData = getInputBytes(inputStream);
+    if (binaryData.length == 0) {
+      return "";
     }
-    return tokens;
+    RequestBody requestBody = new MultipartBody.Builder()
+                                  .setType(MultipartBody.FORM)
+                                  .addFormDataPart("filename", formDataContentDisposition.getFileName())
+                                  .addFormDataPart("uploaded_data", formDataContentDisposition.getFileName(),
+                                      RequestBody.create(binaryData, MediaType.parse("application/octet-stream")))
+                                  .build();
+
+    Request request = new Request.Builder()
+                          .url(zendeskConfig.baseUrl + "/api/v2/uploads")
+                          .addHeader("Authorization", "Basic " + zendeskConfig.token)
+                          .post(requestBody)
+                          .build();
+
+    Response response = okHttpClient.newCall(request).execute();
+
+    if (!response.isSuccessful()) {
+      String bodyString = (null != response.body()) ? response.body().string() : "null";
+      log.error("Response not Successful. Response body: {}", bodyString);
+    }
+
+    InputStream responseBodyStream = response.body().byteStream();
+    String responseBodyString = new Scanner(responseBodyStream, "UTF-8").useDelimiter("\\A").next();
+    ObjectMapper objectMapper = new ObjectMapper();
+    HashMap<String, Object> responseMap = objectMapper.readValue(responseBodyString, HashMap.class);
+    HashMap<String, String> uploadMap = (HashMap<String, String>) responseMap.get("upload");
+    return uploadMap.get("token");
   }
   private byte[] getInputBytes(InputStream inputStream) {
     byte[] inputBytes = new byte[0];

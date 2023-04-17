@@ -104,6 +104,8 @@ public class CompositeSLOMetricAnalysisStateExecutorTest extends CvNextGenTestBa
     MockitoAnnotations.initMocks(this);
 
     builderFactory = BuilderFactory.getDefault();
+    builderFactory.getContext().setOrgIdentifier("orgIdentifier");
+    builderFactory.getContext().setProjectIdentifier("project");
     sloMetricAnalysisStateExecutor = stateTypeAnalysisStateExecutorMap.get(StateType.COMPOSOITE_SLO_METRIC_ANALYSIS);
 
     MonitoredServiceDTO monitoredServiceDTO1 =

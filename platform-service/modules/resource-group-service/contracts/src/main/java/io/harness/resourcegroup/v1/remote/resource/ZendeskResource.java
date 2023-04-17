@@ -38,7 +38,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.List;
+import java.io.InputStream;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -46,7 +46,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import org.glassfish.jersey.media.multipart.FormDataBodyPart;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
 @Api("/zendesk")
@@ -92,10 +92,26 @@ public class ZendeskResource {
       @Parameter(description = "type of the ticket ") @NotNull @QueryParam("ticketType") TicketType ticketType,
       @Parameter(description = "priority of the ticket") @NotNull @QueryParam("priority") ZendeskPriority priority,
       @Parameter(description = "subject of the ticket") @NotNull @QueryParam("subject") String subject,
-      @FormDataParam("zendeskDescription") ZendeskDescription zendeskDescription,
-      @FormDataParam("files") List<FormDataBodyPart> fileParts) {
-    return ResponseDTO.newResponse(
-        zendeskHelper.create(emailId, ticketType, priority, subject, zendeskDescription, fileParts));
+      @FormDataParam("message") String message, @FormDataParam("url") String url,
+      @FormDataParam("userBrowser") String userBrowser, @FormDataParam("userOS") String userOS,
+      @FormDataParam("website") String website, @FormDataParam("userName") String userName,
+      @FormDataParam("accountId") String accountId, @FormDataParam("module") String module,
+      @FormDataParam("browserResolution") String browserResolution,
+      @FormDataParam("file") InputStream uploadedInputStream,
+      @FormDataParam("file") FormDataContentDisposition fileDetail) {
+    ZendeskDescription zendeskDescription = ZendeskDescription.builder()
+                                                .message(message)
+                                                .accountId(accountId)
+                                                .browserResolution(browserResolution)
+                                                .userBrowser(userBrowser)
+                                                .module(module)
+                                                .url(url)
+                                                .userOS(userOS)
+                                                .website(website)
+                                                .userOS(userOS)
+                                                .build();
+    return ResponseDTO.newResponse(zendeskHelper.create(
+        emailId, ticketType, priority, subject, zendeskDescription, uploadedInputStream, fileDetail));
   }
 
   @GET

@@ -15,14 +15,17 @@ import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
+import io.harness.cvng.servicelevelobjective.beans.slospec.ServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOTarget;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.transformer.ServiceLevelObjectiveDetailsTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.ng.core.mapper.TagMapper;
 
 import com.google.inject.Inject;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -30,6 +33,8 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
   @Inject NotificationRuleService notificationRuleService;
 
   @Inject ServiceLevelObjectiveDetailsTransformer serviceLevelObjectiveDetailsTransformer;
+
+  @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
 
   @Inject private Map<SLOTargetType, SLOTargetTransformer> sloTargetTypeSLOTargetTransformerMap;
 
@@ -76,15 +81,7 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
         .identifier(serviceLevelObjective.getIdentifier())
         .name(serviceLevelObjective.getName())
         .description(serviceLevelObjective.getDesc())
-        .spec(CompositeServiceLevelObjectiveSpec.builder()
-                  .serviceLevelObjectivesDetails(
-                      serviceLevelObjective.getServiceLevelObjectivesDetails()
-                          .stream()
-                          .map(serviceLevelObjectivesDetail
-                              -> serviceLevelObjectiveDetailsTransformer.getServiceLevelObjectiveDetailsDTO(
-                                  serviceLevelObjectivesDetail))
-                          .collect(Collectors.toList()))
-                  .build())
+        .spec(getSpec(serviceLevelObjective))
         .notificationRuleRefs(
             notificationRuleService.getNotificationRuleRefDTOs(serviceLevelObjective.getNotificationRuleRefs()))
         .sloTarget(SLOTargetDTO.builder()
@@ -95,6 +92,26 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
                        .build())
         .tags(TagMapper.convertToMap(serviceLevelObjective.getTags()))
         .userJourneyRefs(serviceLevelObjective.getUserJourneyIdentifiers())
+        .build();
+  }
+
+  private ServiceLevelObjectiveSpec getSpec(CompositeServiceLevelObjective serviceLevelObjective) {
+    return CompositeServiceLevelObjectiveSpec.builder()
+        .evaluationType(serviceLevelObjectiveV2Service
+                            .getEvaluationType(ProjectParams.builder()
+                                                   .accountIdentifier(serviceLevelObjective.getAccountId())
+                                                   .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                                                   .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                                                   .build(),
+                                Collections.singletonList(serviceLevelObjective))
+                            .get(serviceLevelObjective))
+        .serviceLevelObjectivesDetails(
+            serviceLevelObjective.getServiceLevelObjectivesDetails()
+                .stream()
+                .map(serviceLevelObjectivesDetail
+                    -> serviceLevelObjectiveDetailsTransformer.getServiceLevelObjectiveDetailsDTO(
+                        serviceLevelObjectivesDetail))
+                .collect(Collectors.toList()))
         .build();
   }
 }

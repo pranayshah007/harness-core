@@ -24,6 +24,7 @@ import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.GraphNode;
+import software.wings.beans.Workflow;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
@@ -46,7 +47,7 @@ public class CloudformationCreateStepMapperImpl extends BaseCloudformationProvis
 
   @Override
   public List<CgEntityId> getReferencedEntities(
-      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+      String accountId, Workflow workflow, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     CloudFormationCreateStackState state = (CloudFormationCreateStackState) getState(graphNode);
 
     List<CgEntityId> references = new ArrayList<>();

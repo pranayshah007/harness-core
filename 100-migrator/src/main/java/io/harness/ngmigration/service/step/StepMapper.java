@@ -38,6 +38,7 @@ import io.harness.yaml.utils.JsonPipelineUtils;
 
 import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
+import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
@@ -69,7 +70,7 @@ public abstract class StepMapper {
   }
 
   public List<CgEntityId> getReferencedEntities(
-      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+      String accountId, Workflow workflow, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     return secretRefUtils.getSecretRefFromExpressions(accountId, getExpressions(graphNode));
   }
 

@@ -1423,59 +1423,96 @@ public class BuildSourceServiceTest extends WingsBaseTest {
   @Test
   @Owner(developers = RAFAEL)
   @Category(UnitTests.class)
-  public void shouldListBuildsByArtifactStreamAndFilterPath() {
+  public void shouldListArtifactsByArtifactStreamAndFilterPath() {
     ArtifactStream artifactStream =
         GcsArtifactStream.builder().accountId(ACCOUNT_ID).artifactPaths(List.of("artifactory/*")).build();
     artifactStream.setCollectionEnabled(true);
 
     Artifact gcsArt = Artifact.Builder.anArtifact().build();
-    List<Artifact> artifactList = setupList(5, List.of("a", "b", "c"), "artifactory");
+    List<Artifact> artifactList = setupList(5, List.of("a", "b", "c"), "artifactory", ".zip");
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(artifactStream);
     when(artifactService.listArtifactsByArtifactStreamId(ACCOUNT_ID, ARTIFACT_STREAM_ID)).thenReturn(List.of(gcsArt));
-    List<BuildDetails> builds =
+    List<Artifact> artifacts =
         buildSourceService.listArtifactByArtifactStreamAndFilterPath(artifactList, artifactStream);
-    assertThat(builds).hasSize(15);
+    assertThat(artifacts).hasSize(15);
   }
 
   @Test
   @Owner(developers = RAFAEL)
   @Category(UnitTests.class)
-  public void shouldListBuildsByArtifactStreamAndFilterPathWithSpecificPath() {
+  public void shouldListArtifactsByArtifactStreamAndFilterPathWithSpecificPath() {
     ArtifactStream artifactStream =
         GcsArtifactStream.builder().accountId(ACCOUNT_ID).artifactPaths(List.of("artifactory/a0.zip")).build();
     artifactStream.setCollectionEnabled(true);
 
     Artifact gcsArt = Artifact.Builder.anArtifact().build();
-    List<Artifact> artifactList = setupList(5, List.of("a", "b", "c"), "artifactory");
+    List<Artifact> artifactList = setupList(5, List.of("a", "b", "c"), "artifactory", ".zip");
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(artifactStream);
     when(artifactService.listArtifactsByArtifactStreamId(ACCOUNT_ID, ARTIFACT_STREAM_ID)).thenReturn(List.of(gcsArt));
-    List<BuildDetails> builds =
+    List<Artifact> artifacts =
         buildSourceService.listArtifactByArtifactStreamAndFilterPath(artifactList, artifactStream);
-    assertThat(builds).hasSize(1);
+    assertThat(artifacts).hasSize(1);
   }
 
   @Test
   @Owner(developers = RAFAEL)
   @Category(UnitTests.class)
-  public void shouldListBuildsByArtifactStreamAndFilterPathWithoutSpecific() {
+  public void shouldListArtifactsByArtifactStreamAndFilterPathWithSpecificTypeFile() {
+    ArtifactStream artifactStream =
+        GcsArtifactStream.builder().accountId(ACCOUNT_ID).artifactPaths(List.of("artifactory/*.zip")).build();
+    artifactStream.setCollectionEnabled(true);
+
+    Artifact gcsArt = Artifact.Builder.anArtifact().build();
+    List<Artifact> artifactList = setupList(5, List.of("a", "b", "c"), "artifactory", ".zip");
+    artifactList.addAll(setupList(5, List.of("d"), "artifactory", ".tar"));
+
+    when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(artifactStream);
+    when(artifactService.listArtifactsByArtifactStreamId(ACCOUNT_ID, ARTIFACT_STREAM_ID)).thenReturn(List.of(gcsArt));
+    List<Artifact> artifacts =
+        buildSourceService.listArtifactByArtifactStreamAndFilterPath(artifactList, artifactStream);
+    assertThat(artifacts).hasSize(15);
+    assertThat(artifactList.size()).isEqualTo(20);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldListArtifactsByArtifactStreamAndFilterPathWithoutSpecific() {
     ArtifactStream artifactStream =
         GcsArtifactStream.builder().accountId(ACCOUNT_ID).artifactPaths(List.of("artifactory/noart.zip")).build();
     artifactStream.setCollectionEnabled(true);
 
     Artifact gcsArt = Artifact.Builder.anArtifact().build();
-    List<Artifact> artifactList = setupList(5, List.of("a", "b", "c"), "artifactory");
+    List<Artifact> artifactList = setupList(5, List.of("a", "b", "c"), "artifactory", ".zip");
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(artifactStream);
     when(artifactService.listArtifactsByArtifactStreamId(ACCOUNT_ID, ARTIFACT_STREAM_ID)).thenReturn(List.of(gcsArt));
-    List<BuildDetails> builds =
+    List<Artifact> artifacts =
         buildSourceService.listArtifactByArtifactStreamAndFilterPath(artifactList, artifactStream);
-    assertThat(builds).hasSize(0);
+    assertThat(artifacts).hasSize(0);
   }
 
-  private List<Artifact> setupList(int n, List<String> names, String folder) {
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldListArtifactsByArtifactStreamAndFilterPathStartsWith() {
+    ArtifactStream artifactStream =
+        GcsArtifactStream.builder().accountId(ACCOUNT_ID).artifactPaths(List.of("artifactory/*/*.zip")).build();
+    artifactStream.setCollectionEnabled(true);
+
+    Artifact gcsArt = Artifact.Builder.anArtifact().build();
+    List<Artifact> artifactList = setupList(5, List.of("a", "b", "c"), "artifactory", ".zip");
+    when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(artifactStream);
+    when(artifactService.listArtifactsByArtifactStreamId(ACCOUNT_ID, ARTIFACT_STREAM_ID)).thenReturn(List.of(gcsArt));
+    List<Artifact> artifacts =
+        buildSourceService.listArtifactByArtifactStreamAndFilterPath(artifactList, artifactStream);
+    assertThat(artifacts).hasSize(15);
+  }
+
+  private List<Artifact> setupList(int n, List<String> names, String folder, String type) {
     List<Artifact> artifactList = new ArrayList<>();
     for (String name : names) {
       for (int i = 0; i < n; ++i) {
-        String artFileName = name + i + ".zip";
+        String artFileName = name + i + type;
         String artPathName = folder + "/" + artFileName;
         ArtifactMetadata artifactMetadata = new ArtifactMetadata();
         artifactMetadata.put("bucketName", "artifacts");

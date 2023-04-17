@@ -7,6 +7,12 @@
 
 package io.harness.delegate.task.winrm;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.AUTHORIZATION;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.JENKINS_DOWNLOAD_ARTIFACT_PS;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.JENKINS_DOWNLOAD_ARTIFACT_USING_CREDENTIALS_PS;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.OUT_FILE;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.URI;
 import static io.harness.delegate.utils.ArtifactoryUtils.getArtifactFileName;
 import static io.harness.delegate.utils.JenkinsArtifactsUtils.getJenkinsAuthHeader;
 import static io.harness.delegate.utils.JenkinsArtifactsUtils.getJenkinsUrl;
@@ -70,17 +76,21 @@ public class JenkinsArtifactDownloadHandler implements ArtifactDownloadHandler {
       JenkinsArtifactDelegateConfig jenkinsArtifactDelegateConfig, String artifactPath,
       JenkinsConnectorDTO jenkinsConnectorDto) {
     if (jenkinsConnectorDto.getAuth() != null) {
-      return "$webClient = New-Object System.Net.WebClient \n"
-          + "$webClient.Headers[[System.Net.HttpRequestHeader]::Authorization] = \""
-          + getJenkinsAuthHeader(jenkinsArtifactDelegateConfig, secretDecryptionService) + "\";\n"
-          + "$url = \"" + getJenkinsUrl(jenkinsArtifactDelegateConfig, artifactPath) + "\" \n"
-          + "$localfilename = \"" + destinationPath + "\\" + getArtifactFileName(artifactPath) + "\" \n"
-          + "$webClient.DownloadFile($url, $localfilename)";
+      String jenkinsAuthHeader = getJenkinsAuthHeader(jenkinsArtifactDelegateConfig, secretDecryptionService);
+      return isNotEmpty(jenkinsAuthHeader)
+          ? JENKINS_DOWNLOAD_ARTIFACT_USING_CREDENTIALS_PS.replace(AUTHORIZATION, jenkinsAuthHeader)
+                .replace(URI, getJenkinsUrl(jenkinsArtifactDelegateConfig, artifactPath))
+                .replace(OUT_FILE, destinationPath + "\\" + getArtifactFileName(artifactPath))
+          : getJenkinsDownloadScript(destinationPath, jenkinsArtifactDelegateConfig, artifactPath);
     } else {
-      return "$webClient = New-Object System.Net.WebClient \n"
-          + "$url = \"" + getJenkinsUrl(jenkinsArtifactDelegateConfig, artifactPath) + "\" \n"
-          + "$localfilename = \"" + destinationPath + "\\" + getArtifactFileName(artifactPath) + "\" \n"
-          + "$webClient.DownloadFile($url, $localfilename)";
+      return getJenkinsDownloadScript(destinationPath, jenkinsArtifactDelegateConfig, artifactPath);
     }
+  }
+
+  @NotNull
+  private String getJenkinsDownloadScript(
+      String destinationPath, JenkinsArtifactDelegateConfig jenkinsArtifactDelegateConfig, String artifactPath) {
+    return JENKINS_DOWNLOAD_ARTIFACT_PS.replace(URI, getJenkinsUrl(jenkinsArtifactDelegateConfig, artifactPath))
+        .replace(OUT_FILE, destinationPath + "\\" + getArtifactFileName(artifactPath));
   }
 }

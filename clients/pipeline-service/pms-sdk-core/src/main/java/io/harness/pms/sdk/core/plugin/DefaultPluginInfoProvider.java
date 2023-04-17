@@ -7,7 +7,6 @@
 
 package io.harness.pms.sdk.core.plugin;
 
-import io.harness.pms.contracts.plan.PluginContainerResources;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.plan.PluginDetails;
@@ -31,18 +30,21 @@ public class DefaultPluginInfoProvider implements PluginInfoProvider {
       throw new ContainerPluginParseException("Error parsing plugin step", e);
     }
     ContainerResource.Limits resources = pluginStep.getResources().getLimits();
+
     // todo: check for variable issues
+    // todo: not implemented fully, do when required
     return PluginCreationResponse.newBuilder()
-        .setPluginDetails(PluginDetails.newBuilder()
-                              .setPrivileged(pluginStep.getPrivileged())
-                              .setResource(PluginContainerResources.newBuilder()
-                                               .setCpu(resources.getCpu().getValue())
-                                               .setMemory(resources.getMemory().getValue())
-                                               .build())
-                              .putAllEnvVariables(pluginStep.getEnvVariables() == null ? Collections.emptyMap()
-                                                                                       : pluginStep.getEnvVariables())
-                              .setImageDetails(PluginImageUtils.getImageDetails(pluginStep.getImageDetails()))
-                              .build())
+        .setPluginDetails(
+            PluginDetails.newBuilder()
+                .setPrivileged(pluginStep.getPrivileged())
+                //                              .setResource(PluginContainerResources.newBuilder()
+                //                                               .setCpu(resources.getCpu().getValue())
+                //                                               .setMemory(resources.getMemory().getValue())
+                //                                               .build())
+                .putAllEnvVariables(
+                    pluginStep.getEnvVariables() == null ? Collections.emptyMap() : pluginStep.getEnvVariables())
+                .setImageDetails(PluginImageUtils.getImageDetails(pluginStep.getImageDetails()))
+                .build())
         .build();
   }
 

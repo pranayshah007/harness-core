@@ -121,6 +121,9 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
     if (isNotEmpty(user)) {
       String password = getProxyPassword();
       builder.proxyAuthenticator((route, response) -> {
+        if (response == null || response.code() == 407) {
+          return null;
+        }
         String credential = Credentials.basic(user, password);
         return response.request().newBuilder().header("Proxy-Authorization", credential).build();
       });

@@ -100,7 +100,8 @@ public class VerifyStepMetricsAnalysisUtils {
     }
     List<String> appliedThresholds = hostData.getAppliedThresholdIds();
     for (String appliedThreshold : appliedThresholds) {
-      if (metricThresholdMap.get(appliedThreshold).getThresholdType() == MetricThresholdType.FAIL_FAST) {
+      MetricThreshold threshold = metricThresholdMap.get(appliedThreshold);
+      if (threshold != null && threshold.getThresholdType() == MetricThresholdType.FAIL_FAST) {
         return AnalysisReason.CUSTOM_FAIL_FAST_THRESHOLD;
       }
     }

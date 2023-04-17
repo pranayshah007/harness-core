@@ -10,6 +10,7 @@ package io.harness.steps.plugin;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.expression.NotExpression;
 import io.harness.plancreator.execution.StepsExecutionConfig;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
@@ -45,8 +46,8 @@ public class InitContainerV2StepInfo implements PMSStepInfo, Visitable, SpecPara
   private String stepGroupName;
 
   @NotNull @Valid private ContainerStepInfra infrastructure;
-  private StepsExecutionConfig stepsExecutionConfig;
-  Map<String, PluginCreationResponse> pluginsData;
+  @NotExpression private StepsExecutionConfig stepsExecutionConfig;
+  @NotExpression Map<StepInfo, PluginCreationResponse> pluginsData;
   Map<String, StrategyExpansionData> strategyExpansionMap;
 
   @Override

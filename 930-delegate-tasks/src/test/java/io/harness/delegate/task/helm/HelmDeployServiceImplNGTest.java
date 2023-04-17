@@ -8,6 +8,7 @@
 package io.harness.delegate.task.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.helm.HelmTestConstants.LIST_RELEASE_V2;
 import static io.harness.delegate.task.helm.HelmTestConstants.LIST_RELEASE_V3;
 import static io.harness.delegate.task.helm.HelmTestConstants.RELEASE_HIST_V2;
@@ -18,6 +19,7 @@ import static io.harness.k8s.model.HelmVersion.V2;
 import static io.harness.k8s.model.HelmVersion.V3;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
@@ -134,6 +136,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+import lombok.SneakyThrows;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -250,7 +253,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     logCallback = mock(LogCallback.class);
     doNothing().when(logCallback).saveExecutionLog(anyString());
     helmInstallCommandRequestNG = createHelmInstallCommandRequestNG();
-    helmRollbackCommandRequestNG = createHelmRollbackCommandRequestNG();
+    helmRollbackCommandRequestNG = createHelmRollbackCommandRequestNG(null);
     kubernetesConfig = KubernetesConfig.builder().build();
     when(containerDeploymentDelegateBaseHelper.createKubernetesConfig(any(), any(), any()))
         .thenReturn(kubernetesConfig);
@@ -712,22 +715,24 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     doReturn(HelmCliResponse.builder().commandExecutionStatus(SUCCESS).output(RELEASE_HIST_V3).build())
         .when(helmClient)
         .releaseHistory(any(), eq(true));
-    HelmTaskHelperBase helmTaskHelperBaseInternal = new HelmTaskHelperBase();
+    HelmTaskHelperBase helmTaskHelperBaseInternal = new io.harness.delegate.task.helm.HelmTaskHelperBase();
     List<ReleaseInfo> releaseInfoList =
         helmTaskHelperBaseInternal.parseHelmReleaseCommandOutput(RELEASE_HIST_V3, RELEASE_HISTORY);
     when(helmTaskHelperBase.parseHelmReleaseCommandOutput(anyString(), eq(RELEASE_HISTORY)))
         .thenReturn(releaseInfoList);
   }
 
-  private HelmCommandResponseNG executeRollbackWithReleaseHistory(ReleaseHistory releaseHistory, int version)
-      throws Exception {
+  private HelmCommandResponseNG executeRollbackWithReleaseHistory(
+      HelmRollbackCommandRequestNG request, ReleaseHistory releaseHistory, int version) throws Exception {
     List<ContainerInfo> containerInfosDefault1 =
         ImmutableList.of(ContainerInfo.builder().hostName("resource-1").build());
+
+    String releaseHistoryName = getReleaseName(request);
 
     when(helmClient.rollback(any(HelmCommandData.class), eq(true)))
         .thenReturn(
             HelmCliResponse.builder().output("Rollback was a success.").commandExecutionStatus(SUCCESS).build());
-    when(k8sTaskHelperBase.getReleaseHistoryFromSecret(any(KubernetesConfig.class), eq("release")))
+    when(k8sTaskHelperBase.getReleaseHistoryFromSecret(any(KubernetesConfig.class), eq(releaseHistoryName)))
         .thenReturn(releaseHistory.getAsYaml());
 
     when(k8sTaskHelperBase.getContainerInfos(
@@ -738,33 +743,41 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
              any(), anyString(), any(), anyBoolean(), anyBoolean()))
         .thenReturn(true);
 
-    return helmDeployService.rollback(helmRollbackCommandRequestNG);
+    return helmDeployService.rollback(request);
   }
 
   @Test
   @Owner(developers = ACHYUTH)
   @Category(UnitTests.class)
   public void testRollback() throws Exception {
+    testRollbackExecution(helmRollbackCommandRequestNG);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testRollbackWithReleasePrefix() {
+    testRollbackExecution(createHelmRollbackCommandRequestNG("prefix."));
+  }
+
+  @SneakyThrows
+  private void testRollbackExecution(HelmRollbackCommandRequestNG rollbackRequest) {
     // K8SteadyStateCheckEnabled false
     setFakeTimeLimiter();
     initForRollback();
     ArgumentCaptor<HelmCommandData> argumentCaptor = ArgumentCaptor.forClass(HelmCommandData.class);
-    HelmCommandResponseNG helmCommandResponseNG = helmDeployService.rollback(helmRollbackCommandRequestNG);
+    HelmCommandResponseNG helmCommandResponseNG = helmDeployService.rollback(rollbackRequest);
     assertThat(helmCommandResponseNG.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     verify(helmClient).rollback(argumentCaptor.capture(), eq(true));
 
     // K8SteadyStateCheckEnabled true -- empty releaseHistory
-    helmRollbackCommandRequestNG.setK8SteadyStateCheckEnabled(true);
+    String releaseHistoryName = getReleaseName(rollbackRequest);
+    rollbackRequest.setK8SteadyStateCheckEnabled(true);
     doReturn("1.16").when(kubernetesContainerService).getVersionAsString(eq(kubernetesConfig));
-    doReturn("")
-        .when(k8sTaskHelperBase)
-        .getReleaseHistoryFromSecret(any(), eq(helmRollbackCommandRequestNG.getReleaseName()));
-    doNothing()
-        .when(k8sTaskHelperBase)
-        .saveReleaseHistory(any(), eq(helmRollbackCommandRequestNG.getReleaseName()), anyString(), anyBoolean());
+    doReturn("").when(k8sTaskHelperBase).getReleaseHistoryFromSecret(any(), eq(releaseHistoryName));
+    doNothing().when(k8sTaskHelperBase).saveReleaseHistory(any(), eq(releaseHistoryName), anyString(), anyBoolean());
 
-    assertThatThrownBy(() -> helmDeployService.rollback(helmRollbackCommandRequestNG))
-        .isInstanceOf(GeneralException.class);
+    assertThatThrownBy(() -> helmDeployService.rollback(rollbackRequest)).isInstanceOf(GeneralException.class);
 
     // K8SteadyStateCheckEnabled true -- valid releaseHistory
     ReleaseHistory releaseHistory = ReleaseHistory.createNew();
@@ -775,7 +788,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     doReturn("1.16").when(kubernetesContainerService).getVersionAsString(eq(kubernetesConfig));
 
     HelmInstallCmdResponseNG helmInstallCmdResponseNG =
-        (HelmInstallCmdResponseNG) executeRollbackWithReleaseHistory(releaseHistory, 2);
+        (HelmInstallCmdResponseNG) executeRollbackWithReleaseHistory(rollbackRequest, releaseHistory, 2);
     assertThat(helmInstallCmdResponseNG.getCommandExecutionStatus()).isEqualTo(SUCCESS);
     assertThat(helmInstallCmdResponseNG.getContainerInfoList().stream().map(ContainerInfo::getHostName))
         .containsExactlyInAnyOrder("resource-1");
@@ -783,7 +796,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     // K8SteadyStateCheckEnabled true -- failed release
     releaseHistory.setReleaseStatus(IK8sRelease.Status.Failed);
 
-    assertThatThrownBy(() -> executeRollbackWithReleaseHistory(releaseHistory, 2))
+    assertThatThrownBy(() -> executeRollbackWithReleaseHistory(rollbackRequest, releaseHistory, 2))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Invalid status for release with number 2. Expected 'Succeeded' status, actual status is 'Failed'");
   }
@@ -1129,7 +1142,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     return request;
   }
 
-  private HelmRollbackCommandRequestNG createHelmRollbackCommandRequestNG() {
+  private HelmRollbackCommandRequestNG createHelmRollbackCommandRequestNG(String releaseHistoryPrefix) {
     HelmRollbackCommandRequestNG request = HelmRollbackCommandRequestNG.builder()
                                                .releaseName(HelmTestConstants.HELM_RELEASE_NAME_KEY)
                                                .kubeConfigLocation(HelmTestConstants.HELM_KUBE_CONFIG_LOCATION_KEY)
@@ -1142,6 +1155,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
                                                .prevReleaseVersion(2)
                                                .newReleaseVersion(3)
                                                .releaseName("release")
+                                               .releaseHistoryPrefix(releaseHistoryPrefix)
                                                .build();
 
     return request;
@@ -1153,5 +1167,10 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
                       .filePath("path/to/helm/chart/chart.yaml")
                       .fileContent("Test content")
                       .build());
+  }
+
+  private String getReleaseName(HelmCommandRequestNG request) {
+    return isNotEmpty(request.getReleaseHistoryPrefix()) ? request.getReleaseHistoryPrefix() + request.getReleaseName()
+                                                         : request.getReleaseName();
   }
 }

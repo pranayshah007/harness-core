@@ -16,7 +16,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfoType;
-import io.harness.beans.steps.stepinfo.security.GitLeaksStepInfo;
+import io.harness.beans.steps.stepinfo.security.GitleaksStepInfo;
 import io.harness.yaml.core.StepSpecType;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -32,16 +32,16 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName("GitLeaks")
-@TypeAlias("GitLeaksScanNode")
+@JsonTypeName("Gitleaks")
+@TypeAlias("GitleaksScanNode")
 @OwnedBy(STO)
-@RecasterAlias("io.harness.beans.steps.nodes.security.GitLeaksScanNode")
-public class GitLeaksScanNode extends CIAbstractStepNode {
-  @JsonProperty("type") @NotNull GitLeaksScanNode.StepType type = StepType.GitLeaks;
+@RecasterAlias("io.harness.beans.steps.nodes.security.GitleaksScanNode")
+public class GitleaksScanNode extends CIAbstractStepNode {
+  @JsonProperty("type") @NotNull GitleaksScanNode.StepType type = StepType.Gitleaks;
   @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  GitLeaksStepInfo stepInfo;
+  GitleaksStepInfo stepInfo;
   @Override
   public String getType() {
     return CIStepInfoType.GIT_LEAKS.getDisplayName();
@@ -53,7 +53,7 @@ public class GitLeaksScanNode extends CIAbstractStepNode {
   }
 
   enum StepType {
-    GitLeaks(CIStepInfoType.GIT_LEAKS.getDisplayName());
+    Gitleaks(CIStepInfoType.GIT_LEAKS.getDisplayName());
     @Getter String name;
     StepType(String name) {
       this.name = name;

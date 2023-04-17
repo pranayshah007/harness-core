@@ -66,6 +66,7 @@ import software.wings.beans.GraphNode;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.TerraformInfrastructureProvisioner;
+import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
@@ -93,7 +94,7 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
   }
 
   public List<CgEntityId> getReferencedEntities(
-      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+      String accountId, Workflow workflow, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     TerraformProvisionState state = (TerraformProvisionState) getState(graphNode);
 
     List<CgEntityId> references = new ArrayList<>();
