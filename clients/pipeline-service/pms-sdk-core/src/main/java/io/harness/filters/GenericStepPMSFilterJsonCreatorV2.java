@@ -82,7 +82,7 @@ public abstract class GenericStepPMSFilterJsonCreatorV2 implements FilterJsonCre
 
     for (Map.Entry<String, ParameterField<String>> ref : refs.entrySet()) {
       ParameterField<String> refValue = ref.getValue();
-      if (ParameterField.isNull(refValue)) {
+      if (ParameterField.isBlank(refValue)) {
         continue;
       }
 

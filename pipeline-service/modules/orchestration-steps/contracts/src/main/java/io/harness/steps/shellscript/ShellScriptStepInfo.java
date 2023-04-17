@@ -92,7 +92,7 @@ public class ShellScriptStepInfo
   @Override
   public Map<String, ParameterField<String>> extractSecretRefs() {
     Map<String, ParameterField<String>> secretRefMap = new HashMap<>();
-    if (executionTarget != null && executionTarget.getConnectorRef() != null) {
+    if (executionTarget != null && !ParameterField.isBlank(executionTarget.getConnectorRef())) {
       secretRefMap.put("executionTarget.connectorRef", executionTarget.getConnectorRef());
     }
 
