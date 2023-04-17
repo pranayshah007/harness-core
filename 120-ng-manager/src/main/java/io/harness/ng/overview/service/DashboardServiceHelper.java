@@ -734,6 +734,9 @@ public class DashboardServiceHelper {
         for (String envId : envGroupEntity.getEnvIdentifiers()) {
           final ArtifactDeploymentDetail artifactDeploymentDetail = artifactDeploymentDetailsMap.get(envId);
           final EnvironmentType envType = envIdToEnvTypeMap.get(envId);
+          if(envType == null) {
+            continue;
+          }
 
           envIds.add(envId);
           final Integer count = envToCountMap.get(envId);
@@ -777,6 +780,9 @@ public class DashboardServiceHelper {
       final String envId = entry.getKey();
       if(!envIds.contains(envId)) {
         final EnvironmentType envType = envIdToEnvTypeMap.get(envId);
+        if(envType == null) {
+          continue;
+        }
         final String envName = envIdToEnvNameMap.get(envId);
         final Integer count = entry.getValue();
         final ArtifactDeploymentDetail artifactDeploymentDetail = artifactDeploymentDetailsMap.get(envId);
