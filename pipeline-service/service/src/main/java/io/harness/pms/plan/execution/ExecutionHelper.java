@@ -585,7 +585,11 @@ public class ExecutionHelper {
       }
     }
 
-    if (EmptyPredicate.isEmpty(stageNodeId) && (renderFullBottomGraph == null || !renderFullBottomGraph)) {
+    // if the rollback graph has its executionGraph field filled, then we don't need to add execution graph to parent
+    // response dto, because UI will only use the execution graph in the rollback graph
+    boolean rollbackGraphWithExecutionGraph = rollbackGraph != null && rollbackGraph.getExecutionGraph() != null;
+    if (rollbackGraphWithExecutionGraph
+        || EmptyPredicate.isEmpty(stageNodeId) && (renderFullBottomGraph == null || !renderFullBottomGraph)) {
       pmsExecutionService.sendGraphUpdateEvent(executionSummaryEntity);
       return PipelineExecutionDetailDTO.builder()
           .pipelineExecutionSummary(PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails))

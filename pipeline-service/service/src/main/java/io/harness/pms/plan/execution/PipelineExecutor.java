@@ -161,6 +161,8 @@ public class PipelineExecutor {
   // todo: check if we need to take notifyOnlyUser and isDebug
   public PlanExecution startPostExecutionRollback(
       String accountId, String orgIdentifier, String projectIdentifier, String originalExecutionId) {
+    // because post execution rollback will not be linked within any other execution via some stage, it does not have
+    // any parent stage info
     return startRollbackModeExecution(
         accountId, orgIdentifier, projectIdentifier, originalExecutionId, ExecutionMode.POST_EXECUTION_ROLLBACK, null);
   }
