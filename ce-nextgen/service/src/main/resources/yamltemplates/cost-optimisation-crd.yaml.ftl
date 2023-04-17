@@ -62,6 +62,12 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
 
 ---
 apiVersion: v1
