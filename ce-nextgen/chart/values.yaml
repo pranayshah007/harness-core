@@ -1,0 +1,106 @@
+# Default values for nextgen-ce
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  loadbalancerURL: "https://test"
+  ingress:
+    enabled: false
+    className: harness
+    hosts:
+      - my-host.example.org
+    tls:
+      enabled: true
+      secretName: ''
+
+replicaCount: 2
+
+maxSurge: 100%
+
+maxUnavailable: 0
+
+java:
+  memory: "4096m"
+  memoryLimit: "4096m"
+
+image:
+  registry: docker.io
+  repository: harness/ce-nextgen-signed
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "77300"
+  digest: ""
+
+waitForInitContainer:
+  image:
+    registry: docker.io
+    repository: harness/helm-init-container
+    pullPolicy: IfNotPresent
+    tag: "latest"
+    digest: ""
+
+mongoSecrets:
+  userName:
+    name: harness-secrets
+    key: mongodbUsername
+  password:
+    name: mongodb-replicaset-chart
+    key: mongodb-root-password
+
+timescaleSecret:
+  password:
+    name: harness-secrets
+    key: timescaledbPostgresPassword
+
+awsSecret:
+  AWS_ACCESS_KEY: ""
+  AWS_SECRET_KEY: ""
+  AWS_ACCOUNT_ID: ""
+  AWS_DESTINATION_BUCKET: ""
+  AWS_TEMPLATE_LINK: ""
+  CE_AWS_TEMPLATE_URL: ""
+
+ceng-gcp-credentials: ""
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: false
+  annotations: {}
+  name: "harness-default"
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 6340
+
+ingress:
+  className: nginx
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+GCP_PROJECT_ID: "placeHolder"
+
+resources:
+  limits:
+    cpu: 2
+    memory: "5120Mi"
+  requests:
+    cpu: 2
+    memory: "5120Mi"
