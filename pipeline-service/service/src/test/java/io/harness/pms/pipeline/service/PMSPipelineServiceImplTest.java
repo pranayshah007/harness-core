@@ -336,8 +336,8 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(updatedPipelineEntity)
         .when(pmsPipelineServiceHelper)
         .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
-    MockedStatic<CGRestUtils> cgStatic = Mockito.mockStatic(CGRestUtils.class);
     MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
+    MockedStatic<CGRestUtils> cgStatic = Mockito.mockStatic(CGRestUtils.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
     aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
         .thenReturn(projDTOCall);
