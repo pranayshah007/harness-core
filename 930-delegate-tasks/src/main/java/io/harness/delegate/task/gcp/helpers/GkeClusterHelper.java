@@ -13,9 +13,9 @@ import static io.harness.delegate.task.gcp.helpers.GcpHelperService.ALL_LOCATION
 import static io.harness.delegate.task.gcp.helpers.GcpHelperService.LOCATION_DELIMITER;
 import static io.harness.eraro.ErrorCode.CLUSTER_NOT_FOUND;
 import static io.harness.k8s.K8sConstants.API_VERSION;
+import static io.harness.k8s.K8sConstants.CLOUDSDK_CONFIG;
 import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_BINARY;
 import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_INSTALL_HINT;
-import static io.harness.k8s.K8sConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.k8s.K8sConstants.USE_GKE_GCLOUD_AUTH_PLUGIN;
 import static io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable;
 import static io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper.saveLogs;
@@ -36,6 +36,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.filesystem.FileIo;
 import io.harness.gcp.helpers.GcpCredentialsHelperService;
+import io.harness.gcpcli.GcpCliClient;
 import io.harness.k8s.K8sConstants;
 import io.harness.k8s.model.GcpAccessTokenSupplier;
 import io.harness.k8s.model.KubernetesClusterAuthType;
@@ -343,7 +344,7 @@ public class GkeClusterHelper {
         .command(GCP_AUTH_PLUGIN_BINARY)
         .interactiveMode(InteractiveMode.NEVER)
         .env(getEnvVariablesForGkeKubeconfig(serviceAccountKeyFileContent, workingDirectory, logCallback))
-        .provideClusterInfo(true)
+        .provideClusterInfo(false)
         .installHint(GCP_AUTH_PLUGIN_INSTALL_HINT)
         .build();
   }
@@ -356,8 +357,8 @@ public class GkeClusterHelper {
         String gcpKeyFilePath =
             Paths.get(workingDirectory, K8sConstants.GCP_JSON_KEY_FILE_NAME).normalize().toAbsolutePath().toString();
         FileIo.writeUtf8StringToFile(gcpKeyFilePath, String.valueOf(serviceAccountKeyFileContent));
-        envVariableList.add(new EnvVariable(GOOGLE_APPLICATION_CREDENTIALS,
-            "/opt/harness-delegate/.config/gcloud/application_default_credentials.json"));
+        GcpCliClient.loginToGcpCluster(gcpKeyFilePath, getGkeEnv(workingDirectory), logCallback);
+        envVariableList.add(new EnvVariable(CLOUDSDK_CONFIG, workingDirectory));
         envVariableList.add(new EnvVariable(USE_GKE_GCLOUD_AUTH_PLUGIN, "true"));
       }
     } catch (IOException ex) {
@@ -366,5 +367,11 @@ public class GkeClusterHelper {
           logCallback, LogLevel.WARN);
     }
     return envVariableList;
+  }
+
+  private Map<String, String> getGkeEnv(String workingDirectory) {
+    Map<String, String> gkeEnvForGcloudCli = new HashMap<>();
+    gkeEnvForGcloudCli.put(CLOUDSDK_CONFIG, workingDirectory);
+    return gkeEnvForGcloudCli;
   }
 }

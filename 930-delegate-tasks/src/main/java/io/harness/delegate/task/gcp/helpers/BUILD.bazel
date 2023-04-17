@@ -15,6 +15,7 @@ java_library(
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/artifacts/gcr/exceptions:module",
         "//950-delegate-tasks-beans:module",
         "//960-api-services/src/main/java/io/harness/gcp/helpers:module",
+        "//960-api-services/src/main/java/io/harness/gcpcli:module",
         "//960-api-services/src/main/java/io/harness/k8s/model:module",
         "//970-api-services-beans/src/main/java/io/harness/beans/version:module",
         "//970-api-services-beans/src/main/java/io/harness/globalcontex:module",
