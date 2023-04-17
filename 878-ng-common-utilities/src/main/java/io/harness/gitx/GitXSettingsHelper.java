@@ -9,6 +9,7 @@ package io.harness.gitx;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.StoreType;
@@ -44,7 +45,8 @@ public class GitXSettingsHelper {
     }
   }
 
-  private boolean isGitExperienceEnforcedInSettings(
+  @VisibleForTesting
+  boolean isGitExperienceEnforcedInSettings(
       String accountIdentifier, String orgIdentifier, String projIdentifier) {
     String isGitExperienceEnforced =
         NGRestUtils
