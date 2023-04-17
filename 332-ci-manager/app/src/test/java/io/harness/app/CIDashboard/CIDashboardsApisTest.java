@@ -223,8 +223,11 @@ public class CIDashboardsApisTest extends CategoryTest {
                                    .time(1619740800000L)
                                    .builds(BuildCount.builder().total(1).success(1).failed(0).build())
                                    .build());
-    DashboardBuildExecutionInfo expectedBuildExecution =
-        DashboardBuildExecutionInfo.builder().buildExecutionInfoList(buildExecutionInfoList).build();
+    DashboardBuildExecutionInfo expectedBuildExecution = DashboardBuildExecutionInfo.builder()
+                                                             .buildExecutionInfoList(buildExecutionInfoList)
+                                                             .buildRate(1.5)
+                                                             .buildRateChangeRate(-100.0)
+                                                             .build();
 
     assertThat(resultBuildExecution).isEqualTo(expectedBuildExecution);
 

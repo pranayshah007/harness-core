@@ -21,6 +21,7 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.HarnessBackstageEntities;
 import io.harness.spec.server.idp.v1.model.HarnessEntitiesCountResponse;
+import io.harness.spec.server.idp.v1.model.HarnessEntitiesResponse;
 import io.harness.spec.server.idp.v1.model.ImportEntitiesResponse;
 import io.harness.spec.server.idp.v1.model.ImportHarnessEntitiesRequest;
 
@@ -91,13 +92,14 @@ public class OnboardingResourceApiImplTest extends CategoryTest {
         .thenReturn(harnessBackstageEntitiesPageResponse);
     Response response = onboardingResourceApiImpl.getHarnessEntities(ACCOUNT_IDENTIFIER, 0, 10, null, null, null, null);
     assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
-    List<HarnessBackstageEntities> harnessBackstageEntitiesFromApi =
-        (List<HarnessBackstageEntities>) response.getEntity();
-    assertThat(harnessBackstageEntitiesFromApi).hasSize(1);
-    assertThat(harnessBackstageEntitiesFromApi.get(0).getName()).isEqualTo("entityName");
-    assertThat(harnessBackstageEntitiesFromApi.get(0).getEntityType()).isEqualTo("entityType");
-    assertThat(harnessBackstageEntitiesFromApi.get(0).getIdentifier()).isEqualTo("entityIdentifier");
-    assertThat(harnessBackstageEntitiesFromApi.get(0).getType()).isEqualTo("type");
+    HarnessEntitiesResponse harnessBackstageEntitiesFromApi = (HarnessEntitiesResponse) response.getEntity();
+    List<HarnessBackstageEntities> harnessBackstageEntitiesListFromApi =
+        harnessBackstageEntitiesFromApi.getHarnessBackstageEntities();
+    assertThat(harnessBackstageEntitiesListFromApi).hasSize(1);
+    assertThat(harnessBackstageEntitiesListFromApi.get(0).getName()).isEqualTo("entityName");
+    assertThat(harnessBackstageEntitiesListFromApi.get(0).getEntityType()).isEqualTo("entityType");
+    assertThat(harnessBackstageEntitiesListFromApi.get(0).getIdentifier()).isEqualTo("entityIdentifier");
+    assertThat(harnessBackstageEntitiesListFromApi.get(0).getType()).isEqualTo("type");
   }
 
   @Test

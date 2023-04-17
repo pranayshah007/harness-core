@@ -71,6 +71,8 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   private static final String INVALID_MERGED_APP_CONFIG_SCHEMA =
       "Invalid schema for merged app-config.yaml for account - %s";
 
+  private static final long baseTimeStamp = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000;
+
   @Override
   public Map<String, Boolean> getAllPluginIdsMap(String accountIdentifier) {
     List<AppConfigEntity> allPluginConfig =
@@ -214,8 +216,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   }
 
   @Override
-  public List<AppConfigEntity> deleteDisabledPluginsConfigsThatAreDisableWithinOneWeek() {
-    long baseTimeStamp = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000;
+  public List<AppConfigEntity> deleteDisabledPluginsConfigsDisabledMoreThanAWeekAgo() {
     return appConfigRepository.deleteDisabledPluginsConfigBasedOnTimestampsForEnabledDisabledTime(baseTimeStamp);
   }
 

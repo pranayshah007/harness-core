@@ -19,6 +19,7 @@ import io.harness.credit.services.CreditService;
 import io.harness.repositories.CreditRepository;
 
 import com.google.inject.Inject;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,6 +40,7 @@ public class CreditServiceImpl implements CreditService {
 
   private List<CreditDTO> getCreditsByAccountId(String accountIdentifier) {
     List<Credit> credits = creditRepository.findByAccountIdentifier(accountIdentifier);
+    credits.sort(Comparator.comparingLong(Credit::getExpiryTime));
     return credits.stream().map(creditObjectConverter::<CreditDTO>toDTO).collect(Collectors.toList());
   }
 

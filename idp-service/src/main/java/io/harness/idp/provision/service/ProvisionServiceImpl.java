@@ -127,17 +127,6 @@ public class ProvisionServiceImpl implements ProvisionService {
     return sb.toString();
   }
 
-  @Override
-  public void checkUserAuthorization() {
-    String userId = SecurityContextBuilder.getPrincipal().getName();
-    boolean isAuthorized = getResponse(ngConnectorManagerClient.isHarnessSupportUser(userId));
-    if (!isAuthorized) {
-      String errorMessage = String.format("User : %s not allowed to provision IDP", userId);
-      log.error(errorMessage);
-      throw new AccessDeniedException(errorMessage, WingsException.USER);
-    }
-  }
-
   private void makeTriggerApi(String accountIdentifier, String namespace) {
     Request request = createHttpRequest(accountIdentifier, namespace);
     OkHttpClient client = new OkHttpClient();

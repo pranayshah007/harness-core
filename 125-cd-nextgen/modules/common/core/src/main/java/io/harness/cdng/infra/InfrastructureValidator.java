@@ -49,10 +49,14 @@ import org.apache.commons.lang3.tuple.Pair;
 @Singleton
 public class InfrastructureValidator {
   private static final String CANNOT_BE_EMPTY_ERROR_MSG = "cannot be empty";
+  private static final String NOT_PROVIDED_ERROR_MSG = " set as runtime input but no value was provided";
   private static final String AWS_REGION = "region";
+  private static final String INPUT_EXPRESSION = "<+input>";
   private static final String K8S_NAMESPACE = "namespace";
   private static final String K8S_RELEASE_NAME = "releaseName";
   private static final String K8S_CLUSTER_NAME = "cluster";
+  private static final String SUBSCRIPTION = "subscription";
+  private static final String RESOURCE_GROUP = "resourceGroup";
 
   public void validate(Infrastructure infrastructure) {
     switch (infrastructure.getKind()) {
@@ -143,10 +147,12 @@ public class InfrastructureValidator {
         || isEmpty(getParameterFieldValue(infrastructure.getNamespace()))) {
       throw new InvalidArgumentsException(Pair.of(K8S_NAMESPACE, CANNOT_BE_EMPTY_ERROR_MSG));
     }
+    validateRuntimeInputExpression(infrastructure.getNamespace().getValue(), K8S_NAMESPACE);
 
     if (!hasValueOrExpression(infrastructure.getReleaseName())) {
       throw new InvalidArgumentsException(Pair.of(K8S_RELEASE_NAME, CANNOT_BE_EMPTY_ERROR_MSG));
     }
+    validateRuntimeInputExpression(infrastructure.getReleaseName().getValue(), K8S_RELEASE_NAME);
   }
 
   private void validateK8sGcpInfrastructure(K8sGcpInfrastructure infrastructure) {
@@ -154,14 +160,23 @@ public class InfrastructureValidator {
         || isEmpty(getParameterFieldValue(infrastructure.getNamespace()))) {
       throw new InvalidArgumentsException(Pair.of(K8S_NAMESPACE, CANNOT_BE_EMPTY_ERROR_MSG));
     }
+    validateRuntimeInputExpression(infrastructure.getNamespace().getValue(), K8S_NAMESPACE);
 
     if (!hasValueOrExpression(infrastructure.getReleaseName())) {
       throw new InvalidArgumentsException(Pair.of(K8S_RELEASE_NAME, CANNOT_BE_EMPTY_ERROR_MSG));
     }
+    validateRuntimeInputExpression(infrastructure.getReleaseName().getValue(), K8S_RELEASE_NAME);
 
     if (ParameterField.isNull(infrastructure.getCluster())
         || isEmpty(getParameterFieldValue(infrastructure.getCluster()))) {
       throw new InvalidArgumentsException(Pair.of(K8S_CLUSTER_NAME, CANNOT_BE_EMPTY_ERROR_MSG));
+    }
+    validateRuntimeInputExpression(infrastructure.getCluster().getValue(), K8S_CLUSTER_NAME);
+  }
+
+  private void validateRuntimeInputExpression(String fieldValue, String fieldType) {
+    if (fieldValue.equals(INPUT_EXPRESSION)) {
+      throw new InvalidArgumentsException(Pair.of(fieldType, NOT_PROVIDED_ERROR_MSG));
     }
   }
 
@@ -170,25 +185,30 @@ public class InfrastructureValidator {
         || isEmpty(getParameterFieldValue(infrastructure.getNamespace()))) {
       throw new InvalidArgumentsException(Pair.of(K8S_NAMESPACE, CANNOT_BE_EMPTY_ERROR_MSG));
     }
+    validateRuntimeInputExpression(infrastructure.getNamespace().getValue(), K8S_NAMESPACE);
 
     if (!hasValueOrExpression(infrastructure.getReleaseName())) {
       throw new InvalidArgumentsException(Pair.of(K8S_RELEASE_NAME, CANNOT_BE_EMPTY_ERROR_MSG));
     }
+    validateRuntimeInputExpression(infrastructure.getReleaseName().getValue(), K8S_RELEASE_NAME);
 
     if (ParameterField.isNull(infrastructure.getCluster())
         || isEmpty(getParameterFieldValue(infrastructure.getCluster()))) {
       throw new InvalidArgumentsException(Pair.of(K8S_CLUSTER_NAME, CANNOT_BE_EMPTY_ERROR_MSG));
     }
+    validateRuntimeInputExpression(infrastructure.getCluster().getValue(), K8S_CLUSTER_NAME);
 
     if (ParameterField.isNull(infrastructure.getSubscriptionId())
         || isEmpty(getParameterFieldValue(infrastructure.getSubscriptionId()))) {
-      throw new InvalidArgumentsException(Pair.of("subscription", CANNOT_BE_EMPTY_ERROR_MSG));
+      throw new InvalidArgumentsException(Pair.of(SUBSCRIPTION, CANNOT_BE_EMPTY_ERROR_MSG));
     }
+    validateRuntimeInputExpression(infrastructure.getSubscriptionId().getValue(), SUBSCRIPTION);
 
     if (ParameterField.isNull(infrastructure.getResourceGroup())
         || isEmpty(getParameterFieldValue(infrastructure.getResourceGroup()))) {
-      throw new InvalidArgumentsException(Pair.of("resourceGroup", CANNOT_BE_EMPTY_ERROR_MSG));
+      throw new InvalidArgumentsException(Pair.of(RESOURCE_GROUP, CANNOT_BE_EMPTY_ERROR_MSG));
     }
+    validateRuntimeInputExpression(infrastructure.getResourceGroup().getValue(), RESOURCE_GROUP);
   }
 
   private void validateAzureWebAppInfrastructure(AzureWebAppInfrastructure infrastructure) {
@@ -367,15 +387,18 @@ public class InfrastructureValidator {
         || isEmpty(getParameterFieldValue(infrastructure.getNamespace()))) {
       throw new InvalidArgumentsException(Pair.of(K8S_NAMESPACE, CANNOT_BE_EMPTY_ERROR_MSG));
     }
+    validateRuntimeInputExpression(infrastructure.getNamespace().getValue(), K8S_NAMESPACE);
 
     if (!hasValueOrExpression(infrastructure.getReleaseName())) {
       throw new InvalidArgumentsException(Pair.of(K8S_RELEASE_NAME, CANNOT_BE_EMPTY_ERROR_MSG));
     }
+    validateRuntimeInputExpression(infrastructure.getReleaseName().getValue(), K8S_RELEASE_NAME);
 
     if (ParameterField.isNull(infrastructure.getCluster())
         || isEmpty(getParameterFieldValue(infrastructure.getCluster()))) {
       throw new InvalidArgumentsException(Pair.of(K8S_CLUSTER_NAME, CANNOT_BE_EMPTY_ERROR_MSG));
     }
+    validateRuntimeInputExpression(infrastructure.getCluster().getValue(), K8S_CLUSTER_NAME);
   }
 
   private void validateK8sRancherInfrastructure(K8sRancherInfrastructure infrastructure) {
@@ -383,13 +406,17 @@ public class InfrastructureValidator {
         || isEmpty(getParameterFieldValue(infrastructure.getNamespace()))) {
       throw new InvalidArgumentsException(Pair.of(K8S_NAMESPACE, CANNOT_BE_EMPTY_ERROR_MSG));
     }
+    validateRuntimeInputExpression(infrastructure.getNamespace().getValue(), K8S_NAMESPACE);
+
     if (!hasValueOrExpression(infrastructure.getReleaseName())) {
       throw new InvalidArgumentsException(Pair.of(K8S_RELEASE_NAME, CANNOT_BE_EMPTY_ERROR_MSG));
     }
+    validateRuntimeInputExpression(infrastructure.getReleaseName().getValue(), K8S_RELEASE_NAME);
 
     if (ParameterField.isNull(infrastructure.getCluster())
         || isEmpty(getParameterFieldValue(infrastructure.getCluster()))) {
       throw new InvalidArgumentsException(Pair.of(K8S_CLUSTER_NAME, CANNOT_BE_EMPTY_ERROR_MSG));
     }
+    validateRuntimeInputExpression(infrastructure.getCluster().getValue(), K8S_CLUSTER_NAME);
   }
 }

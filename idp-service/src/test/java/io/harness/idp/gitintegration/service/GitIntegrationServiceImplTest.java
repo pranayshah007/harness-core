@@ -6,9 +6,11 @@
  */
 
 package io.harness.idp.gitintegration.service;
+import static io.harness.rule.OwnerRule.VIGNESWARA;
+
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -33,17 +35,31 @@ import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.*;
 import io.harness.encryption.SecretRefData;
 import io.harness.idp.common.Constants;
+import io.harness.idp.configmanager.beans.entity.MergedAppConfigEntity;
+import io.harness.idp.configmanager.service.ConfigManagerService;
+import io.harness.idp.configmanager.utils.ConfigManagerUtils;
+import io.harness.idp.envvariable.service.BackstageEnvVariableService;
+import io.harness.idp.gitintegration.beans.CatalogInfraConnectorType;
+import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
+import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
 import io.harness.idp.gitintegration.processor.impl.AzureRepoConnectorProcessor;
 import io.harness.idp.gitintegration.processor.impl.BitbucketConnectorProcessor;
 import io.harness.idp.gitintegration.processor.impl.GithubConnectorProcessor;
 import io.harness.idp.gitintegration.processor.impl.GitlabConnectorProcessor;
-import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
+import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
+import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.BackstageEnvConfigVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
+import io.harness.spec.server.idp.v1.model.ConnectorDetails;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.math3.util.Pair;
@@ -62,9 +78,14 @@ public class GitIntegrationServiceImplTest {
   @InjectMocks GitlabConnectorProcessor gitlabConnectorProcessor;
   @InjectMocks BitbucketConnectorProcessor bitbucketConnectorProcessor;
   @InjectMocks AzureRepoConnectorProcessor azureRepoConnectorProcessor;
+  @InjectMocks GitIntegrationServiceImpl gitIntegrationServiceImpl;
 
   @Mock ConnectorResourceClient connectorResourceClient;
   @Mock private SecretManagerClientService ngSecretService;
+  @Mock private CatalogConnectorRepository catalogConnectorRepository;
+  @Mock ConnectorProcessorFactory connectorProcessorFactory;
+  @Mock private BackstageEnvVariableService backstageEnvVariableService;
+  @Mock ConfigManagerService configManagerService;
 
   String ACCOUNT_IDENTIFIER = "test-secret-identifier";
   String USER_NAME = "test-username";
@@ -373,5 +394,92 @@ public class GitIntegrationServiceImplTest {
         ((BackstageEnvSecretVariable) response.getSecond().get(Constants.GITHUB_TOKEN)).getHarnessSecretIdentifier());
     assertEquals(Constants.GITHUB_TOKEN, response.getSecond().get(Constants.GITHUB_TOKEN).getEnvName());
     mockRestStatic.close();
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testGetAllConnectorDetails() {
+    List<CatalogConnectorEntity> catalogConnectorEntityList = new ArrayList<>();
+    catalogConnectorEntityList.add(getGithubConnectorEntity());
+    catalogConnectorEntityList.add(getGitlabConnectorEntity());
+    when(catalogConnectorRepository.findAllByAccountIdentifier(ACCOUNT_IDENTIFIER))
+        .thenReturn(catalogConnectorEntityList);
+    List<CatalogConnectorEntity> result = gitIntegrationServiceImpl.getAllConnectorDetails(ACCOUNT_IDENTIFIER);
+    assertEquals(catalogConnectorEntityList.size(), result.size());
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testFindByAccountIdAndProviderType() {
+    CatalogConnectorEntity catalogConnectorEntity = getGithubConnectorEntity();
+    when(catalogConnectorRepository.findByAccountIdentifierAndConnectorProviderType(ACCOUNT_IDENTIFIER, "Github"))
+        .thenReturn(Optional.ofNullable(catalogConnectorEntity));
+    Optional<CatalogConnectorEntity> result =
+        gitIntegrationServiceImpl.findByAccountIdAndProviderType(ACCOUNT_IDENTIFIER, "Github");
+    assertEquals(catalogConnectorEntity, result.get());
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testSaveConnectorDetails() throws Exception {
+    ConnectorDetails connectorDetails = new ConnectorDetails();
+    connectorDetails.setIdentifier("account.testGitlab");
+    connectorDetails.setType(ConnectorType.GITLAB.toString());
+    GitlabConnectorProcessor processor = mock(GitlabConnectorProcessor.class);
+    when(connectorProcessorFactory.getConnectorProcessor(ConnectorType.GITLAB)).thenReturn(processor);
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().build();
+    Map<String, BackstageEnvVariable> secrets = new HashMap<>();
+    secrets.put(Constants.GITLAB_TOKEN,
+        GitIntegrationUtils.getBackstageEnvSecretVariable(TOKEN_SECRET_IDENTIFIER, Constants.GITLAB_TOKEN));
+    when(processor.getConnectorAndSecretsInfo(any(), any(), any(), any()))
+        .thenReturn(new Pair<>(connectorInfoDTO, secrets));
+    doNothing().when(backstageEnvVariableService).sync(anyList(), any());
+    MockedStatic<GitIntegrationUtils> gitIntegrationUtilsMockedStatic = Mockito.mockStatic(GitIntegrationUtils.class);
+    MockedStatic<ConfigManagerUtils> configManagerUtilsMockedStatic = Mockito.mockStatic(ConfigManagerUtils.class);
+    when(GitIntegrationUtils.getHostForConnector(any(), any())).thenReturn("dummyUrl");
+    when(ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(any())).thenReturn("Sample Config");
+    when(ConfigManagerUtils.getJsonSchemaBasedOnConnectorTypeForIntegrations(any())).thenReturn("Sample Json Schema");
+    when(ConfigManagerUtils.isValidSchema(any(), any())).thenReturn(false);
+    when(configManagerService.saveConfigForAccount(any(), any(), any())).thenReturn(new AppConfig());
+    when(configManagerService.mergeAndSaveAppConfig(any())).thenReturn(MergedAppConfigEntity.builder().build());
+    when(processor.getInfraConnectorType(any(), any())).thenReturn("DIRECT");
+    CatalogConnectorEntity catalogConnectorEntity = getGitlabConnectorEntity();
+    when(catalogConnectorRepository.saveOrUpdate(any())).thenReturn(catalogConnectorEntity);
+    CatalogConnectorEntity result =
+        gitIntegrationServiceImpl.saveConnectorDetails(ACCOUNT_IDENTIFIER, connectorDetails);
+    assertEquals("testGitlab", result.getConnectorIdentifier());
+    gitIntegrationUtilsMockedStatic.close();
+    configManagerUtilsMockedStatic.close();
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testFindDefaultConnectorDetails() {
+    CatalogConnectorEntity catalogConnectorEntity = getGithubConnectorEntity();
+    when(catalogConnectorRepository.findLastUpdated(ACCOUNT_IDENTIFIER)).thenReturn(catalogConnectorEntity);
+    CatalogConnectorEntity result = gitIntegrationServiceImpl.findDefaultConnectorDetails(ACCOUNT_IDENTIFIER);
+    assertEquals(catalogConnectorEntity, result);
+  }
+
+  private CatalogConnectorEntity getGithubConnectorEntity() {
+    return CatalogConnectorEntity.builder()
+        .accountIdentifier(ACCOUNT_IDENTIFIER)
+        .connectorIdentifier("testGithub")
+        .connectorProviderType(ConnectorType.GITHUB.toString())
+        .type(CatalogInfraConnectorType.DIRECT)
+        .build();
+  }
+
+  private CatalogConnectorEntity getGitlabConnectorEntity() {
+    return CatalogConnectorEntity.builder()
+        .accountIdentifier(ACCOUNT_IDENTIFIER)
+        .connectorIdentifier("testGitlab")
+        .connectorProviderType(ConnectorType.GITLAB.toString())
+        .type(CatalogInfraConnectorType.DIRECT)
+        .build();
   }
 }

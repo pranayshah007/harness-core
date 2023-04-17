@@ -16,6 +16,7 @@ import static io.harness.mongo.MongoUtils.setUnset;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.UserInvite.UserInviteBuilder.anUserInvite;
+import static software.wings.beans.UserInviteSource.SourceType.SSO;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -35,6 +36,7 @@ import software.wings.beans.SyncTaskContext;
 import software.wings.beans.User;
 import software.wings.beans.User.UserKeys;
 import software.wings.beans.UserInvite;
+import software.wings.beans.UserInviteSource;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.security.UserGroup.UserGroupKeys;
 import software.wings.beans.sso.LdapGroupResponse;
@@ -288,6 +290,7 @@ public class LdapGroupSyncJobHelper {
                                         .withName(ldapUserResponse.getName())
                                         .withUserGroups(Lists.newArrayList(userGroups))
                                         .withUserId(ldapUserResponse.getUserId())
+                                        .withSource(UserInviteSource.builder().type(SSO).build())
                                         .build();
             log.info(
                 "LDAPIterator: creating user invite for account {} and user Invite {} and user Groups {} and externalUserId {}",

@@ -48,6 +48,7 @@ import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.filter.creation.FilterCreatorMergeService;
 import io.harness.pms.filter.creation.FilterCreatorMergeServiceResponse;
+import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntityWithReferencesDTO;
 import io.harness.pms.pipeline.PipelineSetupUsageHelper;
@@ -92,6 +93,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
   @Mock private PipelineSetupUsageHelper pipelineSetupUsageHelper;
   @Mock private FilterCreatorMergeService filterCreatorMergeService;
+  @Mock private OrganizationClient organizationClient;
   @Mock private AccountClient accountClient;
   @Mock NGSettingsClient settingsClient;
 
@@ -107,8 +109,9 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     pipelineService =
         new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper, pmsPipelineTemplateHelper, null,
             null, gitSyncSdkService, null, null, null, new NoopPipelineSettingServiceImpl(), entitySetupUsageClient,
-            pipelineAsyncValidationService, pipelineValidationService, projectClient, pmsFeatureFlagService,
+            pipelineAsyncValidationService, pipelineValidationService, projectClient, organizationClient, pmsFeatureFlagService,
             pipelineSetupUsageHelper, filterCreatorMergeService, accountClient, settingsClient);
+
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
     doNothing().when(pipelineSetupUsageHelper).publishSetupUsageEvent(any(), any(), any());
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())

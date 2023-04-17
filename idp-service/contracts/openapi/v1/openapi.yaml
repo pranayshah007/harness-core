@@ -327,11 +327,9 @@ paths:
         - $ref: '#/components/parameters/Order'
         - $ref: '#/components/parameters/SearchTerm'
         - schema:
-            type: array
-            items:
-              type: string
+            type: string
           in: query
-          name: projects_to_filter
+          name: project_to_filter
           description: This would be used to filter resources having attributes matching the project filter.
   /v1/onboarding/harness-entities-count:
     get:
@@ -910,13 +908,20 @@ components:
       title: HarnessEntitiesResponse
       x-stoplight:
         id: 06ugy0j5318dr
-      type: array
+      type: object
       x-examples: {}
       description: Response for harness entities mapping with backstage entities
-      items:
-        $ref: '#/components/schemas/HarnessBackstageEntities'
-        x-stoplight:
-          id: xrciue3ek36e6
+      properties:
+        harness_backstage_entities:
+          x-stoplight:
+            id: xrciue3ek36e6
+          type: array
+          items:
+            $ref: '#/components/schemas/HarnessBackstageEntities'
+            x-stoplight:
+              id: o4ipievo4uguh
+      required:
+        - harness_backstage_entities
     ImportEntitiesResponse:
       title: ImportEntitiesResponse
       x-stoplight:
@@ -1258,6 +1263,8 @@ components:
           $ref: '#/components/schemas/ConnectorDetails'
           x-stoplight:
             id: ictqwjgoxe2bc
+      required:
+        - connector_details
     Exports:
       title: Exports
       x-stoplight:
@@ -1715,9 +1722,7 @@ components:
       content:
         application/json:
           schema:
-            properties:
-              id:
-                type: string
+            $ref: '#/components/schemas/HarnessEntitiesCountResponse'
   securitySchemes:
     x-api-key:
       name: x-api-key

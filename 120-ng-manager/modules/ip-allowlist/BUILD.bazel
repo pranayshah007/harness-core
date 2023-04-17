@@ -16,7 +16,8 @@ java_library(
     deps = [
         "//:lombok",
         "//120-ng-manager/contracts/openapi/v1:ng-manager-server-spec-module",
-        "//120-ng-manager/modules/ng-settings/contracts:module",
+        "//120-ng-manager/modules/ip-allowlist/contracts:module",
+        "//120-ng-manager/src/main/java/io/harness/utils/featureflaghelper:module",
         "//930-ng-core-clients:module",
         "//930-ng-license-manager:module",
         "//940-feature-flag:module",
@@ -32,3 +33,18 @@ java_library(
         "//platform-service/modules/audit-service/contracts:module",
     ],
 )
+
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["src/test/**/*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":module",
+        "//990-commons-test:module",
+    ],
+)
+
+run_analysis()
+
+run_tests()
