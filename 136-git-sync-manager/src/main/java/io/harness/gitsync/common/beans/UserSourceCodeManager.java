@@ -24,6 +24,7 @@ import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -33,6 +34,7 @@ import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
+@SuperBuilder
 @EqualsAndHashCode
 @FieldNameConstants(innerTypeName = "UserSourceCodeManagerKeys")
 @StoreIn(DbAliases.NG_MANAGER)
