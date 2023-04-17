@@ -117,7 +117,7 @@ public class StepGroupPMSPlanCreatorV2 extends ChildrenPlanCreator<StepGroupElem
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, StepGroupElementConfigV2 config) {
     List<YamlField> dependencyNodeIdsList = ctx.getStepYamlFields();
-
+    log.info("Using step group v2 to run step");
     LinkedHashMap<String, PlanCreationResponse> responseMap = new LinkedHashMap<>();
 
     // Add Steps Node
@@ -131,6 +131,7 @@ public class StepGroupPMSPlanCreatorV2 extends ChildrenPlanCreator<StepGroupElem
       if (stepGroupInfraHandler != null) {
         PlanNode initNode = stepGroupInfraHandler.handle(config, ctx, stepsField);
         if (initNode != null) {
+          log.info("Step group with container infra detected");
           stepsChildNodeId = Dependency.newBuilder()
                                  .putMetadata(STEP_GROUP_CHILD_NODE_ID,
                                      ByteString.copyFrom(kryoSerializer.asDeflatedBytes(initNode.getUuid())))
