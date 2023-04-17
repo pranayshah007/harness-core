@@ -419,6 +419,7 @@ public class DashboardServiceHelper {
         List<ArtifactDeploymentDetail> artifactDeploymentDetailList = new ArrayList<>();
         Set<EnvironmentType> envTypes = new HashSet<>();
         Set<String> artifacts = new HashSet<>();
+        int deploymentsWithoutArtifact = 0;
         if(EmptyPredicate.isEmpty(envGroupEntity.getEnvIdentifiers())) {
           continue;
         }
@@ -427,12 +428,16 @@ public class DashboardServiceHelper {
           final EnvironmentType envType = envIdToEnvTypeMap.get(envId);
 
           envIds.add(envId);
-          if(envType != null) {
-            envTypes.add(envType);
+          if(envType == null) {
+            continue;
           }
+          envTypes.add(envType);
           if(artifactDeploymentDetail != null) {
             artifactDeploymentDetailList.add(artifactDeploymentDetail);
             artifacts.add(artifactDeploymentDetail.getArtifact());
+          } else {
+            deploymentsWithoutArtifact++;
+            artifactDeploymentDetailList.add(ArtifactDeploymentDetail.builder().envName(envIdToEnvNameMap.get(envId)).envId(envId).build());
           }
         }
         Set<String> uniqueArtifacts = new HashSet<>();
@@ -444,7 +449,7 @@ public class DashboardServiceHelper {
                     .environmentTypes(new ArrayList<>(envTypes))
                     .artifactDeploymentDetails(artifactDeploymentDetailList)
                     .isEnvGroup(true)
-                    .isDrift((artifacts.size() > 1) || (artifacts.size() == 1 && artifactDeploymentDetailList.size() != envGroupEntity.getEnvIdentifiers().size()))
+                    .isDrift((artifacts.size() > 1) || (artifacts.size() == 1 && deploymentsWithoutArtifact > 0))
                     .build();
             for(ArtifactDeploymentDetail artifactDeploymentDetail : environmentGroupInstanceDetail.getArtifactDeploymentDetails()) {
               if(uniqueArtifacts.contains(artifactDeploymentDetail.getArtifact())) {
@@ -465,6 +470,9 @@ public class DashboardServiceHelper {
       final String envId = entry.getKey();
       if(!envIds.contains(envId)) {
         final EnvironmentType envType = envIdToEnvTypeMap.get(envId);
+        if(envType == null) {
+          continue;
+        }
         final String envName = entry.getValue();
         final ArtifactDeploymentDetail artifactDeploymentDetail = envToArtifactMap.get(envId);
         if (artifactDeploymentDetail == null) {
@@ -727,6 +735,7 @@ public class DashboardServiceHelper {
         List<ArtifactDeploymentDetail> artifactDeploymentDetailList = new ArrayList<>();
         Set<EnvironmentType> envTypes = new HashSet<>();
         Integer totalCount = 0;
+        int deploymentsWithoutArtifact = 0;
         Set<String> artifacts = new HashSet<>();
         if(EmptyPredicate.isEmpty(envGroupEntity.getEnvIdentifiers())) {
           continue;
@@ -750,6 +759,10 @@ public class DashboardServiceHelper {
             artifactDeploymentDetailList.add(artifactDeploymentDetail);
             artifacts.add(artifactDeploymentDetail.getArtifact());
           }
+          else {
+            deploymentsWithoutArtifact++;
+            artifactDeploymentDetailList.add(ArtifactDeploymentDetail.builder().envName(envIdToEnvNameMap.get(envId)).envId(envId).build());
+          }
         }
         if(totalCount > 0) {
           DashboardServiceHelper.sortArtifactDeploymentDetailList(artifactDeploymentDetailList);
@@ -767,7 +780,7 @@ public class DashboardServiceHelper {
                     .artifactDeploymentDetails(artifactDeploymentDetailList)
                     .isEnvGroup(true)
                     .count(totalCount)
-                    .isDrift((artifacts.size() > 1) || (artifacts.size() == 1 && artifactDeploymentDetailList.size() != envGroupEntity.getEnvIdentifiers().size()))
+                    .isDrift((artifacts.size() > 1) || (artifacts.size() == 1 && deploymentsWithoutArtifact > 0))
                     .isRevert(pipelineExecutionDetailsMap.get(artifactDeploymentDetailList.isEmpty() ? false : artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()).getIsRevertExecution())
                     .isRollback(pipelineExecutionIdsWhereRollbackOccurred.contains(pipelineExecutionDetailsMap.get(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()).getPipelineExecutionId()))
                     .build());
