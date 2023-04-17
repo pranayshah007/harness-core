@@ -10,6 +10,7 @@ package io.harness.engine.pms.execution.strategy.plan;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.contracts.execution.Status.ERRORED;
 
+import io.harness.ModuleType;
 import io.harness.OrchestrationPublisherName;
 import io.harness.PipelineSettingsService;
 import io.harness.PlanExecutionSettingResponse;
@@ -197,6 +198,7 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
   private OrchestrationEvent buildEndEvent(Ambiance ambiance, Status status) {
     return OrchestrationEvent.newBuilder()
         .setAmbiance(ambiance)
+        .setServiceName(ModuleType.PMS.name().toLowerCase())
         .setEventType(OrchestrationEventType.ORCHESTRATION_END)
         .setStatus(status)
         .build();

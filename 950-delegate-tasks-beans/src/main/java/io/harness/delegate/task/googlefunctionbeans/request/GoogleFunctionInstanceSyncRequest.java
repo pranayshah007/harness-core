@@ -33,4 +33,5 @@ public class GoogleFunctionInstanceSyncRequest
   @NonFinal @Expression(ALLOW_SECRETS) GoogleFunctionInfraConfig googleFunctionInfraConfig;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
   String function;
+  String environmentType;
 }

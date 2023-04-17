@@ -7,10 +7,12 @@
 
 package io.harness.ipallowlist;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ipallowlist.entity.IPAllowlistEntity;
-import io.harness.ng.core.common.beans.NGTag;
+import io.harness.ipallowlist.entity.IPAllowlistEntity.IPAllowlistEntityBuilder;
 import io.harness.spec.server.ng.v1.model.IPAllowlistConfig;
 import io.harness.spec.server.ng.v1.model.IPAllowlistConfigResponse;
 
@@ -32,16 +34,19 @@ public class IPAllowlistResourceUtils {
   }
 
   public IPAllowlistEntity toIPAllowlistEntity(IPAllowlistConfig config, String accountIdentifier) {
-    return IPAllowlistEntity.builder()
-        .identifier(config.getIdentifier())
-        .name(config.getName())
-        .description(config.getDescription())
-        .accountIdentifier(accountIdentifier)
-        .allowedSourceType(config.getAllowedSourceType())
-        .enabled(config.isEnabled())
-        .ipAddress(config.getIpAddress())
-        .tag((NGTag) config.getTags())
-        .build();
+    IPAllowlistEntityBuilder ipAllowlistEntityBuilder = IPAllowlistEntity.builder()
+                                                            .identifier(config.getIdentifier())
+                                                            .name(config.getName())
+                                                            .description(config.getDescription())
+                                                            .accountIdentifier(accountIdentifier)
+                                                            .enabled(config.isEnabled())
+                                                            .ipAddress(config.getIpAddress());
+
+    if (config.getAllowedSourceType() != null && isNotEmpty(config.getAllowedSourceType())) {
+      ipAllowlistEntityBuilder.allowedSourceType(config.getAllowedSourceType());
+    }
+
+    return ipAllowlistEntityBuilder.build();
   }
 
   public IPAllowlistConfig toIPAllowlistConfig(IPAllowlistEntity entity) {
@@ -50,7 +55,6 @@ public class IPAllowlistResourceUtils {
     ipAllowlistConfig.setName(entity.getName());
     ipAllowlistConfig.setDescription(entity.getDescription());
     ipAllowlistConfig.setAllowedSourceType(entity.getAllowedSourceType());
-    ipAllowlistConfig.setTags(entity.getTags());
     ipAllowlistConfig.setIpAddress(entity.getIpAddress());
     return ipAllowlistConfig;
   }
@@ -63,22 +67,21 @@ public class IPAllowlistResourceUtils {
         .allowedSourceType(config.getAllowedSourceType())
         .enabled(config.isEnabled())
         .ipAddress(config.getIpAddress())
-        .tag((NGTag) config.getTags())
         .build();
   }
 
   public IPAllowlistConfigResponse toIPAllowlistConfigResponse(IPAllowlistEntity entity) {
     IPAllowlistConfig ipAllowlistConfig = new IPAllowlistConfig();
-    ipAllowlistConfig.setIdentifier(entity.getIdentifier());
-    ipAllowlistConfig.setName(entity.getName());
-    ipAllowlistConfig.setDescription(entity.getDescription());
-    ipAllowlistConfig.setAllowedSourceType(entity.getAllowedSourceType());
-    ipAllowlistConfig.setTags(entity.getTags());
-    ipAllowlistConfig.setIpAddress(entity.getIpAddress());
+    ipAllowlistConfig.identifier(entity.getIdentifier());
+    ipAllowlistConfig.name(entity.getName());
+    ipAllowlistConfig.description(entity.getDescription());
+    ipAllowlistConfig.allowedSourceType(entity.getAllowedSourceType());
+    ipAllowlistConfig.ipAddress(entity.getIpAddress());
+    ipAllowlistConfig.enabled(entity.getEnabled());
     IPAllowlistConfigResponse ipAllowlistConfigResponse = new IPAllowlistConfigResponse();
-    ipAllowlistConfigResponse.setIpAllowlistConfig(ipAllowlistConfig);
-    ipAllowlistConfigResponse.setCreated(entity.getCreated());
-    ipAllowlistConfigResponse.setUpdated(entity.getUpdated());
+    ipAllowlistConfigResponse.ipAllowlistConfig(ipAllowlistConfig);
+    ipAllowlistConfigResponse.created(entity.getCreated());
+    ipAllowlistConfigResponse.updated(entity.getUpdated());
     Set<ConstraintViolation<IPAllowlistConfigResponse>> violations = validator.validate(ipAllowlistConfigResponse);
     if (!violations.isEmpty()) {
       throw new JerseyViolationException(violations, null);

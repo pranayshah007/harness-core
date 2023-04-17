@@ -14,6 +14,7 @@ import static io.harness.audit.ResourceTypeConstants.DEPLOYMENT_FREEZE;
 import static io.harness.audit.ResourceTypeConstants.ENVIRONMENT;
 import static io.harness.audit.ResourceTypeConstants.ENVIRONMENT_GROUP;
 import static io.harness.audit.ResourceTypeConstants.FILE;
+import static io.harness.audit.ResourceTypeConstants.IP_ALLOWLIST_CONFIG;
 import static io.harness.audit.ResourceTypeConstants.ORGANIZATION;
 import static io.harness.audit.ResourceTypeConstants.PROJECT;
 import static io.harness.audit.ResourceTypeConstants.SECRET;
@@ -212,6 +213,7 @@ import io.harness.ng.core.outbox.ApiKeyEventHandler;
 import io.harness.ng.core.outbox.DelegateProfileEventHandler;
 import io.harness.ng.core.outbox.EnvironmentGroupOutboxEventHandler;
 import io.harness.ng.core.outbox.EnvironmentOutboxEventHandler;
+import io.harness.ng.core.outbox.IPAllowlistConfigEventHandler;
 import io.harness.ng.core.outbox.NextGenOutboxEventHandler;
 import io.harness.ng.core.outbox.OrganizationEventHandler;
 import io.harness.ng.core.outbox.ProjectEventHandler;
@@ -981,6 +983,7 @@ public class NextGenModule extends AbstractModule {
     outboxEventHandlerMapBinder.addBinding(VARIABLE).to(VariableEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(SETTING).to(SettingEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(DEPLOYMENT_FREEZE).to(FreezeOutboxEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(IP_ALLOWLIST_CONFIG).to(IPAllowlistConfigEventHandler.class);
   }
 
   private void registerEventsFrameworkMessageListeners() {

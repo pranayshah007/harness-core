@@ -36,5 +36,5 @@ public interface ConfigManagerService {
 
   MergedPluginConfigs mergeEnabledPluginConfigsForAccount(String accountIdentifier) throws Exception;
 
-  List<AppConfigEntity> deleteDisabledPluginsConfigsThatAreDisableWithinOneWeek();
+  List<AppConfigEntity> deleteDisabledPluginsConfigsDisabledMoreThanAWeekAgo();
 }

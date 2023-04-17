@@ -1931,6 +1931,10 @@ components:
           description: 'If true, it will allow all the IPs that are part of the config and block others.'
         tags:
           type: object
+          additionalProperties:
+            type: string
+          description: IP Allowlist tags
+          maxProperties: 128
         allowed_source_type:
           type: array
           uniqueItems: true

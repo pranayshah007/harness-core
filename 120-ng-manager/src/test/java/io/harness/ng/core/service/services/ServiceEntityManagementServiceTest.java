@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.service.services;
 
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.vivekveman;
 
@@ -24,9 +25,13 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.dtos.InstanceDTO;
+import io.harness.entities.ArtifactDetails;
+import io.harness.entities.Instance;
+import io.harness.entities.instanceinfo.K8sInstanceInfo;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.service.services.exception.ActiveServiceInstancesPresentException;
+import io.harness.repositories.instance.InstanceRepository;
 import io.harness.rule.Owner;
 import io.harness.service.instance.InstanceService;
 
@@ -46,6 +51,7 @@ public class ServiceEntityManagementServiceTest extends CategoryTest {
   @Mock ServiceEntityService serviceEntityService;
 
   @Mock InstanceService instanceService;
+  @Mock InstanceRepository instanceRepository;
   @Spy @Inject @InjectMocks ServiceEntityManagementServiceImpl serviceEntityManagementService;
 
   private static final String accountIdentifier = "accountIdentifier";
@@ -62,10 +68,10 @@ public class ServiceEntityManagementServiceTest extends CategoryTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void shouldThrowErrorWhenInstancesRunning() {
-    List<InstanceDTO> instanceDTOList = new ArrayList<>();
+    List<Instance> instanceDTOList = new ArrayList<>();
     instanceDTOList.add(getInstance());
     instanceDTOList.add(getInstance());
-    when(instanceService.getActiveInstancesByServiceId(
+    when(instanceRepository.getInstancesCreatedBefore(
              eq(accountIdentifier), eq(orgIdentifier), eq(projectIdentifier), eq(identifier), anyLong()))
         .thenReturn(instanceDTOList);
     assertThatThrownBy(()
@@ -81,7 +87,7 @@ public class ServiceEntityManagementServiceTest extends CategoryTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void shouldDeleteServiceWhenNoInstances() {
-    when(instanceService.getActiveInstancesByServiceId(
+    when(instanceRepository.getInstancesCreatedBefore(
              eq(accountIdentifier), eq(orgIdentifier), eq(projectIdentifier), eq(identifier), anyLong()))
         .thenReturn(null);
     serviceEntityManagementService.deleteService(
@@ -96,10 +102,10 @@ public class ServiceEntityManagementServiceTest extends CategoryTest {
     doReturn(true).when(serviceEntityManagementService).isForceDeleteFFEnabled(accountIdentifier);
     doReturn(true).when(serviceEntityManagementService).isNgSettingsFFEnabled(accountIdentifier);
     doReturn(true).when(serviceEntityManagementService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
-    List<InstanceDTO> instanceDTOList = new ArrayList<>();
+    List<Instance> instanceDTOList = new ArrayList<>();
     instanceDTOList.add(getInstance());
     instanceDTOList.add(getInstance());
-    when(instanceService.getActiveInstancesByServiceId(
+    when(instanceRepository.getInstancesCreatedBefore(
              eq(accountIdentifier), eq(orgIdentifier), eq(projectIdentifier), eq(identifier), anyLong()))
         .thenReturn(instanceDTOList);
     when(serviceEntityService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, null, true))
@@ -115,10 +121,10 @@ public class ServiceEntityManagementServiceTest extends CategoryTest {
     doReturn(false).when(serviceEntityManagementService).isForceDeleteFFEnabled(accountIdentifier);
     doReturn(true).when(serviceEntityManagementService).isNgSettingsFFEnabled(accountIdentifier);
     doReturn(true).when(serviceEntityManagementService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
-    List<InstanceDTO> instanceDTOList = new ArrayList<>();
+    List<Instance> instanceDTOList = new ArrayList<>();
     instanceDTOList.add(getInstance());
     instanceDTOList.add(getInstance());
-    when(instanceService.getActiveInstancesByServiceId(
+    when(instanceRepository.getInstancesCreatedBefore(
              eq(accountIdentifier), eq(orgIdentifier), eq(projectIdentifier), eq(identifier), anyLong()))
         .thenReturn(instanceDTOList);
     when(serviceEntityService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, null, true))
@@ -132,14 +138,24 @@ public class ServiceEntityManagementServiceTest extends CategoryTest {
     verify(instanceService, never()).deleteAll(any());
   }
 
-  private InstanceDTO getInstance() {
-    return InstanceDTO.builder()
-        .instanceKey(identifier)
+  private Instance getInstance() {
+    return Instance.builder()
         .accountIdentifier(accountIdentifier)
-        .projectIdentifier(projectIdentifier)
         .orgIdentifier(orgIdentifier)
-        .envIdentifier(identifier)
+        .projectIdentifier(projectIdentifier)
         .serviceIdentifier(identifier)
+        .envIdentifier(identifier)
+        .lastPipelineExecutionId("lastPipelineExecutionId")
+        .infraIdentifier("infraIdentifier")
+        .envName("envName")
+        .envType(EnvironmentType.PreProduction)
+        .infrastructureKind(KUBERNETES_DIRECT)
+        .primaryArtifact(ArtifactDetails.builder().tag("buildId").build())
+        .createdAt(0L)
+        .deletedAt(10L)
+        .createdAt(0L)
+        .lastModifiedAt(0L)
+        .instanceInfo(K8sInstanceInfo.builder().podName("podName").releaseName("releaseName").build())
         .build();
   }
 }

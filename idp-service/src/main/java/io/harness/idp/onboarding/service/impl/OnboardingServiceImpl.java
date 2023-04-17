@@ -132,9 +132,9 @@ public class OnboardingServiceImpl implements OnboardingService {
 
   @Override
   public PageResponse<HarnessBackstageEntities> getHarnessEntities(String accountIdentifier, int page, int limit,
-      String sort, String order, String searchTerm, List<String> projectsToFilter) {
+      String sort, String order, String searchTerm, String projectToFilter) {
     List<ServiceResponseDTO> services = getServices(accountIdentifier, searchTerm);
-    services = filterByProject.apply(services, projectsToFilter);
+    services = filterByProject.apply(services, projectToFilter);
 
     List<BackstageCatalogComponentEntity> catalogComponents = harnessServiceToBackstageComponent(services);
     log.info("Mapped harness entities to backstage entities for IDP onboarding import");
@@ -333,11 +333,12 @@ public class OnboardingServiceImpl implements OnboardingService {
     return serviceResponseDTOS;
   }
 
-  private final BiFunction<List<ServiceResponseDTO>, List<String>, List<ServiceResponseDTO>> filterByProject =
-      (services, projectsToFilter) -> {
-    if (!isEmpty(projectsToFilter)) {
+  private final BiFunction<List<ServiceResponseDTO>, String, List<ServiceResponseDTO>> filterByProject =
+      (services, projectToFilter) -> {
+    if (!isEmpty(projectToFilter)) {
       return services.stream()
-          .filter(service -> projectsToFilter.contains(service.getProjectIdentifier()))
+          .filter(service
+              -> service.getProjectIdentifier() != null && service.getProjectIdentifier().contains(projectToFilter))
           .collect(Collectors.toList());
     }
     return services;

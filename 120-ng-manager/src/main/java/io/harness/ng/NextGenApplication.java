@@ -47,6 +47,7 @@ import io.harness.cdng.gitSync.EnvironmentGroupEntityGitSyncHelper;
 import io.harness.cdng.licenserestriction.ServiceRestrictionsUsageImpl;
 import io.harness.cdng.migration.CDMigrationProvider;
 import io.harness.cdng.orchestration.NgStepRegistrar;
+import io.harness.cdng.pipeline.executions.CdngOrchestrationEventRedisConsumer;
 import io.harness.cdng.pipeline.executions.CdngOrchestrationExecutionEventHandlerRegistrar;
 import io.harness.cdng.provision.terraform.functor.TerraformHumanReadablePlanFunctor;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
@@ -181,7 +182,6 @@ import io.harness.pms.sdk.execution.events.interrupts.InterruptEventRedisConsume
 import io.harness.pms.sdk.execution.events.node.advise.NodeAdviseEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.node.resume.NodeResumeEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsumer;
-import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
 import io.harness.pms.serializer.json.PmsBeansJacksonModule;
@@ -665,7 +665,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     PipelineEventConsumerController pipelineEventConsumerController =
         injector.getInstance(PipelineEventConsumerController.class);
     pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumer.class), 1);
-    pipelineEventConsumerController.register(injector.getInstance(OrchestrationEventRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(CdngOrchestrationEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(ProgressEventRedisConsumer.class), 1);

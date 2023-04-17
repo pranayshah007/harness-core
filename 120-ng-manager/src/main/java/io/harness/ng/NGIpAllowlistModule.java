@@ -7,6 +7,9 @@
 
 package io.harness.ng;
 
+import io.harness.ipallowlist.service.IPAllowlistService;
+import io.harness.ipallowlist.service.impl.IPAllowlistServiceImpl;
+
 import com.google.inject.AbstractModule;
 
 public class NGIpAllowlistModule extends AbstractModule {
@@ -19,5 +22,6 @@ public class NGIpAllowlistModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(NextGenConfiguration.class).toInstance(appConfig);
+    bind(IPAllowlistService.class).to(IPAllowlistServiceImpl.class);
   }
 }

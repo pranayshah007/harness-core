@@ -23,8 +23,8 @@ import org.apache.commons.collections.CollectionUtils;
 @OwnedBy(HarnessTeam.CDP)
 public class GoogleFunctionToServerInstanceInfoMapper {
   public static final String GOOGLE_FUNCTION_GEN_ONE_REVISION_NAME = "LATEST";
-  public static final String GOOGLE_FUNCTION_GEN_TWO_ENVIRONMENT_TYPE = "GEN_2";
-  public static final String GOOGLE_FUNCTION_GEN_ONE_ENVIRONMENT_TYPE = "GEN_1";
+  public static final String GOOGLE_FUNCTION_GEN_TWO_ENVIRONMENT_TYPE = "GenTwo";
+  public static final String GOOGLE_FUNCTION_GEN_ONE_ENVIRONMENT_TYPE = "GenOne";
 
   public List<ServerInstanceInfo> toServerInstanceInfoList(
       GoogleFunction googleFunction, String project, String region, String infraStructureKey) {

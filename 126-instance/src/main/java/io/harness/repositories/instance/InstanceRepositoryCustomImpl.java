@@ -113,7 +113,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     return new ArrayList<>(instances);
   }
 
-  private List<Instance> getInstancesCreatedBefore(String accountIdentifier, String orgIdentifier,
+  public List<Instance> getInstancesCreatedBefore(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceIdentifier, long timestamp) {
     Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
                             .is(accountIdentifier)

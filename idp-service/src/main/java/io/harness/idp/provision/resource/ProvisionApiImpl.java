@@ -9,6 +9,7 @@ package io.harness.idp.provision.resource;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
+import io.harness.idp.common.IdpCommonService;
 import io.harness.idp.namespace.beans.entity.NamespaceEntity;
 import io.harness.idp.namespace.mappers.NamespaceMapper;
 import io.harness.idp.namespace.service.NamespaceService;
@@ -28,13 +29,14 @@ import org.springframework.dao.DuplicateKeyException;
 @NextGenManagerAuth
 @Slf4j
 public class ProvisionApiImpl implements ProvisionApi {
+  private IdpCommonService idpCommonService;
   private ProvisionService provisionService;
   private NamespaceService namespaceService;
 
   @Override
   public Response provisionIdp(String accountIdentifier) {
     try {
-      provisionService.checkUserAuthorization();
+      idpCommonService.checkUserAuthorization();
       NamespaceEntity namespaceEntity = namespaceService.saveAccountIdNamespace(accountIdentifier);
       NamespaceInfo namespaceInfo = NamespaceMapper.toDTO(namespaceEntity);
       provisionService.triggerPipelineAndCreatePermissions(

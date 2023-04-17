@@ -73,4 +73,5 @@ public class ResourceTypeConstants {
   public static final String NG_ACCOUNT_DETAILS = "NG_ACCOUNT_DETAILS";
   public static final String BUDGET_GROUP = "BUDGET_GROUP";
   public static final String PIPELINE_EXECUTION = "PIPELINE_EXECUTION";
+  public static final String IP_ALLOWLIST_CONFIG = "IP_ALLOWLIST_CONFIG";
 }

@@ -52,6 +52,24 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("IPAllowlistEntity")
 @OwnedBy(HarnessTeam.PL)
 public class IPAllowlistEntity implements PersistentEntity, NGAccountAccess {
+  @Id @dev.morphia.annotations.Id String id;
+  @Trimmed @NotEmpty String accountIdentifier;
+  @Trimmed @NotEmpty String identifier;
+  @Trimmed @NotEmpty String name;
+  String description;
+  @Singular @Size(max = 128) List<NGTag> tags;
+  @Builder.Default Boolean enabled = Boolean.FALSE;
+  @Builder.Default
+  List<io.harness.spec.server.ng.v1.model.AllowedSourceType> allowedSourceType =
+      List.of(io.harness.spec.server.ng.v1.model.AllowedSourceType.API,
+          io.harness.spec.server.ng.v1.model.AllowedSourceType.UI);
+
+  @NotEmpty String ipAddress;
+  @CreatedDate Long created;
+  @LastModifiedDate Long updated;
+  @CreatedBy private EmbeddedUser createdBy;
+  @LastModifiedBy private EmbeddedUser lastUpdatedBy;
+
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -67,22 +85,4 @@ public class IPAllowlistEntity implements PersistentEntity, NGAccountAccess {
                  .build())
         .build();
   }
-  @Id @dev.morphia.annotations.Id String id;
-  @Trimmed @NotEmpty String accountIdentifier;
-  @Trimmed @NotEmpty String identifier;
-  @Trimmed @NotEmpty String name;
-  String fullyQualifiedIdentifier;
-  String description;
-  @Singular @Size(max = 128) List<NGTag> tags;
-  @Builder.Default Boolean enabled = Boolean.FALSE;
-  @Builder.Default
-  List<io.harness.spec.server.ng.v1.model.AllowedSourceType> allowedSourceType =
-      List.of(io.harness.spec.server.ng.v1.model.AllowedSourceType.API,
-          io.harness.spec.server.ng.v1.model.AllowedSourceType.UI);
-
-  @NotEmpty String ipAddress;
-  @CreatedDate Long created;
-  @LastModifiedDate Long updated;
-  @CreatedBy private EmbeddedUser createdBy;
-  @LastModifiedBy private EmbeddedUser lastUpdatedBy;
 }

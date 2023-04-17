@@ -32,3 +32,18 @@ java_library(
         "//platform-service/modules/audit-service/contracts:module",
     ],
 )
+
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["src/test/**/*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":module",
+        "//990-commons-test:module",
+    ],
+)
+
+run_analysis()
+
+run_tests()

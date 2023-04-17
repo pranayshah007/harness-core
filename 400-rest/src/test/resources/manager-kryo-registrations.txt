@@ -1139,6 +1139,7 @@
 7435:software.wings.service.impl.aws.model.AwsAmiTrafficShiftAlbSwitchRouteRequest
 7436:software.wings.api.AwsAmiTrafficShiftAlbStateExecutionData
 7437:io.harness.delegate.beans.executioncapability.KustomizeCapability
+7438:software.wings.helpers.ext.gcb.models.RepoSource
 7439:software.wings.sm.states.gcbconfigs.GcbOptions
 7440:software.wings.sm.states.gcbconfigs.GcbTriggerBuildSpec
 7441:software.wings.sm.states.gcbconfigs.GcbRemoteBuildSpec
@@ -1150,6 +1151,8 @@
 7447:software.wings.beans.TechStack
 7448:software.wings.sm.states.ParameterEntry
 7449:software.wings.api.k8s.K8sHelmDeploymentElement
+7450:software.wings.helpers.ext.gcb.models.HashType
+7451:software.wings.helpers.ext.gcb.models.Volume
 7452:software.wings.beans.servicenow.ServiceNowFieldType
 7453:io.harness.dashboard.Action
 7457:software.wings.api.TemplatizedSecretManagerStateExecutionData
@@ -2045,6 +2048,9 @@
 50031:software.wings.persistence.artifact.Artifact.Status
 50032:com.mongodb.MongoExecutionTimeoutException
 50033:com.amazonaws.services.kms.model.AWSKMSException
+50034:io.harness.ng.core.user.UserAccountLevelData
+50035:io.harness.ng.core.common.beans.Generation
+50036:io.harness.ng.core.common.beans.UserSource
 54320:io.harness.ng.core.entities.Organization
 54321:io.harness.ng.core.entities.Project
 54322:io.harness.ng.core.entities.SampleEncryptableSettingImplementation

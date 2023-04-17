@@ -129,7 +129,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
 
   @Override
   public CatalogConnectorEntity findDefaultConnectorDetails(String accountIdentifier) {
-    return catalogConnectorRepository.findOneByLastUpdatedAt(accountIdentifier);
+    return catalogConnectorRepository.findLastUpdated(accountIdentifier);
   }
 
   private Optional<CatalogConnectorEntity> getCatalogConnectorEntity(

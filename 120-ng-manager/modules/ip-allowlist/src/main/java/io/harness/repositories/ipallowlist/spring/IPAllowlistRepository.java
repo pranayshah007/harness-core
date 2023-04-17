@@ -22,4 +22,5 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 public interface IPAllowlistRepository
     extends PagingAndSortingRepository<IPAllowlistEntity, String>, IPAllowlistRepositoryCustom {
   Optional<IPAllowlistEntity> findByAccountIdentifierAndIdentifier(String accountIdentifier, String identifier);
+  long deleteByAccountIdentifierAndIdentifier(String accountIdentifier, String identifier);
 }

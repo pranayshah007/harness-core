@@ -42,7 +42,7 @@ public class CatalogConnectorRepositoryCustomImpl implements CatalogConnectorRep
   }
 
   @Override
-  public CatalogConnectorEntity findOneByLastUpdatedAt(String accountIdentifier) {
+  public CatalogConnectorEntity findLastUpdated(String accountIdentifier) {
     Query query =
         new Query(Criteria.where(CatalogConnectorEntity.CatalogConnectorKeys.accountIdentifier).is(accountIdentifier));
     query.with(Sort.by(Sort.Direction.DESC, CatalogConnectorEntity.CatalogConnectorKeys.lastUpdatedAt));
