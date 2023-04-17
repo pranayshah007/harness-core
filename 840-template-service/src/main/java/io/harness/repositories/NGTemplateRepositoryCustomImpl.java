@@ -31,6 +31,7 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.gitx.GitXSettingsHelper;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.template.entity.TemplateEntity;
@@ -70,6 +71,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   private final GitAwareEntityHelper gitAwareEntityHelper;
   private final MongoTemplate mongoTemplate;
   private final TemplateGitXService templateGitXService;
+  private final GitXSettingsHelper gitXSettingsHelper;
   OutboxService outboxService;
 
   @Override
@@ -587,7 +589,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
       templateEntity.setRepoURL(gitAwareEntityHelper.getRepoUrl(
           templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier()));
     }
-    templateEntity.setConnectorRef(gitEntityInfo.getConnectorRef());
+    setConnectorRefForRemoteEntity(templateEntity, gitEntityInfo);
     templateEntity.setRepo(gitEntityInfo.getRepoName());
     templateEntity.setFilePath(gitEntityInfo.getFilePath());
     templateEntity.setFallBackBranch(gitEntityInfo.getBranch());
@@ -605,5 +607,21 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
         new TemplateUpdateEvent(templateToUpdate.getAccountIdentifier(), templateToUpdate.getOrgIdentifier(),
             templateToUpdate.getProjectIdentifier(), templateToUpdate, oldTemplateEntity, comments,
             templateUpdateEventType != null ? templateUpdateEventType : TemplateUpdateEventType.OTHERS_EVENT));
+  }
+
+  private void setConnectorRefForRemoteEntity(TemplateEntity templateEntity, GitEntityInfo gitEntityInfo) {
+    if (gitEntityInfo.getConnectorRef() != null) {
+      templateEntity.setConnectorRef(gitEntityInfo.getConnectorRef());
+    } else {
+      try {
+        String defaultConnectorForGitX =
+            gitXSettingsHelper.getDefaultConnectorForGitX(templateEntity.getAccountIdentifier(),
+                templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
+        templateEntity.setConnectorRef(defaultConnectorForGitX);
+      } catch (Exception ex) {
+        log.warn(
+            String.format("No ConnectorRef provided for template with id: %s", templateEntity.getIdentifier()), ex);
+      }
+    }
   }
 }
