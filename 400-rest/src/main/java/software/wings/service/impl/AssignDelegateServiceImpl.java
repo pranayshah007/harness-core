@@ -282,6 +282,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
     // Account level task and delegate with an owner defined
     if (isEmpty(taskSetupAbstractions) || taskSetupAbstractions.get(NgSetupFields.OWNER) == null) {
+      log.info("Task abstraction is null");
       return false;
     }
 
@@ -297,7 +298,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     log.info("DELEGATE OWNER {},  {}", delegateOrgIdentifier, delegateProjectIdentifier);
     // Match org. When owner is specified, at org must be there.
     if (!StringUtils.equals(taskOrgIdentifier, delegateOrgIdentifier)) {
-      log.info("Owner mismatched {}, ",delegate.getUuid());
+      log.info("Match org.: Owner mismatched {}, ",delegate.getUuid());
       return false;
     }
 
@@ -306,6 +307,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     if (isBlank(taskProjectIdentifier) && isBlank(delegateProjectIdentifier)
         || !isBlank(taskProjectIdentifier) && isBlank(delegateProjectIdentifier)
         || StringUtils.equals(taskProjectIdentifier, delegateProjectIdentifier)) {
+      log.info("Match projects: Owner mismatched {}, ",delegate.getUuid());
       return true;
     }
     return false;
@@ -947,6 +949,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     task.setNonAssignableDelegates(new HashMap<>());
     try {
       List<Delegate> accountDelegates = fetchActiveDelegates(task.getAccountId());
+      log.info("Get active delegates {}", accountDelegates);
       boolean isTaskNg = task.isNGTask(task.getSetupAbstractions());
       accountDelegates = accountDelegates.stream().filter(delegate -> delegate.isNg() == isTaskNg).collect(toList());
       if (isEmpty(accountDelegates)) {
