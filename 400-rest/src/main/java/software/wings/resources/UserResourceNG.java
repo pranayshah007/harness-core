@@ -25,6 +25,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
+import io.harness.exception.UserRegistrationException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.mappers.AccountMapper;
@@ -50,6 +51,9 @@ import io.harness.user.remote.UserFilterNG;
 
 import software.wings.beans.User;
 import software.wings.beans.UserInvite;
+import software.wings.beans.marketplace.MarketPlaceConstants;
+import software.wings.security.JWT_CATEGORY;
+import software.wings.security.SecretManager;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.authentication.TwoFactorAuthenticationManager;
 import software.wings.security.authentication.TwoFactorAuthenticationMechanism;
@@ -105,8 +109,10 @@ public class UserResourceNG {
   private final ScimUserService scimUserService;
   private static final String COMMUNITY_ACCOUNT_EXISTS = "A community account already exists";
   private static final String ACCOUNT_ADMINISTRATOR_USER_GROUP = "Account Administrator";
+  private static final String EXC_USER_ALREADY_REGISTERED = "User is already registered";
 
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private SecretManager secretManager;
 
   @POST
   public RestResponse<UserInfo> createNewUserAndSignIn(UserRequestDTO userRequest) {
@@ -187,6 +193,65 @@ public class UserResourceNG {
     }
 
     return new RestResponse<>(userInfo);
+  }
+
+  @POST
+  @Path("/signup-invite/marketplace")
+  public RestResponse<UserInfo> createMarketplaceUserAndCompleteSignup(
+      SignupDTO dto, String inviteId, String marketPlaceToken) {
+    MarketPlace marketPlace;
+
+    UserInvite existingInvite = wingsPersistence.get(UserInvite.class, inviteId);
+    if (existingInvite.isCompleted()) {
+      log.error("Unexpected state: Existing invite is already completed. ID = {}", inviteId);
+      return;
+    }
+
+    String email = dto.getEmail().toLowerCase();
+    User existingUser = userService.getUserByEmail(email);
+    if (existingUser != null) {
+      throw new UserRegistrationException(EXC_USER_ALREADY_REGISTERED, ErrorCode.USER_ALREADY_REGISTERED, USER);
+      return;
+    }
+
+    verifySignupDTO(dto);
+
+    dto.setEmail(dto.getEmail().toLowerCase());
+
+    AccountDTO account = createAccount(dto);
+
+    User user = convertMarketplaceRequestToUser(dto, account);
+
+    User createdUser = userService.createNewUserAndSignIn(user, accountId, NG);
+
+    sendSucceedTelemetryEvent(dto.getEmail(), dto.getUtmInfo(), account.getIdentifier(), user,
+        SignupType.MARKETPLACE_PROVISION, account.getName(), referer, null, null);
+
+    Map<String, Claim> claims = secretManager.verifyJWTToken(marketPlaceToken, JWT_CATEGORY.MARKETPLACE_SIGNUP);
+    String userInviteID = claims.get(MarketPlaceConstants.USERINVITE_ID_CLAIM_KEY).asString();
+    if (!userInviteID.equals(inviteId)) {
+      throw new GeneralException(String.format(
+          "User Invite Id in claim: [{%s}] does not match the User Invite Id : [{%s}]", userInviteID, inviteId));
+    }
+
+    String marketPlaceID = claims.get(MarketPlaceConstants.MARKETPLACE_ID_CLAIM_KEY).asString();
+    marketPlace = wingsPersistence.get(MarketPlace.class, marketPlaceID);
+    if (marketPlace == null) {
+      throw new GeneralException(String.format("No MarketPlace found with marketPlaceID=[{%s}]", marketPlaceID));
+    }
+
+    userInvite = wingsPersistence.get(UserInvite.class, inviteId);
+    if (userInvite == null) {
+      throw new GeneralException(String.format("No UserInvite found with inviteId=[{%s}]", inviteId));
+    }
+
+    String accountId = userService.setupAccountBasedOnProduct(user, userInvite, marketPlace);
+
+    marketPlace.setAccountId(accountId);
+    wingsPersistence.save(marketPlace);
+
+    // return createdUser;
+    return new RestResponse<>(convertUserToNgUser(createdUser));
   }
 
   @GET
@@ -581,6 +646,43 @@ public class UserResourceNG {
         .emailVerified(userRequest.isEmailVerified())
         .defaultAccountId(userRequest.getDefaultAccountId())
         .build();
+  }
+
+  private User convertMarketplaceRequestToUser(SignupDTO dto, Account account) {
+    if (dto == null) {
+      return null;
+    }
+
+    try {
+      String passwordHash = hashpw(signupDTO.getPassword(), BCrypt.gensalt());
+      List<AccountDTO> accountList = new ArrayList<>();
+      accountList.add(account);
+
+      String name = account.getName();
+
+      return UserRequestDTO.builder()
+          .email(signupDTO.getEmail())
+          .name(name)
+          .passwordHash(passwordHash)
+          .accountName(account.getName())
+          .companyName(account.getCompanyName())
+          .accounts(accountList)
+          .emailVerified(true)
+          .defaultAccountId(account.getIdentifier())
+          .build();
+    } catch (Exception e) {
+      sendFailedTelemetryEvent(signupDTO.getEmail(), signupDTO.getUtmInfo(), e, account, "User creation");
+      throw e;
+    }
+  }
+
+  private AccountDTO createAccount(SignupDTO dto) {
+    try {
+      return accountService.createAccount(dto);
+    } catch (Exception e) {
+      sendFailedTelemetryEvent(dto.getEmail(), dto.getUtmInfo(), e, null, "Account creation");
+      throw e;
+    }
   }
 
   private User convertNgUserToUserWithNameUpdated(UserInfo userInfo) {

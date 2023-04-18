@@ -50,6 +50,7 @@ public interface UserClient {
   String USERS_API_OAUTH = "ng/user/oauth";
   String USERS_SIGNUP_INVITE_API = "ng/user/signup-invite";
   String USER_SIGNUP_COMMUNITY = "ng/user/signup-invite/community";
+  String USER_SIGNUP_MARKETPLACE = "ng/user/signup-invite/marketplace";
   String USER_BATCH_LIST_API = "ng/user/batch";
   String USER_EMAILS_BATCH_LIST_API = "ng/user/batch-emails";
   String SCIM_USER_SEARCH = "ng/user/scim/search";
@@ -103,6 +104,10 @@ public interface UserClient {
   @PUT(SCIM_USER_DISABLED_UPDATE)
   Call<RestResponse<Boolean>> updateUserDisabled(@Query(value = "accountId") String accountId,
       @Query(value = "userId") String userId, @Query("disabled") boolean disabled);
+
+  @POST(USER_SIGNUP_MARKETPLACE)
+  Call<RestResponse<UserInfo>> createMarketplaceUserAndCompleteSignup(
+      @Body SignupDTO dto, String inviteId, String marketPlaceToken);
 
   @POST(USER_SIGNUP_COMMUNITY)
   Call<RestResponse<UserInfo>> createCommunityUserAndCompleteSignup(@Body SignupInviteDTO userRequest);
