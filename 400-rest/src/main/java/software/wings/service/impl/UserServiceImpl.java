@@ -934,6 +934,10 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public void addUserToAccount(String userId, String accountId) {
+    addUserToAccount(userId, accountId, MANUAL);
+  }
+  @Override
+  public void addUserToAccount(String userId, String accountId, UserSource userSource) {
     Account account = accountService.get(accountId);
     if (account == null) {
       throw new InvalidRequestException("No account exists with id " + accountId);
@@ -942,18 +946,26 @@ public class UserServiceImpl implements UserService {
     if (user == null) {
       throw new InvalidRequestException("No user exists with id " + userId);
     }
-    if (user.getAccountIds().contains(account.getUuid())) {
-      return;
-    }
-    List<Account> newAccounts = user.getAccounts();
-    newAccounts.add(account);
+    boolean shouldUpdateUserAccountLevelData = false;
     UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
-    updateOperations.set(UserKeys.accounts, newAccounts);
-    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
-        && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
-      userServiceHelper.populateAccountToUserMapping(user, accountId, NG, MANUAL);
-      updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
+    if (user.getAccountIds().contains(account.getUuid())) {
+      if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
+          && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
+        shouldUpdateUserAccountLevelData = true;
+      } else {
+        return;
+      }
     }
+
+    List<Account> newAccounts = user.getAccounts();
+    if (shouldUpdateUserAccountLevelData) {
+      userServiceHelper.populateAccountToUserMapping(user, accountId, NG, userSource);
+      updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
+    } else {
+      newAccounts.add(account);
+      updateOperations.set(UserKeys.accounts, newAccounts);
+    }
+
     updateUser(user.getUuid(), updateOperations);
   }
 

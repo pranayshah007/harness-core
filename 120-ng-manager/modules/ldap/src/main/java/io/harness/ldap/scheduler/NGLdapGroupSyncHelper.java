@@ -9,6 +9,7 @@ package io.harness.ldap.scheduler;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.common.beans.UserSource.LDAP;
 import static io.harness.ng.core.utils.UserGroupMapper.toDTO;
 
 import static java.util.Collections.emptyList;
@@ -201,6 +202,7 @@ public class NGLdapGroupSyncHelper {
         uuid, userResponse.getUserId(), accountId, orgId, projectId);
     ngUserService.addUserToScope(
         uuid, Scope.of(accountId, orgId, projectId), emptyList(), emptyList(), UserMembershipUpdateSource.SYSTEM);
+    ngUserService.updateNGUserToCGWithSource(uuid, Scope.builder().accountIdentifier(accountId).build(), LDAP);
     return ngUserService.getUserByEmail(userResponse.getEmail(), false);
   }
 

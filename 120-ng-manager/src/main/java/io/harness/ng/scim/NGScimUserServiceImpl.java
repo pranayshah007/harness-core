@@ -21,6 +21,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PL_NEW_SCIM_STANDARDS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.common.beans.UserSource.SCIM;
 
 import static java.util.Collections.emptyList;
 
@@ -110,6 +111,8 @@ public class NGScimUserServiceImpl implements ScimUserService {
       }
       ngUserService.addUserToScope(
           user.getUuid(), Scope.of(accountId, null, null), null, null, UserMembershipUpdateSource.SYSTEM);
+      ngUserService.updateNGUserToCGWithSource(
+          user.getUuid(), Scope.builder().accountIdentifier(accountId).build(), SCIM);
       return Response.status(Response.Status.CREATED).entity(getUserInternal(user.getUuid(), accountId)).build();
     } else {
       String userName = getName(userQuery);

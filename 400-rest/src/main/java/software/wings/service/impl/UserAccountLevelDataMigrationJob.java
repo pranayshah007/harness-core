@@ -19,7 +19,6 @@ import static io.harness.ng.core.common.beans.UserSource.MANUAL;
 import static io.harness.ng.core.common.beans.UserSource.SCIM;
 
 import io.harness.beans.PageRequest;
-import io.harness.ff.FeatureFlagService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.ng.core.common.beans.Generation;
@@ -65,7 +64,6 @@ public class UserAccountLevelDataMigrationJob implements Managed {
 
   private static final String LOCK_NAME = "USER_ACCOUNT_LEVEL_DATA_LOCK";
   private final String DEBUG_MESSAGE = "UserAccountLevelDataMigrationJob: ";
-  @Inject private FeatureFlagService featureFlagService;
   @Inject AccountService accountService;
   @Inject UserServiceHelper userServiceHelper;
   @Inject private SSOSettingService ssoSettingService;
