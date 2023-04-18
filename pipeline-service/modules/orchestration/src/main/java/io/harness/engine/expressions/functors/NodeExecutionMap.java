@@ -283,7 +283,8 @@ public class NodeExecutionMap extends LateBindingMap {
     if (nodeExecution.getAmbiance() != null) {
       Level currentLevel = AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance());
       if (currentLevel != null) {
-        return StrategyUtils.fetchStrategyObjectMap(currentLevel);
+        return StrategyUtils.fetchStrategyObjectMap(
+            currentLevel, nodeExecution.getAmbiance().getMetadata().getUseMatrixFieldName());
       }
     }
     return new HashMap<>();
