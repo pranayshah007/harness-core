@@ -12,7 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cistatus.service.GithubAppConfig;
 import io.harness.cistatus.service.GithubService;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -31,7 +30,6 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
-import io.harness.exception.InvalidArgumentsException;
 import io.harness.git.GitClientHelper;
 import io.harness.product.ci.scm.proto.AzureProvider;
 import io.harness.product.ci.scm.proto.BitbucketCloudProvider;
@@ -50,6 +48,7 @@ import org.apache.commons.lang3.NotImplementedException;
 @OwnedBy(DX)
 public class ScmGitProviderMapper {
   @Inject(optional = true) GithubService githubService;
+  @Inject ScmGitProviderHelper scmGitProviderHelper;
   private static final String SCM_SKIP_SSL = "SCM_SKIP_SSL";
   private static final String ADDITIONAL_CERTS_PATH = "ADDITIONAL_CERTS_PATH";
 
@@ -220,41 +219,20 @@ public class ScmGitProviderMapper {
   private String getAccessTokenFromGithubApp(GithubConnectorDTO githubConnector) {
     GithubApiAccessDTO apiAccess = githubConnector.getApiAccess();
     GithubAppSpecDTO apiAccessDTO = (GithubAppSpecDTO) apiAccess.getSpec();
-    if (githubService == null) {
-      throw new NotImplementedException("Token for Github App is only supported on delegate");
-    }
-
-    try {
-      return githubService.getToken(GithubAppConfig.builder()
-                                        .appId(getSecretAsStringFromPlainTextOrSecretRef(
-                                            apiAccessDTO.getApplicationId(), apiAccessDTO.getApplicationIdRef()))
-                                        .installationId(getSecretAsStringFromPlainTextOrSecretRef(
-                                            apiAccessDTO.getInstallationId(), apiAccessDTO.getInstallationIdRef()))
-                                        .privateKey(String.valueOf(apiAccessDTO.getPrivateKeyRef().getDecryptedValue()))
-                                        .githubUrl(GitClientHelper.getGithubApiURL(githubConnector.getUrl()))
-                                        .build());
-    } catch (Exception ex) {
-      throw new InvalidArgumentsException(ex.getMessage());
-    }
+    return scmGitProviderHelper.getAccessTokenFromGithubApp(apiAccessDTO.getApplicationId(),
+        apiAccessDTO.getApplicationIdRef(), apiAccessDTO.getInstallationId(), apiAccessDTO.getInstallationIdRef(),
+        apiAccessDTO.getPrivateKeyRef(), githubConnector.getUrl());
   }
 
   private String getAccessToken(GithubConnectorDTO githubConnector) {
     GithubApiAccessDTO apiAccess = githubConnector.getApiAccess();
     GithubTokenSpecDTO apiAccessDTO = (GithubTokenSpecDTO) apiAccess.getSpec();
-    if (apiAccessDTO.getTokenRef() == null || apiAccessDTO.getTokenRef().getDecryptedValue() == null) {
-      throw new InvalidArgumentsException(
-          "The Personal Access Token is not set. Please set the Personal Access Token in the Git Connector which has permissions to use providers API's");
-    }
-    return String.valueOf(apiAccessDTO.getTokenRef().getDecryptedValue());
+    return scmGitProviderHelper.getToken(apiAccessDTO.getTokenRef());
   }
 
   private String getOauthToken(GithubConnectorDTO githubConnector) {
     GithubApiAccessDTO apiAccess = githubConnector.getApiAccess();
     GithubOauthDTO githubOauthDTO = (GithubOauthDTO) apiAccess.getSpec();
-    if (githubOauthDTO.getTokenRef() == null || githubOauthDTO.getTokenRef().getDecryptedValue() == null) {
-      throw new InvalidArgumentsException(
-          "The Personal Access Token is not set. Please set the Personal Access Token in the Git Connector which has permissions to use providers API's");
-    }
-    return String.valueOf(githubOauthDTO.getTokenRef().getDecryptedValue());
+    return scmGitProviderHelper.getToken(githubOauthDTO.getTokenRef());
   }
 }

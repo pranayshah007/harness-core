@@ -35,6 +35,7 @@ public enum FeatureName {
           + "continue pipeline execution",
       HarnessTeam.SPG),
   SPG_WFE_PROJECTIONS_DEPLOYMENTS_PAGE("Enable projection on deployments page and executions", HarnessTeam.SPG),
+  SPG_ENABLE_POPULATE_USING_ARTIFACT_VARIABLE("Enable to populate artifact using artifact variables", HarnessTeam.SPG),
   SPG_CHANGE_SECRET_VAULT_PATTERN_ON_YAML("Change the format of secret in yaml when use vault", HarnessTeam.SPG),
   SPG_ALLOW_WFLOW_VARIABLES_TO_CONDITION_SKIP_PIPELINE_STAGE("Enables the use of workflow variables to skip"
           + " pipeline stage",
@@ -636,7 +637,6 @@ public enum FeatureName {
   SPG_STATE_MACHINE_MAPPING_EXCEPTION_IGNORE(
       "To silent ignore org.modelmapper.MappingException inside state machine executor", HarnessTeam.SPG),
   PL_AUDIT_LOG_STREAMING_ENABLED("Enables AuditLogStreaming tab on AuditTrails page in account scope", HarnessTeam.PL),
-  PIE_NG_GITX_CACHING("FF to enable caching on new git experience", HarnessTeam.PIPELINE),
   PL_ADD_ACL_CHECKS_NG_SCIM_API("Enable access control checks on token for NG SCIM API calls", HarnessTeam.PL),
   CDS_QUERY_OPTIMIZATION("Feature flag to optimize CG Queries", HarnessTeam.CDC),
   CI_ENABLE_BARE_METAL("To enable bare metal cloud for infra", HarnessTeam.CI),
@@ -715,6 +715,8 @@ public enum FeatureName {
   CDS_HTTP_STEP_NG_CERTIFICATE("Allow enforce SSL/TLS certificate in NG HTTP step", HarnessTeam.CDC),
   SRM_ENABLE_JIRA_INTEGRATION("Enable Jira integration in CVNG Verify step UI", HarnessTeam.CV),
   CDS_GIT_CONFIG_FILES("Enable config files from GIT repositories", HarnessTeam.CDP),
+  CDS_NEXUS_GROUPID_ARTIFACTID_DROPDOWN(
+      "FF to enable dropdowns for groupId and artifactId in Nexus Artifact Source", HarnessTeam.CDC),
   NG_EXPRESSIONS_NEW_INPUT_ELEMENT(
       "FF to enable the new input element for the Expressions on UI when UI suggests the probable expressions to the User based on text input so far",
       PIPELINE),
@@ -724,7 +726,9 @@ public enum FeatureName {
       "Use a prefix for internal harness release history for native helm deployment. Feature Flag will be removed as part of the epic: https://harness.atlassian.net/browse/CDS-46915",
       HarnessTeam.CDP),
   PL_USER_ACCOUNT_LEVEL_DATA_FLOW(
-      "Enables the new flow for all User CRUD where User's Account level Data is also considered.", HarnessTeam.PL);
+      "Enables the new flow for all User CRUD where User's Account level Data is also considered.", HarnessTeam.PL),
+  PL_USER_ACCOUNT_LEVEL_DATA_MIGRATION(
+      "Enables Migration to create user account level data map for this account", HarnessTeam.PL);
 
   @Deprecated
   FeatureName() {

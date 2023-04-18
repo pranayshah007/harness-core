@@ -30,9 +30,14 @@ import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.manifest.yaml.HttpStoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.delegate.AccountId;
+import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
@@ -40,6 +45,7 @@ import io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest;
 import io.harness.delegate.task.gitpolling.request.GitPollingTaskParameters;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
+import io.harness.encryption.SecretRefData;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.k8s.model.HelmVersion;
@@ -66,6 +72,8 @@ import com.google.inject.Inject;
 import com.google.protobuf.Any;
 import com.google.protobuf.util.Durations;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -248,11 +256,30 @@ public class PollingPerpetualTaskServiceTest extends CDNGTestBase {
                                           .signatures(Collections.singletonList(SIGNATURE_1))
                                           .pollingInfo(gitHubPollingInfo)
                                           .build();
-
+    Set<String> delegateSelectors = new HashSet<>();
+    delegateSelectors.add("xyz");
     GitHubPollingDelegateRequest delegateRequest =
         GitHubPollingDelegateRequest.builder()
             .connectorRef(CONNECTOR_REF)
             .githubConnectorDTO(GithubConnectorDTO.builder().url("url").build())
+            .connectorDetails(
+                ConnectorDetails.builder()
+                    .connectorConfig(
+                        GithubConnectorDTO.builder()
+                            .authentication(
+                                GithubAuthenticationDTO.builder()
+                                    .authType(GitAuthType.HTTP)
+                                    .credentials(GithubHttpCredentialsDTO.builder()
+                                                     .httpCredentialsSpec(GithubOauthDTO.builder()
+                                                                              .tokenRef(SecretRefData.builder().build())
+                                                                              .build())
+                                                     .build())
+                                    .build())
+                            .delegateSelectors(delegateSelectors)
+                            .url("url")
+                            .build())
+                    .encryptedDataDetails(Collections.emptyList())
+                    .build())
             .build();
     when(pollingService.attachPerpetualTask(anyString(), anyString(), anyString())).thenReturn(true);
     when(gitPollingStepHelper.toSourceDelegateRequest(any(), any())).thenReturn(delegateRequest);
@@ -285,6 +312,7 @@ public class PollingPerpetualTaskServiceTest extends CDNGTestBase {
     Any perpetualTaskParams = executionBundle.getTaskParams();
     GitPollingTaskParamsNg params = AnyUtils.unpack(perpetualTaskParams, GitPollingTaskParamsNg.class);
     assertThat(params.getPollingDocId()).isEqualTo(UUID);
+    assertThat(executionBundle.getCapabilitiesCount()).isEqualTo(1);
 
     GitPollingTaskParameters taskParameters =
         (GitPollingTaskParameters) kryoSerializer.asObject(params.getGitpollingWebhookParams().toByteArray());

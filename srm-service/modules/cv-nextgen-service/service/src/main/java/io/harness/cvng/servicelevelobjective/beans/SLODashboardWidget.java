@@ -104,7 +104,7 @@ public class SLODashboardWidget {
           .errorBudgetBurndown(errorBudgetBurndown)
           .errorBudgetRemaining(errorBudgetRemaining)
           .sloPerformanceTrend(sloPerformanceTrend)
-          .isRecalculatingSLI(false)
+          .isRecalculatingSLI(isRecalculatingSLI)
           .isCalculatingSLI(isCalculatingSLI)
           .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
           .totalErrorBudgetFromGraph(totalErrorBudgetFromGraph);

@@ -46,7 +46,8 @@ public class ChangeIntelPodHandler extends BaseChangeHandler<V1Pod> {
   @Override
   void processAndSendAddEvent(V1Pod newResource) {
     String yaml = k8sHandlerUtils.yamlDump(newResource);
-    if (newResource.getMetadata().getCreationTimestamp().isAfter(OffsetDateTime.now().minus(2, ChronoUnit.HOURS))) {
+    if (newResource.getMetadata() != null
+        && newResource.getMetadata().getCreationTimestamp().isAfter(OffsetDateTime.now().minus(2, ChronoUnit.HOURS))) {
       // we want to process and send events only when containers are ready and pod is ready to serve traffic
       // Pod statuses can be found here:
       // https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1PodStatus.md

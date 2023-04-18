@@ -39,7 +39,6 @@ import lombok.extern.slf4j.Slf4j;
  * sends them to Outbox for audits.
  */
 
-//@AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver, NodeStatusUpdateObserver {

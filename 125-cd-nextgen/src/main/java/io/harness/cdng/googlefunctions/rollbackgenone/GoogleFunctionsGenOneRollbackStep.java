@@ -128,6 +128,7 @@ public class GoogleFunctionsGenOneRollbackStep extends CdTaskExecutable<GoogleFu
                 googleFunctionGenOnePrepareRollbackOutcome.getCreateFunctionRequestAsString())
             .isFirstDeployment(googleFunctionGenOnePrepareRollbackOutcome.isFirstDeployment())
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
+            .googleFunctionDeployManifestContent(googleFunctionGenOnePrepareRollbackOutcome.getManifestContent())
             .build();
 
     return googleFunctionsHelper

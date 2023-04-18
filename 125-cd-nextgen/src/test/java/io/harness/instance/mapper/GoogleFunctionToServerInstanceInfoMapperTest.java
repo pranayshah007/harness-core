@@ -9,6 +9,7 @@ package io.harness.instance.mapper;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
+import static io.harness.rule.OwnerRule.PRAGYESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -20,6 +21,7 @@ import io.harness.delegate.beans.instancesync.mapper.GoogleFunctionToServerInsta
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunction;
 import io.harness.rule.Owner;
 
+import com.google.api.client.util.Lists;
 import java.util.Arrays;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -55,6 +57,31 @@ public class GoogleFunctionToServerInstanceInfoMapperTest extends CategoryTest {
         (GoogleFunctionServerInstanceInfo) GoogleFunctionToServerInstanceInfoMapper.toServerInstanceInfo(
             googleFunction, cloudRunService.getRevision(), PROJECT, REGION, INFRA_KEY);
     assertThat(serverInstanceInfo.getRevision()).isEqualTo(REVISION);
+    assertThat(serverInstanceInfo.getFunctionName()).isEqualTo(googleFunction.getFunctionName());
+    assertThat(serverInstanceInfo.getRunTime()).isEqualTo(googleFunction.getRuntime());
+    assertThat(serverInstanceInfo.getSource()).isEqualTo(SOURCE);
+    assertThat(serverInstanceInfo.getUpdatedTime()).isEqualTo(TIME);
+    assertThat(serverInstanceInfo.getProject()).isEqualTo(PROJECT);
+    assertThat(serverInstanceInfo.getRegion()).isEqualTo(REGION);
+    assertThat(serverInstanceInfo.getInfraStructureKey()).isEqualTo(INFRA_KEY);
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void toGenOneServerInstanceInfoListTest() {
+    GoogleFunction googleFunction = GoogleFunction.builder()
+                                        .functionName(FUNCTION)
+                                        .runtime(RUN_TIME)
+                                        .source(SOURCE)
+                                        .updatedTime(TIME)
+                                        .cloudRunService(GoogleFunction.GoogleCloudRunService.builder().build())
+                                        .activeCloudRunRevisions(Lists.newArrayList())
+                                        .build();
+    GoogleFunctionServerInstanceInfo serverInstanceInfo =
+        (GoogleFunctionServerInstanceInfo) GoogleFunctionToServerInstanceInfoMapper.toGenOneServerInstanceInfo(
+            googleFunction, PROJECT, REGION, INFRA_KEY);
+    assertThat(serverInstanceInfo.getRevision()).isEqualTo("LATEST");
     assertThat(serverInstanceInfo.getFunctionName()).isEqualTo(googleFunction.getFunctionName());
     assertThat(serverInstanceInfo.getRunTime()).isEqualTo(googleFunction.getRuntime());
     assertThat(serverInstanceInfo.getSource()).isEqualTo(SOURCE);

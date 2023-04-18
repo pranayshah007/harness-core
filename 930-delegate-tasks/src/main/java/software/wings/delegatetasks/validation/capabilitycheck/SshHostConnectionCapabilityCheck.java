@@ -34,7 +34,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.SshSessionFactory;
-import io.harness.shell.ssh.SshFactory;
+import io.harness.shell.ssh.SshClientManager;
 
 import com.google.inject.Inject;
 import com.jcraft.jsch.Session;
@@ -87,7 +87,7 @@ public class SshHostConnectionCapabilityCheck implements CapabilityCheck {
 
   void connect(SshSessionConfig config) throws Exception {
     if (config.isUseSshClient()) {
-      SshFactory.getSshClient(config).testConnection();
+      SshClientManager.test(config);
     } else {
       Session session = SshSessionFactory.getSSHSession(config);
       session.disconnect();

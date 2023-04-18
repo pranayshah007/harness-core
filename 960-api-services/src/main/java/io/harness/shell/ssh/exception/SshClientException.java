@@ -17,7 +17,7 @@ public class SshClientException extends WingsException {
     return generateMessage(client, "");
   }
   private static String generateMessage(String client, String message) {
-    return client + (isEmpty(message) ? "" : " - " + message);
+    return "[Client: " + client + "]" + (isEmpty(message) ? "" : " - " + message);
   }
   public SshClientException(String client, String message, Throwable cause) {
     super(generateMessage(client, message), cause);

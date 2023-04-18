@@ -7,8 +7,8 @@
 
 package io.harness.service.impl.stackdriver;
 
-import java.time.Instant;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 public class QueryConstructor {
@@ -16,12 +16,13 @@ public class QueryConstructor {
       + "resource.type=(\"k8s_container\" OR \"global\")\n"
       + "labels.app=\"delegate\"\n"
       + "timestamp >= \"%s\" AND timestamp <= \"%s\"\n"
-      + "jsonPayload.harness.taskId=\"%s\"\n"
+      + "jsonPayload.harness.taskId=(%s)\n"
       + "jsonPayload.harness.accountId=\"%s\"";
 
   public static String getTasksLogQuery(String accountId, List<String> taskIds, long start, long end) {
-    Instant endTime = Instant.ofEpochSecond(end);
+    final List<String> taskIdsWithQuotes =
+        taskIds.stream().map(id -> String.format("\"%s\"", id)).collect(Collectors.toList());
     return String.format(TASKS_LOG_QUERY, EpochToUTCConverter.fromEpoch(start), EpochToUTCConverter.fromEpoch(end),
-        StringUtils.join(taskIds, " OR "), accountId);
+        StringUtils.join(taskIdsWithQuotes, " OR "), accountId);
   }
 }
