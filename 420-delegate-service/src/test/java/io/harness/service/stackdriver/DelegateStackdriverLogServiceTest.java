@@ -24,6 +24,7 @@ import io.harness.ng.beans.PageRequest;
 import io.harness.rule.Owner;
 import io.harness.service.impl.stackdriver.DelegateStackdriverLogServiceImpl;
 import io.harness.service.impl.stackdriver.EpochToUTCConverter;
+import io.harness.service.impl.stackdriver.QueryConstructor;
 import io.harness.service.intfc.DelegateStackdriverLogService;
 
 import software.wings.service.impl.infra.InfraDownloadService;
@@ -47,6 +48,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class DelegateStackdriverLogServiceTest {
   private final long timestamp = 1677025536729L;
+  private final String accountId = "xxxxxL";
   private final Map<String, String> labels = Map.of("app", "delegate", "accountId", "04Iq9MDcT9WOBwwS6C4oKw",
       "delegateId", "O8iFplPwS8iX8SfJbpg9BA", "managerHost", "app.harness.io/gratis", "version", "22.12.77617-000",
       "source", "general-us-5b86d45c5f-zc6hh", "processId", "1");
@@ -89,6 +91,23 @@ public class DelegateStackdriverLogServiceTest {
       assertThat(log2.getSeverity()).isEqualTo(Severity.ERROR.name());
       assertThat(log2.getMessage()).isEqualTo(stringLogMessage);
     }
+  }
+
+  @Test
+  @Owner(developers = XINGCHI_JIN)
+  @Category(UnitTests.class)
+  public void testConstructLogQuery() {
+    final List<String> taskIds = List.of("YqEtGip5RI2d5jlCF1yeXQ", "-FaIJFMiDS62zWY7B3iHr4");
+    final long start = 1680804036L;
+    final long end = 1680804456L;
+    final String result = QueryConstructor.getTasksLogQuery(accountId, taskIds, start, end);
+    final String expected = "severity>=DEFAULT\n"
+        + "resource.type=(\"k8s_container\" OR \"global\")\n"
+        + "labels.app=\"delegate\"\n"
+        + "timestamp >= \"2023-04-06T18:00:36Z\" AND timestamp <= \"2023-04-06T18:07:36Z\"\n"
+        + "jsonPayload.harness.taskId=(\"YqEtGip5RI2d5jlCF1yeXQ\" OR \"-FaIJFMiDS62zWY7B3iHr4\")\n"
+        + "jsonPayload.harness.accountId=\"xxxxxL\"";
+    assertThat(expected).isEqualTo(result);
   }
 
   private List<LogEntry> getMockedLogEntries() {
