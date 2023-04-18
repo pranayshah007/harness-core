@@ -39,8 +39,8 @@ then
     echo ${PURPOSE} > purpose.txt
 fi
 
-cp ../../pipeline-service/config/jfr/default.jfc .
-cp ../../pipeline-service/config/jfr/profile.jfc .
+cp ../../debezium-service/config/jfr/default.jfc .
+cp ../../debezium-service/config/jfr/profile.jfc .
 
 java -jar debezium-service-capsule.jar scan-classpath-metadata
 echo $PWD
