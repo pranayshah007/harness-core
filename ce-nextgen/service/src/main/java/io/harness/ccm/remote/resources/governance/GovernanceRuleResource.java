@@ -30,6 +30,7 @@ import io.harness.ccm.audittrails.events.RuleUpdateEvent;
 import io.harness.ccm.governance.faktory.FaktoryProducer;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
+import io.harness.ccm.views.dao.RuleEnforcementDAO;
 import io.harness.ccm.views.dto.CloneRuleDTO;
 import io.harness.ccm.views.dto.CreateRuleDTO;
 import io.harness.ccm.views.dto.GovernanceEnqueueResponseDTO;
@@ -150,6 +151,7 @@ public class GovernanceRuleResource {
   private final CENextGenConfiguration configuration;
   @Inject private YamlSchemaProvider yamlSchemaProvider;
   @Inject private YamlSchemaValidator yamlSchemaValidator;
+  @Inject private RuleEnforcementDAO ruleEnforcementDAO;
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   public static final String MALFORMED_ERROR = "Request payload is malformed";
   private static final RetryPolicy<Object> transactionRetryRule = DEFAULT_RETRY_POLICY;
@@ -209,6 +211,13 @@ public class GovernanceRuleResource {
             "For rule enforcement setting {}: not found in db. Skipping enqueuing in faktory", ruleEnforcementUuid);
         return ResponseDTO.newResponse(GovernanceEnqueueResponseDTO.builder().ruleExecutionId(null).build());
       }
+      RuleEnforcement ruleEnforcementUpdate = RuleEnforcement.builder()
+                                                  .accountId(ruleEnforcement.getAccountId())
+                                                  .uuid(ruleEnforcementUuid)
+                                                  .runCount(ruleEnforcement.getRunCount() + 1)
+                                                  .build();
+      log.info("ruleEnforcementUpdate count{}", ruleEnforcementUpdate.getRunCount());
+      ruleEnforcementDAO.updateCount(ruleEnforcementUpdate);
       RuleCloudProviderType ruleCloudProviderType = ruleEnforcement.getCloudProvider();
       accountId = ruleEnforcement.getAccountId();
       if (ruleEnforcement.getCloudProvider() != RuleCloudProviderType.AWS) {
@@ -693,5 +702,34 @@ public class GovernanceRuleResource {
       @QueryParam(NGCommonEntityConstants.ENTITY_TYPE) EntityType entityType, Scope scope) {
     return ResponseDTO.newResponse(
         yamlSchemaProvider.getYamlSchema(entityType, orgIdentifier, projectIdentifier, scope));
+  }
+
+  @NextGenManagerAuth
+  @POST
+  @Path("ruleValidate")
+  @Timed
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @ExceptionMetered
+  @ApiOperation(value = "Validate a rule", nickname = "ValidateRule")
+  @LogAccountIdentifier
+  @Operation(operationId = "ValidateRule", description = "Validate a Rule .", summary = "Validate a rule",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "newly created rule", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public void
+  validateRule(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                   NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @RequestBody(
+          required = true, description = "Request body containing Rule uuid") @Valid CreateRuleDTO generateRule) {
+    if (generateRule == null) {
+      throw new InvalidRequestException(MALFORMED_ERROR);
+    }
+    Rule validateRule = generateRule.getRule();
+    validateRule.toDTO();
+    governanceRuleService.validateAWSSchema(validateRule);
+    governanceRuleService.custodianValidate(validateRule);
   }
 }

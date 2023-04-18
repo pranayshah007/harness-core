@@ -40,6 +40,17 @@ public class RuleEnforcementDAO {
     return hPersistence.delete(query);
   }
 
+  public void updateCount(RuleEnforcement rule) {
+    Query<RuleEnforcement> query = hPersistence.createQuery(RuleEnforcement.class)
+                                       .field(RuleEnforcementId.accountId)
+                                       .equal(rule.getAccountId())
+                                       .field(RuleEnforcementId.uuid)
+                                       .equal(rule.getUuid());
+    UpdateOperations<RuleEnforcement> updateOperations = hPersistence.createUpdateOperations(RuleEnforcement.class);
+    updateOperations.set(RuleEnforcementId.runCount, rule.getRunCount());
+    hPersistence.update(query, updateOperations);
+  }
+
   public RuleEnforcement update(RuleEnforcement rule) {
     Query<RuleEnforcement> query = hPersistence.createQuery(RuleEnforcement.class)
                                        .field(RuleEnforcementId.accountId)
