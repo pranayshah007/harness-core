@@ -365,7 +365,7 @@ public class GkeClusterHelper {
     return envVariableList;
   }
 
-  private Map<String, String> getGkeEnv(String workingDirectory) {
+  private static Map<String, String> getGkeEnv(String workingDirectory) {
     Map<String, String> gkeEnvForGcloudCli = new HashMap<>();
     gkeEnvForGcloudCli.put(K8sConstants.CLOUDSDK_CONFIG, workingDirectory);
     return gkeEnvForGcloudCli;
