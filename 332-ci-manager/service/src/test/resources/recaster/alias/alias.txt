@@ -262,6 +262,7 @@ io.harness.beans.steps.stepinfo.GCRStepInfo
 io.harness.beans.yaml.extended.infrastrucutre.UseFromStageInfraYaml
 io.harness.ci.beans.entities.CITelemetrySentStatus
 io.harness.beans.steps.stepinfo.UploadToGCSStepInfo
+io.harness.beans.sweepingoutputs.TaskSelectorSweepingOutput
 io.harness.beans.steps.stepinfo.GitCloneStepInfo
 io.harness.beans.build.BuildUpdateType
 io.harness.beans.execution.PublishedFileArtifact
