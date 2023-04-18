@@ -7,6 +7,7 @@
 
 package io.harness.cvng.servicelevelobjective.beans.slospec;
 
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 
@@ -28,9 +29,17 @@ import lombok.experimental.SuperBuilder;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CompositeServiceLevelObjectiveSpec extends ServiceLevelObjectiveSpec {
   @Size(min = 2, max = 20) @Valid @NotNull List<ServiceLevelObjectiveDetailsDTO> serviceLevelObjectivesDetails;
+  SLIEvaluationType evaluationType;
 
   @Override
   public ServiceLevelObjectiveType getType() {
     return ServiceLevelObjectiveType.COMPOSITE;
+  }
+
+  public SLIEvaluationType getEvaluationType() {
+    if (this.evaluationType == null) {
+      return SLIEvaluationType.WINDOW;
+    }
+    return evaluationType;
   }
 }

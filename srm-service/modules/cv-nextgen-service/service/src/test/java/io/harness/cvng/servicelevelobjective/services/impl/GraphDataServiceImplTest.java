@@ -94,6 +94,8 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   @Before
   public void setup() {
     builderFactory = BuilderFactory.getDefault();
+    builderFactory.getContext().setOrgIdentifier("orgIdentifier");
+    builderFactory.getContext().setProjectIdentifier("project");
     MonitoredServiceDTO monitoredServiceDTO1 =
         builderFactory.monitoredServiceDTOBuilder().sources(MonitoredServiceDTO.Sources.builder().build()).build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO1);
