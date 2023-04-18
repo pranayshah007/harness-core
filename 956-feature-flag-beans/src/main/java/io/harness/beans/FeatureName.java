@@ -724,7 +724,9 @@ public enum FeatureName {
       "Use a prefix for internal harness release history for native helm deployment. Feature Flag will be removed as part of the epic: https://harness.atlassian.net/browse/CDS-46915",
       HarnessTeam.CDP),
   PL_USER_ACCOUNT_LEVEL_DATA_FLOW(
-      "Enables the new flow for all User CRUD where User's Account level Data is also considered.", HarnessTeam.PL);
+      "Enables the new flow for all User CRUD where User's Account level Data is also considered.", HarnessTeam.PL),
+  PL_USER_ACCOUNT_LEVEL_DATA_MIGRATION(
+      "Enables Migration to create user account level data map for this account", HarnessTeam.PL);
 
   @Deprecated
   FeatureName() {
