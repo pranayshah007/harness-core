@@ -88,9 +88,9 @@ public class AssessmentEvaluationServiceImpl implements AssessmentEvaluationServ
     Optional<AssessmentResponse> previouslySubmittedResponse =
         assessmentResponseRepository.findOneByAssessmentIdAndUserIdAndVersion(
             assessment.getAssessmentId(), user.getUserId(), assessment.getVersion());
-    String id = null;
+    String perviousSubmissionAssessmentId = null;
     if (previouslySubmittedResponse.isPresent()) {
-      id = previouslySubmittedResponse.get().getId();
+      perviousSubmissionAssessmentId = previouslySubmittedResponse.get().getId();
       if (previouslySubmittedResponse.get().getStatus() == AssessmentResponseStatus.COMPLETED) {
         throw new RuntimeException("Assessment is already completed for this version");
       }
@@ -108,7 +108,7 @@ public class AssessmentEvaluationServiceImpl implements AssessmentEvaluationServ
     // This fixes the correct ordering also.
     List<UserResponse> userResponseEntity = getUserResponses(assessment, userResponseQuestionMap, userScores);
     AssessmentResponse assessmentResponse = AssessmentResponse.builder()
-                                                .id(id)
+                                                .id(perviousSubmissionAssessmentId)
                                                 .assessmentId(assessment.getAssessmentId())
                                                 .version(assessment.getVersion())
                                                 .userId(user.getUserId())

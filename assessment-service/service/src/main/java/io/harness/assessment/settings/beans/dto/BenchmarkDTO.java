@@ -13,11 +13,14 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
 @Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class BenchmarkDTO {
-  @NotNull String benchmarkId;
+  @EqualsAndHashCode.Include @NotNull String benchmarkId;
   @NotNull String benchmarkName;
+  @NotNull Boolean isDefault;
   @Valid @Size(min = 1, max = 200) List<ScoreDTO> scores;
 }

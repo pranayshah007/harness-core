@@ -24,6 +24,8 @@ public class ScoreOverviewDTO {
   Long numberOfResponses;
   Integer percentageDiffOrg;
   Integer percentageDiffBenchmark;
+  String benchmarkId;
+  String benchmarkName;
   List<UserResponsesResponse> best;
   List<UserResponsesResponse> worst;
 }
