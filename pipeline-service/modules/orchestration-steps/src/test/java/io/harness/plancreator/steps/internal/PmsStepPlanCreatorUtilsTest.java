@@ -11,8 +11,10 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.OrchestrationStepsTestBase;
+import io.harness.advisers.nextstep.NextStageAdviserParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -59,7 +61,7 @@ public class PmsStepPlanCreatorUtilsTest extends OrchestrationStepsTestBase {
 
     YamlField yamlField = YamlUtils.readTree(yaml);
     AdviserObtainment adviserObtainment =
-        PmsStepPlanCreatorUtils.getNextStepAdviserObtainment(kryoSerializer, yamlField, false);
+        PmsStepPlanCreatorUtils.getNextStepAdviserObtainment(kryoSerializer, yamlField);
     assertNull(adviserObtainment);
   }
 
@@ -91,9 +93,44 @@ public class PmsStepPlanCreatorUtilsTest extends OrchestrationStepsTestBase {
                           .asArray()
                           .get(1)
                           .getField("stage");
-    AdviserObtainment adviserObtainment =
-        PmsStepPlanCreatorUtils.getNextStepAdviserObtainment(kryoSerializer, stage, true);
+    AdviserObtainment adviserObtainment = PmsStepPlanCreatorUtils.getNextStageAdviser(kryoSerializer, stage);
     assertNull(adviserObtainment);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMAN)
+  @Category(UnitTests.class)
+  public void testGetNextStageAdviserObtainment() throws IOException {
+    String yaml = "stages:\n"
+        + "- stage:\n"
+        + "    identifier: s1\n"
+        + "    type: Pipeline\n"
+        + "    __uuid: uuid1\n"
+        + "- stage:\n"
+        + "    identifier: s2\n"
+        + "    type: Pipeline\n"
+        + "    __uuid: uuid2\n"
+        + "- stage:\n"
+        + "    identifier: prb-uuid3\n"
+        + "    type: PipelineRollback\n"
+        + "    __uuid: uuid3\n";
+    YamlField yamlField = YamlUtils.readTree(yaml);
+
+    YamlField stage1 = yamlField.getNode().getField("stages").getNode().asArray().get(0).getField("stage");
+    AdviserObtainment adviserObtainment = PmsStepPlanCreatorUtils.getNextStageAdviser(kryoSerializer, stage1);
+    assertThat(adviserObtainment.getType().getType()).isEqualTo("NEXT_STAGE");
+    NextStageAdviserParameters adviserParameters =
+        (NextStageAdviserParameters) kryoSerializer.asObject(adviserObtainment.getParameters().toByteArray());
+    assertThat(adviserParameters.getNextNodeId()).isEqualTo("uuid2");
+    assertThat(adviserParameters.getPipelineRollbackStageId()).isEqualTo("uuid3");
+
+    YamlField stage2 = yamlField.getNode().getField("stages").getNode().asArray().get(1).getField("stage");
+    adviserObtainment = PmsStepPlanCreatorUtils.getNextStageAdviser(kryoSerializer, stage2);
+    assertThat(adviserObtainment.getType().getType()).isEqualTo("NEXT_STAGE");
+    adviserParameters =
+        (NextStageAdviserParameters) kryoSerializer.asObject(adviserObtainment.getParameters().toByteArray());
+    assertThat(adviserParameters.getNextNodeId()).isNull();
+    assertThat(adviserParameters.getPipelineRollbackStageId()).isEqualTo("uuid3");
   }
 
   @Test
