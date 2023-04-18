@@ -186,7 +186,8 @@ public class DelegateSetupResourceTest extends CategoryTest {
 
     verify(delegateSetupService, atLeastOnce())
         .listDelegateGroupDetailsV2(ACCOUNT_ID, "orgId", "projectId", null, null,
-            DelegateFilterPropertiesDTO.builder().build(), io.harness.ng.beans.PageRequest.builder().build());
+            DelegateFilterPropertiesDTO.builder().build(),
+            io.harness.ng.beans.PageRequest.builder().pageSize(50).sortOrders(Collections.emptyList()).build());
     assertThat(restResponse.getResource().getDelegateGroupDetails()).isNotEmpty();
     assertThat(restResponse.getResource().getDelegateGroupDetails().get(0).getGroupName()).isEqualTo("group name");
   }

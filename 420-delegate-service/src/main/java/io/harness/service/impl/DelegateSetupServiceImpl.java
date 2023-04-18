@@ -572,6 +572,8 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
             delegateGroupDetails.sort(Comparator.comparing(DelegateGroupDetails::getGroupVersion));
           }
           break;
+        default:
+          break;
       }
     }
     return delegateGroupDetails;
