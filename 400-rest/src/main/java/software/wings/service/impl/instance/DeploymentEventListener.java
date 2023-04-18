@@ -51,7 +51,6 @@ public class DeploymentEventListener extends QueueListener<DeploymentEvent> {
             deploymentEvent.getId(), accountId);
         try {
           instanceSyncServiceV2.handleInstanceSync(deploymentEvent);
-          return;
         } catch (Exception e) {
           log.error("[INSTANCE_SYNC_V2_CG] Exception for handling deployment event. Falling back to old flow.", e);
         }
