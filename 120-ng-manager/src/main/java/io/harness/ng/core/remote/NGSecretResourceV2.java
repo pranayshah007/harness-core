@@ -553,7 +553,6 @@ public class NGSecretResourceV2 {
         ApiResponse(responseCode = "default", description = "Returns created Secret file")
       })
   @Consumes(MediaType.MULTIPART_FORM_DATA)
-  @InternalApi
   public ResponseDTO<SecretResponseWrapper>
   createSecretFile(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                        NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
