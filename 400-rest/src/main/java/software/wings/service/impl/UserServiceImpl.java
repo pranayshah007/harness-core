@@ -294,6 +294,7 @@ import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.Duration;
 import javax.validation.constraints.NotNull;
 import javax.validation.executable.ValidateOnExecution;
+import javax.ws.rs.core.UriInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -4058,14 +4059,17 @@ public class UserServiceImpl implements UserService {
   }
 
   private void applySortFilter(PageRequest pageRequest, Query<User> query) {
-    List<String> fieldToSort = pageRequest.getUriInfo().getQueryParameters(true).get("sort[0][field]");
-    if (fieldToSort == null) {
-      return;
-    }
-    if (pageRequest.getUriInfo().getQueryParameters(true).get("sort[0][direction]").get(0).equals("ASC")) {
-      query.order(Sort.ascending(fieldToSort.get(0)));
-    } else {
-      query.order(Sort.descending(fieldToSort.get(0)));
+    UriInfo uriInfo = pageRequest.getUriInfo();
+    if (null != uriInfo && isNotEmpty(uriInfo.getQueryParameters(true))) {
+      List<String> fieldToSort = uriInfo.getQueryParameters(true).get("sort[0][field]");
+      if (fieldToSort == null) {
+        return;
+      }
+      if (uriInfo.getQueryParameters(true).get("sort[0][direction]").get(0).equals("ASC")) {
+        query.order(Sort.ascending(fieldToSort.get(0)));
+      } else {
+        query.order(Sort.descending(fieldToSort.get(0)));
+      }
     }
   }
 
