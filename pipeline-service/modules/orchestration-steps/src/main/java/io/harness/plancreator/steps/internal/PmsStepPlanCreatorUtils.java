@@ -7,13 +7,14 @@
 
 package io.harness.plancreator.steps.internal;
 
+import static io.harness.plancreator.strategy.StrategyUtils.getPipelineRollbackStageId;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 import io.harness.advisers.manualIntervention.ManualInterventionAdviserRollbackParameters;
 import io.harness.advisers.manualIntervention.ManualInterventionAdviserWithRollback;
+import io.harness.advisers.nextstep.NextStageAdviserParameters;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackAdviser;
 import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters;
@@ -91,8 +92,9 @@ public class PmsStepPlanCreatorUtils {
       }
     } else {
       // Always add nextStep adviser at last, as its priority is less than, Do not change the order.
-      AdviserObtainment nextStepAdviserObtainment =
-          getNextStepAdviserObtainment(kryoSerializer, currentField, isPipelineStage);
+      AdviserObtainment nextStepAdviserObtainment = isPipelineStage
+          ? getNextStageAdviser(kryoSerializer, currentField)
+          : getNextStepAdviserObtainment(kryoSerializer, currentField);
       if (nextStepAdviserObtainment != null) {
         adviserObtainmentList.add(nextStepAdviserObtainment);
       }
@@ -101,25 +103,38 @@ public class PmsStepPlanCreatorUtils {
     return adviserObtainmentList;
   }
 
+  AdviserObtainment getNextStageAdviser(KryoSerializer kryoSerializer, YamlField stageField) {
+    if (stageField == null || stageField.getNode() == null) {
+      return null;
+    }
+    YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingFieldAtStageLevel(stageField);
+    if (siblingField == null || siblingField.getNode().getUuid() == null) {
+      return null;
+    }
+    String pipelineRollbackStageId = getPipelineRollbackStageId(stageField);
+    String siblingFieldUuid = siblingField.getNode().getUuid();
+    // pipeline rollback stage is added as the last stage in the processed yaml. This means that for the last stage in
+    // the pipeline yaml, the sibling would be the pipeline rollback stage. We don't want the PRB stage to run as the
+    // next stage if the last stage in the pipeline yaml is successful. Hence, its sibling will be kept as null
+    return AdviserObtainment.newBuilder()
+        .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
+        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+            NextStageAdviserParameters.builder()
+                .nextNodeId(siblingFieldUuid.equals(pipelineRollbackStageId) ? null : siblingFieldUuid)
+                .pipelineRollbackStageId(pipelineRollbackStageId)
+                .build())))
+        .build();
+  }
+
   @VisibleForTesting
-  AdviserObtainment getNextStepAdviserObtainment(
-      KryoSerializer kryoSerializer, YamlField currentField, boolean isPipelineStage) {
+  AdviserObtainment getNextStepAdviserObtainment(KryoSerializer kryoSerializer, YamlField currentField) {
     if (currentField != null && currentField.getNode() != null) {
       if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
           || StrategyUtils.isWrappedUnderStrategy(currentField)) {
         return null;
       }
 
-      YamlField siblingField;
-      // IF Pipeline Stage is in Parallel Stage, adviser obtainment will be null for individual stages
-      if (isPipelineStage) {
-        if (currentField.checkIfParentIsParallel(STAGES)) {
-          return null;
-        }
-        siblingField = GenericPlanCreatorUtils.obtainNextSiblingFieldAtStageLevel(currentField);
-      } else {
-        siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
-      }
+      YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
         return AdviserObtainment.newBuilder()
             .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())

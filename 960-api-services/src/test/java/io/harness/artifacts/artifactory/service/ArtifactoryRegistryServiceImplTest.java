@@ -9,6 +9,7 @@ package io.harness.artifacts.artifactory.service;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.VED;
 import static io.harness.rule.OwnerRule.vivekveman;
@@ -26,6 +27,7 @@ import io.harness.artifactory.ArtifactoryClientImpl;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.service.ArtifactoryRegistryServiceImpl;
 import io.harness.artifacts.beans.BuildDetailsInternal;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ArtifactoryServerException;
@@ -59,6 +61,12 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
   private static String ARTIFACTORY_USERNAME = "username";
   private static String ARTIFACTORY_PASSWORD = "password";
   private static int MAX_NO_OF_TAGS_PER_IMAGE = 10000;
+  private static final String SHA = "sha256:12345";
+  private static final String SHA_V2 = "sha256:334534";
+  private static final Map<String, String> LABEL = Map.of("K1", "V1");
+  private static final ArtifactMetaInfo ARTIFACT_META_INFO =
+      ArtifactMetaInfo.builder().sha(SHA).shaV2(SHA_V2).labels(LABEL).build();
+  private static final ArtifactMetaInfo EMPTY_ARTIFACT_META_INFO = ArtifactMetaInfo.builder().build();
 
   private static Map<String, List<BuildDetailsInternal>> buildDetailsData;
 
@@ -109,6 +117,13 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
     buildDetailsData.put("bdi5", bdiList);
   }
 
+  private void assertArtifactMetaInfo(BuildDetailsInternal response) {
+    ArtifactMetaInfo artifactMetaInfo = response.getArtifactMetaInfo();
+    assertThat(artifactMetaInfo.getSha()).isEqualTo(SHA);
+    assertThat(artifactMetaInfo.getShaV2()).isEqualTo(SHA_V2);
+    assertThat(artifactMetaInfo.getLabels()).isEqualTo(LABEL);
+  }
+
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
@@ -151,12 +166,17 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
         .when(artifactoryClient)
         .getArtifactsDetails(artifactoryInternalConfig, "test1", "superApp", RepositoryFormat.docker.name());
 
+    doReturn(ARTIFACT_META_INFO)
+        .when(artifactoryClient)
+        .getArtifactMetaInfo(artifactoryInternalConfig, "superApp", "test1", "3.0");
+
     BuildDetailsInternal response = artifactoryRegistryService.getLastSuccessfulBuildFromRegex(
         artifactoryInternalConfig, "test1", "superApp", RepositoryFormat.docker.name(), "[\\d]{1}.0");
     assertThat(response).isNotNull();
     assertThat(response.getMetadata().get(ArtifactMetadataKeys.TAG)).isEqualTo("3.0");
     assertThat(response.getMetadata().get(ArtifactMetadataKeys.IMAGE))
         .isEqualTo("test1.artifactory.harness.io/superApp:3.0");
+    assertArtifactMetaInfo(response);
   }
 
   @Test
@@ -173,6 +193,10 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
     doReturn(buildDetailsData.get("bdi2"))
         .when(artifactoryClient)
         .getArtifactsDetails(artifactoryInternalConfig, "test2", "super/duper/app", RepositoryFormat.docker.name());
+
+    doReturn(EMPTY_ARTIFACT_META_INFO)
+        .when(artifactoryClient)
+        .getArtifactMetaInfo(artifactoryInternalConfig, "super/duper/app", "test2", "2.5.3");
 
     BuildDetailsInternal response =
         artifactoryRegistryService.getLastSuccessfulBuildFromRegex(artifactoryInternalConfig, "test2",
@@ -197,6 +221,10 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
     doReturn(buildDetailsData.get("bdi3"))
         .when(artifactoryClient)
         .getArtifactsDetails(artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name());
+
+    doReturn(EMPTY_ARTIFACT_META_INFO)
+        .when(artifactoryClient)
+        .getArtifactMetaInfo(artifactoryInternalConfig, "extra/megaapp", "test2", "latest");
 
     BuildDetailsInternal response = artifactoryRegistryService.getLastSuccessfulBuildFromRegex(
         artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name(), "*");
@@ -242,12 +270,44 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
         .when(artifactoryClient)
         .getArtifactsDetails(artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name());
 
+    doReturn(EMPTY_ARTIFACT_META_INFO)
+        .when(artifactoryClient)
+        .getArtifactMetaInfo(artifactoryInternalConfig, "extra/megaapp", "test2", "b23");
+
     BuildDetailsInternal response = artifactoryRegistryService.verifyBuildNumber(
         artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name(), "b23");
     assertThat(response).isNotNull();
     assertThat(response.getMetadata().get(ArtifactMetadataKeys.TAG)).isEqualTo("b23");
     assertThat(response.getMetadata().get(ArtifactMetadataKeys.IMAGE))
         .isEqualTo("test2.artifactory.harness.io/extra/megaapp:b23");
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testVerifyBuildNumber_WithArtifactMetaInfo() throws IOException {
+    ArtifactoryConfigRequest artifactoryInternalConfig = ArtifactoryConfigRequest.builder()
+                                                             .artifactoryUrl(ARTIFACTORY_URL)
+                                                             .username(ARTIFACTORY_USERNAME)
+                                                             .password(ARTIFACTORY_PASSWORD.toCharArray())
+                                                             .artifactRepositoryUrl("test2.artifactory.harness.io")
+                                                             .build();
+
+    doReturn(buildDetailsData.get("bdi3"))
+        .when(artifactoryClient)
+        .getArtifactsDetails(artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name());
+
+    doReturn(ARTIFACT_META_INFO)
+        .when(artifactoryClient)
+        .getArtifactMetaInfo(artifactoryInternalConfig, "extra/megaapp", "test2", "b23");
+
+    BuildDetailsInternal response = artifactoryRegistryService.verifyBuildNumber(
+        artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name(), "b23");
+    assertThat(response).isNotNull();
+    assertThat(response.getMetadata().get(ArtifactMetadataKeys.TAG)).isEqualTo("b23");
+    assertThat(response.getMetadata().get(ArtifactMetadataKeys.IMAGE))
+        .isEqualTo("test2.artifactory.harness.io/extra/megaapp:b23");
+    assertArtifactMetaInfo(response);
   }
 
   @Test
@@ -386,6 +446,10 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
         .when(artifactoryClient)
         .getArtifactsDetails(artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name());
 
+    doReturn(EMPTY_ARTIFACT_META_INFO)
+        .when(artifactoryClient)
+        .getArtifactMetaInfo(artifactoryInternalConfig, "extra/megaapp", "test2", "b23");
+
     assertThatThrownBy(()
                            -> artifactoryRegistryService.verifyBuildNumber(artifactoryInternalConfig, "test2",
                                "extra/megaapp", RepositoryFormat.docker.name(), "b23"))
@@ -406,6 +470,10 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
     doReturn(buildDetailsData.get("bdi5"))
         .when(artifactoryClient)
         .getArtifactsDetails(artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name());
+
+    doReturn(EMPTY_ARTIFACT_META_INFO)
+        .when(artifactoryClient)
+        .getArtifactMetaInfo(artifactoryInternalConfig, "extra/megaapp", "test2", "b23");
 
     assertThatThrownBy(()
                            -> artifactoryRegistryService.verifyBuildNumber(artifactoryInternalConfig, "test2",

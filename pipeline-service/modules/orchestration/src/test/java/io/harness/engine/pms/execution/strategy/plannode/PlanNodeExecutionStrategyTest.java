@@ -284,6 +284,94 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
+  public void shouldTestStartExecutionWithWrongExpressionStepParams() {
+    String planExecutionId = generateUuid();
+    String nodeExecutionId = generateUuid();
+    String planId = generateUuid();
+    String planNodeId = generateUuid();
+    PmsStepParameters stepParameters = PmsStepParameters.parse(Map.of("name", "<+abc>"));
+
+    PlanNode planNode =
+        PlanNode.builder()
+            .name("Test Node")
+            .uuid(planNodeId)
+            .identifier("test")
+            .stepType(TEST_STEP_TYPE)
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                    .build())
+            .serviceName("CD")
+            .stepParameters(stepParameters)
+            .whenCondition("\"true\" == \"false\"")
+            .build();
+
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanExecutionId(planExecutionId)
+                            .setPlanId(planId)
+                            .putAllSetupAbstractions(prepareInputArgs())
+                            .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecutionId, planNode))
+                            .build();
+    NodeExecution nodeExecution =
+        NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).planNode(planNode).build();
+
+    when(planService.fetchNode(planId, planNodeId)).thenReturn(planNode);
+    when(nodeExecutionService.get(eq(nodeExecutionId))).thenReturn(nodeExecution);
+    when(nodeExecutionService.update(eq(nodeExecutionId), any())).thenReturn(nodeExecution);
+    doNothing().when(executionStrategy).processFacilitationResponse(any(), any());
+
+    executionStrategy.startExecution(ambiance);
+  }
+
+  @Test
+  @Owner(developers = PRASHANT)
+  @Category(UnitTests.class)
+  public void shouldTestStartExecutionWithWrongExpressionStepParamsAndNotSkip() {
+    String planExecutionId = generateUuid();
+    String nodeExecutionId = generateUuid();
+    String planId = generateUuid();
+    String planNodeId = generateUuid();
+    PmsStepParameters stepParameters = PmsStepParameters.parse(Map.of("name", "<+abc>"));
+
+    PlanNode planNode =
+        PlanNode.builder()
+            .name("Test Node")
+            .uuid(planNodeId)
+            .identifier("test")
+            .stepType(TEST_STEP_TYPE)
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                    .build())
+            .serviceName("CD")
+            .stepParameters(stepParameters)
+            .expressionMode(ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED)
+            .build();
+
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanExecutionId(planExecutionId)
+                            .setPlanId(planId)
+                            .putAllSetupAbstractions(prepareInputArgs())
+                            .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecutionId, planNode))
+                            .build();
+    NodeExecution nodeExecution =
+        NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).planNode(planNode).build();
+    doThrow(new InvalidRequestException("Exception eval failure"))
+        .when(pmsEngineExpressionService)
+        .resolve(ambiance, stepParameters, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
+
+    when(planService.fetchNode(planId, planNodeId)).thenReturn(planNode);
+    when(nodeExecutionService.get(eq(nodeExecutionId))).thenReturn(nodeExecution);
+    when(nodeExecutionService.update(eq(nodeExecutionId), any())).thenReturn(nodeExecution);
+    doNothing().when(executionStrategy).processFacilitationResponse(any(), any());
+    executionStrategy.startExecution(ambiance);
+
+    verify(executionStrategy).handleError(any(), any());
+  }
+
+  @Test
+  @Owner(developers = PRASHANT)
+  @Category(UnitTests.class)
   public void shouldTestResumeNodeExecutionWithStatusRunning() {
     String planExecutionId = generateUuid();
     String nodeExecutionId = generateUuid();

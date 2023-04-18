@@ -266,11 +266,12 @@ public class RetryHelperTest extends OrchestrationTestBase {
                                             .setCurrentIteration(1)
                                             .setTotalIterations(1)
                                             .build();
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(generateUuid())
-                            .setPlanId(planId)
-                            .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecutionId, planNode, strategyMetadata))
-                            .build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setPlanExecutionId(generateUuid())
+            .setPlanId(planId)
+            .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecutionId, planNode, strategyMetadata, false))
+            .build();
 
     NodeExecution nodeExecution =
         NodeExecution.builder()

@@ -13,6 +13,7 @@ import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.retry.ExecutionInfo;
@@ -124,6 +125,13 @@ public class RetryExecutionHelper {
           .isResumable(false)
           .errorMessage(
               "This execution is not the latest of all retried execution. You can only retry the latest execution.")
+          .build();
+    }
+
+    if (EmptyPredicate.isNotEmpty(pipelineExecutionSummaryEntity.getRollbackModeExecutionId())) {
+      return RetryInfo.builder()
+          .isResumable(false)
+          .errorMessage("This execution has undergone Pipeline Rollback, and hence cannot be retried.")
           .build();
     }
 

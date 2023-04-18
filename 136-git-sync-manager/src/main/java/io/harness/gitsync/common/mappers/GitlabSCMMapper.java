@@ -63,7 +63,7 @@ public class GitlabSCMMapper
     }
   }
 
-  GitlabApiAccessDTO toApiAccessDTO(GitlabApiAccessType apiAccessType, GitlabApiAccess gitlabApiAccess) {
+  public static GitlabApiAccessDTO toApiAccessDTO(GitlabApiAccessType apiAccessType, GitlabApiAccess gitlabApiAccess) {
     GitlabApiAccessSpecDTO apiAccessSpecDTO = null;
     switch (apiAccessType) {
       case OAUTH:

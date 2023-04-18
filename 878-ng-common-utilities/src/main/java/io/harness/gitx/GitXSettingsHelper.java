@@ -23,6 +23,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 
+/***
+ * This Class fetches settings for GitExperience.
+ */
 @Slf4j
 @OwnedBy(PIPELINE)
 @Singleton
@@ -54,11 +57,16 @@ public class GitXSettingsHelper {
 
   @VisibleForTesting
   boolean isGitExperienceEnforcedInSettings(String accountIdentifier, String orgIdentifier, String projIdentifier) {
-    String isGitExperienceEnforced =
-        NGRestUtils
-            .getResponse(ngSettingsClient.getSetting(
-                GitSyncConstants.ENFORCE_GIT_EXPERIENCE, accountIdentifier, orgIdentifier, projIdentifier))
-            .getValue();
-    return GitSyncConstants.TRUE_VALUE.equals(isGitExperienceEnforced);
-  }
+    String isGitExperienceEnforced;
+
+    // Exceptions are handled for release for backward compatibility for 1 release.
+    try {
+      isGitExperienceEnforced = NGRestUtils
+                                    .getResponse(ngSettingsClient.getSetting(GitSyncConstants.ENFORCE_GIT_EXPERIENCE,
+                                        accountIdentifier, orgIdentifier, projIdentifier))
+                                    .getValue();
+    } catch (Exception ex) {
+      log.warn(String.format("Could not fetch setting: %s", GitSyncConstants.ENFORCE_GIT_EXPERIENCE), ex);
+      return false;
+    }
 }

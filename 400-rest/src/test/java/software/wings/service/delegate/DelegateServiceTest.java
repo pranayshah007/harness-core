@@ -110,7 +110,6 @@ import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfileParams;
 import io.harness.delegate.beans.DelegateRegisterResponse;
-import io.harness.delegate.beans.DelegateScripts;
 import io.harness.delegate.beans.DelegateSelector;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateSize;
@@ -2230,39 +2229,6 @@ public class DelegateServiceTest extends WingsBaseTest {
       file = (TarArchiveEntry) tarArchiveInputStream.getNextEntry();
       assertThat(file).extracting(TarArchiveEntry::getName).isEqualTo(KUBERNETES_DELEGATE + "/README.txt");
     }
-  }
-
-  @Test
-  @Owner(developers = BRETT)
-  @Category(UnitTests.class)
-  public void shouldSignalForDelegateUpgradeWhenUpdateIsPresent() throws IOException {
-    when(accountService.get(ACCOUNT_ID))
-        .thenReturn(anAccount().withAccountKey("ACCOUNT_KEY").withUuid(ACCOUNT_ID).build());
-    when(delegateVersionService.getDelegateImageTag(ACCOUNT_ID, false)).thenReturn(DELEGATE_IMAGE_TAG);
-    when(delegateVersionService.getUpgraderImageTag(ACCOUNT_ID, false)).thenReturn(UPGRADER_IMAGE_TAG);
-    Delegate delegate = createDelegateBuilder().build();
-    delegate.setUuid(DELEGATE_ID);
-    persistence.save(delegate);
-    DelegateScripts delegateScripts =
-        delegateService.getDelegateScripts(ACCOUNT_ID, "0.0.0", "https://localhost:9090", "https://localhost:7070", "");
-    assertThat(delegateScripts.isDoUpgrade()).isTrue();
-  }
-
-  @Test
-  @Owner(developers = BRETT)
-  @Category(UnitTests.class)
-  public void shouldNotSignalForDelegateUpgradeWhenDelegateIsLatest() throws IOException {
-    when(delegateVersionService.getDelegateImageTag(ACCOUNT_ID, false)).thenReturn(DELEGATE_IMAGE_TAG);
-    when(delegateVersionService.getUpgraderImageTag(ACCOUNT_ID, false)).thenReturn(UPGRADER_IMAGE_TAG);
-    when(mainConfiguration.getDeployMode()).thenReturn(DeployMode.AWS);
-    when(accountService.get(ACCOUNT_ID))
-        .thenReturn(anAccount().withAccountKey("ACCOUNT_KEY").withUuid(ACCOUNT_ID).build());
-    Delegate delegate = createDelegateBuilder().build();
-    delegate.setUuid(DELEGATE_ID);
-    persistence.save(delegate);
-    DelegateScripts delegateScripts =
-        delegateService.getDelegateScripts(ACCOUNT_ID, "9.9.9", "https://localhost:9090", "https://localhost:7070", "");
-    assertThat(delegateScripts.isDoUpgrade()).isFalse();
   }
 
   @Test

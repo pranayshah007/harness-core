@@ -716,6 +716,31 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unable to create secret file remotely", USER);
   }
 
+  @SneakyThrows
+  @Override
+  public SecretResponseWrapper createFile(@NotNull String accountIdentifier, @NotNull SecretDTOV2 dto,
+      @NotNull String encryptionKey, @NotNull String encryptedValue) {
+    SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
+    if (!isOpaPoliciesSatisfied(accountIdentifier, getMaskedDTOForOpa(dto), secretResponseWrapper)) {
+      return secretResponseWrapper;
+    }
+    GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
+
+    SecretFileSpecDTO specDTO = (SecretFileSpecDTO) dto.getSpec();
+    NGEncryptedData encryptedData =
+        encryptedDataService.createSecretFile(accountIdentifier, dto, encryptionKey, encryptedValue);
+
+    if (Optional.ofNullable(encryptedData).isPresent()) {
+      secretEntityReferenceHelper.createSetupUsageForSecretManager(accountIdentifier, dto.getOrgIdentifier(),
+          dto.getProjectIdentifier(), dto.getIdentifier(), dto.getName(), specDTO.getSecretManagerIdentifier());
+      Secret secret = ngSecretService.create(accountIdentifier, dto, false);
+      secretResponseWrapper = getResponseWrapper(secret);
+      secretResponseWrapper.setGovernanceMetadata(governanceMetadata);
+      return secretResponseWrapper;
+    }
+    throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unable to create secret file remotely", USER);
+  }
+
   private SecretDTOV2 validateUpdateRequestAndGetSecret(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String identifier, SecretDTOV2 updateDTO) {
     Optional<SecretResponseWrapper> secretOptional =

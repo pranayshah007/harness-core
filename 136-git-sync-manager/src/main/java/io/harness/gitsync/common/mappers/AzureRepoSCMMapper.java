@@ -49,7 +49,7 @@ public class AzureRepoSCMMapper extends UserSourceCodeManagerMapper<AzureRepoSCM
   AzureRepoApiAccess toApiAccess(AzureRepoApiAccessSpecDTO spec, AzureRepoApiAccessType apiAccessType) {
     switch (apiAccessType) {
       default:
-        throw new UnknownEnumTypeException("Azure Repo Api Access Type", apiAccessType.getDisplayName());
+        throw new UnknownEnumTypeException("Azure Repo Api Access Type ", apiAccessType.getDisplayName());
     }
   }
 
@@ -57,7 +57,7 @@ public class AzureRepoSCMMapper extends UserSourceCodeManagerMapper<AzureRepoSCM
     AzureRepoApiAccessSpecDTO apiAccessSpecDTO = null;
     switch (apiAccessType) {
       default:
-        throw new UnknownEnumTypeException("Azure Repo Api Access Type", apiAccessType.getDisplayName());
+        throw new UnknownEnumTypeException("Azure Repo Api Access Type ", apiAccessType.getDisplayName());
     }
   }
 }

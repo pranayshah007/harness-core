@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifacts.beans.BuildDetailsInternal;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
@@ -18,6 +19,7 @@ import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegat
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.encryption.FieldWithPlainTextOrSecretValueHelper;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
@@ -54,10 +56,20 @@ public class ArtifactoryRequestResponseMapper {
         .build();
   }
 
-  public ArtifactoryArtifactDelegateResponse toArtifactoryDockerResponse(BuildDetailsInternal buildDetailsInternal,
-      ArtifactoryArtifactDelegateRequest request, Map<String, String> label) {
+  public ArtifactoryArtifactDelegateResponse toArtifactoryDockerResponse(
+      BuildDetailsInternal buildDetailsInternal, ArtifactoryArtifactDelegateRequest request) {
+    ArtifactMetaInfo artifactMetaInfo = buildDetailsInternal.getArtifactMetaInfo();
+    Map<String, String> label = null;
+    ArtifactBuildDetailsNG artifactBuildDetailsNG;
+    if (artifactMetaInfo != null) {
+      artifactBuildDetailsNG = ArtifactBuildDetailsMapper.toBuildDetailsNG(
+          buildDetailsInternal, artifactMetaInfo.getSha(), artifactMetaInfo.getShaV2());
+      label = artifactMetaInfo.getLabels();
+    } else {
+      artifactBuildDetailsNG = ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal);
+    }
     return ArtifactoryArtifactDelegateResponse.builder()
-        .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal))
+        .buildDetails(artifactBuildDetailsNG)
         .repositoryName(request.getRepositoryName())
         .artifactPath(request.getArtifactPath())
         .repositoryFormat(request.getRepositoryFormat())

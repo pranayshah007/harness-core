@@ -17,7 +17,6 @@ import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.gar.service.GARUtils;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.NexusRegistryException;
 import io.harness.expression.RegexFunctor;
@@ -128,31 +127,28 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
       String classifier, String packageName, String group, int maxBuilds) {
     if (RepositoryFormat.docker.name().equalsIgnoreCase(repositoryFormat)) {
       ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().build();
-      Exception exception = null;
       try {
         ArtifactMetaInfo artifactMetaInfoSchemaVersion1 =
             nexusClient.getArtifactMetaInfo(nexusConfig, repository, artifactName, tag, true);
-        artifactMetaInfo.setSha(artifactMetaInfoSchemaVersion1.getSha());
-        artifactMetaInfo.setLabels(artifactMetaInfoSchemaVersion1.getLabels());
+        if (artifactMetaInfoSchemaVersion1 != null) {
+          artifactMetaInfo.setSha(artifactMetaInfoSchemaVersion1.getSha());
+          artifactMetaInfo.setLabels(artifactMetaInfoSchemaVersion1.getLabels());
+        }
       } catch (Exception e) {
         log.error(COULD_NOT_FETCH_IMAGE_MANIFEST, e);
-        exception = e;
       }
       try {
         ArtifactMetaInfo artifactMetaInfoSchemaVersion2 =
             nexusClient.getArtifactMetaInfo(nexusConfig, repository, artifactName, tag, false);
-        artifactMetaInfo.setShaV2(artifactMetaInfoSchemaVersion2.getSha());
+        if (artifactMetaInfoSchemaVersion2 != null) {
+          artifactMetaInfo.setShaV2(artifactMetaInfoSchemaVersion2.getSha());
+        }
       } catch (Exception e) {
         log.error(COULD_NOT_FETCH_IMAGE_MANIFEST, e);
-        exception = e;
       }
 
       if (EmptyPredicate.isEmpty(artifactMetaInfo.getSha()) && EmptyPredicate.isEmpty(artifactMetaInfo.getShaV2())) {
-        if (exception != null) {
-          throw NestedExceptionUtils.hintWithExplanationException(
-              COULD_NOT_FETCH_IMAGE_MANIFEST, exception.getMessage(), exception);
-        }
-        throw new InvalidRequestException(COULD_NOT_FETCH_IMAGE_MANIFEST);
+        return getBuildNumber(nexusConfig, repository, port, artifactName, repositoryFormat, tag);
       }
       String repoName = ArtifactUtilities.getNexusRepositoryNameNG(
           nexusConfig.getNexusUrl(), port, nexusConfig.getArtifactRepositoryUrl(), artifactName);
