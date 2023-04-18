@@ -49,10 +49,20 @@ public class GitXSettingsHelper {
   }
 
   public String getDefaultConnectorForGitX(String accountIdentifier, String orgIdentifier, String projIdentifier) {
-    return NGRestUtils
-        .getResponse(ngSettingsClient.getSetting(
-            GitSyncConstants.DEFAULT_CONNECTOR_FOR_GIT_EXPERIENCE, accountIdentifier, orgIdentifier, projIdentifier))
-        .getValue();
+    String defaultConnectorForGitExperience;
+
+    // Exceptions are handled for release for backward compatibility for 1 release.
+    try {
+      defaultConnectorForGitExperience =
+          NGRestUtils
+              .getResponse(ngSettingsClient.getSetting(GitSyncConstants.DEFAULT_CONNECTOR_FOR_GIT_EXPERIENCE,
+                  accountIdentifier, orgIdentifier, projIdentifier))
+              .getValue();
+      return defaultConnectorForGitExperience;
+    } catch (Exception ex) {
+      log.warn(String.format("Could not fetch setting: %s", GitSyncConstants.ENFORCE_GIT_EXPERIENCE), ex);
+      return null;
+    }
   }
 
   @VisibleForTesting
