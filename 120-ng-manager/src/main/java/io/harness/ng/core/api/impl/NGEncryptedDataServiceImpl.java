@@ -249,6 +249,28 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     return encryptedDataDao.save(encryptedData);
   }
 
+  @Override
+  public NGEncryptedData createSecretFile(
+      String accountIdentifier, SecretDTOV2 dto, String encryptionKey, String encryptedValue) {
+    validateSecretDoesNotExist(
+        accountIdentifier, dto.getOrgIdentifier(), dto.getProjectIdentifier(), dto.getIdentifier());
+    SecretFileSpecDTO secret = (SecretFileSpecDTO) dto.getSpec();
+    SecretManagerConfigDTO secretManager = getSecretManagerOrThrow(accountIdentifier, dto.getOrgIdentifier(),
+        dto.getProjectIdentifier(), secret.getSecretManagerIdentifier(), false);
+    validateAdditionalMetadata(secretManager, secret);
+    NGEncryptedData encryptedData = buildNGEncryptedData(accountIdentifier, dto, secretManager);
+
+    if (isReadOnlySecretManager(secretManager)) {
+      throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, READ_ONLY_SECRET_MANAGER_ERROR, USER);
+    }
+
+    encryptedData.setPath(null);
+    encryptedData.setEncryptionKey(encryptionKey);
+    encryptedData.setEncryptedValue(encryptedValue.toCharArray());
+    encryptedData.setBase64Encoded(true);
+    return encryptedDataDao.save(encryptedData);
+  }
+
   private NGEncryptedData buildNGEncryptedData(
       String accountIdentifier, SecretDTOV2 dto, SecretManagerConfigDTO secretManager) {
     NGEncryptedDataBuilder builder = NGEncryptedData.builder();
