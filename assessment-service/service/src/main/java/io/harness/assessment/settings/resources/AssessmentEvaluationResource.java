@@ -27,10 +27,12 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Path("/v1")
 @Api("assessment-evaluation")
+@Slf4j
 public class AssessmentEvaluationResource {
   private AssessmentEvaluationService assessmentEvaluationService;
   @GET
@@ -73,12 +75,13 @@ public class AssessmentEvaluationResource {
   @ApiOperation(value = "Save response for an assessment, and continue it for later.",
       nickname = "saveAssessmentResponse", response = UserAssessmentDTO.class)
   public Response
-  saveAssessmentResponse(@Valid UserResponsesRequest body, @HeaderParam("Auth") String auth) {
+  saveAssessmentResponse(@Valid UserResponsesRequest body, @HeaderParam("Authorization") String auth) {
     try {
       return Response.status(Response.Status.OK)
           .entity(assessmentEvaluationService.saveAssessmentResponse(body, auth))
           .build();
     } catch (Exception e) {
+      log.error("error", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();
