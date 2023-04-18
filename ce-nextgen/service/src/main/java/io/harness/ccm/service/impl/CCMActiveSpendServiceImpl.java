@@ -8,6 +8,7 @@
 package io.harness.ccm.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
 
 import static java.lang.String.format;
 
@@ -17,6 +18,7 @@ import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.beans.ActiveSpendResultSetDTO;
 import io.harness.ccm.commons.beans.config.ClickHouseConfig;
+import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.commons.utils.CCMLicenseUsageHelper;
 import io.harness.ccm.remote.beans.CostOverviewDTO;
 import io.harness.ccm.service.intf.CCMActiveSpendService;
@@ -25,7 +27,6 @@ import io.harness.timescaledb.DBUtils;
 
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.QueryJobConfiguration;
-import com.google.cloud.bigquery.QueryParameterValue;
 import com.google.cloud.bigquery.TableResult;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -35,6 +36,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Instant;
 import java.util.List;
 import javax.annotation.Nullable;
 import lombok.AccessLevel;
@@ -53,12 +55,14 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
   private static final String SPEND_VALUE = "$%s";
   private static final String ACTIVE_SPEND_LABEL = "Total Cost";
   private static final String FORECASTED_SPEND_LABEL = "Forecast Cost";
-  private static final String DATA_SET_NAME = "CE_INTERNAL";
   private static final String TABLE_NAME = "costAggregated";
-  private static final String QUERY_TEMPLATE =
-      "SELECT SUM(cost) AS cost, TIMESTAMP_TRUNC(day, month) AS month, cloudProvider, max(day) as max_day, "
-      + "min(day) as min_day FROM `%s` WHERE day >= TIMESTAMP_MILLIS(@start_time) AND "
-      + "day <= TIMESTAMP_MILLIS(@end_time) AND accountId = @account_id GROUP BY month, cloudProvider";
+  private static final String QUERY_TEMPLATE_BIGQUERY =
+      "SELECT cloudProvider, clustertype, clustercloudprovider, SUM(cost) AS cost, "
+      + "TIMESTAMP_TRUNC(TIMESTAMP_TRUNC(startTime, DAY), MONTH) AS month, MAX(startTime) AS startTime_MAX, "
+      + "MIN(startTime) AS startTime_MIN FROM %s WHERE (((clustertype IS NULL) OR (clustertype = 'K8S')) AND "
+      + "((instancetype IS NULL) OR (instancetype IN ('K8S_NODE','K8S_PV','K8S_POD_FARGATE','ECS_TASK_FARGATE',"
+      + "'ECS_CONTAINER_INSTANCE') )) AND (TIMESTAMP_TRUNC(startTime, DAY) >= '%s') AND "
+      + "(TIMESTAMP_TRUNC(startTime, DAY) <= '%s')) group by month, cloudProvider, clustertype, clustercloudprovider";
   private static final String QUERY_TEMPLATE_CLICKHOUSE =
       "SELECT SUM(cost) AS cost, date_trunc('month',day) AS month, cloudProvider, max(day) as max_day,"
       + " min(day) as min_day FROM %s WHERE day >= toDateTime(%s) AND day <= toDateTime(%s) "
@@ -70,6 +74,7 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
   @Inject @Named("isClickHouseEnabled") private boolean isClickHouseEnabled;
   @Inject @Nullable @Named("clickHouseConfig") private ClickHouseConfig clickHouseConfig;
   @Inject private ClickHouseService clickHouseService;
+  @Inject private BigQueryHelper bigQueryHelper;
 
   @Override
   public CostOverviewDTO getActiveSpendStats(long startTime, long endTime, String accountIdentifier) {
@@ -124,17 +129,12 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
   }
 
   private ActiveSpendDTO getActiveSpendBigQuery(long startTime, long endTime, String accountIdentifier) {
-    String gcpProjectId = configuration.getGcpConfig().getGcpProjectId();
-    String cloudProviderTableName = format("%s.%s.%s", gcpProjectId, DATA_SET_NAME, TABLE_NAME);
-    String query = format(QUERY_TEMPLATE, cloudProviderTableName);
+    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountIdentifier, UNIFIED_TABLE);
+    String query = format(QUERY_TEMPLATE_BIGQUERY, cloudProviderTableName, Instant.ofEpochMilli(startTime),
+        Instant.ofEpochMilli(endTime));
     log.info("Query for active spend: {}", query);
     BigQuery bigQuery = bigQueryService.get();
-    QueryJobConfiguration queryConfig =
-        QueryJobConfiguration.newBuilder(query)
-            .addNamedParameter("start_time", QueryParameterValue.int64(startTime))
-            .addNamedParameter("end_time", QueryParameterValue.int64(endTime))
-            .addNamedParameter("account_id", QueryParameterValue.string(accountIdentifier))
-            .build();
+    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
     TableResult result;
     try {
       result = bigQuery.query(queryConfig);
