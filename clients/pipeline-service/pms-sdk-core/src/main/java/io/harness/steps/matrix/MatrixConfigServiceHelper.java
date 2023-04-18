@@ -61,13 +61,13 @@ public class MatrixConfigServiceHelper {
       Set<Map.Entry<String, String>> entries = combination.entrySet();
       String variableName = entries.stream().map(t -> t.getValue().replace(".", "")).collect(Collectors.joining("_"));
 
-      combinationStringMap.computeIfAbsent(variableName, k -> 0);
-
       combinationStringMap.computeIfPresent(variableName, (k, count) -> {
         Optional<Map.Entry<String, String>> first = entries.stream().findFirst();
         first.ifPresent(entry -> entry.setValue((count + 1) + "_" + entry.getValue()));
         return count + 1;
       });
+
+      combinationStringMap.computeIfAbsent(variableName, k -> 0);
 
       children.add(ChildrenExecutableResponse.Child.newBuilder()
                        .setChildNodeId(childNodeId)
