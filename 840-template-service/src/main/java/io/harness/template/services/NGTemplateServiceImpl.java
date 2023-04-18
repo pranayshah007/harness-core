@@ -254,7 +254,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       }
 
       // populate template references
-      templateReferenceHelper.populateTemplateReferences(template);
+      if (doPublishSetupUsages(template)) {
+        templateReferenceHelper.populateTemplateReferences(template);
+      }
 
       return template;
 
@@ -275,6 +277,17 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       throw new InvalidRequestException(String.format("Error while saving template [%s] of versionLabel [%s]: %s",
           templateEntity.getIdentifier(), templateEntity.getVersionLabel(), e.getMessage()));
     }
+  }
+
+  private boolean doPublishSetupUsages(TemplateEntity templateEntity) {
+    boolean defaultBranchCheckForGitX = GitContextHelper.getIsDefaultBranchFromGitEntityInfo();
+
+    if (templateEntity.getStoreType() == null || templateEntity.getStoreType().equals(StoreType.INLINE)
+        || (templateEntity.getStoreType() == StoreType.REMOTE && defaultBranchCheckForGitX)) {
+      return true;
+    }
+
+    return false;
   }
 
   private void validateTemplateTypeAndChildTypeOfTemplate(
@@ -342,7 +355,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     });
 
     // update template references
-    templateReferenceHelper.populateTemplateReferences(template);
+    if (doPublishSetupUsages(template)) {
+      templateReferenceHelper.populateTemplateReferences(template);
+    }
 
     return template;
   }
@@ -384,7 +399,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     });
 
     // update template references
-    templateReferenceHelper.populateTemplateReferences(template);
+    if (doPublishSetupUsages(template)) {
+      templateReferenceHelper.populateTemplateReferences(template);
+    }
 
     return template;
   }
@@ -444,7 +461,10 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       }
 
       // update template references
-      templateReferenceHelper.populateTemplateReferences(template);
+      if (doPublishSetupUsages(templateEntity)) {
+        templateReferenceHelper.populateTemplateReferences(template);
+      }
+
       return template;
 
     } catch (DuplicateKeyException ex) {
@@ -486,7 +506,14 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         TemplateEntity templateEntity = templateOptional.get();
         validateTemplateVersion(versionLabel, templateEntity);
       }
+
+      // update template references
+      if (doPublishSetupUsages(templateOptional.get())) {
+        templateReferenceHelper.populateTemplateReferences(templateOptional.get());
+      }
+
       return templateOptional;
+
     } catch (ExplanationException | HintException | ScmException e) {
       String errorMessage = getErrorMessage(templateIdentifier, versionLabel);
       log.error(errorMessage, e);

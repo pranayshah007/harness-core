@@ -25,7 +25,6 @@ import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
-import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
