@@ -168,6 +168,7 @@ public class IdentityStepTest extends CategoryTest {
                    .addLevels(Level.newBuilder()
                                   .setRuntimeId("RID")
                                   .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STRATEGY))
+                                  .setNodeType("IDENTITY_PLAN_NODE")
                                   .build())
                    .build();
     ambiance1 = IdentityStep.modifyAmbiance(ambiance);
@@ -177,6 +178,7 @@ public class IdentityStepTest extends CategoryTest {
                    .addLevels(Level.newBuilder()
                                   .setRuntimeId("RID")
                                   .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STRATEGY))
+                                  .setNodeType("IDENTITY_PLAN_NODE")
                                   .build())
                    .addLevels(Level.newBuilder()
                                   .setRuntimeId("RID")
