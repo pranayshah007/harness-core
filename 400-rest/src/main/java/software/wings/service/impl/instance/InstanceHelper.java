@@ -780,7 +780,8 @@ public class InstanceHelper {
   }
 
   private boolean isDeletePerpetualTaskV2(InstanceSyncTaskDetails instanceSyncV2TaskDetails) {
-    return System.currentTimeMillis() - instanceSyncV2TaskDetails.getLastResponseTime() > RESPONSE_TIME_LIMIT;
+    return instanceSyncV2TaskDetails.getLastResponseTime() != 0
+        && System.currentTimeMillis() - instanceSyncV2TaskDetails.getLastResponseTime() > RESPONSE_TIME_LIMIT;
   }
 
   private void handleInstanceSyncResponseFromPerpetualTask(InfrastructureMapping infrastructureMapping,
