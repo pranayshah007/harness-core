@@ -39,7 +39,10 @@ import io.harness.execution.PlanExecutionMetadata.Builder;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.logging.AutoLogContext;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.plan.Plan;
@@ -86,6 +89,7 @@ import io.harness.pms.stages.StagesExpressionExtractor;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.threading.Morpheus;
@@ -108,12 +112,15 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import retrofit2.Call;
 
 @OwnedBy(PIPELINE)
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
 public class ExecutionHelper {
+  NGSettingsClient settingsClient;
+
   PMSPipelineService pmsPipelineService;
   PipelineMetadataService pipelineMetadataService;
   PMSPipelineServiceHelper pmsPipelineServiceHelper;
@@ -139,6 +146,8 @@ public class ExecutionHelper {
   NodeExecutionService nodeExecutionService;
   RollbackModeExecutionHelper rollbackModeExecutionHelper;
   RollbackGraphGenerator rollbackGraphGenerator;
+
+  public static final String ENABLE_MATRIX_FIELD_NAME_SETTING = "enable_matrix_label_by_name";
 
   public PipelineEntity fetchPipelineEntity(@NotNull String accountId, @NotNull String orgIdentifier,
       @NotNull String projectIdentifier, @NotNull String pipelineIdentifier) {
@@ -320,6 +329,19 @@ public class ExecutionHelper {
     }
     if (pipelineEntity.getConnectorRef() != null) {
       builder.setPipelineConnectorRef(pipelineEntity.getConnectorRef());
+    }
+    try {
+      Call<ResponseDTO<SettingValueResponseDTO>> setting =
+          settingsClient.getSetting(ENABLE_MATRIX_FIELD_NAME_SETTING, pipelineEntity.getAccountIdentifier(),
+              pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
+
+      SettingValueResponseDTO response = NGRestUtils.getResponse(setting);
+
+      if (response.getValue().equals("true")) {
+        builder.setUseMatrixFieldName(true);
+      }
+    } catch (Exception e) {
+      log.error("Error in fetching pipeline Setting {} due to {}", ENABLE_MATRIX_FIELD_NAME_SETTING, e.getMessage());
     }
     return builder.build();
   }

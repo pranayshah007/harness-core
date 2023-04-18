@@ -206,3 +206,14 @@ settings :
     allowedValues:
       - INLINE
       - REMOTE
+  - identifier: enable_matrix_label_by_name
+    name: Enable matrix Labels By Name
+    category: PMS
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: false
+    allowedScopes:
+      - PROJECT
+      - ACCOUNT
+      - ORGANIZATION
+
