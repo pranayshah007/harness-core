@@ -7,22 +7,25 @@
 
 package io.harness.shell.ssh.client.sshj;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.SSH_RETRY;
 import static io.harness.eraro.ErrorCode.UNKNOWN_EXECUTOR_TYPE_ERROR;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.shell.AccessType.USER_PASSWORD;
 import static io.harness.shell.AuthenticationScheme.KERBEROS;
+import static io.harness.shell.SshHelperUtils.normalizeError;
 
 import static java.lang.String.format;
 
+import io.harness.eraro.ErrorCode;
 import io.harness.logging.LogCallback;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.ssh.client.SshClient;
 import io.harness.shell.ssh.client.SshConnection;
 import io.harness.shell.ssh.connection.ExecRequest;
 import io.harness.shell.ssh.connection.ExecResponse;
+import io.harness.shell.ssh.exception.JschClientException;
 import io.harness.shell.ssh.exception.SshClientException;
 import io.harness.shell.ssh.exception.SshjClientException;
 import io.harness.shell.ssh.sftp.SftpRequest;
@@ -37,6 +40,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -50,8 +55,9 @@ import net.schmizz.sshj.sftp.SFTPClient;
 import net.schmizz.sshj.transport.TransportException;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import net.schmizz.sshj.userauth.UserAuthException;
+import net.schmizz.sshj.userauth.keyprovider.KeyProvider;
 import net.schmizz.sshj.userauth.keyprovider.OpenSSHKeyFile;
-import org.apache.commons.lang3.NotImplementedException;
+import net.schmizz.sshj.userauth.password.PasswordFinder;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.Oid;
 import org.jetbrains.annotations.NotNull;
@@ -93,15 +99,34 @@ public class SshjClient extends SshClient {
   }
 
   @Override
+  public void createDirectoryForScp(ScpRequest request) {
+    saveExecutionLog("Creating directory " + request.getRemoteFilePath());
+    String command = format("mkdir -p \"%s\"", request.getRemoteFilePath());
+    exec(ExecRequest.builder().displayCommand(false).command(command).build());
+    saveExecutionLog("Created directory " + request.getRemoteFilePath() + " successfully");
+  }
+
+  @Override
   protected ScpResponse scpUploadInternal(ScpRequest scpRequest, SshConnection connection) throws SshClientException {
     try (SshjScpSession scpSession = getScpSession(connection)) {
       try (StreamingInMemorySourceFile sourceFile = new StreamingInMemorySourceFile(scpRequest.getFileProvider())) {
         scpSession.getScpFileTransfer().upload(sourceFile, scpRequest.getRemoteFilePath());
+        saveExecutionLog("File successfully transferred to " + getSshSessionConfig().getHost() + ":"
+            + scpRequest.getRemoteFilePath());
+        return ScpResponse.builder().exitCode(0).status(SUCCESS).build();
       }
+    } catch (ConnectionException e) {
+      log.error("Connection exception", e);
+      if (e.getMessage().contains("open failed")) {
+        throw new SshjClientException(SSH_RETRY, "Connection exception " + e.getMessage(), e);
+      }
+
+      throw new SshjClientException("Connection exception " + e.getMessage(), e);
     } catch (Exception e) {
+      saveExecutionLogError(
+          "File transfer to " + getSshSessionConfig().getHost() + ":" + scpRequest.getRemoteFilePath() + " failed");
       throw new RuntimeException(e);
     }
-    throw new NotImplementedException("Not implemented");
   }
 
   @Override
@@ -141,7 +166,21 @@ public class SshjClient extends SshClient {
 
   @Override
   public void testSession(SshConnection sshConnection) throws SshClientException {
-    throw new NotImplementedException("Not implemented");
+    try (SshjExecSession execSession = getExecSession(sshConnection)) {
+      Session session = execSession.getSession();
+      Session.Command cmd = session.exec("true");
+      String output = IOUtils.readFully(cmd.getInputStream()).toString();
+      cmd.join();
+      Integer exitStatus = cmd.getExitStatus();
+      log.info("Session connection test successful with output {}, exit code {}", output, exitStatus);
+    } catch (JSchException ex) {
+      log.error("Failed to validate Host: ", ex);
+      ErrorCode errorCode = normalizeError(ex);
+      throw new JschClientException(errorCode, errorCode.getDescription(), ex);
+    } catch (Exception exception) {
+      log.error("Failed to connect Host. ", exception);
+      throw new JschClientException(exception.getMessage(), exception);
+    }
   }
 
   @Override
@@ -216,7 +255,6 @@ public class SshjClient extends SshClient {
     client.connect(config.getHost(), config.getPort());
     client.setTimeout(config.getSshSessionTimeout());
     client.getConnection().getKeepAlive().setKeepAliveInterval(10);
-    client.useCompression();
 
     if (config.getAuthenticationScheme() != null && config.getAuthenticationScheme() == KERBEROS) {
       logCallback.saveExecutionLog("SSH using Kerberos Auth");
@@ -225,6 +263,14 @@ public class SshjClient extends SshClient {
       client.authGssApiWithMic(config.getKerberosConfig().getPrincipal(),
           new LoginContext(config.getKerberosConfig().getPrincipal()),
           new Oid(config.getKerberosConfig().getPrincipalWithRealm()));
+    } else if (config.isVaultSSH()) {
+      log.info("[SshSessionFactory]: SSH using Vault SSH secret engine with SignedPublicKey: {} ",
+          config.getSignedPublicKey());
+
+      client.authPublickey(config.getUserName(), getKeyProviders(config));
+      log.info("[VaultSSH]: SSH using Vault SSH secret engine with SignedPublicKey is completed: {} ",
+          config.getSignedPublicKey());
+
     } else if (config.getAccessType() != null && config.getAccessType() == USER_PASSWORD) {
       log.info("[SshSessionFactory]: SSH using Username Password");
       client.authPassword(config.getUserName(), config.getSshPassword());
@@ -234,40 +280,13 @@ public class SshjClient extends SshClient {
       if (!new File(keyPath).isFile()) {
         throw new JSchException("File at " + keyPath + " does not exist", new FileNotFoundException());
       }
-
-      OpenSSHKeyFile openSSHKeyFile = new OpenSSHKeyFile();
-      client.authPublickey(config.getUserName(), openSSHKeyFile);
-      if (isEmpty(config.getKeyPassphrase())) {
-        openSSHKeyFile.init(new File(keyPath));
-      } else {
-        openSSHKeyFile.init(new File(keyPath), new StaticPasswordFinder(new String(config.getKeyPassphrase())));
-      }
-
-      client.authPublickey(config.getUserName(), openSSHKeyFile);
-    } else if (config.isVaultSSH()) {
-      log.info("[SshSessionFactory]: SSH using Vault SSH secret engine with SignedPublicKey: {} ",
-          config.getSignedPublicKey());
-
-      OpenSSHKeyFile openSSHKeyFile = new OpenSSHKeyFile();
-      openSSHKeyFile.init(new String(getCopyOfKey()), config.getSignedPublicKey());
-
-      OpenSSHKeyV1KeyFile openSSHKeyV1KeyFile = new OpenSSHKeyV1KeyFile();
-      openSSHKeyV1KeyFile.init(new String(getCopyOfKey()), config.getSignedPublicKey());
-
-      client.authPublickey(config.getUserName(), openSSHKeyFile, openSSHKeyV1KeyFile);
-      log.info("[VaultSSH]: SSH using Vault SSH secret engine with SignedPublicKey is completed: {} ",
-          config.getSignedPublicKey());
-
+      client.authPublickey(config.getUserName(), getKeyProviders(config));
     } else {
-      if (config.getKey() != null && config.getKey().length > 0) {
+      if (isNotEmpty(config.getKey())) {
         // Copy Key because EncryptionUtils has a side effect of modifying the original array
-        final char[] copyOfKey = getCopyOfKey();
         log.info("SSH using Key");
 
-        client.loadKeys(new String(copyOfKey), null,
-            isEmpty(config.getKeyPassphrase()) ? null
-                                               : new StaticPasswordFinder(new String(config.getKeyPassphrase())));
-        client.authPublickey(config.getUserName());
+        client.authPublickey(config.getUserName(), getKeyProviders(config));
         log.info("[VaultSSH]: SSH using Vault SSH secret engine with SignedPublicKey is completed: {} ",
             config.getSignedPublicKey());
       } else {
@@ -276,7 +295,42 @@ public class SshjClient extends SshClient {
       }
     }
 
+    client.useCompression();
+    log.info("Socket port {}", client.getSocket().getPort());
     return client;
+  }
+
+  private List<KeyProvider> getKeyProviders(SshSessionConfig config) {
+    List<KeyProvider> keyProviders = new LinkedList<>();
+    OpenSSHKeyFile openSSHKeyFile = new OpenSSHKeyFile();
+    if (config.isKeyLess()) {
+      openSSHKeyFile.init(new File(config.getKeyPath()), getPasswordFinder(config.getKeyPassphrase()));
+    } else {
+      openSSHKeyFile.init(
+          new String(getCopyOfKey()), config.getSignedPublicKey(), getPasswordFinder(config.getKeyPassphrase()));
+    }
+    keyProviders.add(openSSHKeyFile);
+
+    OpenSSHKeyV1KeyFile openSSHKeyV1KeyFile = new OpenSSHKeyV1KeyFile();
+    if (config.isKeyLess()) {
+      openSSHKeyFile.init(new File(config.getKeyPath()), getPasswordFinder(config.getKeyPassphrase()));
+    } else {
+      openSSHKeyV1KeyFile.init(
+          new String(getCopyOfKey()), config.getSignedPublicKey(), getPasswordFinder(config.getKeyPassphrase()));
+    }
+    keyProviders.add(openSSHKeyV1KeyFile);
+
+    if (isNotEmpty(config.getKey()) && new String(config.getKey()).contains(" OPENSSH ")) {
+      OpenSSHKeyFile openSSHKeyFileUsingRSA = new OpenSSHKeyFile();
+      openSSHKeyFileUsingRSA.init(new String(config.getKey()).replaceAll(" OPENSSH ", " RSA "),
+          config.getSignedPublicKey(), getPasswordFinder(config.getKeyPassphrase()));
+    }
+
+    return keyProviders;
+  }
+
+  private PasswordFinder getPasswordFinder(char[] keyPassphrase) {
+    return isNotEmpty(keyPassphrase) ? new StaticPasswordFinder(new String(keyPassphrase)) : null;
   }
 
   @Override
@@ -289,6 +343,10 @@ public class SshjClient extends SshClient {
       throw new SshjClientException("Transport exception " + e.getMessage(), e);
     } catch (ConnectionException e) {
       log.error("Connection exception", e);
+      if (e.getMessage().contains("open failed")) {
+        throw new SshjClientException(SSH_RETRY, "Connection exception " + e.getMessage(), e);
+      }
+
       throw new SshjClientException("Connection exception " + e.getMessage(), e);
     }
   }
@@ -301,6 +359,13 @@ public class SshjClient extends SshClient {
     } catch (TransportException e) {
       log.error("Transport exception", e);
       throw new SshjClientException("Transport exception " + e.getMessage(), e);
+    } catch (ConnectionException e) {
+      log.error("Connection exception", e);
+      if (e.getMessage().contains("open failed")) {
+        throw new SshjClientException(SSH_RETRY, "Connection exception " + e.getMessage(), e);
+      }
+
+      throw new SshjClientException("Connection exception " + e.getMessage(), e);
     } catch (IOException e) {
       log.error("Connection exception", e);
       throw new SshjClientException("Connection exception " + e.getMessage(), e);

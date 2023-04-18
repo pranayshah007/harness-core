@@ -22,10 +22,12 @@ public class StreamingInMemorySourceFile extends InMemorySourceFile implements C
   private final ByteArrayOutputStream byteArrayOutputStream;
   private final BufferedInputStream inputStream;
   private final String fileName;
+  private final long length;
 
   public StreamingInMemorySourceFile(AbstractScriptExecutor.FileProvider fileProvider)
       throws IOException, ExecutionException {
     this.fileName = fileProvider.getInfo().getKey();
+    this.length = fileProvider.getInfo().getValue();
     this.byteArrayOutputStream = new ByteArrayOutputStream();
     fileProvider.downloadToStream(byteArrayOutputStream);
     this.inputStream = new BufferedInputStream(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
@@ -38,7 +40,7 @@ public class StreamingInMemorySourceFile extends InMemorySourceFile implements C
 
   @Override
   public long getLength() {
-    return -1;
+    return this.length;
   }
 
   @Override

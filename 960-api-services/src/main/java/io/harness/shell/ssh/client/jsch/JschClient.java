@@ -14,9 +14,7 @@ import static io.harness.eraro.ErrorCode.SSH_RETRY;
 import static io.harness.eraro.ErrorCode.UNKNOWN_ERROR;
 import static io.harness.eraro.ErrorCode.UNKNOWN_EXECUTOR_TYPE_ERROR;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
-import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
-import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.shell.AccessType.USER_PASSWORD;
 import static io.harness.shell.AuthenticationScheme.KERBEROS;
 import static io.harness.shell.SshHelperUtils.normalizeError;
@@ -423,10 +421,6 @@ public class JschClient extends SshClient {
     }
   }
 
-  protected void saveExecutionLogError(String line) {
-    getLogCallback().saveExecutionLog(line, ERROR, RUNNING);
-  }
-
   private String processStreamData(String text, boolean finishedReading, OutputStream outputStream) throws IOException {
     if (text == null || text.length() == 0) {
       return text;
@@ -685,5 +679,10 @@ public class JschClient extends SshClient {
                                      .withUseSshClient(config.isUseSshClient())
                                      .build();
     return getSSHSessionWithRetry(newConfig);
+  }
+
+  @Override
+  public void createDirectoryForScp(ScpRequest request) {
+    // not required
   }
 }

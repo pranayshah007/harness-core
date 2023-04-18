@@ -34,7 +34,7 @@ public class SshFactory {
   public static SshClient getSshClient(SshSessionConfig config, LogCallback logCallback) {
     init(config);
 
-    if (config.isVaultSSH() && config.isUseSshClient() && config.isUseSshj()) {
+    if (config.isUseSshClient() && config.isUseSshj()) {
       // this flow is planned to be migrated to SSHJ flows
       return new SshjClient(config, logCallback);
     } else {

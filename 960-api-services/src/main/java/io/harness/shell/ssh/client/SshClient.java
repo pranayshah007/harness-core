@@ -9,6 +9,7 @@ package io.harness.shell.ssh.client;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
+import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.shell.ssh.SshUtils.getCacheKey;
 
@@ -64,6 +65,8 @@ public abstract class SshClient implements AutoCloseable {
   }
 
   public ScpResponse scpUpload(ScpRequest request) throws SshClientException {
+    createDirectoryForScp(request);
+
     try {
       SshConnection sshConnection = getCachedConnection(request);
       return scpUploadInternal(request, sshConnection);
@@ -77,6 +80,8 @@ public abstract class SshClient implements AutoCloseable {
       }
     }
   }
+
+  public abstract void createDirectoryForScp(ScpRequest request);
 
   public SftpResponse sftpDownload(SftpRequest request) throws SshClientException {
     try {
@@ -141,6 +146,10 @@ public abstract class SshClient implements AutoCloseable {
   }
   protected void saveExecutionLog(String line) {
     saveExecutionLog(line, RUNNING);
+  }
+
+  protected void saveExecutionLogError(String line) {
+    getLogCallback().saveExecutionLog(line, ERROR, RUNNING);
   }
   protected void saveExecutionLog(String line, CommandExecutionStatus commandExecutionStatus) {
     logCallback.saveExecutionLog(line, INFO, commandExecutionStatus);
