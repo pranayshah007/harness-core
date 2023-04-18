@@ -10,6 +10,7 @@ package io.harness.plancreator.steps.internal;
 import static io.harness.plancreator.strategy.StrategyUtils.getPipelineRollbackStageId;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 import io.harness.advisers.manualIntervention.ManualInterventionAdviserRollbackParameters;
@@ -105,6 +106,10 @@ public class PmsStepPlanCreatorUtils {
 
   AdviserObtainment getNextStageAdviser(KryoSerializer kryoSerializer, YamlField stageField) {
     if (stageField == null || stageField.getNode() == null) {
+      return null;
+    }
+    // if parent is parallel, then we need not add nextStepAdvise as all the executions will happen in parallel
+    if (stageField.checkIfParentIsParallel(STAGES)) {
       return null;
     }
     YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingFieldAtStageLevel(stageField);
