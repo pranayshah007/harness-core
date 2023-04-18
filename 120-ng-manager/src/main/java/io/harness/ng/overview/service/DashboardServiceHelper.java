@@ -614,9 +614,9 @@ public class DashboardServiceHelper {
                                  ArtifactDeploymentDetail o2) {
                 int c;
                 if (o1.getLastDeployedAt() > o2.getLastDeployedAt()) {
-                  c = 1;
-                } else if (o1.getLastDeployedAt() < o2.getLastDeployedAt()) {
                   c = -1;
+                } else if (o1.getLastDeployedAt() < o2.getLastDeployedAt()) {
+                  c = 1;
                 } else {
                   c = 0;
                 }
@@ -782,7 +782,7 @@ public class DashboardServiceHelper {
                     .count(totalCount)
                     .isDrift((artifacts.size() > 1) || (artifacts.size() == 1 && deploymentsWithoutArtifact > 0))
                     .isRevert(EmptyPredicate.isNotEmpty(artifactDeploymentDetailList) && EmptyPredicate.isNotEmpty(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()) && pipelineExecutionDetailsMap.containsKey(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()) && pipelineExecutionDetailsMap.get(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()).isRevertExecution())
-                    .isRollback(EmptyPredicate.isNotEmpty(artifactDeploymentDetailList) && EmptyPredicate.isNotEmpty(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()) && pipelineExecutionDetailsMap.containsKey(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()) && pipelineExecutionIdsWhereRollbackOccurred.contains(pipelineExecutionDetailsMap.get(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()).getPipelineExecutionId()))
+                    .isRollback(EmptyPredicate.isNotEmpty(artifactDeploymentDetailList) && EmptyPredicate.isNotEmpty(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()) && pipelineExecutionDetailsMap.containsKey(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()) && pipelineExecutionIdsWhereRollbackOccurred.contains(pipelineExecutionDetailsMap.get(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()).getIdentifier()))
                     .build());
           }
         }
@@ -814,7 +814,7 @@ public class DashboardServiceHelper {
                 .count(count)
                 .isDrift(false)
                 .isRevert(EmptyPredicate.isNotEmpty(artifactDeploymentDetail.getLastPipelineExecutionId()) && pipelineExecutionDetailsMap.containsKey(artifactDeploymentDetail.getLastPipelineExecutionId()) ? pipelineExecutionDetailsMap.get(artifactDeploymentDetail.getLastPipelineExecutionId()).isRevertExecution(): false)
-                .isRollback(EmptyPredicate.isNotEmpty(artifactDeploymentDetail.getLastPipelineExecutionId()) && pipelineExecutionDetailsMap.containsKey(artifactDeploymentDetail.getLastPipelineExecutionId()) && pipelineExecutionIdsWhereRollbackOccurred.contains(pipelineExecutionDetailsMap.get(artifactDeploymentDetail.getLastPipelineExecutionId())))
+                .isRollback(EmptyPredicate.isNotEmpty(artifactDeploymentDetail.getLastPipelineExecutionId()) && pipelineExecutionDetailsMap.containsKey(artifactDeploymentDetail.getLastPipelineExecutionId()) && pipelineExecutionIdsWhereRollbackOccurred.contains(pipelineExecutionDetailsMap.get(artifactDeploymentDetail.getLastPipelineExecutionId()).getIdentifier()))
                 .build());
       }
     }

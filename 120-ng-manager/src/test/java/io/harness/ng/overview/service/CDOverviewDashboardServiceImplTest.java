@@ -671,9 +671,6 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels = new ArrayList<>();
     artifactDeploymentDetailModels.add(new ArtifactDeploymentDetailModel(ENVIRONMENT_1, DISPLAY_NAME_1, 1l, PLAN_EXECUTION_1));
     artifactDeploymentDetailModels.add(new ArtifactDeploymentDetailModel(ENVIRONMENT_2, DISPLAY_NAME_2, 2l, PLAN_EXECUTION_1));
-    artifactDeploymentDetailModels.add(new ArtifactDeploymentDetailModel(ENVIRONMENT_1, DISPLAY_NAME_2, 3l, PLAN_EXECUTION_1));
-    artifactDeploymentDetailModels.add(new ArtifactDeploymentDetailModel(ENVIRONMENT_2, DISPLAY_NAME_1, 4l, PLAN_EXECUTION_1));
-    artifactDeploymentDetailModels.add(new ArtifactDeploymentDetailModel(null, DISPLAY_NAME_1, 4l, PLAN_EXECUTION_1));
     return artifactDeploymentDetailModels;
   }
 
@@ -683,34 +680,66 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
             EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
                             .id(ENVIRONMENT_GROUP_1)
                                     .name(ENVIRONMENT_GROUP_NAME_1)
+                    .isEnvGroup(true)
+                    .isDrift(false)
+                    .isRollback(true)
+                    .isRevert(false)
                                             .environmentTypes(Arrays.asList(EnvironmentType.PreProduction))
                                                     .count(2)
-                                                            .artifactDeploymentDetails(Collections.singletonList(ArtifactDeploymentDetail.builder().artifact(DISPLAY_NAME_1).lastDeployedAt(1l).build()))
+                                                            .artifactDeploymentDetails(Collections.singletonList(ArtifactDeploymentDetail.builder().envName(ENVIRONMENT_NAME_1).envId(ENVIRONMENT_1).lastPipelineExecutionId(PLAN_EXECUTION_1).artifact(DISPLAY_NAME_1).lastDeployedAt(1l).build()))
                                                                     .build());
     environmentInstanceDetails.add(
             EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
                     .id(ENVIRONMENT_GROUP_2)
                     .name(ENVIRONMENT_GROUP_NAME_2)
+                    .isEnvGroup(true)
+                    .isDrift(true)
+                    .isRollback(false)
+                    .isRevert(true)
                     .environmentTypes(Arrays.asList(EnvironmentType.PreProduction, EnvironmentType.Production))
             .count(3)
             .artifactDeploymentDetails(
-                Arrays.asList(ArtifactDeploymentDetail.builder().artifact(DISPLAY_NAME_2).lastDeployedAt(2l).build(), ArtifactDeploymentDetail.builder().artifact(DISPLAY_NAME_1).lastDeployedAt(1l).build()))
+                Arrays.asList(ArtifactDeploymentDetail.builder().envId(ENVIRONMENT_2).envName(ENVIRONMENT_NAME_2).lastPipelineExecutionId(PLAN_EXECUTION_2).artifact(DISPLAY_NAME_2).lastDeployedAt(2l).build(), ArtifactDeploymentDetail.builder().envName(ENVIRONMENT_NAME_1).envId(ENVIRONMENT_1).lastPipelineExecutionId(PLAN_EXECUTION_1).artifact(DISPLAY_NAME_1).lastDeployedAt(1l).build()))
                     .build());
     return environmentInstanceDetails;
   }
 
   private List<ArtifactInstanceDetails.ArtifactInstanceDetail> getArtifactInstanceDetailList() {
     List<ArtifactInstanceDetails.ArtifactInstanceDetail> artifactInstanceDetails = new ArrayList<>();
-    EnvironmentInstanceDetails.EnvironmentInstanceDetail.EnvironmentInstanceDetailBuilder environmentInstanceDetail1 =
-        EnvironmentInstanceDetails.EnvironmentInstanceDetail.builder()
-            .envId(ENVIRONMENT_1)
-            .environmentType(EnvironmentType.PreProduction)
-            .envName(ENVIRONMENT_NAME_1);
-    EnvironmentInstanceDetails.EnvironmentInstanceDetail.EnvironmentInstanceDetailBuilder environmentInstanceDetail2 =
-        EnvironmentInstanceDetails.EnvironmentInstanceDetail.builder()
-            .envId(ENVIRONMENT_2)
-            .environmentType(EnvironmentType.Production)
-            .envName(ENVIRONMENT_NAME_2);
+//    EnvironmentInstanceDetails.EnvironmentInstanceDetail.EnvironmentInstanceDetailBuilder environmentInstanceDetail1 =
+//        EnvironmentInstanceDetails.EnvironmentInstanceDetail.builder()
+//            .envId(ENVIRONMENT_1)
+//            .environmentType(EnvironmentType.PreProduction)
+//            .envName(ENVIRONMENT_NAME_1);
+//    EnvironmentInstanceDetails.EnvironmentInstanceDetail.EnvironmentInstanceDetailBuilder environmentInstanceDetail2 =
+//        EnvironmentInstanceDetails.EnvironmentInstanceDetail.builder()
+//            .envId(ENVIRONMENT_2)
+//            .environmentType(EnvironmentType.Production)
+//            .envName(ENVIRONMENT_NAME_2);
+    List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> environmentInstanceDetails2 = new ArrayList<>();
+    environmentInstanceDetails2.add(
+            EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
+                    .id(ENVIRONMENT_GROUP_1)
+                    .name(ENVIRONMENT_GROUP_NAME_1)
+                    .isEnvGroup(true)
+                    .isDrift(false)
+                    .environmentTypes(Arrays.asList(EnvironmentType.PreProduction))
+                    .artifactDeploymentDetails(Collections.singletonList(ArtifactDeploymentDetail.builder().envName(ENVIRONMENT_NAME_1).envId(ENVIRONMENT_1).lastPipelineExecutionId(PLAN_EXECUTION_1).artifact(DISPLAY_NAME_1).lastDeployedAt(1l).build()))
+                    .build());
+    environmentInstanceDetails2.add(
+            EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
+                    .id(ENVIRONMENT_GROUP_2)
+                    .name(ENVIRONMENT_GROUP_NAME_2)
+                    .isEnvGroup(true)
+                    .isDrift(true)
+                    .isRollback(false)
+                    .isRevert(true)
+                    .environmentTypes(Arrays.asList(EnvironmentType.Production, EnvironmentType.PreProduction))
+                    .count(3)
+                    .artifactDeploymentDetails(
+                            Arrays.asList(ArtifactDeploymentDetail.builder().envId(ENVIRONMENT_2).envName(ENVIRONMENT_NAME_2).lastPipelineExecutionId(PLAN_EXECUTION_2).artifact(DISPLAY_NAME_2).lastDeployedAt(2l).build(), ArtifactDeploymentDetail.builder().envName(ENVIRONMENT_NAME_1).envId(ENVIRONMENT_1).lastPipelineExecutionId(PLAN_EXECUTION_1).artifact(DISPLAY_NAME_1).lastDeployedAt(1l).build()))
+                    .build());
+
     EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail environmentGroupInstanceDetail1 = EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder().id("id").isEnvGroup(true).isDrift(false).build();
     artifactInstanceDetails.add(
         ArtifactInstanceDetails.ArtifactInstanceDetail.builder()
@@ -1028,12 +1057,11 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels = getArtifactDeploymentDetailModelList();
     List<EnvironmentInstanceCountModel> environmentInstanceCountModels = getEnvironmentInstanceCountModelList();
     List<Environment> environments = getEnvironmentList();
-    List<String> envIds = Arrays.asList(ENVIRONMENT_1, ENVIRONMENT_2);
-    Criteria criteria = mock(Criteria.class);
+    List<String> envIds = Arrays.asList(ENVIRONMENT_2, ENVIRONMENT_1);
     Page<EnvironmentGroupEntity> page = mock(Page.class);
     when(environmentGroupService.list(any(), any(), any(), any(), any())).thenReturn(page);
-    EnvironmentGroupEntity environmentGroupEntity1 = EnvironmentGroupEntity.builder().envIdentifiers(Collections.singletonList(ENVIRONMENT_1)).build();
-    EnvironmentGroupEntity environmentGroupEntity2 = EnvironmentGroupEntity.builder().envIdentifiers(Arrays.asList(ENVIRONMENT_1, ENVIRONMENT_2)).build();
+    EnvironmentGroupEntity environmentGroupEntity1 = EnvironmentGroupEntity.builder().identifier(ENVIRONMENT_GROUP_1).name(ENVIRONMENT_GROUP_NAME_1).envIdentifiers(Collections.singletonList(ENVIRONMENT_1)).build();
+    EnvironmentGroupEntity environmentGroupEntity2 = EnvironmentGroupEntity.builder().identifier(ENVIRONMENT_GROUP_2).name(ENVIRONMENT_GROUP_NAME_2).envIdentifiers(Arrays.asList(ENVIRONMENT_1, ENVIRONMENT_2)).build();
     when(page.getContent()).thenReturn(Arrays.asList(environmentGroupEntity1, environmentGroupEntity2));
     Map<String, ServicePipelineWithRevertInfo> servicePipelineInfoMap = new HashMap<>();
     servicePipelineInfoMap.put(PLAN_EXECUTION_1, ServicePipelineWithRevertInfo.builder().isRevertExecution(false).identifier(PIPELINE_EXECUTION_SUMMARY_CD_ID_1).planExecutionId(PLAN_EXECUTION_1).pipelineExecutionId(PIPELINE_EXECUTION_1).build());
@@ -1152,6 +1180,13 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     when(environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(ACCOUNT_ID, ORG_ID, PROJECT_ID, envIds))
         .thenReturn(environments);
     mockServiceEntityForNonGitOps();
+
+    Page<EnvironmentGroupEntity> page = mock(Page.class);
+    when(environmentGroupService.list(any(), any(), any(), any(), any())).thenReturn(page);
+    EnvironmentGroupEntity environmentGroupEntity1 = EnvironmentGroupEntity.builder().identifier(ENVIRONMENT_GROUP_1).name(ENVIRONMENT_GROUP_NAME_1).envIdentifiers(Collections.singletonList(ENVIRONMENT_1)).build();
+    EnvironmentGroupEntity environmentGroupEntity2 = EnvironmentGroupEntity.builder().identifier(ENVIRONMENT_GROUP_2).name(ENVIRONMENT_GROUP_NAME_2).envIdentifiers(Arrays.asList(ENVIRONMENT_1, ENVIRONMENT_2)).build();
+    when(page.getContent()).thenReturn(Arrays.asList(environmentGroupEntity1, environmentGroupEntity2));
+
 
     ArtifactInstanceDetails artifactInstanceDetails =
         ArtifactInstanceDetails.builder().artifactInstanceDetails(getArtifactInstanceDetailList()).build();
