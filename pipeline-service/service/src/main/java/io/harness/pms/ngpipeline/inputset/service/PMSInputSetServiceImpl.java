@@ -43,6 +43,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
+import io.harness.gitx.GitXSettingsHelper;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.inputset.InputSetMoveConfigOperationDTO;
@@ -96,6 +97,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Inject private PMSPipelineService pipelineService;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
   @Inject private InputSetsApiUtils inputSetsApiUtils;
+  @Inject GitXSettingsHelper gitXSettingsHelper;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Input set [%s] under Project[%s], Organization [%s] for Pipeline [%s] already exists";
@@ -111,6 +113,9 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
         inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
     InputSetValidationHelper.validateInputSet(this, inputSetEntity, hasNewYamlStructure);
     if (!isOldGitSync) {
+      gitXSettingsHelper.enforceGitExperienceIfApplicable(
+          inputSetEntity.getAccountId(), inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
+
       PipelineEntity pipelineEntityMetadata =
           pipelineService.getPipelineMetadata(inputSetEntity.getAccountIdentifier(), inputSetEntity.getOrgIdentifier(),
               inputSetEntity.getProjectIdentifier(), inputSetEntity.getPipelineIdentifier(), false, true);

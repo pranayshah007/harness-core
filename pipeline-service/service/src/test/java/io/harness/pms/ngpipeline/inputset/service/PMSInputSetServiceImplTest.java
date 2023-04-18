@@ -53,6 +53,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.gitx.GitXSettingsHelper;
 import io.harness.manage.GlobalContextManager;
 import io.harness.pms.inputset.InputSetMoveConfigOperationDTO;
 import io.harness.pms.inputset.gitsync.InputSetYamlDTO;
@@ -102,6 +103,7 @@ import org.springframework.data.mongodb.core.query.Query;
 @PrepareForTest({InputSetValidationHelper.class})
 @OwnedBy(PIPELINE)
 public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
+  @Mock GitXSettingsHelper gitXSettingsHelper;
   @Inject PMSInputSetServiceImpl pmsInputSetService;
   @Spy @InjectMocks PMSInputSetServiceImpl pmsInputSetServiceMock;
   @Mock private PMSInputSetRepository inputSetRepository;
@@ -222,6 +224,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                          .build();
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
     on(pmsInputSetService).set("inputSetsApiUtils", inputSetsApiUtils);
+    on(pmsInputSetService).set("gitXSettingsHelper", gitXSettingsHelper);
   }
 
   @Test
@@ -230,7 +233,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
   public void testServiceLayer() {
     MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
     List<InputSetEntity> inputSets = ImmutableList.of(inputSetEntity, overlayInputSetEntity);
-
+    doNothing().when(gitXSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
     for (InputSetEntity entity : inputSets) {
       InputSetEntity createdInputSet = pmsInputSetService.create(entity, false);
       assertThat(createdInputSet).isNotNull();
@@ -309,6 +312,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
   public void testList() {
     MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
     when(inputSetsApiUtils.isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(any())).thenReturn(false);
+    doNothing().when(gitXSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
     pmsInputSetService.create(inputSetEntity, false);
     pmsInputSetService.create(overlayInputSetEntity, false);
 
