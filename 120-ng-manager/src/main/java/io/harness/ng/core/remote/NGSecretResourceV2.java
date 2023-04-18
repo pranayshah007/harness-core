@@ -56,6 +56,7 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.service.impl.security.NGEncryptorService;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import io.dropwizard.jersey.validation.JerseyViolationException;
 import io.swagger.annotations.Api;
@@ -487,8 +488,9 @@ public class NGSecretResourceV2 {
           NGCommonEntityConstants.IDENTIFIER_KEY) @NotNull String identifier,
       @Parameter(description = "This is the encrypted Secret File that needs to be uploaded.") @FormDataParam(
           "file") InputStream uploadedInputStream,
-      @Parameter(description = "Specification of Secret file") @FormDataParam("spec") String spec) {
-    SecretRequestWrapper dto = JsonUtils.asObject(spec, SecretRequestWrapper.class);
+      @Parameter(description = "Specification of Secret file") @FormDataParam("spec") String spec)
+      throws JsonProcessingException {
+    SecretRequestWrapper dto = JsonUtils.asObjectWithExceptionHandlingType(spec, SecretRequestWrapper.class);
     validateRequestPayload(dto);
 
     SecretResponseWrapper secret =
@@ -523,8 +525,9 @@ public class NGSecretResourceV2 {
       @QueryParam("privateSecret") @DefaultValue("false") boolean privateSecret,
       @Parameter(description = "This is the encrypted Secret File that needs to be uploaded.") @NotNull @FormDataParam(
           "file") InputStream uploadedInputStream,
-      @Parameter(description = "Specification of Secret file") @FormDataParam("spec") String spec) {
-    SecretRequestWrapper dto = JsonUtils.asObject(spec, SecretRequestWrapper.class);
+      @Parameter(description = "Specification of Secret file") @FormDataParam("spec") String spec)
+      throws JsonProcessingException {
+    SecretRequestWrapper dto = JsonUtils.asObjectWithExceptionHandlingType(spec, SecretRequestWrapper.class);
     validateRequestPayload(dto);
 
     if (!Objects.equals(orgIdentifier, dto.getSecret().getOrgIdentifier())
