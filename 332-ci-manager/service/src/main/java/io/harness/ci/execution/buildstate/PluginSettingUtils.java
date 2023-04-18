@@ -808,7 +808,10 @@ public class PluginSettingUtils {
   private static Map<String, String> getSslVerifyEnvVars(ParameterField<Boolean> sslVerifyParameter) {
     Map<String, String> map = new HashMap<>();
     boolean sslVerify = resolveBooleanParameter(sslVerifyParameter, true);
-    setOptionalEnvironmentVariable(map, GIT_SSL_NO_VERIFY, String.valueOf(!sslVerify));
+    if (!sslVerify) {
+      // Set GIT_SSL_NO_VERIFY=true only when ssl verify is false
+      setOptionalEnvironmentVariable(map, GIT_SSL_NO_VERIFY, String.valueOf(!sslVerify));
+    }
     return map;
   }
 
