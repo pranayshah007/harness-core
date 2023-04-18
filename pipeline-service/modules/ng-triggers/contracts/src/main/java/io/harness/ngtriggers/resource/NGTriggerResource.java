@@ -272,6 +272,10 @@ public interface NGTriggerResource {
   getTriggerCatalog(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
 
+  /**
+   * @deprecated
+   * Use getTriggerEventHistory from NGTriggerEventHistoryResource
+   */
   @GET
   @Path("{triggerIdentifier}/eventHistory")
   @ApiOperation(value = "Get Trigger event history", nickname = "triggerEventHistory")
@@ -282,6 +286,7 @@ public interface NGTriggerResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the Trigger catalogue response")
       })
+  @Deprecated
   ResponseDTO<Page<NGTriggerEventHistoryDTO>>
   getTriggerEventHistory(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
