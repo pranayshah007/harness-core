@@ -125,7 +125,7 @@ public class CEViewServiceImplTest extends CategoryTest {
   @Owner(developers = ROHIT)
   @Category(UnitTests.class)
   public void shouldThrowExceptionViewsExceedLimit() {
-    doReturn(new ArrayList<CEView>(Collections.nCopies(1000, null))).when(ceViewDao).findByAccountId(ACCOUNT_ID, null);
+    doReturn(new ArrayList<CEView>(Collections.nCopies(10000, null))).when(ceViewDao).findByAccountId(ACCOUNT_ID, null);
     assertThatExceptionOfType(InvalidRequestException.class).isThrownBy(() -> ceViewService.save(ceView(), false));
   }
 
