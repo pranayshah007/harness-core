@@ -34,6 +34,7 @@ import io.harness.exception.InvalidYamlException;
 import io.harness.exception.WingsException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.PlanExecutionMetadata.Builder;
 import io.harness.gitsync.beans.StoreType;
@@ -103,6 +104,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -472,7 +474,9 @@ public class ExecutionHelper {
       Plan plan;
       try {
         if (executionMetadata.getExecutionMode() == ExecutionMode.POST_EXECUTION_ROLLBACK) {
-          String originalPlanId = planExecutionService.get(previousExecutionId).getPlanId();
+          String originalPlanId =
+              planExecutionService.getWithFieldsIncluded(previousExecutionId, Set.of(PlanExecutionKeys.planId))
+                  .getPlanId();
           plan = planService.fetchPlan(originalPlanId).withPlanNodes(planService.fetchNodes(originalPlanId));
         } else {
           String version = executionMetadata.getHarnessVersion();

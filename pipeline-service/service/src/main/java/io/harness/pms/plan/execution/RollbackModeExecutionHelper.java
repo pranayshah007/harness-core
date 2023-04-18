@@ -16,6 +16,7 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
 import io.harness.plan.IdentityPlanNode;
@@ -46,6 +47,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -66,8 +68,8 @@ public class RollbackModeExecutionHelper {
   public ExecutionMetadata transformExecutionMetadata(ExecutionMetadata executionMetadata, String planExecutionID,
       ExecutionTriggerInfo triggerInfo, String accountId, String orgIdentifier, String projectIdentifier,
       List<String> stageNodeExecutionIds, ExecutionMode executionMode) {
-    //TODO: Use projections
-    List<NodeExecution> rollbackStageNodeExecutions = nodeExecutionService.getAll(new HashSet<>(stageNodeExecutionIds));
+    List<NodeExecution> rollbackStageNodeExecutions = nodeExecutionService.getAllWithFieldIncluded(
+        new HashSet<>(stageNodeExecutionIds), NodeProjectionUtils.fieldsForNodeAndAmbiance);
     return executionMetadata.toBuilder()
         .setExecutionUuid(planExecutionID)
         .setTriggerInfo(triggerInfo)
@@ -97,11 +99,13 @@ public class RollbackModeExecutionHelper {
             .withUuid(null); // this uuid is the mongo uuid. It is being set as null so that when this Plan Execution
                              // Metadata is saved later on in the execution, a new object is stored rather than
                              // replacing the Metadata for the original execution
-    //TODO: Use projections
-    List<String> rollbackStageFQNs = nodeExecutionService.getAll(new HashSet<>(stageNodeExecutionIds))
-                                         .stream()
-                                         .map(NodeExecution::getStageFqn)
-                                         .collect(Collectors.toList());
+    // TODO: Use projections
+    List<String> rollbackStageFQNs =
+        nodeExecutionService
+            .getAllWithFieldIncluded(new HashSet<>(stageNodeExecutionIds), Set.of(NodeExecutionKeys.planNode))
+            .stream()
+            .map(NodeExecution::getStageFqn)
+            .collect(Collectors.toList());
     metadata.setStagesExecutionMetadata(StagesExecutionMetadata.builder()
                                             .fullPipelineYaml(planExecutionMetadata.getYaml())
                                             .stageIdentifiers(rollbackStageFQNs)
