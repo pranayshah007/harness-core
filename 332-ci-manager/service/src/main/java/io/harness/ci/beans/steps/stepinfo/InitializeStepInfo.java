@@ -22,6 +22,8 @@ import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.filters.WithConnectorRef;
 import io.harness.plancreator.execution.ExecutionElementConfig;
+import io.harness.plancreator.steps.TaskSelectorYaml;
+import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -55,7 +57,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("liteEngineTaskStepInfo")
 @OwnedBy(CI)
 @RecasterAlias("io.harness.beans.steps.stepinfo.InitializeStepInfo")
-public class InitializeStepInfo implements CIStepInfo, WithConnectorRef {
+public class InitializeStepInfo implements CIStepInfo, WithConnectorRef, WithDelegateSelector {
   public static final int DEFAULT_RETRY = 0;
   public static final int DEFAULT_TIMEOUT = 600 * 1000;
   public static final int DEFAULT_TIMEOUT_WITH_QUEUE = 10 * 3600 * 1000;
@@ -88,6 +90,8 @@ public class InitializeStepInfo implements CIStepInfo, WithConnectorRef {
   @NotNull Infrastructure infrastructure;
 
   Map<String, StrategyExpansionData> strategyExpansionMap;
+
+  ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @Builder
   @ConstructorProperties({"accountId", "timeout", "identifier", "name", "retry", "buildJobEnvInfo",
@@ -161,5 +165,10 @@ public class InitializeStepInfo implements CIStepInfo, WithConnectorRef {
   @Override
   public ExpressionMode getExpressionMode() {
     return ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED;
+  }
+
+  @Override
+  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
+    return getDelegateSelectors();
   }
 }
