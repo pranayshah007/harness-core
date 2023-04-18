@@ -41,6 +41,7 @@ import io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.perpetualtask.PerpetualTaskService;
+import io.harness.perpetualtask.PerpetualTaskState;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.queue.QueuePublisher;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -744,6 +745,13 @@ public class InstanceHelper {
             perpetualTaskId, infrastructureMappingId, instanceSyncV2TaskDetails.getPerpetualTaskId(),
             instanceSyncV2TaskDetails.getUuid());
         return;
+      }
+      PerpetualTaskRecord perpetualTaskV2Record =
+          perpetualTaskService.getTaskRecord(instanceSyncV2TaskDetails.getPerpetualTaskId());
+      if (perpetualTaskV2Record != null) {
+        if (perpetualTaskRecord.getState().equals(PerpetualTaskState.TASK_INVALID)) {
+          perpetualTaskService.deleteTask(accountId, instanceSyncV2TaskDetails.getPerpetualTaskId());
+        }
       }
     }
 
