@@ -389,15 +389,17 @@ public class DelegateServiceGrpcClient {
           ByteString.copyFrom(referenceFalseKryoSerializer.asDeflatedBytes(taskParameters)));
     }
 
-    Map<String, String> abstractionsMap = getAbstractionsMap(taskRequest.getLogStreamingAbstractions());
+    Map<String, String> taskLogAbstractionsMap = getAbstractionsMap(taskRequest.getLogStreamingAbstractions());
 
-    TaskLogAbstractions.Builder builder = TaskLogAbstractions.newBuilder().putAllValues(abstractionsMap);
+    TaskLogAbstractions.Builder builder = TaskLogAbstractions.newBuilder().putAllValues(taskLogAbstractionsMap);
 
     builder.setShouldSkipOpenStream(taskRequest.isShouldSkipOpenStream());
     builder.setBaseLogKey(taskRequest.getBaseLogKey() == null ? "" : taskRequest.getBaseLogKey());
 
+    Map<String, String> taskSetupAbstractionsMap = getAbstractionsMap(taskRequest.getTaskSetupAbstractions());
+
     return submitTaskV2(delegateCallbackToken, AccountId.newBuilder().setId(taskRequest.getAccountId()).build(),
-        TaskSetupAbstractions.newBuilder().putAllValues(abstractionsMap).build(), builder.build(),
+        TaskSetupAbstractions.newBuilder().putAllValues(taskSetupAbstractionsMap).build(), builder.build(),
         taskDetailsBuilder.build(), capabilities, taskRequest.getTaskSelectors(), holdFor, taskRequest.isForceExecute(),
         taskRequest.isExecuteOnHarnessHostedDelegates(), taskRequest.getEligibleToExecuteDelegateIds(),
         taskRequest.isEmitEvent(), taskRequest.getStageId(), delegateSelectionTrackingLogEnabled);
