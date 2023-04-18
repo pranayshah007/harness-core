@@ -134,7 +134,7 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
     doReturn((ScmConnector) connectorInfo.getConnectorConfig())
         .when(gitSyncConnectorHelper)
         .getScmConnector(any(), any(), any(), any());
-    doNothing().when(gitSyncConnectorHelper).setUserGitCredsInConnector(anyString(), any());
+    doNothing().when(gitSyncConnectorHelper).setUserGitCredsInConnectorIfPresent(anyString(), any());
     when(yamlGitConfigService.get(any(), any(), any(), any()))
         .thenReturn(YamlGitConfigDTO.builder()
                         .accountIdentifier(accountIdentifier)
