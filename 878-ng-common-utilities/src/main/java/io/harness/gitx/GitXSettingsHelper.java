@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -48,7 +49,18 @@ public class GitXSettingsHelper {
     }
   }
 
-  public String getDefaultConnectorForGitX(String accountIdentifier, String orgIdentifier, String projIdentifier) {
+  public void setConnectorRefForRemoteEntity(String accountIdentifier, String orgIdentifier, String projIdentifier) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (gitEntityInfo != null && gitEntityInfo.getStoreType() != null
+        && StoreType.REMOTE.equals(gitEntityInfo.getStoreType()) && gitEntityInfo.getConnectorRef() == null) {
+      String defaultConnectorForGitX = getDefaultConnectorForGitX(accountIdentifier, orgIdentifier, projIdentifier);
+
+      gitEntityInfo.setConnectorRef(defaultConnectorForGitX);
+      GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
+    }
+  }
+
+  private String getDefaultConnectorForGitX(String accountIdentifier, String orgIdentifier, String projIdentifier) {
     String defaultConnectorForGitExperience;
 
     // Exceptions are handled for release for backward compatibility for 1 release.

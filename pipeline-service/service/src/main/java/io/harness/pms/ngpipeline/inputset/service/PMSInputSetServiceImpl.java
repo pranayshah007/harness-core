@@ -115,7 +115,8 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     if (!isOldGitSync) {
       gitXSettingsHelper.enforceGitExperienceIfApplicable(
           inputSetEntity.getAccountId(), inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
-      setConnectorRefForRemoteEntity(inputSetEntity);
+      gitXSettingsHelper.setConnectorRefForRemoteEntity(
+          inputSetEntity.getAccountId(), inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
 
       PipelineEntity pipelineEntityMetadata =
           pipelineService.getPipelineMetadata(inputSetEntity.getAccountIdentifier(), inputSetEntity.getOrgIdentifier(),
@@ -736,24 +737,6 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
           EXPLANATION_INPUT_SET_ACCOUNT_SETTING,
           new InvalidRequestException(String.format(
               "Input-set repository [%s] doesn't match linked pipeline repository [%s]", inputSetRepo, pipelineRepo)));
-    }
-  }
-
-  private void setConnectorRefForRemoteEntity(InputSetEntity inputSetEntity) {
-    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-    if (gitEntityInfo != null && gitEntityInfo.getStoreType() != null
-        && StoreType.REMOTE.equals(gitEntityInfo.getStoreType()) && gitEntityInfo.getConnectorRef() == null) {
-      try {
-        String defaultConnectorForGitX =
-            gitXSettingsHelper.getDefaultConnectorForGitX(inputSetEntity.getAccountIdentifier(),
-                inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
-
-        gitEntityInfo.setConnectorRef(defaultConnectorForGitX);
-        GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
-      } catch (Exception ex) {
-        log.warn(
-            String.format("No ConnectorRef provided for inputSet with id: %s", inputSetEntity.getIdentifier()), ex);
-      }
     }
   }
 }

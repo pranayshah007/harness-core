@@ -179,7 +179,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
     gitXSettingsHelper.enforceGitExperienceIfApplicable(pipelineEntity.getAccountIdentifier(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
-    setConnectorRefForRemoteEntity(pipelineEntity);
+    gitXSettingsHelper.setConnectorRefForRemoteEntity(pipelineEntity.getAccountIdentifier(),
+        pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
 
     checkProjectExists(
         pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
@@ -971,24 +972,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
                        .collect(Collectors.toList()))) {
       throw new HintException(format(
           "Invalid module type [%s]. Please select the correct module type %s", module, ModuleType.getModules()));
-    }
-  }
-
-  private void setConnectorRefForRemoteEntity(PipelineEntity pipelineEntity) {
-    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
-    if (gitEntityInfo != null && gitEntityInfo.getStoreType() != null
-        && StoreType.REMOTE.equals(gitEntityInfo.getStoreType()) && gitEntityInfo.getConnectorRef() == null) {
-      try {
-        String defaultConnectorForGitX =
-            gitXSettingsHelper.getDefaultConnectorForGitX(pipelineEntity.getAccountIdentifier(),
-                pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
-
-        gitEntityInfo.setConnectorRef(defaultConnectorForGitX);
-        GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
-      } catch (Exception ex) {
-        log.warn(
-            String.format("No ConnectorRef provided for pipeline with id: %s", pipelineEntity.getIdentifier()), ex);
-      }
     }
   }
 }
