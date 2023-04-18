@@ -732,20 +732,28 @@ public class InstanceHelper {
     if (featureFlagService.isEnabled(INSTANCE_SYNC_V2_CG, infrastructureMapping.getAccountId())) {
       InstanceSyncTaskDetails instanceSyncV2TaskDetails =
           taskDetailsService.getForInfraMapping(infrastructureMapping.getAccountId(), infrastructureMapping.getUuid());
-      if (Objects.nonNull(instanceSyncV2TaskDetails) && instanceSyncV2TaskDetails.getLastSuccessfulRun() > 0) {
-        log.info(
-            "[INSTANCE_SYNC_V2_CG] Instance Sync for infra mapping: [{}] is moved to new Instance Sync V2 framework, and is handled via Perpetual Task Id: [{}], and instance sync task details id: [{}]. Skipping consuming response for this.",
-            infrastructureMapping.getUuid(), instanceSyncV2TaskDetails.getPerpetualTaskId(),
-            instanceSyncV2TaskDetails.getUuid());
+      if (Objects.nonNull(instanceSyncV2TaskDetails)) {
+        if (instanceSyncV2TaskDetails.getLastSuccessfulRun() > 0) {
+          log.info(
+              "[INSTANCE_SYNC_V2_CG] Instance Sync for infra mapping: [{}] is moved to new Instance Sync V2 framework, and is handled via Perpetual Task Id: [{}], and instance sync task details id: [{}]. Skipping consuming response for this.",
+              infrastructureMapping.getUuid(), instanceSyncV2TaskDetails.getPerpetualTaskId(),
+              instanceSyncV2TaskDetails.getUuid());
 
-        instanceSyncPerpetualTaskService.deletePerpetualTask(
-            infrastructureMapping.getAccountId(), infrastructureMappingId, perpetualTaskId, true);
-        log.info(
-            "[INSTANCE_SYNC_V2_CG] Perpetual task with Id: [{}] deleted for infra mapping Id: [{}]. This is now migrated to new perpetual task: [{}], and instance sync task details: [{}]",
-            perpetualTaskId, infrastructureMappingId, instanceSyncV2TaskDetails.getPerpetualTaskId(),
-            instanceSyncV2TaskDetails.getUuid());
-        return;
+          instanceSyncPerpetualTaskService.deletePerpetualTask(
+              infrastructureMapping.getAccountId(), infrastructureMappingId, perpetualTaskId, true);
+          log.info(
+              "[INSTANCE_SYNC_V2_CG] Perpetual task with Id: [{}] deleted for infra mapping Id: [{}]. This is now migrated to new perpetual task: [{}], and instance sync task details: [{}]",
+              perpetualTaskId, infrastructureMappingId, instanceSyncV2TaskDetails.getPerpetualTaskId(),
+              instanceSyncV2TaskDetails.getUuid());
+          return;
+        }
+        PerpetualTaskRecord perpetualTaskV2Record =
+            perpetualTaskService.getTaskRecord(instanceSyncV2TaskDetails.getPerpetualTaskId());
+        if (perpetualTaskV2Record != null && (perpetualTaskRecord.getState().equals(PerpetualTaskState.TASK_INVALID))) {
+          perpetualTaskService.deleteTask(accountId, instanceSyncV2TaskDetails.getPerpetualTaskId());
+        }
       }
+
       PerpetualTaskRecord perpetualTaskV2Record =
           perpetualTaskService.getTaskRecord(instanceSyncV2TaskDetails.getPerpetualTaskId());
       if (perpetualTaskV2Record != null && (perpetualTaskRecord.getState().equals(PerpetualTaskState.TASK_INVALID))) {
