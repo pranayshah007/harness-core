@@ -8,26 +8,29 @@
 package io.harness.assessment.settings.services;
 
 import io.harness.assessment.settings.beans.dto.BenchmarkDTO;
-import io.harness.assessment.settings.beans.dto.BenchmarksListRequest;
-import io.harness.assessment.settings.beans.dto.ScoreDTO;
+import io.harness.assessment.settings.beans.dto.upload.AssessmentError;
+import io.harness.assessment.settings.beans.dto.upload.BenchmarkUploadResponse;
+import io.harness.assessment.settings.beans.dto.upload.BenchmarksUploadRequest;
 import io.harness.assessment.settings.beans.entities.Assessment;
 import io.harness.assessment.settings.beans.entities.Benchmark;
 import io.harness.assessment.settings.beans.entities.Question;
 import io.harness.assessment.settings.beans.entities.Score;
 import io.harness.assessment.settings.beans.entities.ScoreType;
 import io.harness.assessment.settings.mappers.BenchmarkMapper;
+import io.harness.assessment.settings.mappers.BenchmarkUtils;
 import io.harness.assessment.settings.repositories.AssessmentRepository;
 import io.harness.assessment.settings.repositories.BenchmarkRepository;
 
 import com.google.inject.Inject;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.SetUtils;
 
 @Slf4j
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -36,24 +39,37 @@ public class BenchmarkServiceImpl implements BenchmarkService {
   private AssessmentRepository assessmentRepository;
 
   @Override
-  public List<BenchmarkDTO> uploadBenchmark(BenchmarksListRequest benchmarksListRequest, String assessmentId) {
+  public BenchmarkUploadResponse uploadBenchmark(BenchmarksUploadRequest benchmarksUploadRequest, String assessmentId) {
     // validations of question and scores TODO
-    Long version = benchmarksListRequest.getVersion();
+    Long version = benchmarksUploadRequest.getMajorVersion();
+    List<AssessmentError> assessmentErrors = new ArrayList<>();
     Optional<Assessment> assessmentOptional = assessmentRepository.findByAssessmentIdAndVersion(assessmentId, version);
     if (assessmentOptional.isEmpty()) {
       throw new RuntimeException("Assessment Not Found for Id : " + assessmentId);
     }
     Assessment assessment = assessmentOptional.get();
-    List<BenchmarkDTO> benchmarks = benchmarksListRequest.getBenchmarks();
-    if (benchmarks.stream().filter(BenchmarkDTO::getIsDefault).count() != 1) {
+    List<BenchmarkDTO> benchmarks = benchmarksUploadRequest.getBenchmarks();
+    // set default as false
+    benchmarks.stream()
+        .filter(benchmarkDTO -> Objects.isNull(benchmarkDTO.getIsDefault()))
+        .forEach(benchmarkDTO -> benchmarkDTO.setIsDefault(false));
+    Map<String, Question> questionMap =
+        assessment.getQuestions().stream().collect(Collectors.toMap(Question::getQuestionId, Function.identity()));
+    // set max score same as question score.
+    benchmarks.stream()
+        .flatMap(benchmarkDTO -> benchmarkDTO.getScores().stream())
+        .filter(scoreDTO -> Objects.isNull(scoreDTO.getMaxScore()))
+        .forEach(scoreDTO -> scoreDTO.setMaxScore(questionMap.get(scoreDTO.getEntityId()).getMaxScore()));
+    BenchmarkUtils.checkUniqueBenchmarkIds(benchmarks, assessmentErrors, assessmentId);
+    benchmarksUploadRequest.getBenchmarks().forEach(
+        benchmarkDTO -> BenchmarkUtils.validateBenchmarkQuestions(benchmarkDTO, assessment, assessmentErrors));
+    if (assessmentErrors.size() > 0) {
+      return BenchmarkUploadResponse.builder().errors(assessmentErrors).build();
+    }
+    // Mantain one default very Imp TODO
+    /*if (benchmarks.stream().filter(BenchmarkDTO::getIsDefault).count() != 1) {
       throw new RuntimeException("There has to be one default benchmark for the assessment.");
-    }
-
-    if (benchmarks.size() != new HashSet<>(benchmarks).size()) {
-      throw new RuntimeException("All benchmark Ids have to be unique");
-    }
-    benchmarksListRequest.getBenchmarks().forEach(benchmarkDTO -> validateBenchmark(benchmarkDTO, assessment));
-
+    }*/
     for (BenchmarkDTO benchmarkDTO : benchmarks) {
       Optional<Benchmark> benchmarkOptional = benchmarkRepository.findOneByAssessmentIdAndVersionAndBenchmarkId(
           assessmentId, version, benchmarkDTO.getBenchmarkId());
@@ -74,21 +90,11 @@ public class BenchmarkServiceImpl implements BenchmarkService {
       benchmarkRepository.save(benchmark);
     }
     List<Benchmark> benchmarksInDB = benchmarkRepository.findAllByAssessmentIdAndVersion(assessmentId, version);
-    return benchmarksInDB.stream().map(BenchmarkMapper::toDTO).collect(Collectors.toList());
-  }
+    List<BenchmarkDTO> benchmarkDTOList =
+        benchmarksInDB.stream().map(BenchmarkMapper::toDTO).collect(Collectors.toList());
 
-  private void validateBenchmark(BenchmarkDTO benchmarkDTO, Assessment assessment) {
-    Set<String> setOfQuestionInDb =
-        assessment.getQuestions().stream().map(Question::getQuestionId).collect(Collectors.toSet());
-    Set<String> setOfQuestionInBenchmark =
-        benchmarkDTO.getScores().stream().map(ScoreDTO::getEntityId).collect(Collectors.toSet());
-    if (!setOfQuestionInBenchmark.equals(setOfQuestionInDb)) {
-      throw new RuntimeException(
-          "Benchmark is incomplete : " + SetUtils.difference(setOfQuestionInDb, setOfQuestionInBenchmark)
-          + " incorrect benchmark questions : " + SetUtils.difference(setOfQuestionInBenchmark, setOfQuestionInDb));
-    }
+    return BenchmarkUploadResponse.builder().benchmarks(benchmarkDTOList).errors(assessmentErrors).build();
   }
-
   @Override
   public List<BenchmarkDTO> getBenchmarks(String assessmentId, Long version) {
     List<Benchmark> benchmarksInDB = benchmarkRepository.findAllByAssessmentIdAndVersion(assessmentId, version);

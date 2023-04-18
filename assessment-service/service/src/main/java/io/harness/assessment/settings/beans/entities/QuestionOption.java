@@ -19,5 +19,6 @@ import lombok.EqualsAndHashCode;
 public class QuestionOption {
   @EqualsAndHashCode.Include String optionId;
   String optionText;
+  // TODO we might need to change it to double.
   @EqualsAndHashCode.Include @Min(0) @Max(10) Long optionPoints;
 }

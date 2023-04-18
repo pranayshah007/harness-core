@@ -10,11 +10,16 @@ package io.harness.assessment.settings.beans.dto.upload;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import lombok.Data;
 
 @Data
 public class UploadedOption {
   @NotNull String optionId;
-  @NotNull String optionText;
-  @NotNull @Min(0) @Max(10) Long optionPoints;
+  @Size.List({
+    @Size(min = 1, message = "Option text is too short."), @Size(max = 3000, message = "Option text is too long")
+  })
+  @NotNull
+  String optionText;
+  @Min(0) @Max(10) Long optionPoints;
 }

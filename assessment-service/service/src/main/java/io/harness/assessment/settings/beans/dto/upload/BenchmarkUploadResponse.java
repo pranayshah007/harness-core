@@ -7,27 +7,17 @@
 
 package io.harness.assessment.settings.beans.dto.upload;
 
-import io.harness.assessment.settings.beans.entities.Question;
+import io.harness.assessment.settings.beans.dto.BenchmarkDTO;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
-@Builder
 @Data
+@Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AssessmentUploadResponse {
-  String assessmentId;
-  String assessmentName;
-  Long majorVersion;
-  Long minorVersion;
-  List<Question> questions;
-  Long expectedCompletionDuration;
-  Long baseScore;
+public class BenchmarkUploadResponse {
+  List<BenchmarkDTO> benchmarks;
   List<AssessmentError> errors;
-  Long createdAt;
-  String createdBy;
-  Boolean isPublished;
-  Long lastUpdatedAt;
 }
