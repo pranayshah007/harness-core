@@ -70,7 +70,7 @@ public class GoogleFunctionGenOneRollbackCommandTaskHandler extends GoogleFuncti
       if (googleFunctionRollbackRequest.isFirstDeployment()) {
         CreateFunctionRequest.Builder createFunctionRequestBuilder = CreateFunctionRequest.newBuilder();
         googleFunctionCommandTaskHelper.parseStringContentAsClassBuilder(
-            googleFunctionRollbackRequest.getCreateFunctionRequestAsString(), createFunctionRequestBuilder,
+            googleFunctionRollbackRequest.getGoogleFunctionDeployManifestContent(), createFunctionRequestBuilder,
             executionLogCallback, "createFunctionRequest");
         String functionName = googleFunctionCommandTaskHelper.getFunctionName(googleFunctionInfraConfig.getProject(),
             googleFunctionInfraConfig.getRegion(), createFunctionRequestBuilder.getFunction().getName());
