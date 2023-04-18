@@ -3297,8 +3297,7 @@
       ],
       "properties": {
         "identifier": {
-          "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
+          "type": "string"
         },
         "spec": {
           "$ref": "#/definitions/ConfigFileAttributes"
@@ -8963,8 +8962,7 @@
       ],
       "properties": {
         "identifier": {
-          "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
+          "type": "string"
         },
         "type": {
           "type": "string",
