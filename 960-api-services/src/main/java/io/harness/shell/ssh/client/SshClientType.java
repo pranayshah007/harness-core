@@ -4,18 +4,6 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
+package io.harness.shell.ssh.client;
 
-package io.harness.shell.ssh.xfer;
-
-import io.harness.logging.CommandExecutionStatus;
-
-import lombok.Builder;
-import lombok.Getter;
-
-@Builder
-@Getter
-public class ScpResponse {
-  boolean success;
-  int exitCode;
-  CommandExecutionStatus status;
-}
+public enum SshClientType { JSCH, SSHJ }

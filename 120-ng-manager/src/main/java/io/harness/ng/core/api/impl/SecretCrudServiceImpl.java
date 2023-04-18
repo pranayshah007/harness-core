@@ -178,8 +178,16 @@ public class SecretCrudServiceImpl implements SecretCrudService {
         secretSpec.setValue(encryptedData.getPath());
       }
     }
+    SecretDTOV2 secretDTO = secret.toDTO();
+    if (null != secretDTO && secretDTO.getSpec() instanceof SSHKeySpecDTO) {
+      SSHKeySpecDTO sshKeySpecDTO = (SSHKeySpecDTO) secretDTO.getSpec();
+      sshKeySpecDTO.getAuth().setUseSshClient(
+          featureFlagHelperService.isEnabled(secret.getAccountIdentifier(), FeatureName.CDS_SSH_CLIENT));
+      sshKeySpecDTO.getAuth().setUseSshj(
+          featureFlagHelperService.isEnabled(secret.getAccountIdentifier(), FeatureName.CDS_SSH_SSHJ));
+    }
     return SecretResponseWrapper.builder()
-        .secret(secret.toDTO())
+        .secret(secretDTO)
         .updatedAt(secret.getLastModifiedAt())
         .createdAt(secret.getCreatedAt())
         .draft(secret.isDraft())
