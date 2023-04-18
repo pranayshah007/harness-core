@@ -26,6 +26,7 @@ import static io.harness.security.encryption.EncryptionType.VAULT;
 import static software.wings.settings.SettingVariableTypes.CONFIG_FILE;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.fail;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,6 +66,7 @@ import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dao.NGEncryptedDataDao;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.rule.Owner;
@@ -876,5 +878,36 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     verify(ngConnectorSecretManagerService, times(0)).getLocalConfigDTO(accountIdentifier);
     verify(ngConnectorSecretManagerService, times(1))
         .getUsingIdentifier(accountIdentifier, null, null, encryptedDataDTO.getSecretManagerIdentifier(), false);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testCreateSecretFile_filesMigrationMethod() {
+    String secretManagerIdentifier = randomAlphabetic(10);
+    String encryptionKey = randomAlphabetic(10);
+    String encryptedValue = randomAlphabetic(10);
+    SecretManagerConfigDTO secretManagerConfigDTO =
+        LocalConfigDTO.builder().harnessManaged(true).encryptionType(LOCAL).build();
+    SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
+                                  .orgIdentifier(orgIdentifier)
+                                  .projectIdentifier(projectIdentifier)
+                                  .identifier(identifier)
+                                  .spec(SecretFileSpecDTO.builder().build())
+                                  .type(SecretType.SecretFile)
+                                  .build();
+    when(encryptedDataDao.get(any(), any(), any(), any())).thenReturn(null);
+    when(ngConnectorSecretManagerService.getUsingIdentifier(
+             accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, false))
+        .thenReturn(secretManagerConfigDTO);
+    ArgumentCaptor<NGEncryptedData> argumentCaptor = ArgumentCaptor.forClass(NGEncryptedData.class);
+    when(encryptedDataDao.save(argumentCaptor.capture())).thenReturn(null);
+    ngEncryptedDataService.createSecretFile(accountIdentifier, secretDTOV2, encryptionKey, encryptedValue);
+    NGEncryptedData createdData = argumentCaptor.getValue();
+    verify(encryptedDataDao, times(1)).get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    assertNotNull(createdData);
+    assertThat(createdData.isBase64Encoded()).isEqualTo(true);
+    assertThat(createdData.getEncryptionKey()).isEqualTo(encryptionKey);
+    assertThat(createdData.getEncryptedValue()).isEqualTo(encryptedValue.toCharArray());
   }
 }
