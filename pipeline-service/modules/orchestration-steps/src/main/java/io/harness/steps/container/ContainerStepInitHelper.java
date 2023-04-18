@@ -8,6 +8,7 @@
 package io.harness.steps.container;
 
 import static io.harness.beans.sweepingoutputs.ContainerPortDetails.PORT_DETAILS;
+import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_SERVICE_LOG_KEY_VARIABLE;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.PORT_STARTING_RANGE;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_PREFIX;
@@ -31,6 +32,7 @@ import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.environment.pod.container.ContainerImageDetails;
 import io.harness.beans.sweepingoutputs.ContainerPortDetails;
+import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.StepContainerUtils;
 import io.harness.ci.utils.ContainerSecretEvaluator;
@@ -54,6 +56,7 @@ import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.ExpressionResolverUtils;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerDetailsSweepingOutput;
@@ -391,6 +394,13 @@ public class ContainerStepInitHelper {
             .cleanUpContainerNames(containerNames)
             .build(),
         CLEANUP_DETAILS);
+    k8sPodInitUtils.consumeSweepingOutput(ambiance,
+        K8StageInfraDetails.builder()
+            .infrastructure(infrastructure.toCIInfra())
+            .podName(podName)
+            .containerNames(containerNames)
+            .build(),
+        STAGE_INFRA_DETAILS);
   }
 
   private String getPodName(Ambiance ambiance, String stageId) {

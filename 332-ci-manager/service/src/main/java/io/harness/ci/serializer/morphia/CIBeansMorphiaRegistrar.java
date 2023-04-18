@@ -41,7 +41,6 @@ public class CIBeansMorphiaRegistrar implements MorphiaRegistrar {
     set.add(ExecutionQueueLimit.class);
     set.add(CITaskDetails.class);
     set.add(K8PodDetails.class);
-    set.add(StageDetails.class);
     set.add(StepTaskDetails.class);
     set.add(BuildStandardVariables.class);
     set.add(GitVariables.class);

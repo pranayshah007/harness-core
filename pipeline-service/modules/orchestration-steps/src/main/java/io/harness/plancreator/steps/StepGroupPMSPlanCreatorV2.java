@@ -110,7 +110,7 @@ public class StepGroupPMSPlanCreatorV2 extends ChildrenPlanCreator<StepGroupElem
 
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
-    return Collections.singletonMap(STEP_GROUP_V2, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
+    return Collections.singletonMap(STEP_GROUP, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
   }
 
   @Override

@@ -8,6 +8,7 @@
 package io.harness.ci.plugin;
 
 import static io.harness.beans.steps.CIStepInfoType.GIT_CLONE;
+import static io.harness.beans.steps.CIStepInfoType.RUN;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.PORT_STARTING_RANGE;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 
@@ -110,6 +111,9 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
   public boolean isSupported(String stepType) {
     // todo: support more steps as they come.
     if (GIT_CLONE.getDisplayName().equals(stepType)) {
+      return true;
+    }
+    if (RUN.getDisplayName().equals(stepType)) {
       return true;
     }
     log.warn("step Type {} not supported by CI yet", stepType);

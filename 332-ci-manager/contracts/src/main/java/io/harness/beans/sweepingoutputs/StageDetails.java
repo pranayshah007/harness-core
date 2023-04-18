@@ -44,13 +44,13 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("StageDetails")
 @OwnedBy(CI)
 @RecasterAlias("io.harness.beans.sweepingoutputs.StageDetails")
-public class StageDetails implements PersistentEntity, UuidAware, ContextElement, AccountAccess {
+public class StageDetails implements PersistentEntity, ContextElement, AccountAccess {
   private String stageID;
   private String stageRuntimeID;
   private BuildStatusUpdateParameter buildStatusUpdateParameter;
   private List<CIRegistry> registries;
   private long lastUpdatedAt;
   private ExecutionSource executionSource;
-  @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
+  @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
   @FdIndex private String accountId;
 }
