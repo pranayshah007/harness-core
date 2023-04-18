@@ -21,7 +21,8 @@ import lombok.Data;
 public class AssessmentResultsResponse {
   String assessmentId;
   String assessmentName;
-  Long version;
+  Long majorVersion;
+  Long minorVersion;
   AssessmentResponseStatus status;
   List<UserResponsesResponse> responses;
   List<Score> userScores;

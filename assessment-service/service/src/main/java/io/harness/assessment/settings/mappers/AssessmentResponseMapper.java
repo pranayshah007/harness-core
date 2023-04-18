@@ -24,7 +24,7 @@ public class AssessmentResponseMapper {
   public AssessmentResultsResponse toDTO(AssessmentResponse assessmentResponse) {
     return AssessmentResultsResponse.builder()
         .assessmentId(assessmentResponse.getAssessmentId())
-        .version(assessmentResponse.getVersion())
+        .majorVersion(assessmentResponse.getVersion())
         .responses(assessmentResponse.getResponses()
                        .stream()
                        .map(AssessmentResponseMapper::toUserResponseDTO)

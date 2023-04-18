@@ -46,7 +46,8 @@ public class AssessmentMapper {
                                   .build())
                        .collect(Collectors.toList()))
         .baseScore(assessment.getBaseScore())
-        .version(assessment.getVersion())
+        .majorVersion(assessment.getVersion())
+        .minorVersion(assessment.getMinorVersion())
         .build();
   }
 }
