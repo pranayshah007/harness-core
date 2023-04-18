@@ -8,12 +8,13 @@
 package io.harness.assessment.settings.services;
 
 import io.harness.assessment.settings.beans.dto.BenchmarkDTO;
-import io.harness.assessment.settings.beans.dto.BenchmarksListRequest;
+import io.harness.assessment.settings.beans.dto.upload.BenchmarkUploadResponse;
+import io.harness.assessment.settings.beans.dto.upload.BenchmarksUploadRequest;
 
 import java.util.List;
 
 public interface BenchmarkService {
-  List<BenchmarkDTO> uploadBenchmark(BenchmarksListRequest benchmarksListRequest, String assessmentId);
+  BenchmarkUploadResponse uploadBenchmark(BenchmarksUploadRequest benchmarksUploadRequest, String assessmentId);
 
   List<BenchmarkDTO> getBenchmarks(String assessmentId, Long version);
 }

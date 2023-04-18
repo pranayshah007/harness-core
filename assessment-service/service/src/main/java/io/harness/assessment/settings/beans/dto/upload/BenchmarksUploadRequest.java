@@ -5,7 +5,9 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.assessment.settings.beans.dto;
+package io.harness.assessment.settings.beans.dto.upload;
+
+import io.harness.assessment.settings.beans.dto.BenchmarkDTO;
 
 import java.util.List;
 import javax.validation.Valid;
@@ -13,14 +15,10 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 @Data
 @Builder
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class BenchmarkDTO {
-  @EqualsAndHashCode.Include @NotNull String benchmarkId;
-  @NotNull String benchmarkName;
-  Boolean isDefault;
-  @Valid @Size(min = 1, max = 200) List<ScoreDTO> scores;
+public class BenchmarksUploadRequest {
+  @NotNull Long majorVersion;
+  @Size(min = 1, max = 50) @NotNull @Valid List<BenchmarkDTO> benchmarks;
 }

@@ -8,7 +8,8 @@
 package io.harness.assessment.settings.resources;
 
 import io.harness.assessment.settings.beans.dto.BenchmarkDTO;
-import io.harness.assessment.settings.beans.dto.BenchmarksListRequest;
+import io.harness.assessment.settings.beans.dto.upload.BenchmarkUploadResponse;
+import io.harness.assessment.settings.beans.dto.upload.BenchmarksUploadRequest;
 import io.harness.assessment.settings.services.BenchmarkService;
 import io.harness.eraro.ResponseMessage;
 
@@ -33,9 +34,6 @@ import lombok.extern.slf4j.Slf4j;
 @Api("benchmark")
 @Slf4j
 public class BenchmarkResource {
-  // get list of benchmark for assessment id
-  // upload a benchmark against a assessment id.
-
   private BenchmarkService benchmarkService;
   @POST
   @Path("{assessmentId}")
@@ -44,11 +42,15 @@ public class BenchmarkResource {
   @ApiOperation(value = "Upload an benchmark against a assessment to the system.", nickname = "uploadBenchmark",
       response = BenchmarkDTO.class)
   public Response
-  uploadBenchmark(@PathParam("assessmentId") String assessmentId, @Valid BenchmarksListRequest body) {
+  uploadBenchmark(@PathParam("assessmentId") String assessmentId, @Valid BenchmarksUploadRequest body) {
     try {
-      return Response.status(Response.Status.OK).entity(benchmarkService.uploadBenchmark(body, assessmentId)).build();
+      BenchmarkUploadResponse uploadResponse = benchmarkService.uploadBenchmark(body, assessmentId);
+      if (uploadResponse.getErrors() != null && uploadResponse.getErrors().size() > 0) {
+        return Response.status(Response.Status.BAD_REQUEST).entity(uploadResponse).build();
+      }
+      return Response.status(Response.Status.OK).entity(uploadResponse).build();
     } catch (Exception e) {
-      log.error("error {}", e);
+      log.error("error", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();
@@ -56,14 +58,14 @@ public class BenchmarkResource {
   }
 
   @GET
-  @Path("{assessmentId}/{version}")
+  @Path("{assessmentId}/{majorVersion}")
   @Produces({"application/json"})
   @ApiOperation(value = "Get list of benchmarks against an assessment in the system.", nickname = "getBenchmarks",
       response = BenchmarkDTO.class, responseContainer = "List")
   public Response
-  getBenchmarks(@PathParam("assessmentId") String assessmentId, @PathParam("version") Long version) {
+  getBenchmarks(@PathParam("assessmentId") String assessmentId, @PathParam("majorVersion") Long majorVersion) {
     try {
-      List<BenchmarkDTO> benchmarks = benchmarkService.getBenchmarks(assessmentId, version);
+      List<BenchmarkDTO> benchmarks = benchmarkService.getBenchmarks(assessmentId, majorVersion);
       return Response.status(Response.Status.OK).entity(benchmarks).build();
     } catch (Exception e) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
