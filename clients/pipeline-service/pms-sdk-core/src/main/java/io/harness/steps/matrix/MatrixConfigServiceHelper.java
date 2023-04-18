@@ -52,7 +52,23 @@ public class MatrixConfigServiceHelper {
       throw new InvalidRequestException(
           "Total number of iterations found to be 0 for this strategy. Please check pipeline yaml");
     }
+
+    // map to store Matrix Combination String
+    Map<String, Integer> combinationStringMap = new HashMap<>();
+
     for (Map<String, String> combination : combinations) {
+      // Creating a runtime Map to identify similar combinations and adding a prefix counter if needed. Refer PIE-6426
+      Set<Map.Entry<String, String>> entries = combination.entrySet();
+      String variableName = entries.stream().map(t -> t.getValue().replace(".", "")).collect(Collectors.joining("_"));
+
+      combinationStringMap.computeIfAbsent(variableName, k -> 0);
+
+      combinationStringMap.computeIfPresent(variableName, (k, count) -> {
+        Optional<Map.Entry<String, String>> first = entries.stream().findFirst();
+        first.ifPresent(entry -> entry.setValue((count + 1) + "_" + entry.getValue()));
+        return count + 1;
+      });
+
       children.add(ChildrenExecutableResponse.Child.newBuilder()
                        .setChildNodeId(childNodeId)
                        .setStrategyMetadata(
@@ -67,6 +83,7 @@ public class MatrixConfigServiceHelper {
                        .build());
       currentIteration++;
     }
+
     return children;
   }
 

@@ -86,7 +86,8 @@ public class InstanceFunctor implements SdkFunctor {
             .filter(level -> level.hasStrategyMetadata() && level.hasStepType())
             .collect(Collectors.toList());
 
-    Map<String, Object> strategyObjectMap = StrategyUtils.fetchStrategyObjectMap(stepLevelsWithStrategyMetadata);
+    Map<String, Object> strategyObjectMap = StrategyUtils.fetchStrategyObjectMap(
+        stepLevelsWithStrategyMetadata, ambiance.getMetadata().getUseMatrixFieldName());
     if (strategyObjectMap == null) {
       throw new InvalidRequestException("Not found step level strategy");
     }
