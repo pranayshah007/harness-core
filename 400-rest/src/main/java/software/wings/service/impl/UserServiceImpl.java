@@ -4249,7 +4249,7 @@ public class UserServiceImpl implements UserService {
     updateUser(existingUser.getUuid(), updateOperations);
   }
 
-  private String setupAccountBasedOnProduct(User user, UserInvite userInvite, MarketPlace marketPlace) {
+  public String setupAccountBasedOnProduct(User user, UserInvite userInvite, MarketPlace marketPlace) {
     String accountId;
     LicenseInfo licenseInfo = LicenseInfo.builder()
                                   .accountType(AccountType.PAID)

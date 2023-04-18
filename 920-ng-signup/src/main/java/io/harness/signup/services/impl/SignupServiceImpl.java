@@ -36,6 +36,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SignupException;
 import io.harness.exception.UserAlreadyPresentException;
+import io.harness.exception.UserRegistrationException;
 import io.harness.exception.WeakPasswordException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
@@ -66,6 +67,10 @@ import io.harness.telemetry.TelemetryOption;
 import io.harness.telemetry.TelemetryReporter;
 import io.harness.user.remote.UserClient;
 import io.harness.version.VersionInfoManager;
+
+import software.wings.beans.marketplace.MarketPlaceConstants;
+import software.wings.security.JWT_CATEGORY;
+import software.wings.security.SecretManager;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -132,12 +137,15 @@ public class SignupServiceImpl implements SignupService {
   private static final String VERIFY_URL_GENERATION_FAILED = "Failed to generate verify url";
   private static final String EMAIL = "email";
   private static final String VISITOR_TOKEN_KEY = "visitor_token";
+  private static final String EXC_USER_ALREADY_REGISTERED = "User is already registered";
 
   private static final String GA_CLIENT_ID_KEY = "ga_client_id";
   private static final String REFERER_URL_KEY = "refererURL";
 
   private static String deployVersion = System.getenv().get(DEPLOY_VERSION);
 
+  @Inject private SecretManager secretManager;
+  @InjectMocks private UserServiceImpl userService;
   @Inject
   public SignupServiceImpl(AccountService accountService, UserClient userClient, SignupValidator signupValidator,
       ReCaptchaVerifier reCaptchaVerifier, TelemetryReporter telemetryReporter,
@@ -192,20 +200,40 @@ public class SignupServiceImpl implements SignupService {
    */
   @Override
   public UserInfo marketplaceSignup(SignupDTO dto, String inviteId, String marketPlaceToken) throws WingsException {
+    MarketPlace marketPlace;
+
+    UserInvite existingInvite = wingsPersistence.get(UserInvite.class, inviteId);
+    if (existingInvite.isCompleted()) {
+      log.error("Unexpected state: Existing invite is already completed. ID = {}", inviteId);
+      return;
+    }
+
+    String email = dto.getEmail().toLowerCase() User existingUser = getUserByEmail(email);
+    if (existingUser != null) {
+      throw new UserRegistrationException(EXC_USER_ALREADY_REGISTERED, ErrorCode.USER_ALREADY_REGISTERED, USER);
+    }
+
     verifySignupDTO(dto);
 
     dto.setEmail(dto.getEmail().toLowerCase());
 
     AccountDTO account = createAccount(dto);
-    // ! Company name & account name are added to the user
+    // Company name & account name are added to the user
     UserInfo user = createUser(dto, account);
     sendSucceedTelemetryEvent(dto.getEmail(), dto.getUtmInfo(), account.getIdentifier(), user,
         SignupType.MARKETPLACE_PROVISION, account.getName(), referer, null, null);
+
+    Map<String, Claim> claims = secretManager.verifyJWTToken(marketPlaceToken, JWT_CATEGORY.MARKETPLACE_SIGNUP);
+    String userInviteID = claims.get(MarketPlaceConstants.USERINVITE_ID_CLAIM_KEY).asString();
+    if (!userInviteID.equals(inviteId)) {
+      throw new GeneralException(String.format(
+          "User Invite Id in claim: [{%s}] does not match the User Invite Id : [{%s}]", userInviteID, inviteId));
+    }
+
+    // Code for email verification
     executorService.submit(() -> {
       SignupVerificationToken verificationToken = generateNewToken(user.getEmail());
-      // ! Double check that user does not need to verify email since they came from marketplace and had a token
-      // ! Their marketPlace record will have details for which product they have access to and we just need to
-      // ! complete signup (Add accountId to the marketPlace & inviteId collections)
+      // User does not need to verify email since they came from marketplace and verify token above
       try {
         String url = generateVerifyUrl(user.getDefaultAccountId(), verificationToken.getToken(), dto.getEmail());
         signupNotificationHelper.sendSignupNotification(
@@ -214,6 +242,25 @@ public class SignupServiceImpl implements SignupService {
         log.error(VERIFY_URL_GENERATION_FAILED, e);
       }
     });
+
+    String marketPlaceID = claims.get(MarketPlaceConstants.MARKETPLACE_ID_CLAIM_KEY).asString();
+    marketPlace = wingsPersistence.get(MarketPlace.class, marketPlaceID);
+    if (marketPlace == null) {
+      throw new GeneralException(String.format("No MarketPlace found with marketPlaceID=[{%s}]", marketPlaceID));
+    }
+
+    userInvite = wingsPersistence.get(UserInvite.class, inviteId);
+    if (userInvite == null) {
+      throw new GeneralException(String.format("No UserInvite found with inviteId=[{%s}]", inviteId));
+    }
+
+    // ! see if we can import function setupAccountBasedOnProduct from UserServiceImpl.java. Alternatively Copy/pasted
+    // below
+    String accountId = userService.setupAccountBasedOnProduct(user, userInvite, marketPlace);
+
+    marketPlace.setAccountId(accountId);
+    wingsPersistence.save(marketPlace);
+
     return user;
   }
 
@@ -825,4 +872,193 @@ public class SignupServiceImpl implements SignupService {
       throw e;
     }
   }
+}
+
+public String setupAccountBasedOnProduct(User user, UserInvite userInvite, MarketPlace marketPlace) {
+  String accountId;
+  LicenseInfo licenseInfo = LicenseInfo.builder()
+                                .accountType(AccountType.PAID)
+                                .licenseUnits(marketPlace.getOrderQuantity())
+                                .expiryTime(marketPlace.getExpirationDate().getTime())
+                                .accountStatus(AccountStatus.ACTIVE)
+                                .build();
+
+  String dimension = marketPlace.getDimension();
+  Edition plan = licenseService.getDimensionPlan(dimension);
+  boolean premiumSupport = licenseService.hasPremierSupport(dimension);
+  LicenseType licenseType = licenseService.getModuleLicenseType(dimension, plan);
+  Integer orderQuantity = awsMarketPlaceApiHandler.getDimensionQuantity(dimension);
+
+  log.info("dimension:{}, plan:{}, premiumSupport:{}, icenseType:{}, orderQuantity:{}", dimension, plan, premiumSupport,
+      licenseType, orderQuantity);
+
+  if (marketPlace.getProductCode().equals(configuration.getMarketPlaceConfig().getAwsMarketPlaceProductCode())) {
+    if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
+      licenseInfo.setAccountType(AccountType.TRIAL);
+    }
+    accountId = setupAccountForUser(user, userInvite, licenseInfo);
+  } else if (marketPlace.getProductCode().equals(
+                 configuration.getMarketPlaceConfig().getAwsMarketPlaceCeProductCode())) {
+    CeLicenseType ceLicenseType = CeLicenseType.PAID;
+    if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
+      ceLicenseType = CeLicenseType.FULL_TRIAL;
+    }
+    licenseInfo.setAccountType(AccountType.TRIAL);
+    licenseInfo.setLicenseUnits(MINIMAL_ORDER_QUANTITY);
+    accountId = setupAccountForUser(user, userInvite, licenseInfo);
+    licenseService.updateCeLicense(accountId,
+        CeLicenseInfo.builder()
+            .expiryTime(marketPlace.getExpirationDate().getTime())
+            .licenseType(ceLicenseType)
+            .build());
+  } else if (marketPlace.getProductCode().equals(
+                 configuration.getMarketPlaceConfig().getAwsMarketPlaceCdProductCode())) {
+    if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
+      licenseInfo.setAccountType(AccountType.TRIAL);
+    }
+
+    // TODO: please add trial logic here [PLG-1942]
+    accountId = setupAccountForUser(user, userInvite, licenseInfo);
+    adminLicenseHttpClient.createAccountLicense(accountId,
+        CDModuleLicenseDTO.builder()
+            .serviceInstances(orderQuantity)
+            .accountIdentifier(accountId)
+            .moduleType(ModuleType.CD)
+            .edition(plan)
+            .licenseType(licenseType)
+            .premiumSupport(premiumSupport)
+            .status(LicenseStatus.ACTIVE)
+            .startTime(DateTime.now().getMillis())
+            .expiryTime(marketPlace.getExpirationDate().getTime())
+            .build());
+  } else if (marketPlace.getProductCode().equals(
+                 configuration.getMarketPlaceConfig().getAwsMarketPlaceCcmProductCode())) {
+    CeLicenseType ceLicenseType = CeLicenseType.PAID;
+    if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
+      ceLicenseType = CeLicenseType.FULL_TRIAL;
+    }
+    Long spendLimit = Long.valueOf(orderQuantity);
+    log.info("spendLimit:{}", spendLimit);
+
+    // TODO: please add trial logic here [PLG-1942]
+    accountId = setupAccountForUser(user, userInvite, licenseInfo);
+
+    licenseService.updateCeLicense(accountId,
+        CeLicenseInfo.builder()
+            .expiryTime(marketPlace.getExpirationDate().getTime())
+            .licenseType(ceLicenseType)
+            .build());
+
+    adminLicenseHttpClient.createAccountLicense(accountId,
+        CEModuleLicenseDTO.builder()
+            .spendLimit(spendLimit)
+            .accountIdentifier(accountId)
+            .moduleType(ModuleType.CE)
+            .edition(plan)
+            .licenseType(licenseType)
+            .premiumSupport(premiumSupport)
+            .status(LicenseStatus.ACTIVE)
+            .startTime(DateTime.now().getMillis())
+            .expiryTime(marketPlace.getExpirationDate().getTime())
+            .build());
+  } else if (marketPlace.getProductCode().equals(
+                 configuration.getMarketPlaceConfig().getAwsMarketPlaceFfProductCode())) {
+    if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
+      licenseInfo.setAccountType(AccountType.TRIAL);
+    }
+    Long numberOfClientMAUs = licenseService.getNumberOfClientMAUs(plan);
+    log.info("numberOfClientMAUs:{}", numberOfClientMAUs);
+
+    // TODO: please add trial logic here [PLG-1942]
+    accountId = setupAccountForUser(user, userInvite, licenseInfo);
+    adminLicenseHttpClient.createAccountLicense(accountId,
+        CFModuleLicenseDTO.builder()
+            .numberOfClientMAUs(numberOfClientMAUs)
+            .numberOfUsers(orderQuantity)
+            .accountIdentifier(accountId)
+            .moduleType(ModuleType.CF)
+            .edition(plan)
+            .licenseType(licenseType)
+            .premiumSupport(premiumSupport)
+            .status(LicenseStatus.ACTIVE)
+            .startTime(DateTime.now().getMillis())
+            .expiryTime(marketPlace.getExpirationDate().getTime())
+            .build());
+  } else if (marketPlace.getProductCode().equals(
+                 configuration.getMarketPlaceConfig().getAwsMarketPlaceCiProductCode())) {
+    if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
+      licenseInfo.setAccountType(AccountType.TRIAL);
+    }
+    // TODO: please add trial logic here [PLG-1942]
+    accountId = setupAccountForUser(user, userInvite, licenseInfo);
+    adminLicenseHttpClient.createAccountLicense(accountId,
+        CIModuleLicenseDTO.builder()
+            .numberOfCommitters(orderQuantity)
+            .accountIdentifier(accountId)
+            .moduleType(ModuleType.CI)
+            .edition(plan)
+            .licenseType(licenseType)
+            .premiumSupport(premiumSupport)
+            .status(LicenseStatus.ACTIVE)
+            .startTime(DateTime.now().getMillis())
+            .expiryTime(marketPlace.getExpirationDate().getTime())
+            .build());
+  } else if (marketPlace.getProductCode().equals(
+                 configuration.getMarketPlaceConfig().getAwsMarketPlaceSrmProductCode())) {
+    if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
+      licenseInfo.setAccountType(AccountType.TRIAL);
+    }
+    // TODO: please add trial logic here [PLG-1942]
+    accountId = setupAccountForUser(user, userInvite, licenseInfo);
+    adminLicenseHttpClient.createAccountLicense(accountId,
+        SRMModuleLicenseDTO.builder()
+            .numberOfServices(orderQuantity)
+            .accountIdentifier(accountId)
+            .moduleType(ModuleType.SRM)
+            .edition(plan)
+            .licenseType(licenseType)
+            .premiumSupport(premiumSupport)
+            .status(LicenseStatus.ACTIVE)
+            .startTime(DateTime.now().getMillis())
+            .expiryTime(marketPlace.getExpirationDate().getTime())
+            .build());
+  } else if (marketPlace.getProductCode().equals(
+                 configuration.getMarketPlaceConfig().getAwsMarketPlaceStoProductCode())) {
+    if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
+      licenseInfo.setAccountType(AccountType.TRIAL);
+    }
+    // TODO: please add trial logic here [PLG-1942]
+    accountId = setupAccountForUser(user, userInvite, licenseInfo);
+    adminLicenseHttpClient.createAccountLicense(accountId,
+        STOModuleLicenseDTO.builder()
+            .numberOfDevelopers(orderQuantity)
+            .accountIdentifier(accountId)
+            .moduleType(ModuleType.STO)
+            .edition(plan)
+            .licenseType(licenseType)
+            .premiumSupport(premiumSupport)
+            .status(LicenseStatus.ACTIVE)
+            .startTime(DateTime.now().getMillis())
+            .expiryTime(marketPlace.getExpirationDate().getTime())
+            .build());
+  } else {
+    throw new InvalidRequestException("Cannot resolve AWS marketplace order");
+  }
+
+  Map<String, String> properties = new HashMap<String, String>() {
+    {
+      put("marketPlaceId", marketPlace.getUuid());
+      put("licenseType", marketPlace.getLicenseType());
+      put("productCode", marketPlace.getProductCode());
+    }
+  };
+  Map<String, Boolean> integrations = new HashMap<String, Boolean>() {
+    { put(Keys.SALESFORCE, Boolean.TRUE); }
+  };
+
+  log.info("Setting up account {} for Product: {} and licenseType: {}", accountId, marketPlace.getProductCode(),
+      marketPlace.getLicenseType());
+  segmentHelper.reportTrackEvent(SYSTEM, SETUP_ACCOUNT_FROM_MARKETPLACE, properties, integrations);
+
+  return accountId;
 }
