@@ -91,9 +91,22 @@ public class PmsStepPlanCreatorUtilsTest extends OrchestrationStepsTestBase {
                           .getField("parallel")
                           .getNode()
                           .asArray()
-                          .get(1)
+                          .get(0)
                           .getField("stage");
     AdviserObtainment adviserObtainment = PmsStepPlanCreatorUtils.getNextStageAdviser(kryoSerializer, stage);
+    assertNull(adviserObtainment);
+
+    stage = yamlField.getNode()
+                .getField("stages")
+                .getNode()
+                .asArray()
+                .get(0)
+                .getField("parallel")
+                .getNode()
+                .asArray()
+                .get(1)
+                .getField("stage");
+    adviserObtainment = PmsStepPlanCreatorUtils.getNextStageAdviser(kryoSerializer, stage);
     assertNull(adviserObtainment);
   }
 
