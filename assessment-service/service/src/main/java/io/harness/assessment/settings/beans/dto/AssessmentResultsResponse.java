@@ -24,7 +24,6 @@ public class AssessmentResultsResponse {
   Long version;
   AssessmentResponseStatus status;
   List<UserResponsesResponse> responses;
-  // TODO also add total scores
   List<Score> userScores;
   List<Score> organizationScores;
   List<BenchmarkDTO> benchmarks;

@@ -45,6 +45,7 @@ public class Benchmark implements PersistentEntity, UpdatedAtAware {
   String assessmentId;
   Long version;
   List<Score> scores;
+  Boolean isDefault;
   @LastModifiedDate long lastUpdatedAt;
 
   public static List<MongoIndex> mongoIndexes() {
