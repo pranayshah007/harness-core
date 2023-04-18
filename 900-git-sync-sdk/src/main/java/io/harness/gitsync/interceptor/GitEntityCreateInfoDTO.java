@@ -67,4 +67,8 @@ public class GitEntityCreateInfoDTO {
   @Parameter(description = GitSyncApiConstants.REPO_NAME_PARAM_MESSAGE)
   @QueryParam(GitSyncApiConstants.REPO_NAME)
   String repoName;
+
+  public void setStoreType(StoreType storeType) {
+    this.storeType = storeType;
+  }
 }

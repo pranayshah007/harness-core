@@ -16,7 +16,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.theokanning.openai.OpenAiApi;
-import com.theokanning.openai.completion.chat.ChatCompletionChoice;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.completion.chat.ChatMessageRole;
@@ -63,6 +62,8 @@ public class PipelineAIHelper {
   public static final String DESCRIBE_PROMPT =
       "Can you explain this pipeline to me and please go into details? Reply with just an explanation without acknowledging it.\n %s";
 
+  public static final String GPT = "gpt-3.5-turbo";
+
   public static final String TOKEN = "";
   public String createPipelineWithAi(
       String accountId, String orgId, String projectId, String pipelineIdentifier, String pipelineName, String prompt) {
@@ -71,7 +72,7 @@ public class PipelineAIHelper {
     ChatMessage samplePrompts = new ChatMessage(ChatMessageRole.SYSTEM.value(), format(PROMPT_0, prompt));
     messages.add(samplePrompts);
     ChatCompletionRequest chatCompletionRequest =
-        ChatCompletionRequest.builder().model("gpt-3.5-turbo").messages(messages).temperature(0.5).topP(0.7).build();
+        ChatCompletionRequest.builder().model(GPT).messages(messages).temperature(0.5).topP(0.7).build();
     String deploymentType =
         service.createChatCompletion(chatCompletionRequest).getChoices().get(0).getMessage().getContent();
 
@@ -95,21 +96,16 @@ public class PipelineAIHelper {
     messages.add(new ChatMessage(
         ChatMessageRole.SYSTEM.value(), format(PROMPT_4, pipelineName, pipelineIdentifier, projectId, orgId, prompt)));
 
-    ChatCompletionRequest chatCompletionRequest2 =
-        ChatCompletionRequest.builder().model("gpt-3.5-turbo").messages(messages).temperature(0.5).topP(0.7).build();
-
-    String content = service.createChatCompletion(chatCompletionRequest2).getChoices().get(0).getMessage().getContent();
-    cleanYaml(content);
+    String content = service.createChatCompletion(chatCompletionRequest).getChoices().get(0).getMessage().getContent();
+    String cleanedYam = cleanYaml(content);
 
     messages.clear();
     messages.add(new ChatMessage(ChatMessageRole.SYSTEM.value(), format(DESCRIBE_PROMPT, content)));
 
-    ChatCompletionRequest chatCompletionRequest3 =
-        ChatCompletionRequest.builder().model("gpt-3.5-turbo").messages(messages).temperature(0.5).topP(0.7).build();
     String description =
-        service.createChatCompletion(chatCompletionRequest3).getChoices().get(0).getMessage().getContent();
+        service.createChatCompletion(chatCompletionRequest).getChoices().get(0).getMessage().getContent();
     System.out.println("DESCRIPTION: " + description);
-    return content;
+    return cleanedYam;
   }
 
   List<String> getSamplePipelines(String folderName) {
@@ -133,9 +129,18 @@ public class PipelineAIHelper {
     ObjectMapper mapper = defaultObjectMapper();
     Retrofit retrofit = defaultRetrofit(defaultClient(TOKEN, Duration.ofSeconds(60)), mapper);
     OpenAiApi api = retrofit.create(OpenAiApi.class);
-    OpenAiService service = new OpenAiService(api);
-    return service;
+    return new OpenAiService(api);
   }
 
-  private void cleanYaml(String content) {}
+  private String cleanYaml(String content) {
+    if (content.contains("```yaml")) {
+      content = content.split("```yaml")[1].split("```")[0];
+      return content.lines().filter(s -> !s.isEmpty()).collect(Collectors.joining("\n"));
+    } else if (content.contains("```")) {
+      content = content.split("```")[1].split("```")[0];
+      return content.lines().filter(s -> !s.isEmpty()).collect(Collectors.joining("\n"));
+    } else {
+      return content.lines().filter(s -> !s.isEmpty()).collect(Collectors.joining("\n"));
+    }
+  }
 }

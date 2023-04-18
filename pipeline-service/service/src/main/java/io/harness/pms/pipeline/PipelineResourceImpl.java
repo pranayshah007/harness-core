@@ -29,6 +29,7 @@ import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitImportInfoDTO;
 import io.harness.gitaware.helper.PipelineMoveConfigRequestDTO;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -125,6 +126,9 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId, String pipelineIdentifier,
       String pipelineName, String pipelineDescription, Boolean isDraft, GitEntityCreateInfoDTO gitEntityCreateInfo,
       @NotNull String yaml) {
+    if (gitEntityCreateInfo.getStoreType() == StoreType.AI) {
+      gitEntityCreateInfo.setStoreType(StoreType.INLINE);
+    }
     String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
         accountId, orgId, projectId, pipelineName, yaml, isDraft, pipelineVersion);

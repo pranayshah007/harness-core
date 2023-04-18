@@ -12,7 +12,9 @@ public enum StoreType {
   INLINE,
 
   // Will be used when entity is in git repo
-  REMOTE;
+  REMOTE,
+
+  AI;
 
   public static StoreType getFromStringOrNull(String value) {
     try {
