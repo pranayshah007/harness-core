@@ -10,7 +10,9 @@ package io.harness.shell.ssh.sftp;
 import io.harness.logging.CommandExecutionStatus;
 
 import lombok.Builder;
+import lombok.Getter;
 
+@Getter
 @Builder
 public class SftpResponse {
   boolean success;
