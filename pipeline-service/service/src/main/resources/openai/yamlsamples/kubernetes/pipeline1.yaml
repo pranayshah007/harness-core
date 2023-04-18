@@ -1,0 +1,68 @@
+pipeline:
+  name: <+pipeline_name>
+  identifier: <+pipeline_id>
+  projectIdentifier: <+project_id>
+  orgIdentifier: <+org_id>
+  tags: {}
+  stages:
+    - stage:
+        name: cd1
+        identifier: cd1
+        description: ""
+        type: Deployment
+        spec:
+          deploymentType: Kubernetes
+          service:
+            serviceRef: k8s_dply_svc
+          environment:
+            environmentRef: dev
+            deployToAll: false
+            infrastructureDefinitions:
+              - identifier: dev
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: ShellScript_1
+                  identifier: ShellScript_1
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          cd /opt/harness-delegate
+                          echo $(pwd)
+                          value=$(<file2)
+                          echo $value
+                    environmentVariables: []
+                    outputVariables:
+                      - name: file2
+                        type: String
+                        value: value
+                  timeout: 10m
+              - step:
+                  type: ShellScript
+                  name: ShellScript_2
+                  identifier: ShellScript_2
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: echo <+execution.steps.ShellScript_1.output.outputVariables.file2>
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+            rollbackSteps: []
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
+  delegateSelectors:
+    - asaini-docker-desktop-k8s

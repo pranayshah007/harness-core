@@ -35,6 +35,7 @@ import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableMergeServiceResponse;
+import io.harness.security.annotations.PublicApi;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
@@ -71,8 +72,8 @@ import org.springframework.data.domain.Page;
 @OwnedBy(PIPELINE)
 @Api("pipelines")
 @Path("pipelines")
-@Produces({"application/json", "application/yaml"})
-@Consumes({"application/json", "application/yaml"})
+@Produces({"application/json", "application/yaml", "text/plain"})
+@Consumes({"application/json", "application/yaml", "text/plain"})
 @ApiResponses(value =
     {
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
@@ -677,4 +678,30 @@ public interface PipelineResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE, required = true) @PathParam(
           NGCommonEntityConstants.UUID) String uuid);
+
+  @POST
+  @Path("/generateWithAI")
+  @ApiOperation(value = "Gets a pipeline with a help of AI", nickname = "generateWithAI")
+  @Operation(operationId = "generateWithAI", description = "Returns a Pipeline generated with AI",
+      summary = "Generate Pipeline with AI",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns pipeline YAML")
+      })
+  @PublicApi
+  //@NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  ResponseDTO<String>
+  createPipelineWithAI(@Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
+                       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE, required = false,
+          hidden = true) @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) String pipelineIdentifier,
+      @Parameter(description = PipelineResourceConstants.PIPELINE_NAME_PARAM_MESSAGE, required = false,
+          hidden = true) @QueryParam(NGCommonEntityConstants.NAME_KEY) String pipelineName,
+      @RequestBody(required = true, description = "Description of Pipeline") @NotNull @ApiParam(
+          hidden = true) String prompt);
 }

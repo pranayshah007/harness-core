@@ -120,6 +120,10 @@ java_binary(
         "@maven//:org_slf4j_slf4j_api",
         "@maven//:org_springframework_data_spring_data_mongodb",
         "@maven//:org_springframework_spring_context",
+        "@maven//:com_theokanning_openai_gpt3_java_api",
+        "@maven//:com_theokanning_openai_gpt3_java_client",
+        "@maven//:com_theokanning_openai_gpt3_java_service",
+        "@maven//:com_squareup_retrofit2_retrofit",
     ],
 )
 

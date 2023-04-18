@@ -1,0 +1,94 @@
+pipeline:
+  name: <+pipeline_name>
+  identifier: <+pipeline_id>
+  projectIdentifier: <+project_id>
+  orgIdentifier: <+org_id>
+  tags: {}
+  stages:
+    - stage:
+        name: Deploy
+        identifier: Deploy
+        description: ""
+        type: Deployment
+        spec:
+          deploymentType: Ssh
+          service:
+            serviceRef: SSHv2Svc
+          environment:
+            environmentRef: TestEnv
+            deployToAll: false
+            infrastructureDefinitions:
+              - identifier: pdcdummy
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Shell
+                  identifier: Shell
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          echo "Repeating Stage Var : " <+stage.variables.testStageVar>
+                          echo "Repeating Stage Var via pipeline expression : " <+pipeline.stages.Deploy_0.variables.testStageVar>
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+            rollbackSteps: []
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
+        strategy:
+          repeat:
+            times: 3
+        variables:
+          - name: testStageVar
+            type: String
+            description: ""
+            value: "Repeated "
+    - stage:
+        name: Test
+        identifier: Test
+        description: ""
+        type: Deployment
+        spec:
+          deploymentType: Ssh
+          service:
+            useFromStage:
+              stage: Deploy
+          environment:
+            environmentRef: TestEnv
+            deployToAll: false
+            infrastructureDefinitions:
+              - identifier: pdcdummy
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Shell
+                  identifier: Shell
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: "echo \"Repeating Stage Var via pipeline expression : \" <+pipeline.stages.Deploy_0.variables.testStageVar>"
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+            rollbackSteps: []
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback

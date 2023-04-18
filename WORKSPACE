@@ -5349,6 +5349,9 @@ plain_artifacts = [
     "io.opentelemetry:opentelemetry-api:1.18.0",
     "io.harness:smp-license:1.0.11",
     "com.clickhouse:clickhouse-jdbc:0.3.2-patch11",
+    "com.theokanning.openai-gpt3-java:api:0.12.0",
+    "com.theokanning.openai-gpt3-java:client:0.12.0",
+    "com.theokanning.openai-gpt3-java:service:0.12.0",
 ]
 
 amazon_artifacts = [

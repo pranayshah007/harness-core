@@ -41,6 +41,7 @@ import io.harness.notification.bean.NotificationRules;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.governance.PipelineSaveResponse;
+import io.harness.pms.helpers.PipelineAIHelper;
 import io.harness.pms.helpers.PipelineCloneHelper;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.api.PipelinesApiUtils;
@@ -100,6 +101,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   private final PipelineCloneHelper pipelineCloneHelper;
   private final PipelineMetadataService pipelineMetadataService;
   private final PipelineAsyncValidationService pipelineAsyncValidationService;
+  private final PipelineAIHelper pipelineAIHelper;
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   @Deprecated
@@ -541,6 +543,14 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     PipelineValidationEvent pipelineValidationEvent = eventByUuid.get();
     PipelineValidationResponseDTO response =
         PMSPipelineDtoMapper.buildPipelineValidationResponseDTO(pipelineValidationEvent);
+    return ResponseDTO.newResponse(response);
+  }
+
+  @Override
+  public ResponseDTO<String> createPipelineWithAI(
+      String accountId, String orgId, String projectId, String pipelineIdentifier, String pipelineName, String prompt) {
+    String response =
+        pipelineAIHelper.createPipelineWithAi(accountId, orgId, projectId, pipelineIdentifier, pipelineName, prompt);
     return ResponseDTO.newResponse(response);
   }
 }
