@@ -20,7 +20,8 @@ import lombok.Data;
 public class UserAssessmentDTO {
   String assessmentId;
   String assessmentName;
-  Long version;
+  Long majorVersion;
+  Long minorVersion;
   List<QuestionResponse> questions;
   Long expectedCompletionDuration;
   Long baseScore;

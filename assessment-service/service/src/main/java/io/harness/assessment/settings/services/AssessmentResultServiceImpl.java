@@ -62,6 +62,7 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
       throw new RuntimeException("Assessment error");
     }
     Assessment assessment = assessmentOptional.get();
+    assessmentResultsResponse.setMinorVersion(assessment.getMinorVersion());
     Optional<OrganizationEvaluation> organizationEvaluationOptional =
         organizationEvaluationRepository.findOneByAssessmentIdAndOrganizationIdAndVersion(
             assessmentResponse.getAssessmentId(), assessmentResponse.getOrganizationId(),
@@ -162,7 +163,7 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
     // Duplicate get code fix - TODO
     if (StringUtils.isNotEmpty(benchmarkId)) {
       Optional<Benchmark> benchmarkOptional = benchmarkRepository.findOneByAssessmentIdAndVersionAndBenchmarkId(
-          assessmentResultsResponse.getAssessmentId(), assessmentResultsResponse.getVersion(), benchmarkId);
+          assessmentResultsResponse.getAssessmentId(), assessmentResultsResponse.getMajorVersion(), benchmarkId);
       log.info("{}", benchmarkOptional);
       if (benchmarkOptional.isEmpty()) {
         throw new RuntimeException("Invalid benchmark Id");
