@@ -122,6 +122,7 @@ public interface StepSpecTypeConstants {
 
   // AWS SAM
   String AWS_SAM_DEPLOY = "AwsSamDeploy";
+  String AWS_SAM_BUILD = "AwsSamBuild";
   String AWS_SAM_ROLLBACK = "AwsSamRollback";
 
   String TERRAFORM_CLOUD_ROLLBACK = "TerraformCloudRollback";
