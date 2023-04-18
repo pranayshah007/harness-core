@@ -313,7 +313,9 @@ public class AssessmentEvaluationServiceImpl implements AssessmentEvaluationServ
                        .responses(question.getPossibleResponses()
                                       .stream()
                                       .map(option -> {
-                                        boolean isSelected = userResponseQuestionMap.containsKey(option.getOptionId());
+                                        List<String> responses = userResponseQuestionMap.getOrDefault(
+                                            question.getQuestionId(), new ArrayList<>());
+                                        boolean isSelected = responses.contains(option.getOptionId());
                                         return UserResponseItem.builder()
                                             .optionId(option.getOptionId())
                                             .isSelected(isSelected)
@@ -327,7 +329,7 @@ public class AssessmentEvaluationServiceImpl implements AssessmentEvaluationServ
     AssessmentResponse assessmentResponse = AssessmentResponse.builder()
                                                 .assessmentId(userInvitation.getAssessmentId())
                                                 .version(assessment.getVersion())
-                                                .userId(user.getId())
+                                                .userId(user.getUserId())
                                                 .organizationId(user.getOrganizationId())
                                                 .responses(userResponseEntity)
                                                 .role(userResponsesRequest.getRole())
