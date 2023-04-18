@@ -470,7 +470,6 @@ import software.wings.sm.states.spotinst.SpotinstTrafficShiftAlbSetupElement;
 import software.wings.utils.ArtifactType;
 import software.wings.verification.stackdriver.StackDriverMetricDefinition;
 
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.cloudwatch.model.Datapoint;
 import com.amazonaws.services.cloudwatch.model.Dimension;
 import com.amazonaws.services.cloudwatch.model.StandardUnit;
@@ -478,7 +477,6 @@ import com.amazonaws.services.ecs.model.Deployment;
 import com.amazonaws.services.ecs.model.DeploymentConfiguration;
 import com.amazonaws.services.ecs.model.Service;
 import com.amazonaws.services.ecs.model.ServiceEvent;
-import com.amazonaws.services.secretsmanager.model.AWSSecretsManagerException;
 import com.esotericsoftware.kryo.Kryo;
 import com.google.api.services.logging.v2.model.LogEntry;
 import com.google.api.services.logging.v2.model.LogEntryOperation;
@@ -735,9 +733,6 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(BuildSourceResponse.class, 5619);
     kryo.register(BuildSourceExecutionResponse.class, 5620);
     kryo.register(BuildSourceParameters.BuildSourceRequestType.class, 5621);
-    kryo.register(AWSSecretsManagerException.class, 5622);
-    kryo.register(AmazonServiceException.class, 5623);
-    kryo.register(AmazonServiceException.ErrorType.class, 5624);
     kryo.register(EcsSetupElement.class, 5671);
     kryo.register(ServiceNowTicketType.class, 7163);
     kryo.register(ServiceNowMetaDTO.class, 7164);
