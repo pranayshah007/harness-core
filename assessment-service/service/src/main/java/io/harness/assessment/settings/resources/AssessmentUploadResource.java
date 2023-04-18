@@ -27,10 +27,12 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Path("/v1/assessment")
 @Api("assessment-upload")
+@Slf4j
 public class AssessmentUploadResource {
   private AssessmentUploadService assessmentUploadService;
   @POST
@@ -41,8 +43,13 @@ public class AssessmentUploadResource {
   public Response
   uploadAssessment(@Valid AssessmentUploadRequest body) {
     try {
-      return Response.status(Response.Status.OK).entity(assessmentUploadService.uploadNewAssessment(body)).build();
+      AssessmentUploadResponse assessmentUploadResponse = assessmentUploadService.uploadNewAssessment(body);
+      if (assessmentUploadResponse.getErrors() != null && assessmentUploadResponse.getErrors().size() > 0) {
+        return Response.status(Response.Status.BAD_REQUEST).entity(assessmentUploadResponse).build();
+      }
+      return Response.status(Response.Status.OK).entity(assessmentUploadResponse).build();
     } catch (Exception e) {
+      log.error("Error", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();

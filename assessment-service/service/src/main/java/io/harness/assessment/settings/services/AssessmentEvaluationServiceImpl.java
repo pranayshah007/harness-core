@@ -333,6 +333,7 @@ public class AssessmentEvaluationServiceImpl implements AssessmentEvaluationServ
                                                 .role(userResponsesRequest.getRole())
                                                 .status(AssessmentResponseStatus.ONGOING)
                                                 .build();
+    previouslySubmittedResponse.ifPresent(response -> assessmentResponse.setId(response.getId()));
     assessmentResponseRepository.save(assessmentResponse);
     UserAssessmentDTO userAssessmentDTO = AssessmentMapper.toDTO(assessment);
     // should fetch user response from db. TODO Important

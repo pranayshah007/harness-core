@@ -9,6 +9,8 @@ package io.harness.assessment.settings.services;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.assessment.settings.beans.dto.EntityType;
+import io.harness.assessment.settings.beans.dto.upload.AssessmentError;
 import io.harness.assessment.settings.beans.dto.upload.AssessmentUploadRequest;
 import io.harness.assessment.settings.beans.dto.upload.AssessmentUploadResponse;
 import io.harness.assessment.settings.beans.entities.Assessment;
@@ -16,17 +18,21 @@ import io.harness.assessment.settings.beans.entities.Question;
 import io.harness.assessment.settings.beans.entities.QuestionOption;
 import io.harness.assessment.settings.beans.entities.QuestionType;
 import io.harness.assessment.settings.mappers.AssessmentUploadMapper;
+import io.harness.assessment.settings.mappers.QuestionUtils;
 import io.harness.assessment.settings.repositories.AssessmentRepository;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.ws.rs.BadRequestException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.SEI)
@@ -35,6 +41,7 @@ import org.jetbrains.annotations.NotNull;
 public class AssessmentUploadServiceImpl implements AssessmentUploadService {
   public static final long QUESTION_SCORE = 10L;
   public static final long QUESTION_SCORE_WEIGHTAGE = 1L;
+  public static final String DEFAULT_SECTION = "DEFAULT_SECTION_ID";
   private AssessmentRepository assessmentRepository;
   @Override
   public AssessmentUploadResponse uploadNewAssessment(AssessmentUploadRequest assessmentUploadRequest) {
@@ -46,8 +53,9 @@ public class AssessmentUploadServiceImpl implements AssessmentUploadService {
       throw new BadRequestException("Assessment already exists, for Id : " + assessmentUploadRequest.getAssessmentId());
     }
     Assessment assessmentUploaded = AssessmentUploadMapper.fromDTO(assessmentUploadRequest);
-    if (isInValidAssessment(assessmentUploaded)) {
-      throw new RuntimeException("Uploaded Assessment is invalid");
+    List<AssessmentError> errorsList = checkInvalidAssessment(assessmentUploaded);
+    if (errorsList.size() > 0) {
+      return AssessmentUploadResponse.builder().errors(errorsList).build();
     }
     assessmentUploaded.setVersion(1L);
     assessmentUploaded.setMinorVersion(0L);
@@ -63,52 +71,65 @@ public class AssessmentUploadServiceImpl implements AssessmentUploadService {
     return AssessmentUploadMapper.toDTO(assessmentUploaded);
   }
 
-  boolean isInValidAssessment(Assessment assessment) {
+  List<AssessmentError> checkInvalidAssessment(Assessment assessment) {
+    List<AssessmentError> errors = new ArrayList<>();
     // add option id checks and section id checks TODO
-    boolean isValid = true;
-    List<String> questionsUploaded = assessment.getQuestions()
-                                         .stream()
-                                         .map(AssessmentUploadServiceImpl::getQuestionKey)
-                                         .collect(Collectors.toList());
+    List<String> questionsUploaded =
+        assessment.getQuestions().stream().map(Question::getQuestionId).collect(Collectors.toList());
+    //                                         .stream()
+    //                                         .map(AssessmentUploadServiceImpl::getQuestionKey)
+    //                                         .collect(Collectors.toList());
     if (!questionsUploaded.stream().distinct().collect(Collectors.toList()).equals(questionsUploaded)) {
-      isValid = false;
-      // add reason;
+      List<String> duplicates = questionsUploaded.stream()
+                                    .collect(Collectors.groupingBy(Function.identity()))
+                                    .entrySet()
+                                    .stream()
+                                    .filter(e -> e.getValue().size() > 1)
+                                    .map(Map.Entry::getKey)
+                                    .collect(Collectors.toList());
+      AssessmentError assessmentError = AssessmentError.builder()
+                                            .entityType(EntityType.ASSESSMENT)
+                                            .entityId(assessment.getAssessmentId())
+                                            .errorMessages(List.of("The question ids are not distinct : " + duplicates))
+                                            .build();
+      errors.add(assessmentError);
     }
     for (Question question : assessment.getQuestions()) {
-      List<String> options =
-          question.getPossibleResponses().stream().map(QuestionOption::getOptionId).collect(Collectors.toList());
-      if (!options.stream().distinct().collect(Collectors.toList()).equals(options)) {
-        isValid = false;
-        // add reason
-      }
-      if (!validateQuestionType(question)) {
-        isValid = false;
+      List<AssessmentError> errorsInQuestions = validateQuestionType(question);
+      QuestionUtils.checkDuplicateOptions(errorsInQuestions, question);
+      if (errorsInQuestions.size() > 0) {
+        errors.addAll(errorsInQuestions);
       }
     }
-    return !isValid;
+    return errors;
   }
 
-  boolean validateQuestionType(Question question) {
+  List<AssessmentError> validateQuestionType(Question question) {
+    List<AssessmentError> errors = new ArrayList<>();
+    if (StringUtils.isEmpty(question.getSectionId())) {
+      question.setSectionId(DEFAULT_SECTION);
+    }
     QuestionType questionType = question.getQuestionType();
     switch (questionType) {
       case RATING:
-        break;
       case LIKERT:
+        QuestionUtils.checkOptionsCount(question, errors, 5);
+        QuestionUtils.checkSorted(question, errors);
+        // Should be ascending or descending
         break;
       case CHECKBOX:
-        long sum = question.getPossibleResponses().stream().mapToLong(QuestionOption::getOptionPoints).sum();
-        if (sum > 10) {
-          return false;
-        }
+        QuestionUtils.checkSumOfPoints(question, errors);
         break;
       case RADIO_BUTTON:
+        QuestionUtils.checkFullPoints(question, errors);
         break;
       case YES_NO:
+        QuestionUtils.checkOptionsCount(question, errors, 2);
+        QuestionUtils.checkFullPoints(question, errors);
         break;
     }
-    return true;
+    return errors;
   }
-
   @Override
   public AssessmentUploadResponse updateAssessment(AssessmentUploadRequest assessmentUploadRequest) {
     // TODO check if its a allowed update.
@@ -116,8 +137,9 @@ public class AssessmentUploadServiceImpl implements AssessmentUploadService {
     log.info("Updating assessment with request: {}", assessmentUploadRequest);
     String assessmentId = assessmentUploadRequest.getAssessmentId();
     Assessment assessmentUploaded = AssessmentUploadMapper.fromDTO(assessmentUploadRequest);
-    if (isInValidAssessment(assessmentUploaded)) {
-      throw new RuntimeException("Uploaded assessment is invalid");
+    List<AssessmentError> errorsList = checkInvalidAssessment(assessmentUploaded);
+    if (errorsList.size() > 0) {
+      throw new RuntimeException("Uploaded Assessment is invalid : " + errorsList);
     }
     Optional<Assessment> assessmentOptional =
         assessmentRepository.findFirstByAssessmentIdOrderByVersionDesc(assessmentId);
@@ -137,7 +159,7 @@ public class AssessmentUploadServiceImpl implements AssessmentUploadService {
       assessmentUploaded.setMinorVersion(assessmentInDb.getMinorVersion() + 1);
       assessmentUploaded.setId(assessmentInDb.getId()); // TODO a good update ?
       assessmentUploaded.setCreatedAt(assessmentInDb.getCreatedAt());
-      // this shoulb be update to old, not new version
+      // this should be updated to old, not new version
       log.info("updating minor version for assessment: {}", assessmentUploadRequest.getAssessmentId());
     }
     assessmentUploaded.setBaseScore(assessmentInDb.getBaseScore()); // calculate

@@ -9,12 +9,14 @@ package io.harness.assessment.settings.beans.dto.upload;
 
 import io.harness.assessment.settings.beans.entities.Question;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
 @Builder
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AssessmentUploadResponse {
   String assessmentId;
   String assessmentName;
@@ -22,6 +24,7 @@ public class AssessmentUploadResponse {
   List<Question> questions;
   Long expectedCompletionDuration;
   Long baseScore;
+  List<AssessmentError> errors;
   Long createdAt;
   String createdBy;
   Boolean isPublished;

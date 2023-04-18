@@ -26,6 +26,10 @@ public class UploadedQuestion {
   @NotNull QuestionType questionType;
   @NotNull String sectionId;
   String sectionName;
+  @NotNull
+  @Size.List({
+    @Size(min = 10, message = "Question text is too short."), @Size(max = 3000, message = "Question text is too long")
+  })
   String questionText;
   @NotNull @Size(min = 2, max = 20) @Valid List<UploadedOption> possibleResponses;
 }
