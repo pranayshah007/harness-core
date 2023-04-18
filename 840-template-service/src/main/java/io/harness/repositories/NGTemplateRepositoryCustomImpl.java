@@ -31,7 +31,6 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
-import io.harness.gitx.GitXSettingsHelper;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.template.entity.TemplateEntity;
@@ -71,7 +70,6 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   private final GitAwareEntityHelper gitAwareEntityHelper;
   private final MongoTemplate mongoTemplate;
   private final TemplateGitXService templateGitXService;
-  private final GitXSettingsHelper gitXSettingsHelper;
   OutboxService outboxService;
 
   @Override
