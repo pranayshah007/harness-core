@@ -169,6 +169,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
     gitXSettingsHelper.enforceGitExperienceIfApplicable(
         templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
+    setConnectorRefForRemoteEntity(templateEntity);
 
     if (TemplateRefHelper.hasTemplateRef(templateEntity.getYaml())) {
       TemplateUtils.setupGitParentEntityDetails(templateEntity.getAccountIdentifier(),
@@ -1476,5 +1477,23 @@ public class NGTemplateServiceImpl implements NGTemplateService {
             .storeType(StoreType.REMOTE)
             .repoName(moveConfigDTO.getRepoName())
             .build());
+  }
+
+  private void setConnectorRefForRemoteEntity(TemplateEntity templateEntity) {
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    if (gitEntityInfo != null && gitEntityInfo.getStoreType() != null
+        && StoreType.REMOTE.equals(gitEntityInfo.getStoreType()) && gitEntityInfo.getConnectorRef() == null) {
+      try {
+        String defaultConnectorForGitX =
+            gitXSettingsHelper.getDefaultConnectorForGitX(templateEntity.getAccountIdentifier(),
+                templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
+
+        gitEntityInfo.setConnectorRef(defaultConnectorForGitX);
+        GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
+      } catch (Exception ex) {
+        log.warn(
+            String.format("No ConnectorRef provided for template with id: %s", templateEntity.getIdentifier()), ex);
+      }
+    }
   }
 }

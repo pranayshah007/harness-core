@@ -466,26 +466,10 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
 
   private void addGitParamsToInputSetEntity(InputSetEntity inputSetEntity, GitEntityInfo gitEntityInfo) {
     inputSetEntity.setStoreType(StoreType.REMOTE);
-    setConnectorRefForRemoteEntity(inputSetEntity, gitEntityInfo);
+    inputSetEntity.setConnectorRef(gitEntityInfo.getConnectorRef());
     inputSetEntity.setRepo(gitEntityInfo.getRepoName());
     inputSetEntity.setFilePath(gitEntityInfo.getFilePath());
     inputSetEntity.setFallBackBranch(gitEntityInfo.getBranch());
     setRepoUrlForSave(inputSetEntity);
-  }
-
-  private void setConnectorRefForRemoteEntity(InputSetEntity inputSetEntity, GitEntityInfo gitEntityInfo) {
-    if (gitEntityInfo.getConnectorRef() != null) {
-      inputSetEntity.setConnectorRef(gitEntityInfo.getConnectorRef());
-    } else {
-      try {
-        String defaultConnectorForGitX =
-            gitXSettingsHelper.getDefaultConnectorForGitX(inputSetEntity.getAccountIdentifier(),
-                inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
-        inputSetEntity.setConnectorRef(defaultConnectorForGitX);
-      } catch (Exception ex) {
-        log.warn(
-            String.format("No ConnectorRef provided for InputSet with id: %s", inputSetEntity.getIdentifier()), ex);
-      }
-    }
   }
 }

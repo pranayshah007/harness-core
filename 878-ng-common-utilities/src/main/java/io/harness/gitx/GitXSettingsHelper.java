@@ -69,4 +69,6 @@ public class GitXSettingsHelper {
       log.warn(String.format("Could not fetch setting: %s", GitSyncConstants.ENFORCE_GIT_EXPERIENCE), ex);
       return false;
     }
+    return GitSyncConstants.TRUE_VALUE.equals(isGitExperienceEnforced);
+  }
 }

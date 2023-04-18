@@ -440,25 +440,9 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
       pipelineToSave.setRepoURL(gitAwareEntityHelper.getRepoUrl(
           pipelineToSave.getAccountId(), pipelineToSave.getOrgIdentifier(), pipelineToSave.getProjectIdentifier()));
     }
-    setConnectorRefForRemoteEntity(pipelineToSave, gitEntityInfo);
+    pipelineToSave.setConnectorRef(gitEntityInfo.getConnectorRef());
     pipelineToSave.setRepo(gitEntityInfo.getRepoName());
     pipelineToSave.setFilePath(gitEntityInfo.getFilePath());
-  }
-
-  private void setConnectorRefForRemoteEntity(PipelineEntity pipelineEntity, GitEntityInfo gitEntityInfo) {
-    if (gitEntityInfo.getConnectorRef() != null) {
-      pipelineEntity.setConnectorRef(gitEntityInfo.getConnectorRef());
-    } else {
-      try {
-        String defaultConnectorForGitX =
-            gitXSettingsHelper.getDefaultConnectorForGitX(pipelineEntity.getAccountIdentifier(),
-                pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
-        pipelineEntity.setConnectorRef(defaultConnectorForGitX);
-      } catch (Exception ex) {
-        log.warn(
-            String.format("No ConnectorRef provided for pipeline with id: %s", pipelineEntity.getIdentifier()), ex);
-      }
-    }
   }
 
   @Override
