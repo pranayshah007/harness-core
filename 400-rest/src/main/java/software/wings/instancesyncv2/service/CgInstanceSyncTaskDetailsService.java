@@ -89,7 +89,13 @@ public class CgInstanceSyncTaskDetailsService {
 
     return query.get();
   }
-
+  public void updateResponseTime(InstanceSyncTaskDetails taskDetails) {
+    if (taskDetails == null) {
+      return;
+    }
+    taskDetails.setLastResponseTime(System.currentTimeMillis());
+    save(taskDetails);
+  }
   public void updateLastRun(
       String taskDetailsId, Set<CgReleaseIdentifiers> releasesToUpdate, Set<CgReleaseIdentifiers> releasesToDelete) {
     InstanceSyncTaskDetails taskDetails = getForId(taskDetailsId);

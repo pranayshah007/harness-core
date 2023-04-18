@@ -134,6 +134,7 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
         .cloudProviderId(cloudProviderId)
         .infraMappingId(deploymentSummary.getInfraMappingId())
         .lastSuccessfulRun(0L)
+        .lastResponseTime(System.currentTimeMillis())
         .releaseIdentifiers(buildReleaseIdentifiers(deploymentSummary.getDeploymentInfo()))
         .build();
   }

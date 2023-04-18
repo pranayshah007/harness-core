@@ -114,6 +114,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -130,6 +131,7 @@ import org.apache.commons.lang3.StringUtils;
 @TargetModule(HarnessModule._441_CG_INSTANCE_SYNC)
 public class InstanceHelper {
   // This queue is used to asynchronously process all the instance information that the workflow touched upon.
+  @VisibleForTesting static final long RESPONSE_TIME_LIMIT = TimeUnit.HOURS.toMillis(3);
   @Inject private QueuePublisher<DeploymentEvent> deploymentEventQueue;
   @Inject private InfrastructureMappingService infraMappingService;
   @Inject private AppService appService;
@@ -749,7 +751,13 @@ public class InstanceHelper {
         }
         PerpetualTaskRecord perpetualTaskV2Record =
             perpetualTaskService.getTaskRecord(instanceSyncV2TaskDetails.getPerpetualTaskId());
-        if (perpetualTaskV2Record != null && (perpetualTaskRecord.getState().equals(PerpetualTaskState.TASK_INVALID))) {
+        if (perpetualTaskV2Record != null && isDeletePerpetualTaskV2(instanceSyncV2TaskDetails)) {
+          List<InstanceSyncTaskDetails> instanceSyncTaskDetailsList =
+              taskDetailsService.fetchAllForPerpetualTask(accountId, instanceSyncV2TaskDetails.getPerpetualTaskId());
+          for (InstanceSyncTaskDetails instanceSyncTaskDetails : instanceSyncTaskDetailsList) {
+            taskDetailsService.delete(instanceSyncTaskDetails.getUuid());
+          }
+
           perpetualTaskService.deleteTask(accountId, instanceSyncV2TaskDetails.getPerpetualTaskId());
         }
       }
@@ -769,6 +777,10 @@ public class InstanceHelper {
 
     log.debug(
         "Handled Instance sync response successfully. Infrastructure Mapping : [{}]", infrastructureMapping.getUuid());
+  }
+
+  private boolean isDeletePerpetualTaskV2(InstanceSyncTaskDetails instanceSyncV2TaskDetails) {
+    return System.currentTimeMillis() - instanceSyncV2TaskDetails.getLastResponseTime() > RESPONSE_TIME_LIMIT;
   }
 
   private void handleInstanceSyncResponseFromPerpetualTask(InfrastructureMapping infrastructureMapping,

@@ -71,4 +71,5 @@ public class InstanceSyncTaskDetails implements PersistentEntity, UuidAware, Uui
   long lastSuccessfulRun;
   long createdAt;
   long lastUpdatedAt;
+  long lastResponseTime;
 }

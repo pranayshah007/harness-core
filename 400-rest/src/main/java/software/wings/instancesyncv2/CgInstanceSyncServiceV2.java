@@ -246,6 +246,7 @@ public class CgInstanceSyncServiceV2 {
     Map<String, InstanceSyncTaskDetails> instanceSyncTaskDetailsMap = new HashMap<>();
     for (InstanceSyncTaskDetails instanceSyncTaskDetails : instanceSyncTaskDetailsList) {
       instanceSyncTaskDetailsMap.put(instanceSyncTaskDetails.getUuid(), instanceSyncTaskDetails);
+      taskDetailsService.updateResponseTime(instanceSyncTaskDetails);
     }
 
     Map<String, List<InstanceSyncData>> instancesPerTask = new HashMap<>();
