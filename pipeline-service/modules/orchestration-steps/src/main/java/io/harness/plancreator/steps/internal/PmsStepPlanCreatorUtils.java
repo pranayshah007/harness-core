@@ -72,7 +72,10 @@ import lombok.experimental.UtilityClass;
 public class PmsStepPlanCreatorUtils {
   public List<AdviserObtainment> getAdviserObtainmentFromMetaData(
       KryoSerializer kryoSerializer, YamlField currentField, boolean isPipelineStage) {
-    boolean isStepInsideRollback = YamlUtils.findParentNode(currentField.getNode(), ROLLBACK_STEPS) != null;
+    boolean isStepInsideRollback = false;
+    if (YamlUtils.findParentNode(currentField.getNode(), ROLLBACK_STEPS) != null) {
+      isStepInsideRollback = true;
+    }
 
     // Adding adviser obtainment list from the failure strategy.
     List<AdviserObtainment> adviserObtainmentList = new ArrayList<>(
@@ -110,6 +113,9 @@ public class PmsStepPlanCreatorUtils {
     }
     String pipelineRollbackStageId = getPipelineRollbackStageId(stageField);
     String siblingFieldUuid = siblingField.getNode().getUuid();
+    // pipeline rollback stage is added as the last stage in the processed yaml. This means that for the last stage in
+    // the pipeline yaml, the sibling would be the pipeline rollback stage. We don't want the PRB stage to run as the
+    // next stage if the last stage in the pipeline yaml is successful. Hence, its sibling will be kept as null
     return AdviserObtainment.newBuilder()
         .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
         .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(

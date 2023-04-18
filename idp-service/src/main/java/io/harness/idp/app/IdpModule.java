@@ -246,7 +246,7 @@ public class IdpModule extends AbstractModule {
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new ServiceResourceClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
-    install(new BackstageResourceClientModule(appConfig.getBackstageHttpClientConfig()));
+    install(new BackstageResourceClientModule());
     install(DelegateServiceDriverModule.getInstance(false, false));
     install(ExceptionModule.getInstance());
     install(new AbstractWaiterModule() {
@@ -440,5 +440,12 @@ public class IdpModule extends AbstractModule {
             .build());
     log.info("delegate callback token generated =[{}]", delegateCallbackToken.getToken());
     return delegateCallbackToken;
+  }
+
+  @Provides
+  @Singleton
+  @Named("backstageHttpClientConfig")
+  public ServiceHttpClientConfig backstageHttpClientConfig() {
+    return this.appConfig.getBackstageHttpClientConfig();
   }
 }

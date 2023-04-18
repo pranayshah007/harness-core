@@ -7,6 +7,8 @@
 
 package io.harness.engine.pms.execution.strategy.identity;
 
+import static io.harness.plan.NodeType.IDENTITY_PLAN_NODE;
+
 import io.harness.OrchestrationStepTypes;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -88,7 +90,7 @@ public class IdentityStep
     Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
     StepCategory stepCategory = level.getStepType().getStepCategory();
     Optional<Level> strategyLevel = AmbianceUtils.getStrategyLevelFromAmbiance(ambiance);
-    if (strategyLevel.isPresent() && strategyLevel.get().getNodeType().equals("IDENTITY_PLAN_NODE")) {
+    if (strategyLevel.isPresent() && strategyLevel.get().getNodeType().equals(IDENTITY_PLAN_NODE.name())) {
       String stepType = IdentityStrategyStep.STEP_TYPE.getType();
       if (stepCategory != StepCategory.STRATEGY) {
         stepType = IdentityStrategyInternalStep.STEP_TYPE.getType();

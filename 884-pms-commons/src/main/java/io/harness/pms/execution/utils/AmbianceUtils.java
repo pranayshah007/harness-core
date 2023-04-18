@@ -263,15 +263,15 @@ public class AmbianceUtils {
 
   public static String modifyIdentifier(Ambiance ambiance, String identifier) {
     Level level = obtainCurrentLevel(ambiance);
-    return modifyIdentifier(level, identifier);
+    return modifyIdentifier(level, identifier, ambiance.getMetadata().getUseMatrixFieldName());
   }
 
-  public static String modifyIdentifier(Level level, String identifier) {
+  public static String modifyIdentifier(Level level, String identifier, boolean useMatrixFieldName) {
     return identifier.replaceAll(
-        StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX_ESCAPED, getStrategyPostfix(level));
+        StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX_ESCAPED, getStrategyPostfix(level, useMatrixFieldName));
   }
 
-  public static String getStrategyPostfix(Level level) {
+  public static String getStrategyPostfix(Level level, boolean useMatrixFieldName) {
     if (level == null || !level.hasStrategyMetadata()) {
       return StringUtils.EMPTY;
     }
@@ -287,13 +287,24 @@ public class AmbianceUtils {
       }
       return "_" + level.getStrategyMetadata().getCurrentIteration();
     }
-    return "_"
-        + level.getStrategyMetadata()
-              .getMatrixMetadata()
-              .getMatrixCombinationList()
-              .stream()
-              .map(String::valueOf)
-              .collect(Collectors.joining("_"));
+
+    String levelIdentifier = level.getStrategyMetadata()
+                                 .getMatrixMetadata()
+                                 .getMatrixCombinationList()
+                                 .stream()
+                                 .map(String::valueOf)
+                                 .collect(Collectors.joining("_"));
+
+    if (useMatrixFieldName) {
+      levelIdentifier = level.getStrategyMetadata()
+                            .getMatrixMetadata()
+                            .getMatrixValuesMap()
+                            .entrySet()
+                            .stream()
+                            .map(t -> t.getValue().replace(".", ""))
+                            .collect(Collectors.joining("_"));
+    }
+    return "_" + (levelIdentifier.length() <= 126 ? levelIdentifier : levelIdentifier.substring(0, 126));
   }
 
   public boolean isCurrentStrategyLevelAtStage(Ambiance ambiance) {
