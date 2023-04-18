@@ -747,11 +747,6 @@ public class InstanceHelper {
               instanceSyncV2TaskDetails.getUuid());
           return;
         }
-        PerpetualTaskRecord perpetualTaskV2Record =
-            perpetualTaskService.getTaskRecord(instanceSyncV2TaskDetails.getPerpetualTaskId());
-        if (perpetualTaskV2Record != null && (perpetualTaskRecord.getState().equals(PerpetualTaskState.TASK_INVALID))) {
-          perpetualTaskService.deleteTask(accountId, instanceSyncV2TaskDetails.getPerpetualTaskId());
-        }
       }
 
       PerpetualTaskRecord perpetualTaskV2Record =
