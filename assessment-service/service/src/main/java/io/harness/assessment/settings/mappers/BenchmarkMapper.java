@@ -10,6 +10,7 @@ package io.harness.assessment.settings.mappers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.assessment.settings.beans.dto.BenchmarkDTO;
+import io.harness.assessment.settings.beans.dto.ScoreDTO;
 import io.harness.assessment.settings.beans.entities.Benchmark;
 import io.harness.assessment.settings.beans.entities.Score;
 
@@ -23,6 +24,7 @@ public class BenchmarkMapper {
     return Benchmark.builder()
         .benchmarkId(benchmarkDTO.getBenchmarkId())
         .benchmarkName(benchmarkDTO.getBenchmarkName())
+        .isDefault(benchmarkDTO.getIsDefault())
         .scores(benchmarkDTO.getScores()
                     .stream()
                     .map(scoreDTO
@@ -31,6 +33,24 @@ public class BenchmarkMapper {
                                .scoreType(scoreDTO.getScoreType())
                                .entityId(scoreDTO.getEntityId())
                                .maxScore(scoreDTO.getMaxScore())
+                               .build())
+                    .collect(Collectors.toList()))
+        .build();
+  }
+
+  public BenchmarkDTO toDTO(Benchmark benchmark) {
+    return BenchmarkDTO.builder()
+        .benchmarkId(benchmark.getBenchmarkId())
+        .benchmarkName(benchmark.getBenchmarkName())
+        .isDefault(benchmark.getIsDefault())
+        .scores(benchmark.getScores()
+                    .stream()
+                    .map(score
+                        -> ScoreDTO.builder()
+                               .score(score.getScore())
+                               .scoreType(score.getScoreType())
+                               .entityId(score.getEntityId())
+                               .maxScore(score.getMaxScore())
                                .build())
                     .collect(Collectors.toList()))
         .build();

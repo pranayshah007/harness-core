@@ -21,4 +21,5 @@ public interface BenchmarkRepository extends CrudRepository<Benchmark, String> {
   List<Benchmark> findAllByAssessmentIdAndVersion(String assessmentId, Long version);
   Optional<Benchmark> findOneByAssessmentIdAndVersionAndBenchmarkId(
       String assessmentId, Long version, String benchmarkId);
+  Optional<Benchmark> findOneByAssessmentIdAndVersionAndIsDefault(String assessmentId, Long version, boolean isDefault);
 }

@@ -29,12 +29,14 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -67,19 +69,12 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
     if (organizationEvaluationOptional.isEmpty()) {
       throw new RuntimeException("Org assessment calculations error.");
     }
-    Map<String, Double> benchmarkMap = new HashMap<>();
-    if (StringUtils.isNotEmpty(benchmarkId)) {
-      Optional<Benchmark> benchmarkOptional = benchmarkRepository.findOneByAssessmentIdAndVersionAndBenchmarkId(
-          assessment.getAssessmentId(), assessment.getVersion(), benchmarkId);
-      log.info("{}", benchmarkOptional);
-      if (benchmarkOptional.isEmpty()) {
-        throw new RuntimeException("Invalid benchmark Id");
-      }
-      Benchmark benchmark = benchmarkOptional.get();
-      benchmark.getScores()
-          .stream()
-          .filter(score -> score.getScoreType() == ScoreType.QUESTION_LEVEL)
-          .forEach(score -> benchmarkMap.put(score.getEntityId(), score.getScore()));
+    Map<String, Double> benchmarkMap =
+        getBenchmarkMap(benchmarkId, assessment.getAssessmentId(), assessment.getVersion());
+    Optional<Benchmark> benchmarkOptional = benchmarkRepository.findOneByAssessmentIdAndVersionAndIsDefault(
+        assessment.getAssessmentId(), assessment.getVersion(), true);
+    if (benchmarkOptional.isPresent()) {
+      benchmarkId = benchmarkOptional.get().getBenchmarkId();
     }
     assessmentResultsResponse.setAssessmentName(assessment.getAssessmentName());
     OrganizationEvaluation organizationEvaluation = organizationEvaluationOptional.get();
@@ -113,6 +108,35 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
     return assessmentResultsResponse;
   }
 
+  @NotNull
+  private Map<String, Double> getBenchmarkMap(String benchmarkId, String assessmentId, Long version) {
+    Map<String, Double> benchmarkMap = new HashMap<>();
+    Benchmark benchmark = null;
+    if (StringUtils.isNotEmpty(benchmarkId)) {
+      Optional<Benchmark> benchmarkOptional =
+          benchmarkRepository.findOneByAssessmentIdAndVersionAndBenchmarkId(assessmentId, version, benchmarkId);
+      log.info("{}", benchmarkOptional);
+      if (benchmarkOptional.isEmpty()) {
+        throw new RuntimeException("Invalid benchmark Id");
+      }
+      benchmark = benchmarkOptional.get();
+
+    } else {
+      Optional<Benchmark> benchmarkOptional =
+          benchmarkRepository.findOneByAssessmentIdAndVersionAndIsDefault(assessmentId, version, true);
+      if (benchmarkOptional.isPresent()) {
+        benchmark = benchmarkOptional.get();
+      }
+    }
+    if (Objects.nonNull(benchmark)) {
+      benchmark.getScores()
+          .stream()
+          .filter(score -> score.getScoreType() == ScoreType.QUESTION_LEVEL)
+          .forEach(score -> benchmarkMap.put(score.getEntityId(), score.getScore()));
+    }
+    return benchmarkMap;
+  }
+
   private void setResultsOverview(
       String benchmarkId, AssessmentResultsResponse assessmentResultsResponse, Long numOfResponses) {
     ScoreOverviewDTO scoreOverviewDTO =
@@ -144,6 +168,8 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
         throw new RuntimeException("Invalid benchmark Id");
       }
       Benchmark benchmark = benchmarkOptional.get();
+      scoreOverviewDTO.setBenchmarkId(benchmark.getBenchmarkId());
+      scoreOverviewDTO.setBenchmarkName(benchmark.getBenchmarkName());
       Score benchmarkScore = benchmark.getScores()
                                  .stream()
                                  .filter(score -> score.getScoreType() == ScoreType.ASSESSMENT_LEVEL)
