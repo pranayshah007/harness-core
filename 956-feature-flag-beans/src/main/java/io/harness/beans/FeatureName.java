@@ -35,6 +35,7 @@ public enum FeatureName {
           + "continue pipeline execution",
       HarnessTeam.SPG),
   SPG_WFE_PROJECTIONS_DEPLOYMENTS_PAGE("Enable projection on deployments page and executions", HarnessTeam.SPG),
+  SPG_ENABLE_POPULATE_USING_ARTIFACT_VARIABLE("Enable to populate artifact using artifact variables", HarnessTeam.SPG),
   SPG_CHANGE_SECRET_VAULT_PATTERN_ON_YAML("Change the format of secret in yaml when use vault", HarnessTeam.SPG),
   SPG_ALLOW_WFLOW_VARIABLES_TO_CONDITION_SKIP_PIPELINE_STAGE("Enables the use of workflow variables to skip"
           + " pipeline stage",
