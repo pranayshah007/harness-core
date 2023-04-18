@@ -629,6 +629,39 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       x-internal: true
+  /v1/plugin/request:
+    post:
+      summary: Request for a Plugin
+      operationId: post-plugin-request
+      responses:
+        '201':
+          description: Created
+      tags:
+        - PluginInfo
+      description: Request for a Plugin
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/RequestPluginRequest'
+    get:
+      summary: Get all plugin requests for an account
+      operationId: get-plugin-request
+      responses:
+        '200':
+          $ref: '#/components/responses/PluginRequestResponseList'
+      tags:
+        - PluginInfo
+      x-internal: true
+      description: Get all plugin requests for an account
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
 components:
   schemas:
     BackstageEnvVariable:
@@ -1335,6 +1368,51 @@ components:
             id: 4cbw2qu8gjz0n
       required:
         - merged_config
+    RequestPlugin:
+      x-stoplight:
+        id: 9hysqi3bqen2g
+      type: object
+      title: RequestPluginRequest
+      description: Details of the plugin being requested
+      properties:
+        name:
+          type: string
+          x-stoplight:
+            id: 36cfc6be33iuq
+        creator:
+          type: string
+          x-stoplight:
+            id: 1rpevk6nasps4
+        package_link:
+          type: string
+          x-stoplight:
+            id: 06dejnewki48v
+        doc_link:
+          type: string
+          x-stoplight:
+            id: kjp2dblyv5l0j
+      required:
+        - name
+        - creator
+        - package_link
+        - doc_link
+    PluginRequestResponseList:
+      title: PluginRequestResponseList
+      x-stoplight:
+        id: l8pxjbva9kd77
+      type: object
+      properties:
+        plugin_requests:
+          type: array
+          x-stoplight:
+            id: 7p55aiahqzgfc
+          items:
+            $ref: '#/components/schemas/RequestPlugin'
+            x-stoplight:
+              id: djchso9u50p2u
+      required:
+        - plugin_requests
+      description: Returns all plugin requests for an account
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -1547,6 +1625,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ConnectorInfoRequest'
+    RequestPluginRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RequestPlugin'
+      description: Details of the plugin being requested
   responses:
     BackstageEnvVariableResponse:
       description: Example response
@@ -1721,6 +1805,25 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/HarnessEntitiesCountResponse'
+    PluginRequestResponseList:
+      description: Returns all plugin requests for an account
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PluginRequestResponseList'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
   securitySchemes:
     x-api-key:
       name: x-api-key
