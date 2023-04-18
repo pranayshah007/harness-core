@@ -9,7 +9,6 @@ package io.harness.gitx;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import com.google.common.annotations.VisibleForTesting;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.StoreType;
@@ -19,6 +18,7 @@ import io.harness.gitsync.interceptor.GitSyncConstants;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.remote.client.NGRestUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
@@ -47,14 +47,13 @@ public class GitXSettingsHelper {
 
   public String getDefaultConnectorForGitX(String accountIdentifier, String orgIdentifier, String projIdentifier) {
     return NGRestUtils
-            .getResponse(ngSettingsClient.getSetting(
-                    GitSyncConstants.DEFAULT_CONNECTOR_FOR_GIT_EXPERIENCE, accountIdentifier, orgIdentifier, projIdentifier))
-            .getValue();
+        .getResponse(ngSettingsClient.getSetting(
+            GitSyncConstants.DEFAULT_CONNECTOR_FOR_GIT_EXPERIENCE, accountIdentifier, orgIdentifier, projIdentifier))
+        .getValue();
   }
 
   @VisibleForTesting
-  boolean isGitExperienceEnforcedInSettings(
-      String accountIdentifier, String orgIdentifier, String projIdentifier) {
+  boolean isGitExperienceEnforcedInSettings(String accountIdentifier, String orgIdentifier, String projIdentifier) {
     String isGitExperienceEnforced =
         NGRestUtils
             .getResponse(ngSettingsClient.getSetting(
