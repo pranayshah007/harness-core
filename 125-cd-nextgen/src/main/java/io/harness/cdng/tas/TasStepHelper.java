@@ -442,11 +442,15 @@ public class TasStepHelper {
                       .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
                       .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
                       .build();
+    String infraIdentifier = infrastructure.getInfraIdentifier();
+    if (isBlank(infraIdentifier)) {
+      infraIdentifier = infrastructure.getInfrastructureKey();
+    }
     return ExecutionInfoKey.builder()
         .scope(scope)
         .deploymentIdentifier(getDeploymentIdentifier(tasInfraConfig, appName))
         .envIdentifier(infrastructure.getEnvironment().getIdentifier())
-        .infraIdentifier(infrastructure.getInfrastructureKey())
+        .infraIdentifier(infraIdentifier)
         .serviceIdentifier(serviceOutcome.getIdentifier())
         .build();
   }
