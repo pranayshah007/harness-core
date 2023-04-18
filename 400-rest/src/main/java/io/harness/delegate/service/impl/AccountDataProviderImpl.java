@@ -9,6 +9,7 @@ package io.harness.delegate.service.impl;
 
 import static io.harness.delegate.beans.DelegateRing.DelegateRingKeys;
 
+import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateRing;
 import io.harness.delegate.beans.DelegateRing.DelegateRingKeys;
 import io.harness.persistence.HPersistence;
@@ -29,8 +30,11 @@ public class AccountDataProviderImpl implements AccountDataProvider {
 
   @Override
   public DelegateRing getDelegateRing(String accountId) {
-    return persistence.createQuery(DelegateRing.class)
-        .filter(DelegateRingKeys.ringName, accountService.get(accountId).getRingName())
-        .get();
+    log.info("Getting into ring");
+    DelegateRing delegateRing = persistence.createQuery(DelegateRing.class)
+                                    .filter(DelegateRingKeys.ringName, accountService.get(accountId).getRingName())
+                                    .get();
+    log.info("Getting into ring, {}", delegateRing.toString());
+    return delegateRing;
   }
 }

@@ -21,6 +21,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.beans.DelegateConfiguration;
+import io.harness.delegate.utils.DelegateDBMigrationFailed;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
 import io.harness.lock.AcquiredLock;
@@ -71,7 +72,7 @@ public class MigrationServiceImpl implements MigrationService {
   @Inject private ConfigurationController configurationController;
 
   @Override
-  public void runMigrations() {
+  public void runMigrations() throws DelegateDBMigrationFailed {
     Map<Integer, Class<? extends Migration>> migrations =
         MigrationList.getMigrations().stream().collect(Collectors.toMap(Pair::getKey, Pair::getValue));
     int maxVersion = migrations.keySet().stream().mapToInt(Integer::intValue).max().orElse(0);

@@ -13,14 +13,25 @@ import io.harness.persistence.PersistentEntity;
 
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 
-@Value
+@Data
+@AllArgsConstructor
 @FieldNameConstants(innerTypeName = "DelegateMigrationFlagKeys")
 @StoreIn(DbAliases.HARNESS)
 @Entity(value = "delegateMigrationFlag", noClassnameStored = true)
 public class DelegateMigrationFlag implements PersistentEntity {
   @Id private String className;
   private boolean enabled;
+  private boolean onPremMigrationTriggered = false;
+
+  public DelegateMigrationFlag(String className, boolean enabled) {
+    this.className = className;
+    this.enabled = enabled;
+  }
 }

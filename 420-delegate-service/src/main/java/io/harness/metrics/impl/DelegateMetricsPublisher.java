@@ -86,7 +86,7 @@ public class DelegateMetricsPublisher implements MetricsPublisher {
                                          .greaterThan(Instant.now().minusSeconds(300).toEpochMilli())
                                          .count();
       metricService.recordMetric(ACTIVE_DELEGATES_COUNT, activeDelegatesCount);
-      metricService.recordMetric(IMMUTABLE_DELEGATES, immutableDelegatesCount);
+      metricService.recordMetric(IMMUTABLE_DELEGATES, 500);
       metricService.recordMetric(MUTABLE_DELEGATES, activeDelegatesCount - immutableDelegatesCount);
 
       if (log.isDebugEnabled()) {

@@ -7,6 +7,8 @@
 
 package software.wings.service.intfc;
 
+import io.harness.delegate.utils.DelegateDBMigrationFailed;
+
 public interface MigrationService {
-  void runMigrations();
+  void runMigrations() throws DelegateDBMigrationFailed;
 }

@@ -27,6 +27,7 @@ import static java.time.Duration.ofHours;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotation.IgnoreUnusedIndex;
+import io.harness.annotations.SecondaryStoreIn;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.StoreInMultiple;
 import io.harness.annotations.dev.HarnessTeam;
@@ -176,7 +177,9 @@ public class IndexManagerSession {
   private static Set<String> processIndexesInternal(
       AdvancedDatastore datastore, Morphia morphia, Store store, IndexesProcessor processor) {
     Set<String> processedCollections = new HashSet<>();
+
     Collection<MappedClass> mappedClasses = morphia.getMapper().getMappedClasses();
+
     mappedClasses.forEach(mc -> {
       Entity entity = mc.getEntityAnnotation();
       if (entity == null) {
@@ -184,6 +187,8 @@ public class IndexManagerSession {
       }
 
       DBCollection collection = datastore.getCollection(mc.getClazz());
+
+      log.info("Store and collection info: {} {}", store.getName(), collection.getName());
 
       Set<String> storeInSet = new HashSet<>();
       addStoreInInSet(mc, storeInSet);
@@ -216,12 +221,16 @@ public class IndexManagerSession {
   private static void addStoreInInSet(MappedClass mc, Set<String> storeInSet) {
     final StoreIn storeIn = mc.getClazz().getAnnotation(StoreIn.class);
     final StoreInMultiple storeInMultiple = mc.getClazz().getAnnotation(StoreInMultiple.class);
+    final SecondaryStoreIn secondaryStoreIn = mc.getClazz().getAnnotation(SecondaryStoreIn.class);
     if (storeIn != null) {
       storeInSet.add(storeIn.value());
     }
     if (storeInMultiple != null) {
       storeInSet.addAll(
           emptyIfNull(Arrays.stream(storeInMultiple.value()).map(StoreIn::value).collect(Collectors.toList())));
+    }
+    if (secondaryStoreIn != null) {
+      storeInSet.add(secondaryStoreIn.value());
     }
   }
 
@@ -373,7 +382,8 @@ public class IndexManagerSession {
 
     switch (mode) {
       case AUTO:
-        log.warn("Creating index {} {}", indexCreator.getOptions().toString(), indexCreator.getKeys().toString());
+        log.warn("Creating index {} {} {}", indexCreator.getOptions().toString(), indexCreator.getKeys().toString(),
+            indexCreator.getCollection().toString());
         for (int i = 0; i < 10; i++) {
           try {
             indexCreator.getCollection().createIndex(indexCreator.getKeys(), indexCreator.getOptions());
@@ -522,6 +532,9 @@ public class IndexManagerSession {
     AtomicBoolean actionPerformed = new AtomicBoolean(false);
     try {
       Map<String, IndexCreator> creators = indexCreators(mc, collection);
+      if (collection.getName().contains("delegate")) {
+        log.info("Index creators anupam: {}", creators.toString());
+      }
       IndexManagerCollectionSession collectionSession = createCollectionSession(collection);
       // We should be attempting to drop indexes only if we successfully created all new ones
 
@@ -581,6 +594,7 @@ public class IndexManagerSession {
         actionPerformed.set(true);
       }
     });
+    log.info("processedCollections anupam {}", processedCollections.toString());
 
     Set<String> whitelistCollections = ImmutableSet.<String>of(
         // Files and chunks
@@ -600,6 +614,8 @@ public class IndexManagerSession {
         "ciTelemetrySentStatus", "ciAccountExecutionMetadata", "pluginMetadataConfig", "pluginMetadataStatus",
         // cd-telemetry
         "cdTelemetrySentStatus", "cdAccountExecutionMetadata");
+
+    log.info("all collections per datastore anupam: {}", datastore.getDB().getCollectionNames());
 
     List<String> obsoleteCollections = datastore.getDB()
                                            .getCollectionNames()

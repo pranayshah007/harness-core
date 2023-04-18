@@ -71,6 +71,7 @@ import io.harness.delegate.resources.DelegateTaskResourceV2;
 import io.harness.delegate.resources.core.CoreDelegateResource;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.telemetry.DelegateTelemetryPublisher;
+import io.harness.delegate.utils.DelegateDBMigrationFailed;
 import io.harness.dms.DmsModule;
 import io.harness.event.EventsModule;
 import io.harness.event.listener.EventListener;
@@ -369,6 +370,7 @@ import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
 import javax.validation.executable.ValidateOnExecution;
 import javax.ws.rs.Path;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -660,6 +662,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     }
   }
 
+  @SneakyThrows
   public void initializeManagerSvc(Injector injector, Environment environment, MainConfiguration configuration) {
     // Access all caches before coming out of maintenance
     injector.getInstance(new Key<Map<String, Cache<?, ?>>>() {});
@@ -1620,7 +1623,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     injector.getInstance(VerificationServiceSecretManager.class).initializeServiceSecretKeys();
   }
 
-  private void runMigrations(Injector injector) {
+  private void runMigrations(Injector injector) throws DelegateDBMigrationFailed {
     injector.getInstance(MigrationService.class).runMigrations();
   }
 

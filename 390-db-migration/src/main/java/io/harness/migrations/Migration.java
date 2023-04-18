@@ -7,6 +7,8 @@
 
 package io.harness.migrations;
 
+import io.harness.delegate.utils.DelegateDBMigrationFailed;
+
 public interface Migration {
-  void migrate();
+  void migrate() throws DelegateDBMigrationFailed;
 }

@@ -493,8 +493,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void initDelegateProcess(final boolean watched) {
     try {
-      if (delegateConfiguration.isLocalNgDelegate()) {
-        delegateNg = true;
+      if (true) {
+        delegateNg = false;
         DELEGATE_GROUP_NAME = "localDelegate";
         // Setting delegate type as kubernetes, as NG doesn't allow shell delegates.
         DELEGATE_TYPE = KUBERNETES;
