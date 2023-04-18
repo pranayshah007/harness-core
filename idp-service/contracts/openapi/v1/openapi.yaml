@@ -118,7 +118,7 @@ paths:
       description: Creates multiple backstage env variables
       x-internal: true
       requestBody:
-        $ref: '#/components/requestBodies/BackstageEnvVariableRequestList'
+        $ref: '#/components/requestBodies/BackstageEnvVariableBatchRequest'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       security:
@@ -136,7 +136,7 @@ paths:
       security:
         - x-api-key: []
       requestBody:
-        $ref: '#/components/requestBodies/BackstageEnvVariableRequestList'
+        $ref: '#/components/requestBodies/BackstageEnvVariableBatchRequest'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       tags:
@@ -729,6 +729,19 @@ components:
           $ref: '#/components/schemas/BackstageEnvVariable'
           x-stoplight:
             id: r2xgjoclqancb
+    BackstageEnvVariableBatchRequest:
+      type: object
+      x-stoplight:
+        id: m9tpxiklbpfzk
+      properties:
+        env_variables:
+          x-stoplight:
+            id: r2xgjoclqancb
+          type: array
+          items:
+            $ref: '#/components/schemas/BackstageEnvVariable'
+            x-stoplight:
+              id: i9tsq5o4dan8z
     BackstageEnvVariableResponse:
       x-stoplight:
         id: e8875709fc5b1
@@ -1460,35 +1473,15 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/BackstageEnvVariableRequest'
-    BackstageEnvVariableRequestList:
+    BackstageEnvVariableBatchRequest:
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/BackstageEnvVariableRequest'
-          examples:
-            Example 1:
-              value:
-                - env_variable:
-                    identifier: 641c7f1aa18dbf72522d78f0
-                    env_name: PAGERDUTY_TOKEN
-                    created: 1679589047352
-                    updated: 1679589047352
-                    type: Secret
-                    harness_secret_identifier: pdtoken
-                - env_variable:
-                    identifier: 641c7f1aa18dbf72522d78f1
-                    env_name: GITHUB_APP_APPLICATION_ID
-                    created: 1679589047352
-                    updated: 1679589047352
-                    type: Config
-                    value: '1234'
+            $ref: '#/components/schemas/BackstageEnvVariableBatchRequest'
+          examples: {}
         application/yaml:
           schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/BackstageEnvVariableRequest'
+            $ref: '#/components/schemas/BackstageEnvVariableBatchRequest'
     BackstagePermissionsRequest:
       content:
         application/json:
@@ -1544,6 +1537,11 @@ components:
                   enabled_disabled_at: 0
                   created: 1679589146025
                   updated: 1679589146025
+                  env_variables:
+                    - env_name: SNYK_TOKEN
+                      type: Secret
+                      harness_secret_identifier: snyktoken
+                  config_name: Snyk Security
     ConnectorInfoRequest:
       content:
         application/json:

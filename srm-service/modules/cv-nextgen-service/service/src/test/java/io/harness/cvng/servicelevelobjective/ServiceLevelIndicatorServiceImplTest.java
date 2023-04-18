@@ -86,6 +86,7 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
 
 public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
   BuilderFactory builderFactory;
@@ -96,6 +97,8 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
   @Inject HPersistence hPersistence;
   @Inject Clock clock;
   @Inject private MonitoredServiceService monitoredServiceService;
+
+  @Mock OrchestrationService orchestrationService;
   private String monitoredServiceIdentifier;
 
   private Instant startTime;
@@ -111,6 +114,7 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     clock = Clock.fixed(TIME_FOR_TESTS, ZoneOffset.UTC);
     startTime = TIME_FOR_TESTS.minus(5, ChronoUnit.MINUTES);
     endTime = TIME_FOR_TESTS;
+    FieldUtils.writeField(serviceLevelIndicatorService, "orchestrationService", orchestrationService, true);
   }
 
   @Test
@@ -438,6 +442,65 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     List<ServiceLevelIndicatorDTO> serviceLevelIndicatorDTOList =
         serviceLevelIndicatorService.get(projectParams, serviceLevelIndicatorIdentifiers);
     assertThat(Collections.singletonList(serviceLevelIndicatorDTO)).isEqualTo(serviceLevelIndicatorDTOList);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testUpdateWindowWithConsecutiveMinutes_success() {
+    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
+        builderFactory.getThresholdServiceLevelIndicatorDTOBuilder().build();
+    ProjectParams projectParams = builderFactory.getProjectParams();
+    List<String> serviceLevelIndicatorIdentifiers = serviceLevelIndicatorService.create(projectParams,
+        Collections.singletonList(serviceLevelIndicatorDTO), "sloId", monitoredServiceIdentifier, "healthSourceId");
+    ServiceLevelIndicatorSpec serviceLevelIndicatorSpec =
+        WindowBasedServiceLevelIndicatorSpec.builder()
+            .sliMissingDataType(SLIMissingDataType.GOOD)
+            .type(SLIMetricType.THRESHOLD)
+            .spec(ThresholdSLIMetricSpec.builder()
+                      .metric1("Calls per Minute")
+                      .thresholdValue(500.0)
+                      .thresholdType(ThresholdType.GREATER_THAN_EQUAL_TO)
+                      .considerConsecutiveMinutes(5)
+                      .considerAllConsecutiveMinutesFromStartAsBad(false)
+                      .build())
+            .build();
+    serviceLevelIndicatorDTO.setSpec(serviceLevelIndicatorSpec);
+    List<ServiceLevelIndicatorDTO> serviceLevelIndicatorDTOList = Collections.singletonList(serviceLevelIndicatorDTO);
+    LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
+    List<SLIRecord.SLIState> sliStateList = Arrays.asList(SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD,
+        SLIRecord.SLIState.BAD, SLIRecord.SLIState.NO_DATA, SLIRecord.SLIState.BAD);
+    String sliId =
+        serviceLevelIndicatorService
+            .getServiceLevelIndicator(builderFactory.getProjectParams(), serviceLevelIndicatorIdentifiers.get(0))
+            .getUuid();
+    createSLIRecords(sliId, sliStateList);
+    serviceLevelIndicatorService.update(projectParams, serviceLevelIndicatorDTOList, "sloId",
+        Collections.singletonList(serviceLevelIndicatorDTO.getIdentifier()), monitoredServiceIdentifier,
+        "healthSourceId",
+        TimePeriod.builder()
+            .startDate(currentLocalDate.toLocalDate().minus(1, ChronoUnit.DAYS))
+            .endDate(currentLocalDate.toLocalDate())
+            .build(),
+        TimePeriod.builder()
+            .startDate(currentLocalDate.toLocalDate().minus(1, ChronoUnit.DAYS))
+            .endDate(currentLocalDate.toLocalDate())
+            .build());
+    serviceLevelIndicatorDTOList = serviceLevelIndicatorService.get(projectParams, serviceLevelIndicatorIdentifiers);
+    assertThat(
+        ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTOList.get(0).getSpec()).getSliMissingDataType())
+        .isEqualTo(SLIMissingDataType.GOOD);
+    assertThat(
+        ((ThresholdSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTOList.get(0).getSpec())
+                .getSpec())
+            .getConsiderConsecutiveMinutes())
+        .isEqualTo(5);
+    assertThat(
+        ((ThresholdSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTOList.get(0).getSpec())
+                .getSpec())
+            .getConsiderAllConsecutiveMinutesFromStartAsBad())
+        .isEqualTo(false);
+    verify(orchestrationService, times(1)).queueAnalysis(any(), any(), any());
   }
 
   @Test

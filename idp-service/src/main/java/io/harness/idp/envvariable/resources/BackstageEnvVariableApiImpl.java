@@ -15,11 +15,11 @@ import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity.Backst
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.spec.server.idp.v1.BackstageEnvVariableApi;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
+import io.harness.spec.server.idp.v1.model.BackstageEnvVariableBatchRequest;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariableRequest;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariableResponse;
 
 import com.google.inject.Inject;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;
@@ -51,14 +51,11 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
   }
 
   @Override
-  public Response createBackstageEnvVariables(
-      @Valid List<BackstageEnvVariableRequest> requestList, String harnessAccount) {
+  public Response createBackstageEnvVariables(@Valid BackstageEnvVariableBatchRequest body, String harnessAccount) {
     idpCommonService.checkUserAuthorization();
-    final List<BackstageEnvVariable> requestSecrets = new ArrayList<>();
-    requestList.forEach(request -> requestSecrets.add(request.getEnvVariable()));
     List<BackstageEnvVariable> responseSecrets;
     try {
-      responseSecrets = backstageEnvVariableService.createMulti(requestSecrets, harnessAccount);
+      responseSecrets = backstageEnvVariableService.createMulti(body.getEnvVariables(), harnessAccount);
     } catch (Exception e) {
       log.error("Could not create all environment variables", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -152,14 +149,11 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
     }
   }
   @Override
-  public Response updateBackstageEnvVariables(
-      @Valid List<BackstageEnvVariableRequest> requestList, String accountIdentifier) {
+  public Response updateBackstageEnvVariables(@Valid BackstageEnvVariableBatchRequest body, String accountIdentifier) {
     idpCommonService.checkUserAuthorization();
-    final List<BackstageEnvVariable> requestSecrets = new ArrayList<>();
-    requestList.forEach(request -> requestSecrets.add(request.getEnvVariable()));
     try {
       List<BackstageEnvVariable> responseVariables =
-          backstageEnvVariableService.updateMulti(requestSecrets, accountIdentifier);
+          backstageEnvVariableService.updateMulti(body.getEnvVariables(), accountIdentifier);
       return Response.status(Response.Status.OK)
           .entity(BackstageEnvVariableMapper.toResponseList(responseVariables))
           .build();

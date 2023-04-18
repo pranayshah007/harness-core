@@ -163,7 +163,18 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     String nodeId = AmbianceUtils.obtainCurrentSetupId(ambiance);
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       PlanNode planNode = planService.fetchNode(ambiance.getPlanId(), nodeId);
-      resolveParameters(ambiance, planNode);
+      try {
+        resolveParameters(ambiance, planNode);
+      } catch (Exception ex) {
+        // NOTE: If there is an exception occurred while resolving parameters and when condition evaluates to skipped
+        // then we should not throw exception but rather carry on the execution
+        ExecutionCheck check = performPreFacilitationChecks(ambiance, planNode);
+        if (!check.isProceed()) {
+          log.info("Not Proceeding with  Execution. Reason : {}", check.getReason());
+          return;
+        }
+        throw ex;
+      }
 
       ExecutionCheck check = performPreFacilitationChecks(ambiance, planNode);
       if (!check.isProceed()) {
