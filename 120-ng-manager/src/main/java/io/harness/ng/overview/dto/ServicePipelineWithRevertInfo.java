@@ -29,5 +29,5 @@ public class ServicePipelineWithRevertInfo {
   String deployedById;
   String deployedByName;
   long lastExecutedAt;
-  Boolean isRevertExecution;
+  boolean isRevertExecution;
 }

@@ -1313,7 +1313,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
           String pipelineId = resultSet.getString(NGPipelineSummaryCDConstants.PIPELINE_IDENTIFIER);
           String status = resultSet.getString(NGPipelineSummaryCDConstants.STATUS);
           String planExecutionId = resultSet.getString(NGPipelineSummaryCDConstants.PLAN_EXECUTION_ID);
-          Boolean isRevertExecution = resultSet.getBoolean(NGPipelineSummaryCDConstants.REVERT_EXECUTION);
+          boolean isRevertExecution = resultSet.getBoolean(NGPipelineSummaryCDConstants.REVERT_EXECUTION);
           String deployedByName = resultSet.getString(NGPipelineSummaryCDConstants.AUTHOR_NAME);
           String deployedById = resultSet.getString(NGPipelineSummaryCDConstants.AUTHOR_ID);
 
@@ -2988,7 +2988,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         DashboardServiceHelper.constructEnvironmentToArtifactDeploymentMap(artifactDeploymentDetails, envIdToEnvNameMap);
     Map<String, ServicePipelineWithRevertInfo> pipelineExecutionDetailsMap =
             getPipelineExecutionDetailsWithRevertInfo(artifactDeploymentDetailsMap.values().stream().map(artifactDeploymentDetail -> artifactDeploymentDetail.getLastPipelineExecutionId()).collect(Collectors.toList()));
-    List<String> pipelineExecutionIdsWhereRollbackOccurred = getPipelineExecutionsWhereRollbackOccurred(pipelineExecutionDetailsMap.values().stream().map(servicePipelineWithRevertInfo -> servicePipelineWithRevertInfo.getPipelineExecutionId()).collect(Collectors.toList()));
+    List<String> pipelineExecutionIdsWhereRollbackOccurred = getPipelineExecutionsWhereRollbackOccurred(pipelineExecutionDetailsMap.values().stream().map(servicePipelineWithRevertInfo -> servicePipelineWithRevertInfo.getIdentifier()).collect(Collectors.toList()));
     return DashboardServiceHelper.getEnvironmentInstanceDetailsFromMap(
         artifactDeploymentDetailsMap, envToCountMap, envIdToEnvNameMap, envIdToEnvTypeMap, environmentGroupEntities, environmentFilterPropertiesDTO, pipelineExecutionDetailsMap, pipelineExecutionIdsWhereRollbackOccurred);
   }

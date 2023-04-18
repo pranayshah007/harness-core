@@ -10,9 +10,12 @@ package io.harness.ng.overview.service;
 import static io.harness.rule.OwnerRule.ABHISHEK;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -22,6 +25,8 @@ import io.harness.NgManagerTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
+import io.harness.cdng.envGroup.services.EnvironmentGroupServiceImpl;
 import io.harness.exception.InvalidRequestException;
 import io.harness.models.ActiveServiceInstanceInfoV2;
 import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
@@ -38,6 +43,8 @@ import io.harness.ng.overview.dto.ActiveServiceDeploymentsInfo;
 import io.harness.ng.overview.dto.ActiveServiceDeploymentsInfo.ActiveServiceDeploymentsInfoBuilder;
 import io.harness.ng.overview.dto.ArtifactDeploymentDetail;
 import io.harness.ng.overview.dto.ArtifactInstanceDetails;
+import io.harness.ng.overview.dto.EnvironmentGroupInstanceDetails;
+import io.harness.ng.overview.dto.EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail;
 import io.harness.ng.overview.dto.EnvironmentInstanceDetails;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
@@ -47,16 +54,20 @@ import io.harness.ng.overview.dto.PipelineExecutionCountInfo;
 import io.harness.ng.overview.dto.ServiceArtifactExecutionDetail;
 import io.harness.ng.overview.dto.ServiceArtifactExecutionDetail.ServiceArtifactExecutionDetailBuilder;
 import io.harness.ng.overview.dto.ServicePipelineInfo;
+import io.harness.ng.overview.dto.ServicePipelineWithRevertInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.service.instancedashboardservice.InstanceDashboardServiceImpl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -65,6 +76,8 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.springframework.data.domain.Page;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.CDC)
 public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
@@ -72,14 +85,23 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
   @Mock private InstanceDashboardServiceImpl instanceDashboardService;
   @Mock private ServiceEntityService serviceEntityServiceImpl;
   @Mock private EnvironmentServiceImpl environmentService;
+  @Mock private EnvironmentGroupServiceImpl environmentGroupService;
 
   private final String ENVIRONMENT_1 = "env1";
   private final String ENVIRONMENT_2 = "env2";
+  private final String ENVIRONMENT_GROUP_1 = "group1";
+  private final String ENVIRONMENT_GROUP_2 = "group2";
   private final String ENVIRONMENT_NAME_1 = "envN1";
   private final String ENVIRONMENT_NAME_2 = "envN2";
+  private final String ENVIRONMENT_GROUP_NAME_1 = "envgroupN1";
+  private final String ENVIRONMENT_GROUP_NAME_2 = "envgroupN2";
   private final String INFRASTRUCTURE_1 = "infra1";
   private final String DISPLAY_NAME_1 = "display1:1";
   private final String DISPLAY_NAME_2 = "display2:2";
+  private final String PLAN_EXECUTION_1 = "planexec:1";
+  private final String PIPELINE_EXECUTION_SUMMARY_CD_ID_1 = "sumarryid1";
+  private final String PIPELINE_EXECUTION_SUMMARY_CD_ID_2 = "sumarryid2";
+  private final String PLAN_EXECUTION_2 = "planexec:2";
   private final String ACCOUNT_ID = "accountID";
   private final String ORG_ID = "orgId";
   private final String PROJECT_ID = "projectId";
@@ -640,41 +662,40 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
 
   private List<ArtifactDeploymentDetailModel> getArtifactDeploymentDetailModelList() {
     List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels = new ArrayList<>();
-    artifactDeploymentDetailModels.add(new ArtifactDeploymentDetailModel(ENVIRONMENT_1, DISPLAY_NAME_1, 1l));
-    artifactDeploymentDetailModels.add(new ArtifactDeploymentDetailModel(ENVIRONMENT_2, DISPLAY_NAME_2, 2l));
+    artifactDeploymentDetailModels.add(new ArtifactDeploymentDetailModel(ENVIRONMENT_1, DISPLAY_NAME_1, 1l, PLAN_EXECUTION_1));
+    artifactDeploymentDetailModels.add(new ArtifactDeploymentDetailModel(ENVIRONMENT_2, DISPLAY_NAME_2, 2l, PLAN_EXECUTION_2));
     return artifactDeploymentDetailModels;
   }
 
   private List<ArtifactDeploymentDetailModel> getArtifactDeploymentDetailModelList_ArtifactCard() {
     List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels = new ArrayList<>();
-    artifactDeploymentDetailModels.add(new ArtifactDeploymentDetailModel(ENVIRONMENT_1, DISPLAY_NAME_1, 1l));
-    artifactDeploymentDetailModels.add(new ArtifactDeploymentDetailModel(ENVIRONMENT_2, DISPLAY_NAME_2, 2l));
-    artifactDeploymentDetailModels.add(new ArtifactDeploymentDetailModel(ENVIRONMENT_1, DISPLAY_NAME_2, 3l));
-    artifactDeploymentDetailModels.add(new ArtifactDeploymentDetailModel(ENVIRONMENT_2, DISPLAY_NAME_1, 4l));
-    artifactDeploymentDetailModels.add(new ArtifactDeploymentDetailModel(null, DISPLAY_NAME_1, 4l));
+    artifactDeploymentDetailModels.add(new ArtifactDeploymentDetailModel(ENVIRONMENT_1, DISPLAY_NAME_1, 1l, PLAN_EXECUTION_1));
+    artifactDeploymentDetailModels.add(new ArtifactDeploymentDetailModel(ENVIRONMENT_2, DISPLAY_NAME_2, 2l, PLAN_EXECUTION_1));
+    artifactDeploymentDetailModels.add(new ArtifactDeploymentDetailModel(ENVIRONMENT_1, DISPLAY_NAME_2, 3l, PLAN_EXECUTION_1));
+    artifactDeploymentDetailModels.add(new ArtifactDeploymentDetailModel(ENVIRONMENT_2, DISPLAY_NAME_1, 4l, PLAN_EXECUTION_1));
+    artifactDeploymentDetailModels.add(new ArtifactDeploymentDetailModel(null, DISPLAY_NAME_1, 4l, PLAN_EXECUTION_1));
     return artifactDeploymentDetailModels;
   }
 
-  private List<EnvironmentInstanceDetails.EnvironmentInstanceDetail> getEnvironmentInstanceDetailList() {
-    List<EnvironmentInstanceDetails.EnvironmentInstanceDetail> environmentInstanceDetails = new ArrayList<>();
+  private List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> getEnvironmentGroupInstanceDetailList() {
+    List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> environmentInstanceDetails = new ArrayList<>();
     environmentInstanceDetails.add(
-        EnvironmentInstanceDetails.EnvironmentInstanceDetail.builder()
-            .envId(ENVIRONMENT_1)
-            .envName(ENVIRONMENT_NAME_1)
-            .environmentType(EnvironmentType.PreProduction)
-            .count(2)
-            .artifactDeploymentDetail(
-                ArtifactDeploymentDetail.builder().artifact(DISPLAY_NAME_1).lastDeployedAt(1l).build())
-            .build());
+            EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
+                            .id(ENVIRONMENT_GROUP_1)
+                                    .name(ENVIRONMENT_GROUP_NAME_1)
+                                            .environmentTypes(Arrays.asList(EnvironmentType.PreProduction))
+                                                    .count(2)
+                                                            .artifactDeploymentDetails(Collections.singletonList(ArtifactDeploymentDetail.builder().artifact(DISPLAY_NAME_1).lastDeployedAt(1l).build()))
+                                                                    .build());
     environmentInstanceDetails.add(
-        EnvironmentInstanceDetails.EnvironmentInstanceDetail.builder()
-            .envId(ENVIRONMENT_2)
-            .envName(ENVIRONMENT_NAME_2)
-            .environmentType(EnvironmentType.Production)
-            .count(1)
-            .artifactDeploymentDetail(
-                ArtifactDeploymentDetail.builder().artifact(DISPLAY_NAME_2).lastDeployedAt(2l).build())
-            .build());
+            EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
+                    .id(ENVIRONMENT_GROUP_2)
+                    .name(ENVIRONMENT_GROUP_NAME_2)
+                    .environmentTypes(Arrays.asList(EnvironmentType.PreProduction, EnvironmentType.Production))
+            .count(3)
+            .artifactDeploymentDetails(
+                Arrays.asList(ArtifactDeploymentDetail.builder().artifact(DISPLAY_NAME_2).lastDeployedAt(2l).build(), ArtifactDeploymentDetail.builder().artifact(DISPLAY_NAME_1).lastDeployedAt(1l).build()))
+                    .build());
     return environmentInstanceDetails;
   }
 
@@ -690,38 +711,17 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
             .envId(ENVIRONMENT_2)
             .environmentType(EnvironmentType.Production)
             .envName(ENVIRONMENT_NAME_2);
+    EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail environmentGroupInstanceDetail1 = EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder().id("id").isEnvGroup(true).isDrift(false).build();
     artifactInstanceDetails.add(
         ArtifactInstanceDetails.ArtifactInstanceDetail.builder()
             .artifact(DISPLAY_NAME_1)
-            .environmentInstanceDetails(
-                EnvironmentInstanceDetails.builder()
-                    .environmentInstanceDetails(Arrays.asList(
-                        environmentInstanceDetail1
-                            .artifactDeploymentDetail(
-                                ArtifactDeploymentDetail.builder().artifact(DISPLAY_NAME_1).lastDeployedAt(1l).build())
-                            .build(),
-                        environmentInstanceDetail2
-                            .artifactDeploymentDetail(
-                                ArtifactDeploymentDetail.builder().artifact(DISPLAY_NAME_1).lastDeployedAt(4l).build())
-                            .build()))
-                    .build())
-            .build());
+            .environmentGroupInstanceDetails(
+                    EnvironmentGroupInstanceDetails.builder().environmentGroupInstanceDetails(Arrays.asList(environmentGroupInstanceDetail1)).build()).build());
     artifactInstanceDetails.add(
         ArtifactInstanceDetails.ArtifactInstanceDetail.builder()
             .artifact(DISPLAY_NAME_2)
-            .environmentInstanceDetails(
-                EnvironmentInstanceDetails.builder()
-                    .environmentInstanceDetails(Arrays.asList(
-                        environmentInstanceDetail1
-                            .artifactDeploymentDetail(
-                                ArtifactDeploymentDetail.builder().artifact(DISPLAY_NAME_2).lastDeployedAt(3l).build())
-                            .build(),
-                        environmentInstanceDetail2
-                            .artifactDeploymentDetail(
-                                ArtifactDeploymentDetail.builder().artifact(DISPLAY_NAME_2).lastDeployedAt(2l).build())
-                            .build()))
-                    .build())
-            .build());
+                .environmentGroupInstanceDetails(
+                        EnvironmentGroupInstanceDetails.builder().environmentGroupInstanceDetails(Arrays.asList(environmentGroupInstanceDetail1)).build()).build());
     return artifactInstanceDetails;
   }
 
@@ -971,7 +971,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
   public void test_constructEnvironmentCountMap() {
     List<EnvironmentInstanceCountModel> environmentInstanceCountModels = getEnvironmentInstanceCountModelList();
     List<String> envIds = Arrays.asList(ENVIRONMENT_1, ENVIRONMENT_2);
-    List<String> envIdResult = new ArrayList<>();
+    Set<String> envIdResult = new HashSet<>();
     Map<String, Integer> envIdToCountMap = new HashMap<>();
     envIdToCountMap.put(ENVIRONMENT_1, 2);
     envIdToCountMap.put(ENVIRONMENT_2, 1);
@@ -1008,12 +1008,15 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels = getArtifactDeploymentDetailModelList();
     Map<String, ArtifactDeploymentDetail> artifactDeploymentDetailMap = new HashMap<>();
     artifactDeploymentDetailMap.put(
-        ENVIRONMENT_1, ArtifactDeploymentDetail.builder().artifact(DISPLAY_NAME_1).lastDeployedAt(1l).build());
+        ENVIRONMENT_1, ArtifactDeploymentDetail.builder().envId(ENVIRONMENT_1).envName(ENVIRONMENT_NAME_1).lastPipelineExecutionId(PLAN_EXECUTION_1).artifact(DISPLAY_NAME_1).lastDeployedAt(1l).build());
     artifactDeploymentDetailMap.put(
-        ENVIRONMENT_2, ArtifactDeploymentDetail.builder().artifact(DISPLAY_NAME_2).lastDeployedAt(2l).build());
+        ENVIRONMENT_2, ArtifactDeploymentDetail.builder().envId(ENVIRONMENT_2).envName(ENVIRONMENT_NAME_2).lastPipelineExecutionId(PLAN_EXECUTION_2).artifact(DISPLAY_NAME_2).lastDeployedAt(2l).build());
 
+    Map<String, String> envIdToEnvNameMap = new HashMap<>();
+    envIdToEnvNameMap.put(ENVIRONMENT_1, ENVIRONMENT_NAME_1);
+    envIdToEnvNameMap.put(ENVIRONMENT_2, ENVIRONMENT_NAME_2);
     Map<String, ArtifactDeploymentDetail> artifactDeploymentDetailMapResult =
-        DashboardServiceHelper.constructEnvironmentToArtifactDeploymentMap(artifactDeploymentDetailModels);
+        DashboardServiceHelper.constructEnvironmentToArtifactDeploymentMap(artifactDeploymentDetailModels, envIdToEnvNameMap);
     assertThat(artifactDeploymentDetailMap).isEqualTo(artifactDeploymentDetailMapResult);
   }
 
@@ -1021,23 +1024,35 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
   public void test_getEnvironmentInstanceDetails() {
+    CDOverviewDashboardServiceImpl cdOverviewDashboardService1 = spy(cdOverviewDashboardService);
     List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels = getArtifactDeploymentDetailModelList();
     List<EnvironmentInstanceCountModel> environmentInstanceCountModels = getEnvironmentInstanceCountModelList();
     List<Environment> environments = getEnvironmentList();
     List<String> envIds = Arrays.asList(ENVIRONMENT_1, ENVIRONMENT_2);
+    Criteria criteria = mock(Criteria.class);
+    Page<EnvironmentGroupEntity> page = mock(Page.class);
+    when(environmentGroupService.list(any(), any(), any(), any(), any())).thenReturn(page);
+    EnvironmentGroupEntity environmentGroupEntity1 = EnvironmentGroupEntity.builder().envIdentifiers(Collections.singletonList(ENVIRONMENT_1)).build();
+    EnvironmentGroupEntity environmentGroupEntity2 = EnvironmentGroupEntity.builder().envIdentifiers(Arrays.asList(ENVIRONMENT_1, ENVIRONMENT_2)).build();
+    when(page.getContent()).thenReturn(Arrays.asList(environmentGroupEntity1, environmentGroupEntity2));
+    Map<String, ServicePipelineWithRevertInfo> servicePipelineInfoMap = new HashMap<>();
+    servicePipelineInfoMap.put(PLAN_EXECUTION_1, ServicePipelineWithRevertInfo.builder().isRevertExecution(false).identifier(PIPELINE_EXECUTION_SUMMARY_CD_ID_1).planExecutionId(PLAN_EXECUTION_1).pipelineExecutionId(PIPELINE_EXECUTION_1).build());
+    servicePipelineInfoMap.put(PLAN_EXECUTION_2, ServicePipelineWithRevertInfo.builder().isRevertExecution(true).identifier(PIPELINE_EXECUTION_SUMMARY_CD_ID_2).planExecutionId(PLAN_EXECUTION_2).pipelineExecutionId(PIPELINE_EXECUTION_2).build());
+    doReturn(servicePipelineInfoMap).when(cdOverviewDashboardService1).getPipelineExecutionDetailsWithRevertInfo(anyList());
+    doReturn(Arrays.asList(PIPELINE_EXECUTION_SUMMARY_CD_ID_1)).when(cdOverviewDashboardService1).getPipelineExecutionsWhereRollbackOccurred(anyList());
     when(instanceDashboardService.getInstanceCountForEnvironmentFilteredByService(
              ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, false))
         .thenReturn(environmentInstanceCountModels);
     when(instanceDashboardService.getLastDeployedInstance(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, true, false))
         .thenReturn(artifactDeploymentDetailModels);
-    when(environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(ACCOUNT_ID, ORG_ID, PROJECT_ID, envIds))
+    when(environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(any(), any(), any(), any()))
         .thenReturn(environments);
     mockServiceEntityForNonGitOps();
 
-    EnvironmentInstanceDetails environmentInstanceDetails =
-        EnvironmentInstanceDetails.builder().environmentInstanceDetails(getEnvironmentInstanceDetailList()).build();
-    EnvironmentInstanceDetails environmentInstanceDetailResult =
-        cdOverviewDashboardService.getEnvironmentInstanceDetails(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
+    EnvironmentGroupInstanceDetails environmentInstanceDetails =
+            EnvironmentGroupInstanceDetails.builder().environmentGroupInstanceDetails(getEnvironmentGroupInstanceDetailList()).build();
+    EnvironmentGroupInstanceDetails environmentInstanceDetailResult =
+            cdOverviewDashboardService1.getEnvironmentInstanceDetails(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, null, null);
     assertThat(environmentInstanceDetails).isEqualTo(environmentInstanceDetailResult);
     verify(instanceDashboardService)
         .getInstanceCountForEnvironmentFilteredByService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, false);

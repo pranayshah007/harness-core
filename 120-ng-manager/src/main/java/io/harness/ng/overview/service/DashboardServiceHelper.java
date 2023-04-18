@@ -781,7 +781,7 @@ public class DashboardServiceHelper {
                     .isEnvGroup(true)
                     .count(totalCount)
                     .isDrift((artifacts.size() > 1) || (artifacts.size() == 1 && deploymentsWithoutArtifact > 0))
-                    .isRevert(EmptyPredicate.isNotEmpty(artifactDeploymentDetailList) && EmptyPredicate.isNotEmpty(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()) && pipelineExecutionDetailsMap.containsKey(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()) && pipelineExecutionDetailsMap.get(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()).getIsRevertExecution())
+                    .isRevert(EmptyPredicate.isNotEmpty(artifactDeploymentDetailList) && EmptyPredicate.isNotEmpty(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()) && pipelineExecutionDetailsMap.containsKey(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()) && pipelineExecutionDetailsMap.get(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()).isRevertExecution())
                     .isRollback(EmptyPredicate.isNotEmpty(artifactDeploymentDetailList) && EmptyPredicate.isNotEmpty(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()) && pipelineExecutionDetailsMap.containsKey(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()) && pipelineExecutionIdsWhereRollbackOccurred.contains(pipelineExecutionDetailsMap.get(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId()).getPipelineExecutionId()))
                     .build());
           }
@@ -813,7 +813,7 @@ public class DashboardServiceHelper {
                 .isEnvGroup(false)
                 .count(count)
                 .isDrift(false)
-                .isRevert(EmptyPredicate.isNotEmpty(artifactDeploymentDetail.getLastPipelineExecutionId()) && pipelineExecutionDetailsMap.containsKey(artifactDeploymentDetail.getLastPipelineExecutionId()) ? pipelineExecutionDetailsMap.get(artifactDeploymentDetail.getLastPipelineExecutionId()).getIsRevertExecution(): false)
+                .isRevert(EmptyPredicate.isNotEmpty(artifactDeploymentDetail.getLastPipelineExecutionId()) && pipelineExecutionDetailsMap.containsKey(artifactDeploymentDetail.getLastPipelineExecutionId()) ? pipelineExecutionDetailsMap.get(artifactDeploymentDetail.getLastPipelineExecutionId()).isRevertExecution(): false)
                 .isRollback(EmptyPredicate.isNotEmpty(artifactDeploymentDetail.getLastPipelineExecutionId()) && pipelineExecutionDetailsMap.containsKey(artifactDeploymentDetail.getLastPipelineExecutionId()) && pipelineExecutionIdsWhereRollbackOccurred.contains(pipelineExecutionDetailsMap.get(artifactDeploymentDetail.getLastPipelineExecutionId())))
                 .build());
       }
@@ -864,10 +864,10 @@ public class DashboardServiceHelper {
   }
 
   public String buildRollbackDurationQuery(
-          List<String> pipelineExecutionIdList) {
+          List<String> pipelineExecutionSummaryCdId) {
     String statement =
             "select pipeline_execution_summary_cd_id from service_infra_info where rollback_duration > 0 and pipeline_execution_summary_cd_id in (''";
-    for(String id: pipelineExecutionIdList) {
+    for(String id: pipelineExecutionSummaryCdId) {
       statement += String.format(",'%s'", id);
     }
     statement += ")";
