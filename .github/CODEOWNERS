@@ -42,8 +42,8 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 
 ### All BUILD.bazel files 260-delegate depends on - to avoid the introduction of new, unnecessary dependencies increasing the delegate JAR size.
 /260-delegate/BUILD.bazel @harness/del-team
-/910-delegate-service-driver/BUILD.bazel @harness/del-team
-/910-delegate-task-grpc-service/BUILD.bazel @harness/del-team
+/910-delegate-service-driver/ @harness/del-team
+/910-delegate-task-grpc-service/ @harness/del-team
 /920-delegate-agent-beans/BUILD.bazel @harness/del-team
 /920-delegate-service-beans/BUILD.bazel @harness/del-team
 /930-delegate-tasks/BUILD.bazel @harness/del-team
