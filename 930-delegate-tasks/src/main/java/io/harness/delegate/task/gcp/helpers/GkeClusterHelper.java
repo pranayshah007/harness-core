@@ -350,7 +350,7 @@ public class GkeClusterHelper {
     String absoluteWorkingDirectory =
         Paths.get(workingDirectory, K8sConstants.GKE_LOGIN_CREDENTIALS_PATH).normalize().toAbsolutePath().toString();
     try {
-      if (serviceAccountKeyFileContent != null && absoluteWorkingDirectory != null) {
+      if (isNotEmpty(serviceAccountKeyFileContent) && absoluteWorkingDirectory != null) {
         String gcpKeyFilePath = Paths.get(absoluteWorkingDirectory, K8sConstants.GCP_JSON_KEY_FILE_NAME).toString();
         FileIo.writeUtf8StringToFile(gcpKeyFilePath, String.valueOf(serviceAccountKeyFileContent));
         GcpCliClient.loginToGcpCluster(gcpKeyFilePath, getGkeEnv(absoluteWorkingDirectory), logCallback);
