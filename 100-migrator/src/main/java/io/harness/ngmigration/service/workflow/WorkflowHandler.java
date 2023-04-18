@@ -622,11 +622,10 @@ public abstract class WorkflowHandler {
       return getDefaultFailureStrategy();
     }
 
-    List<FailureStrategyConfig> failureStrategyConfigs =
-        failureStrategies.stream()
-            .map(failureStrategy -> FailureStrategyHelper.toFailureStrategyConfig(failureStrategy))
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+    List<FailureStrategyConfig> failureStrategyConfigs = failureStrategies.stream()
+                                                             .map(FailureStrategyHelper::toFailureStrategyConfig)
+                                                             .filter(Objects::nonNull)
+                                                             .collect(Collectors.toList());
 
     if (EmptyPredicate.isEmpty(failureStrategyConfigs)) {
       return getDefaultFailureStrategy();
