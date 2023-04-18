@@ -544,6 +544,51 @@ public class NGSecretResourceV2 {
 
   @POST
   @Hidden
+  @Path("filesMigration")
+  @ApiOperation(value = "File type secrets migration", nickname = "migrateSecretFiles", hidden = true)
+  @Operation(operationId = "migrateSecretFiles", summary = "migrate secret files",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns created Secret file")
+      })
+  @Consumes(MediaType.MULTIPART_FORM_DATA)
+  @InternalApi
+  public ResponseDTO<SecretResponseWrapper>
+  createSecretFile(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                       NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(
+          description = "This is a boolean value to specify if the Secret is Private. The default value is False.")
+      @QueryParam("privateSecret") @DefaultValue("false") boolean privateSecret,
+      @Parameter(description = "encryptionKey of the file secret from cg") @QueryParam(
+          "encryptionKey") @NotNull String encryptionKey,
+      @Parameter(description = "encryptionValue of the file secret from cg") @QueryParam(
+          "encryptedValue") @NotNull String encryptedValue,
+      @Parameter(description = "Specification of Secret file") @FormDataParam("spec") String spec) {
+    SecretRequestWrapper dto = JsonUtils.asObject(spec, SecretRequestWrapper.class);
+    validateRequestPayload(dto);
+
+    if (!Objects.equals(orgIdentifier, dto.getSecret().getOrgIdentifier())
+        || !Objects.equals(projectIdentifier, dto.getSecret().getProjectIdentifier())) {
+      throw new InvalidRequestException("Invalid request, scope in payload and params do not match.", USER);
+    }
+
+    secretPermissionValidator.checkForAccessOrThrow(
+        ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier), Resource.of(SECRET_RESOURCE_TYPE, null),
+        SECRET_EDIT_PERMISSION, privateSecret ? SecurityContextBuilder.getPrincipal() : null);
+    if (privateSecret) {
+      dto.getSecret().setOwner(SecurityContextBuilder.getPrincipal());
+    }
+
+    return ResponseDTO.newResponse(
+        ngSecretService.createFile(accountIdentifier, dto.getSecret(), encryptionKey, encryptedValue));
+  }
+
+  @POST
+  @Hidden
   @Path("decrypt-encryption-details")
   @Consumes("application/x-kryo")
   @Produces("application/x-kryo")
