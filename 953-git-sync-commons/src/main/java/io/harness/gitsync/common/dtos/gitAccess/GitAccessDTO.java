@@ -5,32 +5,22 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.gitsync.common.dtos;
+package io.harness.gitsync.common.dtos.gitAccess;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-
+import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ng.userprofile.commons.SCMType;
+import io.harness.beans.DecryptableEntity;
+import io.harness.beans.Scope;
 
 import lombok.AccessLevel;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 
-@OwnedBy(PIPELINE)
 @Data
 @SuperBuilder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@NoArgsConstructor
-public abstract class UserSourceCodeManagerDTO {
-  String id;
-  String userIdentifier;
-  String accountIdentifier;
-  Long createdAt;
-  Long lastModifiedAt;
-  SCMType type;
-  String userName;
-  String userEmail;
-  public abstract SCMType getType();
+@OwnedBy(HarnessTeam.PIPELINE)
+public abstract class GitAccessDTO implements DecryptableEntity {
+  Scope tokenScope;
 }

@@ -7,30 +7,19 @@
 
 package io.harness.gitsync.common.dtos;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-
+import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ng.userprofile.commons.SCMType;
+import io.harness.gitsync.common.dtos.gitAccess.GitAccessDTO;
 
 import lombok.AccessLevel;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Builder;
+import lombok.Value;
 import lombok.experimental.FieldDefaults;
-import lombok.experimental.SuperBuilder;
 
-@OwnedBy(PIPELINE)
-@Data
-@SuperBuilder
+@Value
+@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@NoArgsConstructor
-public abstract class UserSourceCodeManagerDTO {
-  String id;
-  String userIdentifier;
-  String accountIdentifier;
-  Long createdAt;
-  Long lastModifiedAt;
-  SCMType type;
-  String userName;
-  String userEmail;
-  public abstract SCMType getType();
+@OwnedBy(HarnessTeam.PIPELINE)
+public class UserDetailsRequestDTO {
+  GitAccessDTO gitAccessDTO;
 }

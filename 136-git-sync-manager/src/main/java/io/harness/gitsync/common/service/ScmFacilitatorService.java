@@ -28,6 +28,8 @@ import io.harness.gitsync.common.dtos.ScmGetFileUrlResponseDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
 import io.harness.gitsync.common.dtos.UserRepoResponse;
 import io.harness.ng.beans.PageRequest;
 
@@ -73,4 +75,6 @@ public interface ScmFacilitatorService {
   ScmListFilesResponseDTO listFiles(ScmListFilesRequestDTO scmListFilesRequestDTO);
 
   ScmGetFileUrlResponseDTO getFileUrl(ScmGetFileUrlRequestDTO scmGetFileUrlRequestDTO);
+
+  UserDetailsResponseDTO getUserDetails(UserDetailsRequestDTO authenticatedUserRequestDTO);
 }
