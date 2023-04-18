@@ -9,7 +9,11 @@ package io.harness.ccm.views.dao;
 
 import static io.harness.persistence.HQuery.excludeValidate;
 
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateResults;
 import io.harness.ccm.commons.entities.CCMTimeFilter;
+import io.harness.ccm.commons.entities.billing.CECloudAccount;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
 import io.harness.ccm.views.entities.RuleExecution;
 import io.harness.ccm.views.entities.RuleExecution.RuleExecutionKeys;
 import io.harness.ccm.views.helper.RuleExecutionFilter;
@@ -31,6 +35,21 @@ public class RuleExecutionDAO {
 
   public String save(RuleExecution ruleExecution) {
     return hPersistence.save(ruleExecution);
+  }
+
+  public RuleExecution update(RuleExecution ruleExecution) {
+    Query<RuleExecution> query = hPersistence.createQuery(RuleExecution.class)
+            .field(RuleExecutionKeys.accountId)
+            .equal(ruleExecution.getAccountId())
+            .field(RuleExecutionKeys.uuid)
+            .equal(ruleExecution.getUuid());
+
+    UpdateOperations<RuleExecution> updateOperations = hPersistence.createUpdateOperations(RuleExecution.class);
+
+    updateOperations.set(RuleExecution.potentialSavings, ruleExecution.getPotentialSavings());
+    updateOperations.set(RuleExecution.realizedSavings, ruleExecution.getRealizedSavings());
+    hPersistence.update(query, updateOperations);
+    return ruleExecution;
   }
 
   public List<RuleExecution> list(String accountId) {
