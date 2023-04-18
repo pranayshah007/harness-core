@@ -73,5 +73,5 @@ public class AwsSamDeployBaseStepInfo {
 
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  ParameterField<List<String>> buildCommandOptions;
+  ParameterField<List<String>> deployCommandOptions;
 }

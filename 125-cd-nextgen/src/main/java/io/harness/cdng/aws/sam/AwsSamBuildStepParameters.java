@@ -10,10 +10,14 @@ package io.harness.cdng.aws.sam;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.yaml.extended.ci.container.ContainerResource;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -28,7 +32,12 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.aws.sam.AwsSamBuildStepParameters")
 public class AwsSamBuildStepParameters extends AwsSamBuildBaseStepInfo implements AwsSamSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public AwsSamBuildStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(delegateSelectors);
+  public AwsSamBuildStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
+      ContainerResource resources, ParameterField<Map<String, ParameterField<String>>> envVariables,
+      ParameterField<Boolean> privileged, ParameterField<Integer> runAsUser,
+      ParameterField<ImagePullPolicy> imagePullPolicy, ParameterField<List<String>> deployCommandOptions) {
+    super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
+        imagePullPolicy, deployCommandOptions);
   }
 }

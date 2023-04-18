@@ -41,7 +41,7 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @AllArgsConstructor
 @TypeAlias("awsSamBuildBaseStepInfo")
-@FieldNameConstants(innerTypeName = "AwsSamBuiildBaseStepInfoKeys")
+@FieldNameConstants(innerTypeName = "AwsSamBuildBaseStepInfoKeys")
 public class AwsSamBuildBaseStepInfo {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)

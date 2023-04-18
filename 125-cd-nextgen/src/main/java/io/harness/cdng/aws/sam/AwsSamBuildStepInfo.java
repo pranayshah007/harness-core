@@ -10,6 +10,7 @@ package io.harness.cdng.aws.sam;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.aws.sam.AwsSamDeployStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -21,11 +22,14 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -41,7 +45,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.AWS_SAM_DEPLOY)
 @TypeAlias("awsSamBuildStepInfo")
 @RecasterAlias("io.harness.cdng.aws.sam.AwsSamBuildStepInfo")
-public class AwsSamBuildStepInfo extends AwsSamDeployBaseStepInfo implements CDAbstractStepInfo, Visitable {
+public class AwsSamBuildStepInfo extends AwsSamBuildBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -50,8 +54,13 @@ public class AwsSamBuildStepInfo extends AwsSamDeployBaseStepInfo implements CDA
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public AwsSamBuildStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(delegateSelectors);
+  public AwsSamBuildStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
+      ContainerResource resources, ParameterField<Map<String, ParameterField<String>>> envVariables,
+      ParameterField<Boolean> privileged, ParameterField<Integer> runAsUser,
+      ParameterField<ImagePullPolicy> imagePullPolicy, ParameterField<List<String>> buildCommandOptions) {
+    super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
+        imagePullPolicy, buildCommandOptions);
   }
   @Override
   public StepType getStepType() {
