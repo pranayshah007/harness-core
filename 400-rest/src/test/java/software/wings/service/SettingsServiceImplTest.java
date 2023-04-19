@@ -74,12 +74,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.hamcrest.Matchers.equalTo;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -903,7 +902,7 @@ public class SettingsServiceImplTest extends WingsBaseTest {
                                                            .build())
                                             .build();
 
-    when(secretManager.getEncryptionDetails(anyObject(), anyString(), anyString())).thenReturn(Collections.emptyList());
+    when(secretManager.getEncryptionDetails(any(), anyString(), anyString())).thenReturn(Collections.emptyList());
     when(settingValidationService.validate(any(SettingAttribute.class))).thenReturn(true);
 
     doReturn(settingAttribute).when(mockWingsPersistence).get(SettingAttribute.class, uuid);
@@ -923,7 +922,7 @@ public class SettingsServiceImplTest extends WingsBaseTest {
             .withValue(AzureArtifactsPATConfig.builder().accountId(ACCOUNT_ID).azureDevopsUrl(AZURE_DEVOPS_URL).build())
             .build();
 
-    when(secretManager.getEncryptionDetails(anyObject(), anyString(), anyString())).thenReturn(Collections.emptyList());
+    when(secretManager.getEncryptionDetails(any(), anyString(), anyString())).thenReturn(Collections.emptyList());
     when(settingValidationService.validate(any(SettingAttribute.class))).thenReturn(true);
 
     doReturn(settingAttribute).when(mockWingsPersistence).get(SettingAttribute.class, uuid);
@@ -953,7 +952,7 @@ public class SettingsServiceImplTest extends WingsBaseTest {
                                             .withValue(hostConnectionAttributes)
                                             .build();
 
-    when(secretManager.getEncryptionDetails(anyObject(), anyString(), anyString())).thenReturn(Collections.emptyList());
+    when(secretManager.getEncryptionDetails(any(), anyString(), anyString())).thenReturn(Collections.emptyList());
     when(settingValidationService.validate(any(SettingAttribute.class))).thenReturn(true);
 
     doReturn(settingAttribute).when(mockWingsPersistence).get(SettingAttribute.class, uuid);
@@ -1549,7 +1548,7 @@ public class SettingsServiceImplTest extends WingsBaseTest {
                                             .build();
     when(mockWingsPersistence.get(any(), any())).thenReturn(settingAttribute);
     when(settingServiceHelper.hasReferencedSecrets(settingAttribute)).thenReturn(true);
-    when(secretManager.getEncryptionDetails(anyObject(), anyString(), anyString())).thenReturn(Collections.emptyList());
+    when(secretManager.getEncryptionDetails(any(), anyString(), anyString())).thenReturn(Collections.emptyList());
     when(settingValidationService.validate(any(SettingAttribute.class))).thenReturn(true);
     doReturn(settingAttribute).when(mockWingsPersistence).get(SettingAttribute.class, uuid);
     doReturn(settingAttribute).when(spyQuery).get();

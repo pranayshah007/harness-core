@@ -9,7 +9,7 @@ package io.harness.cvng.metrics.services.impl;
 
 import static io.harness.rule.OwnerRule.KAMAL;
 
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;

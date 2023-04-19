@@ -11,11 +11,11 @@ import static io.harness.rule.OwnerRule.IVAN;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
+import static org.mockito.Mockito.mockConstruction;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -36,13 +36,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedConstruction;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({EcsServiceDeployCommandHandler.class})
-@PowerMockIgnore({"javax.security.*", "javax.net.*"})
+@RunWith(MockitoJUnitRunner.class)
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class EcsServiceDeployCommandHandlerTest extends WingsBaseTest {
   @Mock private Injector injector;
@@ -56,18 +53,19 @@ public class EcsServiceDeployCommandHandlerTest extends WingsBaseTest {
   @Category(UnitTests.class)
   @Ignore("Disable top running CG tests")
   public void testExecuteTaskInternalWithException() throws Exception {
-    whenNew(ExecutionLogCallback.class).withAnyArguments().thenReturn(executionLogCallback);
-    doNothing().when(executionLogCallback).saveExecutionLog(anyString(), any());
-    whenNew(ResizeCommandUnit.class).withNoArguments().thenReturn(resizeCommandUnit);
-    doThrow(new RuntimeException("Error msg")).when(resizeCommandUnit).execute(any());
+    try (MockedConstruction<ExecutionLogCallback> ignore = mockConstruction(ExecutionLogCallback.class,
+             (mock, context) -> doNothing().when(mock).saveExecutionLog(anyString(), any()));
+         MockedConstruction<ResizeCommandUnit> ignore1 = mockConstruction(ResizeCommandUnit.class)) {
+      doThrow(new RuntimeException("Error msg")).when(resizeCommandUnit).execute(any());
 
-    EcsServiceDeployRequest request = EcsServiceDeployRequest.builder().build();
-    EcsCommandExecutionResponse ecsCommandExecutionResponse =
-        ecsSetupCommandTaskHelper.executeTask(request, emptyList());
+      EcsServiceDeployRequest request = EcsServiceDeployRequest.builder().build();
+      EcsCommandExecutionResponse ecsCommandExecutionResponse =
+          ecsSetupCommandTaskHelper.executeTask(request, emptyList());
 
-    assertThat(ecsCommandExecutionResponse).isNotNull();
-    assertThat(ecsCommandExecutionResponse.getCommandExecutionStatus()).isNotNull();
-    assertThat(ecsCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
-    assertThat(ecsCommandExecutionResponse.getErrorMessage()).isEqualTo("RuntimeException: Error msg");
+      assertThat(ecsCommandExecutionResponse).isNotNull();
+      assertThat(ecsCommandExecutionResponse.getCommandExecutionStatus()).isNotNull();
+      assertThat(ecsCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
+      assertThat(ecsCommandExecutionResponse.getErrorMessage()).isEqualTo("RuntimeException: Error msg");
+    }
   }
 }

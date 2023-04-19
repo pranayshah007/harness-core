@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -79,16 +79,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(CDC)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({JiraClient.class, JiraTaskNGHandler.class})
-@PowerMockIgnore({"javax.net.ssl.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class JiraTaskNGHandlerTest extends CategoryTest {
   @Rule
   public WireMockRule wireMockRule = new WireMockRule(WireMockConfiguration.wireMockConfig()
@@ -132,38 +128,35 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void testValidateCredentials() throws Exception {
-    JiraClient jiraClient = Mockito.mock(JiraClient.class);
-    when(jiraClient.getProjects()).thenReturn(Collections.emptyList());
-    PowerMockito.whenNew(JiraClient.class).withAnyArguments().thenReturn(jiraClient);
-
-    assertThatCode(() -> jiraTaskNGHandler.validateCredentials(createJiraTaskParametersBuilder().build()))
-        .doesNotThrowAnyException();
+    try (MockedConstruction<JiraClient> ignored = mockConstruction(
+             JiraClient.class, (mock, context) -> when(mock.getProjects()).thenReturn(Collections.emptyList()))) {
+      assertThatCode(() -> jiraTaskNGHandler.validateCredentials(createJiraTaskParametersBuilder().build()))
+          .doesNotThrowAnyException();
+    }
   }
 
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void testValidateCredentialsError() throws Exception {
-    JiraClient jiraClient = Mockito.mock(JiraClient.class);
-    when(jiraClient.getProjects()).thenThrow(new RuntimeException("exception"));
-    PowerMockito.whenNew(JiraClient.class).withAnyArguments().thenReturn(jiraClient);
-
-    assertThatThrownBy(() -> jiraTaskNGHandler.validateCredentials(createJiraTaskParametersBuilder().build()))
-        .isNotNull();
+    try (MockedConstruction<JiraClient> ignored = mockConstruction(JiraClient.class,
+             (mock, context) -> when(mock.getProjects()).thenThrow(new RuntimeException("exception")))) {
+      assertThatThrownBy(() -> jiraTaskNGHandler.validateCredentials(createJiraTaskParametersBuilder().build()))
+          .isNotNull();
+    }
   }
 
   @Test
   @Owner(developers = MOUNIK)
   @Category(UnitTests.class)
   public void testValidateCredentialsExactError() throws Exception {
-    JiraClient jiraClient = Mockito.mock(JiraClient.class);
-    when(jiraClient.getProjects()).thenThrow(new RuntimeException("exception"));
-    PowerMockito.whenNew(JiraClient.class).withAnyArguments().thenReturn(jiraClient);
-
-    assertThatThrownBy(() -> jiraTaskNGHandler.validateCredentials(createJiraTaskParametersBuilder().build()))
-        .isInstanceOf(HintException.class)
-        .hasMessage(
-            "Check if the Jira URL & Jira credentials are correct. Jira URLs are different for different credentials");
+    try (MockedConstruction<JiraClient> ignored = mockConstruction(JiraClient.class,
+             (mock, context) -> when(mock.getProjects()).thenThrow(new RuntimeException("exception")))) {
+      assertThatThrownBy(() -> jiraTaskNGHandler.validateCredentials(createJiraTaskParametersBuilder().build()))
+          .isInstanceOf(HintException.class)
+          .hasMessage(
+              "Check if the Jira URL & Jira credentials are correct. Jira URLs are different for different credentials");
+    }
   }
 
   @Test
@@ -987,26 +980,27 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     fieldsMap.put("Test Summary", jiraFieldNG2);
     when(jiraIssueTypeNG.getFields()).thenReturn(fieldsMap);
 
-    JiraClient jiraClient = Mockito.mock(JiraClient.class);
-    PowerMockito.whenNew(JiraClient.class).withAnyArguments().thenReturn(jiraClient);
-    when(jiraClient.getIssueCreateMetadata("TJI", "Bug", null, false, false, false, false))
-        .thenReturn(jiraIssueCreateMetadataNG);
     JiraUserData jiraUserData = new JiraUserData("accountId", "assignee", true, "your-jira-account-id");
-    when(jiraClient.getUsers("your-jira-account-id", null, null)).thenReturn(Arrays.asList(jiraUserData));
 
     JiraIssueNG jiraIssueNG = Mockito.mock(JiraIssueNG.class);
     Map<String, String> fields1 = new HashMap<>();
     fields1.put("QE Assignee", "accountId");
     fields1.put("Test Summary", "No test added");
-    when(jiraClient.createIssue("TJI", "Bug", fields1, true, false, false)).thenReturn(jiraIssueNG);
     JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.CLOUD);
-    when(jiraClient.getInstanceData()).thenReturn(jiraInstanceData);
-    JiraTaskNGResponse jiraTaskNGResponse = jiraTaskNGHandler.createIssue(jiraTaskNGParameters);
+    try (MockedConstruction<JiraClient> ignored = mockConstruction(JiraClient.class, (mock, context) -> {
+      when(mock.getIssueCreateMetadata("TJI", "Bug", null, false, false, false, false))
+          .thenReturn(jiraIssueCreateMetadataNG);
+      when(mock.getUsers("your-jira-account-id", null, null)).thenReturn(Arrays.asList(jiraUserData));
+      when(mock.createIssue("TJI", "Bug", fields1, true, false, false)).thenReturn(jiraIssueNG);
+      when(mock.getInstanceData()).thenReturn(jiraInstanceData);
+    })) {
+      JiraTaskNGResponse jiraTaskNGResponse = jiraTaskNGHandler.createIssue(jiraTaskNGParameters);
 
-    assertThat(jiraTaskNGResponse.getIssue()).isNotNull();
-    assertThat(jiraTaskNGResponse).isNotNull();
-    assertThat(jiraTaskNGResponse.getIssue()).isEqualTo(jiraIssueNG);
-    assertThat(jiraTaskNGParameters.getFields()).isEqualTo(fields1);
+      assertThat(jiraTaskNGResponse.getIssue()).isNotNull();
+      assertThat(jiraTaskNGResponse).isNotNull();
+      assertThat(jiraTaskNGResponse.getIssue()).isEqualTo(jiraIssueNG);
+      assertThat(jiraTaskNGParameters.getFields()).isEqualTo(fields1);
+    }
   }
 
   @Test
@@ -1052,27 +1046,28 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     fieldsMap.put("Test Summary", jiraFieldNG2);
     when(jiraIssueTypeNG.getFields()).thenReturn(fieldsMap);
 
-    JiraClient jiraClient = Mockito.mock(JiraClient.class);
-    PowerMockito.whenNew(JiraClient.class).withAnyArguments().thenReturn(jiraClient);
-    when(jiraClient.getIssueCreateMetadata("TJI", "Bug", null, false, false, false, false))
-        .thenReturn(jiraIssueCreateMetadataNG);
     JiraUserData jiraUserData = new JiraUserData("JIRAUSERaccountId", "assignee", true, "your-jira-account-id");
     jiraUserData.setName("Assignee");
-    when(jiraClient.getUsers("your-jira-account-id", null, null)).thenReturn(Arrays.asList(jiraUserData));
 
     JiraIssueNG jiraIssueNG = Mockito.mock(JiraIssueNG.class);
     Map<String, String> fields1 = new HashMap<>();
     fields1.put("QE Assignee", "Assignee");
     fields1.put("Test Summary", "No test added");
-    when(jiraClient.createIssue("TJI", "Bug", fields1, true, false, false)).thenReturn(jiraIssueNG);
     JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.CLOUD);
-    when(jiraClient.getInstanceData()).thenReturn(jiraInstanceData);
-    JiraTaskNGResponse jiraTaskNGResponse = jiraTaskNGHandler.createIssue(jiraTaskNGParameters);
+    try (MockedConstruction<JiraClient> ignored = mockConstruction(JiraClient.class, (mock, context) -> {
+      when(mock.getIssueCreateMetadata("TJI", "Bug", null, false, false, false, false))
+          .thenReturn(jiraIssueCreateMetadataNG);
+      when(mock.getUsers("your-jira-account-id", null, null)).thenReturn(Arrays.asList(jiraUserData));
+      when(mock.createIssue("TJI", "Bug", fields1, true, false, false)).thenReturn(jiraIssueNG);
+      when(mock.getInstanceData()).thenReturn(jiraInstanceData);
+    })) {
+      JiraTaskNGResponse jiraTaskNGResponse = jiraTaskNGHandler.createIssue(jiraTaskNGParameters);
 
-    assertThat(jiraTaskNGResponse.getIssue()).isNotNull();
-    assertThat(jiraTaskNGResponse).isNotNull();
-    assertThat(jiraTaskNGResponse.getIssue()).isEqualTo(jiraIssueNG);
-    assertThat(jiraTaskNGParameters.getFields()).isEqualTo(fields1);
+      assertThat(jiraTaskNGResponse.getIssue()).isNotNull();
+      assertThat(jiraTaskNGResponse).isNotNull();
+      assertThat(jiraTaskNGResponse.getIssue()).isEqualTo(jiraIssueNG);
+      assertThat(jiraTaskNGParameters.getFields()).isEqualTo(fields1);
+    }
   }
 
   @Test
@@ -1146,26 +1141,27 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
 
     JiraClient jiraClient = Mockito.mock(JiraClient.class);
     JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraDeploymentType.CLOUD);
-    doReturn(jiraInstanceData).when(jiraClient).getInstanceData();
-    PowerMockito.whenNew(JiraClient.class).withAnyArguments().thenReturn(jiraClient);
-    when(jiraClient.getIssueUpdateMetadata("TJI-37792")).thenReturn(jiraIssueUpdateMetadataNG);
     JiraUserData jiraUserData = new JiraUserData("accountId", "assignee", true, "your-jira-account-id");
-    when(jiraClient.getUsers("your-jira-account-id", null, null)).thenReturn(Arrays.asList(jiraUserData));
-
     JiraIssueNG jiraIssueNG = Mockito.mock(JiraIssueNG.class);
     Map<String, String> fields1 = new HashMap<>();
     fields1.put("QE Assignee", "accountId");
     fields1.put("Test Summary", "No test added");
     fields1.put("Issue Type", "Change");
-    when(jiraClient.updateIssue(
-             jiraTaskNGParameters.getIssueKey(), jiraTaskNGParameters.getTransitionToStatus(), null, fields1))
-        .thenReturn(jiraIssueNG);
-    JiraTaskNGResponse jiraTaskNGResponse = jiraTaskNGHandler.updateIssue(jiraTaskNGParameters);
+    try (MockedConstruction<JiraClient> ignored = mockConstruction(JiraClient.class, (mock, context) -> {
+      when(mock.getIssueUpdateMetadata("TJI-37792")).thenReturn(jiraIssueUpdateMetadataNG);
+      when(mock.getUsers("your-jira-account-id", null, null)).thenReturn(Arrays.asList(jiraUserData));
+      when(mock.updateIssue(
+               jiraTaskNGParameters.getIssueKey(), jiraTaskNGParameters.getTransitionToStatus(), null, fields1))
+          .thenReturn(jiraIssueNG);
+      when(mock.getInstanceData()).thenReturn(jiraInstanceData);
+    })) {
+      JiraTaskNGResponse jiraTaskNGResponse = jiraTaskNGHandler.updateIssue(jiraTaskNGParameters);
 
-    assertThat(jiraTaskNGResponse.getIssue()).isNotNull();
-    assertThat(jiraTaskNGResponse).isNotNull();
-    assertThat(jiraTaskNGResponse.getIssue()).isEqualTo(jiraIssueNG);
-    assertThat(jiraTaskNGParameters.getFields()).isEqualTo(fields1);
+      assertThat(jiraTaskNGResponse.getIssue()).isNotNull();
+      assertThat(jiraTaskNGResponse).isNotNull();
+      assertThat(jiraTaskNGResponse.getIssue()).isEqualTo(jiraIssueNG);
+      assertThat(jiraTaskNGParameters.getFields()).isEqualTo(fields1);
+    }
   }
 
   @Test
@@ -1235,25 +1231,24 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
 
     JiraClient jiraClient = Mockito.mock(JiraClient.class);
     JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraDeploymentType.CLOUD);
-    doReturn(jiraInstanceData).when(jiraClient).getInstanceData();
 
-    PowerMockito.whenNew(JiraClient.class).withAnyArguments().thenReturn(jiraClient);
-    when(jiraClient.getIssueUpdateMetadata("TJI-37792")).thenReturn(jiraIssueUpdateMetadataNG);
     JiraUserData jiraUserData1 = new JiraUserData("accountId1", "assignee1", true, "your-jira-account-id-1");
     JiraUserData jiraUserData2 = new JiraUserData("accountId2", "assignee2", true, "your-jira-account-id-2");
-    when(jiraClient.getUsers("your-jira-account-id", null, null))
-        .thenReturn(Arrays.asList(jiraUserData1, jiraUserData2));
-
     JiraIssueNG jiraIssueNG = Mockito.mock(JiraIssueNG.class);
     Map<String, String> fields1 = new HashMap<>();
     fields1.put("QE Assignee", "accountId");
     fields1.put("Test Summary", "No test added");
-    when(jiraClient.updateIssue(
-             jiraTaskNGParameters.getIssueKey(), jiraTaskNGParameters.getTransitionToStatus(), null, fields1))
-        .thenReturn(jiraIssueNG);
-
-    assertThatExceptionOfType(InvalidRequestException.class)
-        .isThrownBy(() -> jiraTaskNGHandler.updateIssue(jiraTaskNGParameters));
+    try (MockedConstruction<JiraClient> ignored = mockConstruction(JiraClient.class, (mock, context) -> {
+      when(mock.getIssueUpdateMetadata("TJI-37792")).thenReturn(jiraIssueUpdateMetadataNG);
+      when(mock.getUsers("your-jira-account-id", null, null)).thenReturn(Arrays.asList(jiraUserData1, jiraUserData2));
+      when(mock.updateIssue(
+               jiraTaskNGParameters.getIssueKey(), jiraTaskNGParameters.getTransitionToStatus(), null, fields1))
+          .thenReturn(jiraIssueNG);
+      when(mock.getInstanceData()).thenReturn(jiraInstanceData);
+    })) {
+      assertThatExceptionOfType(InvalidRequestException.class)
+          .isThrownBy(() -> jiraTaskNGHandler.updateIssue(jiraTaskNGParameters));
+    }
   }
 
   private JiraTaskNGParametersBuilder createJiraTaskParametersBuilder() {

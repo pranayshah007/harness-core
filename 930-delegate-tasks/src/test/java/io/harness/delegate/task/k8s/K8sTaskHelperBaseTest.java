@@ -73,14 +73,14 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -2595,8 +2595,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
         ImmutableMap.of(HarnessLabels.releaseName, "release", HarnessLabels.track, "canary");
     doReturn(emptyList())
         .when(spyK8sTaskHelperBase)
-        .getPodDetailsWithLabels(
-            any(KubernetesConfig.class), anyString(), anyString(), anyMapOf(String.class, String.class), anyLong());
+        .getPodDetailsWithLabels(any(KubernetesConfig.class), anyString(), anyString(), anyMap(), anyLong());
     spyK8sTaskHelperBase.getPodDetailsWithTrack(config, "default", "release", "canary", DEFAULT_STEADY_STATE_TIMEOUT);
 
     verify(spyK8sTaskHelperBase, times(1))
@@ -2613,8 +2612,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
         ImmutableMap.of(HarnessLabels.releaseName, "release", HarnessLabels.color, "blue");
     doReturn(emptyList())
         .when(spyK8sTaskHelperBase)
-        .getPodDetailsWithLabels(
-            any(KubernetesConfig.class), anyString(), anyString(), anyMapOf(String.class, String.class), anyLong());
+        .getPodDetailsWithLabels(any(KubernetesConfig.class), anyString(), anyString(), anyMap(), anyLong());
     spyK8sTaskHelperBase.getPodDetailsWithColor(config, "default", "release", "blue", DEFAULT_STEADY_STATE_TIMEOUT);
 
     verify(spyK8sTaskHelperBase, times(1))
@@ -2631,8 +2629,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     Map<String, String> expectedLabels = ImmutableMap.of(HELM_RELEASE_LABEL, "release");
     doReturn(existingPods)
         .when(spyK8sTaskHelperBase)
-        .getPodDetailsWithLabels(
-            any(KubernetesConfig.class), anyString(), anyString(), anyMapOf(String.class, String.class), anyLong());
+        .getPodDetailsWithLabels(any(KubernetesConfig.class), anyString(), anyString(), anyMap(), anyLong());
     List<ContainerInfo> result =
         spyK8sTaskHelperBase.getContainerInfos(config, "release", "default", DEFAULT_STEADY_STATE_TIMEOUT);
 

@@ -15,8 +15,8 @@ import static software.wings.graphql.datafetcher.execution.ResumeExecutionDataFe
 import static software.wings.graphql.datafetcher.execution.ResumeExecutionDataFetcher.ERROR_MESSAGE_EXECUTION_S_DOESN_T_EXIST;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isA;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 

@@ -11,7 +11,7 @@ import static io.harness.pms.utils.PmsConstants.QUEUING_RC_NAME;
 import static io.harness.rule.OwnerRule.FERNANDOD;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.notNull;
+import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
