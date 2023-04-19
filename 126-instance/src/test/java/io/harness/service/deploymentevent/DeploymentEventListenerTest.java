@@ -30,6 +30,7 @@ import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.entities.ArtifactDetails;
+import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.models.DeploymentEvent;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -37,6 +38,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggeredBy;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
@@ -95,12 +97,21 @@ public class DeploymentEventListenerTest extends InstancesTestBase {
     namespaces.add("namespace1");
     StepType stepType = StepType.newBuilder().build();
     Level level = Level.newBuilder().setStepType(stepType).setStartTs(START_TS).build();
+    Level stageLevel = Level.newBuilder()
+                           .setRuntimeId("stageNodeExecutionId")
+                           .setStepType(StepType.newBuilder()
+                                            .setType(ExecutionNodeType.DEPLOYMENT_STAGE_STEP.getName())
+                                            .setStepCategory(StepCategory.STAGE)
+                                            .build())
+                           .setStartTs(START_TS)
+                           .build();
     TriggeredBy triggeredBy = TriggeredBy.newBuilder().setIdentifier(TRIGGERED_BY_IDENTIFER).setUuid(UUID).build();
     ExecutionTriggerInfo triggerInfo = ExecutionTriggerInfo.newBuilder().setTriggeredBy(triggeredBy).build();
     ExecutionMetadata executionMetadata =
         ExecutionMetadata.newBuilder().setPipelineIdentifier(PIPELINE_IDENTIFIER).setTriggerInfo(triggerInfo).build();
     Ambiance ambiance = Ambiance.newBuilder()
                             .setMetadata(executionMetadata)
+                            .addLevels(stageLevel)
                             .addLevels(level)
                             .setPlanExecutionId(PLAN_EXECUTION_ID)
                             .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID)
@@ -192,6 +203,7 @@ public class DeploymentEventListenerTest extends InstancesTestBase {
     verify(deploymentSummaryService, times(1)).save(deploymentSummaryDTOArgumentCaptor.capture());
     DeploymentSummaryDTO actualDeploymentSummaryDTO = deploymentSummaryDTOArgumentCaptor.getValue();
     assertThat(actualDeploymentSummaryDTO.getAccountIdentifier()).isEqualTo(ACCOUNT_ID);
+    assertThat(actualDeploymentSummaryDTO.getStageNodeExecutionId()).isEqualTo(stageLevel.getRuntimeId());
     verify(outcomeService, times(1))
         .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
     verify(infrastructureMappingService, times(1)).createNewOrReturnExistingInfrastructureMapping(captor.capture());
@@ -211,12 +223,21 @@ public class DeploymentEventListenerTest extends InstancesTestBase {
     namespaces.add("namespace1");
     StepType stepType = StepType.newBuilder().build();
     Level level = Level.newBuilder().setStepType(stepType).setStartTs(START_TS).build();
+    Level stageLevel = Level.newBuilder()
+                           .setRuntimeId("stageNodeExecutionId")
+                           .setStepType(StepType.newBuilder()
+                                            .setType(ExecutionNodeType.DEPLOYMENT_STAGE_STEP.getName())
+                                            .setStepCategory(StepCategory.STAGE)
+                                            .build())
+                           .setStartTs(START_TS)
+                           .build();
     TriggeredBy triggeredBy = TriggeredBy.newBuilder().setIdentifier(TRIGGERED_BY_IDENTIFER).setUuid(UUID).build();
     ExecutionTriggerInfo triggerInfo = ExecutionTriggerInfo.newBuilder().setTriggeredBy(triggeredBy).build();
     ExecutionMetadata executionMetadata =
         ExecutionMetadata.newBuilder().setPipelineIdentifier(PIPELINE_IDENTIFIER).setTriggerInfo(triggerInfo).build();
     Ambiance ambiance = Ambiance.newBuilder()
                             .setMetadata(executionMetadata)
+                            .addLevels(stageLevel)
                             .addLevels(level)
                             .setPlanExecutionId(PLAN_EXECUTION_ID)
                             .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID)
@@ -309,6 +330,7 @@ public class DeploymentEventListenerTest extends InstancesTestBase {
     verify(deploymentSummaryService, times(1)).save(deploymentSummaryDTOArgumentCaptor.capture());
     DeploymentSummaryDTO actualDeploymentSummaryDTO = deploymentSummaryDTOArgumentCaptor.getValue();
     assertThat(actualDeploymentSummaryDTO.getAccountIdentifier()).isEqualTo(ACCOUNT_ID);
+    assertThat(actualDeploymentSummaryDTO.getStageNodeExecutionId()).isEqualTo(stageLevel.getRuntimeId());
     verify(outcomeService, times(1))
         .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
     verify(infrastructureMappingService, times(1)).createNewOrReturnExistingInfrastructureMapping(captor.capture());
