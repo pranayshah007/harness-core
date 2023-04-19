@@ -501,44 +501,6 @@ public class DashboardServiceHelper {
 
     sortArtifactInstanceDetailList(artifactInstanceDetails);
     return ArtifactInstanceDetails.builder().artifactInstanceDetails(artifactInstanceDetails).build();
-
-    //    List<ArtifactInstanceDetails.ArtifactInstanceDetail> artifactInstanceDetails = new ArrayList<>();
-//    for (Map.Entry<String, Map<String, ArtifactDeploymentDetail>> entry : artifactDeploymentDetailsMap.entrySet()) {
-//      final String displayName = entry.getKey();
-//      List<EnvironmentInstanceDetails.EnvironmentInstanceDetail> environmentInstanceDetailList = new ArrayList<>();
-//      for (Map.Entry<String, ArtifactDeploymentDetail> entry1 : entry.getValue().entrySet()) {
-//        final String envId = entry1.getKey();
-//        final ArtifactDeploymentDetail artifactDeploymentDetail = entry1.getValue();
-//        if (envId == null || artifactDeploymentDetail == null) {
-//          continue;
-//        }
-//        final String envName = envIdToEnvNameMap.get(envId);
-//        final EnvironmentType environmentType = envIdToEnvTypeMap.get(envId);
-//        EnvironmentInstanceDetails.EnvironmentInstanceDetail environmentInstanceDetail =
-//            EnvironmentInstanceDetails.EnvironmentInstanceDetail.builder()
-//                .envId(envId)
-//                .envName(envName)
-//                .environmentType(environmentType)
-//                .artifactDeploymentDetail(artifactDeploymentDetail)
-//                .build();
-//        environmentInstanceDetailList.add(environmentInstanceDetail);
-//      }
-//
-//      if (EmptyPredicate.isEmpty(environmentInstanceDetailList)) {
-//        continue;
-//      }
-//
-//      sortEnvironmentInstanceDetailList(environmentInstanceDetailList);
-//      artifactInstanceDetails.add(
-//          ArtifactInstanceDetails.ArtifactInstanceDetail.builder()
-//              .artifact(displayName)
-//              .environmentInstanceDetails(EnvironmentInstanceDetails.builder()
-//                                              .environmentInstanceDetails(environmentInstanceDetailList)
-//                                              .build())
-//              .build());
-//    }
-//    sortArtifactInstanceDetailList(artifactInstanceDetails);
-//    return ArtifactInstanceDetails.builder().artifactInstanceDetails(artifactInstanceDetails).build();
   }
 
   private void sortArtifactInstanceDetailList(
