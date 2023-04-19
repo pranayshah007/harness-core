@@ -40,6 +40,7 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryRawConfig;
 import io.harness.cdng.expressionEvaluator.CustomScriptSecretExpressionEvaluator;
 import io.harness.cdng.expressionEvaluator.NgCustomSecretExpressionEvaluator;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.algorithm.HashGenerator;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.SecretDetail;
@@ -358,9 +359,9 @@ public class ArtifactConfigToDelegateReqMapper {
     String project = artifactConfig.getProject().getValue();
     String repository = artifactConfig.getRepository().getValue();
     String sourceDirectory = artifactConfig.getSourceDirectory().getValue();
-    String branch = artifactConfig.getBranch().getValue();
-    String commitId = artifactConfig.getCommitId().getValue();
-    String tag = artifactConfig.getTag().getValue();
+    String branch = ParameterFieldHelper.getParameterFieldValue(artifactConfig.getBranch());
+    String commitId = ParameterFieldHelper.getParameterFieldValue(artifactConfig.getCommitId());
+    String tag = ParameterFieldHelper.getParameterFieldValue(artifactConfig.getTag());
     if (StringUtils.isBlank(project)) {
       throw new InvalidRequestException("Please input project name.");
     }

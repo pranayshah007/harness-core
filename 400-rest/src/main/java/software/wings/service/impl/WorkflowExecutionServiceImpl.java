@@ -38,6 +38,7 @@ import static io.harness.beans.FeatureName.NEW_DEPLOYMENT_FREEZE;
 import static io.harness.beans.FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION;
 import static io.harness.beans.FeatureName.RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION;
 import static io.harness.beans.FeatureName.SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE;
+import static io.harness.beans.FeatureName.SPG_ENABLE_POPULATE_USING_ARTIFACT_VARIABLE;
 import static io.harness.beans.FeatureName.SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS;
 import static io.harness.beans.FeatureName.SPG_SAVE_REJECTED_BY_FREEZE_WINDOWS;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
@@ -2740,25 +2741,36 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
           workflowExecution, keywords, executionArgs, accountId, shouldReduceKeywords);
     }
 
-    if (isEmpty(executionArgs.getArtifacts())) {
-      return;
-    }
+    List<Artifact> artifacts;
+    if (isNotEmpty(executionArgs.getArtifacts())) {
+      List<String> artifactIds = executionArgs.getArtifacts()
+                                     .stream()
+                                     .map(Artifact::getUuid)
+                                     .filter(Objects::nonNull)
+                                     .distinct()
+                                     .collect(toList());
+      if (isEmpty(artifactIds)) {
+        return;
+      }
 
-    List<String> artifactIds = executionArgs.getArtifacts()
-                                   .stream()
-                                   .map(Artifact::getUuid)
-                                   .filter(Objects::nonNull)
-                                   .distinct()
-                                   .collect(toList());
-    if (isEmpty(artifactIds)) {
+      artifacts = artifactService.listByIds(appService.getAccountIdByAppId(workflowExecution.getAppId()), artifactIds);
+      if (artifacts == null || artifacts.size() != artifactIds.size()) {
+        log.error("artifactIds from executionArgs contains invalid artifacts");
+        throw new InvalidRequestException("Invalid artifact");
+      }
+    } else if (featureFlagService.isEnabled(SPG_ENABLE_POPULATE_USING_ARTIFACT_VARIABLE, accountId)
+        && isNotEmpty(executionArgs.getArtifactVariables())) {
+      List<List<Artifact>> tempArts = executionArgs.getArtifactVariables()
+                                          .stream()
+                                          .map(artifactVar
+                                              -> artifactService.listArtifactsByArtifactStreamId(accountId,
+                                                  artifactVar.getArtifactInput().getArtifactStreamId(),
+                                                  artifactVar.getArtifactInput().getBuildNo()))
+                                          .collect(toList());
+      artifacts = tempArts.stream().collect(ArrayList::new, List::addAll, List::addAll);
+    } else {
+      log.info("artifact info from executionArgs doesnt contains valid artifacts");
       return;
-    }
-
-    List<Artifact> artifacts =
-        artifactService.listByIds(appService.getAccountIdByAppId(workflowExecution.getAppId()), artifactIds);
-    if (artifacts == null || artifacts.size() != artifactIds.size()) {
-      log.error("artifactIds from executionArgs contains invalid artifacts");
-      throw new InvalidRequestException("Invalid artifact");
     }
 
     // Filter out the artifacts that do not belong to the workflow.

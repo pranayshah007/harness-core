@@ -39,6 +39,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.gitx.GitXSettingsHelper;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.dto.ProjectResponse;
@@ -85,8 +86,8 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Mock private PipelineValidationService pipelineValidationService;
   @Mock private ProjectClient projectClient;
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
+  @Mock private GitXSettingsHelper gitXSettingsHelper;
   @Mock private OrganizationClient organizationClient;
-
   @Mock private AccountClient accountClient;
   @Mock NGSettingsClient settingsClient;
 
@@ -103,8 +104,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
         new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper, pmsPipelineTemplateHelper, null,
             null, gitSyncSdkService, null, null, null, new NoopPipelineSettingServiceImpl(), entitySetupUsageClient,
             pipelineAsyncValidationService, pipelineValidationService, projectClient, organizationClient,
-            pmsFeatureFlagService, accountClient, settingsClient);
-
+            pmsFeatureFlagService, gitXSettingsHelper, accountClient, settingsClient);
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pipelineServiceHelper)

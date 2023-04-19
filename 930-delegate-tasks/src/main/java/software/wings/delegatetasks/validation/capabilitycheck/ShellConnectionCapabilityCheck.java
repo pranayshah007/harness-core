@@ -20,7 +20,7 @@ import io.harness.delegate.task.winrm.WinRmSession;
 import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.SshSessionConfig;
-import io.harness.shell.ssh.SshFactory;
+import io.harness.shell.ssh.SshClientManager;
 
 import software.wings.beans.delegation.ShellScriptParameters;
 import software.wings.delegatetasks.validation.capabilities.ShellConnectionCapability;
@@ -92,7 +92,7 @@ public class ShellConnectionCapabilityCheck implements CapabilityCheck {
   @VisibleForTesting
   void performTest(SshSessionConfig expectedSshConfig) throws Exception {
     if (expectedSshConfig.isUseSshClient()) {
-      SshFactory.getSshClient(expectedSshConfig).testConnection();
+      SshClientManager.test(expectedSshConfig);
     } else {
       getSSHSession(expectedSshConfig).disconnect();
     }

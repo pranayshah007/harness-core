@@ -170,6 +170,7 @@ public class GovernanceRuleEnforcementResource {
     }
     RuleEnforcement ruleEnforcement = createRuleEnforcementDTO.getRuleEnforcement();
     ruleEnforcement.setAccountId(accountId);
+    ruleEnforcement.setRunCount(0);
     if (ruleEnforcement.getExecutionTimezone() == null) {
       ruleEnforcement.setExecutionTimezone("UTC");
     }

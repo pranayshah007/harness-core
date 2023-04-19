@@ -50,15 +50,15 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDC)
 public class SecretFactory {
-  @Inject private VaultSecretMigrator vaultSecretMigrator;
-  @Inject private HarnessSecretMigrator harnessSecretMigrator;
-  @Inject private AwsSecretMigrator awsSecretMigrator;
-  @Inject private GcpSecretMigrator gcpSecretMigrator;
-  @Inject private VaultSshSecretMigrator vaultSshSecretMigrator;
-  @Inject private AzureVaultSecretMigrator azureVaultSecretMigrator;
-  @Inject private AwsKmsSecretMigrator awsKmsSecretMigrator;
-  @Inject private GcpKmsSecretMigrator gcpKmsSecretMigrator;
-  @Inject private CustomSecretMigrator customSecretMigrator;
+  @Inject private io.harness.ngmigration.secrets.VaultSecretMigrator vaultSecretMigrator;
+  @Inject private io.harness.ngmigration.secrets.HarnessSecretMigrator harnessSecretMigrator;
+  @Inject private io.harness.ngmigration.secrets.AwsSecretMigrator awsSecretMigrator;
+  @Inject private io.harness.ngmigration.secrets.GcpSecretMigrator gcpSecretMigrator;
+  @Inject private io.harness.ngmigration.secrets.VaultSshSecretMigrator vaultSshSecretMigrator;
+  @Inject private io.harness.ngmigration.secrets.AzureVaultSecretMigrator azureVaultSecretMigrator;
+  @Inject private io.harness.ngmigration.secrets.AwsKmsSecretMigrator awsKmsSecretMigrator;
+  @Inject private io.harness.ngmigration.secrets.GcpKmsSecretMigrator gcpKmsSecretMigrator;
+  @Inject private io.harness.ngmigration.secrets.CustomSecretMigrator customSecretMigrator;
 
   public static ConnectorType getConnectorType(SecretManagerConfig secretManagerConfig) {
     if (secretManagerConfig instanceof AzureVaultConfig) {
@@ -88,7 +88,7 @@ public class SecretFactory {
     throw new InvalidRequestException("Unsupported secret manager");
   }
 
-  public SecretMigrator getSecretMigrator(SecretManagerConfig secretManagerConfig) {
+  public io.harness.ngmigration.secrets.SecretMigrator getSecretMigrator(SecretManagerConfig secretManagerConfig) {
     if (secretManagerConfig instanceof AzureVaultConfig) {
       return azureVaultSecretMigrator;
     }
@@ -164,6 +164,36 @@ public class SecretFactory {
     }
     // Support secret text
     return getSecretMigrator(secretManagerConfig).getSecretFile(encryptedData, secretManagerConfig);
+  }
+
+  public String getEncryptionKey(EncryptedData encryptedData, Map<CgEntityId, CgEntityNode> entities) {
+    CgEntityId secretManagerId =
+        CgEntityId.builder().type(NGMigrationEntityType.SECRET_MANAGER).id(encryptedData.getKmsId()).build();
+    if (!entities.containsKey(secretManagerId)) {
+      return null;
+    }
+    SecretManagerConfig secretManagerConfig = (SecretManagerConfig) entities.get(secretManagerId).getEntity();
+    // Support secret file
+    if (!SettingVariableTypes.CONFIG_FILE.equals(encryptedData.getType())) {
+      return null;
+    }
+    // Support secret text
+    return getSecretMigrator(secretManagerConfig).getEncryptionKey(encryptedData, secretManagerConfig);
+  }
+
+  public String getEncryptionValue(EncryptedData encryptedData, Map<CgEntityId, CgEntityNode> entities) {
+    CgEntityId secretManagerId =
+        CgEntityId.builder().type(NGMigrationEntityType.SECRET_MANAGER).id(encryptedData.getKmsId()).build();
+    if (!entities.containsKey(secretManagerId)) {
+      return null;
+    }
+    SecretManagerConfig secretManagerConfig = (SecretManagerConfig) entities.get(secretManagerId).getEntity();
+    // Support secret file
+    if (!SettingVariableTypes.CONFIG_FILE.equals(encryptedData.getType())) {
+      return null;
+    }
+    // Support secret text
+    return getSecretMigrator(secretManagerConfig).getEncryptionValue(encryptedData, secretManagerConfig);
   }
 
   public static SecretDTOV2 getHarnessSecretManagerSpec(

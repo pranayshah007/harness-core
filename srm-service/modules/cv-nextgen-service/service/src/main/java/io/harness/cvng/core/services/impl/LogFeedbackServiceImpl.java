@@ -127,7 +127,7 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
             .lastUpdatedAt(logFeedback.getUpdatedAt());
     hPersistence.save(logFeedbackEntityBuilder.build());
     createHistory(
-        projectParams, userPrincipal.getEmail(), getLogFeedbackFromFeedbackEntity(logFeedbackEntityBuilder.build()));
+        projectParams, userPrincipal.getUsername(), getLogFeedbackFromFeedbackEntity(logFeedbackEntityBuilder.build()));
     updateDeploymentLogAnalysis(projectParams, logFeedback);
     return getLogFeedbackFromFeedbackEntity(logFeedbackEntityBuilder.build());
   }
@@ -149,7 +149,7 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
     updateOperations.set(LogFeedbackEntity.LogFeedbackKeys.updatedByUser, userPrincipal.getUsername());
     updateOperations.set(LogFeedbackEntity.LogFeedbackKeys.lastUpdatedAt, updateTimeStamp);
     hPersistence.update(logFeedbackEntity, updateOperations);
-    updateHistory(projectParams, userPrincipal.getEmail(), logFeedbackBuilder.build());
+    updateHistory(projectParams, userPrincipal.getUsername(), logFeedbackBuilder.build());
     updateDeploymentLogAnalysis(projectParams, logFeedbackBuilder.build());
     return logFeedback;
   }

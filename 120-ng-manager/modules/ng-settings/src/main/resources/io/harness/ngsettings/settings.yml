@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 17
+version : 18
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -182,6 +182,7 @@ settings :
     category: GIT_EXPERIENCE
     defaultValue:
     valueType: String
+    allowOverrides: true
     allowedScopes:
       - ACCOUNT
       - ORGANIZATION
@@ -201,11 +202,23 @@ settings :
     category: GIT_EXPERIENCE
     defaultValue: INLINE
     valueType: STRING
+    allowOverrides: true
     allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
       - PROJECT
     allowedValues:
       - INLINE
       - REMOTE
+  - identifier: default_repo_for_git_experience
+    name: Default Repo For Git Experience with Entities- Pipelines/InputSets/Templates
+    category: GIT_EXPERIENCE
+    defaultValue:
+    valueType: String
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
   - identifier: enable_matrix_label_by_name
     name: Enable matrix Labels By Name
     category: PMS

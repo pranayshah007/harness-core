@@ -25,7 +25,7 @@ import io.harness.delegate.task.executioncapability.CapabilityCheck;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.SshSessionConfig;
-import io.harness.shell.ssh.SshFactory;
+import io.harness.shell.ssh.SshClientManager;
 
 import software.wings.beans.BastionConnectionAttributes;
 import software.wings.beans.HostConnectionAttributes;
@@ -80,7 +80,7 @@ public class SSHHostValidationCapabilityCheck implements CapabilityCheck {
   @VisibleForTesting
   void performTest(SshSessionConfig hostConnectionTest) throws Exception {
     if (hostConnectionTest.isUseSshClient()) {
-      SshFactory.getSshClient(hostConnectionTest).testConnection();
+      SshClientManager.test(hostConnectionTest);
     } else {
       getSSHSession(hostConnectionTest).disconnect();
     }
