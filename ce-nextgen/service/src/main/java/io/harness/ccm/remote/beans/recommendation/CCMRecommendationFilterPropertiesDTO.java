@@ -49,6 +49,7 @@ public class CCMRecommendationFilterPropertiesDTO extends FilterPropertiesDTO {
 
   @Schema(name = "minSaving", description = "Fetch recommendations with Saving more than minSaving") Double minSaving;
   @Schema(name = "minCost", description = "Fetch recommendations with Cost more than minCost") Double minCost;
+  @Schema(name = "daysBack", description = "Fetch recommendations generated in last daysBack days") Long daysBack;
 
   @Schema(name = "offset", description = "Query Offset") Long offset;
   @Schema(name = "limit", description = "Query Limit") Long limit;

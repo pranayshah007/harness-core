@@ -12,8 +12,8 @@ import static io.harness.pms.contracts.execution.ChildrenExecutableResponse.Chil
 import static io.harness.rule.OwnerRule.PRASHANT;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -32,10 +32,13 @@ import io.harness.pms.contracts.execution.events.SpawnChildrenRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.rule.Owner;
+import io.harness.waiter.OldNotifyCallback;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
@@ -102,12 +105,14 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
     List<String> runtimeIds = runtimeIdCaptor.getAllValues();
     assertThat(runtimeIds).hasSize(2);
 
-    ArgumentCaptor<EngineResumeCallback> callbackCaptor = ArgumentCaptor.forClass(EngineResumeCallback.class);
-    ArgumentCaptor<String> exIdCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<OldNotifyCallback> callbackCaptor = ArgumentCaptor.forClass(OldNotifyCallback.class);
+    ArgumentCaptor<String[]> exIdCaptor = ArgumentCaptor.forClass(String[].class);
     verify(waitNotifyEngine, times(3)).waitForAllOn(any(), callbackCaptor.capture(), exIdCaptor.capture());
 
-    assertThat(callbackCaptor.getValue().getAmbiance()).isEqualTo(ambiance);
-    assertThat(exIdCaptor.getAllValues())
+    assertThat(callbackCaptor.getAllValues().get(2)).isInstanceOf(EngineResumeCallback.class);
+    EngineResumeCallback engineResumeCallback = (EngineResumeCallback) callbackCaptor.getAllValues().get(2);
+    assertThat(engineResumeCallback.getAmbiance()).isEqualTo(ambiance);
+    assertThat(exIdCaptor.getAllValues().stream().flatMap(Arrays::stream).collect(Collectors.toList()))
         .containsExactlyInAnyOrder(runtimeIds.get(0), runtimeIds.get(1), runtimeIds.get(0), runtimeIds.get(1));
 
     verify(nodeExecutionService).updateV2(eq(nodeExecutionId), any());

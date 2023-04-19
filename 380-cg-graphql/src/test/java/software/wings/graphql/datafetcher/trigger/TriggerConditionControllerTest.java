@@ -79,8 +79,8 @@ import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -205,7 +205,7 @@ public class TriggerConditionControllerTest extends CategoryTest {
 
     SettingAttribute gitConfig = new SettingAttribute();
     gitConfig.setName("gitConnectorName");
-    Mockito.when(settingsService.get(Matchers.anyString())).thenReturn(gitConfig);
+    Mockito.when(settingsService.get(ArgumentMatchers.anyString())).thenReturn(gitConfig);
 
     QLOnWebhook qlOnWebhook = (QLOnWebhook) triggerConditionController.populateTriggerCondition(trigger, accountId);
 
@@ -266,7 +266,7 @@ public class TriggerConditionControllerTest extends CategoryTest {
 
     SettingAttribute gitConfig = new SettingAttribute();
     gitConfig.setName("gitConnectorName");
-    Mockito.when(settingsService.get(Matchers.anyString())).thenReturn(gitConfig);
+    Mockito.when(settingsService.get(ArgumentMatchers.anyString())).thenReturn(gitConfig);
 
     QLOnWebhook qlOnWebhook = (QLOnWebhook) triggerConditionController.populateTriggerCondition(trigger, accountId);
 
@@ -326,7 +326,7 @@ public class TriggerConditionControllerTest extends CategoryTest {
 
     SettingAttribute gitConfig = new SettingAttribute();
     gitConfig.setName("gitConnectorName");
-    Mockito.when(settingsService.get(Matchers.anyString())).thenReturn(gitConfig);
+    Mockito.when(settingsService.get(ArgumentMatchers.anyString())).thenReturn(gitConfig);
 
     QLOnWebhook qlOnWebhook = (QLOnWebhook) triggerConditionController.populateTriggerCondition(trigger, accountId);
 
@@ -384,7 +384,7 @@ public class TriggerConditionControllerTest extends CategoryTest {
 
     SettingAttribute gitConfig = new SettingAttribute();
     gitConfig.setName("gitConnectorName");
-    Mockito.when(settingsService.get(Matchers.anyString())).thenReturn(gitConfig);
+    Mockito.when(settingsService.get(ArgumentMatchers.anyString())).thenReturn(gitConfig);
 
     QLOnWebhook qlOnWebhook = (QLOnWebhook) triggerConditionController.populateTriggerCondition(trigger, accountId);
 
@@ -441,7 +441,7 @@ public class TriggerConditionControllerTest extends CategoryTest {
 
     SettingAttribute gitConfig = new SettingAttribute();
     gitConfig.setName("gitConnectorName");
-    Mockito.when(settingsService.get(Matchers.anyString())).thenReturn(gitConfig);
+    Mockito.when(settingsService.get(ArgumentMatchers.anyString())).thenReturn(gitConfig);
 
     QLOnWebhook qlOnWebhook = (QLOnWebhook) triggerConditionController.populateTriggerCondition(trigger, accountId);
 
@@ -499,7 +499,7 @@ public class TriggerConditionControllerTest extends CategoryTest {
 
     SettingAttribute gitConfig = new SettingAttribute();
     gitConfig.setName("gitConnectorName");
-    Mockito.when(settingsService.get(Matchers.anyString())).thenReturn(gitConfig);
+    Mockito.when(settingsService.get(ArgumentMatchers.anyString())).thenReturn(gitConfig);
 
     QLOnWebhook qlOnWebhook = (QLOnWebhook) triggerConditionController.populateTriggerCondition(trigger, accountId);
 
@@ -559,7 +559,7 @@ public class TriggerConditionControllerTest extends CategoryTest {
 
     SettingAttribute gitConfig = new SettingAttribute();
     gitConfig.setName("gitConnectorName");
-    Mockito.when(settingsService.get(Matchers.anyString())).thenReturn(gitConfig);
+    Mockito.when(settingsService.get(ArgumentMatchers.anyString())).thenReturn(gitConfig);
 
     QLOnWebhook qlOnWebhook = (QLOnWebhook) triggerConditionController.populateTriggerCondition(trigger, accountId);
 
@@ -618,7 +618,7 @@ public class TriggerConditionControllerTest extends CategoryTest {
 
     SettingAttribute gitConfig = new SettingAttribute();
     gitConfig.setName("gitConnectorName");
-    Mockito.when(settingsService.get(Matchers.anyString())).thenReturn(gitConfig);
+    Mockito.when(settingsService.get(ArgumentMatchers.anyString())).thenReturn(gitConfig);
 
     QLOnWebhook qlOnWebhook = (QLOnWebhook) triggerConditionController.populateTriggerCondition(trigger, accountId);
 
@@ -661,7 +661,7 @@ public class TriggerConditionControllerTest extends CategoryTest {
 
     Mockito.doReturn(artifactTriggerCondition)
         .when(triggerConditionController)
-        .validateAndResolveOnNewArtifactConditionType(Matchers.any(QLCreateOrUpdateTriggerInput.class));
+        .validateAndResolveOnNewArtifactConditionType(ArgumentMatchers.any(QLCreateOrUpdateTriggerInput.class));
 
     ArtifactTriggerCondition retrievedArtifactTriggerCondition =
         (ArtifactTriggerCondition) triggerConditionController.resolveTriggerCondition(qlCreateOrUpdateTriggerInput);
@@ -689,7 +689,7 @@ public class TriggerConditionControllerTest extends CategoryTest {
 
     Mockito.doReturn(pipelineTriggerCondition)
         .when(triggerConditionController)
-        .validateAndResolveOnPipelineCompletionConditionType(Matchers.any(QLCreateOrUpdateTriggerInput.class));
+        .validateAndResolveOnPipelineCompletionConditionType(ArgumentMatchers.any(QLCreateOrUpdateTriggerInput.class));
 
     PipelineTriggerCondition retrievedPipelineTriggerCondition =
         (PipelineTriggerCondition) triggerConditionController.resolveTriggerCondition(qlCreateOrUpdateTriggerInput);
@@ -716,7 +716,7 @@ public class TriggerConditionControllerTest extends CategoryTest {
 
     Mockito.doReturn(scheduledTriggerCondition)
         .when(triggerConditionController)
-        .validateAndResolveOnScheduleConditionType(Matchers.any(QLCreateOrUpdateTriggerInput.class));
+        .validateAndResolveOnScheduleConditionType(ArgumentMatchers.any(QLCreateOrUpdateTriggerInput.class));
 
     ScheduledTriggerCondition retrievedScheduledTriggerCondition =
         (ScheduledTriggerCondition) triggerConditionController.resolveTriggerCondition(qlCreateTriggerInput);
@@ -755,7 +755,7 @@ public class TriggerConditionControllerTest extends CategoryTest {
 
     Mockito.doReturn(webHookTriggerCondition)
         .when(triggerConditionController)
-        .validateAndResolveOnWebhookConditionType(Matchers.any(QLCreateOrUpdateTriggerInput.class));
+        .validateAndResolveOnWebhookConditionType(ArgumentMatchers.any(QLCreateOrUpdateTriggerInput.class));
 
     WebHookTriggerCondition retrievedWebHookTriggerCondition =
         (WebHookTriggerCondition) triggerConditionController.resolveTriggerCondition(qlCreateTriggerInput);
@@ -814,7 +814,7 @@ public class TriggerConditionControllerTest extends CategoryTest {
 
     SettingAttribute gitConfig = new SettingAttribute();
     gitConfig.setName("gitConnectorName");
-    Mockito.when(settingsService.get(Matchers.anyString())).thenReturn(gitConfig);
+    Mockito.when(settingsService.get(ArgumentMatchers.anyString())).thenReturn(gitConfig);
 
     QLOnWebhook qlOnWebhook = (QLOnWebhook) triggerConditionController.populateTriggerCondition(trigger, accountId);
 
@@ -872,7 +872,7 @@ public class TriggerConditionControllerTest extends CategoryTest {
 
     SettingAttribute gitConfig = new SettingAttribute();
     gitConfig.setName("gitConnectorName");
-    Mockito.when(settingsService.get(Matchers.anyString())).thenReturn(gitConfig);
+    Mockito.when(settingsService.get(ArgumentMatchers.anyString())).thenReturn(gitConfig);
 
     QLOnWebhook qlOnWebhook = (QLOnWebhook) triggerConditionController.populateTriggerCondition(trigger, accountId);
 
@@ -930,7 +930,7 @@ public class TriggerConditionControllerTest extends CategoryTest {
 
     SettingAttribute gitConfig = new SettingAttribute();
     gitConfig.setName("gitConnectorName");
-    Mockito.when(settingsService.get(Matchers.anyString())).thenReturn(gitConfig);
+    Mockito.when(settingsService.get(ArgumentMatchers.anyString())).thenReturn(gitConfig);
 
     QLOnWebhook qlOnWebhook = (QLOnWebhook) triggerConditionController.populateTriggerCondition(trigger, accountId);
 
@@ -1517,7 +1517,7 @@ public class TriggerConditionControllerTest extends CategoryTest {
 
     SettingAttribute gitConfig = new SettingAttribute();
     gitConfig.setName("gitConnectorName");
-    Mockito.when(settingsService.get(Matchers.anyString())).thenReturn(gitConfig);
+    Mockito.when(settingsService.get(ArgumentMatchers.anyString())).thenReturn(gitConfig);
     when(featureFlagService.isEnabled(WEBHOOK_TRIGGER_AUTHORIZATION, accountId)).thenReturn(true);
 
     QLOnWebhook qlOnWebhook = (QLOnWebhook) triggerConditionController.populateTriggerCondition(trigger, accountId);

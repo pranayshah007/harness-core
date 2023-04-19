@@ -19,10 +19,9 @@ import static software.wings.utils.WingsTestConstants.SETTING_ID;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -119,8 +118,8 @@ public class AzureInfraMappingYamlHandlerTest extends YamlHandlerTestBase {
     when(appService.get(anyString())).thenReturn(getApplication());
     when(appService.getAppByName(anyString(), anyString())).thenReturn(getApplication());
     when(environmentService.getEnvironmentByName(anyString(), anyString())).thenReturn(getEnvironment());
-    when(containerService.validate(anyObject(), anyBoolean())).thenReturn(true);
-    when(delegateProxyFactory.getV2(anyObject(), any(SyncTaskContext.class))).thenReturn(containerService);
+    when(containerService.validate(any(), anyBoolean())).thenReturn(true);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(containerService);
     when(serviceResourceService.getServiceByName(anyString(), anyString())).thenReturn(getService());
     when(serviceResourceService.getWithDetails(anyString(), anyString())).thenReturn(getService());
     when(serviceTemplateService.getTemplateRefKeysByService(anyString(), anyString(), anyString()))

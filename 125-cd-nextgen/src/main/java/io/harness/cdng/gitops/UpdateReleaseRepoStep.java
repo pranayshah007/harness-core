@@ -256,6 +256,13 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
           ExpressionEvaluatorUtils.updateExpressions(
               copyParameter, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
           flattennedVariables.put(variableEntry.getKey(), copyParameter.getValue().toString());
+
+          for (String key : flattennedVariables.keySet()) {
+            String value = flattennedVariables.get(key);
+            if (value.matches("[-+]?[0-9]*\\.0")) {
+              flattennedVariables.put(key, value.split("\\.")[0]);
+            }
+          }
         }
         filePathsToVariables.put(file, flattennedVariables);
       }

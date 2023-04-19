@@ -19,15 +19,15 @@ import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -41,7 +41,6 @@ import io.harness.rule.Owner;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.ssh.SshHelperUtils;
 
-import io.cloudsoft.winrm4j.client.WinRmClient;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,14 +54,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({SshHelperUtils.class, WinRmSession.class, InstallUtils.class, WinRmClient.class})
+@RunWith(MockitoJUnitRunner.class)
 @OwnedBy(CDP)
 @TargetModule(_930_DELEGATE_TASKS)
 public class DefaultWinRmExecutorTest extends CategoryTest {
@@ -285,10 +280,10 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
                                     .build();
     spyDefaultWinRmExecutor = new DefaultWinRmExecutor(logCallback, true, config, true, false);
 
-    mockStatic(InstallUtils.class);
-    PowerMockito.when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
+    try (MockedStatic<InstallUtils> installUtilsMockedStatic = mockStatic(InstallUtils.class);
+         MockedStatic<SshHelperUtils> mockStatic = mockStatic(SshHelperUtils.class)) {
+      when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
 
-    try (MockedStatic<SshHelperUtils> mockStatic = Mockito.mockStatic(SshHelperUtils.class)) {
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
           .thenReturn(true);
       CommandExecutionStatus status = spyDefaultWinRmExecutor.executeCommandString("cmd", null, true);
@@ -311,10 +306,10 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
                                     .build();
     spyDefaultWinRmExecutor = new DefaultWinRmExecutor(logCallback, true, config, true, true);
 
-    mockStatic(InstallUtils.class);
-    PowerMockito.when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
+    try (MockedStatic<InstallUtils> installUtilsMockedStatic = mockStatic(InstallUtils.class);
+         MockedStatic<SshHelperUtils> mockStatic = mockStatic(SshHelperUtils.class)) {
+      when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
 
-    try (MockedStatic<SshHelperUtils> mockStatic = Mockito.mockStatic(SshHelperUtils.class)) {
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
           .thenReturn(true);
       CommandExecutionStatus status = spyDefaultWinRmExecutor.executeCommandString("cmd", true);
@@ -337,10 +332,10 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
                                     .build();
     spyDefaultWinRmExecutor = new DefaultWinRmExecutor(logCallback, true, config, false, false);
 
-    mockStatic(InstallUtils.class);
-    PowerMockito.when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
+    try (MockedStatic<InstallUtils> installUtilsMockedStatic = mockStatic(InstallUtils.class);
+         MockedStatic<SshHelperUtils> mockStatic = mockStatic(SshHelperUtils.class)) {
+      when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
 
-    try (MockedStatic<SshHelperUtils> mockStatic = Mockito.mockStatic(SshHelperUtils.class)) {
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
           .thenReturn(true);
       CommandExecutionStatus status = spyDefaultWinRmExecutor.executeCommandString("cmd");
@@ -363,10 +358,10 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
                                     .build();
     spyDefaultWinRmExecutor = new DefaultWinRmExecutor(logCallback, true, config, false, false);
 
-    mockStatic(InstallUtils.class);
-    PowerMockito.when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
+    try (MockedStatic<InstallUtils> installUtilsMockedStatic = mockStatic(InstallUtils.class);
+         MockedStatic<SshHelperUtils> mockStatic = mockStatic(SshHelperUtils.class)) {
+      when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
 
-    try (MockedStatic<SshHelperUtils> mockStatic = Mockito.mockStatic(SshHelperUtils.class)) {
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
           .thenThrow(new RuntimeException("test"));
       StringBuffer stringBuffer = mock(StringBuffer.class);
@@ -391,10 +386,10 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
                                     .build();
     spyDefaultWinRmExecutor = new DefaultWinRmExecutor(logCallback, true, config, false, false);
 
-    mockStatic(InstallUtils.class);
-    PowerMockito.when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
+    try (MockedStatic<InstallUtils> installUtilsMockedStatic = mockStatic(InstallUtils.class);
+         MockedStatic<SshHelperUtils> mockStatic = mockStatic(SshHelperUtils.class)) {
+      when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
 
-    try (MockedStatic<SshHelperUtils> mockStatic = Mockito.mockStatic(SshHelperUtils.class)) {
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
           .thenReturn(true);
       ExecuteCommandResponse response = spyDefaultWinRmExecutor.executeCommandString("cmd", Collections.EMPTY_LIST);
@@ -417,10 +412,10 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
                                     .build();
     spyDefaultWinRmExecutor = new DefaultWinRmExecutor(logCallback, true, config, true, false);
 
-    mockStatic(InstallUtils.class);
-    PowerMockito.when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
+    try (MockedStatic<InstallUtils> installUtilsMockedStatic = mockStatic(InstallUtils.class);
+         MockedStatic<SshHelperUtils> mockStatic = mockStatic(SshHelperUtils.class)) {
+      when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
 
-    try (MockedStatic<SshHelperUtils> mockStatic = Mockito.mockStatic(SshHelperUtils.class)) {
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
           .thenReturn(true);
       ExecuteCommandResponse response = spyDefaultWinRmExecutor.executeCommandString("cmd", Collections.EMPTY_LIST);
@@ -443,10 +438,10 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
                                     .build();
     spyDefaultWinRmExecutor = new DefaultWinRmExecutor(logCallback, true, config, true, true);
 
-    mockStatic(InstallUtils.class);
-    PowerMockito.when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
+    try (MockedStatic<InstallUtils> installUtilsMockedStatic = mockStatic(InstallUtils.class);
+         MockedStatic<SshHelperUtils> mockStatic = mockStatic(SshHelperUtils.class)) {
+      when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
 
-    try (MockedStatic<SshHelperUtils> mockStatic = Mockito.mockStatic(SshHelperUtils.class)) {
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
           .thenReturn(true);
       ExecuteCommandResponse response = spyDefaultWinRmExecutor.executeCommandString("cmd", Collections.EMPTY_LIST);
@@ -469,10 +464,10 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
                                     .build();
     spyDefaultWinRmExecutor = new DefaultWinRmExecutor(logCallback, true, config, true, true);
 
-    mockStatic(InstallUtils.class);
-    PowerMockito.when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
+    try (MockedStatic<InstallUtils> installUtilsMockedStatic = mockStatic(InstallUtils.class);
+         MockedStatic<SshHelperUtils> mockStatic = mockStatic(SshHelperUtils.class)) {
+      when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
 
-    try (MockedStatic<SshHelperUtils> mockStatic = Mockito.mockStatic(SshHelperUtils.class)) {
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
           .thenThrow(new RuntimeException("test"));
       assertThatThrownBy(() -> spyDefaultWinRmExecutor.executeCommandString("cmd", Collections.EMPTY_LIST))

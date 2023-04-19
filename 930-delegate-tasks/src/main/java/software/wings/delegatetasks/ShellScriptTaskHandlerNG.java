@@ -26,6 +26,7 @@ import io.harness.shell.ScriptSshExecutor;
 import io.harness.shell.ShellExecutorConfig;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.SshSessionManager;
+import io.harness.shell.ssh.SshClientManager;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -75,6 +76,7 @@ public class ShellScriptTaskHandlerNG {
             .build();
       } finally {
         SshSessionManager.evictAndDisconnectCachedSession(taskParameters.getExecutionId(), taskParameters.getHost());
+        SshClientManager.evictCacheAndDisconnect(taskParameters.getExecutionId(), taskParameters.getHost());
       }
     }
   }

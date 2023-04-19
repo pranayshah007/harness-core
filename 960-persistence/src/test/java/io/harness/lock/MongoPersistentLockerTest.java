@@ -13,12 +13,11 @@ import static io.harness.rule.OwnerRule.GEORGE;
 import static java.time.Duration.ofMillis;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.matches;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.PersistenceTestBase;
@@ -30,6 +29,10 @@ import io.harness.lock.mongo.AcquiredDistributedLock;
 import io.harness.lock.mongo.MongoPersistentLocker;
 import io.harness.rule.Owner;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.deftlabs.lock.mongo.DistributedLock;
 import com.deftlabs.lock.mongo.DistributedLockOptions;
 import com.deftlabs.lock.mongo.DistributedLockSvc;
@@ -40,7 +43,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The Class PersistentLockerTest.
@@ -134,13 +137,20 @@ public class MongoPersistentLockerTest extends PersistenceTestBase {
     when(distributedLock.isLocked()).thenReturn(false);
     when(distributedLockSvc.create(matches(AcquiredLock.class.getName() + "-cba"), any())).thenReturn(distributedLock);
 
-    Logger logger = mock(Logger.class);
-    setStaticFieldValue(AcquiredDistributedLock.class, "log", logger);
+    Logger logger = (Logger) LoggerFactory.getLogger(AcquiredDistributedLock.class);
+    ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+    listAppender.start();
+    logger.setLevel(Level.DEBUG);
+    logger.addAppender(listAppender);
 
     try (AcquiredLock lock = mongoPersistentLocker.acquireLock(AcquiredLock.class, "cba", timeout)) {
     }
-
-    verify(logger).error(matches("attempt to release lock that is not currently locked"), any(Throwable.class));
+    assertThat(listAppender.list).hasSize(1);
+    assertThat(listAppender.list.get(0).getFormattedMessage())
+        .isEqualTo("attempt to release lock that is not currently locked");
+    assertThat(listAppender.list.get(0).getThrowableProxy()).isNotNull();
+    assertThat(listAppender.list.get(0).getThrowableProxy().getClassName())
+        .isEqualTo(Exception.class.getCanonicalName());
   }
 
   @Test
@@ -151,15 +161,17 @@ public class MongoPersistentLockerTest extends PersistenceTestBase {
     when(distributedLock.tryLock()).thenReturn(false);
     when(distributedLockSvc.create(matches(AcquiredLock.class.getName() + "-cba"), any())).thenReturn(distributedLock);
 
-    Logger mockLogger = mock(Logger.class);
-    setStaticFieldValue(MessageManager.class, "log", mockLogger);
+    Logger logger = (Logger) LoggerFactory.getLogger(MessageManager.class);
+    ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+    listAppender.start();
+    logger.addAppender(listAppender);
 
     try (AcquiredLock lock = mongoPersistentLocker.acquireLock(AcquiredLock.class, "cba", Duration.ofMinutes(1))) {
     } catch (WingsException exception) {
-      mockLogger.error("", exception);
+      logger.error("", exception);
     }
-
-    verify(mockLogger, times(0)).error(any());
+    assertThat(listAppender.list).hasSize(1);
+    assertThat(listAppender.list.get(0).getFormattedMessage()).isEqualTo("");
   }
 
   @Test
@@ -178,16 +190,20 @@ public class MongoPersistentLockerTest extends PersistenceTestBase {
     when(distributedLock.tryLock()).thenReturn(true);
     when(distributedLockSvc.create(matches(AcquiredLock.class.getName() + "-cba"), any())).thenReturn(distributedLock);
 
-    Logger mockLogger = mock(Logger.class);
+    Logger logger = (Logger) LoggerFactory.getLogger(AcquiredDistributedLock.class);
+    ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+    listAppender.start();
+    logger.addAppender(listAppender);
 
     try (AcquiredLock lock = mongoPersistentLocker.acquireLock(AcquiredLock.class, "cba", timeout)) {
       Thread.sleep(10);
     } catch (WingsException exception) {
-      mockLogger.error("", exception);
+      logger.error("", exception);
     }
 
-    verify(mockLogger)
-        .error(matches(
-            "The distributed lock abc-cba was not released on time. THIS IS VERY BAD!!!, elapsed: \\d+, timeout 1"));
+    assertThat(listAppender.list).hasSizeGreaterThan(0);
+    assertThat(listAppender.list.get(0).getFormattedMessage())
+        .matches("The distributed lock " + AcquiredLock.class.getName()
+            + "-cba was not released on time. THIS IS VERY BAD!!!, elapsed: \\d+, timeout 1");
   }
 }

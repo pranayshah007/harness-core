@@ -15,7 +15,10 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -23,9 +26,11 @@ import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.SortOrder;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ipallowlist.IPAllowlistResourceUtils;
+import io.harness.ipallowlist.dto.IPAllowlistFilterDTO;
 import io.harness.ipallowlist.entity.IPAllowlistEntity;
 import io.harness.ipallowlist.service.IPAllowlistService;
 import io.harness.rule.Owner;
@@ -33,6 +38,7 @@ import io.harness.spec.server.ng.v1.model.AllowedSourceType;
 import io.harness.spec.server.ng.v1.model.IPAllowlistConfig;
 import io.harness.spec.server.ng.v1.model.IPAllowlistConfigRequest;
 import io.harness.spec.server.ng.v1.model.IPAllowlistConfigResponse;
+import io.harness.utils.PageUtils;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import java.util.List;
@@ -43,8 +49,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @OwnedBy(PL)
 public class IpAllowlistApiImplTest extends CategoryTest {
@@ -159,6 +171,35 @@ public class IpAllowlistApiImplTest extends CategoryTest {
     when(ipAllowlistService.delete(ACCOUNT_IDENTIFIER, IDENTIFIER)).thenReturn(true);
     exceptionRule.expect(NGAccessDeniedException.class);
     ipAllowlistApi.deleteIpAllowlistConfig(IDENTIFIER, ACCOUNT_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testGetIpAllowlistConfigs() {
+    String searchTerm = randomAlphabetic(10);
+    int page = 0;
+    int limit = 10;
+    String sort = PageUtils.SortFields.UPDATED.value();
+    String order = SortOrder.OrderType.ASC.name();
+    ArgumentCaptor<IPAllowlistFilterDTO> entityArgumentCaptor = ArgumentCaptor.forClass(IPAllowlistFilterDTO.class);
+    IPAllowlistFilterDTO filterProperties =
+        IPAllowlistFilterDTO.builder().searchTerm(searchTerm).allowedSourceType(AllowedSourceType.UI).build();
+    Pageable pageable =
+        PageRequest.of(page, limit, Sort.Direction.fromString(order), IPAllowlistEntity.IPAllowlistConfigKeys.updated);
+    Page<IPAllowlistEntity> ipAllowlistEntityPage = new PageImpl<>(List.of(getIPAllowlistEntity()));
+    Page<IPAllowlistConfigResponse> ipAllowlistConfigResponsePage =
+        ipAllowlistEntityPage.map(ipAllowlistResourceUtil::toIPAllowlistConfigResponse);
+    mockIPAllowlistFFTrue();
+    when(ipAllowlistService.list(eq(ACCOUNT_IDENTIFIER), eq(pageable), entityArgumentCaptor.capture()))
+        .thenReturn(ipAllowlistEntityPage);
+    Response response = ipAllowlistApi.getIpAllowlistConfigs(
+        searchTerm, page, limit, ACCOUNT_IDENTIFIER, sort, order, AllowedSourceType.UI.name());
+    verify(ipAllowlistService, times(1)).list(eq(ACCOUNT_IDENTIFIER), eq(pageable), entityArgumentCaptor.capture());
+    assertThat(entityArgumentCaptor.getValue()).isEqualToComparingFieldByField(filterProperties);
+    assertThat(response).isNotNull();
+    assertThat(response.getEntity()).isEqualToComparingFieldByField(ipAllowlistConfigResponsePage.getContent());
+    assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
   }
 
   private IPAllowlistConfigRequest getIpAllowlistConfigRequest() {

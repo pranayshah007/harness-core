@@ -10,6 +10,7 @@ package io.harness.ipallowlist.service.impl;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
+import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
@@ -17,6 +18,7 @@ import io.harness.eraro.Level;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.NoResultFoundException;
 import io.harness.ipallowlist.IPAllowlistResourceUtils;
+import io.harness.ipallowlist.dto.IPAllowlistFilterDTO;
 import io.harness.ipallowlist.entity.IPAllowlistEntity;
 import io.harness.ipallowlist.events.IPAllowlistConfigCreateEvent;
 import io.harness.ipallowlist.events.IPAllowlistConfigDeleteEvent;
@@ -29,7 +31,11 @@ import com.google.inject.Inject;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(HarnessTeam.PL)
@@ -119,5 +125,36 @@ public class IPAllowlistServiceImpl implements IPAllowlistService {
           ipAllowlistEntity.getAccountIdentifier(), ipAllowlistResourceUtil.toIPAllowlistConfig(ipAllowlistEntity)));
       return true;
     }));
+  }
+
+  @Override
+  public boolean validateUniqueness(String accountIdentifier, String identifier) {
+    Optional<IPAllowlistEntity> optionalIPAllowlistEntity =
+        ipAllowlistRepository.findByAccountIdentifierAndIdentifier(accountIdentifier, identifier);
+    return optionalIPAllowlistEntity.isEmpty();
+  }
+
+  @Override
+  public Page<IPAllowlistEntity> list(
+      String accountIdentifier, Pageable pageable, IPAllowlistFilterDTO ipAllowlistFilterDTO) {
+    Criteria criteria = getCriteriaForIPAllowlistConfigs(accountIdentifier, ipAllowlistFilterDTO);
+    return ipAllowlistRepository.findAll(criteria, pageable);
+  }
+
+  private Criteria getCriteriaForIPAllowlistConfigs(
+      String accountIdentifier, IPAllowlistFilterDTO ipAllowlistFilterDTO) {
+    Criteria criteria = Criteria.where(IPAllowlistEntity.IPAllowlistConfigKeys.accountIdentifier).is(accountIdentifier);
+    if (null != ipAllowlistFilterDTO.getAllowedSourceType()) {
+      criteria.and(IPAllowlistEntity.IPAllowlistConfigKeys.allowedSourceType)
+          .is(ipAllowlistFilterDTO.getAllowedSourceType());
+    }
+    if (StringUtils.isNotEmpty(ipAllowlistFilterDTO.getSearchTerm())) {
+      criteria.orOperator(
+          Criteria.where(IPAllowlistEntity.IPAllowlistConfigKeys.name)
+              .regex(ipAllowlistFilterDTO.getSearchTerm(), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+          Criteria.where(IPAllowlistEntity.IPAllowlistConfigKeys.identifier)
+              .regex(ipAllowlistFilterDTO.getSearchTerm(), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
+    }
+    return criteria;
   }
 }

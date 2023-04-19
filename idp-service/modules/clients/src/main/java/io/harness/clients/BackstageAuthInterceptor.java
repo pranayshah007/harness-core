@@ -29,8 +29,13 @@ import okhttp3.Response;
 import org.jetbrains.annotations.NotNull;
 
 public class BackstageAuthInterceptor implements Interceptor {
-  @Inject @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
+  private final SecretManagerClientService ngSecretService;
   private static final int EXPIRATION_TIME = 3600;
+
+  public BackstageAuthInterceptor(SecretManagerClientService ngSecretService) {
+    this.ngSecretService = ngSecretService;
+  }
+
   @NotNull
   @Override
   public Response intercept(@NotNull Chain chain) throws IOException {
@@ -44,7 +49,7 @@ public class BackstageAuthInterceptor implements Interceptor {
   private String getBackstageBackendSecret(String harnessAccount) {
     DecryptedSecretValue decryptedValue =
         ngSecretService.getDecryptedSecretValue(harnessAccount, null, null, Constants.IDP_BACKEND_SECRET);
-    byte[] decodedSecret = Base64.getDecoder().decode(String.valueOf(decryptedValue));
+    byte[] decodedSecret = Base64.getDecoder().decode(String.valueOf(decryptedValue.getDecryptedValue()));
     return generateToken(new String(decodedSecret));
   }
 

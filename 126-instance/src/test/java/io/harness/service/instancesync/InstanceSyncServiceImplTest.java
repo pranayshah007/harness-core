@@ -81,6 +81,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -88,7 +89,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.mockito.stubbing.Answer;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -197,7 +197,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
             .infrastructureMapping(infrastructureMappingDTO)
             .deploymentInfoDTO(deploymentInfoDTO)
             .infrastructureMappingId(INFRASTRUCTURE_MAPPING_ID)
-            .serverInstanceInfoList(Arrays.asList(
+            .serverInstanceInfoList(List.of(
                 AzureSshWinrmServerInstanceInfo.builder().infrastructureKey(INFRASTRUCTURE_KEY).host(HOST3).build()))
             .build();
     doReturn(Optional.of(deploymentSummaryDTO))
@@ -268,13 +268,17 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
       return instanceInfoDTO.prepareInstanceKey();
     });
 
-    doAnswer((Answer<InstanceInfoDTO>) invocation -> {
-      Object[] args = invocation.getArguments();
-      AzureSshWinrmServerInstanceInfo s = (AzureSshWinrmServerInstanceInfo) args[0];
-      return AzureSshWinrmInstanceInfoDTO.builder()
-          .host(s.getHost())
-          .infrastructureKey(s.getInfrastructureKey())
-          .build();
+    doAnswer(invocation -> {
+      List<ServerInstanceInfo> instanceInfoList = invocation.getArgument(0, List.class);
+      return instanceInfoList.stream()
+          .map(instanceInfo -> {
+            AzureSshWinrmServerInstanceInfo s = (AzureSshWinrmServerInstanceInfo) instanceInfo;
+            return AzureSshWinrmInstanceInfoDTO.builder()
+                .host(s.getHost())
+                .infrastructureKey(s.getInfrastructureKey())
+                .build();
+          })
+          .collect(Collectors.toCollection(ArrayList::new));
     })
         .when(abstractInstanceSyncHandler)
         .getInstanceDetailsFromServerInstances(deploymentSummaryDTO.getServerInstanceInfoList());
@@ -388,13 +392,17 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
       return instanceInfoDTO.prepareInstanceKey();
     });
 
-    doAnswer((Answer<InstanceInfoDTO>) invocation -> {
-      Object[] args = invocation.getArguments();
-      AzureSshWinrmServerInstanceInfo s = (AzureSshWinrmServerInstanceInfo) args[0];
-      return AzureSshWinrmInstanceInfoDTO.builder()
-          .host(s.getHost())
-          .infrastructureKey(s.getInfrastructureKey())
-          .build();
+    doAnswer(invocation -> {
+      List<ServerInstanceInfo> instanceInfoList = invocation.getArgument(0, List.class);
+      return instanceInfoList.stream()
+          .map(instanceInfo -> {
+            AzureSshWinrmServerInstanceInfo s = (AzureSshWinrmServerInstanceInfo) instanceInfo;
+            return AzureSshWinrmInstanceInfoDTO.builder()
+                .host(s.getHost())
+                .infrastructureKey(s.getInfrastructureKey())
+                .build();
+          })
+          .collect(Collectors.toCollection(ArrayList::new));
     })
         .when(abstractInstanceSyncHandler)
         .getInstanceDetailsFromServerInstances(deploymentSummaryDTO.getServerInstanceInfoList());

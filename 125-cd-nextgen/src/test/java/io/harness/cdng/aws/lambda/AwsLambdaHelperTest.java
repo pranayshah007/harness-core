@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -92,16 +93,14 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({TaskRequestsUtils.class})
+@RunWith(MockitoJUnitRunner.class)
 @OwnedBy(CDP)
 public class AwsLambdaHelperTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -172,25 +171,26 @@ public class AwsLambdaHelperTest extends CategoryTest {
     doReturn(optionalArtifactOutcome)
         .when(outcomeService)
         .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
-    Mockito.mockStatic(TaskRequestsUtils.class);
-    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(TaskRequest.newBuilder().build());
+    try (MockedStatic<TaskRequestsUtils> aStatic = mockStatic(TaskRequestsUtils.class)) {
+      when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+          .thenReturn(TaskRequest.newBuilder().build());
 
-    Optional<FileStoreNodeDTO> manifestFile = Optional.of(FileNodeDTO.builder().content(MANIFEST_CONTENT).build());
-    doReturn(manifestFile).when(fileStoreService).getWithChildrenByPath(any(), any(), any(), any(), anyBoolean());
-    doReturn(MANIFEST_CONTENT).when(engineExpressionService).renderExpression(any(), any());
-    doReturn(unitProgressData)
-        .when(awsLambdaHelper)
-        .getCommandUnitProgressData(
-            AwsLambdaCommandUnitConstants.fetchManifests.toString(), CommandExecutionStatus.SUCCESS);
-    TaskChainResponse taskChainResponse = awsLambdaHelper.startChainLink(ambiance, stepElementParameters);
+      Optional<FileStoreNodeDTO> manifestFile = Optional.of(FileNodeDTO.builder().content(MANIFEST_CONTENT).build());
+      doReturn(manifestFile).when(fileStoreService).getWithChildrenByPath(any(), any(), any(), any(), anyBoolean());
+      doReturn(MANIFEST_CONTENT).when(engineExpressionService).renderExpression(any(), any());
+      doReturn(unitProgressData)
+          .when(awsLambdaHelper)
+          .getCommandUnitProgressData(
+              AwsLambdaCommandUnitConstants.fetchManifests.toString(), CommandExecutionStatus.SUCCESS);
+      TaskChainResponse taskChainResponse = awsLambdaHelper.startChainLink(ambiance, stepElementParameters);
 
-    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
-    TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
+      aStatic.verify(
+          () -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()), times(1));
 
-    verify(awsLambdaHelper)
-        .queueTask(eq(stepElementParameters), any(), eq(TaskType.AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_TASK_NG),
-            eq(ambiance), any(), eq(false));
+      verify(awsLambdaHelper)
+          .queueTask(eq(stepElementParameters), any(), eq(TaskType.AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_TASK_NG),
+              eq(ambiance), any(), eq(false));
+    }
   }
 
   @Test
@@ -346,15 +346,16 @@ public class AwsLambdaHelperTest extends CategoryTest {
                                                       .timeout(ParameterField.createValueField("10m"))
                                                       .spec(awsLambdaSpecParameters)
                                                       .build();
-    Mockito.mockStatic(TaskRequestsUtils.class);
-    when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(TaskRequest.newBuilder().build());
+    try (MockedStatic<TaskRequestsUtils> ignored = mockStatic(TaskRequestsUtils.class)) {
+      when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+          .thenReturn(TaskRequest.newBuilder().build());
 
-    assertThat(
-        awsLambdaHelper
-            .executeNextLink(ambiance, stepElementParameters, awsLambdaStepPassThroughData, () -> gitTaskNGResponse)
-            .getPassThroughData())
-        .isInstanceOf(AwsLambdaStepPassThroughData.class);
+      assertThat(
+          awsLambdaHelper
+              .executeNextLink(ambiance, stepElementParameters, awsLambdaStepPassThroughData, () -> gitTaskNGResponse)
+              .getPassThroughData())
+          .isInstanceOf(AwsLambdaStepPassThroughData.class);
+    }
   }
 
   @Test
@@ -411,15 +412,16 @@ public class AwsLambdaHelperTest extends CategoryTest {
                                                       .timeout(ParameterField.createValueField("10m"))
                                                       .spec(awsLambdaSpecParameters)
                                                       .build();
-    Mockito.mockStatic(TaskRequestsUtils.class);
-    when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(TaskRequest.newBuilder().build());
+    try (MockedStatic<TaskRequestsUtils> ignored = mockStatic(TaskRequestsUtils.class)) {
+      when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+          .thenReturn(TaskRequest.newBuilder().build());
 
-    assertThat(awsLambdaHelper
-                   .executeNextLink(ambiance, stepElementParameters, awsLambdaStepPassThroughData,
-                       () -> awsLambdaPrepareRollbackResponse)
-                   .getPassThroughData())
-        .isInstanceOf(AwsLambdaStepPassThroughData.class);
+      assertThat(awsLambdaHelper
+                     .executeNextLink(ambiance, stepElementParameters, awsLambdaStepPassThroughData,
+                         () -> awsLambdaPrepareRollbackResponse)
+                     .getPassThroughData())
+          .isInstanceOf(AwsLambdaStepPassThroughData.class);
+    }
   }
 
   @Test
@@ -446,7 +448,7 @@ public class AwsLambdaHelperTest extends CategoryTest {
                                                             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                             .build();
     ServerInstanceInfo serverInstanceInfo = mock(ServerInstanceInfo.class);
-    Mockito.mockStatic(AwsLambdaToServerInstanceInfoMapper.class);
+    mockStatic(AwsLambdaToServerInstanceInfoMapper.class);
     when(AwsLambdaToServerInstanceInfoMapper.toServerInstanceInfo(any(), any(), any())).thenReturn(serverInstanceInfo);
     AwsLambdaInfraConfig awsLambdaInfraConfig = AwsLambdaFunctionsInfraConfig.builder().region("region").build();
     assertThat(awsLambdaHelper.getServerInstanceInfo(awsLambdaCommandResponse, awsLambdaInfraConfig, "infraKey").size())

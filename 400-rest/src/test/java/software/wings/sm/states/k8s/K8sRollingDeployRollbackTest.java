@@ -22,12 +22,11 @@ import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.STATE_NAME;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
@@ -43,14 +42,12 @@ import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.task.helm.HelmChartInfo;
-import io.harness.deployment.InstanceDetails;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.tasks.ResponseData;
 
-import software.wings.api.InstanceElement;
 import software.wings.api.k8s.K8sContextElement;
 import software.wings.api.k8s.K8sHelmDeploymentElement;
 import software.wings.api.k8s.K8sStateExecutionData;
@@ -198,8 +195,7 @@ public class K8sRollingDeployRollbackTest extends CategoryTest {
         .fetchK8sHelmDeploymentElement(any());
     doNothing()
         .when(k8sRollingDeployRollback)
-        .saveInstanceInfoToSweepingOutput(
-            any(ExecutionContext.class), anyListOf(InstanceElement.class), anyListOf(InstanceDetails.class));
+        .saveInstanceInfoToSweepingOutput(any(ExecutionContext.class), anyList(), anyList());
 
     ExecutionResponse executionResponse = k8sRollingDeployRollback.handleAsyncResponse(context, response);
 
@@ -247,8 +243,7 @@ public class K8sRollingDeployRollbackTest extends CategoryTest {
     doReturn(stateExecutionData).when(context).getStateExecutionData();
     doNothing()
         .when(k8sRollingState)
-        .saveInstanceInfoToSweepingOutput(
-            any(ExecutionContext.class), anyListOf(InstanceElement.class), anyListOf(InstanceDetails.class));
+        .saveInstanceInfoToSweepingOutput(any(ExecutionContext.class), anyList(), anyList());
     k8sRollingState.handleAsyncResponse(context, response);
 
     assertThat(stateExecutionData.getHelmChartInfo()).isEqualTo(helmChartInfo);
@@ -259,8 +254,7 @@ public class K8sRollingDeployRollbackTest extends CategoryTest {
     doReturn(null).when(k8sRollingState).fetchK8sHelmDeploymentElement(context);
     doNothing()
         .when(k8sRollingState)
-        .saveInstanceInfoToSweepingOutput(
-            any(ExecutionContext.class), anyListOf(InstanceElement.class), anyListOf(InstanceDetails.class));
+        .saveInstanceInfoToSweepingOutput(any(ExecutionContext.class), anyList(), anyList());
     k8sRollingState.handleAsyncResponse(context, response);
 
     assertThat(stateExecutionData.getHelmChartInfo()).isNull();

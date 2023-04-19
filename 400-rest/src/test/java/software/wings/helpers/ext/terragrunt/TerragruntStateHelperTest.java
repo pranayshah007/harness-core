@@ -30,8 +30,8 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
@@ -97,8 +97,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.stubbing.Answer;
@@ -441,11 +441,11 @@ public class TerragruntStateHelperTest extends CategoryTest {
   public void testGetSavedTerraformConfig() {
     doReturn(query).when(wingsPersistence).createQuery(any());
     doReturn(query).when(query).filter(any(), any());
-    doReturn(query).when(query).order(Matchers.<Sort>anyVararg());
+    doReturn(query).when(query).order(ArgumentMatchers.<Sort>any());
 
     terragruntStateHelper.getSavedTerraformConfig(APP_ID, ENTITY_ID);
     verify(wingsPersistence).createQuery(TerraformConfig.class);
-    verify(query).order(Matchers.<Sort>anyVararg());
+    verify(query).order(ArgumentMatchers.<Sort>any());
   }
 
   @Test

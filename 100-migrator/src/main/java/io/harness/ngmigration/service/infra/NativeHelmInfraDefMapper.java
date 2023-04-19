@@ -23,7 +23,6 @@ import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
-import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
@@ -40,6 +39,8 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDC)
 public class NativeHelmInfraDefMapper implements InfraDefMapper {
+  static final String DEFAULT_RELEASE_NAME = "release-<+INFRA_KEY>";
+
   @Override
   public ServiceDefinitionType getServiceDefinition(InfrastructureDefinition infrastructureDefinition) {
     return ServiceDefinitionType.NATIVE_HELM;
@@ -72,11 +73,8 @@ public class NativeHelmInfraDefMapper implements InfraDefMapper {
         connectorDetail =
             migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(k8s.getCloudProviderId()).build())
                 .getNgEntityDetail();
-        releaseName = (String) MigratorExpressionUtils.render(
-            migrationContext, k8s.getReleaseName(), migrationContext.getInputDTO().getCustomExpressions());
         return K8SDirectInfrastructure.builder()
-            .releaseName(getExpression(k8s.getExpressions(), DirectKubernetesInfrastructureKeys.releaseName,
-                releaseName, infrastructureDefinition.getProvisionerId()))
+            .releaseName(ParameterField.createValueField(DEFAULT_RELEASE_NAME))
             .namespace(getExpression(k8s.getExpressions(), DirectKubernetesInfrastructureKeys.namespace,
                 k8s.getNamespace(), infrastructureDefinition.getProvisionerId()))
             .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connectorDetail)))
@@ -86,12 +84,9 @@ public class NativeHelmInfraDefMapper implements InfraDefMapper {
         connectorDetail =
             migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(gcpK8s.getCloudProviderId()).build())
                 .getNgEntityDetail();
-        releaseName = (String) MigratorExpressionUtils.render(
-            migrationContext, gcpK8s.getReleaseName(), migrationContext.getInputDTO().getCustomExpressions());
         return K8sGcpInfrastructure.builder()
             .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connectorDetail)))
-            .releaseName(getExpression(gcpK8s.getExpressions(), GoogleKubernetesEngineKeys.releaseName, releaseName,
-                infrastructureDefinition.getProvisionerId()))
+            .releaseName(ParameterField.createValueField(DEFAULT_RELEASE_NAME))
             .cluster(getExpression(gcpK8s.getExpressions(), GoogleKubernetesEngineKeys.clusterName,
                 gcpK8s.getClusterName(), infrastructureDefinition.getProvisionerId()))
             .namespace(getExpression(gcpK8s.getExpressions(), GoogleKubernetesEngineKeys.namespace,

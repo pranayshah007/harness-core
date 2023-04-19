@@ -20,12 +20,12 @@ import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.AdditionalMatchers.and;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.contains;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -471,8 +471,8 @@ public class TerraformClientImplTest extends CategoryTest {
   public void testshowCommand() throws InterruptedException, IOException, TimeoutException {
     doReturn(getCliResponseTfVersion(1, 0, 1))
         .when(cliHelper)
-        .executeCliCommand(and(contains("terraform"), contains("version")), anyLong(),
-            anyMapOf(String.class, String.class), anyString(), any(LogCallback.class));
+        .executeCliCommand(
+            and(contains("terraform"), contains("version")), anyLong(), anyMap(), anyString(), any(LogCallback.class));
 
     CliResponse cliResponse = getCliResponse();
     String plan = "planName";
@@ -495,16 +495,15 @@ public class TerraformClientImplTest extends CategoryTest {
       throws InterruptedException, IOException, TimeoutException {
     doReturn(getCliResponseTfVersion(0, 11, 15))
         .when(cliHelper)
-        .executeCliCommand(and(contains("terraform"), contains("version")), anyLong(),
-            anyMapOf(String.class, String.class), anyString(), any(LogCallback.class));
+        .executeCliCommand(
+            and(contains("terraform"), contains("version")), anyLong(), anyMap(), anyString(), any(LogCallback.class));
 
     CliResponse cliResponse = terraformClientImpl.show("planName", DEFAULT_TERRAFORM_COMMAND_TIMEOUT,
         Collections.emptyMap(), SCRIPT_FILES_DIRECTORY, logCallback, planJsonLogOutputStream);
 
     verify(cliHelper, never())
-        .executeCliCommand(and(contains("terraform show"), contains("-json")), anyLong(),
-            anyMapOf(String.class, String.class), anyString(), any(LogCallback.class), anyString(),
-            any(LogOutputStream.class), any(), anyLong());
+        .executeCliCommand(and(contains("terraform show"), contains("-json")), anyLong(), anyMap(), anyString(),
+            any(LogCallback.class), anyString(), any(LogOutputStream.class), any(), anyLong());
     assertThat(cliResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SKIPPED);
   }
 
@@ -515,8 +514,8 @@ public class TerraformClientImplTest extends CategoryTest {
       throws InterruptedException, IOException, TimeoutException {
     doReturn(getCliResponseTfVersion(0, 11, 15))
         .when(cliHelper)
-        .executeCliCommand(and(contains("terraform"), contains("version")), anyLong(),
-            anyMapOf(String.class, String.class), anyString(), any(LogCallback.class));
+        .executeCliCommand(
+            and(contains("terraform"), contains("version")), anyLong(), anyMap(), anyString(), any(LogCallback.class));
 
     terraformClientImpl.show("planName", DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(),
         SCRIPT_FILES_DIRECTORY, logCallback, planJsonLogOutputStream);
@@ -535,20 +534,20 @@ public class TerraformClientImplTest extends CategoryTest {
       throws InterruptedException, IOException, TimeoutException {
     doReturn(getCliResponseTfVersion(0, 12, 0))
         .when(cliHelper)
-        .executeCliCommand(and(contains("terraform"), contains("version")), anyLong(),
-            anyMapOf(String.class, String.class), anyString(), any(LogCallback.class));
+        .executeCliCommand(
+            and(contains("terraform"), contains("version")), anyLong(), anyMap(), anyString(), any(LogCallback.class));
 
     doReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
         .when(cliHelper)
-        .executeCliCommand(contains("terraform"), anyLong(), anyMapOf(String.class, String.class), anyString(),
-            any(LogCallback.class), contains("terraform"), any(LogOutputStream.class), any(), anyLong());
+        .executeCliCommand(contains("terraform"), anyLong(), anyMap(), anyString(), any(LogCallback.class),
+            contains("terraform"), any(LogOutputStream.class), any(), anyLong());
 
     terraformClientImpl.show("planName", DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(),
         SCRIPT_FILES_DIRECTORY, logCallback, planJsonLogOutputStream);
 
     ArgumentCaptor<String> commandCaptor = ArgumentCaptor.forClass(String.class);
-    verify(cliHelper).executeCliCommand(commandCaptor.capture(), anyLong(), anyMapOf(String.class, String.class),
-        anyString(), any(LogCallback.class), anyString(), any(LogOutputStream.class), any(), anyLong());
+    verify(cliHelper).executeCliCommand(commandCaptor.capture(), anyLong(), anyMap(), anyString(),
+        any(LogCallback.class), anyString(), any(LogOutputStream.class), any(), anyLong());
     assertThat(commandCaptor.getAllValues().get(0)).contains("terraform show");
     assertThat(commandCaptor.getAllValues().get(0)).contains("-json");
   }
@@ -560,20 +559,20 @@ public class TerraformClientImplTest extends CategoryTest {
       throws InterruptedException, IOException, TimeoutException {
     doReturn(getCliResponseTfVersion(1, 0, 1))
         .when(cliHelper)
-        .executeCliCommand(and(contains("terraform"), contains("version")), anyLong(),
-            anyMapOf(String.class, String.class), anyString(), any(LogCallback.class));
+        .executeCliCommand(
+            and(contains("terraform"), contains("version")), anyLong(), anyMap(), anyString(), any(LogCallback.class));
 
     doReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
         .when(cliHelper)
-        .executeCliCommand(contains("terraform"), anyLong(), anyMapOf(String.class, String.class), anyString(),
-            any(LogCallback.class), contains("terraform"), any(LogOutputStream.class), any(), anyLong());
+        .executeCliCommand(contains("terraform"), anyLong(), anyMap(), anyString(), any(LogCallback.class),
+            contains("terraform"), any(LogOutputStream.class), any(), anyLong());
 
     terraformClientImpl.show("planName", DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(),
         SCRIPT_FILES_DIRECTORY, logCallback, planJsonLogOutputStream);
 
     ArgumentCaptor<String> commandCaptor = ArgumentCaptor.forClass(String.class);
-    verify(cliHelper).executeCliCommand(commandCaptor.capture(), anyLong(), anyMapOf(String.class, String.class),
-        anyString(), any(LogCallback.class), anyString(), any(LogOutputStream.class), any(), anyLong());
+    verify(cliHelper).executeCliCommand(commandCaptor.capture(), anyLong(), anyMap(), anyString(),
+        any(LogCallback.class), anyString(), any(LogOutputStream.class), any(), anyLong());
     assertThat(commandCaptor.getAllValues().get(0)).contains("terraform show");
     assertThat(commandCaptor.getAllValues().get(0)).contains("-json");
   }

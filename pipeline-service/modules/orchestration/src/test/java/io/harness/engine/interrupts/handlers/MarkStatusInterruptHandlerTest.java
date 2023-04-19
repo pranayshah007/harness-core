@@ -89,7 +89,9 @@ public class MarkStatusInterruptHandlerTest extends CategoryTest {
     interruptBuilder.nodeExecutionId(nodeExecutionId);
     assertThatThrownBy(() -> markStatusInterruptHandler.registerInterrupt(interruptBuilder.build()))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("NodeExecution is not in a finalizable or broken status. Current Status: " + Status.RUNNING);
+        .hasMessage("Failed to interrupt node execution " + InterruptType.MARK_EXPIRED
+            + ". Either another interrupt is already in process or the current status: " + Status.RUNNING
+            + "does not allow interruption");
 
     doReturn(NodeExecution.builder().status(FAILED).build())
         .when(nodeExecutionService)

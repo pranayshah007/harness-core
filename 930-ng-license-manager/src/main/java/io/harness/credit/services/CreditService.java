@@ -17,5 +17,5 @@ import java.util.List;
 public interface CreditService {
   List<CreditDTO> getCredits(String accountIdentifier);
 
-  void purchaseCredits(String accountIdentifier);
+  CreditDTO purchaseCredit(String accountIdentifier, CreditDTO creditDTO);
 }

@@ -56,6 +56,7 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
+import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
 @Slf4j
@@ -133,6 +134,22 @@ public class SecretMigrationService extends NgMigrationService {
       return migrateSecretFile(inputDTO.getDestinationAuthToken(), ngClient, inputDTO, yamlFile);
     }
     // If the secret type is SecretFile then we use the YAML API to create.
+    if (secretRequestWrapper.getSecret().getType().equals(SecretType.SecretFile)
+        && StringUtils.isNoneBlank(
+            secretRequestWrapper.getEncryptionKey(), secretRequestWrapper.getEncryptionValue())) {
+      RequestBody spec = RequestBody.create(MediaType.parse("text/plain"), JsonUtils.asJson(secretRequestWrapper));
+      Response<ResponseDTO<SecretResponseWrapper>> resp =
+          ngClient
+              .createSecretFileInternal(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                  secretRequestWrapper.getSecret().getOrgIdentifier(),
+                  secretRequestWrapper.getSecret().getProjectIdentifier(), secretRequestWrapper.getEncryptionKey(),
+                  secretRequestWrapper.getEncryptionValue(), spec)
+              .execute();
+      log.info("Secret creation using internal API Response details {} {}", resp.code(), resp.message());
+      return handleResp(yamlFile, resp);
+    }
+
+    // If the secret type is SecretFile then we use the YAML API to create.
     if (secretRequestWrapper.getSecret().getType().equals(SecretType.SecretFile)) {
       Response<ResponseDTO<SecretResponseWrapper>> resp =
           ngClient
@@ -197,6 +214,8 @@ public class SecretMigrationService extends NgMigrationService {
                               .type(NGMigrationEntityType.SECRET)
                               .filename("secret/" + name + ".yaml")
                               .yaml(CustomSecretRequestWrapper.builder()
+                                        .encryptionKey(secretFactory.getEncryptionKey(encryptedData, entities))
+                                        .encryptionValue(secretFactory.getEncryptionValue(encryptedData, entities))
                                         .fileContent(secretFactory.getSecretFileContent(encryptedData, entities))
                                         .secret(secretDTOV2)
                                         .build())

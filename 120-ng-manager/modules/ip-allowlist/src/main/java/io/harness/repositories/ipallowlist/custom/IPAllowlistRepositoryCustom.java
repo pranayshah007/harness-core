@@ -7,4 +7,12 @@
 
 package io.harness.repositories.ipallowlist.custom;
 
-public interface IPAllowlistRepositoryCustom {}
+import io.harness.ipallowlist.entity.IPAllowlistEntity;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.query.Criteria;
+
+public interface IPAllowlistRepositoryCustom {
+  Page<IPAllowlistEntity> findAll(Criteria criteria, Pageable pageable);
+}

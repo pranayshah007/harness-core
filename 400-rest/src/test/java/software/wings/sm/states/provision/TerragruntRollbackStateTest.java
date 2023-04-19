@@ -24,10 +24,10 @@ import static software.wings.utils.WingsTestConstants.WORKSPACE;
 
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -130,12 +130,10 @@ public class TerragruntRollbackStateTest extends WingsBaseTest {
         extractVariablesOfType.apply("TEXT", toMap(NameValuePair::getName, NameValuePair::getValue));
     Answer doExtractEncryptedVariables = extractVariablesOfType.apply("ENCRYPTED_TEXT",
         toMap(NameValuePair::getName, entry -> EncryptedDataDetail.builder().fieldName(entry.getName()).build()));
-    doAnswer(doExtractTextVariables)
-        .when(infrastructureProvisionerService)
-        .extractUnresolvedTextVariables(anyListOf(NameValuePair.class));
+    doAnswer(doExtractTextVariables).when(infrastructureProvisionerService).extractUnresolvedTextVariables(anyList());
     doAnswer(doExtractEncryptedVariables)
         .when(infrastructureProvisionerService)
-        .extractEncryptedTextVariables(anyListOf(NameValuePair.class), anyString(), any());
+        .extractEncryptedTextVariables(anyList(), anyString(), any());
     doAnswer(doReturnSameValue).when(executionContext).renderExpression(anyString());
     when(executionContext.getAppId()).thenReturn(APP_ID);
   }

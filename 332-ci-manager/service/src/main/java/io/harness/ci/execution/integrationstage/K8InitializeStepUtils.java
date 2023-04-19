@@ -362,7 +362,7 @@ public class K8InitializeStepUtils {
       setEnvVariablesForHostedBuids(stageNode, stepInfo, envVarMap);
     }
     envVarMap.putAll(pluginSettingUtils.getPluginCompatibleEnvVariables(
-        stepInfo, identifier, timeout, ambiance, StageInfraDetails.Type.K8, false));
+        stepInfo, identifier, timeout, ambiance, StageInfraDetails.Type.K8, false, true));
     Integer runAsUser = resolveIntegerParameter(stepInfo.getRunAsUser(), null);
 
     Map<String, SecretNGVariable> secretVarMap = new HashMap<>();

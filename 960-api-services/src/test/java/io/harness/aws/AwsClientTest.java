@@ -11,15 +11,17 @@ import static io.harness.rule.OwnerRule.NGONZALEZ;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.doReturn;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.spy;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.aws.util.AwsCallTracker;
@@ -40,13 +42,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedConstruction;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({CloseableAmazonWebServiceClient.class})
+@RunWith(MockitoJUnitRunner.class)
 public class AwsClientTest extends CategoryTest {
   @Mock private AwsApiHelperService awsApiHelperService;
   @InjectMocks private AwsClientImpl mockCFAWSClient;
@@ -54,28 +53,27 @@ public class AwsClientTest extends CategoryTest {
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
-  @PrepareForTest(CloseableAmazonWebServiceClient.class)
   public void testGetListIAMRoles() throws Exception {
     AmazonIdentityManagementClient client = mock(AmazonIdentityManagementClient.class);
-    CloseableAmazonWebServiceClient mockCloseable = mock(CloseableAmazonWebServiceClient.class);
     AwsClientImpl service = spy(new AwsClientImpl());
-    PowerMockito.whenNew(CloseableAmazonWebServiceClient.class).withAnyArguments().thenReturn(mockCloseable);
     doReturn(client).when(service).getAmazonIdentityManagementClient(any());
-    ListRolesResult result = new ListRolesResult().withRoles(new Role().withRoleName("test"));
-    doReturn(client).when(mockCloseable).getClient();
-    doReturn(result).when(client).listRoles(any());
-    AwsCallTracker mockTracker = Mockito.mock(AwsCallTracker.class);
-    doNothing().when(mockTracker).trackCFCall(anyString());
-    on(service).set("tracker", mockTracker);
-    Map<String, String> map = service.listIAMRoles(any());
-    assertThat(map.size()).isEqualTo(1);
+    try (MockedConstruction<CloseableAmazonWebServiceClient> ignored = mockConstruction(
+             CloseableAmazonWebServiceClient.class, (mock, context) -> when(mock.getClient()).thenReturn(client))) {
+      ListRolesResult result = new ListRolesResult().withRoles(new Role().withRoleName("test"));
+      doReturn(result).when(client).listRoles(any());
+      AwsCallTracker mockTracker = mock(AwsCallTracker.class);
+      doNothing().when(mockTracker).trackCFCall(anyString());
+      on(service).set("tracker", mockTracker);
+      Map<String, String> map = service.listIAMRoles(any());
+      assertThat(map.size()).isEqualTo(1);
+    }
   }
 
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void checkServiceException() throws Exception {
-    AwsClientImpl service = Mockito.spy(mockCFAWSClient);
+    AwsClientImpl service = spy(mockCFAWSClient);
     doThrow(AmazonServiceException.class).when(service).getAmazonIdentityManagementClient(any());
     service.listIAMRoles(any());
     verify(awsApiHelperService, times(1)).handleAmazonServiceException(any());
@@ -85,7 +83,7 @@ public class AwsClientTest extends CategoryTest {
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void checkClientException() throws Exception {
-    AwsClientImpl service = Mockito.spy(mockCFAWSClient);
+    AwsClientImpl service = spy(mockCFAWSClient);
     doThrow(AmazonClientException.class).when(service).getAmazonIdentityManagementClient(any());
     service.listIAMRoles(any());
     verify(awsApiHelperService, times(1)).handleAmazonClientException(any());
@@ -95,7 +93,7 @@ public class AwsClientTest extends CategoryTest {
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void checkGeneralException() throws Exception {
-    AwsClientImpl service = Mockito.spy(mockCFAWSClient);
+    AwsClientImpl service = spy(mockCFAWSClient);
     doThrow(Exception.class).when(service).getAmazonIdentityManagementClient(any());
     service.listIAMRoles(any());
   }

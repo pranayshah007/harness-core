@@ -50,6 +50,8 @@ public abstract class UserSourceCodeManager {
   @CreatedDate Long createdAt;
   @LastModifiedDate Long lastModifiedAt;
   @NotEmpty SCMType type;
+  String userName;
+  String userEmail;
   public abstract SCMType getType();
 
   public static List<MongoIndex> mongoIndexes() {

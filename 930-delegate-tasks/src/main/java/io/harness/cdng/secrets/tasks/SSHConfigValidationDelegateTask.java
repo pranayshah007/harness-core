@@ -27,7 +27,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.SshSessionFactory;
-import io.harness.shell.ssh.SshFactory;
+import io.harness.shell.ssh.SshClientManager;
 
 import com.google.inject.Inject;
 import com.jcraft.jsch.Session;
@@ -85,7 +85,7 @@ public class SSHConfigValidationDelegateTask extends AbstractDelegateRunnableTas
     sshSessionConfig.setPort(sshTaskParams.getSshKeySpec().getPort());
     try {
       if (sshSessionConfig.isUseSshClient()) {
-        SshFactory.getSshClient(sshSessionConfig).testConnection();
+        SshClientManager.test(sshSessionConfig);
       } else {
         Session session = SshSessionFactory.getSSHSession(sshSessionConfig);
         session.disconnect();

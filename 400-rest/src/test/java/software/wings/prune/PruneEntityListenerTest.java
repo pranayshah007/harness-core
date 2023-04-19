@@ -10,12 +10,10 @@ package software.wings.prune;
 import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
 import static io.harness.rule.OwnerRule.GEORGE;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.matches;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,12 +34,15 @@ import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.LogService;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.google.inject.Inject;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PruneEntityListenerTest extends WingsBaseTest {
   @Mock private WingsPersistence wingsPersistence;
@@ -65,12 +66,13 @@ public class PruneEntityListenerTest extends WingsBaseTest {
   public void unhandledClass() throws Exception {
     when(wingsPersistence.get(Base.class, ENTITY_ID)).thenReturn(null);
 
-    Logger mockLogger = mock(Logger.class);
-    setStaticFieldValue(PruneEntityListener.class, "log", mockLogger);
+    ListAppender<ILoggingEvent> listAppender = initLogger(PruneEntityListener.class);
 
     listener.onMessage(new PruneEvent(Base.class, APP_ID, ENTITY_ID));
 
-    verify(mockLogger, times(1)).error(anyString(), matches(Base.class.getCanonicalName()));
+    assertThat(listAppender.list).hasSize(2);
+    assertThat(listAppender.list.get(1).getFormattedMessage())
+        .isEqualTo(String.format("Unsupported class [%s] was scheduled for pruning.", Base.class.getCanonicalName()));
     verify(environmentService, times(0)).pruneDescendingEntities(APP_ID, ENTITY_ID);
   }
 
@@ -102,9 +104,6 @@ public class PruneEntityListenerTest extends WingsBaseTest {
     WingsException exception = new WingsException(DEFAULT_ERROR_CODE);
     doThrow(exception).when(logService).pruneByActivity(APP_ID, ENTITY_ID);
 
-    Logger mockLogger = mock(Logger.class);
-    setStaticFieldValue(PruneEntityListener.class, "log", mockLogger);
-
     assertThatThrownBy(() -> listener.onMessage(new PruneEvent(Activity.class, APP_ID, ENTITY_ID)))
         .isInstanceOf(WingsException.class)
         .hasMessage("The prune failed this time");
@@ -121,5 +120,13 @@ public class PruneEntityListenerTest extends WingsBaseTest {
 
       listener.onMessage(new PruneEvent(Application.class, APP_ID, ENTITY_ID));
     }).doesNotThrowAnyException();
+  }
+
+  private <T> ListAppender<ILoggingEvent> initLogger(Class<T> aClass) {
+    Logger logger = (Logger) LoggerFactory.getLogger(aClass);
+    ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+    listAppender.start();
+    logger.addAppender(listAppender);
+    return listAppender;
   }
 }
