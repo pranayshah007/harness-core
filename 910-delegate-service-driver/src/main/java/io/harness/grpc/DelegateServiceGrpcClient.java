@@ -76,11 +76,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -388,19 +386,20 @@ public class DelegateServiceGrpcClient {
       taskDetailsBuilder.setKryoParameters(
           ByteString.copyFrom(referenceFalseKryoSerializer.asDeflatedBytes(taskParameters)));
     }
-
-    Map<String, String> abstractionsMap = getAbstractionsMap(taskRequest.getLogStreamingAbstractions());
-
-    TaskLogAbstractions.Builder builder = TaskLogAbstractions.newBuilder().putAllValues(abstractionsMap);
+    TaskLogAbstractions.Builder builder =
+        TaskLogAbstractions.newBuilder().putAllValues(MapUtils.emptyIfNull(taskRequest.getLogStreamingAbstractions()));
 
     builder.setShouldSkipOpenStream(taskRequest.isShouldSkipOpenStream());
     builder.setBaseLogKey(taskRequest.getBaseLogKey() == null ? "" : taskRequest.getBaseLogKey());
 
     return submitTaskV2(delegateCallbackToken, AccountId.newBuilder().setId(taskRequest.getAccountId()).build(),
-        TaskSetupAbstractions.newBuilder().putAllValues(abstractionsMap).build(), builder.build(),
-        taskDetailsBuilder.build(), capabilities, taskRequest.getTaskSelectors(), holdFor, taskRequest.isForceExecute(),
-        taskRequest.isExecuteOnHarnessHostedDelegates(), taskRequest.getEligibleToExecuteDelegateIds(),
-        taskRequest.isEmitEvent(), taskRequest.getStageId(), delegateSelectionTrackingLogEnabled);
+        TaskSetupAbstractions.newBuilder()
+            .putAllValues(MapUtils.emptyIfNull(taskRequest.getTaskSetupAbstractions()))
+            .build(),
+        builder.build(), taskDetailsBuilder.build(), capabilities, taskRequest.getTaskSelectors(), holdFor,
+        taskRequest.isForceExecute(), taskRequest.isExecuteOnHarnessHostedDelegates(),
+        taskRequest.getEligibleToExecuteDelegateIds(), taskRequest.isEmitEvent(), taskRequest.getStageId(),
+        delegateSelectionTrackingLogEnabled);
   }
 
   public TaskExecutionStage cancelTask(AccountId accountId, TaskId taskId) {
@@ -536,13 +535,5 @@ public class DelegateServiceGrpcClient {
     } catch (StatusRuntimeException ex) {
       throw new DelegateServiceDriverException("Unexpected error occurred while checking if task is supported.", ex);
     }
-  }
-
-  static Map<String, String> getAbstractionsMap(Map<String, String> map) {
-    return MapUtils.emptyIfNull(map)
-        .entrySet()
-        .stream()
-        .filter(entry -> isNotEmpty(entry.getValue()))
-        .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
   }
 }
