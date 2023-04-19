@@ -13,11 +13,11 @@ import static io.harness.rule.OwnerRule.UTSAV;
 import static software.wings.beans.TaskType.CE_VALIDATE_KUBERNETES_CONFIG;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -111,7 +111,7 @@ public class CEKubernetesConnectionValidatorTest extends CategoryTest {
     when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.empty());
     ceKubernetesConnectionValidator.validate(ceKubernetesClusterConfigDTO, ACCOUNT_ID, null, null, null);
 
-    verifyZeroInteractions(delegateGrpcClientWrapper);
+    verifyNoInteractions(delegateGrpcClientWrapper);
     verify(connectorService, times(1)).get(any(), any(), any(), eq(CONNECTOR_IDENTIFIER));
   }
 
@@ -150,8 +150,8 @@ public class CEKubernetesConnectionValidatorTest extends CategoryTest {
     final ConnectorValidationResult connectorValidationResult =
         ceKubernetesConnectionValidator.validate(ceKubernetesClusterConfigDTO, null, null, null, null);
 
-    verifyZeroInteractions(delegateGrpcClientWrapper);
-    verifyZeroInteractions(connectorService);
+    verifyNoInteractions(delegateGrpcClientWrapper);
+    verifyNoInteractions(connectorService);
   }
 
   @Test

@@ -73,6 +73,7 @@ public interface NodeExecutionService {
    * @return NodeExecutions with all properties
    */
   List<NodeExecution> getAll(Set<String> nodeExecutionIds);
+  List<NodeExecution> getAllWithFieldIncluded(Set<String> nodeExecutionIds, Set<String> fieldsToInclude);
 
   /**
    * Fetches all step nodeExecutions with given projected fields, checks stepCategory should be step

@@ -13,11 +13,11 @@ import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.PRAGYESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -75,15 +75,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ServerlessCommandTaskHelper.class})
+@RunWith(MockitoJUnitRunner.class)
 @OwnedBy(CDP)
 public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -237,17 +235,18 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
     ServerlessDelegateTaskParams serverlessDelegateTaskParams =
         ServerlessDelegateTaskParams.builder().workingDirectory("workingDir").build();
 
-    Mockito.mockStatic(ServerlessCommandTaskHelper.class);
-    PowerMockito.when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any()))
-        .thenReturn(response);
+    try (MockedStatic<ServerlessCommandTaskHelper> ignored = Mockito.mockStatic(ServerlessCommandTaskHelper.class)) {
+      when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any()))
+          .thenReturn(response);
 
-    ServerlessCliResponse serverlessCliResponse = serverlessAwsCommandTaskHelper.configCredential(serverlessClient,
-        serverlessAwsLambdaConfig, serverlessDelegateTaskParams, logCallback, true, 30000, new HashMap<>());
+      ServerlessCliResponse serverlessCliResponse = serverlessAwsCommandTaskHelper.configCredential(serverlessClient,
+          serverlessAwsLambdaConfig, serverlessDelegateTaskParams, logCallback, true, 30000, new HashMap<>());
 
-    PowerMockito.verifyStatic(ServerlessCommandTaskHelper.class, times(1));
-    ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any());
+      verify(ServerlessCommandTaskHelper.class, times(1));
+      ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any());
 
-    assertThat(serverlessCliResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+      assertThat(serverlessCliResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    }
   }
 
   @Test
@@ -256,18 +255,19 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
   public void deploySuccessTest() throws IOException, InterruptedException, TimeoutException {
     ServerlessClient serverlessClient = ServerlessClient.client("");
 
-    Mockito.mockStatic(ServerlessCommandTaskHelper.class);
-    PowerMockito.when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any()))
-        .thenReturn(response);
+    try (MockedStatic<ServerlessCommandTaskHelper> ignored = Mockito.mockStatic(ServerlessCommandTaskHelper.class)) {
+      when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any()))
+          .thenReturn(response);
 
-    ServerlessCliResponse serverlessCliResponse = serverlessAwsCommandTaskHelper.deploy(serverlessClient,
-        serverlessDelegateTaskParams, logCallback, serverlessAwsLambdaDeployConfig, serverlessAwsLambdaInfraConfig,
-        30000, serverlessAwsLambdaManifestConfig, new HashMap<>());
+      ServerlessCliResponse serverlessCliResponse = serverlessAwsCommandTaskHelper.deploy(serverlessClient,
+          serverlessDelegateTaskParams, logCallback, serverlessAwsLambdaDeployConfig, serverlessAwsLambdaInfraConfig,
+          30000, serverlessAwsLambdaManifestConfig, new HashMap<>());
 
-    PowerMockito.verifyStatic(ServerlessCommandTaskHelper.class, times(1));
-    ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any());
+      verify(ServerlessCommandTaskHelper.class, times(1));
+      ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any());
 
-    assertThat(serverlessCliResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+      assertThat(serverlessCliResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    }
   }
 
   @Test
@@ -276,18 +276,19 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
   public void deployListTest() throws IOException, InterruptedException, TimeoutException {
     ServerlessClient serverlessClient = ServerlessClient.client("");
 
-    Mockito.mockStatic(ServerlessCommandTaskHelper.class);
-    PowerMockito.when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any()))
-        .thenReturn(response);
+    try (MockedStatic<ServerlessCommandTaskHelper> ignored = Mockito.mockStatic(ServerlessCommandTaskHelper.class)) {
+      when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any()))
+          .thenReturn(response);
 
-    ServerlessCliResponse serverlessCliResponse =
-        serverlessAwsCommandTaskHelper.deployList(serverlessClient, serverlessDelegateTaskParams, logCallback,
-            serverlessAwsLambdaInfraConfig, 30000, serverlessAwsLambdaManifestConfig, new HashMap<>());
+      ServerlessCliResponse serverlessCliResponse =
+          serverlessAwsCommandTaskHelper.deployList(serverlessClient, serverlessDelegateTaskParams, logCallback,
+              serverlessAwsLambdaInfraConfig, 30000, serverlessAwsLambdaManifestConfig, new HashMap<>());
 
-    PowerMockito.verifyStatic(ServerlessCommandTaskHelper.class, times(1));
-    ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any());
+      verify(ServerlessCommandTaskHelper.class, times(1));
+      ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any());
 
-    assertThat(serverlessCliResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+      assertThat(serverlessCliResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    }
   }
 
   @Test
@@ -296,18 +297,19 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
   public void removeTest() throws IOException, InterruptedException, TimeoutException {
     ServerlessClient serverlessClient = ServerlessClient.client("");
 
-    Mockito.mockStatic(ServerlessCommandTaskHelper.class);
-    PowerMockito.when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any()))
-        .thenReturn(response);
+    try (MockedStatic<ServerlessCommandTaskHelper> ignored = Mockito.mockStatic(ServerlessCommandTaskHelper.class)) {
+      when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any()))
+          .thenReturn(response);
 
-    ServerlessCliResponse serverlessCliResponse =
-        serverlessAwsCommandTaskHelper.remove(serverlessClient, serverlessDelegateTaskParams, logCallback, 30000,
-            serverlessAwsLambdaManifestConfig, serverlessAwsLambdaInfraConfig, new HashMap<>());
+      ServerlessCliResponse serverlessCliResponse =
+          serverlessAwsCommandTaskHelper.remove(serverlessClient, serverlessDelegateTaskParams, logCallback, 30000,
+              serverlessAwsLambdaManifestConfig, serverlessAwsLambdaInfraConfig, new HashMap<>());
 
-    PowerMockito.verifyStatic(ServerlessCommandTaskHelper.class, times(1));
-    ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any());
+      verify(ServerlessCommandTaskHelper.class, times(1));
+      ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any());
 
-    assertThat(serverlessCliResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+      assertThat(serverlessCliResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    }
   }
 
   @Test
@@ -318,18 +320,19 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
     ServerlessAwsLambdaRollbackConfig serverlessAwsLambdaRollbackConfig =
         ServerlessAwsLambdaRollbackConfig.builder().previousVersionTimeStamp("123").build();
 
-    Mockito.mockStatic(ServerlessCommandTaskHelper.class);
-    PowerMockito.when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any()))
-        .thenReturn(response);
+    try (MockedStatic<ServerlessCommandTaskHelper> ignored = Mockito.mockStatic(ServerlessCommandTaskHelper.class)) {
+      when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any()))
+          .thenReturn(response);
 
-    ServerlessCliResponse serverlessCliResponse = serverlessAwsCommandTaskHelper.rollback(serverlessClient,
-        serverlessDelegateTaskParams, logCallback, serverlessAwsLambdaRollbackConfig, 30000,
-        serverlessAwsLambdaManifestConfig, serverlessAwsLambdaInfraConfig, new HashMap<>());
+      ServerlessCliResponse serverlessCliResponse = serverlessAwsCommandTaskHelper.rollback(serverlessClient,
+          serverlessDelegateTaskParams, logCallback, serverlessAwsLambdaRollbackConfig, 30000,
+          serverlessAwsLambdaManifestConfig, serverlessAwsLambdaInfraConfig, new HashMap<>());
 
-    PowerMockito.verifyStatic(ServerlessCommandTaskHelper.class, times(1));
-    ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any());
+      verify(ServerlessCommandTaskHelper.class, times(1));
+      ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any());
 
-    assertThat(serverlessCliResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+      assertThat(serverlessCliResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    }
   }
 
   @Test
@@ -571,16 +574,17 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
                                                   + "  runtime: nodejs14.x\n"
                                                   + "  stackName: testStack")
                                               .build();
-    Mockito.mockStatic(ServerlessCommandTaskHelper.class);
-    PowerMockito.when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any()))
-        .thenReturn(printResponse);
-    Optional<String> stack = serverlessAwsCommandTaskHelper.getCustomCloudFormationStackName(
-        ServerlessClient.client("abc"), serverlessDelegateTaskParams, logCallback, 500L,
-        ServerlessAwsLambdaManifestConfig.builder().build(), new HashMap<>());
-    PowerMockito.verifyStatic(ServerlessCommandTaskHelper.class, times(1));
-    ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any());
-    assertThat(stack.isPresent()).isEqualTo(true);
-    assertThat(stack.get()).isEqualTo("testStack");
+    try (MockedStatic<ServerlessCommandTaskHelper> ignored = Mockito.mockStatic(ServerlessCommandTaskHelper.class)) {
+      when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any()))
+          .thenReturn(printResponse);
+      Optional<String> stack = serverlessAwsCommandTaskHelper.getCustomCloudFormationStackName(
+          ServerlessClient.client("abc"), serverlessDelegateTaskParams, logCallback, 500L,
+          ServerlessAwsLambdaManifestConfig.builder().build(), new HashMap<>());
+      verify(ServerlessCommandTaskHelper.class, times(1));
+      ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any());
+      assertThat(stack.isPresent()).isEqualTo(true);
+      assertThat(stack.get()).isEqualTo("testStack");
+    }
   }
 
   @Test
@@ -594,14 +598,15 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
                                                   + "  name: aws\n"
                                                   + "  runtime: nodejs14.x")
                                               .build();
-    Mockito.mockStatic(ServerlessCommandTaskHelper.class);
-    PowerMockito.when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any()))
-        .thenReturn(printResponse);
-    Optional<String> stack = serverlessAwsCommandTaskHelper.getCustomCloudFormationStackName(
-        ServerlessClient.client("abc"), serverlessDelegateTaskParams, logCallback, 500L,
-        ServerlessAwsLambdaManifestConfig.builder().build(), new HashMap<>());
-    PowerMockito.verifyStatic(ServerlessCommandTaskHelper.class, times(1));
-    ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any());
-    assertThat(stack.isPresent()).isEqualTo(false);
+    try (MockedStatic<ServerlessCommandTaskHelper> ignored = Mockito.mockStatic(ServerlessCommandTaskHelper.class)) {
+      when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any()))
+          .thenReturn(printResponse);
+      Optional<String> stack = serverlessAwsCommandTaskHelper.getCustomCloudFormationStackName(
+          ServerlessClient.client("abc"), serverlessDelegateTaskParams, logCallback, 500L,
+          ServerlessAwsLambdaManifestConfig.builder().build(), new HashMap<>());
+      verify(ServerlessCommandTaskHelper.class, times(1));
+      ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any());
+      assertThat(stack.isPresent()).isEqualTo(false);
+    }
   }
 }

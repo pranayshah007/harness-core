@@ -10,7 +10,7 @@ package io.harness.pms.sdk.core.execution;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAHIL;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;

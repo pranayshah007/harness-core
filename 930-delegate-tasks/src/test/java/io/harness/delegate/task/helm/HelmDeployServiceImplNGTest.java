@@ -33,14 +33,13 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -739,8 +738,8 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
              any(), eq("release"), eq("default"), eq(helmRollbackCommandRequestNG.getTimeoutInMillis())))
         .thenReturn(containerInfosDefault1);
 
-    when(k8sTaskHelperBase.doStatusCheckForAllResources(any(Kubectl.class), anyListOf(KubernetesResourceId.class),
-             any(), anyString(), any(), anyBoolean(), anyBoolean()))
+    when(k8sTaskHelperBase.doStatusCheckForAllResources(
+             any(Kubectl.class), anyList(), any(), anyString(), any(), anyBoolean(), anyBoolean()))
         .thenReturn(true);
 
     return helmDeployService.rollback(request);

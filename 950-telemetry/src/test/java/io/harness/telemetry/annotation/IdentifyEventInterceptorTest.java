@@ -139,6 +139,6 @@ public class IdentifyEventInterceptorTest extends TelemetrySdkTestBase {
     Mockito.when(sendIdentifyEvent.destinations()).thenReturn(new Destination[] {Destination.NATERO});
 
     identifyEventInterceptor.processIdentifyEvent(sendIdentifyEvent, ARGUMENTS);
-    Mockito.verifyZeroInteractions(segmentReporterImpl);
+    Mockito.verifyNoInteractions(segmentReporterImpl);
   }
 }

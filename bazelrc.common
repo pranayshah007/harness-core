@@ -13,6 +13,26 @@ build --java_runtime_version=local_jdk
 
 build --tool_java_language_version=11
 build --tool_java_runtime_version=local_jdk
+build --javacopt='--release 11'
+
+# Use JDK17 targeting JDK11 --config=jdk1711
+build:jdk1711 --jvmopt="--add-exports java.xml/com.sun.org.apache.xerces.internal.parsers=ALL-UNNAMED"
+build:jdk1711 --jvmopt="--add-opens java.base/java.lang=ALL-UNNAMED"
+build:jdk1711 --jvmopt="--add-opens java.base/java.math=ALL-UNNAMED"
+build:jdk1711 --jvmopt="--add-opens java.base/java.time=ALL-UNNAMED"
+build:jdk1711 --jvmopt="--add-opens java.base/java.util=ALL-UNNAMED"
+build:jdk1711 --jvmopt="--add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED"
+
+# Use JDK17 --config=jdk17
+build:jdk17 --java_language_version=17
+build:jdk17 --tool_java_language_version=17
+build:jdk17 --javacopt='--release 17'
+build:jdk17 --jvmopt="--add-exports java.xml/com.sun.org.apache.xerces.internal.parsers=ALL-UNNAMED"
+build:jdk17 --jvmopt="--add-opens java.base/java.lang=ALL-UNNAMED"
+build:jdk17 --jvmopt="--add-opens java.base/java.math=ALL-UNNAMED"
+build:jdk17 --jvmopt="--add-opens java.base/java.time=ALL-UNNAMED"
+build:jdk17 --jvmopt="--add-opens java.base/java.util=ALL-UNNAMED"
+build:jdk17 --jvmopt="--add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED"
 
 build --enable_platform_specific_config
 
@@ -24,7 +44,6 @@ build --experimental_strict_java_deps=off
 build --java_header_compilation=false
 build --javacopt='-XepDisableAllChecks'
 build --javacopt='-Xlint:none'
-build --javacopt='--release 11'
 
 #CV-Nextgen
 build --action_env=VERIFICATION_SERVICE_SECRET=67d9b94d9856665afc21acd3aa745401

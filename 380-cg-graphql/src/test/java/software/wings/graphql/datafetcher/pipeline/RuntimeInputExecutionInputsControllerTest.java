@@ -10,10 +10,10 @@ package software.wings.graphql.datafetcher.pipeline;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 
 import static junit.framework.TestCase.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -31,7 +31,6 @@ import software.wings.beans.WorkflowExecution;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.graphql.datafetcher.execution.PipelineExecutionController;
 import software.wings.graphql.datafetcher.execution.RuntimeInputExecutionInputsController;
-import software.wings.graphql.schema.mutation.execution.input.QLVariableInput;
 import software.wings.graphql.schema.query.QLExecutionInputsToResumePipelineQueryParams;
 import software.wings.service.impl.security.auth.AuthHandler;
 import software.wings.service.intfc.PipelineService;
@@ -82,9 +81,9 @@ public class RuntimeInputExecutionInputsControllerTest extends WingsBaseTest {
     when(workflowExecutionService.getWorkflowExecution(anyString(), anyString())).thenReturn(pipelineExecution);
     Pipeline pipeline = JsonUtils.readResourceFile("pipeline/pipeline.json", Pipeline.class);
     when(pipelineService.readPipeline(anyString(), anyString(), eq(true))).thenReturn(pipeline);
-    when(pipelineExecutionController.resolveEnvId(eq(pipeline), anyListOf(QLVariableInput.class))).thenReturn("envId");
+    when(pipelineExecutionController.resolveEnvId(eq(pipeline), anyList())).thenReturn("envId");
     when(pipelineExecutionController.validateAndResolvePipelineVariables(
-             eq(pipeline), anyListOf(QLVariableInput.class), eq("envId"), eq(new ArrayList<>()), eq(false)))
+             eq(pipeline), anyList(), eq("envId"), eq(new ArrayList<>()), eq(false)))
         .thenReturn(new HashMap<>());
 
     DeploymentMetadata metadata =

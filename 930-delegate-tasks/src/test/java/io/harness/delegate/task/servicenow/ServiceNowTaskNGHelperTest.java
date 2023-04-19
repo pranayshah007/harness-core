@@ -16,14 +16,15 @@ import static io.harness.rule.OwnerRule.vivekveman;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -67,25 +68,20 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import okhttp3.MediaType;
 import okhttp3.ResponseBody;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 
 @OwnedBy(CDC)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Retrofit.class, ServiceNowTaskNgHelper.class})
-@PowerMockIgnore({"javax.net.ssl.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class ServiceNowTaskNGHelperTest extends CategoryTest {
   public static final String TICKET_NUMBER = "INC00001";
   public static final String TICKET_SYSID = "aacc24dcdb5f85509e7c2a59139619c4";
@@ -95,38 +91,31 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
 
   @Mock private SecretDecryptionService secretDecryptionService;
   @Mock private ILogStreamingTaskClient logStreamingTaskClient;
-  @Mock private NGDelegateLogCallback logCallback;
   @InjectMocks private ServiceNowTaskNgHelper serviceNowTaskNgHelper;
-
-  @Before
-  public void setup() throws Exception {
-    logCallback = Mockito.mock(NGDelegateLogCallback.class);
-    PowerMockito.whenNew(NGDelegateLogCallback.class).withAnyArguments().thenReturn(logCallback);
-  }
 
   @Test
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void shouldValidateCredentialsWithRetry() throws Exception {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
-    Retrofit retrofit = Mockito.mock(Retrofit.class);
+
     Call mockCall = Mockito.mock(Call.class);
     when(serviceNowRestClient.validateConnection(anyString())).thenReturn(mockCall);
     Response<JsonNode> jsonNodeResponse = Response.success(null);
     when(mockCall.clone()).thenReturn(mockCall);
     doThrow(new SocketTimeoutException()).doReturn(jsonNodeResponse).when(mockCall).execute();
-    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
-    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
-
-    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
-    ServiceNowTaskNGResponse response =
-        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
-                                                         .action(ServiceNowActionNG.VALIDATE_CREDENTIALS)
-                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                         .build(),
-            null);
-    assertThat(response.getDelegateMetaInfo()).isNull();
-    verify(secretDecryptionService).decrypt(any(), any());
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.VALIDATE_CREDENTIALS)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .build(),
+              null);
+      assertThat(response.getDelegateMetaInfo()).isNull();
+      verify(secretDecryptionService).decrypt(any(), any());
+    }
   }
 
   @Test
@@ -134,27 +123,27 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldValidateCredentialsFailure() throws Exception {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
-    Retrofit retrofit = Mockito.mock(Retrofit.class);
+
     Call mockCall = Mockito.mock(Call.class);
     when(serviceNowRestClient.validateConnection(anyString())).thenReturn(mockCall);
     Response<JsonNode> jsonNodeResponse = Response.error(401, ResponseBody.create(MediaType.parse("JSON"), ""));
     when(mockCall.execute()).thenReturn(jsonNodeResponse);
     when(mockCall.clone()).thenReturn(mockCall);
-    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
-    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
-
-    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
-    assertThatThrownBy(
-        ()
-            -> serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
-                                                                .action(ServiceNowActionNG.VALIDATE_CREDENTIALS)
-                                                                .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                                .build(),
-                null))
-        .isInstanceOf(HintException.class)
-        .hasMessage(
-            "Check if the ServiceNow credentials are correct and you have necessary permissions to access the incident table");
-    verify(secretDecryptionService).decrypt(any(), any());
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient))) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      assertThatThrownBy(
+          ()
+              -> serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                                  .action(ServiceNowActionNG.VALIDATE_CREDENTIALS)
+                                                                  .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                                  .build(),
+                  null))
+          .isInstanceOf(HintException.class)
+          .hasMessage(
+              "Check if the ServiceNow credentials are correct and you have necessary permissions to access the incident table");
+      verify(secretDecryptionService).decrypt(any(), any());
+    }
   }
 
   private ServiceNowConnectorDTO getServiceNowConnector() {
@@ -177,7 +166,7 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldGetIssueCreateMetdataWithRetry() throws Exception {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
-    Retrofit retrofit = Mockito.mock(Retrofit.class);
+
     Call mockCall = Mockito.mock(Call.class);
     when(serviceNowRestClient.getAdditionalFields(anyString(), anyString())).thenReturn(mockCall);
     List<Map<String, String>> responseMap =
@@ -187,30 +176,31 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
     when(mockCall.clone()).thenReturn(mockCall);
     doThrow(new SocketTimeoutException()).doReturn(jsonNodeResponse).when(mockCall).execute();
-    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
-    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
-
-    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
-    ServiceNowTaskNGResponse response =
-        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
-                                                         .action(ServiceNowActionNG.GET_TICKET_CREATE_METADATA)
-                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                         .ticketType("incident")
-                                                         .build(),
-            logStreamingTaskClient);
-    assertThat(response.getDelegateMetaInfo()).isNull();
-    assertThat(response.getServiceNowFieldNGList()).hasSize(2);
-    assertThat(
-        response.getServiceNowFieldNGList().stream().map(ServiceNowFieldNG::getName).collect(Collectors.toList()))
-        .containsExactlyInAnyOrder("field1", "field2");
-    assertThat(response.getServiceNowFieldNGList().stream().map(ServiceNowFieldNG::getKey).collect(Collectors.toList()))
-        .containsExactlyInAnyOrder("value1", "value2");
-    assertThat(response.getServiceNowFieldNGList()
-                   .stream()
-                   .map(ServiceNowFieldNG::getInternalType)
-                   .collect(Collectors.toList()))
-        .containsExactlyInAnyOrder("string", "boolean");
-    verify(secretDecryptionService).decrypt(any(), any());
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.GET_TICKET_CREATE_METADATA)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .ticketType("incident")
+                                                           .build(),
+              logStreamingTaskClient);
+      assertThat(response.getDelegateMetaInfo()).isNull();
+      assertThat(response.getServiceNowFieldNGList()).hasSize(2);
+      assertThat(
+          response.getServiceNowFieldNGList().stream().map(ServiceNowFieldNG::getName).collect(Collectors.toList()))
+          .containsExactlyInAnyOrder("field1", "field2");
+      assertThat(
+          response.getServiceNowFieldNGList().stream().map(ServiceNowFieldNG::getKey).collect(Collectors.toList()))
+          .containsExactlyInAnyOrder("value1", "value2");
+      assertThat(response.getServiceNowFieldNGList()
+                     .stream()
+                     .map(ServiceNowFieldNG::getInternalType)
+                     .collect(Collectors.toList()))
+          .containsExactlyInAnyOrder("string", "boolean");
+      verify(secretDecryptionService).decrypt(any(), any());
+    }
   }
 
   @Test
@@ -218,7 +208,7 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldGetTicketWithRetry() throws Exception {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
-    Retrofit retrofit = Mockito.mock(Retrofit.class);
+
     Call mockCall = Mockito.mock(Call.class);
     when(serviceNowRestClient.getIssue(anyString(), anyString(), anyString(), anyString())).thenReturn(mockCall);
     Map<String, Map<String, String>> responseMap =
@@ -229,31 +219,31 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
     when(mockCall.clone()).thenReturn(mockCall);
     doThrow(new SocketTimeoutException()).doReturn(jsonNodeResponse).when(mockCall).execute();
-    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
-    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.GET_TICKET)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .ticketType("incident")
+                                                           .ticketNumber(TICKET_NUMBER)
+                                                           .build(),
+              logStreamingTaskClient);
 
-    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
-    ServiceNowTaskNGResponse response =
-        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
-                                                         .action(ServiceNowActionNG.GET_TICKET)
-                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                         .ticketType("incident")
-                                                         .ticketNumber(TICKET_NUMBER)
-                                                         .build(),
-            logStreamingTaskClient);
+      assertThat(response.getDelegateMetaInfo()).isNull();
+      assertThat(response.getTicket().getNumber()).isEqualTo(TICKET_NUMBER);
+      assertThat(response.getTicket().getUrl())
+          .isEqualTo("https://harness.service-now.com/nav_to.do?uri=/incident.do?sysparm_query=number=INC00001");
+      assertThat(response.getTicket().getFields()).hasSize(2);
+      assertThat(response.getTicket().getFields().get("field1").getValue()).isEqualTo("BEvalue1");
+      assertThat(response.getTicket().getFields().get("field1").getDisplayValue()).isEqualTo("UIvalue1");
+      assertThat(response.getTicket().getFields().get("field2").getValue()).isEqualTo("BEvalue2");
+      assertThat(response.getTicket().getFields().get("field2").getDisplayValue()).isEqualTo("UIvalue2");
+      verify(secretDecryptionService).decrypt(any(), any());
 
-    assertThat(response.getDelegateMetaInfo()).isNull();
-    assertThat(response.getTicket().getNumber()).isEqualTo(TICKET_NUMBER);
-    assertThat(response.getTicket().getUrl())
-        .isEqualTo("https://harness.service-now.com/nav_to.do?uri=/incident.do?sysparm_query=number=INC00001");
-    assertThat(response.getTicket().getFields()).hasSize(2);
-    assertThat(response.getTicket().getFields().get("field1").getValue()).isEqualTo("BEvalue1");
-    assertThat(response.getTicket().getFields().get("field1").getDisplayValue()).isEqualTo("UIvalue1");
-    assertThat(response.getTicket().getFields().get("field2").getValue()).isEqualTo("BEvalue2");
-    assertThat(response.getTicket().getFields().get("field2").getDisplayValue()).isEqualTo("UIvalue2");
-    verify(secretDecryptionService).decrypt(any(), any());
-
-    verify(serviceNowRestClient).getIssue(anyString(), anyString(), eq("number=" + TICKET_NUMBER), eq("all"));
+      verify(serviceNowRestClient).getIssue(anyString(), anyString(), eq("number=" + TICKET_NUMBER), eq("all"));
+    }
   }
 
   @Test
@@ -261,7 +251,7 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testApplyServiceNowTemplateToCreateTicket() throws Exception {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
-    Retrofit retrofit = Mockito.mock(Retrofit.class);
+
     Call mockCall = Mockito.mock(Call.class);
     when(serviceNowRestClient.createUsingTemplate(anyString(), anyString(), anyString())).thenReturn(mockCall);
     ImmutableMap<String, String> responseMap = ImmutableMap.of("record_sys_id", "aacc24dcdb5f85509e7c2a59139619c4",
@@ -286,30 +276,30 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     Response<JsonNode> jsonNodeFetchIssueResponse = Response.success(fetchIssueResponse);
     when(mockFetchIssueCall.clone()).thenReturn(mockFetchIssueCall);
     doThrow(new SocketTimeoutException()).doReturn(jsonNodeFetchIssueResponse).when(mockFetchIssueCall).execute();
-    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
-    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.CREATE_TICKET)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .templateName(TEMPLATE_NAME)
+                                                           .useServiceNowTemplate(true)
+                                                           .ticketType("incident")
+                                                           .build(),
+              logStreamingTaskClient);
 
-    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
-    ServiceNowTaskNGResponse response =
-        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
-                                                         .action(ServiceNowActionNG.CREATE_TICKET)
-                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                         .templateName(TEMPLATE_NAME)
-                                                         .useServiceNowTemplate(true)
-                                                         .ticketType("incident")
-                                                         .build(),
-            logStreamingTaskClient);
+      assertThat(response.getDelegateMetaInfo()).isNull();
 
-    assertThat(response.getDelegateMetaInfo()).isNull();
-
-    // ServiceNow Outcome
-    assertThat(response.getTicket().getNumber()).isEqualTo(TICKET_NUMBER);
-    assertThat(response.getTicket().getUrl())
-        .isEqualTo(
-            "https://harness.service-now.com/nav_to.do?uri=/incident.do?sys_id=aacc24dcdb5f85509e7c2a59139619c4");
-    assertThat(response.getTicket().getFields()).hasSize(2);
-    verify(secretDecryptionService).decrypt(any(), any());
-    verify(serviceNowRestClient).createUsingTemplate(anyString(), eq("incident"), eq(TEMPLATE_NAME));
+      // ServiceNow Outcome
+      assertThat(response.getTicket().getNumber()).isEqualTo(TICKET_NUMBER);
+      assertThat(response.getTicket().getUrl())
+          .isEqualTo(
+              "https://harness.service-now.com/nav_to.do?uri=/incident.do?sys_id=aacc24dcdb5f85509e7c2a59139619c4");
+      assertThat(response.getTicket().getFields()).hasSize(2);
+      verify(secretDecryptionService).decrypt(any(), any());
+      verify(serviceNowRestClient).createUsingTemplate(anyString(), eq("incident"), eq(TEMPLATE_NAME));
+    }
   }
 
   @Test
@@ -317,7 +307,7 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetMetadataWithChoicesWithRetry() throws Exception {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
-    Retrofit retrofit = Mockito.mock(Retrofit.class);
+
     Call mockCall = Mockito.mock(Call.class);
     when(serviceNowRestClient.getMetadata(anyString(), anyString())).thenReturn(mockCall);
 
@@ -329,33 +319,33 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     Response<JsonNode> jsonNodeResponse = Response.success(responseNode);
     when(mockCall.clone()).thenReturn(mockCall);
     doThrow(new SocketTimeoutException()).doReturn(jsonNodeResponse).when(mockCall).execute();
-    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
-    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.GET_METADATA)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .ticketType("incident")
+                                                           .build(),
+              logStreamingTaskClient);
 
-    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
-    ServiceNowTaskNGResponse response =
-        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
-                                                         .action(ServiceNowActionNG.GET_METADATA)
-                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                         .ticketType("incident")
-                                                         .build(),
-            logStreamingTaskClient);
+      assertThat(response.getDelegateMetaInfo()).isNull();
+      assertThat(response.getServiceNowFieldNGList()).hasSize(2);
+      assertThat(response.getServiceNowFieldNGList().get(0).getKey()).isEqualTo("parent");
+      assertThat(response.getServiceNowFieldNGList().get(0).getName()).isEqualTo("Parent");
 
-    assertThat(response.getDelegateMetaInfo()).isNull();
-    assertThat(response.getServiceNowFieldNGList()).hasSize(2);
-    assertThat(response.getServiceNowFieldNGList().get(0).getKey()).isEqualTo("parent");
-    assertThat(response.getServiceNowFieldNGList().get(0).getName()).isEqualTo("Parent");
+      // choice based fields
+      assertThat(response.getServiceNowFieldNGList().get(1).getKey()).isEqualTo("priority");
+      assertThat(response.getServiceNowFieldNGList().get(1).getName()).isEqualTo("Priority");
+      assertThat(response.getServiceNowFieldNGList().get(1).getAllowedValues()).hasSize(6);
+      assertThat(response.getServiceNowFieldNGList().get(1).getSchema().isArray()).isTrue();
 
-    // choice based fields
-    assertThat(response.getServiceNowFieldNGList().get(1).getKey()).isEqualTo("priority");
-    assertThat(response.getServiceNowFieldNGList().get(1).getName()).isEqualTo("Priority");
-    assertThat(response.getServiceNowFieldNGList().get(1).getAllowedValues()).hasSize(6);
-    assertThat(response.getServiceNowFieldNGList().get(1).getSchema().isArray()).isTrue();
+      assertThat(response.getTicket()).isNull();
+      verify(secretDecryptionService).decrypt(any(), any());
 
-    assertThat(response.getTicket()).isNull();
-    verify(secretDecryptionService).decrypt(any(), any());
-
-    verify(serviceNowRestClient).getMetadata(anyString(), eq("incident"));
+      verify(serviceNowRestClient).getMetadata(anyString(), eq("incident"));
+    }
   }
 
   @Test
@@ -363,7 +353,7 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testApplyServiceNowTemplateToUpdateTicketWithRetry() throws Exception {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
-    Retrofit retrofit = Mockito.mock(Retrofit.class);
+
     Call mockCall = Mockito.mock(Call.class);
     when(serviceNowRestClient.updateUsingTemplate(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(mockCall);
@@ -391,31 +381,32 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     when(mockFetchIssueCall.clone()).thenReturn(mockFetchIssueCall);
     doThrow(new SocketTimeoutException()).doReturn(jsonNodeFetchIssueResponse).when(mockFetchIssueCall).execute();
 
-    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
-    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.UPDATE_TICKET)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .templateName(TEMPLATE_NAME)
+                                                           .useServiceNowTemplate(true)
+                                                           .ticketType("incident")
+                                                           .ticketNumber(TICKET_NUMBER)
+                                                           .build(),
+              logStreamingTaskClient);
 
-    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
-    ServiceNowTaskNGResponse response =
-        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
-                                                         .action(ServiceNowActionNG.UPDATE_TICKET)
-                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                         .templateName(TEMPLATE_NAME)
-                                                         .useServiceNowTemplate(true)
-                                                         .ticketType("incident")
-                                                         .ticketNumber(TICKET_NUMBER)
-                                                         .build(),
-            logStreamingTaskClient);
+      assertThat(response.getDelegateMetaInfo()).isNull();
 
-    assertThat(response.getDelegateMetaInfo()).isNull();
-
-    // ServiceNow Outcome
-    assertThat(response.getTicket().getNumber()).isEqualTo(TICKET_NUMBER);
-    assertThat(response.getTicket().getUrl())
-        .isEqualTo(
-            "https://harness.service-now.com/nav_to.do?uri=/incident.do?sys_id=aacc24dcdb5f85509e7c2a59139619c4");
-    assertThat(response.getTicket().getFields()).hasSize(2);
-    verify(secretDecryptionService).decrypt(any(), any());
-    verify(serviceNowRestClient).updateUsingTemplate(anyString(), eq("incident"), eq(TEMPLATE_NAME), eq(TICKET_NUMBER));
+      // ServiceNow Outcome
+      assertThat(response.getTicket().getNumber()).isEqualTo(TICKET_NUMBER);
+      assertThat(response.getTicket().getUrl())
+          .isEqualTo(
+              "https://harness.service-now.com/nav_to.do?uri=/incident.do?sys_id=aacc24dcdb5f85509e7c2a59139619c4");
+      assertThat(response.getTicket().getFields()).hasSize(2);
+      verify(secretDecryptionService).decrypt(any(), any());
+      verify(serviceNowRestClient)
+          .updateUsingTemplate(anyString(), eq("incident"), eq(TEMPLATE_NAME), eq(TICKET_NUMBER));
+    }
   }
 
   @Test
@@ -423,7 +414,7 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetTemplateListWithRetry() throws Exception {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
-    Retrofit retrofit = Mockito.mock(Retrofit.class);
+
     Call mockCall = Mockito.mock(Call.class);
     when(serviceNowRestClient.getTemplateList(anyString(), anyString(), anyInt(), anyInt(), anyString()))
         .thenReturn(mockCall);
@@ -436,33 +427,33 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     Response<JsonNode> jsonNodeResponse = Response.success(responseNode);
     when(mockCall.clone()).thenReturn(mockCall);
     doThrow(new SocketTimeoutException()).doReturn(jsonNodeResponse).when(mockCall).execute();
-    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
-    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.GET_TEMPLATE)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .ticketType("incident")
+                                                           .templateListLimit(1)
+                                                           .templateListOffset(0)
+                                                           .templateName(TEMPLATE_NAME)
+                                                           .build(),
+              logStreamingTaskClient);
 
-    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
-    ServiceNowTaskNGResponse response =
-        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
-                                                         .action(ServiceNowActionNG.GET_TEMPLATE)
-                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                         .ticketType("incident")
-                                                         .templateListLimit(1)
-                                                         .templateListOffset(0)
-                                                         .templateName(TEMPLATE_NAME)
-                                                         .build(),
-            logStreamingTaskClient);
+      assertThat(response.getDelegateMetaInfo()).isNull();
+      assertThat(response.getServiceNowTemplateList()).hasSize(1);
 
-    assertThat(response.getDelegateMetaInfo()).isNull();
-    assertThat(response.getServiceNowTemplateList()).hasSize(1);
+      // template fields
+      ServiceNowTemplate serviceNowTemplate = response.getServiceNowTemplateList().get(0);
+      assertThat(serviceNowTemplate.getName()).isEqualTo(TEMPLATE_NAME);
+      assertThat(serviceNowTemplate.getFields()).hasSize(5);
+      assertThat(serviceNowTemplate.getFields().get("Impact").getDisplayValue()).isEqualTo("1 - High");
 
-    // template fields
-    ServiceNowTemplate serviceNowTemplate = response.getServiceNowTemplateList().get(0);
-    assertThat(serviceNowTemplate.getName()).isEqualTo(TEMPLATE_NAME);
-    assertThat(serviceNowTemplate.getFields()).hasSize(5);
-    assertThat(serviceNowTemplate.getFields().get("Impact").getDisplayValue()).isEqualTo("1 - High");
+      verify(secretDecryptionService).decrypt(any(), any());
 
-    verify(secretDecryptionService).decrypt(any(), any());
-
-    verify(serviceNowRestClient).getTemplateList(anyString(), eq("incident"), anyInt(), anyInt(), anyString());
+      verify(serviceNowRestClient).getTemplateList(anyString(), eq("incident"), anyInt(), anyInt(), anyString());
+    }
   }
 
   @Test
@@ -496,7 +487,7 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testApplyServiceNowWithoutTemplateToCreateTicket() throws Exception {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
-    Retrofit retrofit = Mockito.mock(Retrofit.class);
+
     Call mockCall = Mockito.mock(Call.class);
     when(serviceNowRestClient.createTicket(anyString(), anyString(), anyString(), isNull(), anyMap()))
         .thenReturn(mockCall);
@@ -508,28 +499,29 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
     when(mockCall.execute()).thenReturn(jsonNodeResponse);
 
-    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
-    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
-    Map<String, String> fieldmap = ImmutableMap.of("value", "BEvalue2", "display_value", "UIvalue2");
-    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
-    ServiceNowTaskNGResponse response =
-        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
-                                                         .action(ServiceNowActionNG.CREATE_TICKET)
-                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                         .useServiceNowTemplate(false)
-                                                         .ticketType("incident")
-                                                         .fields(fieldmap)
-                                                         .build(),
-            logStreamingTaskClient);
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      Map<String, String> fieldmap = ImmutableMap.of("value", "BEvalue2", "display_value", "UIvalue2");
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.CREATE_TICKET)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .useServiceNowTemplate(false)
+                                                           .ticketType("incident")
+                                                           .fields(fieldmap)
+                                                           .build(),
+              logStreamingTaskClient);
 
-    assertThat(response.getDelegateMetaInfo()).isNull();
+      assertThat(response.getDelegateMetaInfo()).isNull();
 
-    // ServiceNow Outcome
-    assertThat(response.getTicket().getNumber()).isEqualTo(TICKET_NUMBER);
-    assertThat(response.getTicket().getUrl())
-        .isEqualTo("https://harness.service-now.com/nav_to.do?uri=/incident.do?sysparm_query=number=INC00001");
-    assertThat(response.getTicket().getFields()).hasSize(1);
-    verify(secretDecryptionService).decrypt(any(), any());
+      // ServiceNow Outcome
+      assertThat(response.getTicket().getNumber()).isEqualTo(TICKET_NUMBER);
+      assertThat(response.getTicket().getUrl())
+          .isEqualTo("https://harness.service-now.com/nav_to.do?uri=/incident.do?sysparm_query=number=INC00001");
+      assertThat(response.getTicket().getFields()).hasSize(1);
+      verify(secretDecryptionService).decrypt(any(), any());
+    }
   }
 
   @Test
@@ -537,7 +529,7 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUpdateServiceNowWithoutTemplateToUpdateTicketWithRetry() throws Exception {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
-    Retrofit retrofit = Mockito.mock(Retrofit.class);
+
     Call mockCall = Mockito.mock(Call.class);
     when(serviceNowRestClient.updateTicket(anyString(), anyString(), anyString(), anyString(), isNull(), anyMap()))
         .thenReturn(mockCall);
@@ -563,30 +555,31 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     Response<JsonNode> jsonNodeFetchIssueResponse = Response.success(fetchIssueResponse);
     when(mockFetchIssueCall.clone()).thenReturn(mockFetchIssueCall);
     doThrow(new SocketTimeoutException()).doReturn(jsonNodeFetchIssueResponse).when(mockFetchIssueCall).execute();
-    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
-    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
-    Map<String, String> fieldmap = ImmutableMap.of("value", "BEvalue2", "display_value", "UIvalue2");
-    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
-    ServiceNowTaskNGResponse response =
-        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
-                                                         .action(ServiceNowActionNG.UPDATE_TICKET)
-                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                         .templateName(TEMPLATE_NAME)
-                                                         .useServiceNowTemplate(false)
-                                                         .ticketType("incident")
-                                                         .fields(fieldmap)
-                                                         .ticketNumber(TICKET_NUMBER)
-                                                         .build(),
-            logStreamingTaskClient);
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      Map<String, String> fieldmap = ImmutableMap.of("value", "BEvalue2", "display_value", "UIvalue2");
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.UPDATE_TICKET)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .templateName(TEMPLATE_NAME)
+                                                           .useServiceNowTemplate(false)
+                                                           .ticketType("incident")
+                                                           .fields(fieldmap)
+                                                           .ticketNumber(TICKET_NUMBER)
+                                                           .build(),
+              logStreamingTaskClient);
 
-    assertThat(response.getDelegateMetaInfo()).isNull();
+      assertThat(response.getDelegateMetaInfo()).isNull();
 
-    // ServiceNow Outcome
-    assertThat(response.getTicket().getNumber()).isEqualTo(TICKET_NUMBER);
-    assertThat(response.getTicket().getUrl())
-        .isEqualTo("https://harness.service-now.com/nav_to.do?uri=/incident.do?sysparm_query=number=INC00001");
-    assertThat(response.getTicket().getFields()).hasSize(1);
-    verify(secretDecryptionService).decrypt(any(), any());
+      // ServiceNow Outcome
+      assertThat(response.getTicket().getNumber()).isEqualTo(TICKET_NUMBER);
+      assertThat(response.getTicket().getUrl())
+          .isEqualTo("https://harness.service-now.com/nav_to.do?uri=/incident.do?sysparm_query=number=INC00001");
+      assertThat(response.getTicket().getFields()).hasSize(1);
+      verify(secretDecryptionService).decrypt(any(), any());
+    }
   }
 
   @Test
@@ -594,7 +587,7 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testApplyServiceNowTemplateToUpdateTicketWithoutSysIdInResponseWithRetry() throws Exception {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
-    Retrofit retrofit = Mockito.mock(Retrofit.class);
+
     Call mockCall = Mockito.mock(Call.class);
     when(serviceNowRestClient.updateUsingTemplate(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(mockCall);
@@ -622,31 +615,32 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     when(mockFetchIssueCall.clone()).thenReturn(mockFetchIssueCall);
     doThrow(new SocketTimeoutException()).doReturn(jsonNodeFetchIssueResponse).when(mockFetchIssueCall).execute();
 
-    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
-    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.UPDATE_TICKET)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .templateName(TEMPLATE_NAME)
+                                                           .useServiceNowTemplate(true)
+                                                           .ticketType("incident")
+                                                           .ticketNumber(TICKET_NUMBER)
+                                                           .build(),
+              logStreamingTaskClient);
 
-    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
-    ServiceNowTaskNGResponse response =
-        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
-                                                         .action(ServiceNowActionNG.UPDATE_TICKET)
-                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                         .templateName(TEMPLATE_NAME)
-                                                         .useServiceNowTemplate(true)
-                                                         .ticketType("incident")
-                                                         .ticketNumber(TICKET_NUMBER)
-                                                         .build(),
-            logStreamingTaskClient);
+      assertThat(response.getDelegateMetaInfo()).isNull();
 
-    assertThat(response.getDelegateMetaInfo()).isNull();
-
-    // ServiceNow Outcome
-    assertThat(response.getTicket().getNumber()).isEqualTo(TICKET_NUMBER);
-    assertThat(response.getTicket().getUrl())
-        .isEqualTo(
-            "https://harness.service-now.com/nav_to.do?uri=/incident.do?sys_id=aacc24dcdb5f85509e7c2a59139619c4");
-    assertThat(response.getTicket().getFields()).hasSize(2);
-    verify(secretDecryptionService).decrypt(any(), any());
-    verify(serviceNowRestClient).updateUsingTemplate(anyString(), eq("incident"), eq(TEMPLATE_NAME), eq(TICKET_NUMBER));
+      // ServiceNow Outcome
+      assertThat(response.getTicket().getNumber()).isEqualTo(TICKET_NUMBER);
+      assertThat(response.getTicket().getUrl())
+          .isEqualTo(
+              "https://harness.service-now.com/nav_to.do?uri=/incident.do?sys_id=aacc24dcdb5f85509e7c2a59139619c4");
+      assertThat(response.getTicket().getFields()).hasSize(2);
+      verify(secretDecryptionService).decrypt(any(), any());
+      verify(serviceNowRestClient)
+          .updateUsingTemplate(anyString(), eq("incident"), eq(TEMPLATE_NAME), eq(TICKET_NUMBER));
+    }
   }
 
   @Test
@@ -654,90 +648,95 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateImportSetNormalAndEmptyImportData() throws Exception {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
-    Retrofit retrofit = Mockito.mock(Retrofit.class);
+
     Call mockCall = Mockito.mock(Call.class);
     when(serviceNowRestClient.createImportSet(anyString(), anyString(), anyString(), any())).thenReturn(mockCall);
 
     ClassLoader classLoader = this.getClass().getClassLoader();
     when(mockCall.execute())
         .thenReturn(getJsonNodeResponseFromJsonFile("servicenow/serviceNowImportSetResponse.json", classLoader));
-    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
-    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class, (mock, context) -> {
+      when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
+    }); MockedConstruction<NGDelegateLogCallback> logCallback = mockConstruction(NGDelegateLogCallback.class)) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      String stagingTable = "u_testing0001";
+      String importData = "{\n"
+          + "    \"u_test_field\" : \"my_test_import_data\"\n"
+          + "}";
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.IMPORT_SET)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .stagingTableName(stagingTable)
+                                                           .importData(importData)
+                                                           .build(),
+              logStreamingTaskClient);
+      ServiceNowImportSetResponseNG importSetResponse = response.getServiceNowImportSetResponseNG();
+      assertThat(response.getDelegateMetaInfo()).isNull();
+      assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList()).hasSize(3);
+      assertThat(importSetResponse.getStagingTable()).isEqualTo(stagingTable);
+      assertThat(importSetResponse.getImportSet()).isEqualTo("ISET0010075");
 
-    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
-    String stagingTable = "u_testing0001";
-    String importData = "{\n"
-        + "    \"u_test_field\" : \"my_test_import_data\"\n"
-        + "}";
-    ServiceNowTaskNGResponse response =
-        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
-                                                         .action(ServiceNowActionNG.IMPORT_SET)
-                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                         .stagingTableName(stagingTable)
-                                                         .importData(importData)
-                                                         .build(),
-            logStreamingTaskClient);
-    ServiceNowImportSetResponseNG importSetResponse = response.getServiceNowImportSetResponseNG();
-    assertThat(response.getDelegateMetaInfo()).isNull();
-    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList()).hasSize(3);
-    assertThat(importSetResponse.getStagingTable()).isEqualTo(stagingTable);
-    assertThat(importSetResponse.getImportSet()).isEqualTo("ISET0010075");
+      assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(0).getTransformMap())
+          .isEqualTo("Testing 2 transform maps");
+      assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(0).getTargetTable())
+          .isEqualTo("incident");
+      assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(0).getDisplayValue())
+          .isEqualTo("INC0083151");
+      assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(0).getDisplayName())
+          .isEqualTo("number");
+      assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(0).getStatus())
+          .isEqualTo("inserted");
+      assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(0).getTargetRecordURL())
+          .isEqualTo(
+              "https://harness.service-now.com/nav_to.do?uri=/incident.do?sys_id=a639e9ccdb4651909e7c2a5913961911");
 
-    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(0).getTransformMap())
-        .isEqualTo("Testing 2 transform maps");
-    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(0).getTargetTable())
-        .isEqualTo("incident");
-    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(0).getDisplayValue())
-        .isEqualTo("INC0083151");
-    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(0).getDisplayName())
-        .isEqualTo("number");
-    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(0).getStatus())
-        .isEqualTo("inserted");
-    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(0).getTargetRecordURL())
-        .isEqualTo(
-            "https://harness.service-now.com/nav_to.do?uri=/incident.do?sys_id=a639e9ccdb4651909e7c2a5913961911");
+      assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(1).getTransformMap())
+          .isEqualTo("Testing Full Flow");
+      assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(1).getTargetTable())
+          .isEqualTo("problem");
+      assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(1).getDisplayValue())
+          .isEqualTo("PRB0066379");
+      assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(1).getDisplayName())
+          .isEqualTo("number");
+      assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(1).getStatus())
+          .isEqualTo("inserted");
+      assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(1).getTargetRecordURL())
+          .isEqualTo(
+              "https://harness.service-now.com/nav_to.do?uri=/problem.do?sys_id=123929ccdb4651909e7c2a5913961985");
 
-    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(1).getTransformMap())
-        .isEqualTo("Testing Full Flow");
-    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(1).getTargetTable())
-        .isEqualTo("problem");
-    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(1).getDisplayValue())
-        .isEqualTo("PRB0066379");
-    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(1).getDisplayName())
-        .isEqualTo("number");
-    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(1).getStatus())
-        .isEqualTo("inserted");
-    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(1).getTargetRecordURL())
-        .isEqualTo("https://harness.service-now.com/nav_to.do?uri=/problem.do?sys_id=123929ccdb4651909e7c2a5913961985");
+      assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(2).getTransformMap())
+          .isEqualTo("testing permissions");
+      assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(2).getTargetTable())
+          .isEqualTo("sqanda_vote");
+      assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(2).getErrorMessage())
+          .isEqualTo("No transform entry or scripts are defined; Target record not found");
+      assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(2).getStatus())
+          .isEqualTo("error");
 
-    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(2).getTransformMap())
-        .isEqualTo("testing permissions");
-    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(2).getTargetTable())
-        .isEqualTo("sqanda_vote");
-    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(2).getErrorMessage())
-        .isEqualTo("No transform entry or scripts are defined; Target record not found");
-    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(2).getStatus()).isEqualTo("error");
+      assertThat(response.getTicket()).isNull();
+      assertThat(response.getServiceNowFieldNGList()).isNull();
+      assertThat(response.getServiceNowTemplateList()).isNull();
+      assertThat(response.getServiceNowStagingTableList()).isNull();
 
-    assertThat(response.getTicket()).isNull();
-    assertThat(response.getServiceNowFieldNGList()).isNull();
-    assertThat(response.getServiceNowTemplateList()).isNull();
-    assertThat(response.getServiceNowStagingTableList()).isNull();
+      verify(serviceNowRestClient)
+          .createImportSet(anyString(), eq(stagingTable), eq("all"),
+              eq(JsonUtils.asObject(importData, new TypeReference<Map<String, String>>() {})));
 
-    verify(serviceNowRestClient)
-        .createImportSet(anyString(), eq(stagingTable), eq("all"),
-            eq(JsonUtils.asObject(importData, new TypeReference<Map<String, String>>() {})));
-
-    serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
-                                                     .action(ServiceNowActionNG.IMPORT_SET)
-                                                     .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                     .stagingTableName(stagingTable)
-                                                     .importData("    ")
-                                                     .build(),
-        logStreamingTaskClient);
-    verify(secretDecryptionService, times(2)).decrypt(any(), any());
-    verify(serviceNowRestClient).createImportSet(anyString(), eq(stagingTable), eq("all"), eq(new HashMap<>()));
-    verify(logCallback, times(6)).saveExecutionLog(any());
-    verify(logCallback, times(2)).saveExecutionLog(any(), any());
+      serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                       .action(ServiceNowActionNG.IMPORT_SET)
+                                                       .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                       .stagingTableName(stagingTable)
+                                                       .importData("    ")
+                                                       .build(),
+          logStreamingTaskClient);
+      verify(secretDecryptionService, times(2)).decrypt(any(), any());
+      verify(serviceNowRestClient).createImportSet(anyString(), eq(stagingTable), eq("all"), eq(new HashMap<>()));
+      verify(logCallback.constructed().get(0), times(3)).saveExecutionLog(any());
+      verify(logCallback.constructed().get(1), times(3)).saveExecutionLog(any());
+      verify(logCallback.constructed().get(0), times(1)).saveExecutionLog(any(), any());
+      verify(logCallback.constructed().get(1), times(1)).saveExecutionLog(any(), any());
+    }
   }
 
   @Test
@@ -745,78 +744,81 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateImportSetWithMalformedResponse() throws Exception {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
-    Retrofit retrofit = Mockito.mock(Retrofit.class);
+
     Call mockCall = Mockito.mock(Call.class);
     when(serviceNowRestClient.createImportSet(anyString(), anyString(), anyString(), any())).thenReturn(mockCall);
-    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
-    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class, (mock, context) -> {
+      when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
+    }); MockedConstruction<NGDelegateLogCallback> logCallback = mockConstruction(NGDelegateLogCallback.class)) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      String stagingTable = "u_testing0001";
+      String importData = "{\n"
+          + "    \"u_test_field\" : \"my_test_import_data\"\n"
+          + "}";
+      ClassLoader classLoader = this.getClass().getClassLoader();
 
-    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
-    String stagingTable = "u_testing0001";
-    String importData = "{\n"
-        + "    \"u_test_field\" : \"my_test_import_data\"\n"
-        + "}";
-    ClassLoader classLoader = this.getClass().getClassLoader();
+      // case 1 when import data number missing from response
+      when(mockCall.execute())
+          .thenReturn(getJsonNodeResponseFromJsonFile("servicenow/serviceNowImportSetBadResponse1.json", classLoader));
 
-    // case 1 when import data number missing from response
-    when(mockCall.execute())
-        .thenReturn(getJsonNodeResponseFromJsonFile("servicenow/serviceNowImportSetBadResponse1.json", classLoader));
+      try {
+        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                         .action(ServiceNowActionNG.IMPORT_SET)
+                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                         .stagingTableName(stagingTable)
+                                                         .importData(importData)
+                                                         .build(),
+            logStreamingTaskClient);
+        fail("Expected failure as import set is missing from response");
+      } catch (ServiceNowException ex) {
+        assertThat(ex.getParams().get("message"))
+            .isEqualTo(String.format(
+                "Error occurred while creating/executing serviceNow import set: InvalidArgumentsException: Field not found: %s",
+                "import_set"));
+      }
 
-    try {
-      serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
-                                                       .action(ServiceNowActionNG.IMPORT_SET)
-                                                       .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                       .stagingTableName(stagingTable)
-                                                       .importData(importData)
-                                                       .build(),
-          logStreamingTaskClient);
-      fail("Expected failure as import set is missing from response");
-    } catch (ServiceNowException ex) {
-      assertThat(ex.getParams().get("message"))
-          .isEqualTo(String.format(
-              "Error occurred while creating/executing serviceNow import set: InvalidArgumentsException: Field not found: %s",
-              "import_set"));
+      // case 2 when transform map is empty array in response
+      when(mockCall.execute())
+          .thenReturn(getJsonNodeResponseFromJsonFile("servicenow/serviceNowImportSetBadResponse2.json", classLoader));
+
+      try {
+        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                         .action(ServiceNowActionNG.IMPORT_SET)
+                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                         .stagingTableName(stagingTable)
+                                                         .importData(importData)
+                                                         .build(),
+            logStreamingTaskClient);
+        fail("Expected failure as import set is missing from response");
+      } catch (ServiceNowException ex) {
+        assertThat(ex.getParams().get("message"))
+            .isEqualTo("Transformation details are missing or invalid in the response received from ServiceNow");
+      }
+
+      // case 3 when staging table missing from response
+      when(mockCall.execute())
+          .thenReturn(getJsonNodeResponseFromJsonFile("servicenow/serviceNowImportSetBadResponse3.json", classLoader));
+
+      try {
+        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                         .action(ServiceNowActionNG.IMPORT_SET)
+                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                         .stagingTableName(stagingTable)
+                                                         .importData(importData)
+                                                         .build(),
+            logStreamingTaskClient);
+        fail("Expected failure as import set is missing from response");
+      } catch (ServiceNowException ex) {
+        assertThat(ex.getParams().get("message"))
+            .isEqualTo(String.format(
+                "Error occurred while creating/executing serviceNow import set: InvalidArgumentsException: Field not found: %s",
+                "staging_table"));
+      }
+      logCallback.constructed().forEach(contructed -> {
+        verify(contructed, times(3)).saveExecutionLog(any());
+        verify(contructed, times(1)).saveExecutionLog(any(), any());
+      });
     }
-
-    // case 2 when transform map is empty array in response
-    when(mockCall.execute())
-        .thenReturn(getJsonNodeResponseFromJsonFile("servicenow/serviceNowImportSetBadResponse2.json", classLoader));
-
-    try {
-      serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
-                                                       .action(ServiceNowActionNG.IMPORT_SET)
-                                                       .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                       .stagingTableName(stagingTable)
-                                                       .importData(importData)
-                                                       .build(),
-          logStreamingTaskClient);
-      fail("Expected failure as import set is missing from response");
-    } catch (ServiceNowException ex) {
-      assertThat(ex.getParams().get("message"))
-          .isEqualTo("Transformation details are missing or invalid in the response received from ServiceNow");
-    }
-
-    // case 3 when staging table missing from response
-    when(mockCall.execute())
-        .thenReturn(getJsonNodeResponseFromJsonFile("servicenow/serviceNowImportSetBadResponse3.json", classLoader));
-
-    try {
-      serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
-                                                       .action(ServiceNowActionNG.IMPORT_SET)
-                                                       .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                       .stagingTableName(stagingTable)
-                                                       .importData(importData)
-                                                       .build(),
-          logStreamingTaskClient);
-      fail("Expected failure as import set is missing from response");
-    } catch (ServiceNowException ex) {
-      assertThat(ex.getParams().get("message"))
-          .isEqualTo(String.format(
-              "Error occurred while creating/executing serviceNow import set: InvalidArgumentsException: Field not found: %s",
-              "staging_table"));
-    }
-    verify(logCallback, times(9)).saveExecutionLog(any());
-    verify(logCallback, times(3)).saveExecutionLog(any(), any());
   }
 
   @Test
@@ -824,7 +826,6 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetStagingTableListWithRetry() throws Exception {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
-    Retrofit retrofit = Mockito.mock(Retrofit.class);
     Call mockCall = Mockito.mock(Call.class);
     when(serviceNowRestClient.getStagingTableList(anyString())).thenReturn(mockCall);
 
@@ -834,56 +835,56 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
         .doReturn(getJsonNodeResponseFromJsonFile("servicenow/serviceNowStagingTableListResponse.json", classLoader))
         .when(mockCall)
         .execute();
-    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
-    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.GET_IMPORT_SET_STAGING_TABLES)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .build(),
+              logStreamingTaskClient);
+      List<ServiceNowStagingTable> stagingTableList = response.getServiceNowStagingTableList();
+      assertThat(response.getDelegateMetaInfo()).isNull();
+      assertThat(stagingTableList).hasSize(4);
 
-    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
-    ServiceNowTaskNGResponse response =
+      assertThat(stagingTableList.get(0).getName()).isEqualTo("u_venkat_demo_table");
+      assertThat(stagingTableList.get(0).getLabel()).isEqualTo("venkat_demo_table");
+
+      assertThat(stagingTableList.get(1).getName()).isEqualTo("imp_computer");
+      assertThat(stagingTableList.get(1).getLabel()).isEqualTo("Computer");
+
+      assertThat(stagingTableList.get(2).getName()).isEqualTo("u_testing0001");
+      assertThat(stagingTableList.get(2).getLabel()).isEqualTo("Testing0001");
+
+      assertThat(stagingTableList.get(3).getName()).isEqualTo("u_name_without_label");
+      assertThat(stagingTableList.get(3).getLabel()).isEqualTo("u_name_without_label");
+
+      assertThat(response.getTicket()).isNull();
+      assertThat(response.getServiceNowFieldNGList()).isNull();
+      assertThat(response.getServiceNowTemplateList()).isNull();
+      assertThat(response.getServiceNowImportSetResponseNG()).isNull();
+
+      verify(serviceNowRestClient).getStagingTableList(anyString());
+      when(mockCall.execute())
+          .thenReturn(
+              getJsonNodeResponseFromJsonFile("servicenow/serviceNowStagingTableListBadResponse.json", classLoader));
+      try {
         serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
                                                          .action(ServiceNowActionNG.GET_IMPORT_SET_STAGING_TABLES)
                                                          .serviceNowConnectorDTO(serviceNowConnectorDTO)
                                                          .build(),
             logStreamingTaskClient);
-    List<ServiceNowStagingTable> stagingTableList = response.getServiceNowStagingTableList();
-    assertThat(response.getDelegateMetaInfo()).isNull();
-    assertThat(stagingTableList).hasSize(4);
-
-    assertThat(stagingTableList.get(0).getName()).isEqualTo("u_venkat_demo_table");
-    assertThat(stagingTableList.get(0).getLabel()).isEqualTo("venkat_demo_table");
-
-    assertThat(stagingTableList.get(1).getName()).isEqualTo("imp_computer");
-    assertThat(stagingTableList.get(1).getLabel()).isEqualTo("Computer");
-
-    assertThat(stagingTableList.get(2).getName()).isEqualTo("u_testing0001");
-    assertThat(stagingTableList.get(2).getLabel()).isEqualTo("Testing0001");
-
-    assertThat(stagingTableList.get(3).getName()).isEqualTo("u_name_without_label");
-    assertThat(stagingTableList.get(3).getLabel()).isEqualTo("u_name_without_label");
-
-    assertThat(response.getTicket()).isNull();
-    assertThat(response.getServiceNowFieldNGList()).isNull();
-    assertThat(response.getServiceNowTemplateList()).isNull();
-    assertThat(response.getServiceNowImportSetResponseNG()).isNull();
-
-    verify(serviceNowRestClient).getStagingTableList(anyString());
-    when(mockCall.execute())
-        .thenReturn(
-            getJsonNodeResponseFromJsonFile("servicenow/serviceNowStagingTableListBadResponse.json", classLoader));
-    try {
-      serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
-                                                       .action(ServiceNowActionNG.GET_IMPORT_SET_STAGING_TABLES)
-                                                       .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                       .build(),
-          logStreamingTaskClient);
-      fail("Expected failure as invalid response");
-    } catch (ServiceNowException ex) {
-      assertThat(ex.getParams().get("message"))
-          .isEqualTo(String.format("Failed to fetch staging tables received response: {%s}",
-              getJsonNodeResponseFromJsonFile("servicenow/serviceNowStagingTableListBadResponse.json", classLoader)
-                  .body()));
+        fail("Expected failure as invalid response");
+      } catch (ServiceNowException ex) {
+        assertThat(ex.getParams().get("message"))
+            .isEqualTo(String.format("Failed to fetch staging tables received response: {%s}",
+                getJsonNodeResponseFromJsonFile("servicenow/serviceNowStagingTableListBadResponse.json", classLoader)
+                    .body()));
+      }
+      verify(secretDecryptionService, times(2)).decrypt(any(), any());
+      verify(serviceNowRestClient, times(2)).getStagingTableList(anyString());
     }
-    verify(secretDecryptionService, times(2)).decrypt(any(), any());
-    verify(serviceNowRestClient, times(2)).getStagingTableList(anyString());
   }
 
   @Test
@@ -891,7 +892,7 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetTicketTypesWithRetry() throws Exception {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
-    Retrofit retrofit = Mockito.mock(Retrofit.class);
+
     Call mockCall = Mockito.mock(Call.class);
     when(serviceNowRestClient.getTicketTypes(anyString())).thenReturn(mockCall);
 
@@ -901,30 +902,30 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
         .doReturn(getJsonNodeResponseFromJsonFile("servicenow/serviceNowTicketTypeResponse.json", classLoader))
         .when(mockCall)
         .execute();
-    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
-    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.GET_TICKET_TYPES)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .build(),
+              logStreamingTaskClient);
+      List<ServiceNowTicketTypeDTO> ticketTypes = response.getServiceNowTicketTypeList();
+      assertThat(response.getDelegateMetaInfo()).isNull();
+      assertThat(ticketTypes).hasSize(43);
 
-    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
-    ServiceNowTaskNGResponse response =
-        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
-                                                         .action(ServiceNowActionNG.GET_TICKET_TYPES)
-                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                         .build(),
-            logStreamingTaskClient);
-    List<ServiceNowTicketTypeDTO> ticketTypes = response.getServiceNowTicketTypeList();
-    assertThat(response.getDelegateMetaInfo()).isNull();
-    assertThat(ticketTypes).hasSize(43);
+      assertThat(response.getTicket()).isNull();
+      assertThat(response.getServiceNowFieldNGList()).isNull();
+      assertThat(response.getServiceNowTemplateList()).isNull();
+      assertThat(response.getServiceNowImportSetResponseNG()).isNull();
+      assertThat(response.getServiceNowStagingTableList()).isNull();
 
-    assertThat(response.getTicket()).isNull();
-    assertThat(response.getServiceNowFieldNGList()).isNull();
-    assertThat(response.getServiceNowTemplateList()).isNull();
-    assertThat(response.getServiceNowImportSetResponseNG()).isNull();
-    assertThat(response.getServiceNowStagingTableList()).isNull();
+      verify(serviceNowRestClient).getTicketTypes(anyString());
 
-    verify(serviceNowRestClient).getTicketTypes(anyString());
-
-    verify(secretDecryptionService, times(1)).decrypt(any(), any());
-    verify(serviceNowRestClient, times(1)).getTicketTypes(anyString());
+      verify(secretDecryptionService, times(1)).decrypt(any(), any());
+      verify(serviceNowRestClient, times(1)).getTicketTypes(anyString());
+    }
   }
 
   @Test
@@ -932,7 +933,7 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetTicketTypesMissingACLWithRetry() throws Exception {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
-    Retrofit retrofit = Mockito.mock(Retrofit.class);
+
     Call mockCall = Mockito.mock(Call.class);
     when(serviceNowRestClient.getTicketTypes(anyString())).thenReturn(mockCall);
 
@@ -943,30 +944,30 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
             getJsonNodeResponseFromJsonFile("servicenow/serviceNowTicketTypeMissingACLResponse.json", classLoader))
         .when(mockCall)
         .execute();
-    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
-    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.GET_TICKET_TYPES)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .build(),
+              logStreamingTaskClient);
+      List<ServiceNowTicketTypeDTO> ticketTypes = response.getServiceNowTicketTypeList();
+      assertThat(response.getDelegateMetaInfo()).isNull();
+      assertThat(ticketTypes).hasSize(4);
 
-    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
-    ServiceNowTaskNGResponse response =
-        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
-                                                         .action(ServiceNowActionNG.GET_TICKET_TYPES)
-                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                         .build(),
-            logStreamingTaskClient);
-    List<ServiceNowTicketTypeDTO> ticketTypes = response.getServiceNowTicketTypeList();
-    assertThat(response.getDelegateMetaInfo()).isNull();
-    assertThat(ticketTypes).hasSize(4);
+      assertThat(response.getTicket()).isNull();
+      assertThat(response.getServiceNowFieldNGList()).isNull();
+      assertThat(response.getServiceNowTemplateList()).isNull();
+      assertThat(response.getServiceNowImportSetResponseNG()).isNull();
+      assertThat(response.getServiceNowStagingTableList()).isNull();
 
-    assertThat(response.getTicket()).isNull();
-    assertThat(response.getServiceNowFieldNGList()).isNull();
-    assertThat(response.getServiceNowTemplateList()).isNull();
-    assertThat(response.getServiceNowImportSetResponseNG()).isNull();
-    assertThat(response.getServiceNowStagingTableList()).isNull();
+      verify(serviceNowRestClient).getTicketTypes(anyString());
 
-    verify(serviceNowRestClient).getTicketTypes(anyString());
-
-    verify(secretDecryptionService, times(1)).decrypt(any(), any());
-    verify(serviceNowRestClient, times(1)).getTicketTypes(anyString());
+      verify(secretDecryptionService, times(1)).decrypt(any(), any());
+      verify(serviceNowRestClient, times(1)).getTicketTypes(anyString());
+    }
   }
 
   private Response<JsonNode> getJsonNodeResponseFromJsonFile(String filePath, ClassLoader classLoader)
