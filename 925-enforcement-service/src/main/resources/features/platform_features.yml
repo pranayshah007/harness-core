@@ -131,7 +131,7 @@ features:
         clientName: ngmanager
       FREE:
         restrictionType: STATIC_LIMIT
-        limit: 100
+        limit: 1
         clientName: ngmanager
       TEAM:
         restrictionType: AVAILABILITY
