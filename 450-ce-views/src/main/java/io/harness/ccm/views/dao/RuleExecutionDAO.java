@@ -43,8 +43,8 @@ public class RuleExecutionDAO {
 
     UpdateOperations<RuleExecution> updateOperations = hPersistence.createUpdateOperations(RuleExecution.class);
 
-    updateOperations.set(RuleExecution.potentialSavings, ruleExecution.getPotentialSavings());
-    updateOperations.set(RuleExecution.realizedSavings, ruleExecution.getRealizedSavings());
+    updateOperations.set(RuleExecutionKeys.potentialSavings, ruleExecution.getPotentialSavings());
+    updateOperations.set(RuleExecutionKeys.realizedSavings, ruleExecution.getRealizedSavings());
     hPersistence.update(query, updateOperations);
     return ruleExecution;
   }
