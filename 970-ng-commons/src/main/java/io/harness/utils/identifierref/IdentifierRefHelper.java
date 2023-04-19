@@ -162,7 +162,12 @@ public class IdentifierRefHelper {
           .build();
     } else if (identifierConfigStringSplit.length == 2) {
       identifier = identifierConfigStringSplit[1];
-      scope = getScope(identifierConfigStringSplit[0]);
+      try {
+        scope = getScope(identifierConfigStringSplit[0]);
+      } catch (IllegalArgumentException e) {
+        throw new InvalidIdentifierRefException(String.format(
+            "Invalid Identifier Reference %s. " + GENERIC_IDENTIFIER_REFERENCE_HELP, scopedIdentifierConfig));
+      }
       identifierRefBuilder = identifierRefBuilder.identifier(identifier).scope(scope);
       if (scope == Scope.PROJECT || scope == null) {
         throw new InvalidIdentifierRefException(String.format(
