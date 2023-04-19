@@ -12,6 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.mongo.collation.CollationCaseLevel;
+import io.harness.mongo.collation.CollationLocale;
+import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
@@ -56,6 +59,13 @@ public class UserMetadata implements PersistentEntity {
                  .field(UserMetadataKeys.email)
                  .unique(true)
                  .build())
+            .add(CompoundMongoIndex.builder()
+                    .name("uniqueUserMetadataEmailId_collation")
+                    .field(UserMetadataKeys.email)
+                    .collation(
+                            Collation.builder().locale(CollationLocale.ENGLISH).caseLevel(CollationCaseLevel.TRUE).build())
+                    .unique(true)
+                    .build())
         .build();
   }
 
