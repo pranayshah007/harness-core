@@ -36,6 +36,7 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDT
 import io.harness.delegate.beans.connector.k8Connector.KubernetesConnectionTaskResponse;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesDelegateDetailsDTO;
+import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.rule.Owner;
 import io.harness.service.DelegateGrpcClientWrapper;
 
@@ -140,7 +141,7 @@ public class CEKubernetesConnectionValidatorTest extends CategoryTest {
     assertThat(connectorValidationResult.getErrorSummary()).isEqualTo("errorSummary");
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test(expected = InvalidIdentifierRefException.class)
   @Owner(developers = UTSAV)
   @Category(UnitTests.class)
   public void testWronglyScopedConnectorConfig() {
