@@ -240,6 +240,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     doReturn(Response.success(ResponseDTO.newResponse(InputsValidationResponse.builder().isValid(true).build())))
         .when(ngManagerReconcileCall)
         .execute();
+    doReturn(true).when(accessControlClient).hasAccess(any(), any(), any());
   }
 
   @Test
