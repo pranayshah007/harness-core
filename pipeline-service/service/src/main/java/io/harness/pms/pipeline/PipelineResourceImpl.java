@@ -559,7 +559,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   }
 
   @Override
-  public ResponseDTO<String> describeStep(String stageName, String stepName) {
-    return ResponseDTO.newResponse(pipelineAIHelper.getDescription(stageName, stepName));
+  public ResponseDTO<String> describeStep( String stepId) {
+    return ResponseDTO.newResponse(pipelineAIHelper.getDescription(stepId));
   }
 }

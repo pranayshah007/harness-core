@@ -62,7 +62,7 @@ public class PipelineAIHelper {
       "Pipeline name : %s\nPipeline ID : %s\nPipeline Project: %s\n Pipeline Org : %s\n %s";
 
   public static final String DESCRIBE_PROMPT =
-      "Explain the following yaml by going through each 'step' and please go into great detail explaining those steps and what they will do. Do not include any additional details. Return a JSON object that will have parent stage and then step description.Please follow this sample output :\n%s\n YAML to describe and explain:\n %s";
+      "Explain the following yaml by going through each 'step' and please go into great detail explaining those steps and what they will do. Do not include any additional details. Return a JSON object that will have parent stage and then step description. For JSON object use identifier and not name. Please follow this sample output :\n%s\n YAML to describe and explain:\n %s";
 
   public static final String EXAMPLE_FOR_DESCRIPTION = "{\n"
       + "  \"Stage_Identifier\": {\n"
@@ -75,7 +75,7 @@ public class PipelineAIHelper {
       + "}";
   public static final String GPT = "gpt-3.5-turbo";
 
-  public static final String TOKEN = "ToDo";
+  public static final String TOKEN = "toDo";
 
   public static JsonNode DESCRIPTION_JSON = null;
 
@@ -168,7 +168,7 @@ public class PipelineAIHelper {
     }
   }
 
-  public String getDescription(String stageName, String stepName) {
-    return DESCRIPTION_JSON.get(stageName).get(stepName).textValue();
+  public String getDescription(String stepId) {
+    return DESCRIPTION_JSON.findValuesAsText(stepId).get(0);
   }
 }
