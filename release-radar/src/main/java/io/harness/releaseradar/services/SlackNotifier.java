@@ -45,6 +45,10 @@ public class SlackNotifier {
 
   private static String eventDataToString(EventNotifyData eventData) {
     StringBuilder sb = new StringBuilder();
+    if (EmptyPredicate.isNotEmpty(eventData.getJiraId())) {
+      sb.append("*Jira Id:* ").append("*" + eventData.getJiraId() + "*").append("\n");
+    }
+
     if (eventData.getEnvironment() != null) {
       sb.append("*Environment:* ").append(eventData.getEnvironment()).append("\n");
     }
@@ -63,6 +67,7 @@ public class SlackNotifier {
     if (EmptyPredicate.isNotEmpty(eventData.getServiceName())) {
       sb.append("*Service Name:* ").append(eventData.getServiceName()).append("\n");
     }
+
     // Add any other fields as needed
     return sb.toString();
   }

@@ -18,4 +18,6 @@ public class EventNotifyData {
   String buildVersion;
   String release;
   String serviceName;
+  String jiraId;
+  String jiraMessage;
 }
