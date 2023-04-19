@@ -115,6 +115,8 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     if (!isOldGitSync) {
       gitXSettingsHelper.enforceGitExperienceIfApplicable(
           inputSetEntity.getAccountId(), inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
+      gitXSettingsHelper.setConnectorRefForRemoteEntity(
+          inputSetEntity.getAccountId(), inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
 
       PipelineEntity pipelineEntityMetadata =
           pipelineService.getPipelineMetadata(inputSetEntity.getAccountIdentifier(), inputSetEntity.getOrgIdentifier(),

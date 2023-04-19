@@ -179,6 +179,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
     gitXSettingsHelper.enforceGitExperienceIfApplicable(pipelineEntity.getAccountIdentifier(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
+    gitXSettingsHelper.setConnectorRefForRemoteEntity(pipelineEntity.getAccountIdentifier(),
+        pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
 
     checkProjectExists(
         pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());

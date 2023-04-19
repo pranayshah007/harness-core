@@ -88,7 +88,6 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
   @Mock private GitXSettingsHelper gitXSettingsHelper;
   @Mock private OrganizationClient organizationClient;
-
   @Mock private AccountClient accountClient;
   @Mock NGSettingsClient settingsClient;
 
