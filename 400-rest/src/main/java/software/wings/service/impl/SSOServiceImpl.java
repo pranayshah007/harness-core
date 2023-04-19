@@ -446,7 +446,9 @@ public class SSOServiceImpl implements SSOService {
   @Override
   public LdapTestResponse validateLdapConnectionSettings(
       @NotNull LdapSettings ldapSettings, @NotBlank final String accountId) {
-    boolean temporaryEncryption = !populateEncryptedFields(ldapSettings);
+    populateEncryptedFields(ldapSettings);
+    boolean temporaryEncryption = isNotEmpty(ldapSettings.getConnectionSettings().getBindPassword())
+        && !ldapSettings.getConnectionSettings().getBindPassword().equals(LdapConstants.MASKED_STRING);
     encryptSecretIfFFisEnabled(ldapSettings);
     ldapSettings.encryptLdapInlineSecret(secretManager, false);
     EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
