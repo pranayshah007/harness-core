@@ -22,21 +22,21 @@ import java.util.List;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDP)
-public class AwsSamDeployStep extends AbstractContainerStep {
+public class AwsSamBuildStep extends AbstractContainerStep {
   public static final StepType STEP_TYPE = StepType.newBuilder()
-                                               .setType(ExecutionNodeType.AWS_SAM_DEPLOY.getYamlType())
+                                               .setType(ExecutionNodeType.AWS_SAM_BUILD.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
   public Map<String, String> getEnvironmentVariables(StepElementParameters stepElementParameters) {
-    AwsSamDeployStepInfo awsSamDeployStepInfo = (AwsSamDeployStepInfo) stepElementParameters.getSpec();
-    Map<String, String> envvars = ExpressionResolverUtils.resolveMapParameterV2("envVariables", "AwsSamDeployStep",
-        awsSamDeployStepInfo.getUuid(), awsSamDeployStepInfo.getEnvVariables(), false);
+    AwsSamBuildStepInfo awsSamBuildStepInfo = (AwsSamBuildStepInfo) stepElementParameters.getSpec();
+    Map<String, String> envvars = ExpressionResolverUtils.resolveMapParameterV2(
+        "envVariables", "AwsSamBuildStep", awsSamBuildStepInfo.getUuid(), awsSamBuildStepInfo.getEnvVariables(), false);
     return envvars;
   }
 
   public ParameterField<List<OutputNGVariable>> getOutputVariables(StepElementParameters stepElementParameters) {
-    AwsSamDeployStepInfo awsSamDeployStepInfo = (AwsSamDeployStepInfo) stepElementParameters.getSpec();
+    AwsSamBuildStepInfo awsSamBuildStepInfo = (AwsSamBuildStepInfo) stepElementParameters.getSpec();
     return null;
   }
 }

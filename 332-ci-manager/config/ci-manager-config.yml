@@ -70,7 +70,7 @@ distributedLockImplementation: MONGO
 
 
 harness-mongo:
-  uri: mongodb://localhost:27018,127.0.0.1:27019,127.0.0.1:27017/harness?replicaSet=rs0
+  uri: mongodb://localhost:27017/harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
   socketTimeout: 360000
@@ -78,7 +78,7 @@ harness-mongo:
   connectionsPerHost: 50
   aliasDBName: harness
 cimanager-mongo:
-  uri: mongodb://localhost:27018,127.0.0.1:27019,127.0.0.1:27017/harnessci?replicaSet=rs0
+  uri: mongodb://localhost:27017/harnessci
   connectTimeout: 30000
   serverSelectionTimeout: 90000
   socketTimeout: 360000
@@ -170,9 +170,11 @@ ciExecutionServiceConfig:
     overrideConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
-  delegateServiceEndpointVariableValue: "0.tcp.in.ngrok.io:10104"
+  #delegateServiceEndpointVariableValue: "delegate-service:8080"
+  delegateServiceEndpointVariableValue: "2.tcp.ngrok.io:10322"
   addonImage: harness/ci-addon:1.16.7
   liteEngineImage: harness/ci-lite-engine:1.16.7
+  #isLocal: false
   isLocal: true
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
@@ -370,7 +372,8 @@ pmsGrpcClientConfig:
 
 apiUrl: https://localhost:8181/#/
 
-shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-true}
+#shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
+shouldConfigureWithPMS: true
 
 enableDashboardTimescale: false
 

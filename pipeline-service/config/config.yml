@@ -63,7 +63,7 @@ pmsSdkOrchestrationEventPoolConfig:
   timeUnit: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 mongo:
-  uri: mongodb://localhost:27018,127.0.0.1:27019,127.0.0.1:27017/pms-harness?replicaSet=rs0
+  uri: mongodb://localhost:27017/pms-harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
   socketTimeout: 360000
@@ -243,8 +243,8 @@ triggerConfig:
   customBaseUrl: http://localhost:12001/api/
 
 logStreamingServiceConfig:
-  baseUrl: https://qa.harness.io/log-service/
-  serviceToken: "c76e567a-b341-404d-a8dd-d9738714eb82"
+  baseUrl: http://localhost:8079
+  serviceToken: token
 
 # remove in a few cycles
 opaServerConfig:
@@ -299,11 +299,13 @@ orchestrationStepConfig:
     defaultCPULimit: 400
     defaultInternalImageConnector: 'account.harnessImage'
     pvcDefaultStorageSize: 25600
-    delegateServiceEndpointVariableValue: "delegate-service:8080"
+    #delegateServiceEndpointVariableValue: "delegate-service:8080"
+    delegateServiceEndpointVariableValue: "2.tcp.ngrok.io:10322"
     addonImage: harness/ci-addon:1.14.19
     liteEngineImage: harness/ci-lite-engine:1.14.22
-    isLocal: false
-    logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-https://qa.harness.io/log-service/}
+    #isLocal: false
+    isLocal: true
+    logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-http://localhost:8079}
     pluginConfig:
       sscaOrchestrationConfig:
         image: harness/ssca-plugin:latest
@@ -564,7 +566,7 @@ eventsFrameworkSnapshotDebezium:
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
 
-disableFreezeNotificationTemplate: ${DISABLE_FREEZE_NOTIFY_TEMPLATE:-false}
+disableFreezeNotificationTemplate: ${DISABLE_FREEZE_NOTIFY_TEMPLATE:-true}
 
 cfClientConfig:
   apiKey: ""

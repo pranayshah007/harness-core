@@ -86,7 +86,7 @@ logging:
       stackdriverLogEnabled: false
 
 mongo:
-  uri: mongodb://localhost:27018,127.0.0.1:27019,127.0.0.1:27017/ng-harness?replicaSet=rs0
+  uri: mongodb://localhost:27017/ng-harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
   socketTimeout: 360000

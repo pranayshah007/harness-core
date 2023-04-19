@@ -28,11 +28,11 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@TypeAlias("awsSamDeployStepParameters")
-@RecasterAlias("io.harness.cdng.aws.sam.AwsSamDeployStepParameters")
-public class AwsSamDeployStepParameters extends AwsSamDeployBaseStepInfo implements AwsSamSpecParameters {
+@TypeAlias("awsSamBuildStepParameters")
+@RecasterAlias("io.harness.cdng.aws.sam.AwsSamBuildStepParameters")
+public class AwsSamBuildStepParameters extends AwsSamBuildBaseStepInfo implements AwsSamSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public AwsSamDeployStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+  public AwsSamBuildStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
       ContainerResource resources, ParameterField<Map<String, ParameterField<String>>> envVariables,
       ParameterField<Boolean> privileged, ParameterField<Integer> runAsUser,

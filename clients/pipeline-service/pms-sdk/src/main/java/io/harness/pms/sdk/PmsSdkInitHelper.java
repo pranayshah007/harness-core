@@ -89,7 +89,7 @@ public class PmsSdkInitHelper {
 
   public static void initializeSDKInstance(Injector injector, PmsSdkConfiguration pmsSdkConfiguration) {
     initialize(injector, pmsSdkConfiguration);
-    initializeMetrics(injector);
+    // initializeMetrics(injector);
   }
 
   private static void initialize(Injector injector, PmsSdkConfiguration config) {
