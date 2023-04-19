@@ -2024,7 +2024,7 @@ components:
       properties:
         policy_identifier:
           type: string
-        ploicy_name:
+        policy_name:
           type: string
         severity:
           type: string
@@ -2043,9 +2043,9 @@ components:
         project_identifier:
           type: string
         created:
-          type: integer
+          type: int64
         updated:
-          type: integer
+          type: int64
         error:
           type: string
     PolicySetMetadata:
@@ -2066,10 +2066,10 @@ components:
           type: string
         status:
           type: string
-        identifer:
+        identifier:
           type: string
         created:
-          type: integer
+          type: int64
         account_identifier:
           type: string
         org_identifier:
@@ -2111,7 +2111,7 @@ components:
         action:
           type: string
         created:
-          type: integer
+          type: int64
     PipelineSaveResponseBody:
       title: Pipeline Save Response Body
       x-stoplight:
