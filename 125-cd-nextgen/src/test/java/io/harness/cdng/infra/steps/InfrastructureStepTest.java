@@ -27,9 +27,9 @@ import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -137,19 +137,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(CDP)
+@RunWith(MockitoJUnitRunner.class)
 public class InfrastructureStepTest extends CategoryTest {
-  @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock EnvironmentService environmentService;
   @InjectMocks private InfrastructureStep infrastructureStep;
 
@@ -875,10 +874,10 @@ public class InfrastructureStepTest extends CategoryTest {
                                            .region(ParameterField.createValueField("region"))
                                            .build();
     Ambiance ambiance = Mockito.mock(Ambiance.class);
-    doThrow(InvalidRequestException.class).when(infrastructureStepHelper).validateExpression(any());
+    doThrow(InvalidRequestException.class).when(infrastructureStepHelper).validateExpression(any(), any());
     assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
         .isInstanceOf(InvalidRequestException.class);
-    doNothing().when(infrastructureStepHelper).validateExpression(any());
+    doNothing().when(infrastructureStepHelper).validateExpression(any(), any());
     assertThatCode(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
         .doesNotThrowAnyException();
   }

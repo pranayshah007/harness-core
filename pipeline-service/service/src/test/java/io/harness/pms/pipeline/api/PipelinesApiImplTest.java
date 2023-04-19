@@ -424,7 +424,7 @@ public class PipelinesApiImplTest extends CategoryTest {
         .when(pipelineMetadataService)
         .getMetadataForGivenPipelineIds(account, org, project, Collections.singletonList(identifier));
     MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
-    aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
+    aStatic.when(() -> NGRestUtils.getResponse(eq(projectClient.getProject(any(), any(), any())), any()))
         .thenThrow(InvalidRequestException.class);
     final Throwable ex = catchThrowable(()
                                             -> pipelinesApiImpl

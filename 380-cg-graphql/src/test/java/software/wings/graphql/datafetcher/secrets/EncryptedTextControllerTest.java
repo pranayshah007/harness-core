@@ -9,7 +9,7 @@ package software.wings.graphql.datafetcher.secrets;
 
 import static io.harness.rule.OwnerRule.DEEPAK;
 
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;

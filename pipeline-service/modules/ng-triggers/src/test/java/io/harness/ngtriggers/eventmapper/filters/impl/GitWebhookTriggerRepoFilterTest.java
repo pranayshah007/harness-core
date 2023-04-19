@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngtriggers.eventmapper.filters.impl;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
@@ -16,9 +17,8 @@ import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.MockitoAnnotations.initMocks;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 
@@ -51,26 +51,29 @@ import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.ngtriggers.utils.GitProviderDataObtainmentManager;
 import io.harness.rule.Owner;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.google.inject.Inject;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @OwnedBy(PIPELINE)
 public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
   @Mock private NGTriggerService ngTriggerService;
   @Mock private GitProviderDataObtainmentManager dataObtainmentManager;
   @Inject @InjectMocks private GitWebhookTriggerRepoFilter filter;
-  @Mock private Logger logger;
+  private Logger logger;
+  private ListAppender<ILoggingEvent> listAppender;
   private static List<TriggerDetails> triggerDetailsList;
   private static List<TriggerDetails> triggerDetailsList1;
   private static List<ConnectorResponseDTO> connectors;
@@ -257,11 +260,11 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
   @Before
   public void setUp() throws IOException, IllegalAccessException {
     initMocks(this);
-    final Field f = FieldUtils.getField(GitWebhookTriggerRepoFilter.class, "log", true);
-    FieldUtils.removeFinalModifier(f);
-    f.set(null, logger);
+    logger = (Logger) LoggerFactory.getLogger(GitWebhookTriggerRepoFilter.class);
+    listAppender = new ListAppender<>();
+    listAppender.start();
+    logger.addAppender(listAppender);
   }
-
   @Test
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
@@ -571,7 +574,11 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
             .build();
 
     filter.generateConnectorFQNFromTriggerConfig(triggerDetails, triggerToConnectorMap);
-    verify(logger).error(eq(
-        "TRIGGER_ERROR_LOG: Exception while evaluating Trigger: acc:org:proj:null:null, Filter: GitWebhookTriggerRepoFilter, Skipping this one."));
+    ILoggingEvent log = listAppender.list.get(0);
+    assertThat(log).isNotNull();
+    assertThat(log.getFormattedMessage())
+        .isEqualTo(
+            "TRIGGER_ERROR_LOG: Exception while evaluating Trigger: acc:org:proj:null:null, Filter: GitWebhookTriggerRepoFilter, Skipping this one.");
+    assertThat(log.getLevel()).isEqualTo(Level.ERROR);
   }
 }

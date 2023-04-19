@@ -15,7 +15,7 @@ import static io.harness.rule.OwnerRule.SRINIVAS;
 import static java.time.Duration.ofMinutes;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,8 +43,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
@@ -63,8 +63,8 @@ public class DelegateAgentServiceImplTest extends CategoryTest {
 
   @Before
   public void setUp() {
-    when(delegateAgentManagerClient.acquireTask(
-             Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anyString()))
+    when(delegateAgentManagerClient.acquireTask(ArgumentMatchers.anyString(), ArgumentMatchers.anyString(),
+             ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
         .thenReturn(delegatePackageCall);
   }
 

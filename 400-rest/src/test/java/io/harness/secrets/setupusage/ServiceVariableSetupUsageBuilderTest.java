@@ -13,7 +13,7 @@ import static software.wings.beans.CGConstants.GLOBAL_ENV_ID;
 import static software.wings.settings.SettingVariableTypes.SERVICE_VARIABLE;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;

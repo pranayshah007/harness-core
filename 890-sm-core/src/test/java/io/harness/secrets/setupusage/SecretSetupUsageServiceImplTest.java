@@ -15,8 +15,8 @@ import static software.wings.settings.SettingVariableTypes.SERVICE_VARIABLE;
 import static software.wings.settings.SettingVariableTypes.TRIGGER;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -44,7 +44,7 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 
 public class SecretSetupUsageServiceImplTest extends SMCoreTestBase {
   private SecretManagerConfigService secretManagerConfigService;
@@ -171,7 +171,7 @@ public class SecretSetupUsageServiceImplTest extends SMCoreTestBase {
         SecretSetupUsage.builder().entityId(encryptedDataParent6.getId()).type(TRIGGER).build();
 
     when(secretSetupUsageBuilder.buildSecretSetupUsages(
-             Matchers.eq(accountId), eq(encryptedData.getUuid()), any(), eq(encryptionDetail)))
+             ArgumentMatchers.eq(accountId), eq(encryptedData.getUuid()), any(), eq(encryptionDetail)))
         .thenReturn(Sets.newHashSet(mockUsage1, mockUsage2))
         .thenReturn(Sets.newHashSet(mockUsage3))
         .thenReturn(Sets.newHashSet(mockUsage4, mockUsage5))

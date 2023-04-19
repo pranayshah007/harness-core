@@ -17,11 +17,10 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -36,7 +35,6 @@ import io.harness.aws.util.AwsCallTracker;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
@@ -95,7 +93,7 @@ public class AwsEc2HelperServiceDelegateImplTest extends WingsBaseTest {
 
   @Before
   public void setup() {
-    doReturn(null).when(mockEncryptionService).decrypt(any(), anyListOf(EncryptedDataDetail.class), eq(false));
+    doReturn(null).when(mockEncryptionService).decrypt(any(), anyList(), eq(false));
     doReturn(mockClient).when(awsEc2HelperServiceDelegate).getAmazonEc2Client(anyString(), any());
     doNothing().when(mockTracker).trackEC2Call(anyString());
   }

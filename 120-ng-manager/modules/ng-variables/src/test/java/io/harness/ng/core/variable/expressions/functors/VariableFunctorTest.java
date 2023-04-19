@@ -11,12 +11,10 @@ import static io.harness.rule.OwnerRule.NISHANT;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.CategoryTest;
@@ -39,25 +37,25 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import javax.ws.rs.NotFoundException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(VariableFunctor.class)
 public class VariableFunctorTest extends CategoryTest {
   @Mock private VariableService variableService;
   @InjectMocks private VariableFunctor variableFunctor;
+  private MockedStatic<AmbianceUtils> ambianceUtilsMockedStatic;
 
   @Captor public ArgumentCaptor<String> accountIdentifierCaptor;
   @Captor public ArgumentCaptor<String> orgIdentifierCaptor;
@@ -68,6 +66,12 @@ public class VariableFunctorTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+    ambianceUtilsMockedStatic = Mockito.mockStatic(AmbianceUtils.class);
+  }
+
+  @After
+  public void cleanup() {
+    ambianceUtilsMockedStatic.close();
   }
 
   @Test
@@ -80,10 +84,10 @@ public class VariableFunctorTest extends CategoryTest {
     String projectIdentifier = randomAlphabetic(10);
     String variableIdentifier = randomAlphabetic(5);
     String fixedValue = randomAlphabetic(10);
-    mockStatic(AmbianceUtils.class);
+
     when(AmbianceUtils.getNgAccess(any()))
         .thenAnswer(invocationOnMock -> getNgAccess(accountIdentifier, orgIdentifier, projectIdentifier));
-    when(variableService.list(anyObject(), anyObject(), anyObject()))
+    when(variableService.list(any(), any(), any()))
         .thenReturn(Collections.singletonList(getVariableDTO(variableIdentifier, fixedValue)));
     Object variableMap = variableFunctor.get(Ambiance.newBuilder().build(), "account");
     verify(variableService, times(1))
@@ -106,10 +110,10 @@ public class VariableFunctorTest extends CategoryTest {
     String projectIdentifier = randomAlphabetic(10);
     String variableIdentifier = randomAlphabetic(5);
     String fixedValue = randomAlphabetic(10);
-    mockStatic(AmbianceUtils.class);
+
     when(AmbianceUtils.getNgAccess(any()))
         .thenAnswer(invocationOnMock -> getNgAccess(accountIdentifier, orgIdentifier, projectIdentifier));
-    when(variableService.list(anyObject(), anyObject(), anyObject()))
+    when(variableService.list(any(), any(), any()))
         .thenReturn(Collections.singletonList(getVariableDTO(variableIdentifier, fixedValue)));
     Object variableMap = variableFunctor.get(Ambiance.newBuilder().build(), "org");
     verify(variableService, times(1))
@@ -130,9 +134,9 @@ public class VariableFunctorTest extends CategoryTest {
     String accountIdentifier = randomAlphabetic(10);
     String variableIdentifier = randomAlphabetic(5);
     String fixedValue = randomAlphabetic(10);
-    mockStatic(AmbianceUtils.class);
+
     when(AmbianceUtils.getNgAccess(any())).thenAnswer(invocationOnMock -> getNgAccess(accountIdentifier, null, null));
-    when(variableService.get(anyObject(), anyObject(), anyObject(), anyString()))
+    when(variableService.get(any(), any(), any(), anyString()))
         .thenReturn(Optional.ofNullable(getVariableResponseDTO(variableIdentifier, fixedValue)));
     Object variableValue = variableFunctor.get(Ambiance.newBuilder().build(), variableIdentifier);
     verify(variableService, times(1))
@@ -154,10 +158,10 @@ public class VariableFunctorTest extends CategoryTest {
     String orgIdentifier = randomAlphabetic(10);
     String variableIdentifier = randomAlphabetic(5);
     String fixedValue = randomAlphabetic(10);
-    mockStatic(AmbianceUtils.class);
+
     when(AmbianceUtils.getNgAccess(any()))
         .thenAnswer(invocationOnMock -> getNgAccess(accountIdentifier, orgIdentifier, null));
-    when(variableService.get(anyObject(), anyObject(), anyObject(), anyString()))
+    when(variableService.get(any(), any(), any(), anyString()))
         .thenReturn(Optional.ofNullable(getVariableResponseDTO(variableIdentifier, fixedValue)));
     Object variableValue = variableFunctor.get(Ambiance.newBuilder().build(), variableIdentifier);
     verify(variableService, times(1))
@@ -180,10 +184,10 @@ public class VariableFunctorTest extends CategoryTest {
     String projectIdentifier = randomAlphabetic(10);
     String variableIdentifier = randomAlphabetic(5);
     String fixedValue = randomAlphabetic(10);
-    mockStatic(AmbianceUtils.class);
+
     when(AmbianceUtils.getNgAccess(any()))
         .thenAnswer(invocationOnMock -> getNgAccess(accountIdentifier, orgIdentifier, projectIdentifier));
-    when(variableService.get(anyObject(), anyObject(), anyObject(), anyString()))
+    when(variableService.get(any(), any(), any(), anyString()))
         .thenReturn(Optional.ofNullable(getVariableResponseDTO(variableIdentifier, fixedValue)));
     Object variableValue = variableFunctor.get(Ambiance.newBuilder().build(), variableIdentifier);
     verify(variableService, times(1))
@@ -205,10 +209,10 @@ public class VariableFunctorTest extends CategoryTest {
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
     String variableIdentifier = randomAlphabetic(5);
-    mockStatic(AmbianceUtils.class);
+
     when(AmbianceUtils.getNgAccess(any()))
         .thenAnswer(invocationOnMock -> getNgAccess(accountIdentifier, orgIdentifier, projectIdentifier));
-    when(variableService.get(anyObject(), anyObject(), anyObject(), anyString())).thenReturn(Optional.empty());
+    when(variableService.get(any(), any(), any(), anyString())).thenReturn(Optional.empty());
     exceptionRule.expect(NotFoundException.class);
     exceptionRule.expectMessage(
         String.format("Variable with identifier [%s] not found in scope [%s]", variableIdentifier, ScopeLevel.PROJECT));
@@ -224,10 +228,10 @@ public class VariableFunctorTest extends CategoryTest {
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
     String variableIdentifier = randomAlphabetic(5);
-    mockStatic(AmbianceUtils.class);
+
     when(AmbianceUtils.getNgAccess(any()))
         .thenAnswer(invocationOnMock -> getNgAccess(accountIdentifier, orgIdentifier, projectIdentifier));
-    when(variableService.get(anyObject(), anyObject(), anyObject(), anyString()))
+    when(variableService.get(any(), any(), any(), anyString()))
         .thenReturn(Optional.ofNullable(VariableResponseDTO.builder().build()));
     exceptionRule.expect(NotFoundException.class);
     exceptionRule.expectMessage(
@@ -244,10 +248,10 @@ public class VariableFunctorTest extends CategoryTest {
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
     String variableIdentifier = randomAlphabetic(5);
-    mockStatic(AmbianceUtils.class);
+
     when(AmbianceUtils.getNgAccess(any()))
         .thenAnswer(invocationOnMock -> getNgAccess(accountIdentifier, orgIdentifier, projectIdentifier));
-    when(variableService.get(anyObject(), anyObject(), anyObject(), anyString()))
+    when(variableService.get(any(), any(), any(), anyString()))
         .thenReturn(Optional.ofNullable(VariableResponseDTO.builder().variable(VariableDTO.builder().build()).build()));
     exceptionRule.expect(NotFoundException.class);
     exceptionRule.expectMessage(
@@ -261,7 +265,7 @@ public class VariableFunctorTest extends CategoryTest {
   @PrepareForTest(AmbianceUtils.class)
   public void testGet_failValidateAccess() {
     String accountIdentifier = randomAlphabetic(10);
-    mockStatic(AmbianceUtils.class);
+
     when(AmbianceUtils.getNgAccess(any())).thenAnswer(invocationOnMock -> getNgAccess(accountIdentifier, null, null));
     exceptionRule.expect(InvalidArgumentsException.class);
     exceptionRule.expectMessage(

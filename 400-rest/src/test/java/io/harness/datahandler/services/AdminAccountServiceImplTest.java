@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static software.wings.beans.AccountStatus.MARKED_FOR_DELETION;
 
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;

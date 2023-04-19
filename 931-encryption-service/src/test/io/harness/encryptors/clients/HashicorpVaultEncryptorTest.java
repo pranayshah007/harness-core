@@ -17,13 +17,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -45,29 +45,27 @@ import software.wings.helpers.ext.vault.VaultRestClient;
 import software.wings.helpers.ext.vault.VaultRestClientFactory;
 import software.wings.helpers.ext.vault.VaultSysAuthRestClient;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
 
 @Slf4j
 @OwnedBy(PL)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({VaultRestClientFactory.class, NGVaultTaskHelper.class})
-@PowerMockIgnore({"javax.security.*", "org.apache.http.conn.ssl.", "javax.net.ssl.", "javax.crypto.*"})
 public class HashicorpVaultEncryptorTest extends CategoryTest {
   private HashicorpVaultEncryptor hashicorpVaultEncryptor;
   private VaultConfig vaultConfig;
   private VaultRestClient vaultRestClient;
   private VaultSysAuthRestClient vaultSysAuthRestClient;
+  private MockedStatic<VaultRestClientFactory> vaultRestClientFactoryMockedStatic;
+  private MockedStatic<NGVaultTaskHelper> ngVaultTaskHelperMockedStatic;
   public static final String AWS_IAM_TOKEN = "awsIamToken";
   public static final String K8s_AUTH_TOKEN = "k8sAuthToken";
 
@@ -87,32 +85,38 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                       .secretEngineVersion(1)
                       .namespace(UUIDGenerator.generateUuid())
                       .build();
-    hashicorpVaultEncryptor = new HashicorpVaultEncryptor(HTimeLimiter.create());
-    mockStatic(VaultRestClientFactory.class);
-    PowerMockito.when(VaultRestClientFactory.create(vaultConfig)).thenAnswer(invocationOnMock -> vaultRestClient);
-    PowerMockito.when(VaultRestClientFactory.getFullPath(eq(vaultConfig.getBasePath()), anyString()))
+    // Mocking static is supported only in the running thread. Any other thread will call real methods. Since vault
+    // encryptor spawns a new thread it was calling real methods. In tests we don't need multi threading so use
+    // newDirectExecutorService to create executor service which uses the main thread to execute the task.
+    ExecutorService executorService = MoreExecutors.newDirectExecutorService();
+    hashicorpVaultEncryptor = new HashicorpVaultEncryptor(HTimeLimiter.create(executorService));
+    vaultRestClientFactoryMockedStatic = mockStatic(VaultRestClientFactory.class);
+    when(VaultRestClientFactory.create(vaultConfig)).thenReturn(vaultRestClient);
+    when(VaultRestClientFactory.getFullPath(eq(vaultConfig.getBasePath()), anyString()))
         .thenAnswer(invocationOnMock -> {
           String path = (String) invocationOnMock.getArguments()[1];
           return vaultConfig.getBasePath() + "/" + path;
         });
-    mockStatic(NGVaultTaskHelper.class);
+    ngVaultTaskHelperMockedStatic = mockStatic(NGVaultTaskHelper.class);
     VaultAppRoleLoginResult loginResult = VaultAppRoleLoginResult.builder()
                                               .clientToken(AWS_IAM_TOKEN)
                                               .leaseDuration(10L)
                                               .accessor("accessor")
                                               .renewable(true)
                                               .build();
-    PowerMockito.when(NGVaultTaskHelper.getVaultAwmIamAuthLoginResult(eq(vaultConfig))).thenAnswer(invocationOnMock -> {
-      return loginResult;
-    });
+    when(NGVaultTaskHelper.getVaultAwmIamAuthLoginResult(vaultConfig)).thenReturn(loginResult);
     VaultK8sLoginResult vaultK8sLoginResult = VaultK8sLoginResult.builder()
                                                   .clientToken(K8s_AUTH_TOKEN)
                                                   .policies(new ArrayList<>())
                                                   .accessor("accessor")
                                                   .build();
-    PowerMockito.when(NGVaultTaskHelper.getVaultK8sAuthLoginResult(eq(vaultConfig))).thenAnswer(invocationOnMock -> {
-      return vaultK8sLoginResult;
-    });
+    when(NGVaultTaskHelper.getVaultK8sAuthLoginResult(vaultConfig)).thenReturn(vaultK8sLoginResult);
+  }
+
+  @After
+  public void cleanup() {
+    vaultRestClientFactoryMockedStatic.close();
+    ngVaultTaskHelperMockedStatic.close();
   }
 
   @Test

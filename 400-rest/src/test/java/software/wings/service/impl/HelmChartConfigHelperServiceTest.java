@@ -50,8 +50,8 @@ import com.google.inject.Inject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 
 @OwnedBy(CDP)
@@ -250,7 +250,8 @@ public class HelmChartConfigHelperServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldHandleChartNamesProperly() {
     when(executionContext.renderExpression(anyString())).thenAnswer(i -> i.getArgument(0, String.class));
-    when(mockFeatureFlagService.isEnabled(Matchers.eq(FeatureName.HELM_CHART_NAME_SPLIT), any())).thenReturn(true);
+    when(mockFeatureFlagService.isEnabled(ArgumentMatchers.eq(FeatureName.HELM_CHART_NAME_SPLIT), any()))
+        .thenReturn(true);
     when(executionContext.fetchInfraMappingId()).thenReturn("svcId_envId");
     when(executionContext.fetchInfraMappingElement()).thenReturn(InfraMappingElement.builder().name("infraId").build());
     handleChartNameForHelmRepo();

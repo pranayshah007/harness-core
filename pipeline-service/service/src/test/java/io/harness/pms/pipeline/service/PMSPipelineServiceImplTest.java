@@ -23,9 +23,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.joor.Reflect.on;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -90,6 +91,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -122,6 +124,8 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Mock private ProjectClient projectClient;
   @Mock private AccountClient accountClient;
   @Mock GitXSettingsHelper gitXSettingsHelper;
+  private MockedStatic<NGRestUtils> aStatic;
+  MockedStatic<CGRestUtils> cgStatic;
 
   StepCategory library;
   StepCategory cv;
@@ -143,6 +147,8 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
 
   @Before
   public void setUp() throws IOException {
+    aStatic = Mockito.mockStatic(NGRestUtils.class, CALLS_REAL_METHODS);
+    cgStatic = Mockito.mockStatic(CGRestUtils.class);
     StepCategory testStepCD =
         StepCategory.builder()
             .name("Single")
@@ -214,6 +220,12 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
         Objects.requireNonNull(classLoader.getResource(pipeline_yaml_filename)), StandardCharsets.UTF_8);
     PIPELINE_YAML_V1 =
         Resources.toString(Objects.requireNonNull(classLoader.getResource("pipeline-v1.yaml")), StandardCharsets.UTF_8);
+  }
+
+  @After
+  public void cleanup() {
+    aStatic.close();
+    cgStatic.close();
   }
 
   private ClonePipelineDTO buildCloneDTO() {
@@ -336,10 +348,8 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(updatedPipelineEntity)
         .when(pmsPipelineServiceHelper)
         .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
-    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
-    MockedStatic<CGRestUtils> cgStatic = Mockito.mockStatic(CGRestUtils.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
-    aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
+    aStatic.when(() -> NGRestUtils.getResponse(eq(projectClient.getProject(any(), any(), any())), any()))
         .thenReturn(projDTOCall);
     pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
     aStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(false);
@@ -358,9 +368,8 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
         .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
     assertThatThrownBy(() -> pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true))
         .isInstanceOf(InvalidRequestException.class);
-    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
-    aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
+    aStatic.when(() -> NGRestUtils.getResponse(eq(projectClient.getProject(any(), any(), any())), any()))
         .thenReturn(projDTOCall);
     pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
     doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(PipelineVersion.V0));
@@ -440,9 +449,8 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
         .when(pmsPipelineServiceHelper)
         .resolveTemplatesAndValidatePipeline(any(), anyBoolean());
     pmsPipelineRepository.save(pipelineEntity);
-    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
-    aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
+    aStatic.when(() -> NGRestUtils.getResponse(eq(projectClient.getProject(any(), any(), any())), any()))
         .thenReturn(projDTOCall);
 
     PipelineSaveResponse pipelineSaveResponse =
@@ -474,9 +482,8 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
         .validatePipeline(any(), any(), anyBoolean());
 
     pmsPipelineRepository.save(pipelineEntity);
-    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
-    aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
+    aStatic.when(() -> NGRestUtils.getResponse(eq(projectClient.getProject(any(), any(), any())), any()))
         .thenReturn(projDTOCall);
 
     PipelineSaveResponse pipelineSaveResponse =
@@ -504,9 +511,8 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     pipelineEntity.setIsDraft(true);
     doReturn(pipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(PipelineVersion.V0));
     pmsPipelineRepository.save(pipelineEntity);
-    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
-    aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
+    aStatic.when(() -> NGRestUtils.getResponse(eq(projectClient.getProject(any(), any(), any())), any()))
         .thenReturn(projDTOCall);
     PipelineCRUDResult pipelineCRUDResult =
         pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true);
@@ -525,9 +531,8 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
         .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
     assertThatThrownBy(() -> pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true))
         .isInstanceOf(InvalidRequestException.class);
-    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
-    aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
+    aStatic.when(() -> NGRestUtils.getResponse(eq(projectClient.getProject(any(), any(), any())), any()))
         .thenReturn(projDTOCall);
     pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
     doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(PipelineVersion.V0));
@@ -616,9 +621,8 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
         .resolveTemplatesAndValidatePipeline(any(), anyBoolean());
     doNothing().when(gitXSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
     pmsPipelineRepository.save(pipelineEntity);
-    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
-    aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
+    aStatic.when(() -> NGRestUtils.getResponse(eq(projectClient.getProject(any(), any(), any())), any()))
         .thenReturn(projDTOCall);
     PipelineSaveResponse pipelineSaveResponse =
         pmsPipelineService.validateAndClonePipeline(clonePipelineDTO, accountId);
@@ -639,8 +643,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(updatedPipelineEntity)
         .when(pmsPipelineServiceHelper)
         .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
-    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
-    aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
+    aStatic.when(() -> NGRestUtils.getResponse(eq(projectClient.getProject(any(), any(), any())), any()))
         .thenThrow(InvalidRequestException.class);
     final Throwable ex = catchThrowable(() -> pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true));
     assertThat(ex).isInstanceOf(InvalidRequestException.class);
