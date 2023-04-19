@@ -24,7 +24,7 @@ public class UploadedQuestion {
   @NotNull String questionId;
   @Min(1) @Max(100) Long questionNumber;
   @NotNull QuestionType questionType;
-  @NotNull String sectionId;
+  String sectionId;
   String sectionName;
   @NotNull
   @Size.List({

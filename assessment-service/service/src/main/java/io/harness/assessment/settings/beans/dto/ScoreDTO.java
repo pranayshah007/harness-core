@@ -7,12 +7,9 @@
 
 package io.harness.assessment.settings.beans.dto;
 
-import static io.harness.assessment.settings.services.AssessmentUploadServiceImpl.QUESTION_SCORE;
-
 import io.harness.assessment.settings.beans.entities.ScoreType;
 
 import javax.validation.constraints.DecimalMin;
-import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -24,5 +21,5 @@ public class ScoreDTO {
   @NotNull ScoreType scoreType;
   String entityId; //
   @NotNull @DecimalMin(value = "0.00", message = "Score cannot be less than zero.") Double score;
-  @NotNull @Min(0) @Max(QUESTION_SCORE) Long maxScore;
+  @NotNull @Min(0) Long maxScore;
 }

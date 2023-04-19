@@ -9,14 +9,12 @@ package io.harness.assessment.settings.services;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.assessment.settings.beans.dto.EntityType;
 import io.harness.assessment.settings.beans.dto.upload.AssessmentError;
 import io.harness.assessment.settings.beans.dto.upload.AssessmentUploadRequest;
 import io.harness.assessment.settings.beans.dto.upload.AssessmentUploadResponse;
 import io.harness.assessment.settings.beans.entities.Assessment;
 import io.harness.assessment.settings.beans.entities.Question;
 import io.harness.assessment.settings.beans.entities.QuestionOption;
-import io.harness.assessment.settings.beans.entities.QuestionType;
 import io.harness.assessment.settings.mappers.AssessmentUploadMapper;
 import io.harness.assessment.settings.mappers.QuestionUtils;
 import io.harness.assessment.settings.repositories.AssessmentRepository;
@@ -25,9 +23,7 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.ws.rs.BadRequestException;
 import lombok.AllArgsConstructor;
@@ -53,7 +49,11 @@ public class AssessmentUploadServiceImpl implements AssessmentUploadService {
       throw new BadRequestException("Assessment already exists, for Id : " + assessmentUploadRequest.getAssessmentId());
     }
     Assessment assessmentUploaded = AssessmentUploadMapper.fromDTO(assessmentUploadRequest);
-    List<AssessmentError> errorsList = checkInvalidAssessment(assessmentUploaded);
+    assessmentUploadRequest.getQuestions()
+        .stream()
+        .filter(uploadedQuestion -> StringUtils.isEmpty(uploadedQuestion.getSectionId()))
+        .forEach(uploadedQuestion -> uploadedQuestion.setSectionId(DEFAULT_SECTION));
+    List<AssessmentError> errorsList = validateAssessment(assessmentUploaded);
     if (errorsList.size() > 0) {
       return AssessmentUploadResponse.builder().errors(errorsList).build();
     }
@@ -71,62 +71,13 @@ public class AssessmentUploadServiceImpl implements AssessmentUploadService {
     return AssessmentUploadMapper.toDTO(assessmentUploaded);
   }
 
-  List<AssessmentError> checkInvalidAssessment(Assessment assessment) {
+  List<AssessmentError> validateAssessment(Assessment assessment) {
     List<AssessmentError> errors = new ArrayList<>();
     // add option id checks and section id checks TODO
-    List<String> questionsUploaded =
-        assessment.getQuestions().stream().map(Question::getQuestionId).collect(Collectors.toList());
-    //                                         .stream()
-    //                                         .map(AssessmentUploadServiceImpl::getQuestionKey)
-    //                                         .collect(Collectors.toList());
-    if (!questionsUploaded.stream().distinct().collect(Collectors.toList()).equals(questionsUploaded)) {
-      List<String> duplicates = questionsUploaded.stream()
-                                    .collect(Collectors.groupingBy(Function.identity()))
-                                    .entrySet()
-                                    .stream()
-                                    .filter(e -> e.getValue().size() > 1)
-                                    .map(Map.Entry::getKey)
-                                    .collect(Collectors.toList());
-      AssessmentError assessmentError = AssessmentError.builder()
-                                            .entityType(EntityType.ASSESSMENT)
-                                            .entityId(assessment.getAssessmentId())
-                                            .errorMessages(List.of("The question ids are not distinct : " + duplicates))
-                                            .build();
-      errors.add(assessmentError);
-    }
+    QuestionUtils.checkUniqueQuestion(assessment, errors);
     for (Question question : assessment.getQuestions()) {
-      List<AssessmentError> errorsInQuestions = validateQuestionType(question);
-      QuestionUtils.checkDuplicateOptions(errorsInQuestions, question);
-      if (errorsInQuestions.size() > 0) {
-        errors.addAll(errorsInQuestions);
-      }
-    }
-    return errors;
-  }
-
-  List<AssessmentError> validateQuestionType(Question question) {
-    List<AssessmentError> errors = new ArrayList<>();
-    if (StringUtils.isEmpty(question.getSectionId())) {
-      question.setSectionId(DEFAULT_SECTION);
-    }
-    QuestionType questionType = question.getQuestionType();
-    switch (questionType) {
-      case RATING:
-      case LIKERT:
-        QuestionUtils.checkOptionsCount(question, errors, 5);
-        QuestionUtils.checkSorted(question, errors);
-        // Should be ascending or descending
-        break;
-      case CHECKBOX:
-        QuestionUtils.checkSumOfPoints(question, errors);
-        break;
-      case RADIO_BUTTON:
-        QuestionUtils.checkFullPoints(question, errors);
-        break;
-      case YES_NO:
-        QuestionUtils.checkOptionsCount(question, errors, 2);
-        QuestionUtils.checkFullPoints(question, errors);
-        break;
+      QuestionUtils.validateQuestionType(question, errors);
+      QuestionUtils.checkDuplicateOptions(question, errors);
     }
     return errors;
   }
@@ -137,9 +88,9 @@ public class AssessmentUploadServiceImpl implements AssessmentUploadService {
     log.info("Updating assessment with request: {}", assessmentUploadRequest);
     String assessmentId = assessmentUploadRequest.getAssessmentId();
     Assessment assessmentUploaded = AssessmentUploadMapper.fromDTO(assessmentUploadRequest);
-    List<AssessmentError> errorsList = checkInvalidAssessment(assessmentUploaded);
+    List<AssessmentError> errorsList = validateAssessment(assessmentUploaded);
     if (errorsList.size() > 0) {
-      throw new RuntimeException("Uploaded Assessment is invalid : " + errorsList);
+      return AssessmentUploadResponse.builder().errors(errorsList).build();
     }
     Optional<Assessment> assessmentOptional =
         assessmentRepository.findFirstByAssessmentIdOrderByVersionDesc(assessmentId);

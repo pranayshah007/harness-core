@@ -9,6 +9,7 @@ package io.harness.assessment.settings.resources;
 
 import io.harness.assessment.settings.beans.dto.BenchmarkDTO;
 import io.harness.assessment.settings.beans.dto.BenchmarksListRequest;
+import io.harness.assessment.settings.beans.dto.upload.BenchmarkUploadResponse;
 import io.harness.assessment.settings.services.BenchmarkService;
 import io.harness.eraro.ResponseMessage;
 
@@ -46,7 +47,11 @@ public class BenchmarkResource {
   public Response
   uploadBenchmark(@PathParam("assessmentId") String assessmentId, @Valid BenchmarksListRequest body) {
     try {
-      return Response.status(Response.Status.OK).entity(benchmarkService.uploadBenchmark(body, assessmentId)).build();
+      BenchmarkUploadResponse uploadResponse = benchmarkService.uploadBenchmark(body, assessmentId);
+      if (uploadResponse.getErrors() != null && uploadResponse.getErrors().size() > 0) {
+        return Response.status(Response.Status.BAD_REQUEST).entity(uploadResponse).build();
+      }
+      return Response.status(Response.Status.OK).entity(uploadResponse).build();
     } catch (Exception e) {
       log.error("error {}", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)

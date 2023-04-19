@@ -13,8 +13,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.assessment.settings.beans.dto.EntityType;
 import io.harness.assessment.settings.beans.dto.upload.AssessmentError;
+import io.harness.assessment.settings.beans.entities.Assessment;
 import io.harness.assessment.settings.beans.entities.Question;
 import io.harness.assessment.settings.beans.entities.QuestionOption;
+import io.harness.assessment.settings.beans.entities.QuestionType;
 
 import java.util.Collections;
 import java.util.List;
@@ -29,6 +31,27 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.SEI)
 @UtilityClass
 public class QuestionUtils {
+  public static void validateQuestionType(Question question, List<AssessmentError> errors) {
+    QuestionType questionType = question.getQuestionType();
+    switch (questionType) {
+      case RATING:
+      case LIKERT:
+        QuestionUtils.checkOptionsCount(question, errors, 5);
+        QuestionUtils.checkSorted(question, errors);
+        // Should be ascending or descending
+        break;
+      case CHECKBOX:
+        QuestionUtils.checkSumOfPoints(question, errors);
+        break;
+      case RADIO_BUTTON:
+        QuestionUtils.checkFullPoints(question, errors);
+        break;
+      case YES_NO:
+        QuestionUtils.checkOptionsCount(question, errors, 2);
+        QuestionUtils.checkFullPoints(question, errors);
+        break;
+    }
+  }
   public static void checkSorted(Question question, List<AssessmentError> errors) {
     List<Long> pointsList =
         question.getPossibleResponses().stream().map(QuestionOption::getOptionPoints).collect(Collectors.toList());
@@ -77,7 +100,7 @@ public class QuestionUtils {
     }
   }
 
-  public static void checkDuplicateOptions(List<AssessmentError> errors, Question question) {
+  public static void checkDuplicateOptions(Question question, List<AssessmentError> errors) {
     List<String> options =
         question.getPossibleResponses().stream().map(QuestionOption::getOptionId).collect(Collectors.toList());
     if (!options.stream().distinct().collect(Collectors.toList()).equals(options)) {
@@ -93,7 +116,42 @@ public class QuestionUtils {
                      .entityId(question.getQuestionId())
                      .errorMessages(List.of("Options are not distinct for question : " + duplicates))
                      .build());
-      // add reason
+    }
+  }
+
+  public static void checkUniqueQuestion(Assessment assessment, List<AssessmentError> errors) {
+    List<String> questionsUploaded =
+        assessment.getQuestions().stream().map(Question::getQuestionId).collect(Collectors.toList());
+    if (!questionsUploaded.stream().distinct().collect(Collectors.toList()).equals(questionsUploaded)) {
+      List<String> duplicates = questionsUploaded.stream()
+                                    .collect(Collectors.groupingBy(Function.identity()))
+                                    .entrySet()
+                                    .stream()
+                                    .filter(e -> e.getValue().size() > 1)
+                                    .map(Map.Entry::getKey)
+                                    .collect(Collectors.toList());
+      AssessmentError assessmentError = AssessmentError.builder()
+                                            .entityType(EntityType.ASSESSMENT)
+                                            .entityId(assessment.getAssessmentId())
+                                            .errorMessages(List.of("The question ids are not distinct : " + duplicates))
+                                            .build();
+      errors.add(assessmentError);
+      List<Long> duplicateQuestionNumbers = assessment.getQuestions()
+                                                .stream()
+                                                .map(Question::getQuestionNumber)
+                                                .collect(Collectors.groupingBy(Function.identity()))
+                                                .entrySet()
+                                                .stream()
+                                                .filter(e -> e.getValue().size() > 1)
+                                                .map(Map.Entry::getKey)
+                                                .collect(Collectors.toList());
+      AssessmentError duplicateNumbers =
+          AssessmentError.builder()
+              .entityType(EntityType.ASSESSMENT)
+              .entityId(assessment.getAssessmentId())
+              .errorMessages(List.of("There are duplicate question numbers : " + duplicateQuestionNumbers))
+              .build();
+      errors.add(duplicateNumbers);
     }
   }
 }
