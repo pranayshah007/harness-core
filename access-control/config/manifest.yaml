@@ -1,5 +1,5 @@
 BUILD_SCRIPT_PATH="access-control/build/feature_build.sh"
-DOCKER_FILE_PATH="/harness/dist/access-control/Dockerfile-accesscontrol-service-cie-jdk"
+DOCKER_FILE_PATH="/harness/dist/access-control/Dockerfile-cie-jdk"
 CONTEXT_PATH="/harness/dist/access-control"
 ARTIFACT_REPO="harness/feature-accesscontrol-service-openjdk-8u242"
 HELM_CHART_REPO="access-control/chart"
