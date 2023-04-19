@@ -39,6 +39,7 @@ import io.harness.delegate.task.jira.mappers.JiraRequestResponseMapper;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.JiraClientException;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.jira.JiraActionNG;
 import io.harness.jira.JiraClient;
@@ -1075,6 +1076,33 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testCreateIssueWhenCreateMetadataThrowsException() throws Exception {
+    Map<String, String> fields = new HashMap<>();
+    fields.put("Test Summary", "No test added");
+    JiraTaskNGParameters jiraTaskNGParameters = createJiraTaskParametersBuilder()
+                                                    .action(JiraActionNG.CREATE_ISSUE)
+                                                    .projectKey("Invalid-Project-Key")
+                                                    .issueType("Bug")
+                                                    .fields(fields)
+                                                    .fetchStatus(false)
+                                                    .ignoreComment(false)
+                                                    .build();
+
+    JiraClient jiraClient = Mockito.mock(JiraClient.class);
+    PowerMockito.whenNew(JiraClient.class).withAnyArguments().thenReturn(jiraClient);
+
+    when(jiraClient.getIssueCreateMetadata("Invalid-Project-Key", "Bug", null, false, false, false, false))
+        .thenThrow(new JiraClientException("invalid project key"));
+
+    when(jiraClient.createIssue("Invalid-Project-Key", "Bug", fields, true, false, false))
+        .thenThrow(new HintException("dummy hint"));
+
+    assertThatThrownBy(() -> jiraTaskNGHandler.createIssue(jiraTaskNGParameters)).isInstanceOf(HintException.class);
+  }
+
+  @Test
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
   public void testupdateIssue() throws Exception {
@@ -1138,6 +1166,35 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     assertThat(jiraTaskNGResponse).isNotNull();
     assertThat(jiraTaskNGResponse.getIssue()).isEqualTo(jiraIssueNG);
     assertThat(jiraTaskNGParameters.getFields()).isEqualTo(fields1);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testUpdateIssueWhenUpdateMetadataThrowsException() throws Exception {
+    Map<String, String> fields = new HashMap<>();
+    fields.put("Test Summary", "No test added");
+
+    JiraTaskNGParameters jiraTaskNGParameters = createJiraTaskParametersBuilder()
+                                                    .action(JiraActionNG.UPDATE_ISSUE)
+                                                    .projectKey("TJI")
+                                                    .issueKey("TJI-37792-invalid")
+                                                    .fields(fields)
+                                                    .fetchStatus(false)
+                                                    .ignoreComment(false)
+                                                    .build();
+
+    JiraClient jiraClient = Mockito.mock(JiraClient.class);
+
+    PowerMockito.whenNew(JiraClient.class).withAnyArguments().thenReturn(jiraClient);
+    when(jiraClient.getIssueUpdateMetadata("TJI-37792-invalid")).thenThrow(new JiraClientException("dummy"));
+
+    when(jiraClient.updateIssue(
+             jiraTaskNGParameters.getIssueKey(), jiraTaskNGParameters.getTransitionToStatus(), null, fields))
+        .thenThrow(new JiraClientException("invalid issue key"));
+
+    assertThatThrownBy(() -> jiraTaskNGHandler.updateIssue(jiraTaskNGParameters))
+        .isInstanceOf(JiraClientException.class);
   }
 
   @Test

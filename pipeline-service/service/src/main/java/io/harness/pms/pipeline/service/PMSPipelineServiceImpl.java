@@ -54,6 +54,7 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
+import io.harness.gitx.GitXSettingsHelper;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.ngsettings.SettingIdentifiers;
@@ -158,6 +159,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   private final PipelineSetupUsageHelper pipelineSetupUsageHelper;
 
   @Inject private final FilterCreatorMergeService filterCreatorMergeService;
+  @Inject GitXSettingsHelper gitXSettingsHelper;
 
   @Inject private final AccountClient accountClient;
   @Inject NGSettingsClient settingsClient;
@@ -183,8 +185,15 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
         pipelineEntity.getIdentifier());
+
+    gitXSettingsHelper.enforceGitExperienceIfApplicable(pipelineEntity.getAccountIdentifier(),
+        pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
+    gitXSettingsHelper.setConnectorRefForRemoteEntity(pipelineEntity.getAccountIdentifier(),
+        pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
+
     checkProjectExists(
         pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
+
     GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(
         pipelineEntity, throwExceptionIfGovernanceFails, false);
     try {
@@ -205,7 +214,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       String branch = GitAwareContextHelper.getBranchFromSCMGitMetadata();
 
       publishSetupUsages(createdEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), branch);
-
+      
       try {
         String branchInRequest = GitAwareContextHelper.getBranchInRequest();
         pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(createdEntity,

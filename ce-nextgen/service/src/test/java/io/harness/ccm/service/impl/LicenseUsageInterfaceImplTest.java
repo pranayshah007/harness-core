@@ -20,6 +20,7 @@ import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.beans.config.GcpConfig;
 import io.harness.ccm.commons.beans.usage.CELicenseUsageDTO;
+import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.licensing.usage.params.UsageRequestParams;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -57,6 +58,7 @@ public class LicenseUsageInterfaceImplTest extends CategoryTest {
   @Mock private BigQueryService bigQueryService;
   @Mock private CENextGenConfiguration configuration;
   @Mock private ClickHouseService clickHouseService;
+  @Mock private BigQueryHelper bigQueryHelper;
 
   private List<FieldValue> octoberClusterFieldValues;
   private List<FieldValue> octoberAzureFieldValues;

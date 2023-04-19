@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
@@ -54,11 +55,13 @@ import org.mockito.Mock;
 public class K8sDryRunManifestStepTest extends AbstractK8sStepExecutorTestBase {
   @Mock ExecutionSweepingOutputService executionSweepingOutputService;
   @InjectMocks private K8sDryRunManifestStep k8sDryRunManifestStep;
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Test
   @Owner(developers = PRATYUSH)
   @Category(UnitTests.class)
   public void testExecuteK8sTask() {
+    when(cdFeatureFlagHelper.isEnabled(any(), any())).thenReturn(false);
     K8sDryRunManifestStepParameters stepParameters = new K8sDryRunManifestStepParameters();
     final StepElementParameters stepElementParameters =
         StepElementParameters.builder().spec(stepParameters).timeout(ParameterField.createValueField("30m")).build();

@@ -551,17 +551,17 @@ paths:
           $ref: '#/components/responses/IPAllowlistConfigListResponse'
       description: Retrieves the information of the IP Allowlist Config
       parameters:
-        - schema:
-            type: array
-            items:
-              type: string
-          in: query
-          description: Identifier field of IP Allowlist config
-          name: identifier
         - $ref: '#/components/parameters/SearchTerm'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+        - schema:
+            type: string
+          in: query
+          description: This is to filter IP allowlist configs only blocked from UI or API
+          name: allowed_source_type
       security:
         - x-api-key: []
       tags:

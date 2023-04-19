@@ -143,7 +143,6 @@ public class PerspectiveTimeSeriesHelper {
       String id = DEFAULT_STRING_VALUE;
       String stringValue = DEFAULT_GRID_ENTRY_NAME;
       String type = DEFAULT_STRING_VALUE;
-      double sharedCostInUnattributed = 0.0D;
       for (Field field : fields) {
         switch (field.getType().getStandardType()) {
           case TIMESTAMP:
@@ -207,7 +206,6 @@ public class PerspectiveTimeSeriesHelper {
                 if (sharedCostBucketNames.contains(field.getName())) {
                   updateSharedCostMap(
                       sharedCostFromGroupBy, getNumericValue(row, field), field.getName(), startTimeTruncatedTimestamp);
-                  sharedCostInUnattributed = getNumericValue(row, field);
                 }
                 break;
             }
@@ -244,11 +242,6 @@ public class PerspectiveTimeSeriesHelper {
           costPerEntity.put(stringValue, costPerEntity.get(stringValue) + value);
           entityReference.put(stringValue, getReference(id, stringValue, type));
           totalCost += value;
-        }
-        if (businessMapping != null && businessMapping.getUnallocatedCost() != null
-            && businessMapping.getUnallocatedCost().getLabel().equals(stringValue)) {
-          value -= sharedCostInUnattributed;
-          value = Math.max(value, 0.0D);
         }
         addDataPointToMap(id, stringValue, type, value, costDataPointsMap, startTimeTruncatedTimestamp);
         addDataPointToMap(id, "LIMIT", "UTILIZATION", cpuLimit, cpuLimitDataPointsMap, startTimeTruncatedTimestamp);
@@ -445,7 +438,7 @@ public class PerspectiveTimeSeriesHelper {
     });
 
     return updatedDataPoints.stream()
-        .filter(dataPoint -> dataPoint.getValue().doubleValue() > 0.0D)
+        .filter(dataPoint -> dataPoint.getValue().doubleValue() != 0.0D)
         .collect(Collectors.toList());
   }
 

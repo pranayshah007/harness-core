@@ -25,6 +25,7 @@ import io.harness.shell.JSchLogAdapter;
 import io.harness.shell.ScriptProcessExecutor;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.SshSessionManager;
+import io.harness.shell.ssh.SshClientManager;
 
 import software.wings.beans.delegation.ShellScriptParameters;
 import software.wings.core.local.executors.ShellExecutorFactory;
@@ -93,6 +94,7 @@ public class ShellScriptTaskHandler {
           throw new CommandExecutionException("Bash Script Failed to execute", e);
         } finally {
           SshSessionManager.evictAndDisconnectCachedSession(parameters.getActivityId(), parameters.getHost());
+          SshClientManager.evictCacheAndDisconnect(parameters.getActivityId(), parameters.getHost());
           disableJSchLogsPerSSHTaskExecution();
         }
       }

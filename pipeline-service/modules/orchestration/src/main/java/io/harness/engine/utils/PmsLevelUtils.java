@@ -17,19 +17,20 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsLevelUtils {
   public static Level buildLevelFromNode(String runtimeId, Node node) {
-    return buildLevelFromNode(runtimeId, 0, node, null);
+    return buildLevelFromNode(runtimeId, 0, node, null, false);
   }
 
   public static Level buildLevelFromNode(String runtimeId, int retryIndex, Node node) {
-    return buildLevelFromNode(runtimeId, retryIndex, node, null);
-  }
-
-  public static Level buildLevelFromNode(String runtimeId, Node node, StrategyMetadata strategyMetadata) {
-    return buildLevelFromNode(runtimeId, 0, node, strategyMetadata);
+    return buildLevelFromNode(runtimeId, retryIndex, node, null, false);
   }
 
   public static Level buildLevelFromNode(
-      String runtimeId, int retryIndex, Node node, StrategyMetadata strategyMetadata) {
+      String runtimeId, Node node, StrategyMetadata strategyMetadata, boolean useMatrixFieldName) {
+    return buildLevelFromNode(runtimeId, 0, node, strategyMetadata, useMatrixFieldName);
+  }
+
+  public static Level buildLevelFromNode(
+      String runtimeId, int retryIndex, Node node, StrategyMetadata strategyMetadata, boolean useMatrixFieldName) {
     Level.Builder levelBuilder = Level.newBuilder()
                                      .setSetupId(node.getUuid())
                                      .setRuntimeId(runtimeId)
@@ -45,7 +46,8 @@ public class PmsLevelUtils {
     }
     if (strategyMetadata != null) {
       levelBuilder.setStrategyMetadata(strategyMetadata);
-      levelBuilder.setIdentifier(AmbianceUtils.modifyIdentifier(levelBuilder.build(), node.getIdentifier()));
+      levelBuilder.setIdentifier(
+          AmbianceUtils.modifyIdentifier(levelBuilder.build(), node.getIdentifier(), useMatrixFieldName));
     }
     return levelBuilder.build();
   }

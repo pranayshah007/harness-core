@@ -46,6 +46,7 @@ import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.cdng.beans.v2.ClusterAnalysisOverview;
+import io.harness.cvng.core.beans.LogFeedback;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentLogAnalysisFilter;
 import io.harness.cvng.core.entities.CVConfig;
@@ -54,6 +55,8 @@ import io.harness.cvng.core.entities.VerificationTask.VerificationTaskKeys;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.CVNGObjectUtils;
+import io.harness.cvng.ticket.beans.TicketResponseDto;
+import io.harness.cvng.ticket.services.TicketService;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.ng.beans.PageResponse;
@@ -95,6 +98,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private TicketService ticketService;
 
   @Override
   public void save(DeploymentLogAnalysis deploymentLogAnalysis) {
@@ -627,12 +631,24 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
                         .clusterType(ClusterType.BASELINE)
                         .count(eventCountByEventTypeMap.getOrDefault(ClusterType.BASELINE, 0L).intValue())
                         .build());
-
+    populateTicketsForLogFeedbacks(logAnalysisRadarChartListDTOPageResponse.getContent());
     return LogAnalysisRadarChartListWithCountDTO.builder()
         .totalClusters(totalClusters)
         .eventCounts(eventCounts)
         .logAnalysisRadarCharts(logAnalysisRadarChartListDTOPageResponse)
         .build();
+  }
+
+  private void populateTicketsForLogFeedbacks(List<LogAnalysisRadarChartListDTO> logAnalysisRadarChartListDtos) {
+    log.info("Populating ticket details for logFeedbacks.");
+    logAnalysisRadarChartListDtos.forEach(
+        logAnalysis -> logAnalysis.setFeedback(getLogFeedbackWithTicket(logAnalysis.getFeedback())));
+  }
+
+  private LogFeedback getLogFeedbackWithTicket(LogFeedback logFeedback) {
+    log.info("Populating ticket details for logFeedback with feedbackId {}.", logFeedback.getFeedbackId());
+    TicketResponseDto ticketResponseDto = ticketService.getTicketForFeedbackId(logFeedback.getFeedbackId());
+    return logFeedback.toBuilder().ticket(ticketResponseDto).build();
   }
 
   @Override

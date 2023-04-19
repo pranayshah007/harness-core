@@ -23,6 +23,8 @@ import io.harness.beans.response.GitFileBatchResponse;
 import io.harness.beans.response.GitFileResponse;
 import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
 import io.harness.product.ci.scm.proto.CompareCommitsResponse;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
@@ -205,6 +207,11 @@ public class SCMServiceGitClientImpl implements ScmClient {
   @Override
   public GetUserReposResponse getUserRepos(ScmConnector scmConnector, PageRequestDTO pageRequest) {
     return scmServiceClient.getUserRepos(scmConnector, pageRequest, scmBlockingStub);
+  }
+
+  @Override
+  public UserDetailsResponseDTO getUserDetails(UserDetailsRequestDTO userDetailsRequestDTO) {
+    return scmServiceClient.getUserDetails(userDetailsRequestDTO, scmBlockingStub);
   }
 
   @Override

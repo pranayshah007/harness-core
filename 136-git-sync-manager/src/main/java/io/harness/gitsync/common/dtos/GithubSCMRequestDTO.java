@@ -15,9 +15,11 @@ import io.harness.ng.userprofile.commons.SCMType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Value;
+import lombok.experimental.SuperBuilder;
 
 @Value
 @JsonTypeName("GITHUB")
+@SuperBuilder
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GithubSCMRequestDTO extends UserSourceCodeManagerRequestDTO {
   @JsonProperty("apiAccess") GithubApiAccessDTO apiAccess;

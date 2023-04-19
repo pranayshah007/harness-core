@@ -172,6 +172,7 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
     assertThat(form.getCriteriaObject().get("pipelineDeleted")).isNotEqualTo(true);
     assertThat(form.getCriteriaObject().containsKey("executionTriggerInfo")).isEqualTo(false);
     assertThat(form.getCriteriaObject().get("isLatestExecution")).isNotEqualTo(false);
+    assertThat(form.getCriteriaObject().get("executionMode")).isNotEqualTo(false);
   }
 
   @Test

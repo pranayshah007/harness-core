@@ -19,17 +19,17 @@ import io.harness.ng.userprofile.commons.SCMType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import dev.morphia.annotations.Entity;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(PIPELINE)
 @Data
-@Builder
+@SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "GithubSCMKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)

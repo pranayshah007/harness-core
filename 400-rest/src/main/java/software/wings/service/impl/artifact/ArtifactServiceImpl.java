@@ -1045,6 +1045,16 @@ public class ArtifactServiceImpl implements ArtifactService {
         .asList();
   }
 
+  @Override
+  public List<Artifact> listArtifactsByArtifactStreamId(String accountId, String artifactStreamId, String buildNo) {
+    return wingsPersistence.createQuery(Artifact.class)
+        .filter(ArtifactKeys.accountId, accountId)
+        .filter(ArtifactKeys.artifactStreamId, artifactStreamId)
+        .filter(ArtifactKeys.metadata_buildNo, buildNo)
+        .order(Sort.descending(CREATED_AT_KEY))
+        .asList();
+  }
+
   public static boolean metadataOnlyBehindFlag(
       FeatureFlagService featureFlagService, String accountId, boolean metadataOnly) {
     if (featureFlagService.isEnabled(ARTIFACT_STREAM_METADATA_ONLY, accountId)) {

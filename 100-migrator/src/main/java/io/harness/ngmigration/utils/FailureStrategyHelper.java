@@ -45,14 +45,13 @@ public class FailureStrategyHelper {
     if (EmptyPredicate.isEmpty(strategy.getFailureTypes())) {
       return null;
     }
+    List<NGFailureType> errors =
+        strategy.getFailureTypes().stream().map(FailureStrategyHelper::getFailureType).collect(Collectors.toList());
+    if (errors.contains(NGFailureType.ALL_ERRORS)) {
+      errors = Collections.singletonList(NGFailureType.ALL_ERRORS);
+    }
     return FailureStrategyConfig.builder()
-        .onFailure(OnFailureConfig.builder()
-                       .errors(strategy.getFailureTypes()
-                                   .stream()
-                                   .map(FailureStrategyHelper::getFailureType)
-                                   .collect(Collectors.toList()))
-                       .action(getAction(strategy))
-                       .build())
+        .onFailure(OnFailureConfig.builder().errors(errors).action(getAction(strategy)).build())
         .build();
   }
 

@@ -9,9 +9,9 @@ package io.harness.ssca.client;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
+import io.harness.ssca.beans.entities.SSCAServiceConfig;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -21,26 +21,24 @@ import com.google.inject.Singleton;
 @OwnedBy(HarnessTeam.SSCA)
 @Singleton
 public class SSCAServiceClientModuleV2 extends AbstractModule {
-  private final ServiceHttpClientConfig serviceHttpClientConfig;
-  private final String serviceSecret;
+  private final SSCAServiceConfig sscaServiceConfig;
   private final String clientId;
 
-  public SSCAServiceClientModuleV2(
-      ServiceHttpClientConfig serviceHttpClientConfig, String serviceSecret, String clientId) {
-    this.serviceHttpClientConfig = serviceHttpClientConfig;
-    this.serviceSecret = serviceSecret;
+  public SSCAServiceClientModuleV2(SSCAServiceConfig sscaServiceConfig, String clientId) {
+    this.sscaServiceConfig = sscaServiceConfig;
     this.clientId = clientId;
   }
 
   @Provides
   @Singleton
   private SSCAServiceClientFactoryV2 sscaServiceClientFactoryV2(KryoConverterFactory kryoConverterFactory) {
-    return new SSCAServiceClientFactoryV2(
-        serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);
+    return new SSCAServiceClientFactoryV2(sscaServiceConfig.getHttpClientConfig(), sscaServiceConfig.getServiceSecret(),
+        new ServiceTokenGenerator(), kryoConverterFactory, clientId);
   }
 
   @Override
   protected void configure() {
+    this.bind(SSCAServiceConfig.class).toInstance(this.sscaServiceConfig);
     bind(SSCAServiceClient.class).toProvider(SSCAServiceClientFactoryV2.class).in(Scopes.SINGLETON);
   }
 }

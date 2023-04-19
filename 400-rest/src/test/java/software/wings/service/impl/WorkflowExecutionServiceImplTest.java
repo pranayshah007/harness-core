@@ -15,6 +15,7 @@ import static io.harness.beans.ExecutionStatus.RUNNING;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.ExecutionStatus.WAITING;
 import static io.harness.beans.FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE;
+import static io.harness.beans.FeatureName.SPG_ENABLE_POPULATE_USING_ARTIFACT_VARIABLE;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -30,6 +31,7 @@ import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.MILOS;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.PRASHANT;
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.RAGHU;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.SRINIVAS;
@@ -75,6 +77,7 @@ import static software.wings.utils.WingsTestConstants.APP_NAME;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_ID;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_NAME;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_STREAM_ID;
+import static software.wings.utils.WingsTestConstants.BUILD_NO;
 import static software.wings.utils.WingsTestConstants.COMPANY_NAME;
 import static software.wings.utils.WingsTestConstants.ENTITY_ID;
 import static software.wings.utils.WingsTestConstants.ENV_ID;
@@ -2239,6 +2242,76 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
 
     assertThat(workflowExecutionService.fetchWorkflowExecutionStartTs(execution.getAppId(), execution.getUuid()))
         .isNotNull();
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldPopulateArtifactsAndServicesWithFF() {
+    String serviceId1 = SERVICE_ID + "_1";
+    String artifactId1 = ARTIFACT_ID + "_1";
+    String artifactStreamId1 = ARTIFACT_STREAM_ID + "_1";
+    String buildNo = BUILD_NO;
+    ArtifactMetadata artifactMetadata = new ArtifactMetadata() {
+      { put("buildNo", buildNo); }
+    };
+    ExecutionArgs executionArgs =
+        ExecutionArgs.builder()
+            .artifactVariables(List.of(
+                ArtifactVariable.builder()
+                    .artifactInput(ArtifactInput.builder().artifactStreamId(artifactStreamId1).buildNo(buildNo).build())
+                    .build()))
+            .build();
+    when(artifactService.listArtifactsByArtifactStreamId(ACCOUNT_ID, artifactStreamId1, buildNo))
+        .thenReturn(asList(
+            anArtifact().withUuid(ARTIFACT_ID).withArtifactStreamId(ARTIFACT_STREAM_ID).withDisplayName("art").build(),
+            anArtifact()
+                .withUuid(artifactId1)
+                .withArtifactStreamId(artifactStreamId1)
+                .withAccountId(ACCOUNT_ID)
+                .withBuildNo(buildNo)
+                .withMetadata(artifactMetadata)
+                .withDisplayName("art1")
+                .build()));
+
+    WorkflowExecution workflowExecution =
+        WorkflowExecution.builder().serviceIds(asList(SERVICE_ID, serviceId1)).build();
+    when(artifactStreamServiceBindingService.listArtifactStreamIds(SERVICE_ID))
+        .thenReturn(singletonList(ARTIFACT_STREAM_ID));
+    when(artifactStreamServiceBindingService.listArtifactStreamIds(serviceId1))
+        .thenReturn(singletonList(artifactStreamId1));
+    when(artifactStreamServiceBindingService.listServices(ARTIFACT_STREAM_ID))
+        .thenReturn(singletonList(Service.builder().uuid(SERVICE_ID).name("s").build()));
+    when(artifactStreamServiceBindingService.listServices(artifactStreamId1))
+        .thenReturn(singletonList(Service.builder().uuid(serviceId1).name("s1").build()));
+    when(featureFlagService.isEnabled(SPG_ENABLE_POPULATE_USING_ARTIFACT_VARIABLE, ACCOUNT_ID)).thenReturn(true);
+
+    WorkflowStandardParams stdParams = aWorkflowStandardParams().build();
+    Set<String> keywords = new HashSet<>();
+    workflowExecutionService.populateArtifactsAndServices(
+        workflowExecution, stdParams, keywords, executionArgs, ACCOUNT_ID);
+
+    Function<List<Artifact>, Boolean> checkArtifacts = artifacts
+        -> EmptyPredicate.isNotEmpty(artifacts) && artifacts.size() == 2
+        && artifacts.get(0).getUuid().equals(ARTIFACT_ID) && artifacts.get(1).getUuid().equals(artifactId1);
+    assertThat(checkArtifacts.apply(workflowExecution.getArtifacts())).isTrue();
+    assertThat(checkArtifacts.apply(executionArgs.getArtifacts())).isTrue();
+    assertThat(keywords).contains("s", "s1");
+    assertThat(keywords).contains(buildNo);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldPopulateArtifactsAndServicesNoArtifactIdsWithFF() {
+    ExecutionArgs executionArgs = new ExecutionArgs();
+    when(featureFlagService.isEnabled(SPG_ENABLE_POPULATE_USING_ARTIFACT_VARIABLE, ACCOUNT_ID)).thenReturn(true);
+    WorkflowExecution workflowExecution = WorkflowExecution.builder().build();
+    WorkflowStandardParams stdParams = aWorkflowStandardParams().build();
+    Set<String> keywords = new HashSet<>();
+    workflowExecutionService.populateArtifactsAndServices(
+        workflowExecution, stdParams, keywords, executionArgs, ACCOUNT_ID);
+    assertThat(workflowExecution.getArtifacts()).isNullOrEmpty();
   }
 
   @Test

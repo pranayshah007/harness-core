@@ -28,6 +28,7 @@ public class ServiceDetailsDTOV2 {
   String description;
   Map<String, String> tags;
   Set<String> deploymentTypeList;
+  Set<IconDTO> deploymentIconList;
   long totalDeployments;
   ChangeRate totalDeploymentChangeRate;
   double successRate;

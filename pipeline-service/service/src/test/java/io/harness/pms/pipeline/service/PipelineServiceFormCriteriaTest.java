@@ -25,6 +25,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.HintException;
 import io.harness.filter.service.FilterService;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.gitx.GitXSettingsHelper;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -74,6 +75,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
   @Inject private PipelineMetadataService pipelineMetadataService;
 
   @Mock private PipelineSettingsService pipelineSettingsService;
+  @Mock GitXSettingsHelper gitXSettingsHelper;
   @InjectMocks private PMSPipelineServiceImpl pmsPipelineService;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
 
@@ -139,6 +141,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
     doReturn(TemplateMergeResponseDTO.builder().build())
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipeline(any(), anyBoolean(), anyBoolean());
+    doNothing().when(gitXSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
     MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
     aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))

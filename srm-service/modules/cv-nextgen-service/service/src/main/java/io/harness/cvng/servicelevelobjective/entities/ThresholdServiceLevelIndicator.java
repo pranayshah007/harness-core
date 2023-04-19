@@ -102,11 +102,18 @@ public class ThresholdServiceLevelIndicator extends ServiceLevelIndicator {
           (ThresholdServiceLevelIndicator) serviceLevelIndicator;
       Preconditions.checkArgument(this.getThresholdValue().equals(thresholdServiceLevelIndicator.getThresholdValue()));
       Preconditions.checkArgument(this.getThresholdType().equals(thresholdServiceLevelIndicator.getThresholdType()));
-      if (this.getConsiderConsecutiveMinutes() != null) {
+      if (this.getConsiderConsecutiveMinutes() != null
+          || thresholdServiceLevelIndicator.getConsiderConsecutiveMinutes() != null) {
+        Preconditions.checkArgument(this.getConsiderConsecutiveMinutes() != null);
+        Preconditions.checkArgument(thresholdServiceLevelIndicator.getConsiderConsecutiveMinutes() != null);
         Preconditions.checkArgument(this.getConsiderConsecutiveMinutes().equals(
             thresholdServiceLevelIndicator.getConsiderConsecutiveMinutes()));
       }
-      if (this.getConsiderAllConsecutiveMinutesFromStartAsBad() != null) {
+      if (this.getConsiderAllConsecutiveMinutesFromStartAsBad() != null
+          || this.getConsiderAllConsecutiveMinutesFromStartAsBad() != null) {
+        Preconditions.checkArgument(this.getConsiderAllConsecutiveMinutesFromStartAsBad() != null);
+        Preconditions.checkArgument(
+            thresholdServiceLevelIndicator.getConsiderAllConsecutiveMinutesFromStartAsBad() != null);
         Preconditions.checkArgument(this.getConsiderAllConsecutiveMinutesFromStartAsBad().equals(
             thresholdServiceLevelIndicator.getConsiderAllConsecutiveMinutesFromStartAsBad()));
       }

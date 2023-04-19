@@ -10,14 +10,16 @@ package io.harness.delegate.task.gitpolling.github;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
+import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.gitpolling.GitPollingSourceDelegateRequest;
 import io.harness.delegate.task.gitpolling.GitPollingSourceType;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -42,6 +44,11 @@ public class GitHubPollingDelegateRequest implements GitPollingSourceDelegateReq
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    return Collections.emptyList();
+    List<ExecutionCapability> capabilities = new ArrayList<>();
+    GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDetails.getConnectorConfig();
+    GitCapabilityHelper.populateDelegateSelectorCapability(capabilities, githubConnectorDTO.getDelegateSelectors());
+    capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+        connectorDetails.getEncryptedDataDetails(), maskingEvaluator));
+    return capabilities;
   }
 }

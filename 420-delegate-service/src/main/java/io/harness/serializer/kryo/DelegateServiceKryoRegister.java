@@ -10,6 +10,9 @@ package io.harness.serializer.kryo;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateCapacity;
 import io.harness.delegate.beans.DelegateGroup;
+import io.harness.delegate.beans.DelegateGroupStatus;
+import io.harness.delegate.beans.K8sConfigDetails;
+import io.harness.delegate.beans.K8sPermissionType;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.serializer.KryoRegistrar;
 
@@ -21,6 +24,9 @@ public class DelegateServiceKryoRegister implements KryoRegistrar {
     kryo.register(PerpetualTaskClientContext.class, 40030);
     kryo.register(Delegate.class, 40031);
     kryo.register(DelegateGroup.class, 40041);
+    kryo.register(K8sConfigDetails.class, 40042);
+    kryo.register(K8sPermissionType.class, 40043);
+    kryo.register(DelegateGroupStatus.class, 40044);
     kryo.register(DelegateCapacity.class, 5808);
   }
 }

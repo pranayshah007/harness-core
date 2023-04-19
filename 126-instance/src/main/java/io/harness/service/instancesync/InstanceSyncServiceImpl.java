@@ -700,6 +700,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
             .lastDeployedAt(deploymentSummaryDTO.getDeployedAt())
             .infraIdentifier(deploymentSummaryDTO.getInfrastructureIdentifier())
             .infraName(deploymentSummaryDTO.getInfrastructureName())
+            .stageNodeExecutionId(deploymentSummaryDTO.getStageNodeExecutionId())
+            .stageStatus(deploymentSummaryDTO.getStageStatus())
             .instanceInfoDTO(instanceInfoDTO);
 
     if (isAutoScaled) {

@@ -11,6 +11,7 @@ import static software.wings.ngmigration.NGMigrationEntityType.MONITORED_SERVICE
 
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.encryption.Scope;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateEntityType;
@@ -169,7 +170,8 @@ public class MonitoredServiceMigrationService extends NgMigrationService {
         templateClient
             .createTemplate(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                 inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
-                RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.write(yamlFile.getYaml())))
+                RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.write(yamlFile.getYaml())),
+                StoreType.INLINE)
             .execute();
     log.info("Template creation Response details for Monitored Service {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);

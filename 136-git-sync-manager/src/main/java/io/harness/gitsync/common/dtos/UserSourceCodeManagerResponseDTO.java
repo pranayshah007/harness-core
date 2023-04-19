@@ -12,8 +12,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.userprofile.commons.SCMType;
 
 import lombok.Data;
+import lombok.experimental.SuperBuilder;
 
 @Data
+@SuperBuilder
 @OwnedBy(HarnessTeam.PIPELINE)
 public abstract class UserSourceCodeManagerResponseDTO {
   String accountIdentifier;

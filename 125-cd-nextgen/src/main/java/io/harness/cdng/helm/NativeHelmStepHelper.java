@@ -87,6 +87,7 @@ import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.ServiceHookDelegateConfig;
 import software.wings.beans.TaskType;
 import software.wings.stencils.DefaultValue;
 
@@ -124,14 +125,19 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
   public TaskChainResponse queueNativeHelmTask(StepElementParameters stepElementParameters,
       HelmCommandRequestNG helmCommandRequest, Ambiance ambiance,
       NativeHelmExecutionPassThroughData executionPassThroughData) {
+    List<ServiceHookDelegateConfig> serviceHooks = helmCommandRequest.getServiceHooks();
+    TaskType taskType = TaskType.HELM_COMMAND_TASK_NG;
+    if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_K8S_SERVICE_HOOKS_NG)
+        && isNotEmpty(serviceHooks)) {
+      taskType = TaskType.HELM_COMMAND_TASK_NG_V2;
+    }
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {helmCommandRequest})
-                            .taskType(TaskType.HELM_COMMAND_TASK_NG.name())
+                            .taskType(taskType.name())
                             .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
                             .async(true)
                             .build();
-
-    String taskName = TaskType.HELM_COMMAND_TASK_NG.getDisplayName() + " : " + helmCommandRequest.getCommandName();
+    String taskName = taskType.getDisplayName() + " : " + helmCommandRequest.getCommandName();
     HelmSpecParameters helmSpecParameters = (HelmSpecParameters) stepElementParameters.getSpec();
     final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
         referenceFalseKryoSerializer, helmSpecParameters.getCommandUnits(), taskName,

@@ -22,6 +22,7 @@ public class ServiceHeaderInfo {
   String identifier;
   String description;
   Set<String> deploymentTypes;
+  Set<IconDTO> deploymentIconList;
   Long createdAt;
   Long lastModifiedAt;
 }

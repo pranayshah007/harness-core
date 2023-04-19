@@ -9,10 +9,8 @@ package io.harness.credit.services.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.GTM;
 
-import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.credit.beans.credits.CreditDTO;
-import io.harness.credit.entities.CICredit;
 import io.harness.credit.entities.Credit;
 import io.harness.credit.mappers.CreditObjectConverter;
 import io.harness.credit.services.CreditService;
@@ -45,14 +43,9 @@ public class CreditServiceImpl implements CreditService {
   }
 
   @Override
-  public void purchaseCredits(String accountIdentifier) {
-    // Todo: need to determine the details later on, so fat its a temporary
-    // dummy code just to hard code value in db and will replace it in the future
-    Credit buildCredits = CICredit.builder().build();
-    buildCredits.setAccountIdentifier(accountIdentifier);
-    buildCredits.setQuantity(10000);
-    buildCredits.setPurchaseTime(System.currentTimeMillis());
-    buildCredits.setModuleType(ModuleType.CI);
-    creditRepository.save(buildCredits);
+  public CreditDTO purchaseCredit(String accountIdentifier, CreditDTO creditDTO) {
+    Credit credit = creditObjectConverter.toEntity(creditDTO);
+    Credit savedCredit = creditRepository.save(credit);
+    return creditObjectConverter.toDTO(savedCredit);
   }
 }

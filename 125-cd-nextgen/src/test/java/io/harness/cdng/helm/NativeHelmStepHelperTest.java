@@ -2525,7 +2525,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldCreateTaskRequestWithNonProdEnvType() {
     doReturn(NON_PROD).when(stepHelper).getEnvironmentType(ambiance);
-
+    doReturn(Optional.empty()).when(cdStepHelper).getServiceHooksOutcome(ambiance);
     HelmSpecParameters stepParams = HelmDeployStepParams.infoBuilder().build();
     TaskChainResponse taskChainResponse = nativeHelmStepHelper.queueNativeHelmTask(
         StepElementParameters.builder().spec(stepParams).build(),
@@ -2560,7 +2560,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldCreateTaskRequestWithProdEnvType() {
     doReturn(PROD).when(stepHelper).getEnvironmentType(ambiance);
-
+    doReturn(Optional.empty()).when(cdStepHelper).getServiceHooksOutcome(ambiance);
     HelmSpecParameters helmSpecParameters = HelmDeployStepParams.infoBuilder().build();
     TaskChainResponse taskChainResponse = nativeHelmStepHelper.queueNativeHelmTask(
         StepElementParameters.builder().spec(helmSpecParameters).build(),
