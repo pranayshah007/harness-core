@@ -170,7 +170,13 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
         bind(IACMServiceConfig.class)
             .toInstance(
                 IACMServiceConfig.builder().baseUrl("http://localhost:4000").globalToken("api/v1/token").build());
-        bind(SSCAServiceConfig.class).toInstance(SSCAServiceConfig.builder().baseUrl("").build());
+        bind(SSCAServiceConfig.class)
+            .toInstance(
+                SSCAServiceConfig.builder()
+                    .httpClientConfig(ServiceHttpClientConfig.builder().baseUrl("http://localhost:8186").build())
+                    .baseUrl("http://localhost:8186")
+                    .globalToken("global-token")
+                    .build());
         bind(IACMServiceClient.class).toProvider(IACMServiceClientFactory.class).in(Scopes.SINGLETON);
       }
     });
