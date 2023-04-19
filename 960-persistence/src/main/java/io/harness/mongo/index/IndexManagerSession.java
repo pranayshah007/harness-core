@@ -188,7 +188,7 @@ public class IndexManagerSession {
 
       DBCollection collection = datastore.getCollection(mc.getClazz());
 
-      log.info("Store and collection info: {} {}", store.getName(), collection.getName());
+      //      log.info("Store and collection info: {} {}", store.getName(), collection.getName());
 
       Set<String> storeInSet = new HashSet<>();
       addStoreInInSet(mc, storeInSet);

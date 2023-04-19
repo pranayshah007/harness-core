@@ -4,7 +4,6 @@ import static io.harness.ng.DbAliases.DMS;
 import static io.harness.ng.DbAliases.HARNESS;
 
 import io.harness.configuration.DeployMode;
-import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.VersionOverride;
 import io.harness.delegate.beans.VersionOverrideType;
 import io.harness.delegate.utils.DelegateDBMigrationFailed;
@@ -25,8 +24,8 @@ import dev.morphia.Morphia;
 import dev.morphia.query.Query;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
+import org.joda.time.DateTime;
 
 @Slf4j
 public class DMSDatabaseMigration implements Migration, SeedDataMigration {
@@ -37,44 +36,40 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
   // At some places we need collection Name which is entity Name
   // At some places we need class path, esp when we toggle flag in migration collection.
 
+  // We also need to retry migration in case of exceptions. Implement that too.
+  // For Duplicate key exception, just catch it and dont do anything with it.
+
   @Inject Morphia morphia;
 
-  @Inject private ExecutorService executorService;
-
   final Store dmsStore = Store.builder().name(DMS).build();
+  final Store harnessStore = Store.builder().name(HARNESS).build();
   private static final String ON_PREM_MIGRATION = "onPremMigration";
 
   private static final String DEPLOY_MODE = System.getenv(DeployMode.DEPLOY_MODE);
 
-  //  private final List<String> classesHavingMigrationEnabled =
-  //          Arrays.asList(
-  //                  "io.harness.delegate.beans.VersionOverride");
+  private final List<String> entityList = Arrays.asList("versionOverride", "delegateConnectionResults",
+      "delegateGroups", "delegateProfiles", "delegateRing", "delegateScopes", "delegateSequenceConfig",
+      "delegateTokens", "delegates", "perpetualTask", "perpetualTaskScheduleConfig", "taskSelectorMaps");
 
-  private final List<String> entityList = Arrays.asList("versionOverride");
-
-  //  private final List<Class<?>> classesHavingMigrationEnabled =
-  //      Arrays.asList(DelegateConnectionResult.class, DelegateGroup.class, DelegateProfile.class, DelegateRing.class,
-  //          DelegateScope.class, DelegateSequenceConfig.class, DelegateToken.class, Delegate.class,
-  //          PerpetualTaskRecord.class, PerpetualTaskScheduleConfig.class, VersionOverride.class,
-  //          TaskSelectorMap.class);
-
-  //  private final List<Class> classesHavingMigrationEnabled = Arrays.asList(VersionOverride.class);
-
+  // agentMTLS ??
   @Override
   public void migrate() throws DelegateDBMigrationFailed {
-    // Ignore migration for SAAS
-    //    if (!DeployMode.isOnPrem(DEPLOY_MODE)) {
-    //      return;
-    //    }
+    //    // Ignore migration for SAAS
+    //        if (!DeployMode.isOnPrem(DEPLOY_MODE)) {
+    //          return;
+    //        }
 
     log.info("DMS DB Migration started");
 
+    final DateTime validity = DateTime.now().plusDays(5);
+
     // Putting some entries to VersionOverride collection for testing.
-    for (int i = 0; i < 50; i++) {
+    for (int i = 0; i < 10; i++) {
       String override = "a";
       VersionOverride versionOverride = VersionOverride.builder("AccountID")
                                             .overrideType(VersionOverrideType.DELEGATE_IMAGE_TAG)
                                             .version(override.concat(Integer.toString(i)))
+                                            .validUntil(validity.toDate())
                                             .build();
       log.info(" Added entry to db for override {}", persistence.save(versionOverride));
     }
@@ -82,21 +77,18 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
     // We need to ensure that all pods end in same state after migration runs.
     // It shouln't happen that migration succeeded for one pod and failed for another.
     // Migration should be atomic for all pods.
-
-    //    // spawning one more thread to call migrate there too.
-    //    executorService.submit(() -> {
-    //      try {
-    //        migrate();
-    //      } catch (Exception e) {
-    //        log.error("Failed to Migrate");
-    //      }
-    //    });
+    // Check with multiple manager pods.
 
     // Check if we already did the migration
     // This is for case if we run the migration again.
     if (persistence.isMigrationEnabled(ON_PREM_MIGRATION)) {
       return;
     }
+
+    // WE can check ON_PREM_MIGRATION for every collection.
+
+    // We will need to handle duplicate insertion error in bulkWrite.execute, that happens when same document is tried
+    // to insert again based on unique index.
 
     // Create indexes and collections in DMS DB
     indexManager.ensureIndexes(
@@ -116,10 +108,11 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
       // Write to collection in DMS DB
       // If write is successful, follow next set to steps.
       // In case of rollback, drop the created collection.
-      log.info("About to copy data to new collection");
+      log.info("working for entity {}", collection);
       if (persistToNewDatabase(collection)) {
         log.info("Going to toggle flag");
         // String className = classesHavingMigrationEnabled.get(0);
+
         Class<?> collectionClass = getClassForCollectionName(collection);
         toggleFlag(collectionClass.getCanonicalName(), true, true);
         // Check if we reading data from DMS DB after toggle.
@@ -136,6 +129,7 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
             String.format("Delegate DB migration failed for collection: {}", collection));
       }
     }
+    log.info("Migration is done");
     // Migration is done, set on_prem flag as true.
     DelegateMigrationFlag onPremMigrationFlag = new DelegateMigrationFlag(ON_PREM_MIGRATION, true, true);
     persistence.save(onPremMigrationFlag);
@@ -164,42 +158,60 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
         bulkWriteOperation.insert(morphia.toDBObject(record));
       }
     }
-    return verifyWriteOperation(bulkWriteOperation.execute(), insertDocCount);
+    BulkWriteResult result = null;
+    try {
+      result = bulkWriteOperation.execute();
+    } catch (Exception ex) {
+      log.warn("Exception occured while copying data {}", ex.getMessage());
+    }
+    return verifyWriteOperation(result, insertDocCount, collection);
   }
 
   private boolean postToggleCorrectness(Class<?> cls) {
     // invalidate cache and ensure that data is coming from new DB.
     persistence.invalidateCacheAndPut(cls.getCanonicalName());
     Store store = persistence.getStore(cls);
-    if (!store.equals(DMS)) {
-      return false;
-    }
-    return true;
+    log.info("post toggle correctness for collection {} is {}", cls.getCanonicalName(), store.getName().equals(DMS));
+    return store.getName().equals(DMS);
   }
 
   private void toggleFlag(String cls, boolean value, boolean smpMigrationEnabled) {
+    log.info("Toggling flag to true for {}", cls);
     DelegateMigrationFlag flag = new DelegateMigrationFlag(cls, value, smpMigrationEnabled);
     persistence.save(flag);
   }
 
-  private boolean verifyWriteOperation(BulkWriteResult bulkWriteResult, int insertCount) {
+  private boolean verifyWriteOperation(BulkWriteResult bulkWriteResult, int insertCount, String collection) {
     // Check if entire data is written
     // dont check based on bulkWriteResult because now copy is running on multiple machines, so this value will vary.
-    boolean insertSuccessful = bulkWriteResult.isAcknowledged() && bulkWriteResult.getInsertedCount() == insertCount;
+
+    long documentsInNewDB = persistence.getCollection(dmsStore, collection).count();
+
+    log.info("verifyWriteOperation, bulkWriteResult.getInsertedCount and actual count {}, {}", documentsInNewDB,
+        insertCount);
+    //    log.info("ack value {}", bulkWriteResult.isAcknowledged());
+    boolean insertSuccessful = documentsInNewDB == insertCount;
     if (!insertSuccessful) {
       return false;
     }
 
     // Check index count
-    final DBCollection newCollection = persistence.getCollection(dmsStore, "delegates");
-    final DBCollection oldCollection = persistence.getCollection(Delegate.class);
+    final DBCollection newCollection = persistence.getCollection(dmsStore, collection);
+    final DBCollection oldCollection = persistence.getCollection(harnessStore, collection);
+
+    log.info("Value of new index and old are {}, {}", newCollection.getIndexInfo().size(),
+        oldCollection.getIndexInfo().size());
+
     if (newCollection.getIndexInfo().size() != oldCollection.getIndexInfo().size()) {
       return false;
     }
 
     // Check that data is coming from old DB
-    Store store = persistence.getStore(Delegate.class);
-    if (!store.equals(HARNESS)) {
+    Store store = persistence.getStore(getClassForCollectionName(collection));
+
+    log.info("Value of store in collection {}", store.getName());
+
+    if (!store.getName().equals(HARNESS)) {
       return false;
     }
 
