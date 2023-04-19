@@ -183,6 +183,11 @@ ciExecutionServiceConfig:
   cacheIntelligenceConfig:
     bucket: "gcp_bucket"
     serviceKey: "gcp_service_key"
+  dockerLayerCachingConfig:
+    endpoint: "endpoint"
+    bucket: "bucket"
+    accessKey: "access_key"
+    secretKey: "secret_key"
   hostedVmConfig:
     splitLinuxAmd64Pool: false
     splitLinuxArm64Pool: false
@@ -345,6 +350,8 @@ ciExecutionServiceConfig:
         name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.5.6
       gitCloneConfig:
         name: github.com/wings-software/drone-git@refs/tags/v1.3.2
+      dockerBuildxConfig:
+        name: github.com/drone-plugins/drone-buildx@refs/tags/v1.0.0
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}
