@@ -34,3 +34,21 @@ java_binary(
         "@maven//:ch_qos_logback_logback_classic",
     ],
 )
+
+java_binary(
+    name = "non_primitive_parser",
+    srcs = ["NonPrimitivesParser.java"],
+    main_class = "io.harness.buildcleaner.NonPrimitivesParser",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//930-delegate-tasks:module",
+        "//970-ng-commons:module",
+        "//980-commons:module",
+        "//tools/build-cleaner/src/main/java/io/harness/buildcleaner/bazel:module",
+        "//tools/build-cleaner/src/main/java/io/harness/buildcleaner/common:module",
+        "//tools/build-cleaner/src/main/java/io/harness/buildcleaner/javaparser:module",
+        "//tools/build-cleaner/src/main/java/io/harness/buildcleaner/proto:module",
+        "//tools/build-cleaner/src/resources",
+    ],
+)
