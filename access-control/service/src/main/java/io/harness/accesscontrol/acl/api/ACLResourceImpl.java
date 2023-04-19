@@ -14,7 +14,6 @@ import static io.harness.accesscontrol.acl.api.AccessControlResourceUtils.servic
 import static io.harness.accesscontrol.principals.PrincipalType.API_KEY;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
-import static io.harness.beans.FeatureName.PL_ALLOW_DIFFERENT_SERVICE_PRINCIPAL_IN_AUTH_TOKEN_AND_BODY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.accesscontrol.acl.ACLService;
@@ -91,15 +90,10 @@ public class ACLResourceImpl implements ACLResource {
                                          .build());
     }
 
-    boolean allowDifferentPrincipalInTokenAndBody =
-        featureFlagService.isGlobalEnabled(PL_ALLOW_DIFFERENT_SERVICE_PRINCIPAL_IN_AUTH_TOKEN_AND_BODY);
-
-    boolean preconditionsValid =
-        checkPreconditions(contextPrincipal, principalToCheckPermissionsFor, allowDifferentPrincipalInTokenAndBody);
+    boolean preconditionsValid = checkPreconditions(contextPrincipal, principalToCheckPermissionsFor);
     boolean resourcePreconditionsValid = checkResourcePreconditions(permissionChecksDTOs);
 
-    if (serviceContextAndOnlyServicePrincipalInBody(
-            contextPrincipal, principalToCheckPermissionsFor, allowDifferentPrincipalInTokenAndBody)) {
+    if (serviceContextAndOnlyServicePrincipalInBody(contextPrincipal, principalToCheckPermissionsFor)) {
       return ResponseDTO.newResponse(
           AccessCheckResponseDTO.builder()
               .principal(Principal.of(SERVICE, contextPrincipal.getName()))
