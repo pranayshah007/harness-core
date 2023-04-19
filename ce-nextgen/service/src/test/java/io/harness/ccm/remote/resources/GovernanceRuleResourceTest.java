@@ -175,14 +175,14 @@ public class GovernanceRuleResourceTest extends CategoryTest {
                           .accountId(ACCOUNT_ID)
                           .name(NAME)
                           .ruleIds(Collections.singletonList(UUID))
-                          .ruleSetIDs(Collections.singletonList(UUID))
+                          .ruleSetIDs(Collections.singletonList(UUIDSET))
                           .cloudProvider(CLOUD)
                           .executionSchedule(CRON)
                           .targetRegions(Collections.singletonList(REGION))
                           .targetAccounts(Collections.singletonList(ACCOUNT_ID))
                           .build();
-    ruleEnforcementManagement = new GovernanceRuleEnforcementResource(
-        ruleEnforcementService, telemetryReporter, transactionTemplate, outboxService, configuration, rbacHelper);
+    ruleEnforcementManagement = new GovernanceRuleEnforcementResource(ruleEnforcementService, telemetryReporter,
+        transactionTemplate, outboxService, configuration, rbacHelper, ruleSetService, governanceRuleService);
     when(ruleEnforcementService.listId(ACCOUNT_ID, UUIDENF, false)).thenReturn(ruleEnforcement);
   }
 
@@ -210,6 +210,9 @@ public class GovernanceRuleResourceTest extends CategoryTest {
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
+
+    when(rbacHelper.checkRuleIdsGivenPermission(any(), any(), any(), any(), any()))
+        .thenReturn(Collections.singleton(UUID));
     ruleSetManagement.create(ACCOUNT_ID, CreateRuleSetDTO.builder().ruleSet(ruleSet).build());
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(rulesSetCreateEventArgumentCaptor.capture());
@@ -226,6 +229,8 @@ public class GovernanceRuleResourceTest extends CategoryTest {
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
+    when(rbacHelper.checkRuleIdsGivenPermission(any(), any(), any(), any(), any()))
+        .thenReturn(Collections.singleton(UUID));
     ruleEnforcementManagement.create(
         ACCOUNT_ID, CreateRuleEnforcementDTO.builder().ruleEnforcement(ruleEnforcement).build());
     verify(transactionTemplate, times(1)).execute(any());
@@ -259,6 +264,8 @@ public class GovernanceRuleResourceTest extends CategoryTest {
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
+    when(rbacHelper.checkRuleIdsGivenPermission(any(), any(), any(), any(), any()))
+        .thenReturn(Collections.singleton(UUID));
     ruleSetManagement.updateRuleSet(ACCOUNT_ID, CreateRuleSetDTO.builder().ruleSet(ruleSet).build());
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(rulesSetUpdateEventArgumentCaptor.capture());
@@ -275,6 +282,8 @@ public class GovernanceRuleResourceTest extends CategoryTest {
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
+    when(rbacHelper.checkRuleIdsGivenPermission(any(), any(), any(), any(), any()))
+        .thenReturn(Collections.singleton(UUID));
     ruleEnforcementManagement.update(
         ACCOUNT_ID, CreateRuleEnforcementDTO.builder().ruleEnforcement(ruleEnforcement).build());
     verify(transactionTemplate, times(1)).execute(any());
