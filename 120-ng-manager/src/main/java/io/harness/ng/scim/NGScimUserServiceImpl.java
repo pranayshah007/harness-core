@@ -19,6 +19,7 @@ import static io.harness.NGConstants.VALUE;
 import static io.harness.NGConstants.VERSION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PL_NEW_SCIM_STANDARDS;
+import static io.harness.beans.FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.common.beans.UserSource.SCIM;
@@ -303,6 +304,10 @@ public class NGScimUserServiceImpl implements ScimUserService {
       ngUserService.updateUserMetadata(userMetadata);
       log.info("NGSCIM: Updated metadata for user: {}", userId);
 
+      if (ngFeatureFlagHelperService.isEnabled(accountId, PL_USER_ACCOUNT_LEVEL_DATA_FLOW)) {
+        ngUserService.updateNGUserToCGWithSource(userId, Scope.builder().accountIdentifier(accountId).build(), SCIM);
+      }
+
       if (ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.PL_USER_DELETION_V2)) {
         if (scimUser.getActive() != null && !scimUser.getActive()) {
           log.info("NGSCIM: Removing user {}, from account: {}", userId, accountId);
@@ -381,6 +386,10 @@ public class NGScimUserServiceImpl implements ScimUserService {
       userMetadataDTO.setName(patchOperation.getValue(ScimMultiValuedObject.class).getDisplayName());
       userMetadataDTO.setExternallyManaged(true);
       ngUserService.updateUserMetadata(userMetadataDTO);
+    }
+
+    if (ngFeatureFlagHelperService.isEnabled(accountId, PL_USER_ACCOUNT_LEVEL_DATA_FLOW)) {
+      ngUserService.updateNGUserToCGWithSource(userId, Scope.builder().accountIdentifier(accountId).build(), SCIM);
     }
 
     if (!ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.PL_USER_DELETION_V2)

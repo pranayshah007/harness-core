@@ -429,7 +429,7 @@ public class UserResourceNG {
   @POST
   @Path("/user-account-with-source")
   public RestResponse<Boolean> updateNGUserToCGWithSource(
-      @QueryParam("userId") String userId, @QueryParam("accountId") String accountId, UserSource userSource) {
+      @QueryParam("userId") String userId, @QueryParam("accountId") String accountId, @Body UserSource userSource) {
     userService.addUserToAccount(userId, accountId, userSource);
     return new RestResponse<>(true);
   }

@@ -958,12 +958,14 @@ public class UserServiceImpl implements UserService {
     }
 
     List<Account> newAccounts = user.getAccounts();
-    if (shouldUpdateUserAccountLevelData) {
-      userServiceHelper.populateAccountToUserMapping(user, accountId, NG, userSource);
-      updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
-    } else {
+    if (!shouldUpdateUserAccountLevelData) {
       newAccounts.add(account);
       updateOperations.set(UserKeys.accounts, newAccounts);
+    }
+
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      userServiceHelper.populateAccountToUserMapping(user, accountId, NG, userSource);
+      updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
     }
 
     updateUser(user.getUuid(), updateOperations);
@@ -3057,14 +3059,14 @@ public class UserServiceImpl implements UserService {
     if (userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
       if (CG.equals(generation)) {
         removeAllUserGroupsFromUser(user, accountId);
-        updateUserAccountLevelData(accountId, userId, generation, user);
+        removeUserFromThisGenInAccount(accountId, userId, generation, user);
         if (!userServiceHelper.isUserProvisionedInThisAccount(user, accountId)) {
           delete(accountId, userId);
         }
       } else if (NG.equals(generation) && isUserPresent(userId)
           && userServiceHelper.isUserActiveInNG(user, accountId)) {
         userServiceHelper.deleteUserFromNG(userId, accountId, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
-        updateUserAccountLevelData(accountId, userId, generation, user);
+        removeUserFromThisGenInAccount(accountId, userId, generation, user);
         if (!userServiceHelper.isUserProvisionedInThisAccount(user, accountId)) {
           delete(accountId, userId);
         }
@@ -3076,7 +3078,7 @@ public class UserServiceImpl implements UserService {
     }
   }
 
-  private void updateUserAccountLevelData(String accountId, String userId, Generation generation, User user) {
+  private void removeUserFromThisGenInAccount(String accountId, String userId, Generation generation, User user) {
     UpdateOperations<User> updateOp = wingsPersistence.createUpdateOperations(User.class);
     userServiceHelper.removeUserProvisioningFromGenerationInAccount(accountId, user, updateOp, generation);
     updateUser(userId, updateOp);
@@ -3097,7 +3099,7 @@ public class UserServiceImpl implements UserService {
         log.warn("User is removed from all user groups in CG");
         removeAllUserGroupsFromUser(user, accountId);
         if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
-          updateUserAccountLevelData(accountId, userId, CG, user);
+          removeUserFromThisGenInAccount(accountId, userId, CG, user);
         }
         log.error(
             "User {} cannot be deleted in CG, since it is active on NG in account {}", user.getEmail(), accountId);
@@ -4443,5 +4445,17 @@ public class UserServiceImpl implements UserService {
         true, null, null);
     List<UserGroup> userGroupList = pageResponse.getResponse();
     removeUserFromUserGroups(user, userGroupList, false);
+  }
+
+  @Override
+  public void updateUserAccountLevelDataForThisGen(
+      String accountId, User user, Generation generation, UserSource userSource) {
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
+        && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
+      userServiceHelper.populateAccountToUserMapping(user, accountId, generation, userSource);
+      UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
+      updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
+      updateUser(user.getUuid(), updateOperations);
+    }
   }
 }

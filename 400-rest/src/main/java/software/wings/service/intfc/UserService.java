@@ -690,4 +690,6 @@ public interface UserService extends OwnedByAccount {
   boolean ifUserHasAccessToSupportAccount(String userId, String accountId);
 
   void removeAllUserGroupsFromUser(User user, String accountId);
+
+  void updateUserAccountLevelDataForThisGen(String accountId, User user, Generation generation, UserSource userSource);
 }

@@ -145,8 +145,8 @@ public interface UserClient {
       @Query(value = "userId") String userId, @Query(value = "accountId") String accountId);
 
   @POST(USER_UPDATE_WITH_SOURCE)
-  Call<RestResponse<Boolean>> updateNGUserToCGWithSource(
-      @Query(value = "userId") String userId, @Query(value = "accountId") String accountId, UserSource userSource);
+  Call<RestResponse<Boolean>> updateNGUserToCGWithSource(@Query(value = "userId") String userId,
+      @Query(value = "accountId") String accountId, @Body UserSource userSource);
 
   @GET(USER_TWO_FACTOR_AUTH_SETTINGS)
   Call<RestResponse<Optional<TwoFactorAuthSettingsInfo>>> getUserTwoFactorAuthSettings(
