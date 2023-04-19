@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.steps.container.execution;
+package io.harness.pms.sdk.core.plugin;
 
 import static io.harness.steps.StepUtils.buildAbstractions;
 
@@ -29,6 +29,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.steps.StepUtils;
+import io.harness.steps.container.execution.ContainerExecutionConfig;
 
 import software.wings.beans.SerializationFormat;
 
@@ -49,7 +50,6 @@ import net.jodah.failsafe.RetryPolicy;
 public class ContainerDelegateTaskHelper {
   private final DelegateServiceGrpcClient delegateServiceGrpcClient;
   private final Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
-  private final ContainerExecutionConfig containerExecutionConfig;
 
   @Inject
   public ContainerDelegateTaskHelper(DelegateServiceGrpcClient delegateServiceGrpcClient,
@@ -57,7 +57,6 @@ public class ContainerDelegateTaskHelper {
       ContainerExecutionConfig containerExecutionConfig) {
     this.delegateServiceGrpcClient = delegateServiceGrpcClient;
     this.delegateCallbackTokenSupplier = delegateCallbackTokenSupplier;
-    this.containerExecutionConfig = containerExecutionConfig;
   }
 
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
