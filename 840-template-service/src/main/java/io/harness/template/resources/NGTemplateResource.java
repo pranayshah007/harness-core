@@ -498,10 +498,10 @@ public class NGTemplateResource {
     } else {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
-
     Page<TemplateSummaryResponseDTO> templateSummaryResponseDTOS =
         templateService.list(criteria, pageRequest, accountId, orgId, projectId, getDistinctFromBranches)
             .map(NGTemplateDtoMapper::prepareTemplateSummaryResponseDto);
+
     return ResponseDTO.newResponse(templateSummaryResponseDTOS);
   }
 
@@ -541,8 +541,6 @@ public class NGTemplateResource {
       @Parameter(description = "This contains details of Template filters based on Template Types and Template Names ")
       @Body TemplateFilterPropertiesDTO filterProperties,
       @QueryParam("getDistinctFromBranches") boolean getDistinctFromBranches) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
     log.info(String.format("Get List of templates in project: %s, org: %s, account: %s", projectIdentifier,
         orgIdentifier, accountIdentifier));
 
