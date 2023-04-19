@@ -7,6 +7,10 @@
 
 package io.harness.assessment.settings.services;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
+import static org.apache.commons.lang3.StringUtils.stripToNull;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.assessment.settings.beans.dto.AssessmentInviteDTO;
@@ -18,22 +22,41 @@ import io.harness.assessment.settings.repositories.AssessmentRepository;
 import io.harness.assessment.settings.repositories.OrganizationRepository;
 import io.harness.assessment.settings.repositories.UserInvitationRepository;
 import io.harness.assessment.settings.repositories.UserRepository;
+import io.harness.delegate.beans.NotificationProcessingResponse;
+import io.harness.exception.ExceptionUtils;
+import io.harness.notification.SmtpConfig;
 
+import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
+import com.google.common.io.Resources;
 import com.google.inject.Inject;
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
 import javax.ws.rs.BadRequestException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.mail.DefaultAuthenticator;
+import org.apache.commons.mail.Email;
+import org.apache.commons.mail.EmailException;
+import org.apache.commons.mail.HtmlEmail;
 
 @OwnedBy(HarnessTeam.SEI)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class InvitationServiceImpl implements InvitationService {
+  private static final String EMAIL_TEMPLATE = "templates/email_invite.txt";
   private UserRepository userRepository;
   private OrganizationRepository organizationRepository;
   private AssessmentRepository assessmentRepository;
+  private SmtpConfig smtpConfig;
 
   private UserInvitationRepository userInvitationRepository;
 
@@ -73,14 +96,69 @@ public class InvitationServiceImpl implements InvitationService {
                                             .invitedBy(invitedBy)
                                             .build();
         userInvitationRepository.save(userInvitation);
+
+        String emailBody = Resources.toString(InvitationServiceImpl.class.getResource(EMAIL_TEMPLATE), Charsets.UTF_8);
+        emailBody = emailBody.replace("${name!}", assessmentInviteDTO.getEmails().get(0))
+                        .replace("${surveyLink!}", userInvitation.getGeneratedCode());
+
+        send(assessmentInviteDTO.getEmails(), new ArrayList<>(), "Invitation for Harness DevOps Efficiency Survey",
+            emailBody, smtpConfig);
       } catch (NoSuchAlgorithmException e) {
         //        throw new RuntimeException(e);
         log.error("Cannot invite : {} for assessment {}", userEmail, assessmentId);
+      } catch (IOException e) {
+        e.printStackTrace();
       }
     }
     // TODO generate a unique code and send it to email.
     // Create the user in DB
     // call sending invite.
     return assessmentInviteDTO;
+  }
+
+  private NotificationProcessingResponse send(
+      List<String> emailIds, List<String> ccEmailIds, String subject, String body, SmtpConfig smtpConfig) {
+    try {
+      if (Objects.isNull(stripToNull(body))) {
+        log.error("No email body available. Aborting notification request {}", emailIds.toString());
+        return NotificationProcessingResponse.trivialResponseWithNoRetries;
+      }
+
+      Email email = new HtmlEmail();
+      email.setHostName(smtpConfig.getHost());
+      email.setSmtpPort(smtpConfig.getPort());
+
+      if (!isEmpty(smtpConfig.getPassword())) {
+        email.setAuthenticator(
+            new DefaultAuthenticator(smtpConfig.getUsername(), new String(smtpConfig.getPassword())));
+      }
+      email.setSSLOnConnect(smtpConfig.isUseSSL());
+      email.setStartTLSEnabled(smtpConfig.isStartTLS());
+      if (smtpConfig.isUseSSL()) {
+        email.setSslSmtpPort(Integer.toString(smtpConfig.getPort()));
+      }
+
+      try {
+        email.setReplyTo(ImmutableList.of(new InternetAddress(smtpConfig.getFromAddress())));
+      } catch (AddressException | EmailException e) {
+        log.error(ExceptionUtils.getMessage(e), e);
+      }
+      email.setFrom(smtpConfig.getFromAddress(), "HARNESS_NAME");
+      for (String emailId : emailIds) {
+        email.addTo(emailId);
+      }
+      for (String ccEmailId : ccEmailIds) {
+        email.addCc(ccEmailId);
+      }
+
+      email.setSubject(subject);
+      ((HtmlEmail) email).setHtmlMsg(body);
+      email.send();
+    } catch (EmailException e) {
+      log.error("Failed to send email. Check SMTP configuration. notificationId: {}\n{}", emailIds.toString(),
+          ExceptionUtils.getMessage(e));
+      return NotificationProcessingResponse.nonSent(emailIds.size() + ccEmailIds.size());
+    }
+    return NotificationProcessingResponse.allSent(emailIds.size() + ccEmailIds.size());
   }
 }

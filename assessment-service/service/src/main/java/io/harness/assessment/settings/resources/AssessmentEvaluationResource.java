@@ -8,15 +8,22 @@
 package io.harness.assessment.settings.resources;
 
 import io.harness.assessment.settings.beans.dto.AssessmentResultsResponse;
+import io.harness.assessment.settings.beans.dto.QuestionResponse;
 import io.harness.assessment.settings.beans.dto.UserAssessmentDTO;
 import io.harness.assessment.settings.beans.dto.UserResponsesRequest;
 import io.harness.assessment.settings.services.AssessmentEvaluationService;
 import io.harness.eraro.ResponseMessage;
+import io.harness.ng.beans.PageResponse;
+import io.harness.rest.RestResponse;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.IntStream;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -24,6 +31,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -46,6 +54,26 @@ public class AssessmentEvaluationResource {
     return Response.status(Response.Status.OK)
         .entity(assessmentEvaluationService.getAssessmentForUser(assessmentInviteId))
         .build();
+  }
+
+  @GET
+  @Path(("attempt/{assessmentInviteId}"))
+  @Produces({"application/json"})
+  @ApiOperation(value = "View assessment for a particular invite code", nickname = "getAssessmentForUser",
+      response = UserAssessmentDTO.class)
+  public RestResponse<UserAssessmentDTO>
+  getAssessmentForUserPage(@PathParam("assessmentInviteId") String assessmentInviteId,
+      @QueryParam("pageSize") @NotNull Integer pageSize, @QueryParam("offset") @NotNull Integer offset) {
+    // Get token info and validate user.
+    UserAssessmentDTO dto = assessmentEvaluationService.getAssessmentForUser(assessmentInviteId);
+    if (pageSize < dto.getQuestions().size() && offset < dto.getQuestions().size()) {
+      List<QuestionResponse> questionResponses = new ArrayList<>();
+      int endIndex = Math.max(offset + pageSize, dto.getQuestions().size());
+      IntStream.range(offset, endIndex).forEach(idx -> questionResponses.add(dto.getQuestions().get(idx)));
+      dto.setQuestions(questionResponses);
+    }
+
+    return RestResponse.Builder.aRestResponse().withResource(dto).build();
   }
 
   @POST

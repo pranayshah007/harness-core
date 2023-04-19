@@ -12,6 +12,8 @@ import static java.util.stream.Collectors.toSet;
 
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoConfig;
+import io.harness.notification.SmtpConfig;
+import io.harness.secret.ConfigSecret;
 
 import ch.qos.logback.access.spi.IAccessEvent;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -46,7 +48,8 @@ public class AssessmentServiceConfiguration extends Configuration {
   //  @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
   //  @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
   @JsonProperty("listOfErrorCodesForOffsetReset") private List<Integer> listOfErrorCodesForOffsetReset;
-
+  //@JsonProperty("notificationClient") private NotificationClientConfiguration notificationClientConfiguration;
+  @JsonProperty("smtp") @ConfigSecret private SmtpConfig smtpConfig;
   public AssessmentServiceConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();
     defaultServerFactory.setJerseyRootPath("/assessments/api/");
