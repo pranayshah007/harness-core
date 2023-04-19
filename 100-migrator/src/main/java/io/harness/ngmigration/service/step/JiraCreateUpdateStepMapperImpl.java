@@ -27,6 +27,7 @@ import io.harness.steps.jira.update.beans.TransitionTo;
 
 import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
+import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
@@ -45,7 +46,7 @@ import org.apache.commons.lang3.StringUtils;
 public class JiraCreateUpdateStepMapperImpl extends StepMapper {
   @Override
   public List<CgEntityId> getReferencedEntities(
-      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+      String accountId, Workflow workflow, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     JiraCreateUpdate state = (JiraCreateUpdate) getState(graphNode);
     List<CgEntityId> refs = new ArrayList<>();
     if (StringUtils.isNotBlank(state.getJiraConnectorId())) {

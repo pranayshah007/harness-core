@@ -93,6 +93,8 @@ public class UpdateVersionInfoTask {
       return nextGenConfiguration.getCeNextGenClientConfig().getBaseUrl();
     } else if (ModuleType.CI.name().equals(moduleName)) {
       return nextGenConfiguration.getCiManagerClientConfig().getBaseUrl();
+    } else if (ModuleType.SRM.name().equals(moduleName)) {
+      return nextGenConfiguration.getCvngClientConfig().getBaseUrl();
     } else {
       return "";
     }

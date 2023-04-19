@@ -16,14 +16,12 @@ import io.harness.spec.server.idp.v1.model.ImportEntitiesResponse;
 import io.harness.spec.server.idp.v1.model.ImportHarnessEntitiesRequest;
 import io.harness.spec.server.idp.v1.model.ManualImportEntityRequest;
 
-import java.util.List;
-
 @OwnedBy(HarnessTeam.IDP)
 public interface OnboardingService {
   HarnessEntitiesCountResponse getHarnessEntitiesCount(String accountIdentifier);
 
   PageResponse<HarnessBackstageEntities> getHarnessEntities(String accountIdentifier, int page, int limit, String sort,
-      String order, String searchTerm, List<String> projectsToFilter);
+      String order, String searchTerm, String projectToFilter);
 
   ImportEntitiesResponse importHarnessEntities(
       String accountIdentifier, ImportHarnessEntitiesRequest importHarnessEntitiesRequest);

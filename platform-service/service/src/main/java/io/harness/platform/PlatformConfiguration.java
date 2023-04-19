@@ -20,6 +20,7 @@ import io.harness.platform.notification.NotificationServiceConfiguration;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.resourcegroup.ResourceGroupServiceConfig;
+import io.harness.resourcegroup.v1.remote.dto.ZendeskConfig;
 import io.harness.secret.ConfigSecret;
 import io.harness.secret.SecretsConfiguration;
 import io.harness.threading.ThreadPoolConfig;
@@ -90,6 +91,7 @@ public class PlatformConfiguration extends Configuration {
   @JsonProperty("managerClientConfig") private ServiceHttpClientConfig managerServiceConfig;
   @JsonProperty("ngManagerClientConfig") private ServiceHttpClientConfig ngManagerServiceConfig;
   @JsonProperty("rbacServiceConfig") private ServiceHttpClientConfig rbacServiceConfig;
+  @JsonProperty("zendeskApiConfig") private ZendeskConfig zendeskConfig;
   @JsonProperty("secrets") @ConfigSecret private PlatformSecrets platformSecrets;
   @JsonProperty(value = "enableAuth", defaultValue = "true") private boolean enableAuth;
   @JsonProperty(value = "environment", defaultValue = "dev") private String environment;

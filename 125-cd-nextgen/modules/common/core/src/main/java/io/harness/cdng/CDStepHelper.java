@@ -40,9 +40,10 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
-import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.configfile.ConfigFilesOutcome;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
@@ -71,6 +72,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
@@ -148,6 +150,7 @@ import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.filestore.NGFileType;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -821,6 +824,17 @@ public class CDStepHelper {
     return Optional.of((ConfigFilesOutcome) configFilesOutcome.getOutcome());
   }
 
+  public Optional<ServiceHooksOutcome> getServiceHooksOutcome(Ambiance ambiance) {
+    OptionalOutcome serviceHooksOutcome = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE_HOOKS));
+
+    if (!serviceHooksOutcome.isFound()) {
+      return Optional.empty();
+    }
+
+    return Optional.of((ServiceHooksOutcome) serviceHooksOutcome.getOutcome());
+  }
+
   public InfrastructureOutcome getInfrastructureOutcome(Ambiance ambiance) {
     OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
@@ -1018,5 +1032,17 @@ public class CDStepHelper {
         .baseLogKey(baseLogKey)
         .shouldSkipOpenStream(shouldSkipOpenStream)
         .build();
+  }
+
+  public List<TaskSelector> getDelegateSelectors(ConnectorInfoDTO connectorInfoDTO) {
+    switch (connectorInfoDTO.getConnectorType()) {
+      case GITHUB:
+        Set<String> delegateSelectors = CollectionUtils.emptyIfNull(
+            ((GithubConnectorDTO) connectorInfoDTO.getConnectorConfig()).getDelegateSelectors());
+        return TaskSelectorYaml.toTaskSelector(
+            delegateSelectors.stream().map(TaskSelectorYaml::new).collect(Collectors.toList()));
+      default:
+        throw new UnsupportedOperationException(format("Unknown Connector Config for delegate selectors"));
+    }
   }
 }

@@ -94,8 +94,8 @@ public abstract class NgMigrationService {
     return NGYamlUtils.getYamlString(yamlFile.getYaml(), MIGRATION_DEFAULT_OBJECT_MAPPER, YAML_MAPPER);
   }
 
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     return null;
   }
 
@@ -120,8 +120,8 @@ public abstract class NgMigrationService {
             .build();
     if (mappingExist) {
       try {
-        YamlDTO yamlDTO =
-            getNGEntity(entities, migratedEntities, cgEntityNode, ngEntityDetail, inputDTO.getAccountIdentifier());
+        YamlDTO yamlDTO = getNGEntity(
+            entities, migratedEntities, cgEntityNode, ngEntityDetail, inputDTO.getDestinationAccountIdentifier());
         if (yamlDTO == null) {
           return null;
         }
@@ -185,8 +185,8 @@ public abstract class NgMigrationService {
     return MigratorUtility.handleEntityMigrationResp(yamlFile, resp);
   }
 
-  protected MigrationImportSummaryDTO migrateFile(
-      String auth, NGClient ngClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+  protected MigrationImportSummaryDTO migrateFile(NGClient ngClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile)
+      throws IOException {
     FileYamlDTO fileYamlDTO = (FileYamlDTO) yamlFile.getYaml();
     RequestBody identifier = RequestBody.create(TEXT_PLAIN, fileYamlDTO.getIdentifier());
     RequestBody name = RequestBody.create(TEXT_PLAIN, fileYamlDTO.getName());
@@ -199,9 +199,9 @@ public abstract class NgMigrationService {
     Response<ResponseDTO<FileDTO>> resp;
     try {
       resp = ngClient
-                 .createFileInFileStore(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
-                     inputDTO.getProjectIdentifier(), content, name, identifier, fileUsage, type, parentIdentifier,
-                     mimeType)
+                 .createFileInFileStore(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                     inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(), content, name, identifier, fileUsage,
+                     type, parentIdentifier, mimeType)
                  .execute();
       log.info("File store creation Response details {} {}", resp.code(), resp.message());
     } catch (IOException e) {

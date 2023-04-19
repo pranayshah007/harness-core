@@ -425,6 +425,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(246, UpdateIsCrossGenerationAccessEnabledForAllAccountsMigration.class))
         .add(Pair.of(247, BackFillingKeywordsOnWorkflowExecutionCollection.class))
         .add(Pair.of(248, UpdateK8sWatchInvalidStatePerpetualTaskMigration.class))
+        .add(Pair.of(249, EncryptDelegateTokenMigration.class))
         .build();
   }
 }

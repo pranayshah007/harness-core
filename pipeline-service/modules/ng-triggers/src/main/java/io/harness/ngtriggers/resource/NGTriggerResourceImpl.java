@@ -36,14 +36,11 @@ import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.dto.TriggerYamlDiffDTO;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
-import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
-import io.harness.ngtriggers.beans.entity.TriggerEventHistory.TriggerEventHistoryKeys;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
 import io.harness.ngtriggers.beans.source.GitMoveOperationType;
 import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
 import io.harness.ngtriggers.exceptions.InvalidTriggerYamlException;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
-import io.harness.ngtriggers.mapper.NGTriggerEventHistoryMapper;
 import io.harness.ngtriggers.mapper.TriggerFilterHelper;
 import io.harness.ngtriggers.service.NGTriggerEventsService;
 import io.harness.ngtriggers.service.NGTriggerService;
@@ -59,7 +56,6 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.swagger.v3.oas.annotations.Hidden;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
@@ -81,6 +77,8 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
   private final NGTriggerService ngTriggerService;
 
   private final NGTriggerEventsService ngTriggerEventsService;
+
+  private final NGTriggerEventHistoryResource ngTriggerEventHistoryResource;
   private final NGTriggerElementMapper ngTriggerElementMapper;
   private final AccessControlClient accessControlClient;
 
@@ -241,27 +239,8 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
   public ResponseDTO<Page<NGTriggerEventHistoryDTO>> getTriggerEventHistory(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String targetIdentifier, String triggerIdentifier,
       String searchTerm, int page, int size, List<String> sort) {
-    Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
-        accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
-    if (!ngTriggerEntity.isPresent()) {
-      throw new EntityNotFoundException(String.format("Trigger %s does not exist", triggerIdentifier));
-    }
-
-    Criteria criteria = ngTriggerEventsService.formCriteria(accountIdentifier, orgIdentifier, projectIdentifier,
-        targetIdentifier, triggerIdentifier, searchTerm, new ArrayList<>());
-    Pageable pageRequest;
-    if (EmptyPredicate.isEmpty(sort)) {
-      pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, TriggerEventHistoryKeys.createdAt));
-    } else {
-      pageRequest = PageUtils.getPageRequest(page, size, sort);
-    }
-
-    Page<TriggerEventHistory> eventHistoryList = ngTriggerEventsService.getEventHistory(criteria, pageRequest);
-
-    Page<NGTriggerEventHistoryDTO> ngTriggerEventHistoryDTOS = eventHistoryList.map(
-        eventHistory -> NGTriggerEventHistoryMapper.toTriggerEventHistoryDto(eventHistory, ngTriggerEntity.get()));
-
-    return ResponseDTO.newResponse(ngTriggerEventHistoryDTOS);
+    return ngTriggerEventHistoryResource.getTriggerEventHistory(accountIdentifier, orgIdentifier, projectIdentifier,
+        targetIdentifier, triggerIdentifier, searchTerm, page, size, sort);
   }
 
   @Override

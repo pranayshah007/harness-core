@@ -33,4 +33,5 @@ public class GoogleFunctionServerInstanceInfo extends ServerInstanceInfo {
   private String runTime;
 
   private String infraStructureKey;
+  private String environmentType;
 }

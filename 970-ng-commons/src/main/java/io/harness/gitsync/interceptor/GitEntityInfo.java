@@ -41,7 +41,7 @@ public class GitEntityInfo {
   Boolean isFullSyncFlow;
   String resolvedConflictCommitId;
   @Setter StoreType storeType;
-  String connectorRef;
+  @Setter String connectorRef;
   @Setter String repoName;
   @Wither @Setter String lastCommitId;
   @Setter String parentEntityRepoUrl;

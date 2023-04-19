@@ -21,6 +21,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateEntityType;
@@ -97,6 +98,7 @@ public class WorkflowMigrationService extends NgMigrationService {
   @Inject private InfraMigrationService infraMigrationService;
   @Inject private EnvironmentMigrationService environmentMigrationService;
   @Inject private ServiceMigrationService serviceMigrationService;
+  @Inject private MonitoredServiceMigrationService monitoredServiceMigrationService;
   @Inject private WorkflowService workflowService;
   @Inject private RollingWorkflowYamlHandler rollingWorkflowYamlHandler;
   @Inject private ApplicationManifestService applicationManifestService;
@@ -201,6 +203,7 @@ public class WorkflowMigrationService extends NgMigrationService {
     Set<CgEntityId> children = new HashSet<>();
     List<CgEntityId> referencedEntities =
         workflowHandlerFactory.getWorkflowHandler(workflow).getReferencedEntities(stepMapperFactory, workflow);
+
     if (isNotEmpty(referencedEntities)) {
       children.addAll(referencedEntities);
     }
@@ -358,8 +361,8 @@ public class WorkflowMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     if (yamlFile.isExists()) {
       return MigrationImportSummaryDTO.builder()
           .errors(Collections.singletonList(ImportError.builder()
@@ -373,8 +376,9 @@ public class WorkflowMigrationService extends NgMigrationService {
       yaml = getYamlString(yamlFile);
       Response<ResponseDTO<PipelineSaveResponse>> resp =
           pmsClient
-              .createPipeline(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
-                  inputDTO.getProjectIdentifier(), RequestBody.create(MediaType.parse("application/yaml"), yaml))
+              .createPipeline(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                  inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
+                  RequestBody.create(MediaType.parse("application/yaml"), yaml), StoreType.INLINE)
               .execute();
       log.info("Workflow as pipeline creation Response details {} {}", resp.code(), resp.message());
       if (resp.code() >= 400) {
@@ -384,8 +388,9 @@ public class WorkflowMigrationService extends NgMigrationService {
     } else {
       Response<ResponseDTO<TemplateWrapperResponseDTO>> resp =
           templateClient
-              .createTemplate(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
-                  inputDTO.getProjectIdentifier(), RequestBody.create(MediaType.parse("application/yaml"), yaml))
+              .createTemplate(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                  inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
+                  RequestBody.create(MediaType.parse("application/yaml"), yaml), StoreType.INLINE)
               .execute();
       log.info("Workflow as template creation Response details {} {}", resp.code(), resp.message());
       if (resp.code() >= 400) {

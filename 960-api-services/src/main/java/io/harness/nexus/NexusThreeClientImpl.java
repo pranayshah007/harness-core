@@ -21,6 +21,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifact.ArtifactUtilities;
 import io.harness.artifacts.beans.BuildDetailsInternal;
+import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadataInternal;
 import io.harness.exception.HintException;
@@ -541,6 +542,43 @@ public class NexusThreeClientImpl {
     }
 
     return result;
+  }
+
+  public Response<DockerImageManifestResponse> fetchImageManifest(
+      NexusRequest nexusConfig, String repository, String artifactName, boolean isV1, String tag) throws IOException {
+    String repoKey = ArtifactUtilities.trimSlashforwardChars(repository);
+    String imageName = ArtifactUtilities.trimSlashforwardChars(artifactName);
+    NexusThreeRestClient nexusThreeRestClient = getNexusThreeClient(nexusConfig);
+    Response<DockerImageManifestResponse> response;
+
+    if (nexusConfig.isHasCredentials()) {
+      if (isV1) {
+        response =
+            nexusThreeRestClient
+                .getImageManifestV1(Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())),
+                    repoKey, imageName, tag)
+                .execute();
+      } else {
+        response =
+            nexusThreeRestClient
+                .getImageManifestV2(Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())),
+                    repoKey, imageName, tag)
+                .execute();
+      }
+    } else {
+      if (isV1) {
+        response = nexusThreeRestClient.getImageManifestV1(repoKey, imageName, tag).execute();
+      } else {
+        response = nexusThreeRestClient.getImageManifestV2(repoKey, imageName, tag).execute();
+      }
+    }
+
+    if (isSuccessful(response)) {
+      return response;
+    } else {
+      throw new InvalidArtifactServerException(
+          "Failed to fetch image manifest for image [" + imageName + "]", WingsException.USER);
+    }
   }
 
   private Response executeRequest(Call request) {

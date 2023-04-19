@@ -409,6 +409,9 @@ public class KubernetesHelperService {
               httpClientBuilder.proxyAuthenticator(new Authenticator() {
                 @Override
                 public Request authenticate(Route route, Response response) throws IOException {
+                  if (response == null || response.code() == 407) {
+                    return null;
+                  }
                   String credential = Credentials.basic(config.getProxyUsername(), config.getProxyPassword());
                   return response.request().newBuilder().header("Proxy-Authorization", credential).build();
                 }

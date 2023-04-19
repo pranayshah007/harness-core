@@ -200,7 +200,8 @@ public class NGFreezeDtoMapper {
 
   private FreezeConfigEntity toFreezeConfigEntityResponse(String accountId, FreezeConfig freezeConfig,
       String freezeConfigYaml, FreezeType type, String orgId, String projectId) {
-    validateFreezeYaml(freezeConfig, orgId, projectId, type);
+    Scope freezeScope = getScopeFromFreezeDto(orgId, projectId);
+    validateFreezeYaml(freezeConfig, orgId, projectId, type, freezeScope);
     String description = null;
     if (freezeConfig.getFreezeInfoConfig().getDescription() != null) {
       description = (String) freezeConfig.getFreezeInfoConfig().getDescription().fetchFinalValue();
@@ -217,7 +218,7 @@ public class NGFreezeDtoMapper {
         .description(description)
         .tags(TagMapper.convertToList(freezeConfig.getFreezeInfoConfig().getTags()))
         .type(type)
-        .freezeScope(getScopeFromFreezeDto(orgId, projectId))
+        .freezeScope(freezeScope)
         .build();
   }
 
@@ -264,12 +265,18 @@ public class NGFreezeDtoMapper {
     return update[0];
   }
 
-  public static void validateFreezeYaml(FreezeConfig freezeConfig, String orgId, String projectId, FreezeType type) {
+  public static void validateFreezeYaml(
+      FreezeConfig freezeConfig, String orgId, String projectId, FreezeType type, Scope freezeScope) {
     if (freezeConfig.getFreezeInfoConfig() == null) {
       throw new InvalidRequestException("FreezeInfoConfig cannot be empty");
     }
     FreezeInfoConfig freezeInfoConfig = freezeConfig.getFreezeInfoConfig();
-
+    if (!Scope.ACCOUNT.equals(freezeScope) && freezeInfoConfig.getOrgIdentifier() == null) {
+      throw new InvalidRequestException("Org Identifier can not be null.");
+    }
+    if (Scope.PROJECT.equals(freezeScope) && freezeInfoConfig.getProjectIdentifier() == null) {
+      throw new InvalidRequestException("Project Identifier can not be null.");
+    }
     List<FreezeEntityRule> rules = freezeInfoConfig.getRules();
     List<FreezeWindow> windows = freezeInfoConfig.getWindows();
     if (FreezeType.MANUAL.equals(type)) {

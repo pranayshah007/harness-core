@@ -26,4 +26,5 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDC)
 public class ApprovalProgressData implements ProgressData {
   String latestDelegateTaskId;
+  String taskName;
 }

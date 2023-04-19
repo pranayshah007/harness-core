@@ -17,4 +17,6 @@ public class CISweepingOutputNames {
   public static final String CODEBASE = "codebase";
   public static final String INITIALIZE_EXECUTION = "initializeExecution";
   public static final String STAGE_EXECUTION = "stageExecution";
+
+  public static final String TASK_SELECTORS = "taskselectors";
 }

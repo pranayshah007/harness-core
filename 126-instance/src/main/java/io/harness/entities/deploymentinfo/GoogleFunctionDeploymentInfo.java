@@ -20,7 +20,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(HarnessTeam.CDP)
 public class GoogleFunctionDeploymentInfo extends DeploymentInfo {
-  @NotNull private String revision;
+  @NotNull private String environmentType;
   @NotNull private String functionName;
   @NotNull private String project;
   @NotNull private String region;

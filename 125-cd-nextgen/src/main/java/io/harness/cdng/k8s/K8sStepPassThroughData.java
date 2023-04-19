@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
@@ -48,7 +49,7 @@ public class K8sStepPassThroughData implements PassThroughData {
   Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents;
   String helmValuesFileContent;
   List<ManifestFiles> manifestFiles;
-
+  ServiceHooksOutcome serviceHooksOutcome;
   // for custom source manifest and values files
   Map<String, Collection<CustomSourceFile>> customFetchContent;
   String zippedManifestFileId;

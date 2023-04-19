@@ -11,6 +11,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
@@ -20,6 +21,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.common.IdpCommonService;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.*;
@@ -44,6 +46,7 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
   static final String ERROR_MESSAGE = "Failed to replace secret. Code: 401, message: Unauthorized";
   AutoCloseable openMocks;
   @Mock BackstageEnvVariableService backstageEnvVariableService;
+  @Mock private IdpCommonService idpCommonService;
   @InjectMocks BackstageEnvVariableApiImpl backstageEnvVariableApiImpl;
   static final String TEST_ACCOUNT_IDENTIFIER = "accountId";
   static final String TEST_SECRET_IDENTIFIER = "secretId";
@@ -58,6 +61,7 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testCreateEnvironmentSecret() {
+    doNothing().when(idpCommonService).checkUserAuthorization();
     BackstageEnvVariableRequest envVariableRequest = new BackstageEnvVariableRequest();
     BackstageEnvVariable envVariable = new BackstageEnvVariable();
     envVariableRequest.setEnvVariable(envVariable);
@@ -72,6 +76,7 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testCreateEnvironmentSecretError() {
+    doNothing().when(idpCommonService).checkUserAuthorization();
     BackstageEnvVariableRequest envVariableRequest = new BackstageEnvVariableRequest();
     BackstageEnvVariable envVariable = new BackstageEnvVariable();
     envVariableRequest.setEnvVariable(envVariable);
@@ -87,16 +92,14 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testCreateEnvironmentSecrets() {
-    BackstageEnvVariableRequest envVariableRequest1 = new BackstageEnvVariableRequest();
+    doNothing().when(idpCommonService).checkUserAuthorization();
     BackstageEnvVariable envVariable1 = new BackstageEnvVariable();
-    envVariableRequest1.setEnvVariable(envVariable1);
-    BackstageEnvVariableRequest envVariableRequest2 = new BackstageEnvVariableRequest();
     BackstageEnvVariable envVariable2 = new BackstageEnvVariable();
-    envVariableRequest2.setEnvVariable(envVariable2);
-    List<BackstageEnvVariable> secrets = Arrays.asList(envVariable1, envVariable2);
-    when(backstageEnvVariableService.createMulti(secrets, TEST_ACCOUNT_IDENTIFIER)).thenReturn(secrets);
-    Response response = backstageEnvVariableApiImpl.createBackstageEnvVariables(
-        Arrays.asList(envVariableRequest1, envVariableRequest2), TEST_ACCOUNT_IDENTIFIER);
+    List<BackstageEnvVariable> envVariables = Arrays.asList(envVariable1, envVariable2);
+    BackstageEnvVariableBatchRequest batchRequest = new BackstageEnvVariableBatchRequest();
+    batchRequest.setEnvVariables(envVariables);
+    when(backstageEnvVariableService.createMulti(envVariables, TEST_ACCOUNT_IDENTIFIER)).thenReturn(envVariables);
+    Response response = backstageEnvVariableApiImpl.createBackstageEnvVariables(batchRequest, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
     List<BackstageEnvVariableResponse> responseList = (List<BackstageEnvVariableResponse>) response.getEntity();
     assertEquals(2, responseList.size());
@@ -108,17 +111,15 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testCreateEnvironmentSecretsError() {
-    BackstageEnvVariableRequest envVariableRequest1 = new BackstageEnvVariableRequest();
+    doNothing().when(idpCommonService).checkUserAuthorization();
     BackstageEnvVariable envVariable1 = new BackstageEnvVariable();
-    envVariableRequest1.setEnvVariable(envVariable1);
-    BackstageEnvVariableRequest envVariableRequest2 = new BackstageEnvVariableRequest();
     BackstageEnvVariable envVariable2 = new BackstageEnvVariable();
-    envVariableRequest2.setEnvVariable(envVariable2);
-    List<BackstageEnvVariable> secrets = Arrays.asList(envVariable1, envVariable2);
-    when(backstageEnvVariableService.createMulti(secrets, TEST_ACCOUNT_IDENTIFIER))
+    List<BackstageEnvVariable> envVariables = Arrays.asList(envVariable1, envVariable2);
+    BackstageEnvVariableBatchRequest batchRequest = new BackstageEnvVariableBatchRequest();
+    batchRequest.setEnvVariables(envVariables);
+    when(backstageEnvVariableService.createMulti(envVariables, TEST_ACCOUNT_IDENTIFIER))
         .thenThrow(new InvalidRequestException(ERROR_MESSAGE, USER));
-    Response response = backstageEnvVariableApiImpl.createBackstageEnvVariables(
-        Arrays.asList(envVariableRequest1, envVariableRequest2), TEST_ACCOUNT_IDENTIFIER);
+    Response response = backstageEnvVariableApiImpl.createBackstageEnvVariables(batchRequest, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
     assertEquals(ERROR_MESSAGE, ((ResponseMessage) response.getEntity()).getMessage());
   }
@@ -127,6 +128,7 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testDeleteEnvironmentSecret() {
+    doNothing().when(idpCommonService).checkUserAuthorization();
     Response response =
         backstageEnvVariableApiImpl.deleteBackstageEnvVariable(TEST_SECRET_IDENTIFIER, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
@@ -136,6 +138,7 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testDeleteEnvironmentSecretError() {
+    doNothing().when(idpCommonService).checkUserAuthorization();
     doThrow(new InvalidRequestException(ERROR_MESSAGE, USER))
         .when(backstageEnvVariableService)
         .delete(TEST_SECRET_IDENTIFIER, TEST_ACCOUNT_IDENTIFIER);
@@ -149,6 +152,7 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testDeleteEnvironmentSecrets() {
+    doNothing().when(idpCommonService).checkUserAuthorization();
     Response response = backstageEnvVariableApiImpl.deleteBackstageEnvVariables(
         Arrays.asList(TEST_SECRET_IDENTIFIER, TEST_SECRET_IDENTIFIER1), TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
@@ -158,6 +162,7 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testDeleteEnvironmentSecretsError() {
+    doNothing().when(idpCommonService).checkUserAuthorization();
     List<String> secretIdentifiers = Arrays.asList(TEST_SECRET_IDENTIFIER, TEST_SECRET_IDENTIFIER1);
     doThrow(new InvalidRequestException(ERROR_MESSAGE, USER))
         .when(backstageEnvVariableService)
@@ -172,6 +177,7 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testGetEnvironmentSecret() {
+    doNothing().when(idpCommonService).checkUserAuthorization();
     BackstageEnvSecretVariable envVariable = new BackstageEnvSecretVariable();
     envVariable.harnessSecretIdentifier(TEST_SECRET_IDENTIFIER);
     when(backstageEnvVariableService.findByIdAndAccountIdentifier(TEST_SECRET_IDENTIFIER, TEST_ACCOUNT_IDENTIFIER))
@@ -186,6 +192,7 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testGetEnvironmentSecretNotFound() {
+    doNothing().when(idpCommonService).checkUserAuthorization();
     Response response =
         backstageEnvVariableApiImpl.getBackstageEnvVariable(TEST_SECRET_IDENTIFIER, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
@@ -195,6 +202,7 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testGetEnvironmentSecrets() {
+    doNothing().when(idpCommonService).checkUserAuthorization();
     BackstageEnvSecretVariable envVariable1 = new BackstageEnvSecretVariable();
     envVariable1.harnessSecretIdentifier(TEST_SECRET_IDENTIFIER);
     BackstageEnvSecretVariable envVariable2 = new BackstageEnvSecretVariable();
@@ -213,6 +221,7 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testSyncEnvironmentSecrets() {
+    doNothing().when(idpCommonService).checkUserAuthorization();
     BackstageEnvSecretVariable envVariable1 = new BackstageEnvSecretVariable();
     envVariable1.harnessSecretIdentifier(TEST_SECRET_IDENTIFIER);
     BackstageEnvSecretVariable envVariable2 = new BackstageEnvSecretVariable();
@@ -227,6 +236,7 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testSyncEnvironmentSecretsError() {
+    doNothing().when(idpCommonService).checkUserAuthorization();
     BackstageEnvSecretVariable envVariable1 = new BackstageEnvSecretVariable();
     envVariable1.harnessSecretIdentifier(TEST_SECRET_IDENTIFIER);
     BackstageEnvSecretVariable envVariable2 = new BackstageEnvSecretVariable();
@@ -245,6 +255,7 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testUpdateEnvironmentSecret() {
+    doNothing().when(idpCommonService).checkUserAuthorization();
     BackstageEnvVariableRequest envVariableRequest = new BackstageEnvVariableRequest();
     BackstageEnvVariable envVariable = new BackstageEnvVariable();
     envVariableRequest.setEnvVariable(envVariable);
@@ -259,6 +270,7 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testUpdateEnvironmentSecretError() {
+    doNothing().when(idpCommonService).checkUserAuthorization();
     BackstageEnvVariableRequest envVariableRequest = new BackstageEnvVariableRequest();
     BackstageEnvVariable envVariable = new BackstageEnvVariable();
     envVariableRequest.setEnvVariable(envVariable);
@@ -274,16 +286,14 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testUpdateEnvironmentSecrets() {
-    BackstageEnvVariableRequest envVariableRequest1 = new BackstageEnvVariableRequest();
+    doNothing().when(idpCommonService).checkUserAuthorization();
     BackstageEnvVariable envVariable1 = new BackstageEnvVariable();
-    envVariableRequest1.setEnvVariable(envVariable1);
-    BackstageEnvVariableRequest envVariableRequest2 = new BackstageEnvVariableRequest();
     BackstageEnvVariable envVariable2 = new BackstageEnvVariable();
-    envVariableRequest2.setEnvVariable(envVariable2);
-    List<BackstageEnvVariable> secrets = Arrays.asList(envVariable1, envVariable2);
-    when(backstageEnvVariableService.updateMulti(secrets, TEST_ACCOUNT_IDENTIFIER)).thenReturn(secrets);
-    Response response = backstageEnvVariableApiImpl.updateBackstageEnvVariables(
-        Arrays.asList(envVariableRequest1, envVariableRequest2), TEST_ACCOUNT_IDENTIFIER);
+    List<BackstageEnvVariable> envVariables = Arrays.asList(envVariable1, envVariable2);
+    BackstageEnvVariableBatchRequest batchRequest = new BackstageEnvVariableBatchRequest();
+    batchRequest.setEnvVariables(envVariables);
+    when(backstageEnvVariableService.updateMulti(envVariables, TEST_ACCOUNT_IDENTIFIER)).thenReturn(envVariables);
+    Response response = backstageEnvVariableApiImpl.updateBackstageEnvVariables(batchRequest, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
     List<BackstageEnvVariableResponse> responseList = (List<BackstageEnvVariableResponse>) response.getEntity();
     assertEquals(2, responseList.size());
@@ -295,17 +305,15 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testUpdateEnvironmentSecretsError() {
-    BackstageEnvVariableRequest envVariableRequest1 = new BackstageEnvVariableRequest();
+    doNothing().when(idpCommonService).checkUserAuthorization();
     BackstageEnvVariable envVariable1 = new BackstageEnvVariable();
-    envVariableRequest1.setEnvVariable(envVariable1);
-    BackstageEnvVariableRequest envVariableRequest2 = new BackstageEnvVariableRequest();
     BackstageEnvVariable envVariable2 = new BackstageEnvVariable();
-    envVariableRequest2.setEnvVariable(envVariable2);
-    List<BackstageEnvVariable> secrets = Arrays.asList(envVariable1, envVariable2);
-    when(backstageEnvVariableService.updateMulti(secrets, TEST_ACCOUNT_IDENTIFIER))
+    List<BackstageEnvVariable> envVariables = Arrays.asList(envVariable1, envVariable2);
+    BackstageEnvVariableBatchRequest batchRequest = new BackstageEnvVariableBatchRequest();
+    batchRequest.setEnvVariables(envVariables);
+    when(backstageEnvVariableService.updateMulti(envVariables, TEST_ACCOUNT_IDENTIFIER))
         .thenThrow(new InvalidRequestException(ERROR_MESSAGE, USER));
-    Response response = backstageEnvVariableApiImpl.updateBackstageEnvVariables(
-        Arrays.asList(envVariableRequest1, envVariableRequest2), TEST_ACCOUNT_IDENTIFIER);
+    Response response = backstageEnvVariableApiImpl.updateBackstageEnvVariables(batchRequest, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
     assertEquals(ERROR_MESSAGE, ((ResponseMessage) response.getEntity()).getMessage());
   }

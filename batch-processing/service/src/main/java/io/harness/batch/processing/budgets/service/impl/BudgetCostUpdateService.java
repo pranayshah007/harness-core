@@ -14,6 +14,7 @@ import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.budgetGroup.dao.BudgetGroupDao;
+import io.harness.ccm.budgetGroup.service.BudgetGroupService;
 import io.harness.ccm.budgetGroup.utils.BudgetGroupUtils;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.graphql.core.budget.BudgetService;
@@ -36,6 +37,7 @@ public class BudgetCostUpdateService {
   @Autowired private BudgetDao budgetDao;
   @Autowired private BudgetGroupDao budgetGroupDao;
   @Autowired private BudgetService budgetService;
+  @Autowired private BudgetGroupService budgetGroupService;
 
   public void updateCosts() {
     List<String> accountIds = accountShardService.getCeEnabledAccountIds();
@@ -53,7 +55,7 @@ public class BudgetCostUpdateService {
       List<BudgetGroup> budgetGroups = budgetGroupDao.list(accountId, Integer.MAX_VALUE, 0);
       budgetGroups.forEach(budgetGroup -> {
         updateBudgetGroupAmount(budgetGroup, accountId);
-        BudgetGroupUtils.updateBudgetGroupCosts(budgetGroup, accountId);
+        budgetGroupService.updateBudgetGroupCosts(budgetGroup, accountId);
         budgetGroupDao.update(budgetGroup.getUuid(), accountId, budgetGroup);
       });
     });
@@ -98,7 +100,7 @@ public class BudgetCostUpdateService {
         budgetGroup.setBudgetGroupHistory(BudgetGroupUtils.adjustBudgetGroupHistory(budgetGroup));
         budgetGroup.setStartTime(budgetGroup.getEndTime());
         budgetGroup.setEndTime(BudgetUtils.getEndTimeForBudget(budgetGroup.getStartTime(), budgetGroup.getPeriod()));
-        BudgetGroupUtils.updateBudgetGroupAmount(budgetGroup, accountId);
+        budgetGroupService.updateBudgetGroupAmount(budgetGroup, accountId);
         budgetGroupDao.update(budgetGroup.getUuid(), accountId, budgetGroup);
       }
     } catch (Exception e) {

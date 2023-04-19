@@ -12,6 +12,8 @@ import static io.harness.security.NextGenAuthenticationFilter.X_API_KEY;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.GitSyncApiConstants;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
 import io.harness.pms.governance.PipelineSaveResponse;
@@ -29,7 +31,8 @@ public interface PmsClient {
   Call<ResponseDTO<PipelineSaveResponse>> createPipeline(@Header(X_API_KEY) String auth,
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Query(NGCommonEntityConstants.ORG_KEY) String orgId,
-      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectId, @Body RequestBody yaml);
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectId, @Body RequestBody yaml,
+      @Query(GitSyncApiConstants.STORE_TYPE) StoreType storeType);
 
   @POST("triggers")
   Call<ResponseDTO<NGTriggerResponseDTO>> createTrigger(@Header(X_API_KEY) String auth,

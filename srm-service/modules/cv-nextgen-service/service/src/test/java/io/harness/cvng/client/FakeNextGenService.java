@@ -144,6 +144,9 @@ public class FakeNextGenService implements NextGenService {
     projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier").identifier("project").build());
     projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier").identifier("project1").build());
     projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier").identifier("project3").build());
+    projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier1").identifier("project").build());
+    projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier1").identifier("project1").build());
+    projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier1").identifier("project3").build());
     return projectDTOS;
   }
 }

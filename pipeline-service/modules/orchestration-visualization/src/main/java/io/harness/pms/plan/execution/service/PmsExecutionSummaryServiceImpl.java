@@ -9,6 +9,7 @@ package io.harness.pms.plan.execution.service;
 
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
+import io.harness.OrchestrationStepTypes;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ExecutionErrorInfo;
@@ -229,6 +230,11 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
             || nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY)
         && nodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE) {
       updateRequired = updateIdentityStageOrStrategyNodes(planExecutionId, update) || updateRequired;
+    }
+    if (nodeExecution.getStepType().getType().equals(OrchestrationStepTypes.PIPELINE_ROLLBACK_STAGE)) {
+      String previousStagePlanNodeId = nodeExecutionService.get(nodeExecution.getPreviousId()).getNodeId();
+      ExecutionSummaryUpdateUtils.updateNextIdOfStageBeforePipelineRollback(
+          update, nodeExecution.getNodeId(), previousStagePlanNodeId);
     }
     return ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution) || updateRequired;
   }

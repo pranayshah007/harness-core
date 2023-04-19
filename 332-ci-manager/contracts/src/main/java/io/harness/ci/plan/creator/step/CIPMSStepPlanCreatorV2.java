@@ -381,7 +381,8 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
       return ((CIStepInfo) stepElement.getStepSpecType())
           .getStepParameters(stepElement,
               PlanCreatorUtilsCommon.getRollbackParameters(
-                  ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN));
+                  ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN),
+              ctx);
     }
 
     return stepElement.getStepSpecType().getStepParameters();

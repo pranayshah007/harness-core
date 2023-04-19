@@ -1,0 +1,28 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - step:
+          name: "Deploy Cloud Function"
+          identifier: deployCloudFunction
+          type: DeployCloudFunctionGenOne
+          timeout: 10m
+          spec: {}
+      - step:
+          type: Verify
+          name: Verify
+          identifier: Verify
+          timeout: 2h
+          spec: { }
+    rollbackSteps:
+      - step:
+          name: "Rollback Cloud Function"
+          identifier: cloudFunctionRollback
+          type: RollbackCloudFunctionGenOne
+          timeout: 10m
+          spec: {}

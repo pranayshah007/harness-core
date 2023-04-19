@@ -8,6 +8,7 @@
 package io.harness.delegate.task.terraform.handlers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.TMACARI;
 
@@ -16,6 +17,8 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -29,16 +32,22 @@ import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthenticationDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
+import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitHTTPAuthenticationDTO;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.terraform.RemoteTerraformVarFileInfo;
 import io.harness.delegate.task.terraform.TFTaskType;
 import io.harness.delegate.task.terraform.TerraformBaseHelper;
+import io.harness.delegate.task.terraform.TerraformCommand;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.encryption.SecretRefData;
@@ -146,6 +155,31 @@ public class TerraformApplyTaskHandlerTest extends CategoryTest {
     Files.deleteIfExists(Paths.get("sourceDir"));
   }
 
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testApplyWithS3ConfigFiles() throws IOException, TimeoutException, InterruptedException {
+    when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
+    when(terraformBaseHelper.fetchS3ConfigFilesAndPrepareScriptDir(any(), any(), any(), any(), eq(logCallback)))
+        .thenReturn("sourceDir");
+    doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
+    FileIo.createDirectoryIfDoesNotExist("sourceDir");
+    File outputFile = new File("sourceDir/terraform-output.tfvars");
+    FileUtils.touch(outputFile);
+    when(terraformBaseHelper.executeTerraformApplyStep(any()))
+        .thenReturn(
+            TerraformStepResponse.builder()
+                .cliResponse(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
+                .build());
+    TerraformTaskNGResponse response = terraformApplyTaskHandler.executeTaskInternal(
+        getTerraformTaskParametersWithS3Config(), "delegateId", "taskId", logCallback);
+    assertThat(response).isNotNull();
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    verify(terraformBaseHelper, times(1)).fetchS3ConfigFilesAndPrepareScriptDir(any(), any(), any(), any(), any());
+    Files.deleteIfExists(Paths.get(outputFile.getPath()));
+    Files.deleteIfExists(Paths.get("sourceDir"));
+  }
+
   private TerraformTaskNGParameters getTerraformTaskParameters() {
     return TerraformTaskNGParameters.builder()
         .accountId("accountId")
@@ -195,6 +229,35 @@ public class TerraformApplyTaskHandlerTest extends CategoryTest {
         .fileStoreConfigFiles(artifactoryStoreDelegateConfig)
         .varFileInfos(Collections.singletonList(RemoteTerraformVarFileInfo.builder().build()))
         .planName("planName")
+        .build();
+  }
+
+  private TerraformTaskNGParameters getTerraformTaskParametersWithS3Config() {
+    List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(mock(EncryptedDataDetail.class));
+    AwsConnectorDTO awsConnectorDTO = AwsConnectorDTO.builder()
+                                          .credential(AwsCredentialDTO.builder()
+                                                          .awsCredentialType(AwsCredentialType.MANUAL_CREDENTIALS)
+                                                          .config(AwsManualConfigSpecDTO.builder().build())
+                                                          .build())
+                                          .build();
+    S3StoreTFDelegateConfig s3StoreTFDelegateConfig =
+        S3StoreTFDelegateConfig.builder()
+            .region("region")
+            .bucketName("bucket")
+            .paths(Collections.singletonList("terraform"))
+            .encryptedDataDetails(encryptedDataDetails)
+            .connectorDTO(ConnectorInfoDTO.builder().connectorConfig(awsConnectorDTO).build())
+            .build();
+    return TerraformTaskNGParameters.builder()
+        .accountId("accountId")
+        .taskType(TFTaskType.APPLY)
+        .entityId("provisionerIdentifier")
+        .encryptedTfPlan(encryptedPlanContent)
+        .configFile(null)
+        .fileStoreConfigFiles(s3StoreTFDelegateConfig)
+        .varFileInfos(Collections.singletonList(RemoteTerraformVarFileInfo.builder().build()))
+        .planName("planName")
+        .terraformCommand(TerraformCommand.APPLY)
         .build();
   }
 }

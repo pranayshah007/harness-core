@@ -18,7 +18,7 @@ import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.PdcInfraMapping;
 import io.harness.cdng.infra.beans.PdcInfraMapping.PdcInfraMappingBuilder;
 import io.harness.cdng.infra.beans.host.HostFilter;
-import io.harness.filters.ConnectorRefExtractorHelper;
+import io.harness.filters.GenericEntityRefExtractorHelper;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
@@ -32,6 +32,7 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +54,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(InfrastructureKind.PDC)
 @OneOfSet(fields = {"hosts", "connectorRef", "hostArrayPath"},
     requiredFieldNames = {"hosts", "connectorRef", "hostArrayPath"})
-@SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
+@SimpleVisitorHelper(helperClass = GenericEntityRefExtractorHelper.class)
 @TypeAlias("PdcInfrastructure")
 @RecasterAlias("io.harness.cdng.infra.yaml.PdcInfrastructure")
 public class PdcInfrastructure extends InfrastructureDetailsAbstract implements SshWinRmInfrastructure {
@@ -174,7 +175,14 @@ public class PdcInfrastructure extends InfrastructureDetailsAbstract implements 
   @Override
   public Map<String, ParameterField<String>> extractConnectorRefs() {
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
-    connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
+    if (connectorRef != null) {
+      connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
+    }
     return connectorRefMap;
+  }
+
+  @Override
+  public Map<String, ParameterField<String>> extractSecretRefs() {
+    return Collections.singletonMap(YAMLFieldNameConstants.CREDENTIALS_REF, credentialsRef);
   }
 }

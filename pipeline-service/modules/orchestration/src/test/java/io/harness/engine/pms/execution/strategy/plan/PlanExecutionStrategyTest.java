@@ -9,6 +9,7 @@ package io.harness.engine.pms.execution.strategy.plan;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.PRASHANT;
+import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -29,6 +30,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.GovernanceService;
 import io.harness.engine.OrchestrationEngine;
+import io.harness.engine.events.OrchestrationEventEmitter;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.observers.OrchestrationStartObserver;
@@ -43,6 +45,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Ambiance.Builder;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.events.OrchestrationEvent;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepType;
@@ -58,9 +61,11 @@ import java.util.concurrent.ExecutorService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PlanExecutionStrategyTest extends OrchestrationTestBase {
@@ -80,7 +85,8 @@ public class PlanExecutionStrategyTest extends OrchestrationTestBase {
   @Mock WaitNotifyEngine waitNotifyEngine;
   @Mock Subject<OrchestrationStartObserver> orchestrationStartSubject;
   @Mock GovernanceService governanceService;
-  @Inject PlanExecutionService planExecutionService;
+  @Mock private OrchestrationEventEmitter eventEmitter;
+  @Spy @Inject PlanExecutionService planExecutionService;
   @Inject @InjectMocks PlanExecutionStrategy executionStrategy;
 
   @Before
@@ -186,6 +192,23 @@ public class PlanExecutionStrategyTest extends OrchestrationTestBase {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Error Message");
     assertThat(planExecutionService.get(planExecutionId1).getStatus()).isEqualTo(Status.ERRORED);
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void shouldSetServiceName() {
+    doReturn(Status.ERRORED).when(planExecutionService).calculateStatus(any());
+    doReturn(PlanExecution.builder().status(Status.ERRORED).build())
+        .when(planExecutionService)
+        .updateStatus(any(), any(), any());
+    ArgumentCaptor<OrchestrationEvent> argumentCaptor = ArgumentCaptor.forClass(OrchestrationEvent.class);
+
+    executionStrategy.endNodeExecution(Ambiance.newBuilder().build());
+
+    verify(eventEmitter).emitEvent(argumentCaptor.capture());
+    OrchestrationEvent event = argumentCaptor.getValue();
+    assertThat(event.getServiceName()).isEqualTo("pms");
   }
 
   private static Map<String, String> prepareInputArgs() {

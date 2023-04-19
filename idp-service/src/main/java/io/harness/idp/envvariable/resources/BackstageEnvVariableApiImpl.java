@@ -10,15 +10,17 @@ package io.harness.idp.envvariable.resources;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
+import io.harness.idp.common.IdpCommonService;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity.BackstageEnvVariableMapper;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.BackstageEnvVariableApi;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
+import io.harness.spec.server.idp.v1.model.BackstageEnvVariableBatchRequest;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariableRequest;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariableResponse;
 
 import com.google.inject.Inject;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;
@@ -28,12 +30,15 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@NextGenManagerAuth
 @Slf4j
 public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
+  private IdpCommonService idpCommonService;
   private BackstageEnvVariableService backstageEnvVariableService;
 
   @Override
   public Response createBackstageEnvVariable(@Valid BackstageEnvVariableRequest body, String harnessAccount) {
+    idpCommonService.checkUserAuthorization();
     try {
       BackstageEnvVariable envVariable = backstageEnvVariableService.create(body.getEnvVariable(), harnessAccount);
       BackstageEnvVariableResponse secretResponse = new BackstageEnvVariableResponse();
@@ -48,13 +53,11 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
   }
 
   @Override
-  public Response createBackstageEnvVariables(
-      @Valid List<BackstageEnvVariableRequest> requestList, String harnessAccount) {
-    final List<BackstageEnvVariable> requestSecrets = new ArrayList<>();
-    requestList.forEach(request -> requestSecrets.add(request.getEnvVariable()));
+  public Response createBackstageEnvVariables(@Valid BackstageEnvVariableBatchRequest body, String harnessAccount) {
+    idpCommonService.checkUserAuthorization();
     List<BackstageEnvVariable> responseSecrets;
     try {
-      responseSecrets = backstageEnvVariableService.createMulti(requestSecrets, harnessAccount);
+      responseSecrets = backstageEnvVariableService.createMulti(body.getEnvVariables(), harnessAccount);
     } catch (Exception e) {
       log.error("Could not create all environment variables", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -68,6 +71,7 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
 
   @Override
   public Response deleteBackstageEnvVariable(String backstageEnvVariable, String harnessAccount) {
+    idpCommonService.checkUserAuthorization();
     try {
       backstageEnvVariableService.delete(backstageEnvVariable, harnessAccount);
     } catch (Exception e) {
@@ -81,6 +85,7 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
 
   @Override
   public Response deleteBackstageEnvVariables(List<String> backstageEnvVariables, String accountIdentifier) {
+    idpCommonService.checkUserAuthorization();
     try {
       backstageEnvVariableService.deleteMulti(backstageEnvVariables, accountIdentifier);
     } catch (Exception e) {
@@ -94,6 +99,7 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
 
   @Override
   public Response getBackstageEnvVariable(String backstageEnvVariable, String harnessAccount) {
+    idpCommonService.checkUserAuthorization();
     Optional<BackstageEnvVariable> backstageEnvVariableOpt =
         backstageEnvVariableService.findByIdAndAccountIdentifier(backstageEnvVariable, harnessAccount);
     if (backstageEnvVariableOpt.isEmpty()) {
@@ -107,12 +113,14 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
 
   @Override
   public Response getBackstageEnvVariables(String harnessAccount, Integer page, Integer limit, String sort) {
+    idpCommonService.checkUserAuthorization();
     List<BackstageEnvVariable> secrets = backstageEnvVariableService.findByAccountIdentifier(harnessAccount);
     return Response.status(Response.Status.OK).entity(BackstageEnvVariableMapper.toResponseList(secrets)).build();
   }
 
   @Override
   public Response syncBackstageEnvVariables(String harnessAccount) {
+    idpCommonService.checkUserAuthorization();
     List<BackstageEnvVariable> secrets = backstageEnvVariableService.findByAccountIdentifier(harnessAccount);
     try {
       backstageEnvVariableService.sync(secrets, harnessAccount);
@@ -128,6 +136,7 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
   @Override
   public Response updateBackstageEnvVariable(
       String backstageEnvVariableId, @Valid BackstageEnvVariableRequest request, String harnessAccount) {
+    idpCommonService.checkUserAuthorization();
     try {
       BackstageEnvVariable backstageEnvVariable =
           backstageEnvVariableService.update(request.getEnvVariable(), harnessAccount);
@@ -142,13 +151,11 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
     }
   }
   @Override
-  public Response updateBackstageEnvVariables(
-      @Valid List<BackstageEnvVariableRequest> requestList, String accountIdentifier) {
-    final List<BackstageEnvVariable> requestSecrets = new ArrayList<>();
-    requestList.forEach(request -> requestSecrets.add(request.getEnvVariable()));
+  public Response updateBackstageEnvVariables(@Valid BackstageEnvVariableBatchRequest body, String accountIdentifier) {
+    idpCommonService.checkUserAuthorization();
     try {
       List<BackstageEnvVariable> responseVariables =
-          backstageEnvVariableService.updateMulti(requestSecrets, accountIdentifier);
+          backstageEnvVariableService.updateMulti(body.getEnvVariables(), accountIdentifier);
       return Response.status(Response.Status.OK)
           .entity(BackstageEnvVariableMapper.toResponseList(responseVariables))
           .build();

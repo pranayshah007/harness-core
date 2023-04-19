@@ -81,6 +81,7 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
   @JsonProperty("mongo") private MongoConfig mongoConnectionFactory = MongoConfig.builder().build();
   private ServiceHttpClientConfig managerClientConfig;
+  private ServiceHttpClientConfig ticketServiceRestClientConfig;
   @JsonProperty("ngManagerClientConfig") private ServiceHttpClientConfig ngManagerClientConfig;
   @JsonProperty("ngManagerServiceSecret") @ConfigSecret private String ngManagerServiceSecret;
   @JsonProperty("enforcementClientConfiguration") EnforcementClientConfiguration enforcementClientConfiguration;

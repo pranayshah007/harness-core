@@ -50,6 +50,7 @@ import software.wings.beans.GraphNode;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.PipelineStage.PipelineStageElement;
+import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
 import software.wings.beans.approval.ApprovalStateParams;
 import software.wings.beans.approval.ConditionalOperator;
@@ -77,7 +78,7 @@ import org.apache.commons.lang3.StringUtils;
 public class ApprovalStepMapperImpl extends StepMapper {
   @Override
   public List<CgEntityId> getReferencedEntities(
-      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+      String accountId, Workflow workflow, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     ApprovalState state = (ApprovalState) getState(graphNode);
     List<CgEntityId> refs = new ArrayList<>();
     ApprovalStateParams params = state.getApprovalStateParams();

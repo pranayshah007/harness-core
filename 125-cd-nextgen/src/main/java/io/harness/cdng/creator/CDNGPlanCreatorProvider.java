@@ -20,18 +20,17 @@ import static io.harness.cdng.visitor.YamlTypes.ENVIRONMENT_YAML;
 import static io.harness.cdng.visitor.YamlTypes.K8S_MANIFEST;
 import static io.harness.cdng.visitor.YamlTypes.MANIFEST_CONFIG;
 import static io.harness.cdng.visitor.YamlTypes.MANIFEST_LIST_CONFIG;
+import static io.harness.cdng.visitor.YamlTypes.POST_HOOK;
+import static io.harness.cdng.visitor.YamlTypes.PRE_HOOK;
 import static io.harness.cdng.visitor.YamlTypes.PRIMARY;
 import static io.harness.cdng.visitor.YamlTypes.ROLLBACK_STEPS;
 import static io.harness.cdng.visitor.YamlTypes.SERVICE_CONFIG;
 import static io.harness.cdng.visitor.YamlTypes.SERVICE_DEFINITION;
 import static io.harness.cdng.visitor.YamlTypes.SERVICE_ENTITY;
+import static io.harness.cdng.visitor.YamlTypes.SERVICE_HOOKS;
 import static io.harness.cdng.visitor.YamlTypes.SIDECAR;
 import static io.harness.cdng.visitor.YamlTypes.SIDECARS;
-import static io.harness.cdng.visitor.YamlTypes.SPEC;
 import static io.harness.cdng.visitor.YamlTypes.STARTUP_COMMAND;
-import static io.harness.cdng.visitor.YamlTypes.STEPS;
-import static io.harness.cdng.visitor.YamlTypes.STEP_GROUP;
-import static io.harness.cdng.visitor.YamlTypes.STRATEGY;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ACR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_S3_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMI_ARTIFACTS_NAME;
@@ -51,7 +50,6 @@ import static io.harness.ng.core.k8s.ServiceSpecType.CUSTOM_DEPLOYMENT;
 import static io.harness.ng.core.k8s.ServiceSpecType.ECS;
 import static io.harness.ng.core.k8s.ServiceSpecType.KUBERNETES;
 import static io.harness.ng.core.k8s.ServiceSpecType.SERVERLESS_AWS_LAMBDA;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.EXECUTION;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -158,6 +156,8 @@ import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSetupStepPlanCr
 import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSwapRouteStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsDeployWithoutTrafficStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsGenOneDeployStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsGenOneRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsTrafficShiftStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
@@ -227,6 +227,8 @@ import io.harness.cdng.creator.variables.aws.sam.AwsSamDeployStepVariableCreator
 import io.harness.cdng.creator.variables.aws.sam.AwsSamRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsDeployWithoutTrafficStepVariableCreator;
+import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsGenOneDeployStepVariableCreator;
+import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsGenOneRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsTrafficShiftStepVariableCreator;
 import io.harness.cdng.customDeployment.constants.CustomDeploymentConstants;
@@ -267,7 +269,6 @@ import io.harness.pms.sdk.core.variables.EmptyAnyVariableCreator;
 import io.harness.pms.sdk.core.variables.EmptyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -319,12 +320,12 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
   private static final List<String> ASG_CATEGORY = Arrays.asList(ASG);
 
-  private static final Set<String> EMPTY_FILTER_IDENTIFIERS = Sets.newHashSet(SIDECARS, SPEC, SERVICE_CONFIG,
-      CONFIG_FILE, STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, STEPS,
-      CONFIG_FILES, ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG, STEP_GROUP, EXECUTION);
-  private static final Set<String> EMPTY_VARIABLE_IDENTIFIERS = Sets.newHashSet(SIDECARS, SPEC, SERVICE_CONFIG,
-      CONFIG_FILE, STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, STEPS,
-      CONFIG_FILES, ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG);
+  private static final Set<String> EMPTY_FILTER_IDENTIFIERS = Sets.newHashSet(SIDECARS, SERVICE_CONFIG, CONFIG_FILE,
+      STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, CONFIG_FILES,
+      ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG, SERVICE_HOOKS, PRE_HOOK, POST_HOOK);
+  private static final Set<String> EMPTY_VARIABLE_IDENTIFIERS = Sets.newHashSet(SIDECARS, SERVICE_CONFIG, CONFIG_FILE,
+      STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, CONFIG_FILES,
+      ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG, SERVICE_HOOKS, PRE_HOOK, POST_HOOK);
   private static final Set<String> EMPTY_SIDECAR_TYPES =
       Sets.newHashSet(CUSTOM_ARTIFACT_NAME, JENKINS_NAME, DOCKER_REGISTRY_NAME, ACR_NAME, AMAZON_S3_NAME,
           ARTIFACTORY_REGISTRY_NAME, ECR_NAME, GOOGLE_ARTIFACT_REGISTRY_NAME, GCR_NAME, NEXUS3_REGISTRY_NAME,
@@ -337,7 +338,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
       ManifestType.AsgLaunchTemplate, ManifestType.AsgConfiguration, ManifestType.AsgScalingPolicy,
       ManifestType.AsgScheduledUpdateGroupAction, ManifestType.GoogleCloudFunctionDefinition,
       ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsLambdaFunctionAliasDefinition,
-      ManifestType.AwsSamDirectory);
+      ManifestType.AwsSamDirectory, ManifestType.GoogleCloudFunctionGenOneDefinition);
   private static final Set<String> EMPTY_ENVIRONMENT_TYPES =
       Sets.newHashSet(YamlTypes.ENV_PRODUCTION, YamlTypes.ENV_PRE_PRODUCTION);
   private static final Set<String> EMPTY_PRIMARY_TYPES =
@@ -465,6 +466,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new GoogleFunctionsDeployWithoutTrafficStepPlanCreator());
     planCreators.add(new GoogleFunctionsTrafficShiftStepPlanCreator());
     planCreators.add(new GoogleFunctionsRollbackStepPlanCreator());
+    planCreators.add(new GoogleFunctionsGenOneDeployStepPlanCreator());
+    planCreators.add(new GoogleFunctionsGenOneRollbackStepPlanCreator());
+
     // Terraform Cloud
     planCreators.add(new TerraformCloudRunStepPlanCreator());
     planCreators.add(new BambooCreateStepPlanCreator());
@@ -491,7 +495,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     filterJsonCreators.add(new CDPMSCommandStepFilterJsonCreator());
     filterJsonCreators.add(new ChaosStepFilterJsonCreator());
     filterJsonCreators.add(new EmptyAnyFilterJsonCreator(EMPTY_FILTER_IDENTIFIERS));
-    filterJsonCreators.add(new EmptyAnyFilterJsonCreator(Sets.newHashSet(STRATEGY, SPEC)));
     filterJsonCreators.add(new EmptyFilterJsonCreator(SIDECAR, EMPTY_SIDECAR_TYPES));
     filterJsonCreators.add(new EmptyFilterJsonCreator(MANIFEST_CONFIG, EMPTY_MANIFEST_TYPES));
     filterJsonCreators.add(new EmptyFilterJsonCreator(ENVIRONMENT_YAML, EMPTY_ENVIRONMENT_TYPES));
@@ -505,13 +508,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
   @Override
   public List<VariableCreator> getVariableCreators() {
-    Set<String> emptyVariableIdentifiers = new HashSet<>(EMPTY_VARIABLE_IDENTIFIERS);
-    emptyVariableIdentifiers.add(YAMLFieldNameConstants.PARALLEL);
-    emptyVariableIdentifiers.add(YAMLFieldNameConstants.SPEC);
-    emptyVariableIdentifiers.add(YAMLFieldNameConstants.EXECUTION);
-
     List<VariableCreator> variableCreators = new ArrayList<>();
-    variableCreators.add(new EmptyAnyVariableCreator(emptyVariableIdentifiers));
+    variableCreators.add(new EmptyAnyVariableCreator(new HashSet<>(EMPTY_VARIABLE_IDENTIFIERS)));
     variableCreators.add(new EmptyVariableCreator(SIDECAR, EMPTY_SIDECAR_TYPES));
     variableCreators.add(new EmptyVariableCreator(MANIFEST_CONFIG, EMPTY_MANIFEST_TYPES));
     variableCreators.add(new EmptyVariableCreator(ENVIRONMENT_YAML, EMPTY_ENVIRONMENT_TYPES));
@@ -609,6 +607,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new GoogleFunctionsDeployWithoutTrafficStepVariableCreator());
     variableCreators.add(new GoogleFunctionsTrafficShiftStepVariableCreator());
     variableCreators.add(new GoogleFunctionsRollbackStepVariableCreator());
+    variableCreators.add(new GoogleFunctionsGenOneDeployStepVariableCreator());
+    variableCreators.add(new GoogleFunctionsGenOneRollbackStepVariableCreator());
     // Terraform Cloud
     variableCreators.add(new TerraformCloudRunStepVariableCreator());
     variableCreators.add(new TerraformCloudRollbackStepVariableCreator());
@@ -915,6 +915,26 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                 StepMetaData.newBuilder().addCategory("GoogleCloudFunctions").setFolderPath("Google Functions").build())
             .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
             .build();
+
+    StepInfo googleFunctionGenOneDeploy = StepInfo.newBuilder()
+                                              .setName("Google Function Deploy")
+                                              .setType(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY)
+                                              .setStepMetaData(StepMetaData.newBuilder()
+                                                                   .addCategory("GoogleCloudFunctionsGenOne")
+                                                                   .setFolderPath("Google Functions")
+                                                                   .build())
+                                              .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
+                                              .build();
+
+    StepInfo googleFunctionGenOneRollback = StepInfo.newBuilder()
+                                                .setName("Google Function Rollback")
+                                                .setType(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK)
+                                                .setStepMetaData(StepMetaData.newBuilder()
+                                                                     .addCategory("GoogleCloudFunctionsGenOne")
+                                                                     .setFolderPath("Google Functions")
+                                                                     .build())
+                                                .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
+                                                .build();
 
     StepInfo awsLambdaDeploy = StepInfo.newBuilder()
                                    .setName("Aws Lambda Deploy")
@@ -1427,6 +1447,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(terraformCloudRollback);
     stepInfos.add(awsLambdaRollback);
     stepInfos.add(tasRouteMapping);
+    stepInfos.add(googleFunctionGenOneDeploy);
+    stepInfos.add(googleFunctionGenOneRollback);
+
     return stepInfos;
   }
 }
