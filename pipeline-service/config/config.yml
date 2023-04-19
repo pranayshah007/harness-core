@@ -243,8 +243,8 @@ triggerConfig:
   customBaseUrl: http://localhost:12001/api/
 
 logStreamingServiceConfig:
-  baseUrl: http://localhost:8079
-  serviceToken: token
+  baseUrl: https://qa.harness.io/log-service/
+  serviceToken: c76e567a-b341-404d-a8dd-d9738714eb82
 
 # remove in a few cycles
 opaServerConfig:
@@ -305,7 +305,7 @@ orchestrationStepConfig:
     liteEngineImage: harness/ci-lite-engine:1.14.22
     #isLocal: false
     isLocal: true
-    logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-http://localhost:8079}
+    logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-https://qa.harness.io/log-service/}
     pluginConfig:
       sscaOrchestrationConfig:
         image: harness/ssca-plugin:latest
