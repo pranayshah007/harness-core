@@ -1074,6 +1074,7 @@ import software.wings.beans.PerpetualTaskBroadcastEvent;
 import software.wings.beans.PhysicalDataCenterConfig;
 import software.wings.beans.PrometheusConfig;
 import software.wings.beans.SerializationFormat;
+import software.wings.beans.ServiceHookDelegateConfig;
 import software.wings.beans.SlackConfig;
 import software.wings.beans.SpotInstConfig;
 import software.wings.beans.StringValue;
@@ -2481,5 +2482,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GoogleFunctionGenOnePrepareRollbackResponse.class, 1800006);
     kryo.register(GoogleFunctionGenOneRollbackRequest.class, 1800007);
     kryo.register(GoogleFunctionGenOneRollbackResponse.class, 1800008);
+    kryo.register(ServiceHookDelegateConfig.class, 10000527);
   }
 }

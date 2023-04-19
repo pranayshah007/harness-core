@@ -731,7 +731,8 @@ public enum FeatureName {
       "Enables Migration to create user account level data map for this account", HarnessTeam.PL),
   CDS_BG_STAGE_SCALE_DOWN_STEP_NG(
       "Enables Blue Green Scale Down Stage Scale Down Step. This will help bring down the stage environment in Blue Green Deployment. Epic: https://harness.atlassian.net/browse/CDS-55822",
-      HarnessTeam.CDP);
+      HarnessTeam.CDP),
+  CDS_K8S_SERVICE_HOOKS_NG("Enables Service hooks support for K8s/Native Helm Services", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

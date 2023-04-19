@@ -477,6 +477,8 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(437, "GOOGLE_FUNCTION_GEN_ONE_ROLLBACK_TASK");
     taskTypeOrdinalMapping.put(438, "GOOGLE_FUNCTION_GEN_ONE_PREPARE_ROLLBACK_TASK");
     taskTypeOrdinalMapping.put(439, "TERRAFORM_TASK_NG_V6");
+    taskTypeOrdinalMapping.put(440, "K8S_COMMAND_TASK_NG_V2");
+    taskTypeOrdinalMapping.put(441, "HELM_COMMAND_TASK_NG_V2");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
