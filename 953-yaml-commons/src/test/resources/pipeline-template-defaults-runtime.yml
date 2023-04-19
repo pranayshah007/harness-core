@@ -1,0 +1,72 @@
+template:
+  identifier: "PipelineTempWithStageTemplate2345"
+  type: "Pipeline"
+  spec:
+    stages:
+    - stage:
+        identifier: "s1"
+        template:
+          templateInputs:
+            type: "Deployment"
+            spec:
+              service:
+                serviceInputs:
+                  serviceDefinition:
+                    type: "Kubernetes"
+                    spec:
+                      variables:
+                      - name: "var1"
+                        type: "String"
+                        default: "WITHOUT_FF"
+                        value: "<+input>"
+              environment:
+                environmentInputs:
+                  identifier: "PROD_BEFORE"
+                  type: "Production"
+                  variables:
+                  - name: "env_var1"
+                    type: "String"
+                    value: "<+input>"
+                    default: "WITHOUT_FF"
+                serviceOverrideInputs:
+                  variables:
+                  - name: "var1"
+                    type: "String"
+                    value: "<+input>"
+                infrastructureDefinitions:
+                - identifier: "prod_infra1"
+                  inputs:
+                    identifier: "prod_infra1"
+                    type: "KubernetesDirect"
+                    spec:
+                      namespace: "<+input>"
+    - stage:
+        identifier: "nontempstage"
+        type: "Deployment"
+        spec:
+          service:
+            serviceInputs:
+              serviceDefinition:
+                type: "Kubernetes"
+                spec:
+                  variables:
+                  - name: "var1"
+                    type: "String"
+                    default: "DEFAULT_FF_ON"
+                    value: "<+input>.default(DEFAULT_FF_ON)"
+          environment:
+            environmentInputs:
+              identifier: "PROD_BEFORE_FF"
+              type: "Production"
+              variables:
+              - name: "envVar1"
+                type: "String"
+                value: "<+input>.default(DEFAULT_IN_ENV)"
+                default: "DEFAULT_IN_ENV"
+            infrastructureDefinitions:
+            - identifier: "infra1"
+              inputs:
+                identifier: "infra1"
+                type: "KubernetesDirect"
+                spec:
+                  namespace: "<+input>.default(defaultEnvNamespace)"

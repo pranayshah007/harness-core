@@ -7,7 +7,6 @@
 
 package io.harness.cdng.provision.terraformcloud;
 
-import static io.harness.cdng.provision.terraformcloud.TerraformCloudTestStepUtils.TFC_SWEEPING_OUTPUT_IDENTIFIER;
 import static io.harness.delegate.beans.FileBucket.TERRAFORM_CLOUD_POLICY_CHECKS;
 import static io.harness.delegate.beans.FileBucket.TERRAFORM_PLAN_JSON;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
@@ -37,7 +36,6 @@ import io.harness.cdng.provision.terraform.executions.RunDetails;
 import io.harness.cdng.provision.terraform.executions.TerraformCloudPlanExecutionDetails;
 import io.harness.cdng.provision.terraform.executions.TerraformCloudPlanExecutionDetails.TerraformCloudPlanExecutionDetailsKeys;
 import io.harness.cdng.provision.terraformcloud.executiondetails.TerraformCloudPlanExecutionDetailsService;
-import io.harness.cdng.provision.terraformcloud.output.TerraformCloudPlanOutput;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.EncryptionHelper;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -48,10 +46,6 @@ import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformClou
 import io.harness.delegate.task.terraformcloud.cleanup.TerraformCloudCleanupTaskParams;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
-import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
-import io.harness.pms.sdk.core.resolver.RefObjectUtils;
-import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
@@ -62,6 +56,7 @@ import software.wings.beans.TaskType;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.junit.Before;
@@ -84,7 +79,6 @@ public class TerraformCloudStepHelperTest extends CategoryTest {
 
   @Mock private FileServiceClientFactory fileService;
   @Mock private CDStepHelper cdStepHelper;
-  @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private TerraformCloudPlanExecutionDetailsService terraformCloudPlanExecutionDetailsService;
   @Mock private TerraformCloudConnectorDTO mockConnectorDTO;
   @Mock private EncryptionHelper encryptionHelper;
@@ -135,15 +129,14 @@ public class TerraformCloudStepHelperTest extends CategoryTest {
   @Owner(developers = BUHA)
   @Category(UnitTests.class)
   public void testGetTerraformCloudConnectorWhenApply() {
-    when(executionSweepingOutputService.resolveOptional(
-             utils.getAmbiance(), RefObjectUtils.getSweepingOutputRefObject(TFC_SWEEPING_OUTPUT_IDENTIFIER)))
-        .thenReturn(OptionalSweepingOutput.builder()
-                        .found(true)
-                        .output(TerraformCloudPlanOutput.builder()
-                                    .terraformCloudConnectorRef("connectorPlanRef")
-                                    .runId("run-123")
-                                    .build())
-                        .build());
+    when(terraformCloudPlanExecutionDetailsService.listAllPipelineTFCloudPlanExecutionDetails(any(), any()))
+        .thenReturn(Collections.singletonList(
+            TerraformCloudPlanExecutionDetails.builder()
+                .runDetails(RunDetails.builder().connectorRef("connectorPlanRef").runId("run-123").build())
+                .provisionerId("provisionerId")
+                .canBeApplied(true)
+                .build()));
+
     when(cdStepHelper.getConnector("connectorPlanRef", utils.getAmbiance()))
         .thenReturn(ConnectorInfoDTO.builder()
                         .connectorType(ConnectorType.TERRAFORM_CLOUD)
@@ -159,32 +152,43 @@ public class TerraformCloudStepHelperTest extends CategoryTest {
   @Test
   @Owner(developers = BUHA)
   @Category(UnitTests.class)
-  public void testSaveTerraformCloudPlanOutput() {
-    ArgumentCaptor<TerraformCloudPlanOutput> planOutputArgumentCaptor =
-        ArgumentCaptor.forClass(TerraformCloudPlanOutput.class);
-    helper.saveTerraformCloudPlanOutput(utils.getPlanSpecParameters(), "run-123", utils.getAmbiance());
-    verify(executionSweepingOutputService, times(1))
-        .consume(any(), eq(TFC_SWEEPING_OUTPUT_IDENTIFIER), planOutputArgumentCaptor.capture(),
-            eq(StepOutcomeGroup.STAGE.name()));
-    assertThat(planOutputArgumentCaptor.getValue().getTerraformCloudConnectorRef()).isEqualTo("tcConnectorRef");
-    assertThat(planOutputArgumentCaptor.getValue().getRunId()).isEqualTo("run-123");
-  }
+  public void testGetPlanExecutionDetails() {
+    when(terraformCloudPlanExecutionDetailsService.listAllPipelineTFCloudPlanExecutionDetails(any(), any()))
+        .thenReturn(
+            List.of(TerraformCloudPlanExecutionDetails.builder()
+                        .runDetails(RunDetails.builder().connectorRef("connectorPlanRef").runId("run-4").build())
+                        .canBeApplied(true)
+                        .createdAt(4)
+                        .provisionerId("provisionerId")
+                        .build(),
+                TerraformCloudPlanExecutionDetails.builder()
+                    .runDetails(RunDetails.builder().connectorRef("connectorPlanRef").runId("run-1").build())
+                    .canBeApplied(true)
+                    .createdAt(2)
+                    .provisionerId("provisionerId")
+                    .build(),
+                TerraformCloudPlanExecutionDetails.builder()
+                    .runDetails(RunDetails.builder().connectorRef("connectorPlanRef").runId("run-99").build())
+                    .canBeApplied(true)
+                    .createdAt(99)
+                    .provisionerId("provisionerId")
+                    .build(),
+                TerraformCloudPlanExecutionDetails.builder()
+                    .runDetails(RunDetails.builder().connectorRef("connectorPlanRef").runId("run-1").build())
+                    .canBeApplied(true)
+                    .createdAt(1)
+                    .provisionerId("provisionerId")
+                    .build(),
+                TerraformCloudPlanExecutionDetails.builder()
+                    .runDetails(RunDetails.builder().connectorRef("connectorPlanRef2").runId("run-1").build())
+                    .canBeApplied(true)
+                    .provisionerId("provisionerId2")
+                    .createdAt(999)
+                    .build()));
 
-  @Test
-  @Owner(developers = BUHA)
-  @Category(UnitTests.class)
-  public void testGetPlanRunIdFromSweepingOutput() {
-    when(executionSweepingOutputService.resolveOptional(
-             utils.getAmbiance(), RefObjectUtils.getSweepingOutputRefObject(TFC_SWEEPING_OUTPUT_IDENTIFIER)))
-        .thenReturn(OptionalSweepingOutput.builder()
-                        .found(true)
-                        .output(TerraformCloudPlanOutput.builder()
-                                    .terraformCloudConnectorRef("connectorPlanRef")
-                                    .runId("run-123")
-                                    .build())
-                        .build());
     String runId = helper.getPlanRunId("provisionerId", utils.getAmbiance());
-    assertThat(runId).isEqualTo("run-123");
+
+    assertThat(runId).isEqualTo("run-99");
   }
 
   @Test

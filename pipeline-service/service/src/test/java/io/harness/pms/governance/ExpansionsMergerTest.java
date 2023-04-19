@@ -54,6 +54,7 @@ public class ExpansionsMergerTest extends CategoryTest {
         + "                  expandThis: e1\n"
         + "                  expandAndRemove: e2\n"
         + "                  expandAndMoveUp: e3\n"
+        + "                  replaceInline: e4\n"
         + "                timeout: 1d\n";
     ExpansionResponseProto resp0 =
         ExpansionResponseProto.newBuilder()
@@ -79,6 +80,7 @@ public class ExpansionsMergerTest extends CategoryTest {
             .setSuccess(true)
             .setPlacement(MOVE_UP)
             .build();
+
     ExpansionResponseProto resp3 = ExpansionResponseProto.newBuilder()
                                        .setFqn("pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec")
                                        .setKey("gitConfig")
@@ -87,7 +89,16 @@ public class ExpansionsMergerTest extends CategoryTest {
                                        .setPlacement(APPEND)
                                        .build();
 
-    List<ExpansionResponseProto> expansionResponseProtoList = Arrays.asList(resp0, resp1, resp2, resp3);
+    ExpansionResponseProto resp4 =
+        ExpansionResponseProto.newBuilder()
+            .setFqn("pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/replaceInline")
+            .setKey("replaceInline")
+            .setValue("{\"newKey\": \"newValue\"}")
+            .setSuccess(true)
+            .setPlacement(REPLACE)
+            .build();
+
+    List<ExpansionResponseProto> expansionResponseProtoList = Arrays.asList(resp0, resp1, resp2, resp3, resp4);
     ExpansionResponseBatch expansionResponseBatch =
         ExpansionResponseBatch.newBuilder().addAllExpansionResponseProto(expansionResponseProtoList).build();
     String expandedPipeline =
@@ -102,6 +113,9 @@ public class ExpansionsMergerTest extends CategoryTest {
     assertThat(yamlNode.gotoPath("pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/et2")).isNotNull();
     assertThat(yamlNode.gotoPath("pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/et3")).isNotNull();
     assertThat(yamlNode.gotoPath("pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/gitConfig")).isNotNull();
+    assertThat(
+        yamlNode.gotoPath("pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/replaceInline").toString())
+        .isEqualTo("{\"newKey\":\"newValue\"}");
   }
 
   @Test

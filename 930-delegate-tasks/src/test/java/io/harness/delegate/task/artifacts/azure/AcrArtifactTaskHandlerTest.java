@@ -22,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.azure.AzureEnvironmentType;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.connector.azureconnector.AzureAuthDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO;
@@ -72,6 +73,12 @@ public class AcrArtifactTaskHandlerTest extends CategoryTest {
   @Mock private SecretDecryptionService secretDecryptionService;
   @InjectMocks private AcrArtifactTaskHandler acrArtifactTaskHandler;
 
+  private static final String SHA = "sha256:123456";
+  private static final String SHA_V2 = "sha256:341243";
+  private static final Map<String, String> LABEL = Map.of("k1", "v1");
+  private static final ArtifactMetaInfo ARTIFACT_META_INFO =
+      ArtifactMetaInfo.builder().sha(SHA).shaV2(SHA_V2).labels(LABEL).build();
+
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
@@ -103,7 +110,11 @@ public class AcrArtifactTaskHandlerTest extends CategoryTest {
     List<ArtifactDelegateResponse> responseList = artifactTaskResponse.getArtifactDelegateResponses();
 
     assertThat(responseList.size()).isEqualTo(1);
-    assertThat(responseList.get(0).getBuildDetails().getMetadata().get(ArtifactMetadataKeys.TAG)).isEqualTo("2.0");
+    Map<String, String> metadata = responseList.get(0).getBuildDetails().getMetadata();
+    assertThat(metadata.get(ArtifactMetadataKeys.TAG)).isEqualTo("2.0");
+    assertThat(metadata.get(ArtifactMetadataKeys.SHA)).isEqualTo(SHA);
+    assertThat(metadata.get(ArtifactMetadataKeys.SHAV2)).isEqualTo(SHA_V2);
+    assertThat(((AcrArtifactDelegateResponse) responseList.get(0)).getLabel()).isEqualTo(LABEL);
   }
 
   @Test
@@ -130,8 +141,11 @@ public class AcrArtifactTaskHandlerTest extends CategoryTest {
 
     List<ArtifactDelegateResponse> responseList = artifactTaskResponse.getArtifactDelegateResponses();
 
-    assertThat(responseList.size()).isEqualTo(1);
-    assertThat(responseList.get(0).getBuildDetails().getMetadata().get(ArtifactMetadataKeys.TAG)).isEqualTo("2.0");
+    Map<String, String> metadata = responseList.get(0).getBuildDetails().getMetadata();
+    assertThat(metadata.get(ArtifactMetadataKeys.TAG)).isEqualTo("2.0");
+    assertThat(metadata.get(ArtifactMetadataKeys.SHA)).isEqualTo(SHA);
+    assertThat(metadata.get(ArtifactMetadataKeys.SHAV2)).isEqualTo(SHA_V2);
+    assertThat(((AcrArtifactDelegateResponse) responseList.get(0)).getLabel()).isEqualTo(LABEL);
   }
 
   @Test
@@ -232,6 +246,7 @@ public class AcrArtifactTaskHandlerTest extends CategoryTest {
         .uiDisplayName(format("%s %s", TAG_LABEL, tag))
         .buildUrl(imagePath)
         .metadata(metadata)
+        .artifactMetaInfo(ARTIFACT_META_INFO)
         .build();
   }
 

@@ -44,6 +44,7 @@ public class PluginMetadata {
   public static class Input {
     @JsonProperty("name") private String name;
     @JsonProperty("description") String description;
+    @JsonProperty("type") String type;
     @JsonProperty("required") boolean required;
     @JsonProperty("secret") boolean secret;
     @JsonProperty("default") String defaultVal;

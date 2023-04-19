@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.VLAD;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,6 +47,7 @@ import io.harness.secretmanagerclient.services.SshKeySpecDTOHelper;
 import io.harness.secretmanagerclient.services.WinRmCredentialsSpecDTOHelper;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.common.collect.Sets;
 import java.util.Arrays;
@@ -53,6 +55,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -82,7 +85,13 @@ public class NGHostValidationServiceImplTest extends CategoryTest {
   @Mock private TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Mock private NGErrorHelper ngErrorHelper;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @InjectMocks NGHostValidationServiceImpl hostValidationService;
+
+  @Before
+  public void before() {
+    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(any(), any());
+  }
 
   @Test
   @Owner(developers = {VLAD, IVAN})

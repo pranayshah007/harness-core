@@ -12,7 +12,7 @@ import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FI
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
 import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
-import static io.harness.ccm.views.businessMapping.entities.UnallocatedCostStrategy.HIDE;
+import static io.harness.ccm.views.businessmapping.entities.UnallocatedCostStrategy.HIDE;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.graphql.QLCEViewFilterOperator.IN;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
@@ -45,10 +45,10 @@ import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.currency.Currency;
-import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
-import io.harness.ccm.views.businessMapping.entities.CostTarget;
-import io.harness.ccm.views.businessMapping.entities.SharedCost;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessmapping.entities.CostTarget;
+import io.harness.ccm.views.businessmapping.entities.SharedCost;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ClusterData;
 import io.harness.ccm.views.entities.ClusterData.ClusterDataBuilder;
@@ -372,12 +372,10 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       sharedCostBucketNames.forEach(sharedCostBucketName -> sharedCosts.put(sharedCostBucketName, 0.0));
     }
 
-    double totalSharedCostInUnattributed = 0.0D;
     List<QLCEViewEntityStatsDataPoint> entityStatsDataPoints = new ArrayList<>();
     for (FieldValueList row : result.iterateAll()) {
       QLCEViewEntityStatsDataPointBuilder dataPointBuilder = QLCEViewEntityStatsDataPoint.builder();
       Double cost = null;
-      double sharedCostInUnattributed = 0.0D;
       String name = DEFAULT_GRID_ENTRY_NAME;
       String id = DEFAULT_STRING_VALUE;
       for (Field field : fields) {
@@ -392,7 +390,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
               cost = getNumericValue(row, field, skipRoundOff);
               dataPointBuilder.cost(cost);
             } else if (sharedCostBucketNames.contains(field.getName())) {
-              sharedCostInUnattributed = getNumericValue(row, field, skipRoundOff);
               sharedCosts.put(
                   field.getName(), sharedCosts.get(field.getName()) + getNumericValue(row, field, skipRoundOff));
             }
@@ -407,10 +404,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         dataPointBuilder.costTrend(
             viewBillingServiceHelper.getCostTrendForEntity(cost, costTrendData.get(id), startTimeForTrend));
       }
-      if (businessMapping != null && businessMapping.getUnallocatedCost() != null
-          && name.equals(businessMapping.getUnallocatedCost().getLabel())) {
-        totalSharedCostInUnattributed += sharedCostInUnattributed;
-      }
       entityStatsDataPoints.add(dataPointBuilder.build());
     }
 
@@ -419,13 +412,10 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
           viewBillingServiceHelper.getUpdatedDataPoints(entityStatsDataPoints, entityNames, accountId, conversionField);
     }
 
-    if (businessMapping != null) {
-      if (!sharedCostBucketNames.isEmpty() && addSharedCostFromGroupBy) {
-        entityStatsDataPoints =
-            viewBusinessMappingResponseHelper.addSharedCosts(entityStatsDataPoints, sharedCosts, businessMapping);
-      }
-      entityStatsDataPoints = viewBusinessMappingResponseHelper.subtractDuplicateSharedCostFromUnattributed(
-          entityStatsDataPoints, totalSharedCostInUnattributed, businessMapping);
+    // TODO: Remove this code because addSharedCostFromGroupBy will always false.
+    if (businessMapping != null && !sharedCostBucketNames.isEmpty() && addSharedCostFromGroupBy) {
+      entityStatsDataPoints =
+          viewBusinessMappingResponseHelper.addSharedCosts(entityStatsDataPoints, sharedCosts, businessMapping);
     }
 
     if (entityStatsDataPoints.size() > MAX_LIMIT_VALUE) {
@@ -795,7 +785,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     String fieldName = viewParametersHelper.getEntityGroupByFieldName(Collections.emptyList());
     for (FieldValueList row : result.iterateAll()) {
       double cost = 0.0;
-      double sharedCostInUnattributed = 0.0;
       String entityName = null;
       for (Field field : fields) {
         switch (field.getName()) {
@@ -824,7 +813,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
           default:
             if (sharedCostBucketNames.contains(field.getName())) {
               sharedCost += getNumericValue(row, field);
-              sharedCostInUnattributed += getNumericValue(row, field);
             }
             if (field.getType().getStandardType() == StandardSQLTypeName.STRING) {
               entityName = fetchStringValue(row, field, fieldName);
@@ -835,10 +823,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       if (entityName == null
           || (includeOthersCost || !entityName.equals(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName()))) {
         totalCost += cost;
-      }
-      if (businessMappingFromGroupBy != null && businessMappingFromGroupBy.getUnallocatedCost() != null
-          && entityName != null && entityName.equals(businessMappingFromGroupBy.getUnallocatedCost().getLabel())) {
-        totalCost -= sharedCostInUnattributed;
       }
     }
 
@@ -1242,9 +1226,9 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       final boolean groupByCurrentBusinessMapping =
           groupByBusinessMappingId != null && groupByBusinessMappingId.equals(sharedCostBusinessMapping.getUuid());
       SelectQuery query = viewBillingServiceHelper.getQuery(
-          viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid()), updatedGroupBy,
-          aggregateFunction, sort, cloudProviderTableName, queryParams, sharedCostBusinessMappings.get(0),
-          Collections.emptyList());
+          viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid()), groupBy,
+          updatedGroupBy, aggregateFunction, sort, cloudProviderTableName, queryParams,
+          sharedCostBusinessMappings.get(0), Collections.emptyList());
       QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
       TableResult result;
       try {
@@ -1380,7 +1364,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       List<QLCEViewGroupBy> businessMappingGroupBy =
           viewsQueryHelper.createBusinessMappingGroupBy(sharedCostBusinessMapping);
       SelectQuery query = viewBillingServiceHelper.getQuery(
-          viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid()),
+          viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid()), groupBy,
           businessMappingGroupBy, aggregateFunction, sort, cloudProviderTableName, queryParams,
           sharedCostBusinessMapping, Collections.emptyList());
       TableResult result = getTableResultWithLimitAndOffset(bigQuery, query, limit, offset);

@@ -23,6 +23,7 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
@@ -59,6 +60,7 @@ import io.harness.secretmanagerclient.services.WinRmCredentialsSpecDTOHelper;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import software.wings.beans.TaskType;
 
@@ -90,6 +92,7 @@ public class NGHostValidationServiceImpl implements NGHostValidationService {
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject ExceptionManager exceptionManager;
   @Inject NGErrorHelper ngErrorHelper;
+  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private final Executor hostsConnectivityExecutor = new ManagedExecutorService(Executors.newFixedThreadPool(4));
   private final Executor hostsSSHExecutor = new ManagedExecutorService(Executors.newFixedThreadPool(4));
 
@@ -248,6 +251,12 @@ public class NGHostValidationServiceImpl implements NGHostValidationService {
   private DelegateTaskRequest generateSshDelegateTaskRequest(Secret secret, String host, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, Set<String> delegateSelectors) {
     SSHKeySpecDTO secretSpecDTO = (SSHKeySpecDTO) secret.getSecretSpec().toDTO();
+    if (null != secretSpecDTO.getAuth()) {
+      secretSpecDTO.getAuth().setUseSshj(
+          ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_SSH_SSHJ));
+      secretSpecDTO.getAuth().setUseSshClient(
+          ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_SSH_CLIENT));
+    }
     List<EncryptedDataDetail> encryptionDetails = sshKeySpecDTOHelper.getSSHKeyEncryptionDetails(
         secretSpecDTO, getBaseNGAccess(accountIdentifier, orgIdentifier, projectIdentifier));
     String hostName = getHostnameWithoutPort(host);

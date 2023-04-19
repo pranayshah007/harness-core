@@ -12,9 +12,13 @@ import static io.harness.NGDateUtils.HOUR_IN_MS;
 import static io.harness.NGDateUtils.getNumberOfDays;
 import static io.harness.NGDateUtils.getStartTimeOfPreviousInterval;
 import static io.harness.NGDateUtils.getStartTimeOfTheDayAsEpoch;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.event.timeseries.processor.utils.DateUtils.getCurrentTime;
 import static io.harness.ng.core.activityhistory.dto.TimeGroupType.DAY;
 import static io.harness.ng.core.activityhistory.dto.TimeGroupType.HOUR;
+import static io.harness.ng.core.template.TemplateListType.STABLE_TEMPLATE_TYPE;
+
+import static java.util.Objects.isNull;
 
 import io.harness.NGDateUtils;
 import io.harness.annotations.dev.HarnessTeam;
@@ -23,7 +27,9 @@ import io.harness.cd.CDDashboardServiceHelper;
 import io.harness.cd.NGPipelineSummaryCDConstants;
 import io.harness.cd.NGServiceConstants;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.encryption.Scope;
 import io.harness.event.timeseries.processor.utils.DateUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnknownEnumTypeException;
 import io.harness.models.ActiveServiceInstanceInfoV2;
 import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
@@ -36,6 +42,7 @@ import io.harness.models.constants.TimescaleConstants;
 import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeAndServiceId;
 import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeBase;
 import io.harness.ng.core.activityhistory.dto.TimeGroupType;
+import io.harness.ng.core.customDeployment.helper.CustomDeploymentYamlHelper;
 import io.harness.ng.core.dashboard.AuthorInfo;
 import io.harness.ng.core.dashboard.DashboardExecutionStatusInfo;
 import io.harness.ng.core.dashboard.DeploymentsInfo;
@@ -50,6 +57,9 @@ import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
+import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.overview.dto.ActiveServiceDeploymentsInfo;
 import io.harness.ng.overview.dto.ActiveServiceInstanceSummary;
 import io.harness.ng.overview.dto.ActiveServiceInstanceSummaryV2;
@@ -81,6 +91,7 @@ import io.harness.ng.overview.dto.HealthDeploymentDashboardV2;
 import io.harness.ng.overview.dto.HealthDeploymentDetails;
 import io.harness.ng.overview.dto.HealthDeploymentInfo;
 import io.harness.ng.overview.dto.HealthDeploymentInfoV2;
+import io.harness.ng.overview.dto.IconDTO;
 import io.harness.ng.overview.dto.InstanceGroupedByArtifactList;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
@@ -117,11 +128,16 @@ import io.harness.ng.overview.dto.WorkloadDeploymentInfoV2;
 import io.harness.ng.overview.dto.WorkloadInfo;
 import io.harness.ng.overview.util.GrowthTrendEvaluator;
 import io.harness.pms.execution.ExecutionStatus;
+import io.harness.pms.merger.YamlConfig;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.service.instancedashboardservice.InstanceDashboardService;
+import io.harness.template.TemplateFilterPropertiesDTO;
+import io.harness.template.remote.TemplateResourceClient;
 import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.TimeScaleDBService;
-import io.harness.utils.FullyQualifiedIdentifierHelper;
+import io.harness.utils.IdentifierRefHelper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.sql.Array;
@@ -154,8 +170,11 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Inject InstanceDashboardService instanceDashboardService;
   @Inject ServiceEntityService serviceEntityServiceImpl;
   @Inject EnvironmentServiceImpl environmentService;
+  @Inject TemplateResourceClient templateResourceClient;
+  @Inject CustomDeploymentYamlHelper customDeploymentYamlHelper;
 
   private String tableNameCD = "pipeline_execution_summary_cd";
+  private String CUSTOM_DEPLOYMENT = "CustomDeployment";
   private String tableNameServiceAndInfra = "service_infra_info";
   private static final String PIPELINE_EXECUTION_SUMMARY_CD_ID = "pipeline_execution_summary_cd_id";
   public static List<String> activeStatusList = Arrays.asList(ExecutionStatus.RUNNING.name(),
@@ -174,6 +193,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   private static final String ORG_ID = "orgidentifier";
   private static final String PROJECT_ID = "projectidentifier";
   private static final String SERVICE_STARTTS = "service_startts";
+  private static final String ACCOUNT_IDENTIFIER = "account.";
+  private static final String ORG_IDENTIFIER = "org.";
 
   public String executionStatusCdTimeScaleColumns() {
     return "id,"
@@ -906,7 +927,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     Map<String, String> serviceIdToPipelineId = new HashMap<>();
     List<String> serviceRefs = serviceIds.stream()
                                    .map(serviceId
-                                       -> FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+                                       -> IdentifierRefHelper.getRefFromIdentifierOrRef(
                                            accountIdentifier, orgIdentifier, projectIdentifier, serviceId))
                                    .collect(Collectors.toList());
 
@@ -947,13 +968,13 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     Map<String, String> serviceIdToPipelineId = new HashMap<>();
     List<String> serviceRefs = serviceIds.stream()
                                    .map(serviceId
-                                       -> FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+                                       -> IdentifierRefHelper.getRefFromIdentifierOrRef(
                                            accountIdentifier, orgIdentifier, projectIdentifier, serviceId))
                                    .collect(Collectors.toList());
 
     List<String> envRefs = envIds.stream()
                                .map(envId
-                                   -> FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+                                   -> IdentifierRefHelper.getRefFromIdentifierOrRef(
                                        accountIdentifier, orgIdentifier, projectIdentifier, envId))
                                .collect(Collectors.toList());
 
@@ -1057,7 +1078,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<String> serviceIdentifiers = services.stream().map(ServiceEntity::getIdentifier).collect(Collectors.toList());
     List<String> serviceRefs = serviceIdentifiers.stream()
                                    .map(serviceId
-                                       -> FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+                                       -> IdentifierRefHelper.getRefFromIdentifierOrRef(
                                            accountIdentifier, orgIdentifier, projectIdentifier, serviceId))
                                    .collect(Collectors.toList());
     Map<String, String> serviceIdToPipelineIdMap =
@@ -1081,7 +1102,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         services.stream()
             .map(service -> {
               final String serviceId = service.getIdentifier();
-              final String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+              final String serviceRef = IdentifierRefHelper.getRefFromIdentifierOrRef(
                   accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
               final String pipelineId = serviceIdToPipelineIdMap.getOrDefault(serviceRef, null);
 
@@ -1116,6 +1137,136 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     return ServiceDetailsInfoDTO.builder().serviceDeploymentDetailsList(serviceDeploymentInfoList).build();
   }
 
+  public Map<String, Set<IconDTO>> getDeploymentIconMap(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, List<ServiceEntity> services, Map<String, Set<String>> serviceIdToDeploymentTypeMap) {
+    Map<String, Set<IconDTO>> serviceIdToDeploymentIconMap = new HashMap<>();
+    Map<String, String> serviceRefToTemplateRef = new HashMap<>();
+    Map<Scope, List<String>> templateScopeToIds = new HashMap<>();
+    Map<String, String> templateRefToIcon = new HashMap<>();
+
+    try {
+      services.forEach(serviceEntity
+          -> getServiceToTemplateRef(serviceIdToDeploymentTypeMap.get(serviceEntity.getIdentifier()),
+              serviceEntity.getYaml(), serviceEntity.getIdentifier(), templateScopeToIds, serviceRefToTemplateRef));
+
+      getTemplateRefToIcon(accountIdentifier, orgIdentifier, projectIdentifier, templateRefToIcon, templateScopeToIds);
+
+      services.forEach(serviceEntity
+          -> setServiceToIconList(templateRefToIcon, serviceRefToTemplateRef, serviceEntity.getIdentifier(),
+              serviceIdToDeploymentTypeMap.get(serviceEntity.getIdentifier()), serviceIdToDeploymentIconMap));
+
+    } catch (Exception e) {
+      log.error("Not able to fetch icons for services ", e);
+    }
+
+    return serviceIdToDeploymentIconMap;
+  }
+
+  private void setServiceToIconList(Map<String, String> templateRefToIcon, Map<String, String> serviceRefToTemplateRef,
+      String serviceId, Set<String> deploymentType, Map<String, Set<IconDTO>> serviceIdToDeploymentIconMap) {
+    if (isNull(deploymentType)) {
+      return;
+    }
+    String templateRef = serviceRefToTemplateRef.get(serviceId);
+    String icon = "";
+    if (!isEmpty(templateRef) && !isEmpty(templateRefToIcon.get(IdentifierRefHelper.getIdentifier(templateRef)))) {
+      icon = templateRefToIcon.get(IdentifierRefHelper.getIdentifier(templateRef));
+    }
+    Set<IconDTO> iconDTOSet = new HashSet<>();
+    String finalIcon = icon;
+    deploymentType.forEach(deployment -> setIconToIconSet(iconDTOSet, deployment, finalIcon));
+    serviceIdToDeploymentIconMap.put(serviceId, iconDTOSet);
+  }
+  private void setIconToIconSet(Set<IconDTO> iconDTOSet, String deployment, String icon) {
+    if (CUSTOM_DEPLOYMENT.equals(deployment)) {
+      iconDTOSet.add(IconDTO.builder().deploymentType(deployment).icon(icon).build());
+    } else {
+      iconDTOSet.add(IconDTO.builder().deploymentType(deployment).icon("").build());
+    }
+  }
+
+  private void getServiceToTemplateRef(Set<String> deploymentType, String yaml, String serviceIdentifier,
+      Map<Scope, List<String>> templateScopeToIds, Map<String, String> serviceRefToTemplateRef) {
+    if (isEmpty(deploymentType)) {
+      return;
+    }
+    if (deploymentType.contains(CUSTOM_DEPLOYMENT)) {
+      String templateRef;
+      YamlConfig yamlConfig = new YamlConfig(yaml);
+      JsonNode serviceYaml = yamlConfig.getYamlMap().get("service");
+      if (!isNull(serviceYaml)) {
+        JsonNode serviceDefinition = serviceYaml.get("serviceDefinition");
+        if (!isNull(serviceDefinition)) {
+          JsonNode spec = serviceDefinition.get("spec");
+          if (!isNull(spec)) {
+            JsonNode customDeploymentRef = spec.get("customDeploymentRef");
+            if (!isNull(customDeploymentRef)) {
+              JsonNode template = customDeploymentRef.get("templateRef");
+              if (!isNull(template)) {
+                templateRef = template.asText();
+                addTemplateByScope(templateRef, templateScopeToIds);
+                serviceRefToTemplateRef.put(serviceIdentifier, templateRef);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private void addTemplateByScope(String templateRef, Map<Scope, List<String>> templateScopeToIds) {
+    if (templateRef.contains(ACCOUNT_IDENTIFIER)) {
+      if (!templateScopeToIds.containsKey(Scope.ACCOUNT)) {
+        templateScopeToIds.put(Scope.ACCOUNT, new ArrayList<>());
+      }
+      templateScopeToIds.get(Scope.ACCOUNT).add(templateRef.replace(ACCOUNT_IDENTIFIER, ""));
+    } else if (templateRef.contains(ORG_IDENTIFIER)) {
+      if (!templateScopeToIds.containsKey(Scope.ORG)) {
+        templateScopeToIds.put(Scope.ORG, new ArrayList<>());
+      }
+      templateScopeToIds.get(Scope.ORG).add(templateRef.replace(ORG_IDENTIFIER, ""));
+    } else {
+      if (!templateScopeToIds.containsKey(Scope.PROJECT)) {
+        templateScopeToIds.put(Scope.PROJECT, new ArrayList<>());
+      }
+      templateScopeToIds.get(Scope.PROJECT).add(templateRef);
+    }
+  }
+
+  private void getTemplateRefToIcon(String accountId, String orgId, String projectId,
+      Map<String, String> templateRefToIcon, Map<Scope, List<String>> templateScopeToIds) {
+    for (Map.Entry<Scope, List<String>> templateIds : templateScopeToIds.entrySet()) {
+      if (!isEmpty(templateIds.getValue())) {
+        TemplateFilterPropertiesDTO templateFilterPropertiesDTO =
+            TemplateFilterPropertiesDTO.builder()
+                .templateEntityTypes(Collections.singletonList(TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE))
+                .templateIdentifiers(templateIds.getValue())
+                .build();
+        List<TemplateMetadataSummaryResponseDTO> templates;
+        switch (templateIds.getKey()) {
+          case ACCOUNT:
+            templates = NGRestUtils
+                            .getResponse(templateResourceClient.listTemplateMetadata(accountId, null, null,
+                                STABLE_TEMPLATE_TYPE, 0, templateIds.getValue().size(), templateFilterPropertiesDTO))
+                            .getContent();
+            break;
+          case ORG:
+            templates = NGRestUtils
+                            .getResponse(templateResourceClient.listTemplateMetadata(accountId, orgId, null,
+                                STABLE_TEMPLATE_TYPE, 0, templateIds.getValue().size(), templateFilterPropertiesDTO))
+                            .getContent();
+            break;
+          default:
+            templates = NGRestUtils
+                            .getResponse(templateResourceClient.listTemplateMetadata(accountId, orgId, projectId,
+                                STABLE_TEMPLATE_TYPE, 0, templateIds.getValue().size(), templateFilterPropertiesDTO))
+                            .getContent();
+        }
+
+        templates.forEach(template -> templateRefToIcon.put(template.getIdentifier(), template.getIcon()));
+      }
+    }
+  }
   @Override
   public ServiceDetailsInfoDTOV2 getServiceDetailsListV2(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, long startTime, long endTime, List<String> sort) throws Exception {
@@ -1138,7 +1289,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<String> serviceIdentifiers = services.stream().map(ServiceEntity::getIdentifier).collect(Collectors.toList());
     List<String> serviceRefs = serviceIdentifiers.stream()
                                    .map(serviceId
-                                       -> FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+                                       -> IdentifierRefHelper.getRefFromIdentifierOrRef(
                                            accountIdentifier, orgIdentifier, projectIdentifier, serviceId))
                                    .collect(Collectors.toList());
     Map<String, String> serviceIdToPipelineIdMap =
@@ -1152,6 +1303,9 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     Map<String, Set<String>> serviceIdToDeploymentTypeMap =
         getDeploymentType(accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs);
 
+    Map<String, Set<IconDTO>> serviceIdToDeploymentIconMap = getDeploymentIconMap(
+        accountIdentifier, orgIdentifier, projectIdentifier, services, serviceIdToDeploymentTypeMap);
+
     Map<String, InstanceCountDetailsByEnvTypeBase> serviceIdToInstanceCountDetails =
         instanceDashboardService
             .getActiveServiceInstanceCountBreakdown(
@@ -1162,7 +1316,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         services.stream()
             .map(service -> {
               final String serviceId = service.getIdentifier();
-              final String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+              final String serviceRef = IdentifierRefHelper.getRefFromIdentifierOrRef(
                   accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
 
               final String pipelineId = serviceIdToPipelineIdMap.getOrDefault(serviceRef, null);
@@ -1172,6 +1326,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
               serviceDetailsDTOBuilder.description(service.getDescription());
               serviceDetailsDTOBuilder.tags(TagMapper.convertToMap(service.getTags()));
               serviceDetailsDTOBuilder.serviceIdentifier(serviceId);
+              serviceDetailsDTOBuilder.deploymentIconList(serviceIdToDeploymentIconMap.getOrDefault(serviceId, null));
               serviceDetailsDTOBuilder.deploymentTypeList(serviceIdToDeploymentTypeMap.getOrDefault(serviceId, null));
               serviceDetailsDTOBuilder.instanceCountDetails(
                   serviceIdToInstanceCountDetails.getOrDefault(serviceRef, null));
@@ -1362,7 +1517,10 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       String projectIdentifier, String serviceId, Long startInterval, Long endInterval, String artifactPath,
       String artifactVersion, String artifact, String status) {
     endInterval = DashboardServiceHelper.checkForDefaultEndInterval(endInterval);
-    startInterval = DashboardServiceHelper.checkForDefaultStartInterval(startInterval);
+    startInterval = DashboardServiceHelper.checkForDefaultStartInterval(startInterval, endInterval);
+    if (!DashboardServiceHelper.validateDuration(startInterval, endInterval)) {
+      throw new InvalidRequestException("startTime and endTime interval should be less than 6 months");
+    }
     String queryArtifactDetails =
         DashboardServiceHelper.queryToFetchExecutionIdAndArtifactDetails(accountIdentifier, orgIdentifier,
             projectIdentifier, serviceId, startInterval, endInterval, artifactPath, artifactVersion, artifact);
@@ -1416,7 +1574,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public ServiceDeploymentInfoDTO getServiceDeployments(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, long startTime, long endTime, String serviceIdentifier, long bucketSizeInDays) {
-    String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+    String serviceRef = IdentifierRefHelper.getRefFromIdentifierOrRef(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
     String query = queryBuilderServiceDeployments(
         accountIdentifier, orgIdentifier, projectIdentifier, startTime, endTime, bucketSizeInDays, serviceRef);
@@ -1466,7 +1624,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public ServiceDeploymentInfoDTOV2 getServiceDeploymentsV2(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, long startTime, long endTime, String serviceIdentifier, long bucketSizeInDays) {
-    String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+    String serviceRef = IdentifierRefHelper.getRefFromIdentifierOrRef(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
     String query = queryBuilderServiceDeployments(
         accountIdentifier, orgIdentifier, projectIdentifier, startTime, endTime, bucketSizeInDays, serviceRef);
@@ -1661,7 +1819,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   public io.harness.ng.overview.dto.ServiceDeploymentListInfo getServiceDeploymentsInfo(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, long startTime, long endTime, String serviceIdentifier,
       long bucketSizeInDays) throws Exception {
-    String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+    String serviceRef = IdentifierRefHelper.getRefFromIdentifierOrRef(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
     long numberOfDays = getNumberOfDays(startTime, endTime);
     validateBucketSize(numberOfDays, bucketSizeInDays);
@@ -1706,7 +1864,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   public ServiceDeploymentListInfoV2 getServiceDeploymentsInfoV2(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, long startTime, long endTime, String serviceIdentifier, long bucketSizeInDays)
       throws Exception {
-    String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+    String serviceRef = IdentifierRefHelper.getRefFromIdentifierOrRef(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
     long numberOfDays = getNumberOfDays(startTime, endTime);
     validateBucketSize(numberOfDays, bucketSizeInDays);
@@ -2428,8 +2586,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     Map<String, List<BuildIdAndInstanceCount>> envIdToBuildMap = new HashMap<>();
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
 
-    String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    String serviceRef =
+        IdentifierRefHelper.getRefFromIdentifierOrRef(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
 
     List<EnvBuildInstanceCount> envBuildInstanceCounts = instanceDashboardService.getEnvBuildInstanceCountByServiceId(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, getCurrentTime());
@@ -2490,8 +2648,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   public InstanceGroupedByServiceList.InstanceGroupedByService getInstanceGroupedByArtifactList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoList;
-    String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    String serviceRef =
+        IdentifierRefHelper.getRefFromIdentifierOrRef(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
     if (!Boolean.TRUE.equals(isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceId))) {
       activeServiceInstanceInfoList = instanceDashboardService.getActiveServiceInstanceInfo(
           accountIdentifier, orgIdentifier, projectIdentifier, null, serviceRef, null, false);
@@ -2519,7 +2677,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public InstanceGroupedByServiceList getInstanceGroupedByServiceList(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String envIdentifier, String serviceIdentifier, String buildIdentifier) {
-    String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+    String serviceRef = IdentifierRefHelper.getRefFromIdentifierOrRef(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
     List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoList =
         instanceDashboardService.getActiveServiceInstanceInfo(
@@ -2967,10 +3125,10 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   public InstancesByBuildIdList getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
       String infraId, String clusterId, String pipelineExecutionId) {
-    String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
-    String envRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
-        accountIdentifier, orgIdentifier, projectIdentifier, envId);
+    String serviceRef =
+        IdentifierRefHelper.getRefFromIdentifierOrRef(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    String envRef =
+        IdentifierRefHelper.getRefFromIdentifierOrRef(accountIdentifier, orgIdentifier, projectIdentifier, envId);
 
     List<InstanceDetailsByBuildId> instancesByBuildIdList =
         instanceDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(accountIdentifier, orgIdentifier,
@@ -3024,8 +3182,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   public io.harness.ng.overview.dto.ActiveServiceInstanceSummary getActiveServiceInstanceSummary(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs) {
     // build service ref from id
-    String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    String serviceRef =
+        IdentifierRefHelper.getRefFromIdentifierOrRef(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
     Pair<InstanceCountDetailsByEnvTypeBase, InstanceCountDetailsByEnvTypeBase> countDetailsByEnvTypeBasePair =
         getActiveServiceInstanceSummaryHelper(
             accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, timestampInMs);
@@ -3042,8 +3200,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public ActiveServiceInstanceSummaryV2 getActiveServiceInstanceSummaryV2(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs) {
-    String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    String serviceRef =
+        IdentifierRefHelper.getRefFromIdentifierOrRef(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
 
     Pair<InstanceCountDetailsByEnvTypeBase, InstanceCountDetailsByEnvTypeBase> countDetailsByEnvTypeBasePair =
         getActiveServiceInstanceSummaryHelper(
@@ -3095,8 +3253,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     final long tunedStartTimeInMs = startTimeInMs;
     final long tunedEndTimeInMs = endTimeInMs;
 
-    String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    String serviceRef =
+        IdentifierRefHelper.getRefFromIdentifierOrRef(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
 
     final String query =
         "select reportedat, SUM(instancecount) as count from ng_instance_stats_day where accountid = ? and orgid = ? and projectid = ? and serviceid = ? and reportedat >= ? and reportedat <= ? group by reportedat order by reportedat asc";
@@ -3152,8 +3310,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     final long tunedStartTimeInMs = startTimeInMs;
     final long tunedEndTimeInMs = endTimeInMs;
 
-    String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    String serviceRef =
+        IdentifierRefHelper.getRefFromIdentifierOrRef(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
     final String query =
         "select reportedat, envid, SUM(instancecount) as count from ng_instance_stats_day where accountid = ? and orgid = ? and projectid = ? and serviceid = ? and reportedat >= ? and reportedat <= ? group by reportedat, envid order by reportedat asc";
 
@@ -3205,8 +3363,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
   public DeploymentsInfo getDeploymentsByServiceId(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, long startTimeInMs, long endTimeInMs) {
-    String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    String serviceRef =
+        IdentifierRefHelper.getRefFromIdentifierOrRef(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
     String query = queryBuilderDeployments(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, startTimeInMs, endTimeInMs);
     String queryServiceNameTagId = queryBuilderServiceTag(
@@ -3236,19 +3394,59 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         serviceEntityServiceImpl.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, false);
     ServiceEntity serviceEntity = service.get();
 
-    String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    String serviceRef =
+        IdentifierRefHelper.getRefFromIdentifierOrRef(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
     Set<String> deploymentTypes =
         getDeploymentType(accountIdentifier, orgIdentifier, projectIdentifier, Arrays.asList(serviceRef))
             .getOrDefault(serviceRef, new HashSet<>());
+
+    Set<IconDTO> iconDTOSet = new HashSet<>();
+    Map<String, String> serviceRefToTemplateRef = new HashMap<>();
+    getServiceToTemplateRef(
+        deploymentTypes, serviceEntity.getYaml(), serviceRef, new HashMap<>(), serviceRefToTemplateRef);
+    if (!isEmpty(serviceRefToTemplateRef.get(serviceId))) {
+      updateIconDTOList(accountIdentifier, orgIdentifier, projectIdentifier, serviceRefToTemplateRef.get(serviceId),
+          deploymentTypes, iconDTOSet);
+    }
+
     return ServiceHeaderInfo.builder()
         .identifier(serviceId)
         .name(serviceEntity.getName())
+        .deploymentIconList(iconDTOSet)
         .description(serviceEntity.getDescription())
         .deploymentTypes(deploymentTypes)
         .createdAt(serviceEntity.getCreatedAt())
         .lastModifiedAt(serviceEntity.getLastModifiedAt())
         .build();
+  }
+
+  public void updateIconDTOList(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String templateRef, Set<String> deploymentTypes, Set<IconDTO> iconDTOSet) {
+    String icon = getIcon(accountIdentifier, projectIdentifier, orgIdentifier, templateRef);
+    deploymentTypes.forEach(
+        deploymentType -> iconDTOSet.add(setIcon(IconDTO.builder().deploymentType(deploymentType).build(), icon)));
+  }
+
+  private IconDTO setIcon(IconDTO iconDTO, String icon) {
+    if (CUSTOM_DEPLOYMENT.equals(iconDTO.getDeploymentType())) {
+      iconDTO.setIcon(icon);
+    }
+    return iconDTO;
+  }
+
+  private String getIcon(String accountIdentifier, String projectIdentifier, String orgIdentifier, String templateRef) {
+    try {
+      TemplateResponseDTO responseDTO = customDeploymentYamlHelper.getScopedTemplateResponseDTO(
+          accountIdentifier, orgIdentifier, projectIdentifier, templateRef, null);
+      if (!isNull(responseDTO)) {
+        return responseDTO.getIcon();
+      } else {
+        return "";
+      }
+    } catch (Exception e) {
+      log.error("could not fetch icon for template with template ref : {}", templateRef);
+      return "";
+    }
   }
 
   /*
@@ -3257,8 +3455,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public io.harness.ng.overview.dto.EnvironmentDeploymentInfo getEnvironmentDeploymentDetailsByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
-    String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    String serviceRef =
+        IdentifierRefHelper.getRefFromIdentifierOrRef(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
     String query =
         queryBuilderDeploymentsWithArtifactsDetails(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef);
     List<EnvironmentInfoByServiceId> environmentInfoByServiceIds = getEnvironmentWithArtifactDetails(query);
@@ -3268,7 +3466,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public InstanceGroupedByServiceList.InstanceGroupedByService getActiveServiceDeploymentsList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
-    String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+    String serviceRef = IdentifierRefHelper.getRefFromIdentifierOrRef(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
     InstanceGroupedByServiceList instanceGroupedByServiceList = getActiveServiceDeploymentsListHelper(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, null, null);

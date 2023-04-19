@@ -71,6 +71,7 @@ import io.harness.cvng.core.jobs.CustomChangeEventConsumer;
 import io.harness.cvng.core.jobs.DataCollectionTasksPerpetualTaskStatusUpdateHandler;
 import io.harness.cvng.core.jobs.DeploymentChangeEventConsumer;
 import io.harness.cvng.core.jobs.EntityCRUDStreamConsumer;
+import io.harness.cvng.core.jobs.InternalChangeEventCEConsumer;
 import io.harness.cvng.core.jobs.InternalChangeEventFFConsumer;
 import io.harness.cvng.core.jobs.MonitoringSourcePerpetualTaskHandler;
 import io.harness.cvng.core.jobs.PersistentLockCleanup;
@@ -204,6 +205,7 @@ import io.harness.yaml.YamlSdkInitHelper;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -307,6 +309,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
   public static void configureObjectMapper(final ObjectMapper mapper) {
     mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    mapper.configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE, true);
     HObjectMapper.configureObjectMapperForNG(mapper);
   }
 
@@ -314,6 +317,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     new Thread(injector.getInstance(EntityCRUDStreamConsumer.class)).start();
     new Thread(injector.getInstance(DeploymentChangeEventConsumer.class)).start();
     new Thread(injector.getInstance(InternalChangeEventFFConsumer.class)).start();
+    new Thread(injector.getInstance(InternalChangeEventCEConsumer.class)).start();
     new Thread(injector.getInstance(CustomChangeEventConsumer.class)).start();
     new Thread(injector.getInstance(StatemachineEventConsumer.class)).start();
   }
@@ -1106,11 +1110,16 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
   private void registerNotificationTemplates(VerificationConfiguration configuration, Injector injector) {
     NotificationClient notificationClient = injector.getInstance(NotificationClient.class);
-    List<PredefinedTemplate> templates = new ArrayList<>(Arrays.asList(PredefinedTemplate.CVNG_SLO_SLACK,
-        PredefinedTemplate.CVNG_SLO_EMAIL, PredefinedTemplate.CVNG_SLO_PAGERDUTY, PredefinedTemplate.CVNG_SLO_MSTEAMS,
-        PredefinedTemplate.CVNG_MONITOREDSERVICE_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_EMAIL,
-        PredefinedTemplate.CVNG_MONITOREDSERVICE_PAGERDUTY, PredefinedTemplate.CVNG_MONITOREDSERVICE_MSTEAMS,
-        PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_EMAIL));
+    List<PredefinedTemplate> templates = new ArrayList<>(Arrays.asList(PredefinedTemplate.CVNG_SLO_SIMPLE_PROJECT_SLACK,
+        PredefinedTemplate.CVNG_SLO_SIMPLE_PROJECT_EMAIL, PredefinedTemplate.CVNG_SLO_SIMPLE_PROJECT_PAGERDUTY,
+        PredefinedTemplate.CVNG_SLO_SIMPLE_PROJECT_MSTEAMS, PredefinedTemplate.CVNG_SLO_COMPOSITE_PROJECT_SLACK,
+        PredefinedTemplate.CVNG_SLO_COMPOSITE_PROJECT_EMAIL, PredefinedTemplate.CVNG_SLO_COMPOSITE_PROJECT_PAGERDUTY,
+        PredefinedTemplate.CVNG_SLO_COMPOSITE_PROJECT_MSTEAMS, PredefinedTemplate.CVNG_SLO_COMPOSITE_ACCOUNT_SLACK,
+        PredefinedTemplate.CVNG_SLO_COMPOSITE_ACCOUNT_EMAIL, PredefinedTemplate.CVNG_SLO_COMPOSITE_ACCOUNT_PAGERDUTY,
+        PredefinedTemplate.CVNG_SLO_COMPOSITE_ACCOUNT_MSTEAMS, PredefinedTemplate.CVNG_MONITOREDSERVICE_SLACK,
+        PredefinedTemplate.CVNG_MONITOREDSERVICE_EMAIL, PredefinedTemplate.CVNG_MONITOREDSERVICE_PAGERDUTY,
+        PredefinedTemplate.CVNG_MONITOREDSERVICE_MSTEAMS, PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_SLACK,
+        PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_EMAIL));
 
     if (configuration.getShouldConfigureWithNotification()) {
       for (PredefinedTemplate template : templates) {
@@ -1137,20 +1146,18 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .iteratorName("SLONotificationIterator")
             .clazz(AbstractServiceLevelObjective.class)
             .fieldName(ServiceLevelObjectiveV2Keys.nextNotificationIteration)
-            .targetInterval(ofMinutes(60))
+            .targetInterval(ofMinutes(5))
             .acceptableNoAlertDelay(ofMinutes(10))
             .executorService(notificationExecutor)
             .semaphore(new Semaphore(5))
             .handler(notificationHandler)
             .schedulingType(REGULAR)
-            .filterExpander(query
-                -> query.and(query.criteria(ServiceLevelObjectiveV2Keys.type).equal(ServiceLevelObjectiveType.SIMPLE),
-                    query.criteria(ServiceLevelObjectiveV2Keys.notificationRuleRefs).exists()))
+            .filterExpander(query -> query.criteria(ServiceLevelObjectiveV2Keys.notificationRuleRefs).exists())
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();
     injector.injectMembers(dataCollectionIterator);
-    notificationExecutor.scheduleWithFixedDelay(() -> dataCollectionIterator.process(), 0, 30, TimeUnit.MINUTES);
+    notificationExecutor.scheduleWithFixedDelay(() -> dataCollectionIterator.process(), 0, 5, TimeUnit.MINUTES);
   }
 
   private void registerMonitoredServiceNotificationIterator(Injector injector) {

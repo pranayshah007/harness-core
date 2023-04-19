@@ -149,11 +149,9 @@ public class ProjectEntityCRUDStreamListener implements MessageListener {
         () -> serviceOverrideService.deleteAllInProject(accountIdentifier, orgIdentifier, projIdentifier));
     boolean infraMappingDeleted = processQuietly(
         () -> infrastructureMappingService.deleteAllFromProj(accountIdentifier, orgIdentifier, projIdentifier));
-    boolean instanceSyncPerpetualTaskInfoDeleted =
-        processQuietly(() -> instanceSyncPerpetualTaskInfoService.deleteAllInstanceSyncPTs(accountIdentifier));
 
     return envDeleted && infraDeleted && serviceDeleted && clustersDeleted && serviceOverridesDeleted
-        && infraMappingDeleted && instanceSyncPerpetualTaskInfoDeleted;
+        && infraMappingDeleted;
   }
 
   boolean processQuietly(BooleanSupplier b) {

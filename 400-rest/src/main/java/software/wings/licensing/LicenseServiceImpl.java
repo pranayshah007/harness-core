@@ -25,7 +25,12 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.LicenseType;
+import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
+import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
+import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
+import io.harness.licensing.beans.modules.SRMModuleLicenseDTO;
+import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
 import io.harness.licensing.beans.response.CheckExpiryResultDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.licensing.remote.admin.AdminLicenseHttpClient;
@@ -81,6 +86,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.joda.time.DateTime;
 
@@ -93,8 +99,14 @@ import org.joda.time.DateTime;
 @Slf4j
 @TargetModule(HarnessModule._820_PLATFORM_SERVICE)
 public class LicenseServiceImpl implements LicenseService {
-  private static final Long TEST_FF_NUMBER_OF_CLIENT_MAUS = 1000000L;
-  private static final int TEST_FF_NUMBER_OF_USERS = 50;
+  private static final Long FREE_CLIENT_MAUS = 25000L;
+  private static final Long TEAM_CLIENT_MAUS = 100000L;
+  private static final Long ENTERPRISE_CLIENT_MAUS = 1000000L;
+  private static final String FEATURE_FLAGS = "FF";
+  private static final String PREMIER = "PRMR";
+  private static final String TEAM = "TEAM";
+  private static final String ENTERPRISE = "ENTERPRISE";
+  private static final String PAID = "PAID";
   private static final String EMAIL_SUBJECT_ACCOUNT_EXPIRED = "Harness License Expired!";
   private static final String EMAIL_SUBJECT_ACCOUNT_ABOUT_TO_EXPIRE = "Harness License about to Expire!";
 
@@ -633,10 +645,16 @@ public class LicenseServiceImpl implements LicenseService {
 
   @Override
   public boolean updateLicenseForProduct(
-      String productCode, String accountId, Integer orderQuantity, long expirationTime) {
+      String productCode, String accountId, Integer orderQuantity, long expirationTime, String dimension) {
     final MarketPlaceConfig marketPlaceConfig = mainConfiguration.getMarketPlaceConfig();
-    log.info("marketPlaceConfig:", marketPlaceConfig);
-    log.info("productCode:", productCode);
+    log.info("marketPlaceConfig: {}, productCode:{}, accountId:{}, orderQuantity:{}, expirationTime:{}, dimension:{}",
+        marketPlaceConfig, productCode, accountId, orderQuantity, expirationTime, dimension);
+
+    boolean premiumSupport = hasPremierSupport(dimension);
+    Edition plan = getDimensionPlan(dimension);
+    LicenseType licenseType = getModuleLicenseType(dimension, plan);
+
+    log.info("plan:{}, premiumSupport:{}, licenseType:{}", plan, premiumSupport, licenseType);
 
     if (marketPlaceConfig.getAwsMarketPlaceProductCode().equals(productCode)) {
       updateAccountLicense(accountId,
@@ -649,19 +667,87 @@ public class LicenseServiceImpl implements LicenseService {
     } else if (marketPlaceConfig.getAwsMarketPlaceCeProductCode().equals(productCode)) {
       updateCeLicense(
           accountId, CeLicenseInfo.builder().expiryTime(expirationTime).licenseType(CeLicenseType.PAID).build());
+    } else if (marketPlaceConfig.getAwsMarketPlaceCdProductCode().equals(productCode)) {
+      adminLicenseHttpClient.createAccountLicense(accountId,
+          CDModuleLicenseDTO.builder()
+              .serviceInstances(orderQuantity)
+              .accountIdentifier(accountId)
+              .moduleType(ModuleType.CD)
+              .edition(plan)
+              .licenseType(licenseType)
+              .premiumSupport(premiumSupport)
+              .status(LicenseStatus.ACTIVE)
+              .startTime(DateTime.now().getMillis())
+              .expiryTime(expirationTime)
+              .build());
+    } else if (marketPlaceConfig.getAwsMarketPlaceCcmProductCode().equals(productCode)) {
+      Long spendLimit = Long.valueOf(orderQuantity);
+      log.info("spendLimit:{}", spendLimit);
+
+      adminLicenseHttpClient.createAccountLicense(accountId,
+          CEModuleLicenseDTO.builder()
+              .spendLimit(spendLimit)
+              .accountIdentifier(accountId)
+              .moduleType(ModuleType.CE)
+              .edition(plan)
+              .licenseType(licenseType)
+              .premiumSupport(premiumSupport)
+              .status(LicenseStatus.ACTIVE)
+              .startTime(DateTime.now().getMillis())
+              .expiryTime(expirationTime)
+              .build());
     } else if (marketPlaceConfig.getAwsMarketPlaceFfProductCode().equals(productCode)) {
-      log.info("accountId:", accountId);
-      log.info("orderQuantity:", orderQuantity);
-      log.info("expirationTime:", expirationTime);
+      Long numberOfClientMAUs = getNumberOfClientMAUs(plan);
+      log.info("numberOfClientMAUs:{}", numberOfClientMAUs);
 
       adminLicenseHttpClient.createAccountLicense(accountId,
           CFModuleLicenseDTO.builder()
-              .numberOfClientMAUs(TEST_FF_NUMBER_OF_CLIENT_MAUS)
-              .numberOfUsers(TEST_FF_NUMBER_OF_USERS)
+              .numberOfClientMAUs(numberOfClientMAUs)
+              .numberOfUsers(orderQuantity)
               .accountIdentifier(accountId)
               .moduleType(ModuleType.CF)
-              .edition(Edition.ENTERPRISE)
+              .edition(plan)
+              .licenseType(licenseType)
+              .premiumSupport(premiumSupport)
+              .status(LicenseStatus.ACTIVE)
+              .startTime(DateTime.now().getMillis())
+              .expiryTime(expirationTime)
+              .build());
+    } else if (marketPlaceConfig.getAwsMarketPlaceCiProductCode().equals(productCode)) {
+      adminLicenseHttpClient.createAccountLicense(accountId,
+          CIModuleLicenseDTO.builder()
+              .numberOfCommitters(orderQuantity)
+              .accountIdentifier(accountId)
+              .moduleType(ModuleType.CI)
+              .edition(plan)
               .licenseType(LicenseType.PAID)
+              .premiumSupport(premiumSupport)
+              .status(LicenseStatus.ACTIVE)
+              .startTime(DateTime.now().getMillis())
+              .expiryTime(expirationTime)
+              .build());
+    } else if (marketPlaceConfig.getAwsMarketPlaceSrmProductCode().equals(productCode)) {
+      adminLicenseHttpClient.createAccountLicense(accountId,
+          SRMModuleLicenseDTO.builder()
+              .numberOfServices(orderQuantity)
+              .accountIdentifier(accountId)
+              .moduleType(ModuleType.SRM)
+              .edition(plan)
+              .licenseType(LicenseType.PAID)
+              .premiumSupport(premiumSupport)
+              .status(LicenseStatus.ACTIVE)
+              .startTime(DateTime.now().getMillis())
+              .expiryTime(expirationTime)
+              .build());
+    } else if (marketPlaceConfig.getAwsMarketPlaceStoProductCode().equals(productCode)) {
+      adminLicenseHttpClient.createAccountLicense(accountId,
+          STOModuleLicenseDTO.builder()
+              .numberOfDevelopers(orderQuantity)
+              .accountIdentifier(accountId)
+              .moduleType(ModuleType.STO)
+              .edition(plan)
+              .licenseType(LicenseType.PAID)
+              .premiumSupport(premiumSupport)
               .status(LicenseStatus.ACTIVE)
               .startTime(DateTime.now().getMillis())
               .expiryTime(expirationTime)
@@ -672,6 +758,75 @@ public class LicenseServiceImpl implements LicenseService {
     }
     accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
     return true;
+  }
+
+  // Gets plan from dimension string
+  public Edition getDimensionPlan(String dimension) {
+    Edition plan = null;
+    if (StringUtils.isNotBlank(dimension)) {
+      String[] result = dimension.split("_");
+      if (result.length < 2) {
+        log.error("Failed to get plan for dimension:[{}]", dimension);
+        return plan;
+      }
+
+      String tempPlan = result[1];
+      if (TEAM.equals(tempPlan)) {
+        plan = Edition.TEAM;
+      } else if (ENTERPRISE.equals(tempPlan)) {
+        plan = Edition.ENTERPRISE;
+      } else {
+        log.error("Unresolved plan for dimension:[{}]", dimension, tempPlan);
+      }
+    }
+    return plan;
+  }
+
+  // Gets Number of Client MAUs from plan
+  public Long getNumberOfClientMAUs(Edition plan) {
+    Long numberOfClientMAUs = FREE_CLIENT_MAUS;
+    if (Edition.TEAM.equals(plan)) {
+      numberOfClientMAUs = TEAM_CLIENT_MAUS;
+    } else if (Edition.ENTERPRISE.equals(plan)) {
+      numberOfClientMAUs = ENTERPRISE_CLIENT_MAUS;
+    } else {
+      log.error("Failed to get Number of Client MAUs for plan:[{}]", plan);
+    }
+
+    return numberOfClientMAUs;
+  }
+
+  // Gets Module License from dimension/plan
+  public LicenseType getModuleLicenseType(String dimension, Edition plan) {
+    LicenseType licenseType = null;
+    if (StringUtils.isNotBlank(dimension)) {
+      String[] result = dimension.split("_");
+
+      if (FEATURE_FLAGS.equals(result[0]) && (Edition.TEAM.equals(plan) || Edition.ENTERPRISE.equals(plan))) {
+        // Trial currently not yet supported for FF
+        licenseType = LicenseType.PAID;
+      }
+    }
+
+    return licenseType;
+  }
+
+  // Gets Module License from dimension/plan
+  public boolean hasPremierSupport(String dimension) {
+    boolean premierSupport = false;
+    if (StringUtils.isNotBlank(dimension)) {
+      String[] result = dimension.split("_");
+
+      if (result.length < 4) {
+        return premierSupport;
+      }
+
+      if (PREMIER.equals(result[2])) {
+        premierSupport = true;
+      }
+    }
+
+    return premierSupport;
   }
 
   /**

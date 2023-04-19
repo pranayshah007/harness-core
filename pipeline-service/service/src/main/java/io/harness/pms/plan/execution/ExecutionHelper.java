@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
+import static io.harness.utils.ExecutionModeUtils.isRollbackMode;
 
 import static java.lang.String.format;
 
@@ -38,8 +39,12 @@ import io.harness.execution.PlanExecutionMetadata.Builder;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.logging.AutoLogContext;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.notification.bean.NotificationRules;
+import io.harness.opaclient.model.OpaConstants;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionMode;
@@ -74,6 +79,7 @@ import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
+import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
 import io.harness.pms.plan.execution.helpers.InputSetMergeHelperV1;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
@@ -83,6 +89,7 @@ import io.harness.pms.stages.StagesExpressionExtractor;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.threading.Morpheus;
@@ -97,7 +104,6 @@ import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -106,12 +112,15 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import retrofit2.Call;
 
 @OwnedBy(PIPELINE)
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
 public class ExecutionHelper {
+  NGSettingsClient settingsClient;
+
   PMSPipelineService pmsPipelineService;
   PipelineMetadataService pipelineMetadataService;
   PMSPipelineServiceHelper pmsPipelineServiceHelper;
@@ -136,6 +145,9 @@ public class ExecutionHelper {
   PipelineStageHelper pipelineStageHelper;
   NodeExecutionService nodeExecutionService;
   RollbackModeExecutionHelper rollbackModeExecutionHelper;
+  RollbackGraphGenerator rollbackGraphGenerator;
+
+  public static final String ENABLE_MATRIX_FIELD_NAME_SETTING = "enable_matrix_label_by_name";
 
   public PipelineEntity fetchPipelineEntity(@NotNull String accountId, @NotNull String orgIdentifier,
       @NotNull String projectIdentifier, @NotNull String pipelineIdentifier) {
@@ -264,7 +276,8 @@ public class ExecutionHelper {
         pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
       }
       String expandedJson = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(pipelineEntity.getAccountId(),
-          pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef, true);
+          pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef,
+          OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
       planExecutionMetadataBuilder.expandedPipelineJson(expandedJson);
       PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataBuilder.build();
 
@@ -316,6 +329,19 @@ public class ExecutionHelper {
     }
     if (pipelineEntity.getConnectorRef() != null) {
       builder.setPipelineConnectorRef(pipelineEntity.getConnectorRef());
+    }
+    try {
+      Call<ResponseDTO<SettingValueResponseDTO>> setting =
+          settingsClient.getSetting(ENABLE_MATRIX_FIELD_NAME_SETTING, pipelineEntity.getAccountIdentifier(),
+              pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
+
+      SettingValueResponseDTO response = NGRestUtils.getResponse(setting);
+
+      if (response.getValue().equals("true")) {
+        builder.setUseMatrixFieldName(true);
+      }
+    } catch (Exception e) {
+      log.error("Error in fetching pipeline Setting {} due to {}", ENABLE_MATRIX_FIELD_NAME_SETTING, e.getMessage());
     }
     return builder.build();
   }
@@ -494,9 +520,9 @@ public class ExecutionHelper {
       return retryExecutionHelper.transformPlan(
           plan, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier);
     }
-    if (executionMode.equals(ExecutionMode.POST_EXECUTION_ROLLBACK)) {
+    if (isRollbackMode(executionMode)) {
       return rollbackModeExecutionHelper.transformPlanForRollbackMode(
-          plan, previousExecutionId, Collections.emptyList(), executionMode);
+          plan, previousExecutionId, resp.getPreservedNodesInRollbackModeList(), executionMode);
     }
     return plan;
   }
@@ -562,22 +588,34 @@ public class ExecutionHelper {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of("PIPELINE", executionSummaryEntity.getPipelineIdentifier()), PipelineRbacPermissions.PIPELINE_VIEW);
 
-    // Checking if the stage is of type Pipeline Stage, then return the child graph along with top graph of parent
-    // pipeline
+    ChildExecutionDetailDTO rollbackGraph = rollbackGraphGenerator.checkAndBuildRollbackGraph(accountId, orgId,
+        projectId, executionSummaryEntity, entityGitDetails, childStageNodeId, stageNodeExecutionId, stageNodeId);
+
+    // If the stage is of type Pipeline Stage, then return the child graph along with top graph of parent pipeline
     if (pipelineStageHelper.validateChildGraphToGenerate(executionSummaryEntity.getLayoutNodeMap(), stageNodeId)) {
       NodeExecution nodeExecution = getNodeExecution(stageNodeId, planExecutionId);
       if (nodeExecution != null && isNotEmpty(nodeExecution.getExecutableResponses())) {
         // TODO: check with @sahilHindwani whether this update is required or not.
         pmsExecutionService.sendGraphUpdateEvent(executionSummaryEntity);
-        return pipelineStageHelper.getResponseDTOWithChildGraph(
-            accountId, childStageNodeId, executionSummaryEntity, entityGitDetails, nodeExecution, stageNodeExecutionId);
+        ChildExecutionDetailDTO childGraph = pipelineStageHelper.getChildGraph(
+            accountId, childStageNodeId, entityGitDetails, nodeExecution, stageNodeExecutionId);
+        return PipelineExecutionDetailDTO.builder()
+            .pipelineExecutionSummary(PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails))
+            .childGraph(childGraph)
+            .rollbackGraph(rollbackGraph)
+            .build();
       }
     }
 
-    if (EmptyPredicate.isEmpty(stageNodeId) && (renderFullBottomGraph == null || !renderFullBottomGraph)) {
+    // if the rollback graph has its executionGraph field filled, then we don't need to add execution graph to parent
+    // response dto, because UI will only use the execution graph in the rollback graph
+    boolean rollbackGraphWithExecutionGraph = rollbackGraph != null && rollbackGraph.getExecutionGraph() != null;
+    if (rollbackGraphWithExecutionGraph
+        || EmptyPredicate.isEmpty(stageNodeId) && (renderFullBottomGraph == null || !renderFullBottomGraph)) {
       pmsExecutionService.sendGraphUpdateEvent(executionSummaryEntity);
       return PipelineExecutionDetailDTO.builder()
           .pipelineExecutionSummary(PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails))
+          .rollbackGraph(rollbackGraph)
           .build();
     }
 
@@ -586,6 +624,7 @@ public class ExecutionHelper {
         .executionGraph(ExecutionGraphMapper.toExecutionGraph(
             pmsExecutionService.getOrchestrationGraph(stageNodeId, planExecutionId, stageNodeExecutionId),
             executionSummaryEntity))
+        .rollbackGraph(rollbackGraph)
         .build();
   }
 

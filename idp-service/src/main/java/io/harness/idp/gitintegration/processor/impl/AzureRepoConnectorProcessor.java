@@ -17,11 +17,13 @@ import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.outcome.AzureRepoHttpCredentialsOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.common.Constants;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
 import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
+import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
+import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
-import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
 
 import java.util.HashMap;
 import java.util.List;
@@ -38,7 +40,7 @@ public class AzureRepoConnectorProcessor extends ConnectorProcessor {
   }
 
   @Override
-  public Pair<ConnectorInfoDTO, Map<String, EnvironmentSecret>> getConnectorAndSecretsInfo(
+  public Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> getConnectorAndSecretsInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
     ConnectorInfoDTO connectorInfoDTO = getConnectorInfo(accountIdentifier, connectorIdentifier);
     if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.AZURE_REPO_CONNECTOR_TYPE)) {
@@ -63,28 +65,29 @@ public class AzureRepoConnectorProcessor extends ConnectorProcessor {
           "Secret identifier not found for connector: [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
     }
 
-    Map<String, EnvironmentSecret> secrets = new HashMap<>();
+    Map<String, BackstageEnvVariable> secrets = new HashMap<>();
 
-    secrets.put(GitIntegrationConstants.AZURE_REPO_TOKEN,
-        GitIntegrationUtils.getEnvironmentSecret(ngSecretService, accountIdentifier, orgIdentifier, projectIdentifier,
-            tokenSecretIdentifier, connectorIdentifier, GitIntegrationConstants.AZURE_REPO_TOKEN));
+    secrets.put(Constants.AZURE_REPO_TOKEN,
+        GitIntegrationUtils.getBackstageEnvSecretVariable(tokenSecretIdentifier, Constants.AZURE_REPO_TOKEN));
     return new Pair<>(connectorInfoDTO, secrets);
   }
 
   @Override
   public void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
-      String locationParentPath, String remoteFolder, List<String> filesToPush) {
-    Pair<ConnectorInfoDTO, Map<String, EnvironmentSecret>> connectorSecretsInfo = getConnectorAndSecretsInfo(
-        accountIdentifier, null, null, catalogConnectorInfo.getSourceConnector().getIdentifier());
-    String azureRepoConnectorSecret =
-        connectorSecretsInfo.getSecond().get(GitIntegrationConstants.AZURE_REPO_TOKEN).getDecryptedValue();
+      String locationParentPath, List<String> filesToPush) {
+    Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> connectorSecretsInfo = getConnectorAndSecretsInfo(
+        accountIdentifier, null, null, catalogConnectorInfo.getInfraConnector().getIdentifier());
+    BackstageEnvSecretVariable envSecretVariable =
+        (BackstageEnvSecretVariable) connectorSecretsInfo.getSecond().get(Constants.AZURE_REPO_TOKEN);
+    String azureRepoConnectorSecret = GitIntegrationUtils.decryptSecret(ngSecretService, accountIdentifier, null, null,
+        envSecretVariable.getHarnessSecretIdentifier(), catalogConnectorInfo.getSourceConnector().getIdentifier());
 
     AzureRepoConnectorDTO config = (AzureRepoConnectorDTO) connectorSecretsInfo.getFirst().getConnectorConfig();
     AzureRepoHttpCredentialsOutcomeDTO outcome =
         (AzureRepoHttpCredentialsOutcomeDTO) config.getAuthentication().getCredentials().toOutcome();
     AzureRepoUsernameTokenDTO spec = (AzureRepoUsernameTokenDTO) outcome.getSpec();
 
-    performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, remoteFolder, filesToPush,
+    performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, filesToPush,
         spec.getUsername(), azureRepoConnectorSecret);
   }
 }

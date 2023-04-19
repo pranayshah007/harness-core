@@ -7,6 +7,7 @@
 
 package io.harness.cvng.servicelevelobjective.resources;
 
+import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAPIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,15 +43,18 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.yaml.snakeyaml.Yaml;
 
 public class ServiceLevelObjectiveResourceTest extends CvNextGenTestBase {
   @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
@@ -300,5 +304,39 @@ public class ServiceLevelObjectiveResourceTest extends CvNextGenTestBase {
             "\"message\":\"io.harness.exception.InvalidRequestException: SLO with identifier slo1, accountId %s, orgIdentifier %s, and projectIdentifier %s  is not present.\"",
             builderFactory.getContext().getAccountId(), builderFactory.getContext().getOrgIdentifier(),
             builderFactory.getContext().getProjectIdentifier()));
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testCreateSLO_withEmptySLIType() throws IOException {
+    String sloYaml = getYAML("slo/slo-with-empty-sli-type.yaml");
+
+    Response createResponse = V2_RESOURCES.client()
+                                  .target("http://localhost:9998/slo/v2")
+                                  .queryParam("accountId", builderFactory.getContext().getAccountId())
+                                  .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                                  .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                                  .request(MediaType.APPLICATION_JSON_TYPE)
+                                  .post(Entity.json(convertToJson(sloYaml)));
+    assertThat(createResponse.getStatus()).isEqualTo(200);
+  }
+
+  private static String convertToJson(String yamlString) {
+    Yaml yaml = new Yaml();
+    Map<String, Object> map = yaml.load(yamlString);
+
+    JSONObject jsonObject = new JSONObject(map);
+    return jsonObject.toString();
+  }
+
+  private String getYAML(String filePath) throws IOException {
+    String sloYaml = getResource(filePath);
+    sloYaml = sloYaml.replace("$projectIdentifier", builderFactory.getContext().getProjectIdentifier());
+    sloYaml = sloYaml.replace("$orgIdentifier", builderFactory.getContext().getOrgIdentifier());
+    sloYaml = sloYaml.replace("$monitoredServiceRef", monitoredServiceDTO.getIdentifier());
+    sloYaml = sloYaml.replace(
+        "$healthSourceRef", monitoredServiceDTO.getSources().getHealthSources().iterator().next().getIdentifier());
+    return sloYaml;
   }
 }

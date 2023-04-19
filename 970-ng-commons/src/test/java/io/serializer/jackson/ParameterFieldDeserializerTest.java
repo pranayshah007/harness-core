@@ -21,6 +21,7 @@ import io.harness.yaml.core.timeout.Timeout;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -172,6 +173,30 @@ public class ParameterFieldDeserializerTest extends CategoryTest implements Mult
     assertThat(responseArray.size()).isEqualTo(2);
     assertThat(responseArray.contains(4.0)).isTrue();
     assertThat(responseArray.contains(6.0)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.BRIJESH)
+  @Category(UnitTests.class)
+  public void testExtractDefaultValueForObject() throws JsonProcessingException {
+    String defaultValueString = "{\"field\":\"<+input>.executionInput().default(abc)\"}";
+    DummyClass response = objectMapper.readValue(defaultValueString, DummyClass.class);
+    assertThat(response.getField()).isNotNull();
+    assertThat(response.getField().getValue().getClass()).isEqualTo(DummyInnerClass.class);
+    assertThat(response.getField().getValue().getInnerClassFieldValue()).isEqualTo("abc");
+  }
+
+  @Data
+  private static class DummyClass {
+    @ApiModelProperty(dataType = "string") ParameterField<DummyInnerClass> field;
+  }
+
+  @Data
+  private static class DummyInnerClass {
+    String innerClassFieldValue;
+    DummyInnerClass(String value) {
+      this.innerClassFieldValue = value;
+    }
   }
 
   @Data

@@ -32,11 +32,11 @@ public class HelmRollbackCommandRequestNG extends HelmCommandRequestNG {
       CommandUnitsProgress commandUnitsProgress, LogCallback logCallback, String namespace, HelmVersion helmVersion,
       String commandFlags, String repoName, String workingDir, String kubeConfigLocation, String ocPath,
       String commandName, boolean useLatestKubectlVersion, Integer prevReleaseVersion, Integer newReleaseVersion,
-      String gcpKeyPath) {
+      String gcpKeyPath, String releaseHistoryPrefix) {
     super(releaseName, HelmCommandType.ROLLBACK, valuesYamlList, k8sInfraDelegateConfig, manifestDelegateConfig,
         accountId, k8SteadyStateCheckEnabled, shouldOpenFetchFilesLogStream, commandUnitsProgress, logCallback,
         namespace, helmVersion, commandFlags, repoName, workingDir, kubeConfigLocation, ocPath, commandName,
-        useLatestKubectlVersion, gcpKeyPath);
+        useLatestKubectlVersion, gcpKeyPath, releaseHistoryPrefix);
     this.prevReleaseVersion = prevReleaseVersion;
     this.newReleaseVersion = newReleaseVersion;
   }

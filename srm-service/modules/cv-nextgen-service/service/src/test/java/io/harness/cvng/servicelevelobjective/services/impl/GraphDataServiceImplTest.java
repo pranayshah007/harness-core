@@ -77,7 +77,11 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   @Inject private SLIRecordService sliRecordService;
   private MonitoredService monitoredService;
   private String sliId;
+
+  private String sliId2;
   private SimpleServiceLevelObjective simpleServiceLevelObjective1;
+
+  private SimpleServiceLevelObjective simpleRequestServiceLevelObjective;
   @Inject private HPersistence hPersistence;
 
   private BuilderFactory builderFactory;
@@ -85,14 +89,29 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   private CompositeServiceLevelObjective compositeServiceLevelObjective;
   private ServiceLevelIndicator serviceLevelIndicator;
 
+  private ServiceLevelIndicator requestServiceLevelIndicator;
+
   @Before
   public void setup() {
     builderFactory = BuilderFactory.getDefault();
+    builderFactory.getContext().setOrgIdentifier("orgIdentifier");
+    builderFactory.getContext().setProjectIdentifier("project");
     MonitoredServiceDTO monitoredServiceDTO1 =
         builderFactory.monitoredServiceDTOBuilder().sources(MonitoredServiceDTO.Sources.builder().build()).build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO1);
     ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO1 =
         builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    ServiceLevelObjectiveV2DTO simpleRequestServiceLevelObjectiveDTO =
+        builderFactory.getSimpleRequestServiceLevelObjectiveV2DTOBuilder().build();
+    SimpleServiceLevelObjectiveSpec simpleRequestServiceLevelObjectiveSpec =
+        (SimpleServiceLevelObjectiveSpec) simpleRequestServiceLevelObjectiveDTO.getSpec();
+    simpleRequestServiceLevelObjectiveSpec.setMonitoredServiceRef(monitoredServiceDTO1.getIdentifier());
+    simpleRequestServiceLevelObjectiveSpec.setHealthSourceRef(generateUuid());
+    simpleRequestServiceLevelObjectiveDTO.setSpec(simpleRequestServiceLevelObjectiveSpec);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleRequestServiceLevelObjectiveDTO);
+    simpleRequestServiceLevelObjective = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        builderFactory.getProjectParams(), simpleRequestServiceLevelObjectiveDTO.getIdentifier());
+
     SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec1 =
         (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO1.getSpec();
     simpleServiceLevelObjectiveSpec1.setMonitoredServiceRef(monitoredServiceDTO1.getIdentifier());
@@ -149,7 +168,9 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
 
     verificationTaskId = compositeServiceLevelObjective.getUuid();
     sliId = createServiceLevelIndicator();
-    serviceLevelIndicator = getServiceLevelIndicator();
+    sliId2 = createRequestServiceLevelIndicator();
+    serviceLevelIndicator = getServiceLevelIndicator(sliId);
+    requestServiceLevelIndicator = getServiceLevelIndicator(sliId2);
   }
 
   private String createServiceLevelIndicator() {
@@ -160,7 +181,15 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     return sliId.get(0);
   }
 
-  private ServiceLevelIndicator getServiceLevelIndicator() {
+  private String createRequestServiceLevelIndicator() {
+    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
+        builderFactory.getRequestServiceLevelIndicatorDTOBuilder().build();
+    List<String> sliId = serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
+        Collections.singletonList(serviceLevelIndicatorDTO), "sloIdentifier2", monitoredService.getIdentifier(), null);
+    return sliId.get(0);
+  }
+
+  private ServiceLevelIndicator getServiceLevelIndicator(String sliId) {
     return serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(), sliId);
   }
 
@@ -306,6 +335,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
         Lists.newArrayList(100.0, 100.0, 99.0, 99.0, 99.0, 99.0, 98.0, 98.0, 98.0, 98.0, 97.0, 97.0);
     testGraphCalculation(sliStates, SLIMissingDataType.BAD, expectedSLITrend, expectedBurndown, 97, 0, 0);
   }
+
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
@@ -424,6 +454,45 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetGraphData_request() {
+    List<SLIRecord.SLIState> sliStates = Arrays.asList(GOOD, GOOD, GOOD, GOOD);
+    List<Long> goodCounts = Arrays.asList(100l, 95l, 80l, 100l);
+    List<Long> badCounts = Arrays.asList(0l, 5l, 20l, 100l);
+    List<Double> expectedSLITrend = Lists.newArrayList(100.0, 97.5, 91.66, 75.0);
+    List<Double> expectedBurndown = Lists.newArrayList(100.0, 87.5, 58.33, -25.0);
+    testGraphCalculation_Request(
+        sliStates, goodCounts, badCounts, SLIMissingDataType.BAD, expectedSLITrend, expectedBurndown, -25, 0, 0, 100);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetGraphData_request_noDataSkipData() {
+    List<SLIRecord.SLIState> sliStates = Arrays.asList(GOOD, NO_DATA, SKIP_DATA, GOOD);
+    List<Long> goodCounts = Arrays.asList(100l, 0l, 0l, 100l);
+    List<Long> badCounts = Arrays.asList(0l, 0l, 0l, 100l);
+    List<Double> expectedSLITrend = Lists.newArrayList(100.0, 100.0, 100.0, 66.66);
+    List<Double> expectedBurndown = Lists.newArrayList(100.0, 100.0, 100.0, -66.66);
+    testGraphCalculation_Request(
+        sliStates, goodCounts, badCounts, SLIMissingDataType.BAD, expectedSLITrend, expectedBurndown, -40, 0, 0, 60);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetGraphData_request_noCalls() {
+    List<SLIRecord.SLIState> sliStates = Arrays.asList(GOOD, GOOD, GOOD, GOOD);
+    List<Long> goodCounts = Arrays.asList(0l, 0l, 0l, 0l);
+    List<Long> badCounts = Arrays.asList(0l, 0l, 0l, 0l);
+    List<Double> expectedSLITrend = Lists.newArrayList(100.0, 100.0, 100.0, 100.0);
+    List<Double> expectedBurndown = Lists.newArrayList(100.0, 100.0, 100.0, 100.0);
+    testGraphCalculation_Request(
+        sliStates, goodCounts, badCounts, SLIMissingDataType.BAD, expectedSLITrend, expectedBurndown, 0, 0, 0, 0);
+  }
+
+  @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testGetGraphData_perMinute() {
@@ -443,6 +512,30 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     testGraphCalculation(sliStates, expectedSLITrend, expectedBurndown, 96);
   }
 
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetMinutes() {
+    Instant startTime = clock.instant();
+    Instant endTime = clock.instant().plus(5, ChronoUnit.MINUTES);
+    List<Instant> minutes = graphDataService.getMinutes(startTime, endTime, 0L);
+    assertThat(minutes.size()).isEqualTo(2);
+    assertThat(minutes.get(0)).isEqualTo(startTime);
+    assertThat(minutes.get(1)).isEqualTo(endTime);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetMinutesForMaxRecords() {
+    Instant startTime = clock.instant();
+    Instant endTime = clock.instant().plus(7, ChronoUnit.DAYS);
+    List<Instant> minutes = graphDataService.getMinutes(startTime, endTime, 2000);
+    assertThat(minutes.size()).isEqualTo(2017);
+    assertThat(minutes.get(0)).isEqualTo(startTime);
+    assertThat(minutes.get(2016)).isEqualTo(endTime);
+  }
+
   private void testGraphCalculation(List<SLIRecord.SLIState> sliStates, SLIMissingDataType sliMissingDataType,
       List<Double> expectedSLITrend, List<Double> expectedBurndown, int expectedErrorBudgetRemaining,
       long customMinutesStart, long customMinutesEnd) {
@@ -454,9 +547,10 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     Instant customStartTime = startTime.plus(Duration.ofMinutes(customMinutesStart));
     Instant customEndTime = startTime.plus(Duration.ofMinutes(sliStates.size() - customMinutesEnd + 1));
 
-    SLODashboardWidget.SLOGraphData sloGraphData = graphDataService.getGraphData(serviceLevelIndicator, startTime,
-        startTime.plus(Duration.ofMinutes(sliStates.size() + 1)), 100, sliMissingDataType, 0,
-        TimeRangeParams.builder().startTime(customStartTime).endTime(customEndTime).build());
+    SLODashboardWidget.SLOGraphData sloGraphData = graphDataService.getGraphDataForSimpleSLO(serviceLevelIndicator,
+        startTime, startTime.plus(Duration.ofMinutes(sliStates.size() + 1)), 100, sliMissingDataType, 0,
+        TimeRangeParams.builder().startTime(customStartTime).endTime(customEndTime).build(), null,
+        graphDataService.MAX_NUMBER_OF_POINTS);
     Duration duration = Duration.between(customStartTime, customEndTime);
     if (customMinutesEnd == 0) {
       assertThat(sloGraphData.getSloPerformanceTrend()).hasSize((int) duration.toMinutes() - 1);
@@ -481,6 +575,48 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     assertThat(sloGraphData.isRecalculatingSLI()).isFalse();
   }
 
+  private void testGraphCalculation_Request(List<SLIRecord.SLIState> sliStates, List<Long> goodCounts,
+      List<Long> badCounts, SLIMissingDataType sliMissingDataType, List<Double> expectedSLITrend,
+      List<Double> expectedBurndown, int expectedErrorBudgetRemaining, long customMinutesStart, long customMinutesEnd,
+      long expectedErrorBudget) {
+    Instant startTime =
+        DateTimeUtils.roundDownTo1MinBoundary(clock.instant().minus(Duration.ofMinutes(sliStates.size())));
+    createData(startTime.minus(Duration.ofMinutes(4)), Arrays.asList(SKIP_DATA, NO_DATA, GOOD, GOOD),
+        Arrays.asList(95l, 0l, 180l, 400l), Arrays.asList(5l, 0l, 20l, 100l));
+    createData(startTime, sliStates, goodCounts, badCounts);
+
+    Instant customStartTime = startTime.plus(Duration.ofMinutes(customMinutesStart));
+    Instant customEndTime = startTime.plus(Duration.ofMinutes(sliStates.size() - customMinutesEnd + 1));
+
+    SLODashboardWidget.SLOGraphData sloGraphData = graphDataService.getGraphDataForSimpleSLO(
+        requestServiceLevelIndicator, startTime, startTime.plus(Duration.ofMinutes(sliStates.size() + 1)), 100,
+        sliMissingDataType, 0, TimeRangeParams.builder().startTime(customStartTime).endTime(customEndTime).build(),
+        simpleRequestServiceLevelObjective, graphDataService.MAX_NUMBER_OF_POINTS);
+    Duration duration = Duration.between(customStartTime, customEndTime);
+    if (customMinutesEnd == 0) {
+      assertThat(sloGraphData.getSloPerformanceTrend()).hasSize((int) duration.toMinutes() - 1);
+    } else {
+      assertThat(sloGraphData.getSloPerformanceTrend()).hasSize((int) duration.toMinutes());
+    }
+    List<SLODashboardWidget.Point> sloPerformanceTrend = sloGraphData.getSloPerformanceTrend();
+    List<SLODashboardWidget.Point> errorBudgetBurndown = sloGraphData.getErrorBudgetBurndown();
+
+    for (int i = 1; i < expectedSLITrend.size(); i++) {
+      assertThat(sloPerformanceTrend.get(i).getTimestamp())
+          .isEqualTo(customStartTime.plus(Duration.ofMinutes(i)).toEpochMilli());
+      assertThat(sloPerformanceTrend.get(i).getValue()).isCloseTo(expectedSLITrend.get(i), offset(0.01));
+      assertThat(errorBudgetBurndown.get(i).getTimestamp())
+          .isEqualTo(customStartTime.plus(Duration.ofMinutes(i)).toEpochMilli());
+      assertThat(errorBudgetBurndown.get(i).getValue()).isCloseTo(expectedBurndown.get(i), offset(0.01));
+    }
+
+    assertThat(sloGraphData.getErrorBudgetRemainingPercentage())
+        .isCloseTo(expectedBurndown.get(errorBudgetBurndown.size() - 1), offset(0.01));
+    assertThat(sloGraphData.getErrorBudgetRemaining()).isEqualTo(expectedErrorBudgetRemaining);
+    assertThat(sloGraphData.isRecalculatingSLI()).isFalse();
+    assertThat(sloGraphData.getTotalErrorBudgetFromGraph()).isEqualTo(expectedErrorBudget);
+  }
+
   private void testGraphCalculation(List<SLIRecord.SLIState> sliStates, SLIMissingDataType sliMissingDataType,
       List<Double> expectedSLITrend, List<Double> expectedBurndown, int expectedErrorBudgetRemaining) {
     testGraphCalculation(
@@ -498,12 +634,46 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     sliRecordService.create(sliRecordParams, serviceLevelIndicator.getUuid(), verificationTaskId, 0);
   }
 
+  private void createData(
+      Instant startTime, List<SLIRecord.SLIState> sliStates, List<Long> goodCounts, List<Long> badCounts) {
+    List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates, goodCounts, badCounts);
+    sliRecordService.create(sliRecordParams, requestServiceLevelIndicator.getUuid(), verificationTaskId, 0);
+  }
+
   private List<SLIRecordParam> getSLIRecordParam(Instant startTime, List<SLIRecord.SLIState> sliStates) {
     List<SLIRecordParam> sliRecordParams = new ArrayList<>();
     for (int i = 0; i < sliStates.size(); i++) {
       SLIRecord.SLIState sliState = sliStates.get(i);
-      sliRecordParams.add(
-          SLIRecordParam.builder().sliState(sliState).timeStamp(startTime.plus(Duration.ofMinutes(i))).build());
+      long goodCount = 0;
+      long badCount = 0;
+      if (sliState == GOOD) {
+        goodCount++;
+      } else if (sliState == BAD) {
+        badCount++;
+      }
+      sliRecordParams.add(SLIRecordParam.builder()
+                              .sliState(sliState)
+                              .timeStamp(startTime.plus(Duration.ofMinutes(i)))
+                              .goodEventCount(goodCount)
+                              .badEventCount(badCount)
+                              .build());
+    }
+    return sliRecordParams;
+  }
+
+  private List<SLIRecordParam> getSLIRecordParam(
+      Instant startTime, List<SLIRecord.SLIState> sliStates, List<Long> goodCounts, List<Long> badCounts) {
+    List<SLIRecordParam> sliRecordParams = new ArrayList<>();
+    for (int i = 0; i < sliStates.size(); i++) {
+      SLIRecord.SLIState sliState = sliStates.get(i);
+      long goodCount = goodCounts.get(i);
+      long badCount = badCounts.get(i);
+      sliRecordParams.add(SLIRecordParam.builder()
+                              .sliState(sliState)
+                              .timeStamp(startTime.plus(Duration.ofMinutes(i)))
+                              .goodEventCount(goodCount)
+                              .badEventCount(badCount)
+                              .build());
     }
     return sliRecordParams;
   }

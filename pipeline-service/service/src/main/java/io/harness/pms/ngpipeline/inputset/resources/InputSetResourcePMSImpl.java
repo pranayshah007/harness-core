@@ -94,7 +94,6 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   private final ValidateAndMergeHelper validateAndMergeHelper;
   private final InputSetsApiUtils inputSetsApiUtils;
   private final PMSExecutionService executionService;
-  private final boolean allowDifferentReposForPipelineAndInputSets;
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<InputSetResponseDTOPMS> getInputSet(String inputSetIdentifier,
@@ -370,14 +369,13 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String pipelineIdentifier, String inputSetIdentifier, String pipelineBranch,
       String pipelineRepoID, GitEntityUpdateInfoDTO gitEntityInfo) {
-    if (allowDifferentReposForPipelineAndInputSets
-        && inputSetsApiUtils.isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(accountId)
+    if (inputSetsApiUtils.isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(accountId)
         && EmptyPredicate.isEmpty(pipelineBranch)) {
       throw new InvalidRequestException(ERROR_PIPELINE_BRANCH_NOT_PROVIDED);
     }
     return ResponseDTO.newResponse(InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, pmsInputSetService,
         pipelineService, validateAndMergeHelper, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-        inputSetIdentifier, pipelineBranch, pipelineRepoID, allowDifferentReposForPipelineAndInputSets));
+        inputSetIdentifier, pipelineBranch, pipelineRepoID));
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)

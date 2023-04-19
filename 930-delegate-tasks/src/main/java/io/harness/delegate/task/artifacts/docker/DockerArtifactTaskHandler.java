@@ -31,6 +31,7 @@ import lombok.AllArgsConstructor;
 public class DockerArtifactTaskHandler extends DelegateArtifactTaskHandler<DockerArtifactDelegateRequest> {
   private final DockerRegistryService dockerRegistryService;
   private final SecretDecryptionService secretDecryptionService;
+  private final String ACCEPT_ALL_REGEX = "*";
 
   @Override
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(DockerArtifactDelegateRequest attributesRequest) {

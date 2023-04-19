@@ -8,6 +8,7 @@
 package io.harness.when.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.contracts.plan.ExecutionMode.NORMAL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -41,8 +42,13 @@ public class RunInfoUtils {
   // If when conditions configured as <+input> and no value is given, when.getValue() will still
   // be null and handled accordingly
   public String getRunConditionForStage(ParameterField<StageWhenCondition> stageWhenCondition) {
+    return getRunConditionForStage(stageWhenCondition, NORMAL);
+  }
+
+  public String getRunConditionForStage(
+      ParameterField<StageWhenCondition> stageWhenCondition, ExecutionMode executionMode) {
     if (ParameterField.isNull(stageWhenCondition) || stageWhenCondition.getValue() == null) {
-      return getDefaultWhenCondition(true);
+      return getDefaultWhenCondition(true, executionMode);
     }
 
     if (stageWhenCondition.getValue().getPipelineStatus() == null) {
@@ -91,10 +97,14 @@ public class RunInfoUtils {
   }
 
   private String getDefaultWhenCondition(boolean isStage) {
+    return getDefaultWhenCondition(isStage, NORMAL);
+  }
+
+  private String getDefaultWhenCondition(boolean isStage, ExecutionMode executionMode) {
     if (!isStage) {
       return getStatusExpression(STAGE_SUCCESS);
     }
-    return getStatusExpression(PIPELINE_SUCCESS);
+    return isRollbackMode(executionMode) ? getStatusExpression(ALWAYS) : getStatusExpression(PIPELINE_SUCCESS);
   }
 
   private String combineExpressions(String statusExpression, String conditionExpression) {

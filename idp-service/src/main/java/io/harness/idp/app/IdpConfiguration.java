@@ -15,10 +15,13 @@ import io.harness.AccessControlClientConfiguration;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
+import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.idp.onboarding.config.OnboardingModuleConfig;
 import io.harness.idp.provision.ProvisionModuleConfig;
+import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.mongo.MongoConfig;
+import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
@@ -34,6 +37,7 @@ import io.dropwizard.request.logging.LogbackAccessRequestLogFactory;
 import io.dropwizard.request.logging.RequestLogFactory;
 import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.server.ServerFactory;
+import io.grpc.netty.shaded.io.grpc.netty.NegotiationType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -54,6 +58,8 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("logStreamingServiceConfig")
   @ConfigSecret
   private LogStreamingServiceConfiguration logStreamingServiceConfig;
+  @JsonProperty("redisLockConfig") private RedisConfig redisLockConfig;
+  @JsonProperty("distributedLockImplementation") private DistributedLockImplementation distributedLockImplementation;
   @JsonProperty("managerClientConfig") private ServiceHttpClientConfig managerClientConfig;
   @JsonProperty("ngManagerServiceHttpClientConfig") private ServiceHttpClientConfig ngManagerServiceHttpClientConfig;
   @JsonProperty("ngManagerServiceSecret") private String ngManagerServiceSecret;
@@ -64,14 +70,23 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("jwtAuthSecret") private String jwtAuthSecret;
   @JsonProperty("jwtIdentityServiceSecret") private String jwtIdentityServiceSecret;
   @JsonProperty("onboardingModuleConfig") private OnboardingModuleConfig onboardingModuleConfig;
+  @JsonProperty("gitManagerGrpcClientConfig") private GrpcClientConfig gitManagerGrpcClientConfig;
+  @JsonProperty("grpcNegotiationType") NegotiationType grpcNegotiationType;
   @JsonProperty("accessControlClient") private AccessControlClientConfiguration accessControlClientConfiguration;
   @JsonProperty("backstageSaToken") private String backstageSaToken;
   @JsonProperty("backstageSaCaCrt") private String backstageSaCaCrt;
   @JsonProperty("backstageMasterUrl") private String backstageMasterUrl;
   @JsonProperty("backstagePodLabel") private String backstagePodLabel;
+  @JsonProperty("env") private String env;
+  @JsonProperty("prEnvDefaultBackstageNamespace") private String prEnvDefaultBackstageNamespace;
   @JsonProperty(PROVISION_MODULE_CONFIG) private ProvisionModuleConfig provisionModuleConfig;
+  private String managerTarget;
+  private String managerAuthority;
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
   public static final String IDP_SPEC_PACKAGE = "io.harness.spec.server.idp.v1";
+  public static final String NG_MANAGER_PROXY_PACKAGE = "io.harness.idp.proxy.ngmanager";
+  public static final String DELEGATE_PROXY_PACKAGE = "io.harness.idp.proxy.delegate";
+  public static final String IDP_HEALTH_PACKAGE = "io.harness.idp.health";
 
   public IdpConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();
@@ -131,7 +146,9 @@ public class IdpConfiguration extends Configuration {
     return HarnessReflections.get()
         .getTypesAnnotatedWith(Path.class)
         .stream()
-        .filter(klazz -> StringUtils.startsWithAny(klazz.getPackage().getName(), IDP_SPEC_PACKAGE))
+        .filter(klazz
+            -> StringUtils.startsWithAny(klazz.getPackage().getName(), IDP_SPEC_PACKAGE, NG_MANAGER_PROXY_PACKAGE,
+                DELEGATE_PROXY_PACKAGE, IDP_HEALTH_PACKAGE))
         .collect(Collectors.toSet());
   }
 }

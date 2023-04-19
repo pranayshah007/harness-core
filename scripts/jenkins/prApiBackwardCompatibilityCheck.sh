@@ -37,7 +37,7 @@ ACCESS_CONTROL_T=0
 bazel build ${BAZEL_ARGS} -- //access-control/service:module_deploy.jar || ACCESS_CONTROL_T=$?
 STO_MANAGER_T=0
 echo "BUILD STO_MANAGER"
-bazel build ${BAZEL_ARGS} -- //315-sto-manager:module_deploy.jar || STO_MANAGER_T=$?
+bazel build ${BAZEL_ARGS} -- //315-sto-manager/app:module_deploy.jar || STO_MANAGER_T=$?
 
 mkdir target
 
@@ -264,7 +264,7 @@ fi
 if [ $STO_MANAGER_S -eq 0 ]
 then
     echo "====Generating STO-Manager Source-Branch Api Spec===="
-    java -jar bazel-bin/315-sto-manager/app/module_deploy.jar generate-openapi-spec target/315_source.json 315-sto-manager/config/sto-manager-config.yml || STO_MANAGER_S=$?
+    java -jar bazel-bin/315-sto-manager/app/module_deploy.jar generate-openapi-spec target/315_source.json 332-ci-manager/config/sto-manager-config.yml || STO_MANAGER_S=$?
 fi
 
 exit_code=0

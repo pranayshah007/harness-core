@@ -8,6 +8,7 @@
 package io.harness.auditevent.streaming.repositories;
 
 import io.harness.audit.entities.streaming.StreamingDestination;
+import io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys;
 
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +33,7 @@ public class StreamingDestinationRepositoryCustomImpl implements StreamingDestin
   @Override
   public List<String> findDistinctAccounts(Criteria criteria) {
     Query query = new Query(criteria);
-    return template.findDistinct(query, StreamingDestination.StreamingDestinationKeys.accountIdentifier,
-        StreamingDestination.class, String.class);
+    return template.findDistinct(
+        query, StreamingDestinationKeys.accountIdentifier, StreamingDestination.class, String.class);
   }
 }

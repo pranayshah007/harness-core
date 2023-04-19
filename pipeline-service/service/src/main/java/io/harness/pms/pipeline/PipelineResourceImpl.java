@@ -210,7 +210,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
           PMSPipelineResponseDTO.builder()
               .yamlPipeline(pe.getYaml())
               .governanceMetadata(pe.getGovernanceMetadata())
-              .entityValidityDetails(EntityValidityDetails.builder().valid(false).invalidYaml(pe.getYaml()).build())
+              .entityValidityDetails(EntityValidityDetails.builder().valid(true).invalidYaml(pe.getYaml()).build())
               .gitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata())
               .build());
     } catch (InvalidYamlException e) {
@@ -538,9 +538,6 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   public ResponseDTO<PipelineValidationResponseDTO> getPipelineValidateResult(
       String accountId, String orgId, String projectId, String uuid) {
     Optional<PipelineValidationEvent> eventByUuid = pipelineAsyncValidationService.getEventByUuid(uuid);
-    if (eventByUuid.isEmpty()) {
-      throw new EntityNotFoundException("No Pipeline Validation Event found for uuid " + uuid);
-    }
     PipelineValidationEvent pipelineValidationEvent = eventByUuid.get();
     PipelineValidationResponseDTO response =
         PMSPipelineDtoMapper.buildPipelineValidationResponseDTO(pipelineValidationEvent);

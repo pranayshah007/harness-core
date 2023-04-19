@@ -40,7 +40,9 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryRawConfig;
 import io.harness.cdng.expressionEvaluator.CustomScriptSecretExpressionEvaluator;
 import io.harness.cdng.expressionEvaluator.NgCustomSecretExpressionEvaluator;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.algorithm.HashGenerator;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -67,6 +69,7 @@ import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceFetchType;
 import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
@@ -105,14 +108,32 @@ public class ArtifactConfigToDelegateReqMapper {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
+
+    if (isRegex(tag)) {
+      tagRegex = getTagRegex(tag);
+    }
+
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
+
     boolean shouldFetchDockerV2DigestSHA256 =
         artifactConfig.getDigest() != null && isNotEmpty(artifactConfig.getDigest().getValue());
     return ArtifactDelegateRequestUtils.getDockerDelegateRequest(artifactConfig.getImagePath().getValue(), tag,
         tagRegex, null, connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.DOCKER_REGISTRY,
         shouldFetchDockerV2DigestSHA256);
+  }
+
+  public boolean isRegex(String tag) {
+    if (EmptyPredicate.isNotEmpty(tag) && tag.equals(ACCEPT_ALL_REGEX)) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  public String getTagRegex(String tag) {
+    return tag.equals(ACCEPT_ALL_REGEX) ? tag.replace(ACCEPT_ALL_REGEX, ".*?") : tag;
   }
 
   public S3ArtifactDelegateRequest getAmazonS3DelegateRequest(AmazonS3ArtifactConfig artifactConfig,
@@ -136,7 +157,6 @@ public class ArtifactConfigToDelegateReqMapper {
     if (StringUtils.isBlank(filePathRegex)) {
       filePathRegex = "";
     }
-
     return ArtifactDelegateRequestUtils.getAmazonS3DelegateRequest(artifactConfig.getBucketName().getValue(), filePath,
         filePathRegex, null, connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.AMAZONS3,
         artifactConfig.getRegion() != null ? artifactConfig.getRegion().getValue() : "us-east-1");
@@ -153,6 +173,10 @@ public class ArtifactConfigToDelegateReqMapper {
     String version = artifactConfig.getVersion() != null
         ? StringUtils.isBlank(artifactConfig.getVersion().getValue()) ? "" : artifactConfig.getVersion().getValue()
         : "";
+
+    if (isRegex(version)) {
+      versionRegex = version.equals(ACCEPT_ALL_REGEX) ? version.replace(ACCEPT_ALL_REGEX, "*") : version;
+    }
 
     // If both version and versionRegex are empty, versionRegex is latest among all versions.
     if (isEmpty(version) && isEmpty(versionRegex)) {
@@ -174,30 +198,47 @@ public class ArtifactConfigToDelegateReqMapper {
 
     String version = artifactConfig.getVersion().getValue();
 
+    if (isRegex(version)) {
+      versionRegex = getTagRegex(version);
+    }
+
     if (StringUtils.isBlank(version)) {
       version = "";
     }
 
     // If both version and versionRegex are empty, throw exception.
     if (StringUtils.isAllBlank(version, versionRegex)) {
-      throw new InvalidRequestException("Please specify version or versionRegex. Both cannot be empty.");
+      versionRegex = "*";
+    }
+
+    String scope = null;
+    if (artifactConfig.getScope() != null) {
+      scope = artifactConfig.getScope().getValue();
     }
 
     return ArtifactDelegateRequestUtils.getAzureArtifactsDelegateRequest(artifactConfig.getPackageName().getValue(),
         artifactConfig.getPackageType().getValue(), version, versionRegex, artifactConfig.getProject().getValue(),
-        artifactConfig.getScope().getValue(), artifactConfig.getFeed().getValue(), connectorRef, connectorDTO,
-        encryptedDataDetails, ArtifactSourceType.AZURE_ARTIFACTS);
+        scope, artifactConfig.getFeed().getValue(), connectorRef, connectorDTO, encryptedDataDetails,
+        ArtifactSourceType.AZURE_ARTIFACTS);
   }
 
   public AMIArtifactDelegateRequest getAMIDelegateRequest(AMIArtifactConfig artifactConfig,
       AwsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
-    String versionRegex = artifactConfig.getVersionRegex().getValue();
+    String versionRegex = "";
 
-    if (StringUtils.isBlank(versionRegex)) {
-      versionRegex = "";
+    if (artifactConfig.getVersionRegex() != null && isNotEmpty(artifactConfig.getVersionRegex().getValue())) {
+      versionRegex = artifactConfig.getVersionRegex().getValue();
+    }
+
+    if (artifactConfig.getVersionRegex() != null && artifactConfig.getVersionRegex().getInputSetValidator() != null) {
+      versionRegex = artifactConfig.getVersionRegex().getInputSetValidator().getParameters();
     }
 
     String version = artifactConfig.getVersion().getValue();
+
+    if (isRegex(version)) {
+      versionRegex = artifactConfig.getVersion().getValue();
+    }
 
     if (StringUtils.isBlank(version)) {
       version = "";
@@ -205,7 +246,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
     // If both version and versionRegex are empty, throw exception.
     if (StringUtils.isAllBlank(version, versionRegex)) {
-      throw new InvalidRequestException("Please specify version or versionRegex. Both cannot be empty.");
+      versionRegex = "*";
     }
 
     return ArtifactDelegateRequestUtils.getAMIArtifactDelegateRequest(artifactConfig.getTags().getValue(),
@@ -218,6 +259,9 @@ public class ArtifactConfigToDelegateReqMapper {
     String artifactPath = artifactConfig.getArtifactPath() != null ? artifactConfig.getArtifactPath().getValue() : "";
     String jobName = artifactConfig.getJobName() != null ? artifactConfig.getJobName().getValue() : "";
     String buildNumber = artifactConfig.getBuild() != null ? artifactConfig.getBuild().getValue() : "";
+    if (isRegex(buildNumber)) {
+      buildNumber = buildNumber.equals(ACCEPT_ALL_REGEX) ? "" : buildNumber;
+    }
     return ArtifactDelegateRequestUtils.getJenkinsDelegateArtifactRequest(connectorRef, connectorDTO,
         encryptedDataDetails, ArtifactSourceType.JENKINS, null, null, jobName, Arrays.asList(artifactPath),
         buildNumber);
@@ -229,6 +273,9 @@ public class ArtifactConfigToDelegateReqMapper {
                                                                           : Collections.emptyList();
     String planKey = artifactConfig.getPlanKey() != null ? artifactConfig.getPlanKey().getValue() : "";
     String buildNumber = artifactConfig.getBuild() != null ? artifactConfig.getBuild().getValue() : "";
+    if (isRegex(buildNumber)) {
+      buildNumber = getTagRegex(buildNumber);
+    }
     return ArtifactDelegateRequestUtils.getBambooDelegateArtifactRequest(connectorRef, connectorDTO,
         encryptedDataDetails, ArtifactSourceType.BAMBOO, planKey, artifactPath, buildNumber);
   }
@@ -236,32 +283,53 @@ public class ArtifactConfigToDelegateReqMapper {
       CustomArtifactConfig artifactConfig, Ambiance ambiance) {
     CustomScriptInlineSource customScriptInlineSource = getCustomScriptInlineSource(artifactConfig);
     long timeout = TIME_OUT;
+    String version = artifactConfig.getVersion().getValue();
+    String versionRegex = "";
+    if (artifactConfig.getVersionRegex() != null && isNotEmpty(artifactConfig.getVersionRegex().getValue())) {
+      versionRegex = artifactConfig.getVersionRegex().getValue();
+    }
 
     if (artifactConfig.getTimeout() != null && artifactConfig.getTimeout().getValue() != null
         && isNotEmpty(artifactConfig.getTimeout().getValue().toString())) {
       timeout = artifactConfig.getTimeout().getValue().getTimeoutInMillis();
     }
+    if (isNotEmpty(version) && isRegex(version)) {
+      versionRegex = getTagRegex(version);
+    }
 
     String script = customScriptInlineSource.getScript().fetchFinalValue().toString();
     return ArtifactDelegateRequestUtils.getCustomDelegateRequest(
         artifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath().fetchFinalValue().toString(),
-        artifactConfig.getVersionRegex().getValue(),
+        versionRegex,
         artifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getSource().getType(),
         ArtifactSourceType.CUSTOM_ARTIFACT,
         artifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().getValue(), script,
         NGVariablesUtils.getStringMapVariables(artifactConfig.getScripts().getFetchAllArtifacts().getAttributes(), 0L),
-        NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L), artifactConfig.getVersion().getValue(),
+        NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L), version,
         ambiance != null ? AmbianceUtils.obtainCurrentRuntimeId(ambiance) : "", timeout,
         AmbianceUtils.getAccountId(ambiance));
   }
 
   public CustomArtifactDelegateRequest getCustomDelegateRequest(CustomArtifactConfig artifactConfig, Ambiance ambiance,
       DelegateMetricsService delegateMetricsService, SecretManagerClientService ngSecretService) {
+    String versionRegex = artifactConfig.getVersionRegex().getValue();
+    String version = artifactConfig.getVersion().getValue();
+
+    if (StringUtils.isBlank(versionRegex)) {
+      versionRegex = "";
+    }
+
+    if (isNotEmpty(version) && isRegex(version)) {
+      versionRegex = getTagRegex(version);
+    }
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     int secretFunctorToken = HashGenerator.generateIntegerHash();
     CustomScriptInlineSource customScriptInlineSource = getCustomScriptInlineSource(artifactConfig);
     String script = customScriptInlineSource.getScript().fetchFinalValue().toString();
     script = resolveNGSecretExpression(script, secretFunctorToken);
+    if (isNotEmpty(version) && isRegex(version)) {
+      version = getTagRegex(version);
+    }
     NgCustomSecretExpressionEvaluator ngCustomSecretExpressionEvaluator =
         new NgCustomSecretExpressionEvaluator(ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(),
             ngAccess.getProjectIdentifier(), secretFunctorToken, delegateMetricsService, ngSecretService);
@@ -273,12 +341,12 @@ public class ArtifactConfigToDelegateReqMapper {
 
     return ArtifactDelegateRequestUtils.getCustomDelegateRequest(
         artifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath().fetchFinalValue().toString(),
-        artifactConfig.getVersionRegex().getValue(),
+        versionRegex,
         artifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getSource().getType(),
         ArtifactSourceType.CUSTOM_ARTIFACT,
         artifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().getValue(), script,
         NGVariablesUtils.getStringMapVariables(artifactConfig.getScripts().getFetchAllArtifacts().getAttributes(), 0L),
-        NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L), artifactConfig.getVersion().getValue(),
+        NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L), version,
         ambiance != null ? AmbianceUtils.obtainCurrentRuntimeId(ambiance) : "",
         artifactConfig.getTimeout() != null ? artifactConfig.getTimeout().getValue().getTimeoutInMillis() : TIME_OUT,
         AmbianceUtils.getAccountId(ambiance), encryptionConfigs, secretDetails,
@@ -291,6 +359,9 @@ public class ArtifactConfigToDelegateReqMapper {
     String project = artifactConfig.getProject().getValue();
     String repository = artifactConfig.getRepository().getValue();
     String sourceDirectory = artifactConfig.getSourceDirectory().getValue();
+    String branch = ParameterFieldHelper.getParameterFieldValue(artifactConfig.getBranch());
+    String commitId = ParameterFieldHelper.getParameterFieldValue(artifactConfig.getCommitId());
+    String tag = ParameterFieldHelper.getParameterFieldValue(artifactConfig.getTag());
     if (StringUtils.isBlank(project)) {
       throw new InvalidRequestException("Please input project name.");
     }
@@ -300,8 +371,13 @@ public class ArtifactConfigToDelegateReqMapper {
     if (StringUtils.isBlank(sourceDirectory)) {
       throw new InvalidRequestException("Please input sourceDirectory path.");
     }
+    if (StringUtils.isAllBlank(branch, commitId, tag)) {
+      throw new InvalidRequestException("Please input one of these three, branch, commitId, Tag.");
+    }
     return ArtifactDelegateRequestUtils.getGoogleCloudSourceArtifactDelegateRequest(repository, project,
-        sourceDirectory, gcpConnectorDTO, connectorRef, encryptedDataDetails,
+        sourceDirectory,
+        GoogleCloudSourceFetchType.valueOf(StringUtils.upperCase(artifactConfig.getFetchType().getName())), branch,
+        commitId, tag, gcpConnectorDTO, connectorRef, encryptedDataDetails,
         ArtifactSourceType.GOOGLE_CLOUD_SOURCE_ARTIFACT);
   }
 
@@ -344,6 +420,10 @@ public class ArtifactConfigToDelegateReqMapper {
     // If both are empty, regex is latest among all gcr artifacts.
     String tagRegex = gcrArtifactConfig.getTagRegex() != null ? gcrArtifactConfig.getTagRegex().getValue() : "";
     String tag = gcrArtifactConfig.getTag() != null ? gcrArtifactConfig.getTag().getValue() : "";
+
+    if (isRegex(tag)) {
+      tagRegex = getTagRegex(tag);
+    }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
@@ -357,6 +437,11 @@ public class ArtifactConfigToDelegateReqMapper {
     String versionRegex =
         garArtifactConfig.getVersionRegex() != null ? garArtifactConfig.getVersionRegex().getValue() : "";
     String version = garArtifactConfig.getVersion() != null ? garArtifactConfig.getVersion().getValue() : "";
+
+    if (isRegex(version)) {
+      versionRegex = getTagRegex(version);
+      version = "";
+    }
     if (StringUtils.isBlank(version) && StringUtils.isBlank(versionRegex)) {
       versionRegex = "/*";
     }
@@ -371,6 +456,9 @@ public class ArtifactConfigToDelegateReqMapper {
     // If both are empty, regex is latest among all ecr artifacts.
     String tagRegex = ecrArtifactConfig.getTagRegex() != null ? ecrArtifactConfig.getTagRegex().getValue() : "";
     String tag = ecrArtifactConfig.getTag() != null ? ecrArtifactConfig.getTag().getValue() : "";
+    if (isRegex(tag)) {
+      tagRegex = tag.equals(ACCEPT_ALL_REGEX) ? "*" : tag;
+    }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
@@ -384,6 +472,9 @@ public class ArtifactConfigToDelegateReqMapper {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
+    if (isRegex(tag)) {
+      tagRegex = getTagRegex(tag);
+    }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
@@ -441,6 +532,9 @@ public class ArtifactConfigToDelegateReqMapper {
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
 
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
+    if (isRegex(tag)) {
+      tagRegex = getTagRegex(tag);
+    }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
@@ -491,6 +585,10 @@ public class ArtifactConfigToDelegateReqMapper {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
+
+    if (isRegex(tag)) {
+      tagRegex = tag;
+    }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
@@ -518,6 +616,10 @@ public class ArtifactConfigToDelegateReqMapper {
         ? null
         : artifactConfig.getArtifactDirectory().getValue();
 
+    if (isRegex(artifactPath)) {
+      artifactPathFilter = artifactPath.equals(ACCEPT_ALL_REGEX) ? "*" : artifactPath;
+    }
+
     return ArtifactDelegateRequestUtils.getArtifactoryGenericArtifactDelegateRequest(
         artifactConfig.getRepository().getValue(), artifactConfig.getRepositoryFormat().getValue(), artifactDirectory,
         artifactPath, artifactPathFilter, connectorRef, artifactoryConnectorDTO, encryptedDataDetails,
@@ -530,6 +632,9 @@ public class ArtifactConfigToDelegateReqMapper {
     String tagRegex =
         ParameterField.isNull(acrArtifactConfig.getTagRegex()) ? "" : acrArtifactConfig.getTagRegex().getValue();
     String tag = ParameterField.isNull(acrArtifactConfig.getTag()) ? "" : acrArtifactConfig.getTag().getValue();
+    if (isRegex(tag)) {
+      tagRegex = getTagRegex(tag);
+    }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }

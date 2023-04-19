@@ -35,6 +35,7 @@ import static io.harness.ci.commonconstants.ContainerExecutionConstants.GOLANG_C
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.GOLANG_CACHE_ENV_NAME;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.GRADLE_CACHE_DIR;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.GRADLE_CACHE_ENV_NAME;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.PLUGIN_PIPELINE;
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_ENDPOINT_VARIABLE;
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_TOKEN_VARIABLE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -197,6 +198,7 @@ public class VmInitializeUtils {
     envVars.put(HARNESS_PROJECT_ID_VARIABLE, projectID);
     envVars.put(HARNESS_ORG_ID_VARIABLE, orgID);
     envVars.put(HARNESS_PIPELINE_ID_VARIABLE, pipelineID);
+    envVars.put(PLUGIN_PIPELINE, pipelineID);
     envVars.put(HARNESS_BUILD_ID_VARIABLE, String.valueOf(buildNumber));
     envVars.put(HARNESS_STAGE_ID_VARIABLE, stageID);
     envVars.put(HARNESS_EXECUTION_ID_VARIABLE, executionID);

@@ -67,10 +67,13 @@ import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.gitops.syncstep.SyncStep;
 import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStep;
 import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStep;
+import io.harness.cdng.googlefunctions.deploygenone.GoogleFunctionsGenOneDeployStep;
 import io.harness.cdng.googlefunctions.rollback.GoogleFunctionsRollbackStep;
+import io.harness.cdng.googlefunctions.rollbackgenone.GoogleFunctionsGenOneRollbackStep;
 import io.harness.cdng.googlefunctions.trafficShift.GoogleFunctionsTrafficShiftStep;
 import io.harness.cdng.helm.HelmDeployStep;
 import io.harness.cdng.helm.HelmRollbackStep;
+import io.harness.cdng.hooks.steps.ServiceHooksStep;
 import io.harness.cdng.infra.steps.EnvironmentStep;
 import io.harness.cdng.infra.steps.InfrastructureSectionStep;
 import io.harness.cdng.infra.steps.InfrastructureStep;
@@ -279,6 +282,8 @@ public class NgStepRegistrar {
     engineSteps.put(GoogleFunctionsDeployWithoutTrafficStep.STEP_TYPE, GoogleFunctionsDeployWithoutTrafficStep.class);
     engineSteps.put(GoogleFunctionsTrafficShiftStep.STEP_TYPE, GoogleFunctionsTrafficShiftStep.class);
     engineSteps.put(GoogleFunctionsRollbackStep.STEP_TYPE, GoogleFunctionsRollbackStep.class);
+    engineSteps.put(GoogleFunctionsGenOneDeployStep.STEP_TYPE, GoogleFunctionsGenOneDeployStep.class);
+    engineSteps.put(GoogleFunctionsGenOneRollbackStep.STEP_TYPE, GoogleFunctionsGenOneRollbackStep.class);
     engineSteps.put(TerraformCloudRunStep.STEP_TYPE, TerraformCloudRunStep.class);
     engineSteps.put(BambooBuildStep.STEP_TYPE, BambooBuildStep.class);
     engineSteps.put(TerraformCloudRollbackStep.STEP_TYPE, TerraformCloudRollbackStep.class);
@@ -291,6 +296,8 @@ public class NgStepRegistrar {
     engineSteps.put(AwsSamDeployStep.STEP_TYPE, AwsSamDeployStep.class);
     engineSteps.put(AwsSamRollbackStep.STEP_TYPE, AwsSamRollbackStep.class);
 
+    // Service Hooks
+    engineSteps.put(ServiceHooksStep.STEP_TYPE, ServiceHooksStep.class);
     return engineSteps;
   }
 }

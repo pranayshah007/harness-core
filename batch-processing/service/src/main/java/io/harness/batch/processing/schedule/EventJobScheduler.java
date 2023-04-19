@@ -326,7 +326,7 @@ public class EventJobScheduler {
   public void runBudgetAlertsJob() {
     try {
       budgetAlertsService.sendBudgetAndBudgetGroupAlerts();
-      log.info("Budget alerts send");
+      log.info("Budget & Budget Groups alerts sent");
     } catch (Exception ex) {
       log.error("Exception while running budgetAlertsJob", ex);
     }
@@ -336,7 +336,7 @@ public class EventJobScheduler {
   public void runBudgetCostUpdateJob() {
     try {
       budgetCostUpdateService.updateCosts();
-      log.info("Costs updated for budgets");
+      log.info("Costs updated for budgets & budget groups");
     } catch (Exception ex) {
       log.error("Exception while running runBudgetCostUpdateJob", ex);
     }

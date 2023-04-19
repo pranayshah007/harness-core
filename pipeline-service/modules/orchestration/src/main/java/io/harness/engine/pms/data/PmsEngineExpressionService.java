@@ -13,6 +13,8 @@ import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 
+import java.util.Map;
+
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PmsEngineExpressionService {
   default String renderExpression(Ambiance ambiance, String expression) {
@@ -25,6 +27,7 @@ public interface PmsEngineExpressionService {
   String evaluateExpression(Ambiance ambiance, String expression, ExpressionMode expressionMode);
   @Deprecated Object resolve(Ambiance ambiance, Object o, boolean skipUnresolvedExpressionsCheck);
   Object resolve(Ambiance ambiance, Object o, ExpressionMode expressionMode);
+  Object resolve(Ambiance ambiance, Object o, ExpressionMode expressionMode, Map<String, String> contextMap);
   default EngineExpressionEvaluator prepareExpressionEvaluator(Ambiance ambiance) {
     return null;
   }

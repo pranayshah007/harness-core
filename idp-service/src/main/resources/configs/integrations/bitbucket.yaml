@@ -1,0 +1,4 @@
+integrations:
+  bitbucketCloud:
+    - username: ${BITBUCKET_CLOUD_USERNAME}
+      appPassword: ${HARNESS_BITBUCKET_TOKEN}

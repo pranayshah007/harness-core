@@ -14,11 +14,12 @@ import io.harness.ng.core.variable.entity.Variable;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Pageable;
 
 public interface VariableService {
   Variable create(String accountIdentifier, VariableDTO variableDTO);
   PageResponse<VariableResponseDTO> list(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      int page, int size, String searchTerm, boolean includeVariablesFromEverySubScope);
+      String searchTerm, boolean includeVariablesFromEverySubScope, Pageable pageable);
   List<VariableDTO> list(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   Optional<VariableResponseDTO> get(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);

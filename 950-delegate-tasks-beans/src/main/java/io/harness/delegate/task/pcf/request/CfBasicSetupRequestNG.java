@@ -17,7 +17,9 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryCapab
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCapabilityHelper;
 import io.harness.delegate.beans.connector.azureconnector.AzureCapabilityHelper;
+import io.harness.delegate.beans.connector.bamboo.BambooCapabilityHelper;
 import io.harness.delegate.beans.connector.docker.DockerCapabilityHelper;
+import io.harness.delegate.beans.connector.gcp.GcpCapabilityHelper;
 import io.harness.delegate.beans.connector.jenkins.JenkinsCapabilityHelper;
 import io.harness.delegate.beans.connector.nexusconnector.NexusCapabilityHelper;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
@@ -130,6 +132,14 @@ public class CfBasicSetupRequestNG extends AbstractTasTaskRequest {
             break;
           case AZURE_ARTIFACTS:
             capabilities.addAll(AzureArtifactsCapabilityHelper.fetchRequiredExecutionCapabilities(
+                azurePackageArtifactConfig.getConnectorConfig(), maskingEvaluator));
+            break;
+          case BAMBOO:
+            capabilities.addAll(BambooCapabilityHelper.fetchRequiredExecutionCapabilities(
+                azurePackageArtifactConfig.getConnectorConfig(), maskingEvaluator));
+            break;
+          case GOOGLE_CLOUD_STORAGE_ARTIFACT:
+            capabilities.addAll(GcpCapabilityHelper.fetchRequiredExecutionCapabilities(
                 azurePackageArtifactConfig.getConnectorConfig(), maskingEvaluator));
             break;
           default:

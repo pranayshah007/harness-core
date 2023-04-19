@@ -20,7 +20,6 @@ import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.SetupMetadata;
@@ -65,16 +64,14 @@ public class EntityReferenceServiceTest extends PipelineServiceTestBase {
   @Mock PipelineSetupUsageHelper pipelineSetupUsageHelper;
   @Mock PmsGitSyncHelper pmsGitSyncHelper;
   @Mock PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
-  @Mock IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   @Mock GitSyncSdkService gitSyncSdkService;
   @Mock PrincipalInfoHelper infoHelper;
   @Mock TriggeredByHelper triggeredByHelper;
 
   @Before
   public void setup() {
-    filterCreatorMergeService =
-        spy(new FilterCreatorMergeService(pmsSdkHelper, pipelineSetupUsageHelper, pmsGitSyncHelper,
-            pmsPipelineTemplateHelper, identifierRefProtoDTOHelper, gitSyncSdkService, infoHelper, triggeredByHelper));
+    filterCreatorMergeService = spy(new FilterCreatorMergeService(pmsSdkHelper, pipelineSetupUsageHelper,
+        pmsGitSyncHelper, pmsPipelineTemplateHelper, gitSyncSdkService, infoHelper, triggeredByHelper));
     entityReferenceService = new EntityReferenceService(filterCreatorMergeService);
     services.put("cd", new PlanCreatorServiceInfo(new HashMap<>(), null));
     when(filterCreatorMergeService.getServices()).thenReturn(services);

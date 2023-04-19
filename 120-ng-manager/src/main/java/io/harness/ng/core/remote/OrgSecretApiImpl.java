@@ -105,8 +105,8 @@ public class OrgSecretApiImpl implements OrgSecretApi {
 
   @Override
   public Response getOrgScopedSecrets(String org, List<String> secret, List<String> type, Boolean recursive,
-      String searchTerm, Integer page, Integer limit, String account) {
-    return getSecrets(account, org, secret, type, recursive, searchTerm, page, limit);
+      String searchTerm, Integer page, Integer limit, String account, String sort, String order) {
+    return getSecrets(account, org, secret, type, recursive, searchTerm, page, limit, sort, order);
   }
 
   @Override
@@ -196,10 +196,10 @@ public class OrgSecretApiImpl implements OrgSecretApi {
   }
 
   private Response getSecrets(String account, String org, List<String> secret, List<String> type, Boolean recursive,
-      String searchTerm, Integer page, Integer limit) {
+      String searchTerm, Integer page, Integer limit, String sort, String order) {
     List<SecretType> secretTypes = secretApiUtils.toSecretTypes(type);
-    Page<SecretResponseWrapper> secretPage =
-        ngSecretService.list(account, org, null, secret, secretTypes, recursive, searchTerm, page, limit, null, false);
+    Page<SecretResponseWrapper> secretPage = ngSecretService.list(account, org, null, secret, secretTypes, recursive,
+        searchTerm, null, false, ApiUtils.getPageRequest(page, limit, sort, order));
     List<SecretResponseWrapper> content = getNGPageResponse(secretPage).getContent();
 
     List<SecretResponse> secretResponse =

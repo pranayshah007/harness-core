@@ -16,6 +16,7 @@ import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
@@ -25,23 +26,28 @@ import lombok.Data;
 public class SyncOptions {
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @NotNull
   public ParameterField<Boolean> skipSchemaValidation;
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @NotNull
   public ParameterField<Boolean> autoCreateNamespace;
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @NotNull
   public ParameterField<Boolean> pruneResourcesAtLast;
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @NotNull
   public ParameterField<Boolean> applyOutOfSyncOnly;
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @NotNull
   public ParameterField<Boolean> replaceResources;
 
-  @JsonProperty("prunePropagationPolicy") PrunePropagationPolicy prunePropagationPolicy;
+  @NotNull @JsonProperty("prunePropagationPolicy") PrunePropagationPolicy prunePropagationPolicy;
 }

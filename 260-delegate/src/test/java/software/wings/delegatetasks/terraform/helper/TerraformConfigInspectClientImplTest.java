@@ -24,6 +24,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.clienttools.InstallUtils;
+import io.harness.delegate.clienttools.TerraformConfigInspectVersion;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filesystem.FileIo;
 import io.harness.rule.Owner;
@@ -114,8 +115,8 @@ public class TerraformConfigInspectClientImplTest extends CategoryTest {
         + "}";
     when(terraformConfigInspectClientSpy.executeShellCommand(anyString()))
         .thenReturn(terraformConfigInspectClientResponse);
-    List<String> inputVariables = terraformConfigInspectClientSpy.parseFieldsUnderBlock(
-        GIT_REPO_DIRECTORY, TerraformConfigInspectClient.BLOCK_TYPE.VARIABLES.name().toLowerCase(), useLatestVersion);
+    List<String> inputVariables = terraformConfigInspectClientSpy.parseFieldsUnderBlock(GIT_REPO_DIRECTORY,
+        TerraformConfigInspectClient.BLOCK_TYPE.VARIABLES.name().toLowerCase(), TerraformConfigInspectVersion.V1_1);
     FileIo.deleteDirectoryAndItsContentIfExists(GIT_REPO_DIRECTORY);
     assertThat(inputVariables).contains("sleep", "a");
   }
@@ -184,8 +185,8 @@ public class TerraformConfigInspectClientImplTest extends CategoryTest {
         + "}";
     when(terraformConfigInspectClientSpy.executeShellCommand(anyString()))
         .thenReturn(terraformConfigInspectClientResponse);
-    List<String> inputVariables = terraformConfigInspectClientSpy.parseFieldsUnderBlock(
-        GIT_REPO_DIRECTORY, TerraformConfigInspectClient.BLOCK_TYPE.VARIABLES.name().toLowerCase(), useLatestVersion);
+    List<String> inputVariables = terraformConfigInspectClientSpy.parseFieldsUnderBlock(GIT_REPO_DIRECTORY,
+        TerraformConfigInspectClient.BLOCK_TYPE.VARIABLES.name().toLowerCase(), TerraformConfigInspectVersion.V1_1);
     FileIo.deleteDirectoryAndItsContentIfExists(GIT_REPO_DIRECTORY);
     assertThat(inputVariables).contains("access_key", "secret_key");
   }
@@ -242,8 +243,8 @@ public class TerraformConfigInspectClientImplTest extends CategoryTest {
     when(terraformConfigInspectClientSpy.executeShellCommand(anyString()))
         .thenReturn(terraformConfigInspectClientResponse);
     assertThatThrownBy(() -> {
-      terraformConfigInspectClientSpy.parseFieldsUnderBlock(
-          GIT_REPO_DIRECTORY, TerraformConfigInspectClient.BLOCK_TYPE.VARIABLES.name().toLowerCase(), useLatestVersion);
+      terraformConfigInspectClientSpy.parseFieldsUnderBlock(GIT_REPO_DIRECTORY,
+          TerraformConfigInspectClient.BLOCK_TYPE.VARIABLES.name().toLowerCase(), TerraformConfigInspectVersion.V1_1);
     })
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageStartingWith("Quoted strings may not be split over multiple lines.")

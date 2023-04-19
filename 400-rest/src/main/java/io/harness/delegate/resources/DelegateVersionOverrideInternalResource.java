@@ -7,6 +7,7 @@
 
 package io.harness.delegate.resources;
 
+import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_DELEGATES;
 import static software.wings.security.PermissionAttribute.ResourceType.DELEGATE;
 
 import io.harness.NGCommonEntityConstants;
@@ -16,6 +17,7 @@ import io.harness.datahandler.services.AdminDelegateVersionService;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.InternalApi;
 
+import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -53,6 +55,7 @@ public class DelegateVersionOverrideInternalResource {
   @Path("/delegate-tag")
   @Timed
   @ExceptionMetered
+  @AuthRule(permissionType = MANAGE_DELEGATES)
   @InternalApi
   public RestResponse<String> overrideDelegateImageTag(@Context HttpServletRequest request,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(

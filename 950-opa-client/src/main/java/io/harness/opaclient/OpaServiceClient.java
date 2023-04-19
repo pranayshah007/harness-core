@@ -10,9 +10,11 @@ package io.harness.opaclient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.opaclient.model.OpaEvaluationResponseHolder;
+import io.harness.opaclient.model.OpaShouldEvaluateResponse;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.Query;
 
@@ -31,4 +33,9 @@ public interface OpaServiceClient {
   Call<OpaEvaluationResponseHolder> evaluateWithCredentialsByID(@Query("accountIdentifier") String accountId,
       @Query("orgIdentifier") String orgId, @Query("projectIdentifier") String projId, @Query("ids") String policySets,
       @Query("entityMetadata") String entityMetadata, @Body Object context);
+
+  @GET(API_PREFIX + "evaluate-by-type-check")
+  Call<OpaShouldEvaluateResponse> shouldEvaluateByTypeAndAction(@Query("accountIdentifier") String accountId,
+      @Query("orgIdentifier") String orgId, @Query("projectIdentifier") String projId, @Query("type") String type,
+      @Query("action") String action);
 }

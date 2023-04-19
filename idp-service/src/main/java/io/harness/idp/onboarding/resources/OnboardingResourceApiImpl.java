@@ -16,9 +16,12 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.onboarding.services.OnboardingService;
+import io.harness.idp.onboarding.service.OnboardingService;
+import io.harness.ng.beans.PageResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.OnboardingResourceApi;
+import io.harness.spec.server.idp.v1.model.HarnessBackstageEntities;
+import io.harness.spec.server.idp.v1.model.HarnessEntitiesCountResponse;
 import io.harness.spec.server.idp.v1.model.HarnessEntitiesResponse;
 import io.harness.spec.server.idp.v1.model.ImportEntitiesResponse;
 import io.harness.spec.server.idp.v1.model.ImportHarnessEntitiesRequest;
@@ -41,18 +44,27 @@ public class OnboardingResourceApiImpl implements OnboardingResourceApi {
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
+  public Response getHarnessEntitiesCount(@AccountIdentifier String harnessAccount) {
+    log.info("Request received to get harness entities count for idp import. Account = {}", harnessAccount);
+    HarnessEntitiesCountResponse harnessEntitiesCount = onboardingService.getHarnessEntitiesCount(harnessAccount);
+    return Response.status(Response.Status.OK).entity(harnessEntitiesCount).build();
+  }
+
+  @Override
+  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
   public Response getHarnessEntities(@AccountIdentifier String harnessAccount, Integer page, Integer limit, String sort,
-      String order, String searchTerm) {
+      String order, String searchTerm, String projectToFilter) {
     log.info("Request received to get harness entities for idp import. Account = {}", harnessAccount);
     int pageIndex = page == null ? UI_DEFAULT_PAGE : page;
     int pageLimit = limit == null ? UI_DEFAULT_PAGE_LIMIT : limit;
-    HarnessEntitiesResponse harnessEntities =
-        onboardingService.getHarnessEntities(harnessAccount, pageIndex, pageLimit, sort, order, searchTerm);
+    PageResponse<HarnessBackstageEntities> harnessEntities = onboardingService.getHarnessEntities(
+        harnessAccount, pageIndex, pageLimit, sort, order, searchTerm, projectToFilter);
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(responseBuilder,
-        harnessEntities.getOrgCount() + harnessEntities.getProjectCount() + harnessEntities.getServiceCount(),
-        pageIndex, pageLimit);
-    return responseBuilderWithLinks.entity(harnessEntities).build();
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, harnessEntities.getTotalItems(), pageIndex, pageLimit);
+    HarnessEntitiesResponse harnessEntitiesResponse = new HarnessEntitiesResponse();
+    harnessEntitiesResponse.setHarnessBackstageEntities(harnessEntities.getContent());
+    return responseBuilderWithLinks.entity(harnessEntitiesResponse).build();
   }
 
   @Override

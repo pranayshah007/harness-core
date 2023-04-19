@@ -39,6 +39,7 @@ import io.harness.enforcement.client.custom.CustomRestrictionInterface;
 import io.harness.enforcement.client.services.EnforcementSdkRegisterService;
 import io.harness.enforcement.client.usage.RestrictionUsageInterface;
 import io.harness.enforcement.constants.FeatureRestrictionName;
+import io.harness.engine.OrchestrationExecutionPmsEventHandlerRegistrar;
 import io.harness.engine.events.NodeExecutionStatusUpdateEventHandler;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.node.NodeExecutionServiceImpl;
@@ -692,7 +693,7 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         .engineAdvisers(PipelineServiceUtilAdviserRegistrar.getEngineAdvisers())
         .staticAliases(getStaticAliases())
         .jsonExpansionHandlers(getJsonExpansionHandlers())
-        .engineEventHandlersMap(of())
+        .engineEventHandlersMap(OrchestrationExecutionPmsEventHandlerRegistrar.getEngineEventHandlers())
         .executionSummaryModuleInfoProviderClass(PmsExecutionServiceInfoProvider.class)
         .eventsFrameworkConfiguration(config.getEventsFrameworkConfiguration())
         .executionPoolConfig(config.getPmsSdkExecutionPoolConfig())

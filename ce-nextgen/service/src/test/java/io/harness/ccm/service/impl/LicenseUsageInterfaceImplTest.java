@@ -20,6 +20,7 @@ import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.beans.config.GcpConfig;
 import io.harness.ccm.commons.beans.usage.CELicenseUsageDTO;
+import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.licensing.usage.params.UsageRequestParams;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -45,29 +46,31 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LicenseUsageInterfaceImplTest extends CategoryTest {
-  public static final String COST = "cost";
-  public static final String CLOUD_PROVIDER = "cloudProvider";
-  public static final String MONTH = "month";
-  public static final String ACCOUNT_ID = "accountId";
-  public static final String ACCOUNT_1 = "account1";
-  @InjectMocks private LicenseUsageInterfaceImpl licenseUsageInterface;
-  @Mock BigQuery bigQuery;
-  @Mock TableResult tableResult;
-  @Mock BigQueryService bigQueryService;
-  @Mock CENextGenConfiguration configuration;
-  @Mock ClickHouseService clickHouseService;
+  private static final String COST = "cost";
+  private static final String CLOUD_PROVIDER = "cloudProvider";
+  private static final String MONTH = "month";
+  private static final String ACCOUNT_ID = "accountId";
+  private static final String ACCOUNT_1 = "account1";
 
-  List<FieldValue> octoberClusterFieldValues;
-  List<FieldValue> octoberAzureFieldValues;
-  List<FieldValue> octoberGcpFieldValues;
-  List<FieldValue> septemberClusterFieldValues;
-  List<FieldValue> septemberGcpFieldValues;
-  FieldValueList octoberClusterFieldValuesList;
-  FieldValueList octoberAzureFieldValuesList;
-  FieldValueList octoberGcpFieldValuesList;
-  FieldValueList septemberClusterFieldValuesList;
-  FieldValueList septemberGcpFieldValuesList;
-  UsageRequestParams usageRequestParams;
+  @InjectMocks private LicenseUsageInterfaceImpl licenseUsageInterface;
+  @Mock private BigQuery bigQuery;
+  @Mock private TableResult tableResult;
+  @Mock private BigQueryService bigQueryService;
+  @Mock private CENextGenConfiguration configuration;
+  @Mock private ClickHouseService clickHouseService;
+  @Mock private BigQueryHelper bigQueryHelper;
+
+  private List<FieldValue> octoberClusterFieldValues;
+  private List<FieldValue> octoberAzureFieldValues;
+  private List<FieldValue> octoberGcpFieldValues;
+  private List<FieldValue> septemberClusterFieldValues;
+  private List<FieldValue> septemberGcpFieldValues;
+  private FieldValueList octoberClusterFieldValuesList;
+  private FieldValueList octoberAzureFieldValuesList;
+  private FieldValueList octoberGcpFieldValuesList;
+  private FieldValueList septemberClusterFieldValuesList;
+  private FieldValueList septemberGcpFieldValuesList;
+  private UsageRequestParams usageRequestParams;
 
   @Before
   public void setup() throws InterruptedException {
@@ -97,21 +100,21 @@ public class LicenseUsageInterfaceImplTest extends CategoryTest {
     octoberGcpFieldValues = new ArrayList<>();
     octoberGcpFieldValues.add(FieldValue.of(PRIMITIVE, ACCOUNT_1));
     octoberGcpFieldValues.add(FieldValue.of(PRIMITIVE, "600"));
-    octoberGcpFieldValues.add(FieldValue.of(PRIMITIVE, "AZURE"));
+    octoberGcpFieldValues.add(FieldValue.of(PRIMITIVE, "GCP"));
     octoberGcpFieldValues.add(FieldValue.of(PRIMITIVE, "October"));
     octoberGcpFieldValuesList = FieldValueList.of(octoberGcpFieldValues, fieldList);
 
     septemberGcpFieldValues = new ArrayList<>();
     septemberGcpFieldValues.add(FieldValue.of(PRIMITIVE, ACCOUNT_1));
     septemberGcpFieldValues.add(FieldValue.of(PRIMITIVE, "450"));
-    septemberGcpFieldValues.add(FieldValue.of(PRIMITIVE, "AZURE"));
-    septemberGcpFieldValues.add(FieldValue.of(PRIMITIVE, "October"));
+    septemberGcpFieldValues.add(FieldValue.of(PRIMITIVE, "GCP"));
+    septemberGcpFieldValues.add(FieldValue.of(PRIMITIVE, "September"));
     septemberGcpFieldValuesList = FieldValueList.of(septemberGcpFieldValues, fieldList);
 
     septemberClusterFieldValues = new ArrayList<>();
     septemberClusterFieldValues.add(FieldValue.of(PRIMITIVE, ACCOUNT_1));
     septemberClusterFieldValues.add(FieldValue.of(PRIMITIVE, "80"));
-    septemberClusterFieldValues.add(FieldValue.of(PRIMITIVE, "K8S_AZURE"));
+    septemberClusterFieldValues.add(FieldValue.of(PRIMITIVE, "K8S_GCP"));
     septemberClusterFieldValues.add(FieldValue.of(PRIMITIVE, "September"));
     septemberClusterFieldValuesList = FieldValueList.of(septemberClusterFieldValues, fieldList);
 
@@ -168,6 +171,6 @@ public class LicenseUsageInterfaceImplTest extends CategoryTest {
 
     CELicenseUsageDTO licenseUsage =
         licenseUsageInterface.getLicenseUsage(ACCOUNT_1, ModuleType.CE, 0L, usageRequestParams);
-    assertThat(licenseUsage.getActiveSpend().getCount()).isEqualTo(Long.valueOf(1370));
+    assertThat(licenseUsage.getActiveSpend().getCount()).isEqualTo(Long.valueOf(1290));
   }
 }

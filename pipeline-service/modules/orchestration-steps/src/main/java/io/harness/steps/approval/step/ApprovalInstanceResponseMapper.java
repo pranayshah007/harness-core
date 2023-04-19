@@ -8,6 +8,7 @@
 package io.harness.steps.approval.step;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
@@ -34,6 +35,8 @@ import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInst
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @OwnedBy(CDC)
@@ -107,7 +110,7 @@ public class ApprovalInstanceResponseMapper {
 
     return JiraApprovalInstanceDetailsDTO.builder()
         .connectorRef(instance.getConnectorRef())
-        .issue(new JiraIssueKeyNG(connectorDTO.getJiraUrl(), instance.getIssueKey()))
+        .issue(new JiraIssueKeyNG(connectorDTO.getJiraUrl(), instance.getIssueKey(), instance.getTicketFields()))
         .approvalCriteria(instance.getApprovalCriteria())
         .rejectionCriteria(instance.getRejectionCriteria())
         .build();
@@ -118,10 +121,18 @@ public class ApprovalInstanceResponseMapper {
         AmbianceUtils.getAccountId(instance.getAmbiance()), AmbianceUtils.getOrgIdentifier(instance.getAmbiance()),
         AmbianceUtils.getProjectIdentifier(instance.getAmbiance()), instance.getConnectorRef());
 
+    Map<String, String> fields;
+    if (!isEmpty(instance.getTicketFields())) {
+      fields = new HashMap<>();
+      instance.getTicketFields().forEach((k, v) -> fields.put(k, v.getDisplayValue()));
+    } else {
+      fields = null;
+    }
+
     return ServiceNowApprovalInstanceDetailsDTO.builder()
         .connectorRef(instance.getConnectorRef())
         .ticket(new ServiceNowTicketKeyNG(
-            connectorDTO.getServiceNowUrl(), instance.getTicketNumber(), instance.getTicketType()))
+            connectorDTO.getServiceNowUrl(), instance.getTicketNumber(), instance.getTicketType(), fields))
         .approvalCriteria(instance.getApprovalCriteria())
         .rejectionCriteria(instance.getRejectionCriteria())
         .changeWindowSpec(instance.getChangeWindow())

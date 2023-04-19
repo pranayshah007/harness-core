@@ -125,7 +125,7 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
               .serviceLevelObjectiveIdentifier(serviceLevelObjective.getIdentifier())
               .monitoredServiceIdentifier(monitoredServiceIdentifier)
               .errorBudgetRemainingPercentage(sloGraphData.getErrorBudgetRemainingPercentage())
-              .errorBudgetRemainingMinutes(sloGraphData.getErrorBudgetRemaining())
+              .errorBudgetRemainingMinutes((int) sloGraphData.getErrorBudgetRemaining())
               .build();
       hPersistence.save(newSloHealthIndicator);
     } else {
@@ -154,6 +154,6 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
     TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
     Instant currentTimeMinute = DateTimeUtils.roundDownTo1MinBoundary(clock.instant());
     return graphDataService.getGraphData(serviceLevelObjective,
-        timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes);
+        timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes, 0L);
   }
 }

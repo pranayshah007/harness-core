@@ -53,7 +53,8 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
     update.set(stepInputsKey, Document.parse(RecastOrchestrationUtils.pruneRecasterAdditions(stepInputs.clone())));
     Level currentLevel = AmbianceUtils.obtainCurrentLevel(ambiance);
     if (currentLevel != null && currentLevel.hasStrategyMetadata()) {
-      Map<String, Object> strategyMap = StrategyUtils.fetchStrategyObjectMap(currentLevel);
+      Map<String, Object> strategyMap =
+          StrategyUtils.fetchStrategyObjectMap(currentLevel, ambiance.getMetadata().getUseMatrixFieldName());
       for (Map.Entry<String, Object> entry : strategyMap.entrySet()) {
         String strategyKey = String.format("%s.%s", getExpansionPathUsingLevels(ambiance), entry.getKey());
         if (ClassUtils.isPrimitiveOrWrapper(entry.getValue().getClass())) {
@@ -88,8 +89,7 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
     if (shouldUseExpandedJsonFunctor(ambiance)) {
       Criteria criteria = Criteria.where("planExecutionId").is(ambiance.getPlanExecutionId());
       Query query = new Query(criteria);
-      expressions.forEach(expression
-          -> query.fields().include(String.format("%s.", PlanExpansionConstants.EXPANDED_JSON) + expression));
+      expressions.forEach(expression -> query.fields().include(expression));
       PlanExecutionExpansion planExecutionExpansion = planExecutionExpansionRepository.find(query);
       if (planExecutionExpansion == null) {
         return null;

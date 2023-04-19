@@ -56,7 +56,7 @@ public interface TerraformClient {
 
   @Nonnull
   CliResponse workspace(String workspace, boolean isNew, long timeoutInMillis, Map<String, String> envVariables,
-      String scriptDirectory, @Nonnull LogCallback executionLogCallback)
+      String scriptDirectory, @Nonnull LogCallback executionLogCallback, Map<String, String> additionalCliFlags)
       throws InterruptedException, TimeoutException, IOException;
 
   @Nonnull

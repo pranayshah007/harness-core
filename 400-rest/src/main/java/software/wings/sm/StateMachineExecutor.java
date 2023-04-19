@@ -219,7 +219,8 @@ public class StateMachineExecutor implements StateInspectionListener {
   private static final List<String> POSSIBLE_ROLLBACK_STATE_TYPES =
       asList(ENV_ROLLBACK_STATE.getType(), ENV_LOOP_STATE.getType(), FORK.getType());
   static final String TEMPLATE_VARIABLE_ENTRY = "templateVariables";
-  private static final String VARIABLE_DESCRIPTION_FIELD = "description";
+  static final String VARIABLE_DESCRIPTION_FIELD = "description";
+  static final String VARIABLE_VALUE_FIELD = "value";
 
   @Getter private Subject<StateStatusUpdate> statusUpdateSubject = new Subject<>();
 
@@ -655,13 +656,16 @@ public class StateMachineExecutor implements StateInspectionListener {
 
       handleResponse(context, executionResponse);
     } catch (StateExecutionInstanceUpdateException exception) {
-      log.error("Exception occurred while updating state execution instance : {}", exception);
+      log.error(
+          String.format("Exception occurred while updating state execution instance : %s", stateExecutionInstance),
+          exception);
     } catch (WingsException exception) {
       ex = exception;
-      log.error("Exception occurred while starting state execution : {}", exception);
+      log.error(
+          String.format("Exception occurred while starting state execution : %s", stateExecutionInstance), exception);
     } catch (Exception exception) {
       ex = new WingsException(exception);
-      log.error("Exception occurred while starting state execution : {}", ex);
+      log.error(String.format("Exception occurred while starting state execution : %s", stateExecutionInstance), ex);
     }
 
     if (ex != null) {
@@ -1751,15 +1755,8 @@ public class StateMachineExecutor implements StateInspectionListener {
           ? context.getStateExecutionData().getErrorMsg()
           : errorMsgBuilder.toString();
 
-      // NOT CHANGED TO REDUCE THE BLAST RATIO.
-      // WHEN MAPPING FAIL HERE IT HANGS THE ABORT OPERATION, ALREADY SILENCED BECAUSE THAT.
-      try {
-        if (stateExecutionInstance.getStateParams() != null) {
-          MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
-        }
-      } catch (org.modelmapper.MappingException e) {
-        log.error("Got model mapping exception during mapping the stateParams {}",
-            stateExecutionInstance.getStateParams(), e);
+      if (stateExecutionInstance.getStateParams() != null) {
+        mapObject(stateExecutionInstance.getStateParams(), currentState, context.getAccountId());
       }
 
       currentState.handleAbortEvent(context);
@@ -2838,20 +2835,23 @@ public class StateMachineExecutor implements StateInspectionListener {
       try {
         @SuppressWarnings("unchecked")
         List<Map<String, String>> elements = (List<Map<String, String>>) entry.getValue();
+        final List<Map<String, String>> result = new ArrayList<>();
 
-        if (elements.stream().anyMatch(e -> e.containsKey(VARIABLE_DESCRIPTION_FIELD))) {
-          final List<Map<String, String>> result = new ArrayList<>();
+        final boolean hasDescription = elements.stream().anyMatch(e -> e.containsKey(VARIABLE_DESCRIPTION_FIELD));
+        final boolean hasValue = elements.stream().anyMatch(e -> e.containsKey(VARIABLE_VALUE_FIELD));
 
-          elements.forEach(e -> {
-            if (e.containsKey(VARIABLE_DESCRIPTION_FIELD)) {
-              result.add(e);
-            } else {
-              Map<String, String> content = new HashMap<>(e);
-              content.put(VARIABLE_DESCRIPTION_FIELD, StringUtils.EMPTY);
-              result.add(content);
-            }
-          });
+        elements.forEach(e -> {
+          Map<String, String> content = new HashMap<>(e);
+          if (hasDescription) {
+            content.putIfAbsent(VARIABLE_DESCRIPTION_FIELD, StringUtils.EMPTY);
+          }
+          if (hasValue) {
+            content.putIfAbsent(VARIABLE_VALUE_FIELD, StringUtils.EMPTY);
+          }
+          result.add(content);
+        });
 
+        if (!result.isEmpty()) {
           return Collections.singletonMap(TEMPLATE_VARIABLE_ENTRY, result);
         }
 
@@ -2862,6 +2862,10 @@ public class StateMachineExecutor implements StateInspectionListener {
         log.warn(String.format("Unable to sanitize field [%s]", TEMPLATE_VARIABLE_ENTRY), e);
       }
     }
-    return null;
+
+    // FALLBACK. THE OUTPUT IS THE SAME AS INPUT
+    final Map<String, Object> fallback = new HashMap<>();
+    fallback.put(entry.getKey(), entry.getValue());
+    return fallback;
   }
 }

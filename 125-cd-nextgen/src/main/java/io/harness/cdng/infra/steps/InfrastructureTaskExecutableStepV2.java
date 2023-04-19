@@ -31,6 +31,7 @@ import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
@@ -84,6 +85,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.rbac.PipelineRbacHelper;
+import io.harness.pms.sdk.core.execution.invokers.StrategyHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
@@ -132,6 +134,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private InfrastructureValidator infrastructureValidator;
   @Inject private CDExpressionResolver resolver;
+  @Inject private StrategyHelper strategyHelper;
 
   @Override
   public Class<InfrastructureTaskExecutableStepV2Params> getStepParametersClass() {
@@ -206,8 +209,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
       if (isNotEmpty(failedResponses)) {
         log.error("Error notify response found for Infrastructure step " + failedResponses);
-        throw new InvalidRequestException(
-            "Failed to complete Infrastructure step. " + failedResponses.get(0).getErrorMessage());
+        return strategyHelper.handleException(failedResponses.get(0).getException());
       }
 
       Iterator<ResponseData> dataIterator = responseDataMap.values().iterator();
@@ -315,7 +317,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     infrastructureValidator.validate(spec);
 
     final InfrastructureOutcome infrastructureOutcome =
-        infrastructureOutcomeProvider.getOutcome(spec, environmentOutcome, serviceOutcome,
+        infrastructureOutcomeProvider.getOutcome(ambiance, spec, environmentOutcome, serviceOutcome,
             ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
     // save spec sweeping output for further use within the step
@@ -397,7 +399,8 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
     if (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome
         || infrastructureOutcome instanceof K8sDirectInfrastructureOutcome
-        || infrastructureOutcome instanceof K8sAzureInfrastructureOutcome) {
+        || infrastructureOutcome instanceof K8sAzureInfrastructureOutcome
+        || infrastructureOutcome instanceof K8sAwsInfrastructureOutcome) {
       publishK8sInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
     }
 

@@ -1170,7 +1170,6 @@ public class NativeHelmStepHelperTest extends CategoryTest {
         HelmChartManifestOutcome.builder()
             .identifier("helm")
             .store(harnessStore)
-            .chartName(ParameterField.createValueField("Todolist"))
             .valuesPaths(ParameterField.createValueField(asList("org:/path/to/helm/chart/valuesOverride.yaml")))
             .build();
 
@@ -1242,7 +1241,6 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     HelmChartManifestOutcome helmChartManifestOutcome = HelmChartManifestOutcome.builder()
                                                             .identifier("helm")
                                                             .store(customRemoteStoreConfig)
-                                                            .chartName(ParameterField.createValueField("Todolist"))
                                                             .valuesPaths(ParameterField.createValueField(null))
                                                             .build();
 
@@ -2606,6 +2604,22 @@ public class NativeHelmStepHelperTest extends CategoryTest {
 
     assertThat(releaseDetailsCaptor.getValue().getReleaseName()).isEqualTo("test-release-name");
     assertThat(releaseNameCaptor.getValue()).isEqualTo(RELEASE_NAME);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testGetReleaseHistoryPrefix() {
+    doReturn(false)
+        .when(cdFeatureFlagHelper)
+        .isEnabled("test-account", FeatureName.CDS_RENAME_HARNESS_RELEASE_HISTORY_RESOURCE_NATIVE_HELM_NG);
+    assertThat(nativeHelmStepHelper.getReleaseHistoryPrefix(ambiance)).isNullOrEmpty();
+
+    doReturn(true)
+        .when(cdFeatureFlagHelper)
+        .isEnabled("test-account", FeatureName.CDS_RENAME_HARNESS_RELEASE_HISTORY_RESOURCE_NATIVE_HELM_NG);
+    assertThat(nativeHelmStepHelper.getReleaseHistoryPrefix(ambiance))
+        .isEqualTo(NativeHelmStepHelper.RELEASE_HISTORY_PREFIX);
   }
 
   public Ambiance getAmbiance() {

@@ -119,6 +119,8 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
     Query query = new Query().addCriteria(
         new Criteria().and(PollingDocumentKeys.accountId).is(accountId).and(PollingDocumentKeys.uuid).is(pollDocId));
     Update update = new Update().set(key, value);
+    long timeOfUpdate = System.currentTimeMillis();
+    update.set(PollingDocumentKeys.lastModifiedAt, timeOfUpdate);
     return mongoTemplate.updateFirst(query, update, PollingDocument.class);
   }
 

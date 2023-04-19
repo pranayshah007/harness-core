@@ -22,6 +22,7 @@ java_library(
         "@maven//:com_google_api_client_google_api_client",
         "@maven//:com_google_api_gax",
         "@maven//:com_google_api_gax_grpc",
+        "@maven//:com_google_api_grpc_proto_google_cloud_functions_v1",
         "@maven//:com_google_api_grpc_proto_google_cloud_functions_v2",
         "@maven//:com_google_api_grpc_proto_google_cloud_run_v2",
         "@maven//:com_google_apis_google_api_services_container",

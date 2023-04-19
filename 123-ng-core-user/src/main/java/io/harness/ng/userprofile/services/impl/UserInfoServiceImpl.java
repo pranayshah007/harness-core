@@ -25,6 +25,7 @@ import io.harness.ng.core.user.PasswordChangeResponse;
 import io.harness.ng.core.user.TwoFactorAuthMechanismInfo;
 import io.harness.ng.core.user.TwoFactorAuthSettingsInfo;
 import io.harness.ng.core.user.UserInfo;
+import io.harness.ng.core.user.UserInfoUpdateDTO;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
 import io.harness.ng.userprofile.services.api.UserInfoService;
@@ -78,6 +79,35 @@ public class UserInfoServiceImpl implements UserInfoService {
     }
 
     Optional<UserInfo> updatedUserInfo = CGRestUtils.getResponse(userClient.updateUser(userInfo));
+    return updatedUserInfo.get();
+  }
+
+  @Override
+  public UserInfo update(UserInfoUpdateDTO userInfo, String userId, String accountIdentifier) {
+    if (PrincipalType.USER.equals(SourcePrincipalContextBuilder.getSourcePrincipal().getType())) {
+      validateUserUpdateRequestOfUserPrincipalTypeV2(userInfo);
+    } else if (PrincipalType.SERVICE_ACCOUNT.equals(SourcePrincipalContextBuilder.getSourcePrincipal().getType())) {
+      if (isEmpty(userInfo.getEmail())) {
+        throw new InvalidRequestException("Email ID is required to update user details");
+      }
+      Optional<UserInfo> optionalTargetUserInfo =
+          CGRestUtils.getResponse(userClient.getUserByEmailId(userInfo.getEmail()));
+
+      if (!optionalTargetUserInfo.isPresent()) {
+        throw new InvalidRequestException(String.format("User with %s email ID doesn't exist", userInfo.getEmail()));
+      }
+      validateUserUpdateRequestOfServiceAccountPrincipalType(optionalTargetUserInfo.get(), accountIdentifier);
+      accessControlClient.checkForAccessOrThrow(ResourceScope.builder().accountIdentifier(accountIdentifier).build(),
+          Resource.of(USER, optionalTargetUserInfo.get().getUuid()), MANAGE_USER_PERMISSION);
+    }
+    UserInfo userInfoInput = UserInfo.builder()
+                                 .uuid(userId)
+                                 .name(userInfo.getName())
+                                 .email(userInfo.getEmail())
+                                 .givenName(userInfo.getGivenName())
+                                 .familyName(userInfo.getFamilyName())
+                                 .build();
+    Optional<UserInfo> updatedUserInfo = CGRestUtils.getResponse(userClient.updateUser(userInfoInput));
     return updatedUserInfo.get();
   }
 
@@ -156,6 +186,16 @@ public class UserInfoServiceImpl implements UserInfoService {
   }
 
   private void validateUserUpdateRequestOfUserPrincipalType(UserInfo userInfo) {
+    String userEmail = ((UserPrincipal) (SourcePrincipalContextBuilder.getSourcePrincipal())).getEmail();
+    String userInfoEmail = userInfo.getEmail();
+    if (userInfoEmail == null) {
+      userInfo.setEmail(userEmail);
+    } else if (!userEmail.equals(userInfoEmail)) {
+      throw new InvalidRequestException("Cannot modify details of different user");
+    }
+  }
+
+  private void validateUserUpdateRequestOfUserPrincipalTypeV2(UserInfoUpdateDTO userInfo) {
     String userEmail = ((UserPrincipal) (SourcePrincipalContextBuilder.getSourcePrincipal())).getEmail();
     String userInfoEmail = userInfo.getEmail();
     if (userInfoEmail == null) {

@@ -12,6 +12,7 @@ go_library(
         "header.go",
         "helper.go",
         "middleware.go",
+        "readiness.go",
         "store.go",
         "stream.go",
         "token.go",

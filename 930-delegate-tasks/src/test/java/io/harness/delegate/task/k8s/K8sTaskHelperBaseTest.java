@@ -130,7 +130,6 @@ import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.clienttools.ClientTool;
 import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.k8s.K8sTestHelper;
-import io.harness.delegate.k8s.kustomize.KustomizeTaskHelper;
 import io.harness.delegate.k8s.openshift.OpenShiftDelegateService;
 import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
@@ -138,6 +137,8 @@ import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.client.K8sApiClient;
 import io.harness.delegate.task.k8s.client.K8sCliClient;
+import io.harness.delegate.task.k8s.k8sbase.K8sReleaseHandlerFactory;
+import io.harness.delegate.task.k8s.k8sbase.KustomizeTaskHelper;
 import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.encryption.SecretRefData;
 import io.harness.errorhandling.NGErrorHelper;
@@ -153,7 +154,6 @@ import io.harness.exception.UrlNotProvidedException;
 import io.harness.exception.UrlNotReachableException;
 import io.harness.filesystem.FileIo;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
-import io.harness.helpers.k8s.releasehistory.K8sReleaseHandlerFactory;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.ProcessResponse;
@@ -3073,7 +3073,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isTrue();
     verify(helmTaskHelperBase, times(1)).initHelm("manifest", HelmVersion.V3, 9000L);
     verify(helmTaskHelperBase, times(1))
-        .printHelmChartInfoInExecutionLogs(manifestDelegateConfig, executionLogCallback);
+        .printHelmChartInfoWithVersionInExecutionLogs("manifest", manifestDelegateConfig, executionLogCallback);
     verify(helmTaskHelperBase, times(1)).downloadChartFilesFromHttpRepo(manifestDelegateConfig, "manifest", 9000L);
   }
 
@@ -3149,7 +3149,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isTrue();
     verify(helmTaskHelperBase, times(1)).initHelm("manifest", HelmVersion.V2, 9000L);
     verify(helmTaskHelperBase, times(1))
-        .printHelmChartInfoInExecutionLogs(manifestDelegateConfig, executionLogCallback);
+        .printHelmChartInfoWithVersionInExecutionLogs("manifest", manifestDelegateConfig, executionLogCallback);
     verify(helmTaskHelperBase, times(1)).downloadChartFilesUsingChartMuseum(manifestDelegateConfig, "manifest", 9000L);
   }
 
@@ -3161,7 +3161,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                         .helmVersion(HelmVersion.V3)
                                         .storeDelegateConfig(GitStoreDelegateConfig.builder().build())
                                         .helmCommandFlag(TEST_HELM_COMMAND)
-                                        .subChartName("")
+                                        .subChartPath("")
                                         .build(),
         "manifest", "manifest");
   }
@@ -3175,7 +3175,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                         .storeDelegateConfig(HttpHelmStoreDelegateConfig.builder().build())
                                         .helmCommandFlag(TEST_HELM_COMMAND)
                                         .chartName("chart-name")
-                                        .subChartName("")
+                                        .subChartPath("")
                                         .build(),
         "manifest", "manifest/chart-name");
 
@@ -3184,7 +3184,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                            .storeDelegateConfig(HttpHelmStoreDelegateConfig.builder().build())
                                            .helmCommandFlag(HELM_DEPENDENCY_UPDATE)
                                            .chartName("chart-name")
-                                           .subChartName("first-child")
+                                           .subChartPath("charts/first-child")
                                            .build(),
         "manifest", "manifest/chart-name/charts/first-child");
   }
@@ -3220,7 +3220,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(renderedFiles)
         .when(spyHelper)
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE, "first-child");
+            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE, "charts/first-child");
 
     List<FileData> result = spyHelper.renderTemplate(K8sDelegateTaskParams.builder().helmPath(helmPath).build(),
         manifestDelegateConfig, manifestDirectory, valuesList, "release", "namespace", executionLogCallback, 10);
@@ -3228,7 +3228,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isEqualTo(renderedFiles);
     verify(spyHelper, times(1))
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE, "first-child");
+            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE, "charts/first-child");
   }
 
   @Test

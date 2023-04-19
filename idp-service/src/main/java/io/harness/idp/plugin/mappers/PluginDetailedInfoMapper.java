@@ -10,23 +10,47 @@ package io.harness.idp.plugin.mappers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.plugin.beans.PluginInfoEntity;
+import io.harness.idp.plugin.enums.ExportType;
 import io.harness.spec.server.idp.v1.model.AppConfig;
+import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
+import io.harness.spec.server.idp.v1.model.Exports;
 import io.harness.spec.server.idp.v1.model.PluginDetailedInfo;
 
+import java.util.List;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.IDP)
 @UtilityClass
 public class PluginDetailedInfoMapper {
-  public PluginDetailedInfo toDTO(PluginInfoEntity pluginInfoEntity, AppConfig appConfig, String staticConfig) {
+  public PluginDetailedInfo toDTO(PluginInfoEntity pluginInfoEntity, AppConfig appConfig,
+      List<BackstageEnvSecretVariable> backstageEnvSecretVariables) {
     PluginDetailedInfo pluginDetailedInfo = new PluginDetailedInfo();
-    boolean isEnabled = appConfig != null && appConfig.isEnabled();
+    boolean isConfigSaved = appConfig != null;
+    boolean isEnabled = isConfigSaved && appConfig.isEnabled();
     pluginDetailedInfo.setPluginDetails(PluginInfoMapper.toDTO(pluginInfoEntity, isEnabled));
-    pluginDetailedInfo.setDescription(pluginInfoEntity.getDescription());
-    pluginDetailedInfo.setCategory(pluginInfoEntity.getCategory());
-    pluginDetailedInfo.setSource(pluginInfoEntity.getSource());
-    String config = (appConfig != null && appConfig.isEnabled()) ? appConfig.getConfigs() : staticConfig;
+    String config;
+    if (isEnabled) {
+      config = appConfig.getConfigs();
+    } else {
+      config =
+          (isConfigSaved && appConfig.getConfigs() != null) ? appConfig.getConfigs() : pluginInfoEntity.getConfig();
+    }
+    Exports exports = new Exports();
+    exports.setCards(getExportTypeCount(pluginInfoEntity, ExportType.CARD));
+    exports.setTabContents(getExportTypeCount(pluginInfoEntity, ExportType.TAB_CONTENT));
+    exports.setPages(getExportTypeCount(pluginInfoEntity, ExportType.PAGE));
+    pluginDetailedInfo.setSaved(isConfigSaved);
+    pluginDetailedInfo.setExports(exports);
     pluginDetailedInfo.setConfig(config);
+    pluginDetailedInfo.setEnvVariables(backstageEnvSecretVariables);
     return pluginDetailedInfo;
+  }
+
+  private int getExportTypeCount(PluginInfoEntity pluginInfoEntity, ExportType exportType) {
+    return (int) pluginInfoEntity.getExports()
+        .getExportDetails()
+        .stream()
+        .filter(exportDetails -> exportDetails.getType().equals(exportType))
+        .count();
   }
 }

@@ -87,9 +87,9 @@ public class AmiStartupScriptMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
-    return migrateFile(auth, ngClient, inputDTO, yamlFile);
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+    return migrateFile(ngClient, inputDTO, yamlFile);
   }
 
   @Override
@@ -136,10 +136,14 @@ public class AmiStartupScriptMigrationService extends NgMigrationService {
                   .fileUsage(fileUsage)
                   .name(name)
                   .content(new String(content))
+                  .rootIdentifier("Root")
+                  .depth(Integer.MAX_VALUE)
+                  .filePath("")
                   .orgIdentifier(orgIdentifier)
                   .projectIdentifier(projectIdentifier)
                   .build())
         .ngEntityDetail(NgEntityDetail.builder()
+                            .entityType(NGMigrationEntityType.FILE_STORE)
                             .identifier(identifier)
                             .orgIdentifier(orgIdentifier)
                             .projectIdentifier(projectIdentifier)

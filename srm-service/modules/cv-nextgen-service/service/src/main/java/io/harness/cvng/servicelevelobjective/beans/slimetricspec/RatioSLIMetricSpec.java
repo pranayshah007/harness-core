@@ -10,6 +10,7 @@ package io.harness.cvng.servicelevelobjective.beans.slimetricspec;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -28,6 +29,10 @@ public class RatioSLIMetricSpec extends SLIMetricSpec {
   @NotNull String metric2;
   @NotNull Double thresholdValue;
   @NotNull ThresholdType thresholdType;
+
+  @Max(30) Integer considerConsecutiveMinutes;
+
+  Boolean considerAllConsecutiveMinutesFromStartAsBad;
 
   @Override
   public SLIMetricType getType() {

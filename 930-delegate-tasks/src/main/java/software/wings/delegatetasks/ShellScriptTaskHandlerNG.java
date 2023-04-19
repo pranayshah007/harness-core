@@ -26,6 +26,7 @@ import io.harness.shell.ScriptSshExecutor;
 import io.harness.shell.ShellExecutorConfig;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.SshSessionManager;
+import io.harness.shell.ssh.SshClientManager;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -75,6 +76,7 @@ public class ShellScriptTaskHandlerNG {
             .build();
       } finally {
         SshSessionManager.evictAndDisconnectCachedSession(taskParameters.getExecutionId(), taskParameters.getHost());
+        SshClientManager.evictCacheAndDisconnect(taskParameters.getExecutionId(), taskParameters.getHost());
       }
     }
   }
@@ -110,7 +112,8 @@ public class ShellScriptTaskHandlerNG {
   private ShellExecutorConfig getShellExecutorConfig(ShellScriptTaskParametersNG taskParameters) {
     String kubeConfigFileContent = taskParameters.getScript().contains(K8sConstants.HARNESS_KUBE_CONFIG_PATH)
             && taskParameters.getK8sInfraDelegateConfig() != null
-        ? containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(taskParameters.getK8sInfraDelegateConfig())
+        ? containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(
+            taskParameters.getK8sInfraDelegateConfig(), taskParameters.getWorkingDirectory())
         : "";
 
     return ShellExecutorConfig.builder()

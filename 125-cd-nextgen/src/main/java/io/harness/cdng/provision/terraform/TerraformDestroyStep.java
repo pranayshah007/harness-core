@@ -7,12 +7,8 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.beans.FeatureName.CDS_TERRAFORM_CLI_OPTIONS_NG;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.DESTROY;
-import static io.harness.cdng.provision.terraform.TerraformStepHelper.SKIP_REFRESH_COMMAND;
-import static io.harness.cdng.provision.terraform.TerraformStepHelper.TERRAFORM_CLOUD_CLI;
-
-import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V3;
-import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V4;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
@@ -147,9 +143,6 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
 
     if (isTerraformCloudCli) {
       helper.checkIfTerraformCloudCliIsEnabled(FeatureName.CD_TERRAFORM_CLOUD_CLI_NG, true, ambiance);
-      io.harness.delegate.TaskType taskTypeV3 =
-          io.harness.delegate.TaskType.newBuilder().setType(TERRAFORM_TASK_NG_V3.name()).build();
-      helper.checkIfTaskIsSupportedByDelegate(ambiance, taskTypeV3, TERRAFORM_CLOUD_CLI);
     }
 
     helper.validateDestroyStepConfigFilesInline(parameters);
@@ -164,15 +157,14 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
       builder.workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()));
     }
 
+    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_CLI_OPTIONS_NG)) {
+      builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
+    }
+
     ParameterField<Boolean> skipTerraformRefreshCommandParameter =
         parameters.getConfiguration().getIsSkipTerraformRefresh();
     boolean skipRefreshCommand =
         ParameterFieldHelper.getBooleanParameterFieldValue(skipTerraformRefreshCommandParameter);
-    if (skipRefreshCommand) {
-      io.harness.delegate.TaskType taskTypeV4 =
-          io.harness.delegate.TaskType.newBuilder().setType(TERRAFORM_TASK_NG_V4.name()).build();
-      helper.checkIfTaskIsSupportedByDelegate(ambiance, taskTypeV4, SKIP_REFRESH_COMMAND);
-    }
 
     builder.skipTerraformRefresh(skipRefreshCommand);
 
@@ -227,6 +219,11 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
     String entityId = helper.generateFullIdentifier(provisionerIdentifier, ambiance);
     builder.entityId(entityId);
     builder.currentStateFileId(helper.getLatestFileId(entityId));
+
+    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_CLI_OPTIONS_NG)) {
+      builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
+    }
+
     TerraformInheritOutput inheritOutput =
         helper.getSavedInheritOutput(provisionerIdentifier, DESTROY.name(), ambiance);
     TerraformTaskNGParameters terraformTaskNGParameters =
@@ -234,8 +231,10 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
             .configFile(helper.getGitFetchFilesConfig(
                 inheritOutput.getConfigFiles(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
             .tfModuleSourceInheritSSH(inheritOutput.isUseConnectorCredentials())
-            .fileStoreConfigFiles(helper.getFileStoreFetchFilesConfig(
-                inheritOutput.getFileStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
+            .fileStoreConfigFiles(inheritOutput.getFileStorageConfigDTO() != null
+                    ? helper.prepareTerraformConfigFileInfo(inheritOutput.getFileStorageConfigDTO(), ambiance)
+                    : helper.getFileStoreFetchFilesConfig(
+                        inheritOutput.getFileStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
             .varFileInfos(helper.prepareTerraformVarFileInfo(inheritOutput.getVarFileConfigs(), ambiance))
             .backendConfig(inheritOutput.getBackendConfig())
             .backendConfigFileInfo(helper.prepareTerraformBackendConfigFileInfo(
@@ -278,6 +277,11 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
         ParameterFieldHelper.getParameterFieldValue(parameters.getProvisionerIdentifier()), ambiance);
     builder.entityId(entityId);
     builder.currentStateFileId(helper.getLatestFileId(entityId));
+
+    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_CLI_OPTIONS_NG)) {
+      builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
+    }
+
     TerraformConfig terraformConfig = helper.getLastSuccessfulApplyConfig(parameters, ambiance);
     builder.workspace(terraformConfig.getWorkspace())
         .varFileInfos(helper.prepareTerraformVarFileInfo(terraformConfig.getVarFileConfigs(), ambiance))
@@ -300,8 +304,7 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
     }
     if (terraformConfig.getFileStoreConfig() != null) {
       builder.fileStoreConfigFiles(
-          helper.getFileStoreFetchFilesConfig(terraformConfig.getFileStoreConfig().toFileStorageStoreConfig(), ambiance,
-              TerraformStepHelper.TF_CONFIG_FILES));
+          helper.prepareTerraformConfigFileInfo(terraformConfig.getFileStoreConfig(), ambiance));
     }
 
     ParameterField<Boolean> skipTerraformRefreshCommand = parameters.getConfiguration().getIsSkipTerraformRefresh();

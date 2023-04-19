@@ -22,10 +22,12 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.execution.PipelineStageResponseData;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecutionMetadata;
 import io.harness.interrupts.Interrupt;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
@@ -35,6 +37,7 @@ import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.contracts.interrupts.IssuedBy;
 import io.harness.pms.contracts.interrupts.ManualIssuer;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
@@ -44,6 +47,7 @@ import io.harness.pms.pipelinestage.output.PipelineStageSweepingOutput;
 import io.harness.pms.plan.execution.PipelineExecutor;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.PlanExecutionResponseDto;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -79,6 +83,8 @@ public class PipelineStageStepTest extends CategoryTest {
   @Mock ExecutionSweepingOutputService sweepingOutputService;
   @Mock NodeExecutionService nodeExecutionService;
   @Mock InterruptService interruptService;
+
+  @Mock PlanExecutionMetadataService planExecutionMetadataService;
   @InjectMocks PipelineStageStep pipelineStageStep;
 
   String planExecutionId = "planExecutionId";
@@ -128,8 +134,18 @@ public class PipelineStageStepTest extends CategoryTest {
                             .setMetadata(ExecutionMetadata.newBuilder().setRunSequence(40).build())
                             .build();
 
+    doReturn(Optional.of(PlanExecutionMetadata.builder().triggerJsonPayload("trigger").build()))
+        .when(planExecutionMetadataService)
+        .findByPlanExecutionId(ambiance.getPlanExecutionId());
     PipelineStageStepParameters stepParameters =
         PipelineStageStepParameters.builder().stageNodeId("stageNodeId").build();
+    doReturn(PipelineExecutionSummaryEntity.builder()
+                 .executionTriggerInfo(ExecutionTriggerInfo.newBuilder().build())
+                 .build())
+        .when(pmsExecutionService)
+        .getPipelineExecutionSummaryEntity(
+            ambiance.getSetupAbstractions().get("accountId"), ordId, projectId, planExecutionId);
+
     PipelineStageInfo info = pipelineStageStep.prepareParentStageInfo(ambiance, stepParameters);
     assertThat(info.getHasParentPipeline()).isEqualTo(true);
     assertThat(info.getStageNodeId()).isEqualTo("stageNodeId");
@@ -176,6 +192,15 @@ public class PipelineStageStepTest extends CategoryTest {
                             .setMetadata(ExecutionMetadata.newBuilder().setRunSequence(40).build())
                             .build();
 
+    doReturn(Optional.of(PlanExecutionMetadata.builder().triggerJsonPayload("").build()))
+        .when(planExecutionMetadataService)
+        .findByPlanExecutionId(ambiance.getPlanExecutionId());
+    doReturn(PipelineExecutionSummaryEntity.builder()
+                 .executionTriggerInfo(ExecutionTriggerInfo.newBuilder().build())
+                 .build())
+        .when(pmsExecutionService)
+        .getPipelineExecutionSummaryEntity(
+            ambiance.getSetupAbstractions().get("accountId"), ordId, projectId, planExecutionId);
     PipelineStageStepParameters stepParameters =
         PipelineStageStepParameters.builder().stageNodeId("stageNodeId").build();
 

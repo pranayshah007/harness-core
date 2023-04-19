@@ -9,10 +9,12 @@ package io.harness.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.remote.client.CGRestUtils;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -31,8 +33,11 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class PmsFeatureFlagHelper implements PmsFeatureFlagService {
   @Inject FeatureFlagService featureFlagService;
+  @Inject AccountClient accountClient;
 
   private static final int CACHE_EVICTION_TIME_MINUTES = 5;
+  private static final String DEPLOY_MODE = System.getenv("DEPLOY_MODE");
+  private static final String DEPLOY_VERSION = System.getenv("DEPLOY_VERSION");
 
   private final LoadingCache<FeatureNameAndAccountId, Boolean> featureFlagCache =
       CacheBuilder.newBuilder()
@@ -41,8 +46,7 @@ public class PmsFeatureFlagHelper implements PmsFeatureFlagService {
             @Override
             public Boolean load(
                 @org.jetbrains.annotations.NotNull final FeatureNameAndAccountId featureNameAndAccountId) {
-              return featureFlagService.isEnabled(
-                  featureNameAndAccountId.getFeatureName(), featureNameAndAccountId.getAccountId());
+              return isFlagEnabledForAccountId(featureNameAndAccountId);
             }
           });
 
@@ -68,6 +72,20 @@ public class PmsFeatureFlagHelper implements PmsFeatureFlagService {
 
   public boolean refreshCacheForGivenAccountId(String accountId) throws InvalidRequestException {
     throw new InvalidRequestException("Cache will be automatically refreshed within 5 mins");
+  }
+
+  private boolean isFlagEnabledForAccountId(FeatureNameAndAccountId featureNameAndAccountId) {
+    if (checkIfEnvOnPremOrCommunity()) {
+      return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(
+          featureNameAndAccountId.getFeatureName().name(), featureNameAndAccountId.getAccountId()));
+    }
+    return featureFlagService.isEnabled(
+        featureNameAndAccountId.getFeatureName(), featureNameAndAccountId.getAccountId());
+  }
+
+  private boolean checkIfEnvOnPremOrCommunity() {
+    return (DEPLOY_MODE != null && (DEPLOY_MODE.equals("ONPREM") || DEPLOY_MODE.equals("KUBERNETES_ONPREM")))
+        || (DEPLOY_VERSION != null && DEPLOY_VERSION.equals("COMMUNITY"));
   }
 
   @Getter

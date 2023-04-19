@@ -15,6 +15,7 @@ import io.harness.cvng.core.beans.params.logsFilterParams.SLILogsFilter;
 import io.harness.cvng.core.services.api.DeleteEntityByHandler;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
@@ -24,10 +25,12 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Respon
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.ng.beans.PageResponse;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<AbstractServiceLevelObjective> {
@@ -63,6 +66,9 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
 
   List<AbstractServiceLevelObjective> get(ProjectParams projectParams, List<String> identifiers);
 
+  List<AbstractServiceLevelObjective> getSimpleSLOWithChildResource(
+      ProjectParams projectParams, List<String> identifiers);
+
   List<AbstractServiceLevelObjective> getByMonitoredServiceIdentifier(
       ProjectParams projectParams, String monitoredServiceIdentifier);
 
@@ -89,6 +95,17 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
   AbstractServiceLevelObjective get(String sloId);
 
   void handleNotification(AbstractServiceLevelObjective serviceLevelObjective);
+
+  Map<AbstractServiceLevelObjective, SLIEvaluationType> getEvaluationType(
+      ProjectParams projectParams, List<AbstractServiceLevelObjective> serviceLevelObjectiveList);
+  List<AbstractServiceLevelObjective> getAllReferredSLOs(
+      ProjectParams projectParams, CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec);
+
+  String getScopedIdentifier(AbstractServiceLevelObjective abstractServiceLevelObjective);
+
+  String getScopedIdentifier(ServiceLevelObjectivesDetail serviceLevelObjectivesDetail);
+
+  String getScopedIdentifierForSLI(SimpleServiceLevelObjective serviceLevelObjective);
 
   List<SLOErrorBudgetResetDTO> getErrorBudgetResetHistory(ProjectParams projectParams, String sloIdentifier);
   SLOErrorBudgetResetDTO resetErrorBudget(ProjectParams projectParams, SLOErrorBudgetResetDTO resetDTO);

@@ -10,21 +10,21 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.persistence.HQuery.excludeAuthorityCount;
 
+import io.harness.SRMPersistence;
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordKeys;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
-import io.harness.persistence.HPersistence;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -33,7 +33,6 @@ import com.mongodb.ReadPreference;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Sort;
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -44,12 +43,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
+@Slf4j
 public class SLIRecordServiceImpl implements SLIRecordService {
   @VisibleForTesting static int MAX_NUMBER_OF_POINTS = 2000;
   private static final int RETRY_COUNT = 3;
-  @Inject private HPersistence hPersistence;
+
+  @Inject private SRMPersistence hPersistence;
   @Inject Clock clock;
 
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
@@ -86,11 +88,8 @@ public class SLIRecordServiceImpl implements SLIRecordService {
   private void createSLIRecords(List<SLIRecordParam> sliRecordParamList, String sliId, String verificationTaskId,
       int sliVersion, long runningGoodCount, long runningBadCount, List<SLIRecord> sliRecordList) {
     for (SLIRecordParam sliRecordParam : sliRecordParamList) {
-      if (SLIState.GOOD.equals(sliRecordParam.getSliState())) {
-        runningGoodCount++;
-      } else if (SLIState.BAD.equals(sliRecordParam.getSliState())) {
-        runningBadCount++;
-      }
+      runningBadCount += sliRecordParam.getBadEventCount();
+      runningGoodCount += sliRecordParam.getGoodEventCount();
       SLIRecord sliRecord = SLIRecord.builder()
                                 .runningBadCount(runningBadCount)
                                 .runningGoodCount(runningGoodCount)
@@ -102,7 +101,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
                                 .build();
       sliRecordList.add(sliRecord);
     }
-    hPersistence.save(sliRecordList);
+    hPersistence.saveBatch(sliRecordList);
   }
 
   @RetryOnException(retryCount = RETRY_COUNT, retryOn = ConcurrentModificationException.class)
@@ -116,11 +115,8 @@ public class SLIRecordServiceImpl implements SLIRecordService {
     List<SLIRecord> updateOrCreateSLIRecords = new ArrayList<>();
     for (SLIRecordParam sliRecordParam : sliRecordParamList) {
       SLIRecord sliRecord = sliRecordMap.get(sliRecordParam.getTimeStamp());
-      if (SLIState.GOOD.equals(sliRecordParam.getSliState())) {
-        runningGoodCount++;
-      } else if (SLIState.BAD.equals(sliRecordParam.getSliState())) {
-        runningBadCount++;
-      }
+      runningBadCount += sliRecordParam.getBadEventCount();
+      runningGoodCount += sliRecordParam.getGoodEventCount();
       if (Objects.nonNull(sliRecord)) {
         sliRecord.setRunningGoodCount(runningGoodCount);
         sliRecord.setRunningBadCount(runningBadCount);
@@ -140,7 +136,12 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         updateOrCreateSLIRecords.add(newSLIRecord);
       }
     }
-    hPersistence.save(updateOrCreateSLIRecords);
+    try {
+      hPersistence.upsertBatch(SLIRecord.class, updateOrCreateSLIRecords, new ArrayList<>());
+    } catch (IllegalAccessException exception) {
+      log.error("SLI Records update failed through Bulk update {}", exception.getLocalizedMessage());
+      hPersistence.save(updateOrCreateSLIRecords);
+    }
   }
 
   @Override
@@ -153,12 +154,17 @@ public class SLIRecordServiceImpl implements SLIRecordService {
 
   @Override
   public List<SLIRecord> getSLIRecordsForLookBackDuration(String sliId, long lookBackDuration) {
-    Instant startTime = clock.instant().minusMillis(lookBackDuration);
-    Instant endTime = clock.instant().minusMillis(Duration.ofMinutes(1).toMillis());
+    SLIRecord latestSLIRecord = getLatestSLIRecord(sliId);
+    if (latestSLIRecord == null) {
+      return new ArrayList<>();
+    }
+    Instant endTime = latestSLIRecord.getTimestamp();
+    Instant startTime = endTime.minusMillis(lookBackDuration).plus(1, ChronoUnit.MINUTES);
     List<Instant> minutes = new ArrayList<>();
     minutes.add(startTime);
-    minutes.add(endTime);
-    return getSLIRecordsOfMinutes(sliId, minutes);
+    List<SLIRecord> sliRecords = getSLIRecordsOfMinutes(sliId, minutes);
+    sliRecords.add(latestSLIRecord);
+    return sliRecords;
   }
 
   @Override
@@ -239,6 +245,16 @@ public class SLIRecordServiceImpl implements SLIRecordService {
           simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
       String sliId = serviceLevelIndicator.getUuid();
       int sliVersion = serviceLevelIndicator.getVersion();
+      if (serviceLevelIndicator.getSLIEvaluationType().equals(SLIEvaluationType.WINDOW)
+          && serviceLevelIndicator.getConsiderConsecutiveMinutes() != null
+          && serviceLevelIndicator.getConsiderConsecutiveMinutes() > 1) {
+        SLIRecord lastSLIRecord = getLatestSLIRecordSLIVersion(sliId, sliVersion);
+        if (lastSLIRecord != null) {
+          Instant timeOfLastRecordWhichIsFixed = lastSLIRecord.getTimestamp().minus(
+              serviceLevelIndicator.getConsiderConsecutiveMinutes() - 2, ChronoUnit.MINUTES);
+          endTime = timeOfLastRecordWhichIsFixed.isBefore(endTime) ? timeOfLastRecordWhichIsFixed : endTime;
+        }
+      }
       List<SLIRecord> sliRecords = getSLIRecordsWithSLIVersion(sliId, startTime, endTime, sliVersion);
       if (!sliRecords.isEmpty()) {
         serviceLevelObjectivesDetailSLIRecordMap.put(objectivesDetail, sliRecords);
@@ -246,6 +262,15 @@ public class SLIRecordServiceImpl implements SLIRecordService {
       }
     }
     return Pair.of(serviceLevelObjectivesDetailSLIRecordMap, objectivesDetailSLIMissingDataTypeMap);
+  }
+
+  private SLIRecord getLatestSLIRecordSLIVersion(String sliId, int sliVersion) {
+    return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
+        .filter(SLIRecordKeys.sliId, sliId)
+        .field(SLIRecordKeys.sliVersion)
+        .equal(sliVersion)
+        .order(Sort.descending(SLIRecordKeys.timestamp))
+        .get();
   }
 
   @Override

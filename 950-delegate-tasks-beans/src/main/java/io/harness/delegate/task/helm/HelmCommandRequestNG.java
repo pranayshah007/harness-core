@@ -76,6 +76,7 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
   private String commandName;
   private boolean useLatestKubectlVersion;
   private String gcpKeyPath;
+  private String releaseHistoryPrefix;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
@@ -87,7 +88,8 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
 
     if (k8sInfraDelegateConfig instanceof DirectK8sInfraDelegateConfig) {
       capabilities.addAll(K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(
-          ((DirectK8sInfraDelegateConfig) k8sInfraDelegateConfig).getKubernetesClusterConfigDTO(), maskingEvaluator));
+          ((DirectK8sInfraDelegateConfig) k8sInfraDelegateConfig).getKubernetesClusterConfigDTO(), maskingEvaluator,
+          k8sInfraDelegateConfig.useSocketCapability()));
     }
 
     if (k8sInfraDelegateConfig instanceof GcpK8sInfraDelegateConfig) {

@@ -12,6 +12,7 @@ import static io.harness.cdng.provision.terraform.TerraformPlanCommand.DESTROY;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.AKHIL_PANDEY;
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.JELENA;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
@@ -20,6 +21,7 @@ import static io.harness.rule.OwnerRule.SATYAM;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VLICA;
 
+import static com.mongodb.assertions.Assertions.assertTrue;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,6 +47,7 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.fileservice.FileServiceClient;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
 import io.harness.cdng.k8s.K8sStepHelper;
+import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.ArtifactoryStorageConfigDTO;
 import io.harness.cdng.manifest.yaml.ArtifactoryStoreConfig;
 import io.harness.cdng.manifest.yaml.BitBucketStoreDTO;
@@ -54,6 +57,8 @@ import io.harness.cdng.manifest.yaml.GitStoreConfigDTO;
 import io.harness.cdng.manifest.yaml.GitStoreDTO;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.GithubStoreDTO;
+import io.harness.cdng.manifest.yaml.S3StorageConfigDTO;
+import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.manifest.yaml.storeConfig.moduleSource.ModuleSource;
@@ -71,11 +76,14 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthT
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthenticationDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
+import io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig;
+import io.harness.delegate.task.filestore.FileStoreFetchFilesConfig;
 import io.harness.delegate.task.terraform.InlineTerraformVarFileInfo;
 import io.harness.delegate.task.terraform.RemoteTerraformBackendConfigFileInfo;
 import io.harness.delegate.task.terraform.RemoteTerraformVarFileInfo;
@@ -342,9 +350,9 @@ public class TerraformStepHelperTest extends CategoryTest {
     verify(mockExecutionSweepingOutputService).consume(any(), anyString(), captor.capture(), anyString());
     TerraformInheritOutput output = captor.getValue();
     assertThat(output).isNotNull();
-    ArtifactoryStoreConfig configFiles = (ArtifactoryStoreConfig) output.getFileStoreConfig();
+    ArtifactoryStorageConfigDTO configFiles = (ArtifactoryStorageConfigDTO) output.getFileStorageConfigDTO();
     assertThat(configFiles).isNotNull();
-    assertThat(ParameterFieldHelper.getParameterFieldValue(configFiles.getArtifactPaths()).size()).isEqualTo(1);
+    assertThat(configFiles.getArtifactPaths()).size().isEqualTo(1);
     List<TerraformVarFileConfig> varFileConfigs = output.getVarFileConfigs();
     assertThat(varFileConfigs).isNotNull();
     assertThat(varFileConfigs.size()).isEqualTo(2);
@@ -1697,6 +1705,270 @@ public class TerraformStepHelperTest extends CategoryTest {
         assertThat(value.get(0).getName()).isEqualTo("test-encrypted-tf-plan-3");
       }
     });
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testGetFileStoreFetchFilesConfigForS3() {
+    Ambiance ambiance = getAmbiance();
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), any());
+    S3StoreConfig s3StoreConfig = S3StoreConfig.builder()
+                                      .connectorRef(ParameterField.createValueField("connectorRef"))
+                                      .region(ParameterField.createValueField("region"))
+                                      .bucketName(ParameterField.createValueField("bucket"))
+                                      .folderPath(ParameterField.createValueField("terraform"))
+                                      .build();
+    doReturn(TerraformStepDataGenerator.getAWSConnectorInfoDTO()).when(cdStepHelper).getConnector(any(), any());
+    doNothing().when(cdStepHelper).validateManifest(any(), any(), any());
+    doReturn(null).when(mockSecretManagerClientService).getEncryptionDetails(any(), any());
+
+    FileStoreFetchFilesConfig fileStoreFetchFilesConfig =
+        helper.getFileStoreFetchFilesConfig(s3StoreConfig, ambiance, TerraformStepHelper.TF_CONFIG_FILES);
+
+    assertThat(fileStoreFetchFilesConfig).isInstanceOf(S3StoreTFDelegateConfig.class);
+    S3StoreTFDelegateConfig s3Store = (S3StoreTFDelegateConfig) fileStoreFetchFilesConfig;
+    assertThat(s3Store.getBucketName()).isEqualTo("bucket");
+    assertThat(s3Store.getRegion()).isEqualTo("region");
+    assertThat(s3Store.getPaths().get(0)).isEqualTo("terraform");
+    assertThat(s3Store.getVersions()).isNull();
+    assertThat(s3Store.getConnectorDTO().getConnectorConfig()).isInstanceOf(AwsConnectorDTO.class);
+    assertThat(s3Store.getIdentifier()).isEqualTo(TerraformStepHelper.TF_CONFIG_FILES);
+    assertThat(s3Store.getManifestStoreType()).isEqualTo(ManifestStoreType.S3);
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testGetFileStoreFetchFilesBackendConfigForS3() {
+    Ambiance ambiance = getAmbiance();
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), any());
+    S3StoreConfig s3StoreConfig =
+        S3StoreConfig.builder()
+            .connectorRef(ParameterField.createValueField("connectorRef"))
+            .region(ParameterField.createValueField("region"))
+            .bucketName(ParameterField.createValueField("bucket"))
+            .paths(ParameterField.createValueField(Collections.singletonList("terraform-be/backend.tf")))
+            .build();
+    doReturn(TerraformStepDataGenerator.getAWSConnectorInfoDTO()).when(cdStepHelper).getConnector(any(), any());
+    doNothing().when(cdStepHelper).validateManifest(any(), any(), any());
+    doReturn(null).when(mockSecretManagerClientService).getEncryptionDetails(any(), any());
+
+    FileStoreFetchFilesConfig fileStoreFetchFilesConfig =
+        helper.getFileStoreFetchFilesConfig(s3StoreConfig, ambiance, TerraformStepHelper.TF_BACKEND_CONFIG_FILE);
+
+    assertThat(fileStoreFetchFilesConfig).isInstanceOf(S3StoreTFDelegateConfig.class);
+    S3StoreTFDelegateConfig s3Store = (S3StoreTFDelegateConfig) fileStoreFetchFilesConfig;
+    assertThat(s3Store.getBucketName()).isEqualTo("bucket");
+    assertThat(s3Store.getRegion()).isEqualTo("region");
+    assertThat(s3Store.getPaths().get(0)).isEqualTo("terraform-be/backend.tf");
+    assertThat(s3Store.getVersions()).isNull();
+    assertThat(s3Store.getConnectorDTO().getConnectorConfig()).isInstanceOf(AwsConnectorDTO.class);
+    assertThat(s3Store.getIdentifier()).isEqualTo(TerraformStepHelper.TF_BACKEND_CONFIG_FILE);
+    assertThat(s3Store.getManifestStoreType()).isEqualTo(ManifestStoreType.S3);
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testGetFileStoreFetchVarFilesConfigForS3() {
+    Ambiance ambiance = getAmbiance();
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), any());
+    S3StoreConfig s3StoreConfig =
+        S3StoreConfig.builder()
+            .connectorRef(ParameterField.createValueField("connectorRef"))
+            .region(ParameterField.createValueField("region"))
+            .bucketName(ParameterField.createValueField("bucket"))
+            .paths(ParameterField.createValueField(List.of("terraform/var1", "terraform/var2")))
+            .build();
+    doReturn(TerraformStepDataGenerator.getAWSConnectorInfoDTO()).when(cdStepHelper).getConnector(any(), any());
+    doNothing().when(cdStepHelper).validateManifest(any(), any(), any());
+    doReturn(null).when(mockSecretManagerClientService).getEncryptionDetails(any(), any());
+
+    FileStoreFetchFilesConfig fileStoreFetchFilesConfig =
+        helper.getFileStoreFetchFilesConfig(s3StoreConfig, ambiance, TerraformStepHelper.TF_VAR_FILES);
+
+    assertThat(fileStoreFetchFilesConfig).isInstanceOf(S3StoreTFDelegateConfig.class);
+    S3StoreTFDelegateConfig s3Store = (S3StoreTFDelegateConfig) fileStoreFetchFilesConfig;
+    assertThat(s3Store.getBucketName()).isEqualTo("bucket");
+    assertThat(s3Store.getRegion()).isEqualTo("region");
+    assertTrue(s3Store.getPaths().contains("terraform/var1"));
+    assertTrue(s3Store.getPaths().contains("terraform/var2"));
+    assertThat(s3Store.getVersions()).isNull();
+    assertThat(s3Store.getConnectorDTO().getConnectorConfig()).isInstanceOf(AwsConnectorDTO.class);
+    assertThat(s3Store.getIdentifier()).isEqualTo(TerraformStepHelper.TF_VAR_FILES);
+    assertThat(s3Store.getManifestStoreType()).isEqualTo(ManifestStoreType.S3);
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testSaveRollbackDestroyConfigS3Inline() {
+    Ambiance ambiance = getAmbiance();
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), any());
+    S3StoreConfig s3StoreConfigFiles = S3StoreConfig.builder()
+                                           .connectorRef(ParameterField.createValueField("connectorRef"))
+                                           .region(ParameterField.createValueField("region"))
+                                           .bucketName(ParameterField.createValueField("bucket"))
+                                           .folderPath(ParameterField.createValueField("terraform"))
+                                           .build();
+    S3StoreConfig s3StoreVarFiles = (S3StoreConfig) s3StoreConfigFiles.cloneInternal();
+    s3StoreVarFiles.setPaths(ParameterField.createValueField(List.of("terraform/var1", "terraform/var2")));
+    S3StoreConfig s3StoreBeFiles = (S3StoreConfig) s3StoreConfigFiles.cloneInternal();
+    s3StoreBeFiles.setFolderPath(ParameterField.createValueField("terraformBe"));
+
+    TerraformConfigFilesWrapper configFilesWrapper = new TerraformConfigFilesWrapper();
+    TerraformStepDataGenerator.generateConfigFileStore(configFilesWrapper, StoreConfigType.S3, s3StoreConfigFiles);
+    RemoteTerraformVarFileSpec remoteVarFiles =
+        TerraformStepDataGenerator.generateRemoteVarFileSpec(StoreConfigType.S3, s3StoreVarFiles);
+    LinkedHashMap<String, TerraformVarFile> varFilesMap =
+        TerraformStepDataGenerator.generateVarFileSpecs(remoteVarFiles, false);
+    RemoteTerraformBackendConfigSpec remoteTerraformBackendConfigSpec =
+        TerraformStepDataGenerator.generateRemoteBackendConfigFileSpec(StoreConfigType.S3, s3StoreBeFiles);
+    TerraformBackendConfig terraformBackendConfig =
+        TerraformBackendConfig.builder().type("Remote").spec(remoteTerraformBackendConfigSpec).build();
+
+    TerraformApplyStepParameters parameters =
+        TerraformApplyStepParameters.infoBuilder()
+            .provisionerIdentifier(ParameterField.createValueField("provId_"))
+            .configuration(TerraformStepConfigurationParameters.builder()
+                               .type(TerraformStepConfigurationType.INLINE)
+                               .spec(TerraformExecutionDataParameters.builder()
+                                         .configFiles(configFilesWrapper)
+                                         .varFiles(varFilesMap)
+                                         .backendConfig(terraformBackendConfig)
+                                         .isTerraformCloudCli(ParameterField.createValueField(false))
+                                         .build())
+                               .build())
+            .build();
+    Map<String, Map<String, String>> keyVersionMap = new HashMap();
+    keyVersionMap.put("TF_CONFIG_FILES", Map.of("main.tf", "111", "file2", "112", "file3", "113"));
+    keyVersionMap.put("TF_VAR_FILES_1", Map.of("terraform/var1", "222", "terraform/var2", "333"));
+    keyVersionMap.put("TF_BACKEND_CONFIG_FILE", Map.of("terraform/backend.tf", "444"));
+    TerraformTaskNGResponse response = TerraformTaskNGResponse.builder().keyVersionMap(keyVersionMap).build();
+    helper.saveRollbackDestroyConfigInline(parameters, response, ambiance);
+    ArgumentCaptor<TerraformConfig> captor = ArgumentCaptor.forClass(TerraformConfig.class);
+    verify(terraformConfigDAL).saveTerraformConfig(captor.capture());
+    TerraformConfig config = captor.getValue();
+    assertThat(config).isNotNull();
+    assertThat(config.getAccountId()).isEqualTo("test-account");
+    assertThat(config.getOrgId()).isEqualTo("test-org");
+    assertThat(config.getProjectId()).isEqualTo("test-project");
+    assertTrue(config.getFileStoreConfig() instanceof S3StorageConfigDTO);
+    S3StorageConfigDTO s3StorageConfigDTO = (S3StorageConfigDTO) config.getFileStoreConfig();
+    assertThat(s3StorageConfigDTO.getRegion()).isEqualTo("region");
+    assertThat(s3StorageConfigDTO.getBucket()).isEqualTo("bucket");
+    assertThat(s3StorageConfigDTO.getFolderPath()).isEqualTo("terraform");
+    assertThat(s3StorageConfigDTO.getVersions().size()).isEqualTo(3);
+    assertThat(s3StorageConfigDTO.getVersions().get("main.tf")).isEqualTo("111");
+    assertThat(s3StorageConfigDTO.getVersions().get("file2")).isEqualTo("112");
+    assertThat(s3StorageConfigDTO.getVersions().get("file3")).isEqualTo("113");
+    List<TerraformVarFileConfig> varFileConfigs = config.getVarFileConfigs();
+    assertThat(varFileConfigs).isNotNull();
+    assertThat(varFileConfigs.size()).isEqualTo(1);
+    TerraformVarFileConfig terraformVarFileConfig = varFileConfigs.get(0);
+    assertTrue(terraformVarFileConfig instanceof TerraformRemoteVarFileConfig);
+    TerraformRemoteVarFileConfig remoteVarFileConfig = (TerraformRemoteVarFileConfig) terraformVarFileConfig;
+    assertTrue(remoteVarFileConfig.getFileStoreConfigDTO() instanceof S3StorageConfigDTO);
+    S3StorageConfigDTO s3StorageVarsDTO = (S3StorageConfigDTO) remoteVarFileConfig.getFileStoreConfigDTO();
+    assertThat(s3StorageVarsDTO.getRegion()).isEqualTo("region");
+    assertThat(s3StorageVarsDTO.getBucket()).isEqualTo("bucket");
+    assertThat(s3StorageVarsDTO.getPaths().size()).isEqualTo(2);
+    assertTrue(s3StorageVarsDTO.getPaths().contains("terraform/var1"));
+    assertTrue(s3StorageVarsDTO.getPaths().contains("terraform/var2"));
+    assertThat(s3StorageVarsDTO.getVersions().get("terraform/var1")).isEqualTo("222");
+    assertThat(s3StorageVarsDTO.getVersions().get("terraform/var2")).isEqualTo("333");
+    TerraformRemoteBackendConfigFileConfig backendConfigFileConfig =
+        (TerraformRemoteBackendConfigFileConfig) config.getBackendConfigFileConfig();
+    assertTrue(backendConfigFileConfig.getFileStoreConfigDTO() instanceof S3StorageConfigDTO);
+    S3StorageConfigDTO backendS3Storage = (S3StorageConfigDTO) backendConfigFileConfig.getFileStoreConfigDTO();
+    assertThat(backendS3Storage.getRegion()).isEqualTo("region");
+    assertThat(backendS3Storage.getBucket()).isEqualTo("bucket");
+    assertThat(backendS3Storage.getFolderPath()).isEqualTo("terraformBe");
+    assertThat(backendS3Storage.getVersions().size()).isEqualTo(1);
+    assertThat(backendS3Storage.getVersions().get("terraform/backend.tf")).isEqualTo("444");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testSaveTerraformInheritOutputWithS3Store() {
+    Ambiance ambiance = getAmbiance();
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), any());
+    S3StoreConfig s3StoreConfigFiles = S3StoreConfig.builder()
+                                           .connectorRef(ParameterField.createValueField("connectorRef"))
+                                           .region(ParameterField.createValueField("region"))
+                                           .bucketName(ParameterField.createValueField("bucket"))
+                                           .folderPath(ParameterField.createValueField("terraform"))
+                                           .build();
+    S3StoreConfig s3StoreVarFiles = (S3StoreConfig) s3StoreConfigFiles.cloneInternal();
+    s3StoreVarFiles.setPaths(ParameterField.createValueField(List.of("terraform/var1", "terraform/var2")));
+    S3StoreConfig s3StoreBeFiles = (S3StoreConfig) s3StoreConfigFiles.cloneInternal();
+    s3StoreBeFiles.setFolderPath(ParameterField.createValueField("terraformBe"));
+
+    TerraformConfigFilesWrapper configFilesWrapper = new TerraformConfigFilesWrapper();
+    TerraformStepDataGenerator.generateConfigFileStore(configFilesWrapper, StoreConfigType.S3, s3StoreConfigFiles);
+    RemoteTerraformVarFileSpec remoteVarFiles =
+        TerraformStepDataGenerator.generateRemoteVarFileSpec(StoreConfigType.S3, s3StoreVarFiles);
+    LinkedHashMap<String, TerraformVarFile> varFilesMap =
+        TerraformStepDataGenerator.generateVarFileSpecs(remoteVarFiles, false);
+    RemoteTerraformBackendConfigSpec remoteTerraformBackendConfigSpec =
+        TerraformStepDataGenerator.generateRemoteBackendConfigFileSpec(StoreConfigType.S3, s3StoreBeFiles);
+    TerraformBackendConfig terraformBackendConfig =
+        TerraformBackendConfig.builder().type("Remote").spec(remoteTerraformBackendConfigSpec).build();
+
+    TerraformPlanStepParameters parameters =
+        TerraformPlanStepParameters.infoBuilder()
+            .provisionerIdentifier(ParameterField.createValueField("provId_"))
+            .configuration(TerraformPlanExecutionDataParameters.builder()
+                               .configFiles(configFilesWrapper)
+                               .varFiles(varFilesMap)
+                               .backendConfig(terraformBackendConfig)
+                               .isTerraformCloudCli(ParameterField.createValueField(false))
+                               .command(APPLY)
+                               .secretManagerRef(ParameterField.createValueField("ref"))
+                               .build())
+            .build();
+    Map<String, Map<String, String>> keyVersionMap = new HashMap();
+    keyVersionMap.put("TF_CONFIG_FILES", Map.of("main.tf", "111", "file2", "112", "file3", "113"));
+    keyVersionMap.put("TF_VAR_FILES_1", Map.of("terraform/var1", "222", "terraform/var2", "333"));
+    keyVersionMap.put("TF_BACKEND_CONFIG_FILE", Map.of("terraform/backend.tf", "444"));
+    TerraformTaskNGResponse response = TerraformTaskNGResponse.builder().keyVersionMap(keyVersionMap).build();
+    helper.saveTerraformInheritOutput(parameters, response, ambiance);
+    ArgumentCaptor<TerraformInheritOutput> captor = ArgumentCaptor.forClass(TerraformInheritOutput.class);
+    verify(mockExecutionSweepingOutputService).consume(any(), anyString(), captor.capture(), anyString());
+    TerraformInheritOutput output = captor.getValue();
+    assertThat(output).isNotNull();
+    S3StorageConfigDTO configFiles = (S3StorageConfigDTO) output.getFileStorageConfigDTO();
+    assertThat(configFiles).isNotNull();
+    assertThat(configFiles.getRegion()).isEqualTo("region");
+    assertThat(configFiles.getBucket()).isEqualTo("bucket");
+    assertThat(configFiles.getFolderPath()).isEqualTo("terraform");
+    assertThat(configFiles.getVersions().get("main.tf")).isEqualTo("111");
+    assertThat(configFiles.getVersions().get("file2")).isEqualTo("112");
+    assertThat(configFiles.getVersions().get("file3")).isEqualTo("113");
+
+    List<TerraformVarFileConfig> varFileConfigs = output.getVarFileConfigs();
+    assertThat(varFileConfigs).isNotNull();
+    assertThat(varFileConfigs.size()).isEqualTo(1);
+    assertTrue(varFileConfigs.get(0) instanceof TerraformRemoteVarFileConfig);
+    S3StorageConfigDTO s3VarConfig =
+        (S3StorageConfigDTO) ((TerraformRemoteVarFileConfig) varFileConfigs.get(0)).getFileStoreConfigDTO();
+    assertThat(s3VarConfig.getRegion()).isEqualTo("region");
+    assertThat(s3VarConfig.getBucket()).isEqualTo("bucket");
+    assertThat(s3VarConfig.getPaths().size()).isEqualTo(2);
+    assertTrue(s3VarConfig.getPaths().contains("terraform/var1"));
+    assertTrue(s3VarConfig.getPaths().contains("terraform/var2"));
+    assertThat(s3VarConfig.getVersions().get("terraform/var1")).isEqualTo("222");
+    assertThat(s3VarConfig.getVersions().get("terraform/var2")).isEqualTo("333");
+
+    TerraformRemoteBackendConfigFileConfig terraformRemoteBackendConfigFileConfig =
+        (TerraformRemoteBackendConfigFileConfig) output.getBackendConfigurationFileConfig();
+    S3StorageConfigDTO configBEFiles = (S3StorageConfigDTO) terraformRemoteBackendConfigFileConfig.fileStoreConfigDTO;
+    assertThat(configBEFiles.getRegion()).isEqualTo("region");
+    assertThat(configBEFiles.getBucket()).isEqualTo("bucket");
+    assertThat(configBEFiles.getFolderPath()).isEqualTo("terraformBe");
+    assertThat(configBEFiles.getVersions().get("terraform/backend.tf")).isEqualTo("444");
   }
 
   private TerraformPlanExecutionDetails createTfPlanExecutionDetails(String encryptionConfigName, String configId,

@@ -16,6 +16,7 @@ import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.downtime.beans.DowntimeInstanceDetails;
+import io.harness.cvng.downtime.beans.DowntimeStatusDetails;
 import io.harness.cvng.downtime.beans.EntityType;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
@@ -24,6 +25,7 @@ import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLOConsumptionBreakdown;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
@@ -96,6 +98,9 @@ public class SLODashboardServiceImpl implements SLODashboardService {
     PageResponse<AbstractServiceLevelObjective> sloPageResponse =
         serviceLevelObjectiveV2Service.getSLOForListView(projectParams, filter, pageParams);
 
+    Map<AbstractServiceLevelObjective, SLIEvaluationType> serviceLevelObjectiveSLIEvaluationTypeMap =
+        serviceLevelObjectiveV2Service.getEvaluationType(projectParams, sloPageResponse.getContent());
+
     Set<String> monitoredServiceIdentifiers =
         sloPageResponse.getContent()
             .stream()
@@ -143,6 +148,10 @@ public class SLODashboardServiceImpl implements SLODashboardService {
 
     List<UserJourney> userJourneyList = userJourneyService.get(projectParams);
 
+    Map<String, EntityUnavailabilityStatusesDTO> monitoredServiceIdentifierToUnavailabilityStatusesDTOMap =
+        downtimeService.getMonitoredServicesAssociatedUnavailabilityInstanceMap(
+            projectParams, monitoredServiceIdentifiers);
+
     Map<String, MonitoredServiceDTO> scopedMonitoredServiceIdentifierToDTOMap =
         monitoredServicesFromScopedIdentifiers.stream()
             .map(MonitoredServiceResponse::getMonitoredServiceDTO)
@@ -163,7 +172,9 @@ public class SLODashboardServiceImpl implements SLODashboardService {
             .stream()
             .map(sloResponse
                 -> getSLOListView(projectParams, sloResponse, scopedMonitoredServiceIdentifierToDTOMap,
-                    scopedSloIdentifierToHealthIndicatorMap, userJourneyIdentifierToNameMap))
+                    scopedSloIdentifierToHealthIndicatorMap, userJourneyIdentifierToNameMap,
+                    serviceLevelObjectiveSLIEvaluationTypeMap,
+                    monitoredServiceIdentifierToUnavailabilityStatusesDTOMap))
             .collect(Collectors.toList());
 
     return PageResponse.<SLOHealthListView>builder()
@@ -350,8 +361,8 @@ public class SLODashboardServiceImpl implements SLODashboardService {
               .build();
       List<MonitoredServiceDetail> monitoredServiceDetails = Collections.singletonList(monitoredServiceDetail);
 
-      return getSloDashboardWidgetBuilder(slo, timePeriod, sloGraphData, serviceLevelObjective, totalErrorBudgetMinutes,
-          currentLocalDate, monitoredServiceDetails)
+      return getSloDashboardWidgetBuilder(
+          slo, timePeriod, sloGraphData, serviceLevelObjective, currentLocalDate, monitoredServiceDetails)
           .monitoredServiceIdentifier(simpleServiceLevelObjectiveSpec.getMonitoredServiceRef())
           .monitoredServiceName(monitoredService.getName())
           .environmentIdentifier(monitoredService.getEnvironmentRef())
@@ -407,16 +418,15 @@ public class SLODashboardServiceImpl implements SLODashboardService {
                          .build())
               .collect(Collectors.toList());
 
-      return getSloDashboardWidgetBuilder(slo, timePeriod, sloGraphData, serviceLevelObjective, totalErrorBudgetMinutes,
-          currentLocalDate, monitoredServiceDetails)
+      return getSloDashboardWidgetBuilder(
+          slo, timePeriod, sloGraphData, serviceLevelObjective, currentLocalDate, monitoredServiceDetails)
           .build();
     }
   }
 
   private SLODashboardWidgetBuilder getSloDashboardWidgetBuilder(ServiceLevelObjectiveV2DTO slo, TimePeriod timePeriod,
       SLODashboardWidget.SLOGraphData sloGraphData, AbstractServiceLevelObjective serviceLevelObjective,
-      int totalErrorBudgetMinutes, LocalDateTime currentLocalDate,
-      List<MonitoredServiceDetail> monitoredServiceDetails) {
+      LocalDateTime currentLocalDate, List<MonitoredServiceDetail> monitoredServiceDetails) {
     return SLODashboardWidget.withGraphData(sloGraphData)
         .sloIdentifier(slo.getIdentifier())
         .title(slo.getName())
@@ -427,11 +437,11 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         .monitoredServiceDetails(monitoredServiceDetails)
         .sloTargetPercentage(serviceLevelObjective.getSloTargetPercentage())
         .tags(slo.getTags())
-        .totalErrorBudget(totalErrorBudgetMinutes)
         .timeRemainingDays(timePeriod.getRemainingDays(currentLocalDate))
         .burnRate(SLODashboardWidget.BurnRate.builder()
                       .currentRatePercentage(sloGraphData.dailyBurnRate(serviceLevelObjective.getZoneOffset()))
                       .build())
+        .evaluationType(sloGraphData.getEvaluationType())
         .sloType(slo.getType());
   }
 
@@ -593,7 +603,9 @@ public class SLODashboardServiceImpl implements SLODashboardService {
   private SLOHealthListView getSLOListView(ProjectParams projectParams, AbstractServiceLevelObjective slo,
       Map<String, MonitoredServiceDTO> scopedMonitoredServiceIdentifierToDTOMap,
       Map<String, SLOHealthIndicator> scopedSloIdentifierToHealthIndicatorMap,
-      Map<String, String> userJourneyIdentifierToNameMap) {
+      Map<String, String> userJourneyIdentifierToNameMap,
+      Map<AbstractServiceLevelObjective, SLIEvaluationType> serviceLevelObjectiveSLIEvaluationTypeMap,
+      Map<String, EntityUnavailabilityStatusesDTO> monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap) {
     LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), slo.getZoneOffset());
     List<SLOErrorBudgetResetDTO> errorBudgetResetDTOS =
         sloErrorBudgetResetService.getErrorBudgetResets(projectParams, slo.getIdentifier());
@@ -621,7 +633,8 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           getProjectName(projectParams.getAccountIdentifier(), slo.getOrgIdentifier(), slo.getProjectIdentifier());
       String orgName = getOrgName(projectParams.getAccountIdentifier(), slo.getOrgIdentifier());
       return SLOHealthListView
-          .getSLOHealthListViewBuilder(slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator)
+          .getSLOHealthListViewBuilder(
+              slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator, serviceLevelObjectiveSLIEvaluationTypeMap)
           .monitoredServiceIdentifier(monitoredService.getIdentifier())
           .monitoredServiceName(monitoredService.getName())
           .environmentIdentifier(monitoredService.getEnvironmentRef())
@@ -641,10 +654,21 @@ public class SLODashboardServiceImpl implements SLODashboardService {
               getHealthSourceName(monitoredService, simpleServiceLevelObjective.getHealthSourceIdentifier()))
           .sliType(simpleServiceLevelObjective.getServiceLevelIndicatorType())
           .sliIdentifier(simpleServiceLevelObjective.getServiceLevelIndicators().get(0))
+          .downtimeStatusDetails(
+              monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap.containsKey(monitoredService.getIdentifier())
+                  ? DowntimeStatusDetails.getDowntimeStatusDetailsInstance(
+                      monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap.get(monitoredService.getIdentifier())
+                          .getStartTime(),
+                      monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap.get(monitoredService.getIdentifier())
+                          .getEndTime(),
+                      clock)
+                  : null)
           .build();
     }
 
-    return SLOHealthListView.getSLOHealthListViewBuilder(slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator)
+    return SLOHealthListView
+        .getSLOHealthListViewBuilder(
+            slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator, serviceLevelObjectiveSLIEvaluationTypeMap)
         .build();
   }
 

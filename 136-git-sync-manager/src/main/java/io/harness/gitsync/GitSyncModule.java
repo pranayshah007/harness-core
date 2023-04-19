@@ -40,8 +40,13 @@ import io.harness.gitsync.common.impl.ScmDelegateFacilitatorServiceImpl;
 import io.harness.gitsync.common.impl.ScmFacilitatorServiceImpl;
 import io.harness.gitsync.common.impl.ScmManagerFacilitatorServiceImpl;
 import io.harness.gitsync.common.impl.ScmOrchestratorServiceImpl;
+import io.harness.gitsync.common.impl.UserSourceCodeManagerServiceImpl;
 import io.harness.gitsync.common.impl.YamlGitConfigServiceImpl;
 import io.harness.gitsync.common.impl.gittoharness.GitToHarnessProcessorServiceImpl;
+import io.harness.gitsync.common.mappers.AzureRepoSCMMapper;
+import io.harness.gitsync.common.mappers.GithubSCMMapper;
+import io.harness.gitsync.common.mappers.GitlabSCMMapper;
+import io.harness.gitsync.common.mappers.UserSourceCodeManagerMapper;
 import io.harness.gitsync.common.service.FullSyncTriggerService;
 import io.harness.gitsync.common.service.GitBranchService;
 import io.harness.gitsync.common.service.GitBranchSyncService;
@@ -52,6 +57,7 @@ import io.harness.gitsync.common.service.HarnessToGitHelperService;
 import io.harness.gitsync.common.service.ScmClientFacilitatorService;
 import io.harness.gitsync.common.service.ScmFacilitatorService;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
+import io.harness.gitsync.common.service.UserSourceCodeManagerService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.gitsync.common.service.gittoharness.GitToHarnessProcessorService;
 import io.harness.gitsync.core.fullsync.FullSyncAccumulatorService;
@@ -83,8 +89,10 @@ import io.harness.gitsync.gitfileactivity.impl.GitSyncServiceImpl;
 import io.harness.gitsync.gitfileactivity.service.GitSyncService;
 import io.harness.gitsync.gitsyncerror.impl.GitSyncErrorServiceImpl;
 import io.harness.gitsync.gitsyncerror.service.GitSyncErrorService;
+import io.harness.manage.ManagedExecutorService;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.ng.userprofile.commons.SCMType;
 import io.harness.persistence.HPersistence;
 import io.harness.threading.ThreadPool;
 
@@ -93,6 +101,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.multibindings.MapBinder;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
@@ -101,6 +110,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 
 @OwnedBy(DX)
 public class GitSyncModule extends AbstractModule {
@@ -177,6 +187,7 @@ public class GitSyncModule extends AbstractModule {
     bind(GitFullSyncEntityService.class).to(GitFullSyncEntityServiceImpl.class);
     bind(GitFullSyncProcessorService.class).to(GitFullSyncProcessorServiceImpl.class);
     bind(ScmFacilitatorService.class).to(ScmFacilitatorServiceImpl.class);
+    bind(UserSourceCodeManagerService.class).to(UserSourceCodeManagerServiceImpl.class);
     bind(FullSyncTriggerService.class).to(FullSyncTriggerServiceImpl.class);
     bind(GitFullSyncConfigService.class).to(GitFullSyncConfigServiceImpl.class);
     bind(GitFileCacheService.class).to(GitFileCacheServiceImpl.class);
@@ -188,6 +199,11 @@ public class GitSyncModule extends AbstractModule {
         .annotatedWith(Names.named(GIT_TO_HARNESS_PROGRESS + ENTITY_CRUD))
         .to(GitToHarnessEventListener.class);
     registerRequiredBindings();
+    MapBinder<SCMType, UserSourceCodeManagerMapper> sourceCodeManagerMapBinder =
+        MapBinder.newMapBinder(binder(), SCMType.class, UserSourceCodeManagerMapper.class);
+    sourceCodeManagerMapBinder.addBinding(SCMType.GITHUB).to(GithubSCMMapper.class);
+    sourceCodeManagerMapBinder.addBinding(SCMType.GITLAB).to(GitlabSCMMapper.class);
+    sourceCodeManagerMapBinder.addBinding(SCMType.AZURE_REPO).to(AzureRepoSCMMapper.class);
 
     bindFullSyncMessageListeners();
   }
@@ -205,9 +221,10 @@ public class GitSyncModule extends AbstractModule {
   @Provides
   @Singleton
   @Named(GITX_BACKGROUND_CACHE_UPDATE_EXECUTOR_NAME)
-  public ExecutorService orchestrationEventExecutorService() {
-    return ThreadPool.create(
-        gitServiceConfiguration.getGitServiceCacheConfiguration().getBackgroundUpdateThreadPoolConfig(),
-        new ThreadFactoryBuilder().setNameFormat("GitxCachingBackgroundUpdateThread-%d").build());
+  public ExecutorService backgroundCacheUpdateExecutorService() {
+    return new ManagedExecutorService(ThreadPool.create(
+        gitServiceConfiguration.getGitServiceCacheConfiguration().getBackgroundUpdateThreadPoolConfig(), 1,
+        new ThreadFactoryBuilder().setNameFormat("GitxCachingBackgroundUpdateThread-%d").build(),
+        new ThreadPoolExecutor.AbortPolicy()));
   }
 }

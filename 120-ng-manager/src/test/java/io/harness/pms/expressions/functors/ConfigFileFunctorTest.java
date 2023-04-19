@@ -10,6 +10,7 @@ package io.harness.pms.expressions.functors;
 import static io.harness.NGCommonEntityConstants.FUNCTOR_BASE64_METHOD_NAME;
 import static io.harness.NGCommonEntityConstants.FUNCTOR_STRING_METHOD_NAME;
 import static io.harness.pms.expressions.functors.ConfigFileFunctor.MAX_CONFIG_FILE_SIZE;
+import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 import static io.harness.rule.OwnerRule.IVAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,7 +23,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.configfile.ConfigFileOutcome;
-import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.configfile.ConfigFilesOutcome;
+import io.harness.cdng.configfile.ConfigGitFile;
+import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -30,6 +34,7 @@ import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
@@ -53,6 +58,7 @@ public class ConfigFileFunctorTest extends CategoryTest {
   private static final String BASE64_FILE_CONTENT = "ZmlsZSBjb250ZW50";
 
   @Mock private CDStepHelper cdStepHelper;
+  @Mock private CDExpressionResolver cdExpressionResolver;
 
   @InjectMocks private ConfigFileFunctor configFileFunctor;
 
@@ -166,6 +172,19 @@ public class ConfigFileFunctorTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void testGitFileGetAsString() {
+    Ambiance ambiance = getAmbiance();
+    ConfigFilesOutcome configFilesOutcome = mockGetGitConfigFileOutcomeWithFiles();
+    when(cdStepHelper.getConfigFilesOutcome(ambiance)).thenReturn(Optional.of(configFilesOutcome));
+    when(cdExpressionResolver.renderExpression(ambiance, FILE_CONTENT)).thenReturn(FILE_CONTENT);
+    String fileContent = (String) configFileFunctor.get(ambiance, FUNCTOR_STRING_METHOD_NAME, CONFIG_FILE_IDENTIFIER);
+
+    assertThat(fileContent).isEqualTo(FILE_CONTENT);
+  }
+
+  @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testFileGetAsBase64() {
@@ -218,6 +237,18 @@ public class ConfigFileFunctorTest extends CategoryTest {
     ConfigFilesOutcome configFilesOutcome = new ConfigFilesOutcome();
     configFilesOutcome.put(CONFIG_FILE_IDENTIFIER,
         ConfigFileOutcome.builder().identifier(CONFIG_FILE_IDENTIFIER).store(harnessStore).build());
+    return configFilesOutcome;
+  }
+
+  @NotNull
+  private ConfigFilesOutcome mockGetGitConfigFileOutcomeWithFiles() {
+    GithubStore githubStore =
+        GithubStore.builder().paths(ParameterField.createValueField(List.of(SCOPED_FILE_PATH))).build();
+    ConfigFilesOutcome configFilesOutcome = new ConfigFilesOutcome();
+    ConfigGitFile configGitFile = ConfigGitFile.builder().fileContent(FILE_CONTENT).filePath(SCOPED_FILE_PATH).build();
+    List<ConfigGitFile> gitFiles = Arrays.asList(configGitFile);
+    configFilesOutcome.put(CONFIG_FILE_IDENTIFIER,
+        ConfigFileOutcome.builder().identifier(CONFIG_FILE_IDENTIFIER).store(githubStore).gitFiles(gitFiles).build());
     return configFilesOutcome;
   }
 

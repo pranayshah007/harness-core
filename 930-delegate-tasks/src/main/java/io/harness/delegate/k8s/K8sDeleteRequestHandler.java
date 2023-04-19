@@ -26,6 +26,7 @@ import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
+import static java.util.Collections.emptyMap;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -148,8 +149,9 @@ public class K8sDeleteRequestHandler extends K8sRequestHandler {
     }
 
     client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
-    kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        k8sDeleteRequest.getK8sInfraDelegateConfig(), executionLogCallback);
+    kubernetesConfig =
+        containerDeploymentDelegateBaseHelper.createKubernetesConfig(k8sDeleteRequest.getK8sInfraDelegateConfig(),
+            k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
 
     if (isEmpty(k8sDeleteRequest.getFilePaths())) {
       executionLogCallback.saveExecutionLog(color("\nNo file specified in the state", Yellow, Bold));
@@ -169,7 +171,7 @@ public class K8sDeleteRequestHandler extends K8sRequestHandler {
         deleteFilePaths.forEach(each -> sb.append(color(format("- %s", each), Gray)).append(System.lineSeparator()));
         executionLogCallback.saveExecutionLog(sb.toString());
 
-        List<String> manifestOverrideFiles = getManifestOverrideFlies(k8sDeleteRequest);
+        List<String> manifestOverrideFiles = getManifestOverrideFlies(k8sDeleteRequest, emptyMap());
 
         resources = k8sTaskHelperBase.getResourcesFromManifests(k8sDelegateTaskParams,
             k8sDeleteRequest.getManifestDelegateConfig(), manifestFilesDirectory, deleteFilePaths,
@@ -205,8 +207,9 @@ public class K8sDeleteRequestHandler extends K8sRequestHandler {
       executionLogCallback.saveExecutionLog(color(String.format("Release Name: [%s]", releaseName), Yellow, Bold));
     }
     client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
-    kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        k8sDeleteRequest.getK8sInfraDelegateConfig(), executionLogCallback);
+    kubernetesConfig =
+        containerDeploymentDelegateBaseHelper.createKubernetesConfig(k8sDeleteRequest.getK8sInfraDelegateConfig(),
+            k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
 
     try {
       resourceIdsToDelete =

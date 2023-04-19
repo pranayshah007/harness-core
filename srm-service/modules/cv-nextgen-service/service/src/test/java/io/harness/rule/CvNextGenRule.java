@@ -14,6 +14,8 @@ import static io.harness.cache.CacheBackend.NOOP;
 
 import io.harness.AccessControlClientConfiguration;
 import io.harness.AccessControlClientModule;
+import io.harness.SRMMongoPersistence;
+import io.harness.SRMPersistence;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.cache.CacheConfig;
@@ -168,6 +170,7 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
       @Override
       protected void configure() {
         bind(HPersistence.class).to(MongoPersistence.class);
+        bind(SRMPersistence.class).to(SRMMongoPersistence.class);
       }
     });
 

@@ -18,12 +18,10 @@ import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 
 import com.google.inject.Inject;
-import java.io.IOException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
-import org.jose4j.lang.JoseException;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
@@ -41,7 +39,7 @@ public class GoogleCloudSourceArtifactTaskNG extends AbstractDelegateRunnableTas
   }
 
   @Override
-  public DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException {
+  public DelegateResponseData run(TaskParameters parameters) {
     ArtifactTaskParameters taskParameters = (ArtifactTaskParameters) parameters;
     return googleCloudSourceArtifactTaskHelper.getArtifactCollectResponse(taskParameters, null);
   }

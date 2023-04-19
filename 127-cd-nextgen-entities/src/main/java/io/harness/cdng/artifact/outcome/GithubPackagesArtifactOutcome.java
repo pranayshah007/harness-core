@@ -15,6 +15,7 @@ import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.GithubPackagesArtifactSummary;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -70,14 +71,20 @@ public class GithubPackagesArtifactOutcome implements ArtifactOutcome {
 
   /**
    * imagePullSecret for Github Package credentials base encoded.
-   * */
+   */
   String imagePullSecret;
-
+  /**
+   * dockerConfigJson for docker credentials base encoded.
+   */
+  String dockerConfigJsonSecret;
   /**
    * package type for Github Package such as npm, maven, rubygems, nuget, container
-   *
    */
   String packageType;
+
+  Map<String, String> metadata;
+
+  Map<String, String> label;
 
   @Override
   public ArtifactSummary getArtifactSummary() {

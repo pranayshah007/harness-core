@@ -11,11 +11,13 @@ import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.MANKRIT;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -30,8 +32,10 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
+import io.harness.pms.pipeline.TemplateValidationResponseDTO;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
@@ -43,6 +47,8 @@ import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.beans.ValidationResult;
 import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
+import io.harness.project.remote.ProjectClient;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.spec.server.pipeline.v1.model.GitMoveDetails;
 import io.harness.spec.server.pipeline.v1.model.MoveConfigOperationType;
@@ -69,6 +75,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -85,6 +93,8 @@ public class PipelinesApiImplTest extends CategoryTest {
   @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
   @Mock PipelineMetadataService pipelineMetadataService;
   @Mock PipelineAsyncValidationService pipelineAsyncValidationService;
+  @Mock private OrganizationClient organizationClient;
+  @Mock ProjectClient projectClient;
 
   String identifier = "basichttpFail";
   String name = "basichttpFail";
@@ -343,10 +353,15 @@ public class PipelinesApiImplTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetPipelineValidateResult() {
-    doReturn(Optional.of(PipelineValidationEvent.builder()
-                             .status(ValidationStatus.IN_PROGRESS)
-                             .result(ValidationResult.builder().build())
-                             .build()))
+    doReturn(
+        Optional.of(
+            PipelineValidationEvent.builder()
+                .status(ValidationStatus.IN_PROGRESS)
+                .result(ValidationResult.builder()
+                            .templateValidationResponse(
+                                TemplateValidationResponseDTO.builder().validYaml(true).exceptionMessage("").build())
+                            .build())
+                .build()))
         .when(pipelineAsyncValidationService)
         .getEventByUuid("uuid1");
 
@@ -391,5 +406,26 @@ public class PipelinesApiImplTest extends CategoryTest {
     Response response = pipelinesApiImpl.moveConfig(org, project, identifier, pipelineMoveConfigRequestBody, account);
     PipelineMoveConfigResponseBody responseBody = (PipelineMoveConfigResponseBody) response.getEntity();
     assertEquals(identifier, responseBody.getPipelineIdentifier());
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testPipelineListForInvalidProject() {
+    Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, PipelineEntityKeys.lastUpdatedAt));
+    Page<PipelineEntity> pipelineEntities = new PageImpl<>(Collections.singletonList(entityModified), pageable, 1);
+    when(pmsPipelineService.list(any(), any(), any(), any(), any(), any())).thenThrow(InvalidRequestException.class);
+    doReturn(Collections.emptyMap())
+        .when(pipelineMetadataService)
+        .getMetadataForGivenPipelineIds(account, org, project, Collections.singletonList(identifier));
+    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
+    aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
+        .thenThrow(InvalidRequestException.class);
+    final Throwable ex = catchThrowable(()
+                                            -> pipelinesApiImpl
+                                                   .listPipelines(org, project, account, 0, 25, null, null, null, null,
+                                                       null, null, null, null, null, null, null, null, null)
+                                                   .getEntity());
+    assertThat(ex).isInstanceOf(InvalidRequestException.class);
   }
 }

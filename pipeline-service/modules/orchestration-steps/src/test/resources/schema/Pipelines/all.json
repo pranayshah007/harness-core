@@ -1700,6 +1700,12 @@
             "assertion": {
               "type": "string"
             },
+            "certificate": {
+              "type": "string"
+            },
+            "certificateKey": {
+              "type": "string"
+            },
             "delegateSelectors": {
               "oneOf": [
                 {
@@ -2432,7 +2438,8 @@
               "PolicyEvaluationFailure",
               "InputTimeoutError",
               "ApprovalRejection",
-              "DelegateRestart"
+              "DelegateRestart",
+              "UserMarkedFailure"
             ]
           }
         }
@@ -2875,6 +2882,18 @@
               ]
             }
           }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "PipelineRollbackStageConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StageInfoConfig"
+        },
+        {
+          "type": "object",
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4383,6 +4402,22 @@
                 "properties": {
                   "spec": {
                     "$ref": "#/definitions/PipelineStageConfig"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "PipelineRollback"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/PipelineRollbackStageConfig"
                   }
                 }
               }

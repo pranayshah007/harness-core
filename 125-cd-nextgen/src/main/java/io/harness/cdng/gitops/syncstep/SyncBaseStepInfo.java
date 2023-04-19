@@ -20,6 +20,7 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -41,23 +42,31 @@ public class SyncBaseStepInfo {
 
   @YamlSchemaTypes({string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @NotNull
   public ParameterField<Boolean> prune;
 
-  @JsonProperty("applicationsList") List<AgentApplicationTargets> applicationsList;
+  // check if this can be runtime/ check if this works when it is empty/populated/ fixed, runtime, expression
+  @YamlSchemaTypes(runtime)
+  @ApiModelProperty(dataType = SwaggerConstants.GITOPS_AGENT_DETAILS_LIST_CLASSPATH)
+  @JsonProperty("applicationsList")
+  ParameterField<List<AgentApplicationTargets>> applicationsList;
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @NotNull
   public ParameterField<Boolean> dryRun;
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @NotNull
   public ParameterField<Boolean> applyOnly;
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @NotNull
   public ParameterField<Boolean> forceApply;
 
-  @JsonProperty("syncOptions") SyncOptions syncOptions;
+  @NotNull @JsonProperty("syncOptions") SyncOptions syncOptions;
 
   @JsonProperty("retryStrategy") SyncRetryStrategy retryStrategy;
 }

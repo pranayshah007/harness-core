@@ -35,7 +35,7 @@ import io.harness.beans.FileReference;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
-import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.configfile.ConfigFilesOutcome;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -402,9 +402,12 @@ public class SshCommandStepHelper extends CDStepHelper {
 
   @Nullable
   private FileDelegateConfig getFileDelegateConfig(@NotNull Ambiance ambiance) {
+    boolean shouldRenderConfigFiles =
+        cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_NG_CONFIG_FILE_EXPRESSION);
     Optional<ConfigFilesOutcome> configFilesOutcomeOptional = getConfigFilesOutcome(ambiance);
     return configFilesOutcomeOptional
-        .map(configFilesOutcome -> sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance))
+        .map(configFilesOutcome
+            -> sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance, shouldRenderConfigFiles))
         .orElse(null);
   }
 

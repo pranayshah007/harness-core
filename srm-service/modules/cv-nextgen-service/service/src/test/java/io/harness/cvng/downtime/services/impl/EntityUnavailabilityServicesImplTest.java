@@ -157,6 +157,25 @@ public class EntityUnavailabilityServicesImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
+  public void testGetPastAndActiveInstancesSuccess() {
+    entityUnavailabilityStatusesDTO.setStartTime(clock.millis() / 1000 - 1);
+    entityUnavailabilityStatusesDTO.setEndTime(clock.millis() / 1000 + 1);
+    entityUnavailabilityStatusesService.create(
+        projectParams, Collections.singletonList(entityUnavailabilityStatusesDTO));
+
+    entityUnavailabilityStatusesDTO.setStartTime(clock.millis() / 1000 - 2);
+    entityUnavailabilityStatusesDTO.setEndTime(clock.millis() / 1000 - 1);
+    entityUnavailabilityStatusesService.create(
+        projectParams, Collections.singletonList(entityUnavailabilityStatusesDTO));
+    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
+        entityUnavailabilityStatusesService.getPastAndActiveDowntimeInstances(
+            projectParams, Collections.singletonList(entityUnavailabilityStatusesDTO.getEntityId()));
+    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
   public void testDeleteByProjectIdentifier_Success() {
     EntityUnavailabilityStatusesService mockEntityUnavailabilityStatusesService =
         spy(entityUnavailabilityStatusesService);

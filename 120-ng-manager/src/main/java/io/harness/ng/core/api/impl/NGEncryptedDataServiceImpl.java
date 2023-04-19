@@ -170,8 +170,6 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         validatePath(encryptedData.getPath(), encryptedData.getEncryptionType());
         break;
       case CustomSecretManagerValues:
-        // At the time of creation, ensure secret exist.
-        validateCustomSecretManagerPathValue(accountIdentifier, encryptedData, secretManager, secret.getValue());
         break;
       default:
         throw new RuntimeException("Secret value type is unknown");
@@ -248,6 +246,28 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
           encryptedData.getName(), encryptedData.getAccountIdentifier(), encryptedData.getEncryptedValue());
       encryptedData.setEncryptedValue(encryptedFileId.toCharArray());
     }
+    return encryptedDataDao.save(encryptedData);
+  }
+
+  @Override
+  public NGEncryptedData createSecretFile(
+      String accountIdentifier, SecretDTOV2 dto, String encryptionKey, String encryptedValue) {
+    validateSecretDoesNotExist(
+        accountIdentifier, dto.getOrgIdentifier(), dto.getProjectIdentifier(), dto.getIdentifier());
+    SecretFileSpecDTO secret = (SecretFileSpecDTO) dto.getSpec();
+    SecretManagerConfigDTO secretManager = getSecretManagerOrThrow(accountIdentifier, dto.getOrgIdentifier(),
+        dto.getProjectIdentifier(), secret.getSecretManagerIdentifier(), false);
+    validateAdditionalMetadata(secretManager, secret);
+    NGEncryptedData encryptedData = buildNGEncryptedData(accountIdentifier, dto, secretManager);
+
+    if (isReadOnlySecretManager(secretManager)) {
+      throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, READ_ONLY_SECRET_MANAGER_ERROR, USER);
+    }
+
+    encryptedData.setPath(null);
+    encryptedData.setEncryptionKey(encryptionKey);
+    encryptedData.setEncryptedValue(encryptedValue.toCharArray());
+    encryptedData.setBase64Encoded(true);
     return encryptedDataDao.save(encryptedData);
   }
 
@@ -566,6 +586,16 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         vaultEncryptorsRegistry.getVaultEncryptor(SecretManagerConfigMapper.fromDTO(secretManager).getEncryptionType())
             .validateReference(accountIdentifier, secretRefPath, SecretManagerConfigMapper.fromDTO(secretManager));
     return isValidationSuccess;
+  }
+
+  @Override
+  public boolean isSecretManagerReadOnly(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String secretManagerId) {
+    SecretManagerConfigDTO secretManager;
+
+    secretManager =
+        getSecretManagerOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, secretManagerId, false);
+    return isReadOnlySecretManager(secretManager);
   }
 
   private byte[] getInputBytes(InputStream inputStream) {

@@ -13,6 +13,7 @@ import static io.harness.ngtriggers.Constants.AMAZON_S3;
 import static io.harness.ngtriggers.Constants.AMI;
 import static io.harness.ngtriggers.Constants.ARTIFACTORY_REGISTRY;
 import static io.harness.ngtriggers.Constants.AZURE_ARTIFACTS;
+import static io.harness.ngtriggers.Constants.BAMBOO;
 import static io.harness.ngtriggers.Constants.CUSTOM_ARTIFACT;
 import static io.harness.ngtriggers.Constants.DOCKER_REGISTRY;
 import static io.harness.ngtriggers.Constants.ECR;
@@ -50,7 +51,8 @@ import java.util.List;
       @JsonSubTypes.Type(value = GithubPackagesSpec.class, name = GITHUB_PACKAGES),
       @JsonSubTypes.Type(value = AzureArtifactsRegistrySpec.class, name = AZURE_ARTIFACTS),
       @JsonSubTypes.Type(value = AMIRegistrySpec.class, name = AMI),
-      @JsonSubTypes.Type(value = GoolgeCloudStorageRegistrySpec.class, name = GOOGLE_CLOUD_STORAGE)
+      @JsonSubTypes.Type(value = GoolgeCloudStorageRegistrySpec.class, name = GOOGLE_CLOUD_STORAGE),
+      @JsonSubTypes.Type(value = BambooRegistrySpec.class, name = BAMBOO)
 })
 
 @OwnedBy(PIPELINE)

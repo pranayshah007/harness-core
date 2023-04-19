@@ -8,7 +8,7 @@
 package io.harness.audit.beans.custom.executions;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.audit.beans.custom.AuditEventDataTypeConstants.NODE_EXECUTION_EVENT_DATA;
+import static io.harness.audit.beans.custom.AuditEventDataTypeConstants.PIPELINE_EXECUTION_EVENT_DATA;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.beans.AuditEventData;
@@ -25,8 +25,8 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName(NODE_EXECUTION_EVENT_DATA)
-@TypeAlias(NODE_EXECUTION_EVENT_DATA)
+@JsonTypeName(PIPELINE_EXECUTION_EVENT_DATA)
+@TypeAlias(PIPELINE_EXECUTION_EVENT_DATA)
 public class NodeExecutionEventData extends AuditEventData {
   String accountIdentifier;
   String orgIdentifier;
@@ -57,6 +57,6 @@ public class NodeExecutionEventData extends AuditEventData {
     this.triggeredBy = triggeredBy;
     this.startTs = startTs;
     this.endTs = endTs;
-    this.type = NODE_EXECUTION_EVENT_DATA;
+    this.type = PIPELINE_EXECUTION_EVENT_DATA;
   }
 }

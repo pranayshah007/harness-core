@@ -27,6 +27,7 @@ import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.SkippedExpressionDetail;
 import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
@@ -37,6 +38,7 @@ import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigratedDetails;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.ngmigration.utils.NGMigrationConstants;
 import io.harness.remote.client.ServiceHttpClientConfig;
@@ -268,13 +270,12 @@ public class DiscoveryService {
         discoveryResult.getRoot(), migratedEntities, leafTracker);
   }
 
-  public SaveSummaryDTO migrateEntity(String auth, MigrationInputDTO inputDTO, DiscoveryResult discoveryResult) {
+  public SaveSummaryDTO migrateEntities(MigrationInputDTO inputDTO, DiscoveryResult discoveryResult) {
     YamlGenerationDetails generationDetails = migrateEntity(inputDTO, discoveryResult);
-    return createEntities(auth, inputDTO, generationDetails);
+    return createEntities(inputDTO, generationDetails);
   }
 
-  private SaveSummaryDTO createEntities(
-      String auth, MigrationInputDTO inputDTO, YamlGenerationDetails generationDetails) {
+  private SaveSummaryDTO createEntities(MigrationInputDTO inputDTO, YamlGenerationDetails generationDetails) {
     List<NGYamlFile> ngYamlFiles = generationDetails.getYamlFileList();
     List<NGSkipDetail> skipDetails = generationDetails.getSkipDetails();
     NGClient ngClient = MigratorUtility.getRestClient(ngClientConfig, NGClient.class);
@@ -283,6 +284,7 @@ public class DiscoveryService {
     // Sort such that we create secrets first then connectors and so on.
     MigratorUtility.sort(ngYamlFiles);
     SaveSummaryDTO summaryDTO = SaveSummaryDTO.builder()
+                                    .skippedExpressions(generationDetails.getSkippedExpressions())
                                     .errors(new ArrayList<>())
                                     .stats(new HashMap<>())
                                     .skipDetails(skipDetails)
@@ -296,7 +298,7 @@ public class DiscoveryService {
         NgMigrationService ngMigration = migrationFactory.getMethod(file.getType());
         if (!file.isExists()) {
           MigrationImportSummaryDTO importSummaryDTO =
-              ngMigration.migrate(auth, ngClient, pmsClient, templateClient, inputDTO, file);
+              ngMigration.migrate(ngClient, pmsClient, templateClient, inputDTO, file);
           if (importSummaryDTO != null && importSummaryDTO.isSuccess()) {
             summaryDTO.getStats().get(file.getType()).incrementSuccessfullyMigrated();
             summaryDTO.getSuccessfullyMigratedDetails().add(MigratedDetails.builder()
@@ -441,7 +443,24 @@ public class DiscoveryService {
       removeLeafNodes(leafTracker);
     }
 
-    return YamlGenerationDetails.builder().yamlFileList(files).skipDetails(skipDetails).build();
+    List<SkippedExpressionDetail> skippedExpressionDetails = new ArrayList<>();
+    for (NGYamlFile yamlFile : files) {
+      Set<String> skippedExpressions = MigratorExpressionUtils.getExpressions(yamlFile);
+      if (EmptyPredicate.isNotEmpty(skippedExpressions)) {
+        skippedExpressionDetails.add(SkippedExpressionDetail.builder()
+                                         .expressions(skippedExpressions)
+                                         .entityType(yamlFile.getNgEntityDetail().getEntityType())
+                                         .orgIdentifier(yamlFile.getNgEntityDetail().getOrgIdentifier())
+                                         .projectIdentifier(yamlFile.getNgEntityDetail().getProjectIdentifier())
+                                         .identifier(yamlFile.getNgEntityDetail().getIdentifier())
+                                         .build());
+      }
+    }
+    return YamlGenerationDetails.builder()
+        .yamlFileList(files)
+        .skippedExpressions(skippedExpressionDetails)
+        .skipDetails(skipDetails)
+        .build();
   }
 
   private MutableGraph getGraphViz(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph) {

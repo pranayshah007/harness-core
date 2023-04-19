@@ -45,7 +45,7 @@ public class ArtifactSource implements Visitable {
   @ApiModelProperty(hidden = true)
   String uuid;
 
-  @NotNull @EntityIdentifier String identifier;
+  @NotNull @EntityIdentifier @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN) String identifier;
   @JsonProperty("type") ArtifactSourceType sourceType;
 
   @JsonProperty("spec")

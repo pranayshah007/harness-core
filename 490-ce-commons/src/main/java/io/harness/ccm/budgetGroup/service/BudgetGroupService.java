@@ -29,6 +29,10 @@ public interface BudgetGroupService {
   List<BudgetSummary> listBudgetsAndBudgetGroupsSummary(String accountId, String id);
   BudgetData getBudgetGroupTimeSeriesStats(BudgetGroup budgetGroup, BudgetBreakdown breakdown);
   void cascadeBudgetGroupAmount(BudgetGroup budgetGroup);
+  void upwardCascadeBudgetGroupAmount(BudgetGroup budgetGroup, Boolean isMonthlyBreadownBudget, Double budgetAmountDiff,
+      Double[] budgetAmountMonthlyDiff);
   void updateBudgetGroupCosts(BudgetGroup budgetGroup);
   void updateCostsOfParentBudgetGroupsOnEntityDeletion(BudgetGroup immediateParent);
+  void updateBudgetGroupAmount(BudgetGroup budgetGroup, String accountId);
+  void updateBudgetGroupCosts(BudgetGroup budgetGroup, String accountId);
 }

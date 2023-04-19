@@ -123,7 +123,11 @@ public class SecretManagerConfigServiceImpl implements SecretManagerConfigServic
     } else {
       SecretManagerConfig oldConfig = wingsPersistence.get(SecretManagerConfig.class, secretManagerConfig.getUuid());
       secretsManagerRBACService.canChangePermissions(accountId, secretManagerConfig, oldConfig);
-      secretService.updateConflictingSecretsToInheritScopes(accountId, secretManagerConfig);
+      if (!(oldConfig.getUsageRestrictions() != null && secretManagerConfig.getUsageRestrictions() != null
+              && oldConfig.getUsageRestrictions().getAppEnvRestrictions().equals(
+                  secretManagerConfig.getUsageRestrictions().getAppEnvRestrictions()))) {
+        secretService.updateConflictingSecretsToInheritScopes(accountId, secretManagerConfig);
+      }
     }
 
     //[PL-11328] DO NOT remove this innocent redundant looking line which is actually setting the encryptionType.

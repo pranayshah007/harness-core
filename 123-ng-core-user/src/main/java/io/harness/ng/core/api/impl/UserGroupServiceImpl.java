@@ -12,7 +12,6 @@ import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENT
 import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.NG_ENABLE_LDAP_CHECK;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.GROUP;
@@ -835,14 +834,6 @@ public class UserGroupServiceImpl implements UserGroupService {
   public UserGroup linkToSsoGroup(@NotBlank @AccountIdentifier String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotBlank String userGroupIdentifier, @NotNull SSOType ssoType, @NotBlank String ssoId,
       @NotBlank String ssoGroupId, @NotBlank String ssoGroupName) {
-    boolean ngLdapEnabled = false;
-    if (SSOType.LDAP == ssoType) {
-      ngLdapEnabled = ngFeatureFlagHelperService.isEnabled(accountIdentifier, NG_ENABLE_LDAP_CHECK);
-      if (!ngLdapEnabled) {
-        throw new InvalidRequestException("Please enable feature flag NG_ENABLE_LDAP_CHECK for your account");
-      }
-    }
-
     UserGroup existingUserGroup = getOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier);
     UserGroupDTO oldUserGroup = (UserGroupDTO) HObjectMapper.clone(toDTO(existingUserGroup));
 

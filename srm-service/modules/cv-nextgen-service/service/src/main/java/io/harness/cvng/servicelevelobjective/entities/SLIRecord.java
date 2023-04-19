@@ -67,7 +67,7 @@ public class SLIRecord extends VerificationTaskBase implements PersistentEntity,
       return sliRecord;
     }
   }
-  @Version long version;
+  @Version @Deprecated long version;
   @Id private String uuid;
   @FdIndex private String verificationTaskId;
   private String sliId;
@@ -86,5 +86,7 @@ public class SLIRecord extends VerificationTaskBase implements PersistentEntity,
   public static class SLIRecordParam {
     private SLIState sliState;
     private Instant timeStamp;
+    private Long goodEventCount;
+    private Long badEventCount;
   }
 }

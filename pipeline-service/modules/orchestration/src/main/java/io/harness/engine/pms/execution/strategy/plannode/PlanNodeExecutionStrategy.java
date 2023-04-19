@@ -163,7 +163,18 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     String nodeId = AmbianceUtils.obtainCurrentSetupId(ambiance);
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       PlanNode planNode = planService.fetchNode(ambiance.getPlanId(), nodeId);
-      resolveParameters(ambiance, planNode);
+      try {
+        resolveParameters(ambiance, planNode);
+      } catch (Exception ex) {
+        // NOTE: If there is an exception occurred while resolving parameters and when condition evaluates to skipped
+        // then we should not throw exception but rather carry on the execution
+        ExecutionCheck check = performPreFacilitationChecks(ambiance, planNode);
+        if (!check.isProceed()) {
+          log.info("Not Proceeding with  Execution. Reason : {}", check.getReason());
+          return;
+        }
+        throw ex;
+      }
 
       ExecutionCheck check = performPreFacilitationChecks(ambiance, planNode);
       if (!check.isProceed()) {
@@ -230,11 +241,9 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
         // After resuming, pipeline status need to be set. Ex: Pipeline waiting on approval step, pipeline status is
         // waiting, after approval, node execution is marked as running and,  similarly we are marking for pipeline.
         // Earlier pipeline status was marked from step itself.
-        Status planStatus =
-            planExecutionService.calculateStatusExcluding(ambiance.getPlanExecutionId(), nodeExecutionId);
-        if (!StatusUtils.isFinalStatus(planStatus)) {
-          planExecutionService.updateStatus(ambiance.getPlanExecutionId(), planStatus);
-        }
+
+        // Please refer the explanation added above the method - calculateAndUpdateRunningStatus(
+        planExecutionService.calculateAndUpdateRunningStatus(ambiance.getPlanExecutionId(), nodeExecutionId);
       } else {
         // This will happen if the node is not in any paused or waiting statuses.
         log.debug("NodeExecution with id {} is already in Running status", nodeExecutionId);
@@ -302,25 +311,27 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
 
   @Override
   public void endNodeExecution(Ambiance ambiance) {
-    String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    NodeExecution nodeExecution =
-        nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.fieldsForExecutionStrategy);
-    if (isNotEmpty(nodeExecution.getNotifyId())) {
-      Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
-      StepResponseNotifyData responseData = StepResponseNotifyData.builder()
-                                                .nodeUuid(level.getSetupId())
-                                                .stepOutcomeRefs(outcomeService.fetchOutcomeRefs(nodeExecutionId))
-                                                .failureInfo(nodeExecution.getFailureInfo())
-                                                .identifier(level.getIdentifier())
-                                                .nodeExecutionId(level.getRuntimeId())
-                                                .status(nodeExecution.getStatus())
-                                                .adviserResponse(nodeExecution.getAdviserResponse())
-                                                .nodeExecutionEndTs(nodeExecution.getEndTs())
-                                                .build();
-      waitNotifyEngine.doneWith(nodeExecution.getNotifyId(), responseData);
-    } else {
-      log.info("Ending Execution");
-      orchestrationEngine.endNodeExecution(AmbianceUtils.cloneForFinish(ambiance));
+    try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
+      String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+      NodeExecution nodeExecution =
+          nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.fieldsForExecutionStrategy);
+      if (isNotEmpty(nodeExecution.getNotifyId())) {
+        Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
+        StepResponseNotifyData responseData = StepResponseNotifyData.builder()
+                                                  .nodeUuid(level.getSetupId())
+                                                  .stepOutcomeRefs(outcomeService.fetchOutcomeRefs(nodeExecutionId))
+                                                  .failureInfo(nodeExecution.getFailureInfo())
+                                                  .identifier(level.getIdentifier())
+                                                  .nodeExecutionId(level.getRuntimeId())
+                                                  .status(nodeExecution.getStatus())
+                                                  .adviserResponse(nodeExecution.getAdviserResponse())
+                                                  .nodeExecutionEndTs(nodeExecution.getEndTs())
+                                                  .build();
+        waitNotifyEngine.doneWith(nodeExecution.getNotifyId(), responseData);
+      } else {
+        log.info("Ending Execution");
+        orchestrationEngine.endNodeExecution(AmbianceUtils.cloneForFinish(ambiance));
+      }
     }
   }
 

@@ -71,6 +71,8 @@ public class PasswordBasedAuthHandlerTest extends CategoryTest {
 
   @InjectMocks @Inject @Spy PasswordBasedAuthHandler authHandler;
 
+  public final String defaultAccountId = "kmpySmUISimoRrJL6NL73w";
+
   @Before
   public void setUp() {
     initMocks(this);
@@ -96,7 +98,7 @@ public class PasswordBasedAuthHandlerTest extends CategoryTest {
     }
 
     try {
-      authHandler.authenticate("test", "test1", "test2");
+      authHandler.authenticate("test", "test1", "test2", "test3");
       failBecauseExceptionWasNotThrown(WingsException.class);
     } catch (WingsException e) {
       assertThat(e.getMessage()).isEqualTo(ErrorCode.INVALID_ARGUMENT.name());
@@ -108,16 +110,16 @@ public class PasswordBasedAuthHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCaptchaNotShownForCommunity() throws MaxLoginAttemptExceededException {
     User user = new User();
-    user.setDefaultAccountId("kmpySmUISimoRrJL6NL73w");
+    user.setDefaultAccountId(defaultAccountId);
     user.setEmailVerified(true);
-    user.setUuid("kmpySmUISimoRrJL6NL73w");
+    user.setUuid(defaultAccountId);
     user.setPasswordHash(hashpw("notpassword", BCrypt.gensalt()));
 
     authHandler.setDeployVariant(DeployVariant.COMMUNITY);
     doReturn(user).when(authHandler).getUser(anyString());
 
     try {
-      authHandler.authenticate("admin@harness.io", "admin");
+      authHandler.authenticate("admin@harness.io", "admin", defaultAccountId);
     } catch (WingsException e) {
       assertThat(e.getMessage()).isEqualTo(ErrorCode.INVALID_CREDENTIAL.name());
     }
@@ -129,16 +131,16 @@ public class PasswordBasedAuthHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCaptchShownForSaas() throws MaxLoginAttemptExceededException {
     User user = new User();
-    user.setDefaultAccountId("kmpySmUISimoRrJL6NL73w");
+    user.setDefaultAccountId(defaultAccountId);
     user.setEmailVerified(true);
-    user.setUuid("kmpySmUISimoRrJL6NL73w");
+    user.setUuid(defaultAccountId);
     user.setPasswordHash(hashpw("notpassword", BCrypt.gensalt()));
 
     authHandler.setDeployVariant(DeployVariant.SAAS);
     doReturn(user).when(authHandler).getUser(anyString());
 
     try {
-      authHandler.authenticate("admin@harness.io", "admin");
+      authHandler.authenticate("admin@harness.io", "admin", defaultAccountId);
     } catch (WingsException e) {
       assertThat(e.getMessage()).isEqualTo(ErrorCode.INVALID_CREDENTIAL.name());
     }
@@ -151,7 +153,7 @@ public class PasswordBasedAuthHandlerTest extends CategoryTest {
   public void testBasicTokenValidationNoUserFound() {
     try {
       doReturn(null).when(authHandler).getUser(anyString());
-      authHandler.authenticate("admin@harness.io", "admin");
+      authHandler.authenticate("admin@harness.io", "admin", defaultAccountId);
       failBecauseExceptionWasNotThrown(WingsException.class);
     } catch (WingsException e) {
       assertThat(e.getMessage()).isEqualTo(ErrorCode.USER_DOES_NOT_EXIST.name());
@@ -164,10 +166,10 @@ public class PasswordBasedAuthHandlerTest extends CategoryTest {
   public void testBasicTokenValidationEmailNotVerified() {
     try {
       User user = new User();
-      user.setDefaultAccountId("kmpySmUISimoRrJL6NL73w");
-      user.setUuid("kmpySmUISimoRrJL6NL73w");
+      user.setDefaultAccountId(defaultAccountId);
+      user.setUuid(defaultAccountId);
       doReturn(user).when(authHandler).getUser(anyString());
-      authHandler.authenticate("admin@harness.io", "admin");
+      authHandler.authenticate("admin@harness.io", "admin", defaultAccountId);
       failBecauseExceptionWasNotThrown(WingsException.class);
     } catch (WingsException e) {
       assertThat(e.getMessage()).isEqualTo(ErrorCode.EMAIL_NOT_VERIFIED.name());
@@ -181,7 +183,7 @@ public class PasswordBasedAuthHandlerTest extends CategoryTest {
     User mockUser = new User();
     mockUser.setEmailVerified(true);
     mockUser.setUuid("TestUID");
-    mockUser.setDefaultAccountId("accountId");
+    mockUser.setDefaultAccountId(defaultAccountId);
     mockUser.setPasswordHash("$2a$10$Rf/.q4HvUkS7uG2Utdkk7.jLnqnkck5ruH/vMrHjGVk4R9mL8nQE2");
     when(configuration.getPortal()).thenReturn(mock(PortalConfig.class));
     when(authenticationUtils.getDefaultAccount(any(User.class))).thenReturn(new Account());
@@ -192,7 +194,7 @@ public class PasswordBasedAuthHandlerTest extends CategoryTest {
     when(accountService.getFromCacheWithFallback(anyString()))
         .thenReturn(Account.Builder.anAccount().withCreatedFromNG(true).build());
 
-    User authenticatedUser = authHandler.authenticate("admin@harness.io", "admin").getUser();
+    User authenticatedUser = authHandler.authenticate("admin@harness.io", "admin", defaultAccountId).getUser();
     assertThat(authenticatedUser).isNotNull();
   }
 
@@ -206,13 +208,13 @@ public class PasswordBasedAuthHandlerTest extends CategoryTest {
       User mockUser = mock(User.class);
       when(mockUser.isEmailVerified()).thenReturn(true);
       when(mockUser.getUserLockoutInfo()).thenReturn(new UserLockoutInfo());
-      when(mockUser.getDefaultAccountId()).thenReturn("kmpySmUISimoRrJL6NL73w");
-      when(mockUser.getUuid()).thenReturn("kmpySmUISimoRrJL6NL73w");
+      when(mockUser.getDefaultAccountId()).thenReturn(defaultAccountId);
+      when(mockUser.getUuid()).thenReturn(defaultAccountId);
       doNothing().when(loginSettingsService).updateUserLockoutInfo(any(User.class), any(Account.class), anyInt());
       doReturn(mockUser).when(authHandler).getUser(anyString());
       when(mockUser.getPasswordHash()).thenReturn("$2a$10$Rf/.q4HvUkS7uG2Utdkk7.jLnqnkck5ruH/vMrHjGVk4R9mL8nQE2");
       when(domainWhitelistCheckerService.isDomainWhitelisted(mockUser)).thenReturn(true);
-      authHandler.authenticate("admin@harness.io", "admintest");
+      authHandler.authenticate("admin@harness.io", "admintest", defaultAccountId);
       failBecauseExceptionWasNotThrown(WingsException.class);
     } catch (WingsException e) {
       assertThat(e.getCode()).isEqualTo(ErrorCode.INVALID_CREDENTIAL);
@@ -229,15 +231,15 @@ public class PasswordBasedAuthHandlerTest extends CategoryTest {
           .check(Mockito.any(User.class));
 
       User mockUser = mock(User.class);
-      when(mockUser.getDefaultAccountId()).thenReturn("kmpySmUISimoRrJL6NL73w");
-      when(mockUser.getUuid()).thenReturn("kmpySmUISimoRrJL6NL73w");
+      when(mockUser.getDefaultAccountId()).thenReturn(defaultAccountId);
+      when(mockUser.getUuid()).thenReturn(defaultAccountId);
       when(mockUser.isEmailVerified()).thenReturn(true);
       when(mockUser.getUserLockoutInfo()).thenReturn(new UserLockoutInfo());
       doNothing().when(loginSettingsService).updateUserLockoutInfo(any(User.class), any(Account.class), anyInt());
       doReturn(mockUser).when(authHandler).getUser(anyString());
       when(mockUser.getPasswordHash()).thenReturn("$2a$10$Rf/.q4HvUkS7uG2Utdkk7.jLnqnkck5ruH/vMrHjGVk4R9mL8nQE2");
       when(domainWhitelistCheckerService.isDomainWhitelisted(mockUser)).thenReturn(true);
-      authHandler.authenticate("admin@harness.io", "admintest");
+      authHandler.authenticate("admin@harness.io", "admintest", defaultAccountId);
       failBecauseExceptionWasNotThrown(WingsException.class);
 
     } catch (WingsException e) {
@@ -252,7 +254,7 @@ public class PasswordBasedAuthHandlerTest extends CategoryTest {
     User mockUser = new User();
     mockUser.setEmailVerified(true);
     mockUser.setUuid("TestUID");
-    mockUser.setDefaultAccountId("accountId");
+    mockUser.setDefaultAccountId(defaultAccountId);
     mockUser.setPasswordHash("$2a$10$Rf/.q4HvUkS7uG2Utdkk7.jLnqnkck5ruH/vMrHjGVk4R9mL8nQE2");
     when(configuration.getPortal()).thenReturn(mock(PortalConfig.class));
     when(authenticationUtils.getDefaultAccount(any(User.class))).thenReturn(new Account());
@@ -260,7 +262,7 @@ public class PasswordBasedAuthHandlerTest extends CategoryTest {
     doNothing().when(loginSettingsService).updateUserLockoutInfo(any(User.class), any(Account.class), anyInt());
     doReturn(mockUser).when(authHandler).getUser(anyString());
     when(domainWhitelistCheckerService.isDomainWhitelisted(mockUser)).thenReturn(true);
-    User user = authHandler.authenticate("admin@harness.io", "admin").getUser();
+    User user = authHandler.authenticate("admin@harness.io", "admin", defaultAccountId).getUser();
     assertThat(user).isNotNull();
   }
 
@@ -269,16 +271,16 @@ public class PasswordBasedAuthHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSaasUserPasswordNoPasswordHash() throws MaxLoginAttemptExceededException {
     User user = new User();
-    user.setDefaultAccountId("kmpySmUISimoRrJL6NL73w");
+    user.setDefaultAccountId(defaultAccountId);
     user.setEmailVerified(true);
-    user.setUuid("kmpySmUISimoRrJL6NL73w");
+    user.setUuid(defaultAccountId);
     user.setPasswordHash(null);
 
     authHandler.setDeployVariant(DeployVariant.SAAS);
     doReturn(user).when(authHandler).getUser(anyString());
 
     try {
-      authHandler.authenticate("admin@harness.io", "admin");
+      authHandler.authenticate("admin@harness.io", "admin", defaultAccountId);
     } catch (WingsException e) {
       assertThat(e.getMessage()).isEqualTo(ErrorCode.INVALID_CREDENTIAL.name());
     }

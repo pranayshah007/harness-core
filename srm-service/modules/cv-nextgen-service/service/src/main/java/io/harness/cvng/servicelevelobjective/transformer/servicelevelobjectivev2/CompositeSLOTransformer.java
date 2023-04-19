@@ -15,13 +15,17 @@ import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
+import io.harness.cvng.servicelevelobjective.beans.slospec.ServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.SLOTarget;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.transformer.ServiceLevelObjectiveDetailsTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.ng.core.mapper.TagMapper;
 
 import com.google.inject.Inject;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -30,6 +34,8 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
 
   @Inject ServiceLevelObjectiveDetailsTransformer serviceLevelObjectiveDetailsTransformer;
 
+  @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
+
   @Inject private Map<SLOTargetType, SLOTargetTransformer> sloTargetTypeSLOTargetTransformerMap;
 
   @Override
@@ -37,6 +43,8 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
       ProjectParams projectParams, ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, Boolean isEnabled) {
     CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec =
         (CompositeServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec();
+    SLOTarget sloTarget = sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveV2DTO.getSloTarget().getType())
+                              .getSLOTarget(serviceLevelObjectiveV2DTO.getSloTarget().getSpec());
     return CompositeServiceLevelObjective.builder()
         .type(ServiceLevelObjectiveType.COMPOSITE)
         .accountId(projectParams.getAccountIdentifier())
@@ -49,8 +57,7 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
         .userJourneyIdentifiers(serviceLevelObjectiveV2DTO.getUserJourneyRefs())
         .notificationRuleRefs(notificationRuleService.getNotificationRuleRefs(projectParams,
             serviceLevelObjectiveV2DTO.getNotificationRuleRefs(), NotificationRuleType.SLO, Instant.ofEpochSecond(0)))
-        .sloTarget(sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveV2DTO.getSloTarget().getType())
-                       .getSLOTarget(serviceLevelObjectiveV2DTO.getSloTarget().getSpec()))
+        .target(sloTarget)
         .serviceLevelObjectivesDetails(
             compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
                 .stream()
@@ -74,25 +81,37 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
         .identifier(serviceLevelObjective.getIdentifier())
         .name(serviceLevelObjective.getName())
         .description(serviceLevelObjective.getDesc())
-        .spec(CompositeServiceLevelObjectiveSpec.builder()
-                  .serviceLevelObjectivesDetails(
-                      serviceLevelObjective.getServiceLevelObjectivesDetails()
-                          .stream()
-                          .map(serviceLevelObjectivesDetail
-                              -> serviceLevelObjectiveDetailsTransformer.getServiceLevelObjectiveDetailsDTO(
-                                  serviceLevelObjectivesDetail))
-                          .collect(Collectors.toList()))
-                  .build())
+        .spec(getSpec(serviceLevelObjective))
         .notificationRuleRefs(
             notificationRuleService.getNotificationRuleRefDTOs(serviceLevelObjective.getNotificationRuleRefs()))
         .sloTarget(SLOTargetDTO.builder()
-                       .type(serviceLevelObjective.getSloTarget().getType())
-                       .spec(sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjective.getSloTarget().getType())
-                                 .getSLOTargetSpec(serviceLevelObjective.getSloTarget()))
+                       .type(serviceLevelObjective.getTarget().getType())
+                       .spec(sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjective.getTarget().getType())
+                                 .getSLOTargetSpec(serviceLevelObjective.getTarget()))
                        .sloTargetPercentage(serviceLevelObjective.getSloTargetPercentage())
                        .build())
         .tags(TagMapper.convertToMap(serviceLevelObjective.getTags()))
         .userJourneyRefs(serviceLevelObjective.getUserJourneyIdentifiers())
+        .build();
+  }
+
+  private ServiceLevelObjectiveSpec getSpec(CompositeServiceLevelObjective serviceLevelObjective) {
+    return CompositeServiceLevelObjectiveSpec.builder()
+        .evaluationType(serviceLevelObjectiveV2Service
+                            .getEvaluationType(ProjectParams.builder()
+                                                   .accountIdentifier(serviceLevelObjective.getAccountId())
+                                                   .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                                                   .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                                                   .build(),
+                                Collections.singletonList(serviceLevelObjective))
+                            .get(serviceLevelObjective))
+        .serviceLevelObjectivesDetails(
+            serviceLevelObjective.getServiceLevelObjectivesDetails()
+                .stream()
+                .map(serviceLevelObjectivesDetail
+                    -> serviceLevelObjectiveDetailsTransformer.getServiceLevelObjectiveDetailsDTO(
+                        serviceLevelObjectivesDetail))
+                .collect(Collectors.toList()))
         .build();
   }
 }

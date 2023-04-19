@@ -665,7 +665,13 @@ public enum ErrorCode {
   CLUSTER_CREDENTIALS_NOT_FOUND,
   SCM_API_ERROR,
   INTERNAL_SERVER_ERROR(Status.INTERNAL_SERVER_ERROR),
-  SCM_FORBIDDEN;
+
+  SCM_FORBIDDEN,
+  AWS_EKS_ERROR,
+  OPA_POLICY_EVALUATION_ERROR,
+
+  USER_MARKED_FAILURE,
+  SSH_RETRY("Ssh retryable error");
 
   private Status status = BAD_REQUEST;
   private String description;

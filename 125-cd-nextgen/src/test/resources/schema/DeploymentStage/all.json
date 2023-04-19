@@ -305,33 +305,16 @@
     },
     "AgentApplicationTargets": {
       "type": "object",
+      "required": [
+        "agentId",
+        "applicationName"
+      ],
       "properties": {
         "agentId": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "applicationName": {
-          "oneOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -468,7 +451,8 @@
       ],
       "properties": {
         "identifier": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         },
         "metadata": {
           "type": "string"
@@ -1102,6 +1086,9 @@
             "metadata": {
               "type": "string"
             },
+            "provisioner": {
+              "type": "string"
+            },
             "region": {
               "type": "string",
               "minLength": 1
@@ -1457,6 +1444,9 @@
             "metadata": {
               "type": "string"
             },
+            "provisioner": {
+              "type": "string"
+            },
             "region": {
               "type": "string",
               "minLength": 1
@@ -1605,6 +1595,9 @@
               "minLength": 1
             },
             "metadata": {
+              "type": "string"
+            },
+            "provisioner": {
               "type": "string"
             },
             "region": {
@@ -2188,6 +2181,9 @@
             "connectorRef": {
               "type": "string",
               "minLength": 1
+            },
+            "provisioner": {
+              "type": "string"
             },
             "resourceGroup": {
               "type": "string",
@@ -3748,6 +3744,9 @@
             "metadata": {
               "type": "string"
             },
+            "provisioner": {
+              "type": "string"
+            },
             "variables": {
               "type": "array",
               "items": {
@@ -4132,6 +4131,11 @@
         }
       ]
     },
+    "DeploymentMetaData": {
+      "type": "object",
+      "discriminator": "deploymentType",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "DeploymentStageConfig": {
       "type": "object",
       "required": [
@@ -4190,6 +4194,22 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "GoogleCloudFunctions"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/GoogleCloudFunctionDeploymentMetaData"
+              }
+            }
+          }
+        },
         {
           "oneOf": [
             {
@@ -4679,6 +4699,9 @@
             "metadata": {
               "type": "string"
             },
+            "provisioner": {
+              "type": "string"
+            },
             "region": {
               "type": "string",
               "minLength": 1
@@ -5085,6 +5108,9 @@
             },
             "metadata": {
               "type": "string"
+            },
+            "provisioner": {
+              "type": "string"
             }
           }
         }
@@ -5311,7 +5337,8 @@
           ]
         },
         "envGroupRef": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(?=\\s*\\S).*$"
         },
         "environments": {
           "oneOf": [
@@ -5412,7 +5439,8 @@
           ]
         },
         "environmentRef": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(?=\\s*\\S).*$"
         },
         "filters": {
           "oneOf": [
@@ -6240,6 +6268,44 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "GoogleCloudFunctionDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "environmentType": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GoogleCloudFunctionGenOneDefinitionManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "GoogleCloudFunctionsServiceSpec": {
       "allOf": [
         {
@@ -6247,7 +6313,11 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {
+            "environmentType": {
+              "type": "string"
+            }
+          }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6261,13 +6331,28 @@
           "type": "object",
           "required": [
             "connectorRef",
+            "fetchType",
             "project",
             "repository",
             "sourceDirectory"
           ],
           "properties": {
+            "branch": {
+              "type": "string"
+            },
+            "commitId": {
+              "type": "string"
+            },
             "connectorRef": {
               "type": "string"
+            },
+            "fetchType": {
+              "type": "string",
+              "enum": [
+                "Branch",
+                "Commit",
+                "Tag"
+              ]
             },
             "project": {
               "type": "string"
@@ -6276,6 +6361,9 @@
               "type": "string"
             },
             "sourceDirectory": {
+              "type": "string"
+            },
+            "tag": {
               "type": "string"
             }
           }
@@ -6376,6 +6464,65 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "GoogleFunctionsGenOneDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "updateFieldMask": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GoogleFunctionsGenOneRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "GoogleFunctionsInfrastructure": {
       "allOf": [
         {
@@ -6399,6 +6546,9 @@
             "project": {
               "type": "string",
               "minLength": 1
+            },
+            "provisioner": {
+              "type": "string"
             },
             "region": {
               "type": "string",
@@ -6699,7 +6849,7 @@
             "store": {
               "$ref": "#/definitions/StoreConfigWrapper"
             },
-            "subChartName": {
+            "subChartPath": {
               "type": "string"
             },
             "valuesPaths": {
@@ -7043,7 +7193,8 @@
       ],
       "properties": {
         "identifier": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(?=\\s*\\S).*$"
         },
         "inputs": {
           "oneOf": [
@@ -7112,7 +7263,8 @@
             "GoogleCloudFunctions",
             "AWS_SAM",
             "AwsLambda",
-            "KubernetesAws"
+            "KubernetesAws",
+            "KubernetesRancher"
           ]
         }
       },
@@ -7306,6 +7458,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/K8sGcpInfrastructure"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "KubernetesRancher"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/K8sRancherInfrastructure"
               }
             }
           }
@@ -7809,6 +7977,9 @@
               ],
               "minLength": 1
             },
+            "provisioner": {
+              "type": "string"
+            },
             "releaseName": {
               "type": "string",
               "minLength": 1
@@ -7862,7 +8033,9 @@
                   "type": "array",
                   "items": {
                     "type": "string"
-                  }
+                  },
+                  "maxItems": 2147483647,
+                  "minItems": 1
                 },
                 {
                   "type": "string",
@@ -7951,6 +8124,9 @@
               ],
               "minLength": 1
             },
+            "provisioner": {
+              "type": "string"
+            },
             "releaseName": {
               "type": "string",
               "minLength": 1
@@ -7997,6 +8173,9 @@
                 }
               ],
               "minLength": 1
+            },
+            "provisioner": {
+              "type": "string"
             },
             "releaseName": {
               "type": "string",
@@ -8288,6 +8467,9 @@
               ],
               "minLength": 1
             },
+            "provisioner": {
+              "type": "string"
+            },
             "releaseName": {
               "type": "string",
               "minLength": 1
@@ -8351,6 +8533,57 @@
                   "minLength": 1
                 }
               ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "K8sRancherInfrastructure": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Infrastructure"
+        },
+        {
+          "type": "object",
+          "required": [
+            "cluster",
+            "connectorRef",
+            "namespace",
+            "releaseName"
+          ],
+          "properties": {
+            "cluster": {
+              "type": "string",
+              "minLength": 1
+            },
+            "connectorRef": {
+              "type": "string",
+              "minLength": 1
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "namespace": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ],
+              "minLength": 1
+            },
+            "provisioner": {
+              "type": "string"
+            },
+            "releaseName": {
+              "type": "string",
+              "minLength": 1
             }
           }
         }
@@ -8759,7 +8992,8 @@
             "GoogleCloudFunctionDefinition",
             "AwsLambdaFunctionDefinition",
             "AwsLambdaFunctionAliasDefinition",
-            "AwsSamDirectory"
+            "AwsSamDirectory",
+            "GoogleCloudFunctionGenOneDefinition"
           ]
         }
       },
@@ -8969,6 +9203,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GoogleCloudFunctionDefinitionManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleCloudFunctionGenOneDefinition"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudFunctionGenOneDefinitionManifest"
               }
             }
           }
@@ -10048,7 +10298,8 @@
               "PolicyEvaluationFailure",
               "InputTimeoutError",
               "ApprovalRejection",
-              "DelegateRestart"
+              "DelegateRestart",
+              "UserMarkedFailure"
             ]
           }
         }
@@ -10364,6 +10615,57 @@
           "required": [
             "credentialsRef",
             "hostFilter",
+            "hostArrayPath"
+          ],
+          "properties": {
+            "credentialsRef": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "hostArrayPath": {
+              "type": "string"
+            },
+            "hostAttributes": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "hostFilter": {
+              "$ref": "#/definitions/HostFilter"
+            },
+            "provisioner": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "credentialsRef",
+            "hostFilter",
             "connectorRef"
           ],
           "properties": {
@@ -10388,16 +10690,6 @@
                 }
               ]
             },
-            "dynamicallyProvisioned": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
             "hostAttributes": {
               "oneOf": [
                 {
@@ -10413,6 +10705,9 @@
             },
             "hostFilter": {
               "$ref": "#/definitions/HostFilter"
+            },
+            "provisioner": {
+              "type": "string"
             }
           },
           "additionalProperties": false
@@ -10440,16 +10735,6 @@
                   "type": "string",
                   "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
-                }
-              ]
-            },
-            "dynamicallyProvisioned": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
                 }
               ]
             },
@@ -10481,73 +10766,9 @@
                   "type": "string"
                 }
               ]
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "credentialsRef",
-            "hostFilter",
-            "hostObjectArray"
-          ],
-          "properties": {
-            "credentialsRef": {
+            },
+            "provisioner": {
               "type": "string"
-            },
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "dynamicallyProvisioned": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
-            "hostAttributes": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
-            "hostFilter": {
-              "$ref": "#/definitions/HostFilter"
-            },
-            "hostObjectArray": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/JsonNode"
-                },
-                {
-                  "type": "string",
-                  "pattern": "(<\\+.+>.*)",
-                  "minLength": 1
-                }
-              ]
             }
           },
           "additionalProperties": false
@@ -11458,6 +11679,9 @@
               "minLength": 1
             },
             "metadata": {
+              "type": "string"
+            },
+            "provisioner": {
               "type": "string"
             },
             "region": {
@@ -12835,6 +13059,9 @@
               ],
               "minLength": 1
             },
+            "provisioner": {
+              "type": "string"
+            },
             "region": {
               "type": "string",
               "minLength": 1
@@ -12875,6 +13102,9 @@
                 "PublicIP"
               ],
               "minLength": 1
+            },
+            "provisioner": {
+              "type": "string"
             },
             "resourceGroup": {
               "type": "string",
@@ -13599,6 +13829,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "DeployCloudFunctionGenOne"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleFunctionsGenOneDeployStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "DeployCloudFunctionWithNoTraffic"
               }
             }
@@ -14103,6 +14349,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/MergePRStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "RollbackCloudFunctionGenOne"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleFunctionsGenOneRollbackStepInfo"
               }
             }
           }
@@ -14973,6 +15235,14 @@
     },
     "SyncOptions": {
       "type": "object",
+      "required": [
+        "applyOutOfSyncOnly",
+        "autoCreateNamespace",
+        "prunePropagationPolicy",
+        "pruneResourcesAtLast",
+        "replaceResources",
+        "skipSchemaValidation"
+      ],
       "properties": {
         "applyOutOfSyncOnly": {
           "oneOf": [
@@ -15039,22 +15309,14 @@
       "type": "object",
       "properties": {
         "baseBackoffDuration": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "increaseBackoffByFactor": {
           "oneOf": [
             {
               "type": "integer",
-              "format": "int32"
+              "format": "int32",
+              "minimum": 0
             },
             {
               "type": "string"
@@ -15065,7 +15327,8 @@
           "oneOf": [
             {
               "type": "integer",
-              "format": "int32"
+              "format": "int32",
+              "minimum": 0
             },
             {
               "type": "string"
@@ -15073,16 +15336,7 @@
           ]
         },
         "maxBackoffDuration": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -15094,12 +15348,28 @@
         },
         {
           "type": "object",
+          "required": [
+            "applyOnly",
+            "dryRun",
+            "forceApply",
+            "prune",
+            "syncOptions"
+          ],
           "properties": {
             "applicationsList": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/AgentApplicationTargets"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/AgentApplicationTargets"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "applyOnly": {
               "oneOf": [
@@ -15245,6 +15515,9 @@
             "organization": {
               "type": "string"
             },
+            "provisioner": {
+              "type": "string"
+            },
             "space": {
               "type": "string"
             }
@@ -15288,6 +15561,16 @@
                   "type": "string",
                   "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
+                }
+              ]
+            },
+            "ignoreInstanceCountManifest": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
                 }
               ]
             },
@@ -16136,6 +16419,30 @@
       "discriminator": "type",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TerraformCliOptionFlag": {
+      "type": "object",
+      "required": [
+        "commandType",
+        "flag"
+      ],
+      "properties": {
+        "commandType": {
+          "type": "string",
+          "enum": [
+            "INIT",
+            "WORKSPACE",
+            "REFRESH",
+            "PLAN",
+            "APPLY",
+            "DESTROY"
+          ]
+        },
+        "flag": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TerraformCloudApplySpec": {
       "allOf": [
         {
@@ -16222,6 +16529,12 @@
             "Destroy"
           ]
         },
+        "commandFlags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerraformCliOptionFlag"
+          }
+        },
         "configFiles": {
           "$ref": "#/definitions/TerraformConfigFilesWrapper"
         },
@@ -16266,6 +16579,12 @@
     "TerraformCloudCliStepConfiguration": {
       "type": "object",
       "properties": {
+        "commandFlags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerraformCliOptionFlag"
+          }
+        },
         "spec": {
           "$ref": "#/definitions/TerraformCloudCliExecutionData"
         }
@@ -17011,6 +17330,12 @@
             "Destroy"
           ]
         },
+        "commandFlags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerraformCliOptionFlag"
+          }
+        },
         "configFiles": {
           "$ref": "#/definitions/TerraformConfigFilesWrapper"
         },
@@ -17153,6 +17478,12 @@
             "provisionerIdentifier"
           ],
           "properties": {
+            "commandFlags": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TerraformCliOptionFlag"
+              }
+            },
             "delegateSelectors": {
               "oneOf": [
                 {
@@ -17192,6 +17523,12 @@
         "type"
       ],
       "properties": {
+        "commandFlags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerraformCliOptionFlag"
+          }
+        },
         "skipRefreshCommand": {
           "oneOf": [
             {

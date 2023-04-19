@@ -54,4 +54,5 @@ public class TerraformExecuteStepRequest {
   String accountId;
   boolean isTerraformCloudCli;
   boolean skipTerraformRefresh; // NG
+  Map<String, String> additionalCliFlags;
 }

@@ -133,6 +133,10 @@ if [[ "" != "$SMTP_HOST" ]]; then
   export SMTP_HOST; yq -i '.smtp.host=env(SMTP_HOST)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SMTP_PORT" ]]; then
+  export SMTP_PORT; yq -i '.smtp.port=env(SMTP_PORT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$SMTP_USERNAME" ]]; then
   export SMTP_USERNAME; yq -i '.smtp.username=env(SMTP_USERNAME)' $CONFIG_FILE
 fi
@@ -179,6 +183,10 @@ fi
 
 if [[ "" != "$BUDGET_ALERTS_JOB_CRON" ]]; then
   export BUDGET_ALERTS_JOB_CRON; yq -i '.scheduler-jobs-config.budgetAlertsJobCron=env(BUDGET_ALERTS_JOB_CRON)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BUDGET_COST_UPDATE_JOB_CRON" ]]; then
+  export BUDGET_COST_UPDATE_JOB_CRON; yq -i '.scheduler-jobs-config.budgetCostUpdateJobCron=env(BUDGET_COST_UPDATE_JOB_CRON)' $CONFIG_FILE
 fi
 
 if [[ "" != "$WEEKLY_REPORT_JOB_CRON" ]]; then

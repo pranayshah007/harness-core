@@ -10,9 +10,13 @@ package io.harness.ng.migration;
 import io.harness.migration.MigrationDetails;
 import io.harness.migration.NGMigration;
 import io.harness.migration.beans.MigrationType;
+import io.harness.ng.core.migration.timescale.AddDeletedAtColumns;
+import io.harness.ng.core.migration.timescale.AddIndexToServiceInfraInfoTable;
 import io.harness.ng.core.migration.timescale.AddModuleTypeSpecificColumnsToModuleLicensesTable;
 import io.harness.ng.core.migration.timescale.AddRollbackDurationToServiceInfraInfoTable;
+import io.harness.ng.core.migration.timescale.CreateConnectorsTable;
 import io.harness.ng.core.migration.timescale.CreateModuleLicensesTable;
+import io.harness.ng.core.migration.timescale.CreateNgUserTable;
 import io.harness.ng.core.migration.timescale.GetActiveServicesByDateFunction;
 import io.harness.ng.core.migration.timescale.GetServiceInstancesByDateFunction;
 
@@ -39,6 +43,10 @@ public class NGCoreTimeScaleMigrationDetails implements MigrationDetails {
         .add(Pair.of(3, GetServiceInstancesByDateFunction.class))
         .add(Pair.of(4, GetActiveServicesByDateFunction.class))
         .add(Pair.of(5, AddModuleTypeSpecificColumnsToModuleLicensesTable.class))
+        .add(Pair.of(6, AddIndexToServiceInfraInfoTable.class))
+        .add(Pair.of(7, CreateConnectorsTable.class))
+        .add(Pair.of(8, CreateNgUserTable.class))
+        .add(Pair.of(9, AddDeletedAtColumns.class))
         .build();
   }
 }

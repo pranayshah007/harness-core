@@ -34,7 +34,6 @@ import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.serviceoverride.spring.ServiceOverrideRepository;
-import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.core.variables.NGVariable;
@@ -296,8 +295,8 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
     String[] serviceRefSplit = serviceIdentifier.split("\\.", 2);
     if (serviceRefSplit.length == 1) {
       // identifier
-      IdentifierRef serviceIdentifierRef = FullyQualifiedIdentifierHelper.getIdentifierRefWithScope(
-          accountId, orgIdentifier, projectIdentifier, serviceIdentifier);
+      IdentifierRef serviceIdentifierRef =
+          IdentifierRefHelper.getIdentifierRefWithScope(accountId, orgIdentifier, projectIdentifier, serviceIdentifier);
       String scopedServiceRef = serviceIdentifierRef.buildScopedIdentifier();
       // delete all service overrides with matching serviceRef irrespective of its scope
       criteria = getServiceOverrideEqualityCriteriaForServiceRef(
@@ -338,7 +337,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
         throw new InvalidRequestException("Service overrides yaml is empty.");
       }
       try {
-        String serviceOverrideInputs = RuntimeInputFormHelper.createRuntimeInputForm(yaml, true);
+        String serviceOverrideInputs = RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(yaml);
         if (isEmpty(serviceOverrideInputs)) {
           return null;
         }

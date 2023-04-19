@@ -18,6 +18,7 @@ import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.sdk.core.plan.PlanNode;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,13 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
   String startingNodeId;
   @Singular List<String> errorMessages;
 
+  // list of Node IDs that are not to be converted into Identity Plan Nodes during Rollback Mode execution, meaning that
+  // these nodes should be actually executed again rather than them being replicated from a previous execution
+  List<String> preservedNodesInRollbackMode;
+
+  // Dependencies uuids to serviceAffinity map
+  Map<String, String> serviceAffinityMap;
+
   public Dependencies getDependencies() {
     return dependencies;
   }
@@ -53,6 +61,26 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
     mergeContext(other.getContextMap());
     mergeLayoutNodeInfo(other.getGraphLayoutResponse());
     addYamlUpdates(other.getYamlUpdates());
+    mergePreservedNodesInRollbackMode(other.getPreservedNodesInRollbackMode());
+  }
+
+  /**
+   * newPreservedNodes: the nodeIDs in this list will be added to the preservedNodesInRollbackMode into
+   * preservedNodesInRollbackMode in the current object
+   */
+  public void mergePreservedNodesInRollbackMode(List<String> newPreservedNodes) {
+    if (EmptyPredicate.isEmpty(newPreservedNodes)) {
+      return;
+    }
+    if (EmptyPredicate.isEmpty(preservedNodesInRollbackMode)) {
+      preservedNodesInRollbackMode = newPreservedNodes;
+    } else {
+      // On creation, preservedNodesInRollbackMode can be an immutable list (for eg: Collections.singletonList(...),
+      // hence explicitly converting it here to ArrayList
+      List<String> res = new ArrayList<>(preservedNodesInRollbackMode);
+      res.addAll(newPreservedNodes);
+      preservedNodesInRollbackMode = res;
+    }
   }
 
   private void mergeContext(Map<String, PlanCreationContextValue> contextMap) {
@@ -142,7 +170,8 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
     contextMap.put(key, value);
   }
 
-  private void addDependency(String yaml, String nodeId, String yamlPath) {
+  @Override
+  public void addDependency(String yaml, String nodeId, String yamlPath) {
     if ((dependencies != null && dependencies.getDependenciesMap().containsKey(nodeId))
         || (nodes != null && nodes.containsKey(nodeId))) {
       return;
@@ -152,6 +181,18 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
       return;
     }
     dependencies = dependencies.toBuilder().putDependencies(nodeId, yamlPath).build();
+  }
+
+  @Override
+  public void addServiceAffinityToResponse(String dependencyKey, String serviceAffinity) {
+    if (serviceAffinityMap == null) {
+      serviceAffinityMap = new HashMap<>();
+    } else if (!(serviceAffinityMap instanceof HashMap)) {
+      serviceAffinityMap = new HashMap<>(serviceAffinityMap);
+    }
+    if (EmptyPredicate.isNotEmpty(serviceAffinity)) {
+      serviceAffinityMap.put(dependencyKey, serviceAffinity);
+    }
   }
 
   private void mergeStartingNodeId(String otherStartingNodeId) {

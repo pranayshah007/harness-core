@@ -30,6 +30,7 @@ import io.harness.persistence.HPersistence;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import com.mongodb.ReadPreference;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
@@ -90,6 +91,7 @@ public class ActivityServiceImpl implements ActivityService {
   public String getDeploymentTagFromActivity(String accountId, String verificationJobInstanceId) {
     DeploymentActivity deploymentActivity =
         (DeploymentActivity) hPersistence.createQuery(Activity.class, excludeAuthority)
+            .useReadPreference(ReadPreference.secondaryPreferred())
             .filter(ActivityKeys.accountId, accountId)
             .filter(ActivityKeys.type, ActivityType.DEPLOYMENT)
             .field(ActivityKeys.verificationJobInstanceIds)
@@ -189,11 +191,14 @@ public class ActivityServiceImpl implements ActivityService {
   }
 
   private Query<Activity> createQuery(MonitoredServiceParams monitoredServiceParams) {
-    return hPersistence.createQuery(Activity.class, excludeValidate)
-        .filter(ActivityKeys.accountId, monitoredServiceParams.getAccountIdentifier())
-        .filter(ActivityKeys.orgIdentifier, monitoredServiceParams.getOrgIdentifier())
-        .filter(ActivityKeys.projectIdentifier, monitoredServiceParams.getProjectIdentifier())
-        .filter(ActivityKeys.monitoredServiceIdentifier, monitoredServiceParams.getMonitoredServiceIdentifier());
+    Query<Activity> query =
+        hPersistence.createQuery(Activity.class, excludeValidate)
+            .filter(ActivityKeys.accountId, monitoredServiceParams.getAccountIdentifier())
+            .filter(ActivityKeys.orgIdentifier, monitoredServiceParams.getOrgIdentifier())
+            .filter(ActivityKeys.projectIdentifier, monitoredServiceParams.getProjectIdentifier())
+            .filter(ActivityKeys.monitoredServiceIdentifier, monitoredServiceParams.getMonitoredServiceIdentifier());
+    query.useReadPreference(ReadPreference.secondaryPreferred());
+    return query;
   }
 
   private Optional<Activity> getFromDb(Activity activity) {

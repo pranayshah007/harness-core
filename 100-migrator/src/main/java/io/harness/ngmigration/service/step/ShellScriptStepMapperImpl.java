@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.step;
 
 import io.harness.data.structure.CollectionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.StepOutput;
@@ -36,6 +37,7 @@ import io.harness.yaml.core.variables.StringNGVariable;
 import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Variable;
+import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
 import software.wings.beans.template.Template;
 import software.wings.beans.template.command.ShellScriptTemplate;
@@ -81,7 +83,7 @@ public class ShellScriptStepMapperImpl extends StepMapper {
 
   @Override
   public List<CgEntityId> getReferencedEntities(
-      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+      String accountId, Workflow workflow, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     List<CgEntityId> refs = new ArrayList<>();
     String templateId = graphNode.getTemplateUuid();
     if (StringUtils.isNotBlank(templateId)) {
@@ -220,6 +222,7 @@ public class ShellScriptStepMapperImpl extends StepMapper {
     return true;
   }
 
+  @Override
   public void overrideTemplateInputs(MigrationContext migrationContext, WorkflowMigrationContext context,
       WorkflowPhase phase, GraphNode graphNode, NGYamlFile templateFile, JsonNode templateInputs) {
     JsonNode envVars = templateInputs.at("/spec/environmentVariables");
@@ -240,12 +243,26 @@ public class ShellScriptStepMapperImpl extends StepMapper {
         map.put(key, value);
       }
     }
-    Map<String, String> stepVariables = CollectionUtils.emptyIfNull(graphNode.getTemplateVariables())
-                                            .stream()
-                                            .collect(Collectors.toMap(Variable::getName, Variable::getValue));
+    Map<String, String> stepVariables = new HashMap<>();
+    if (EmptyPredicate.isNotEmpty(template.getVariables())) {
+      template.getVariables()
+          .stream()
+          .filter(variable -> StringUtils.isNotBlank(variable.getName()))
+          .forEach(variable
+              -> stepVariables.put(variable.getName(),
+                  (String) MigratorExpressionUtils.render(
+                      migrationContext, StringUtils.defaultIfEmpty(variable.getValue(), ""), custom)));
+    }
+
+    stepVariables.putAll(CollectionUtils.emptyIfNull(graphNode.getTemplateVariables())
+                             .stream()
+                             .filter(variable -> StringUtils.isNoneBlank(variable.getName(), variable.getValue()))
+                             .collect(Collectors.toMap(Variable::getName, Variable::getValue)));
     if (envVars instanceof ArrayNode) {
       for (JsonNode env : envVars) {
         String key = env.get("name").asText();
+        // Default to empty value
+        ((ObjectNode) env).put("value", "");
         if (map.containsKey(key)) {
           ((ObjectNode) env).put("value", map.get(key));
         }
@@ -254,5 +271,9 @@ public class ShellScriptStepMapperImpl extends StepMapper {
         }
       }
     }
+
+    // Fix delegate selectors in the workflow
+    ShellScriptState state = (ShellScriptState) getState(graphNode);
+    overrideTemplateDelegateSelectorInputs(templateInputs, state.getDelegateSelectors());
   }
 }

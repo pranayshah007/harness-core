@@ -12,11 +12,13 @@ import io.harness.secretmanagerclient.SSHAuthScheme;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Data
@@ -33,6 +35,11 @@ public class SSHAuthDTO {
   @NotNull
   @Valid
   private BaseSSHSpecDTO spec;
+
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private boolean useSshClient;
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) private boolean useSshj;
 
   @Builder
   public SSHAuthDTO(SSHAuthScheme type, BaseSSHSpecDTO spec) {

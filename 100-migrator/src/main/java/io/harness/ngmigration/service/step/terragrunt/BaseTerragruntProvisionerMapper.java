@@ -57,6 +57,7 @@ import io.harness.yaml.core.variables.StringNGVariable;
 import software.wings.beans.GraphNode;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.TerragruntInfrastructureProvisioner;
+import software.wings.beans.Workflow;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
@@ -81,7 +82,7 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
   }
 
   public List<CgEntityId> getReferencedEntities(
-      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+      String accountId, Workflow workflow, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     TerragruntProvisionState state = (TerragruntProvisionState) getState(graphNode);
 
     List<CgEntityId> references = new ArrayList<>();

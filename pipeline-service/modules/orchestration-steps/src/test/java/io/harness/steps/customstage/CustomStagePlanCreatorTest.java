@@ -7,12 +7,17 @@
 
 package io.harness.steps.customstage;
 
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
+import io.harness.CategoryTest;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.YamlField;
@@ -27,24 +32,24 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Objects;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
-public class CustomStagePlanCreatorTest {
-  @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
-
+@OwnedBy(PIPELINE)
+public class CustomStagePlanCreatorTest extends CategoryTest {
+  @Mock private KryoSerializer kryoSerializer;
   @InjectMocks CustomStagePlanCreator customStagePlanCreator;
 
-  @Mock private KryoSerializer kryoSerializer;
   private String SOURCE_PIPELINE_YAML;
 
   @Before
   public void setUp() throws IOException {
+    MockitoAnnotations.openMocks(this);
     ClassLoader classLoader = this.getClass().getClassLoader();
     String pipeline_yaml_filename = "customStage.yaml";
     SOURCE_PIPELINE_YAML = Resources.toString(
@@ -94,6 +99,10 @@ public class CustomStagePlanCreatorTest {
     CustomStageNode customStageNode = new CustomStageNode();
     customStageNode.setUuid("tempid");
     doReturn("temp".getBytes()).when(kryoSerializer).asDeflatedBytes(any());
+
+    MockedStatic<YamlUtils> mockSettings = Mockito.mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
+    when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(fullYamlFieldWithUuiD.getNode());
     assertThat(customStagePlanCreator.createPlanForChildrenNodes(ctx, customStageNode)).isNotNull();
+    mockSettings.close();
   }
 }

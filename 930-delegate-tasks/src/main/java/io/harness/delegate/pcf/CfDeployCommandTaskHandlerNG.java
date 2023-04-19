@@ -103,12 +103,9 @@ public class CfDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       }
       cfRequestConfig.setCfHomeDirPath(workingDirectory.getAbsolutePath());
 
-      // Init AppAutoscalarRequestData If Needed
-      if (cfDeployCommandRequestNG.isUseAppAutoScalar()) {
-        cfAppAutoscalarRequestData.setCfRequestConfig(cfRequestConfig);
-        cfAppAutoscalarRequestData.setConfigPathVar(workingDirectory.getAbsolutePath());
-        cfAppAutoscalarRequestData.setTimeoutInMins(cfDeployCommandRequestNG.getTimeoutIntervalInMin());
-      }
+      cfAppAutoscalarRequestData.setCfRequestConfig(cfRequestConfig);
+      cfAppAutoscalarRequestData.setConfigPathVar(workingDirectory.getAbsolutePath());
+      cfAppAutoscalarRequestData.setTimeoutInMins(cfDeployCommandRequestNG.getTimeoutIntervalInMin());
 
       ApplicationDetail details = cfCommandTaskHelperNG.getNewlyCreatedApplication(
           cfRequestConfig, cfDeployCommandRequestNG, cfDeploymentManager);

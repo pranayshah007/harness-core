@@ -10,6 +10,7 @@ package io.harness.ng.core.service.resources;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_CREATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
+import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.SATHISH;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.TATHAGAT;
@@ -37,6 +38,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceServiceImpl;
+import io.harness.cdng.manifest.yaml.kinds.KustomizeCommandFlagType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
@@ -587,5 +589,13 @@ public class ServiceResourceV2Test extends CategoryTest {
                                ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "services", 0, 10, null))
         .hasMessage(format("Invalid account identifier, %s", ACCOUNT_ID))
         .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testKustomizeCommandFlags() {
+    assertThat(serviceResourceV2.getKustomizeCommandFlags().getData())
+        .containsExactlyInAnyOrder(KustomizeCommandFlagType.BUILD);
   }
 }

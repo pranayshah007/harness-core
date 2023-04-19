@@ -19,11 +19,14 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.github.outcome.GithubHttpCredentialsOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.common.Constants;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
 import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
+import io.harness.spec.server.idp.v1.model.BackstageEnvConfigVariable;
+import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
+import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
-import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
 
 import java.util.HashMap;
 import java.util.List;
@@ -39,7 +42,7 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
     return config.getExecuteOnDelegate() ? CATALOG_INFRA_CONNECTOR_TYPE_PROXY : CATALOG_INFRA_CONNECTOR_TYPE_DIRECT;
   }
 
-  public Pair<ConnectorInfoDTO, Map<String, EnvironmentSecret>> getConnectorAndSecretsInfo(
+  public Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> getConnectorAndSecretsInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
     ConnectorInfoDTO connectorInfoDTO = getConnectorInfo(accountIdentifier, connectorIdentifier);
     if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.GITHUB_CONNECTOR_TYPE)) {
@@ -50,20 +53,27 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
     GithubConnectorDTO config = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
     GithubApiAccessDTO apiAccess = config.getApiAccess();
 
-    Map<String, EnvironmentSecret> secrets = new HashMap<>();
+    Map<String, BackstageEnvVariable> secrets = new HashMap<>();
 
     if (apiAccess != null && apiAccess.getType().toString().equals(GitIntegrationConstants.GITHUB_APP_CONNECTOR_TYPE)) {
       GithubAppSpecDTO apiAccessSpec = (GithubAppSpecDTO) apiAccess.getSpec();
 
-      EnvironmentSecret appIDEnvironmentSecret = new EnvironmentSecret();
-      appIDEnvironmentSecret.setEnvName(GitIntegrationConstants.GITHUB_APP_ID);
-      appIDEnvironmentSecret.setDecryptedValue(apiAccessSpec.getApplicationId());
-      secrets.put(GitIntegrationConstants.GITHUB_APP_ID, appIDEnvironmentSecret);
+      if (apiAccessSpec.getApplicationIdRef() == null) {
+        BackstageEnvConfigVariable appIDEnvironmentSecret = new BackstageEnvConfigVariable();
+        appIDEnvironmentSecret.setEnvName(Constants.GITHUB_APP_ID);
+        appIDEnvironmentSecret.setType(BackstageEnvVariable.TypeEnum.CONFIG);
+        appIDEnvironmentSecret.value(apiAccessSpec.getApplicationId());
+        secrets.put(Constants.GITHUB_APP_ID, appIDEnvironmentSecret);
+      } else {
+        String applicationIdSecretRefId = apiAccessSpec.getApplicationIdRef().getIdentifier();
+        secrets.put(Constants.GITHUB_APP_ID,
+            GitIntegrationUtils.getBackstageEnvSecretVariable(applicationIdSecretRefId, Constants.GITHUB_APP_ID));
+      }
 
       String privateRefKeySecretIdentifier = apiAccessSpec.getPrivateKeyRef().getIdentifier();
-      secrets.put(GitIntegrationConstants.GITHUB_APP_PRIVATE_KEY_REF,
-          GitIntegrationUtils.getEnvironmentSecret(ngSecretService, accountIdentifier, orgIdentifier, projectIdentifier,
-              privateRefKeySecretIdentifier, connectorIdentifier, GitIntegrationConstants.GITHUB_APP_PRIVATE_KEY_REF));
+      secrets.put(Constants.GITHUB_APP_PRIVATE_KEY_REF,
+          GitIntegrationUtils.getBackstageEnvSecretVariable(
+              privateRefKeySecretIdentifier, Constants.GITHUB_APP_PRIVATE_KEY_REF));
     }
 
     GithubHttpCredentialsOutcomeDTO outcome =
@@ -80,25 +90,26 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
           String.format("Secret identifier not found for connector: [%s] ", connectorIdentifier));
     }
 
-    secrets.put(GitIntegrationConstants.GITHUB_TOKEN,
-        GitIntegrationUtils.getEnvironmentSecret(ngSecretService, accountIdentifier, orgIdentifier, projectIdentifier,
-            tokenSecretIdentifier, connectorIdentifier, GitIntegrationConstants.GITHUB_TOKEN));
+    secrets.put(Constants.GITHUB_TOKEN,
+        GitIntegrationUtils.getBackstageEnvSecretVariable(tokenSecretIdentifier, Constants.GITHUB_TOKEN));
     return new Pair<>(connectorInfoDTO, secrets);
   }
 
   public void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
-      String locationParentPath, String remoteFolder, List<String> filesToPush) {
-    Pair<ConnectorInfoDTO, Map<String, EnvironmentSecret>> connectorSecretsInfo = getConnectorAndSecretsInfo(
-        accountIdentifier, null, null, catalogConnectorInfo.getSourceConnector().getIdentifier());
-    String githubConnectorSecret =
-        connectorSecretsInfo.getSecond().get(GitIntegrationConstants.GITHUB_TOKEN).getDecryptedValue();
+      String locationParentPath, List<String> filesToPush) {
+    Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> connectorSecretsInfo = getConnectorAndSecretsInfo(
+        accountIdentifier, null, null, catalogConnectorInfo.getInfraConnector().getIdentifier());
+    BackstageEnvSecretVariable envSecretVariable =
+        (BackstageEnvSecretVariable) connectorSecretsInfo.getSecond().get(Constants.GITHUB_TOKEN);
+    String githubConnectorSecret = GitIntegrationUtils.decryptSecret(ngSecretService, accountIdentifier, null, null,
+        envSecretVariable.getHarnessSecretIdentifier(), catalogConnectorInfo.getSourceConnector().getIdentifier());
 
     GithubConnectorDTO config = (GithubConnectorDTO) connectorSecretsInfo.getFirst().getConnectorConfig();
     GithubHttpCredentialsOutcomeDTO outcome =
         (GithubHttpCredentialsOutcomeDTO) config.getAuthentication().getCredentials().toOutcome();
     GithubUsernameTokenDTO spec = (GithubUsernameTokenDTO) outcome.getSpec();
 
-    performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, remoteFolder, filesToPush,
+    performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, filesToPush,
         spec.getUsername(), githubConnectorSecret);
   }
 }

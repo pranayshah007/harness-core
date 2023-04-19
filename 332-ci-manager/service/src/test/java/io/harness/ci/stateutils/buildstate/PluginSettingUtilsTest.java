@@ -64,6 +64,7 @@ import io.harness.exception.ngexception.CIStageExecutionUserException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.ssca.execution.SscaOrchestrationPluginUtils;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildSpec;
 import io.harness.yaml.extended.ci.codebase.BuildType;
@@ -88,11 +89,13 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
   @Mock private CodebaseUtils codebaseUtils;
   @Mock private ConnectorUtils connectorUtils;
+  @Mock private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
 
   @Before
   public void setUp() {
     on(pluginSettingUtils).set("codebaseUtils", codebaseUtils);
     on(pluginSettingUtils).set("connectorUtils", connectorUtils);
+    on(pluginSettingUtils).set("sscaOrchestrationPluginUtils", sscaOrchestrationPluginUtils);
     on(codebaseUtils).set("connectorUtils", connectorUtils);
   }
 
@@ -573,7 +576,6 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put(DRONE_TAG, buildValue);
     expected.put(DRONE_BUILD_EVENT, TAG_BUILD_EVENT);
     expected.put(DRONE_WORKSPACE, STEP_MOUNT_PATH + PATH_SEPARATOR + repoName);
-    expected.put(GIT_SSL_NO_VERIFY, String.valueOf(false));
     expected.put("PLUGIN_DEPTH", GIT_CLONE_MANUAL_DEPTH.toString());
     expected.put(DRONE_NETRC_MACHINE, "");
     expected.put(DRONE_COMMIT_BRANCH, "");
@@ -622,7 +624,6 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put(DRONE_BUILD_EVENT, "");
     expected.put(DRONE_COMMIT_SHA, "");
     expected.putAll(gitEnvVars);
-    expected.put(GIT_SSL_NO_VERIFY, String.valueOf(!sslVerify));
     expected.put(DRONE_COMMIT_BRANCH, buildValue);
     expected.put(DRONE_WORKSPACE, cloneDir);
     expected.put("PLUGIN_DEPTH", depth.toString());
@@ -669,7 +670,6 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put(DRONE_BUILD_EVENT, "");
     expected.put(DRONE_COMMIT_SHA, "");
     expected.putAll(gitEnvVars);
-    expected.put(GIT_SSL_NO_VERIFY, String.valueOf(!sslVerify));
     expected.put(DRONE_COMMIT_BRANCH, buildValue);
     expected.put(DRONE_WORKSPACE, STEP_MOUNT_PATH + PATH_SEPARATOR + repoName);
     expected.put("PLUGIN_DEPTH", depth.toString());
@@ -716,7 +716,6 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put(DRONE_BUILD_EVENT, "");
     expected.put(DRONE_COMMIT_SHA, "");
     expected.putAll(gitEnvVars);
-    expected.put(GIT_SSL_NO_VERIFY, String.valueOf(!sslVerify));
     expected.put(DRONE_COMMIT_BRANCH, buildValue);
     expected.put(DRONE_WORKSPACE, STEP_MOUNT_PATH + PATH_SEPARATOR + repoName);
     expected.put("PLUGIN_DEPTH", depth.toString());

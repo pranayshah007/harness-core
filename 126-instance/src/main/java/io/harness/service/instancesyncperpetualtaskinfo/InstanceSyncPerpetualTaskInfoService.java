@@ -12,9 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
 
+import java.util.List;
 import java.util.Optional;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 
 @OwnedBy(DX)
 public interface InstanceSyncPerpetualTaskInfoService {
@@ -29,10 +28,7 @@ public interface InstanceSyncPerpetualTaskInfoService {
   InstanceSyncPerpetualTaskInfoDTO updateDeploymentInfoDetailsList(
       InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO);
 
-  /**
-   * Deletes all instance sync perpetual task info linked to a particular harness project.
-   * @param accountIdentifier  the account id
-   * @return boolean to indicate if deletion was successful
-   */
-  @NotNull boolean deleteAllInstanceSyncPTs(@NotEmpty String accountIdentifier);
+  InstanceSyncPerpetualTaskInfoDTO updateDeploymentInfoListAndConnectorId(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO, String connectorIdentifier);
+  List<InstanceSyncPerpetualTaskInfoDTO> findAll(String accountId, String perpetualTaskId);
 }

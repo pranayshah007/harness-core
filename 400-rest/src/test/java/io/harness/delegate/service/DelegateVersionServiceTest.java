@@ -80,12 +80,22 @@ public class DelegateVersionServiceTest {
 
   @Test
   @Category(UnitTests.class)
-  public void whenDelegateImageTagAccountOverrideThenUseIt() {
+  public void whenDelegateImageTagAccountOverrideAndImmutableThenUseIt() {
+    final VersionOverride override =
+        VersionOverride.builder(ACCOUNT_ID).overrideType(DELEGATE_IMAGE_TAG).version(HARNESS_OVERRIDE_TAG).build();
+
+    mockDelegateOverrides(override, false, false, true);
+    assertOverrides(HARNESS_OVERRIDE_TAG, DEFAULT_UPGRADER_IMAGE, emptyList(), null, true);
+  }
+
+  @Test
+  @Category(UnitTests.class)
+  public void whenDelegateImageTagAccountOverrideAndNotImmutableThenDontUseIt() {
     final VersionOverride override =
         VersionOverride.builder(ACCOUNT_ID).overrideType(DELEGATE_IMAGE_TAG).version(HARNESS_OVERRIDE_TAG).build();
 
     mockDelegateOverrides(override, false, false, false);
-    assertOverrides(HARNESS_OVERRIDE_TAG, DEFAULT_UPGRADER_IMAGE, emptyList(), null, false);
+    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, false);
   }
 
   @Test

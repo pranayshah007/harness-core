@@ -25,6 +25,8 @@ public class DowntimeListView {
   LastModified lastModified;
   DowntimeSpecDTO spec;
 
+  int pastOrActiveInstancesCount;
+
   @Value
   @SuperBuilder
   public static class LastModified {

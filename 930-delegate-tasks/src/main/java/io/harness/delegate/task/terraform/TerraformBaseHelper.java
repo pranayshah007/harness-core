@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig;
+import io.harness.delegate.clienttools.TerraformConfigInspectVersion;
 import io.harness.git.model.GitBaseRequest;
 import io.harness.logging.LogCallback;
 import io.harness.logging.PlanLogOutputStream;
@@ -21,6 +23,8 @@ import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.terraform.TerraformStepResponse;
 import io.harness.terraform.request.TerraformExecuteStepRequest;
+
+import software.wings.beans.delegation.TerraformProvisionParameters;
 
 import java.io.File;
 import java.io.IOException;
@@ -64,6 +68,10 @@ public interface TerraformBaseHelper {
   String fetchConfigFileAndPrepareScriptDir(ArtifactoryStoreDelegateConfig artifactoryStoreDelegateConfig,
       String accountId, String workspace, String currentStateFileId, LogCallback logCallback, String baseDir);
 
+  String fetchS3ConfigFilesAndPrepareScriptDir(S3StoreTFDelegateConfig s3StoreTFDelegateConfig,
+      TerraformTaskNGParameters terraformTaskNGParameters, String baseDir,
+      Map<String, Map<String, String>> keyVersionMap, LogCallback logCallback);
+
   void fetchConfigFileAndCloneLocally(GitBaseRequest gitBaseRequestForConfigFile, LogCallback logCallback);
 
   String uploadTfStateFile(String accountId, String delegateId, String taskId, String entityId, File tfStateFile)
@@ -74,11 +82,11 @@ public interface TerraformBaseHelper {
 
   List<String> checkoutRemoteVarFileAndConvertToVarFilePaths(List<TerraformVarFileInfo> varFileInfo, String scriptDir,
       LogCallback logCallback, String accountId, String tfVarDirectory, Map<String, String> commitIdToFetchedFilesMap,
-      boolean isTerraformCloudCli) throws IOException;
+      boolean isTerraformCloudCli, Map<String, Map<String, String>> keyVersionMap) throws IOException;
 
   String checkoutRemoteBackendConfigFileAndConvertToFilePath(TerraformBackendConfigFileInfo bcFileInfo,
       String scriptDir, LogCallback logCallback, String accountId, String tfVarDirectory,
-      Map<String, String> commitIdToFetchedFilesMap) throws IOException;
+      Map<String, String> commitIdToFetchedFilesMap, Map<String, Map<String, String>> keyVersionMap) throws IOException;
 
   EncryptedRecordData encryptPlan(byte[] content, String planName, EncryptionConfig encryptionConfig);
 
@@ -104,4 +112,6 @@ public interface TerraformBaseHelper {
 
   TerraformPlanSummary generateTerraformPlanSummary(
       int exitCode, LogCallback logCallback, PlanLogOutputStream planLogOutputStream);
+
+  TerraformConfigInspectVersion getTerraformConfigInspectVersion(TerraformProvisionParameters parameters);
 }

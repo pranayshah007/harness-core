@@ -9,8 +9,10 @@ package io.harness.pms.plan.execution.service;
 
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
+import io.harness.OrchestrationStepTypes;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ExecutionErrorInfo;
 import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
@@ -229,6 +231,11 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
         && nodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE) {
       updateRequired = updateIdentityStageOrStrategyNodes(planExecutionId, update) || updateRequired;
     }
+    if (nodeExecution.getStepType().getType().equals(OrchestrationStepTypes.PIPELINE_ROLLBACK_STAGE)) {
+      String previousStagePlanNodeId = nodeExecutionService.get(nodeExecution.getPreviousId()).getNodeId();
+      ExecutionSummaryUpdateUtils.updateNextIdOfStageBeforePipelineRollback(
+          update, nodeExecution.getNodeId(), previousStagePlanNodeId);
+    }
     return ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution) || updateRequired;
   }
 
@@ -420,5 +427,13 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     update.set(
         PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyNodeExecution.getNodeId() + ".moduleInfo.stepParameters",
         strategyNodeExecution.getResolvedStepParameters());
+    update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyNodeExecution.getNodeId() + ".startTs",
+        strategyNodeExecution.getStartTs());
+    if (strategyNodeExecution.getFailureInfo() != null) {
+      update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyNodeExecution.getNodeId() + ".failureInfo",
+          ExecutionErrorInfo.builder().message(strategyNodeExecution.getFailureInfo().getErrorMessage()).build());
+    }
+    update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyNodeExecution.getNodeId() + ".endTs",
+        strategyNodeExecution.getEndTs());
   }
 }

@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 14
+version : 18
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -159,3 +159,74 @@ settings :
       ENTERPRISE:
         defaultValue: 500
         editable: true
+  - identifier: enable_node_execution_audit_events
+    name: Enable Node Execution Audit Events
+    category: PMS
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: allow_user_to_mark_step_as_failed_explicitly
+    name: Allow user to mark the step as failed explicitly
+    category: PMS
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: default_connector_for_git_experience
+    name: Default Connector For Git Experience with Entities- Pipelines/InputSets/Templates
+    category: GIT_EXPERIENCE
+    defaultValue:
+    valueType: String
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: enforce_git_experience
+    name: Enforce Git Experience For Entities- Pipelines/InputSets/Templates
+    category: GIT_EXPERIENCE
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: default_store_type_for_entities
+    name: Default Store Type For Entities- Pipelines/InputSets/Templates
+    category: GIT_EXPERIENCE
+    defaultValue: INLINE
+    valueType: STRING
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+    allowedValues:
+      - INLINE
+      - REMOTE
+  - identifier: default_repo_for_git_experience
+    name: Default Repo For Git Experience with Entities- Pipelines/InputSets/Templates
+    category: GIT_EXPERIENCE
+    defaultValue:
+    valueType: String
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: enable_matrix_label_by_name
+    name: Enable matrix Labels By Name
+    category: PMS
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: false
+    allowedScopes:
+      - PROJECT
+      - ACCOUNT
+      - ORGANIZATION
+

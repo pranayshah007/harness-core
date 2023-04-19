@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.NAVNEET;
+import static io.harness.rule.OwnerRule.PRAGYESH;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
@@ -48,6 +49,7 @@ import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureOutcomeProvider;
 import io.harness.cdng.infra.InfrastructureValidator;
+import io.harness.cdng.infra.beans.GoogleFunctionsInfraMapping;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAwsInfraMapping;
@@ -65,6 +67,7 @@ import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
+import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure.K8SDirectInfrastructureBuilder;
@@ -209,7 +212,7 @@ public class InfrastructureStepTest extends CategoryTest {
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.KUBERNETES).build());
     when(cdStepHelper.getK8sInfraDelegateConfig(any(), eq(ambiance))).thenReturn(k8sInfraDelegateConfig);
-    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(
             PdcInfrastructureOutcome.builder()
                 .credentialsRef("sshKeyRef")
@@ -258,7 +261,7 @@ public class InfrastructureStepTest extends CategoryTest {
         .when(stageExecutionHelper)
         .saveStageExecutionInfoAndPublishExecutionInfoKey(
             eq(ambiance), any(ExecutionInfoKey.class), eq(InfrastructureKind.PDC));
-    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(
             PdcInfrastructureOutcome.builder()
                 .credentialsRef("sshKeyRef")
@@ -310,7 +313,7 @@ public class InfrastructureStepTest extends CategoryTest {
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.WINRM).build());
     when(cdStepHelper.getWinRmInfraDelegateConfig(any(), eq(ambiance))).thenReturn(pdcWinRmInfraDelegateConfig);
-    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(
             PdcInfrastructureOutcome.builder()
                 .credentialsRef("sshKeyRef")
@@ -1028,6 +1031,27 @@ public class InfrastructureStepTest extends CategoryTest {
         K8sAwsInfraMapping.builder().awsConnector(connector).namespace(namespace).cluster(cluster).build();
 
     assertThat(infrastructureStep.createInfraMappingObject(infrastructureSpec)).isEqualTo(expectedInfraMapping);
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testCreateGoogleFunctionsInfraMapping() {
+    String region = "region";
+    String connector = "connector";
+    String project = "project";
+
+    Infrastructure infrastructureSpec = GoogleFunctionsInfrastructure.builder()
+                                            .connectorRef(ParameterField.createValueField(connector))
+                                            .region(ParameterField.createValueField(region))
+                                            .project(ParameterField.createValueField(project))
+                                            .build();
+
+    InfraMapping expectedInfraMapping =
+        GoogleFunctionsInfraMapping.builder().gcpConnector(connector).region(region).project(project).build();
+
+    InfraMapping infraMapping = infrastructureStep.createInfraMappingObject(infrastructureSpec);
+    assertThat(infraMapping).isEqualTo(expectedInfraMapping);
   }
 
   private void assertConnectorValidationMessage(Infrastructure infrastructure, String message) {

@@ -17,6 +17,7 @@ import io.harness.delegate.beans.DelegateGroupTags;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenStatus;
+import io.harness.delegate.beans.SupportedDelegateVersion;
 import io.harness.delegate.utilities.DelegateGroupDeleteResponse;
 import io.harness.rest.RestResponse;
 
@@ -168,4 +169,8 @@ public interface DelegateNgManagerCgManagerClient {
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @Query("delegateTag") @NotNull String delegateTag, @Query("validTillNextRelease") Boolean validTillNextRelease,
       @Query("validForDays") int validForDays);
+
+  @GET("version/supportedDelegate")
+  Call<RestResponse<SupportedDelegateVersion>> getPublishedDelegateVersion(
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier);
 }

@@ -26,8 +26,14 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConstants;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
+import io.harness.delegate.beans.connector.awsconnector.AwsEqualJitterBackoffStrategySpecDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsFixedDelayBackoffStrategySpecDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsFullJitterBackoffStrategySpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsInheritFromDelegateSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsSdkClientBackoffStrategyDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsSdkClientBackoffStrategySpecDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsSdkClientBackoffStrategyType;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsConnectorDTO;
@@ -493,5 +499,11 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(JiraAuthCredentialsDTO.class, 10000452);
     kryo.register(JiraUserNamePasswordDTO.class, 10000453);
     kryo.register(JiraPATDTO.class, 10000454);
+    kryo.register(AwsFixedDelayBackoffStrategySpecDTO.class, 10000455);
+    kryo.register(AwsEqualJitterBackoffStrategySpecDTO.class, 10000456);
+    kryo.register(AwsFullJitterBackoffStrategySpecDTO.class, 10000457);
+    kryo.register(AwsSdkClientBackoffStrategyDTO.class, 10000458);
+    kryo.register(AwsSdkClientBackoffStrategySpecDTO.class, 10000459);
+    kryo.register(AwsSdkClientBackoffStrategyType.class, 10000460);
   }
 }
