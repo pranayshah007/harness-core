@@ -219,7 +219,7 @@ if [[ "" != "$IACM_EXTERNAL_SERVICE_ENDPOINT" ]]; then
 fi
 
 if [[ "" != "$SSCA_SERVICE_ENDPOINT" ]]; then
-  export SSCA_SERVICE_ENDPOINT; yq -i '.sscaServiceConfig.baseUrl=env(SSCA_SERVICE_ENDPOINT)' $CONFIG_FILE
+  export SSCA_SERVICE_ENDPOINT; yq -i '.sscaServiceConfig.httpClientConfig.baseUrl=env(SSCA_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$API_URL" ]]; then
