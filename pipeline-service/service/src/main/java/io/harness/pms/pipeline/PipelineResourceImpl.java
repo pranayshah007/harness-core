@@ -551,9 +551,9 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   }
 
   @Override
-  public ResponseDTO<String> createPipelineWithAI(
+  public ResponseDTO<PipelineAiGenerationResponseDTO> createPipelineWithAI(
       String accountId, String orgId, String projectId, String pipelineIdentifier, String pipelineName, String prompt) {
-    String response =
+    var response =
         pipelineAIHelper.createPipelineWithAi(accountId, orgId, projectId, pipelineIdentifier, pipelineName, prompt);
     return ResponseDTO.newResponse(response);
   }

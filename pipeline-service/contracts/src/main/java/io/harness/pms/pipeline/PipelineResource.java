@@ -690,7 +690,8 @@ public interface PipelineResource {
         ApiResponse(responseCode = "default", description = "Returns pipeline YAML")
       })
   @PublicApi
-  ResponseDTO<String>
+  //@NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  ResponseDTO<PipelineAiGenerationResponseDTO>
   createPipelineWithAI(@Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
                        @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
