@@ -7,6 +7,7 @@
 
 package io.harness.ci.buildstate;
 
+import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.TASK_SELECTORS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
@@ -27,6 +28,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
+import io.harness.beans.sweepingoutputs.TaskSelectorSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.ci.config.CIExecutionServiceConfig;
@@ -206,6 +208,17 @@ public class ConnectorUtils {
     if (featureFlagService.isEnabled(FeatureName.DISABLE_CI_STAGE_DEL_SELECTOR, accountID)) {
       log.info("DISABLE_CI_STAGE_DEL_SELECTOR Feature flag is enabled for account {}", accountID);
       return Collections.emptyList();
+    }
+
+    // Delegate Selector Precedence: 1)Stage ->  2)Pipeline ->  3)Connector .If not specified use any delegate
+    OptionalSweepingOutput optionalTaskSelectorSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(TASK_SELECTORS));
+
+    if (optionalTaskSelectorSweepingOutput.isFound()) {
+      TaskSelectorSweepingOutput taskSelectorSweepingOutput =
+          (TaskSelectorSweepingOutput) optionalTaskSelectorSweepingOutput.getOutput();
+
+      return taskSelectorSweepingOutput.getTaskSelectors();
     }
 
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(

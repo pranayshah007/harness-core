@@ -7,12 +7,15 @@
 
 package io.harness.ng.overview.service;
 
+import static io.harness.ng.core.template.TemplateListType.STABLE_TEMPLATE_TYPE;
 import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.rule.OwnerRule.SOURABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -29,16 +32,21 @@ import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.EnvironmentInstanceCountModel;
 import io.harness.models.InstanceDetailGroupedByPipelineExecutionList;
 import io.harness.models.InstanceDetailsDTO;
+import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
 import io.harness.ng.overview.dto.ActiveServiceDeploymentsInfo;
 import io.harness.ng.overview.dto.ActiveServiceDeploymentsInfo.ActiveServiceDeploymentsInfoBuilder;
 import io.harness.ng.overview.dto.ArtifactDeploymentDetail;
 import io.harness.ng.overview.dto.ArtifactInstanceDetails;
 import io.harness.ng.overview.dto.EnvironmentInstanceDetails;
+import io.harness.ng.overview.dto.IconDTO;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
 import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
@@ -50,13 +58,19 @@ import io.harness.ng.overview.dto.ServicePipelineInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.service.instancedashboardservice.InstanceDashboardServiceImpl;
+import io.harness.template.TemplateFilterPropertiesDTO;
+import io.harness.template.remote.TemplateResourceClient;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -65,6 +79,8 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
 public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
@@ -72,6 +88,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
   @Mock private InstanceDashboardServiceImpl instanceDashboardService;
   @Mock private ServiceEntityService serviceEntityServiceImpl;
   @Mock private EnvironmentServiceImpl environmentService;
+  @Mock private TemplateResourceClient templateResourceClient;
 
   private final String ENVIRONMENT_1 = "env1";
   private final String ENVIRONMENT_2 = "env2";
@@ -1276,5 +1293,118 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         .getPipelineExecutionStatusMap(
             statusMap.keySet().stream().collect(Collectors.toList()), queryGetPipelineExecutionStatusMap);
     verify(cdOverviewDashboardService1).getExecutionIdAndArtifactDetails(queryExecutionIdAndArtifactDetails);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void test_getDeploymentIconMap() throws InvalidRequestException, IOException {
+    String yamlForServiceWithTemplate =
+        "service:\n  name: s-2\n  identifier: s1\n  serviceDefinition:\n    type: CustomDeployment\n    spec:\n      customDeploymentRef:\n        templateRef: temp1\n        versionLabel: \"1\"\n  gitOpsEnabled: false\n";
+
+    ServiceEntity serviceEntity = ServiceEntity.builder()
+                                      .yaml(yamlForServiceWithTemplate)
+                                      .identifier("s1")
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(ORG_ID)
+                                      .projectIdentifier(PROJECT_ID)
+                                      .build();
+    Map<String, Set<String>> serviceIdToDeploymentTypeMap = new HashMap<>();
+    serviceIdToDeploymentTypeMap.put("s1", new HashSet<>(Arrays.asList("CustomDeployment")));
+
+    Call<ResponseDTO<PageResponse<TemplateMetadataSummaryResponseDTO>>> callRequest = mock(Call.class);
+
+    TemplateFilterPropertiesDTO templateFilterPropertiesDTO =
+        TemplateFilterPropertiesDTO.builder()
+            .templateEntityTypes(Collections.singletonList(TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE))
+            .templateIdentifiers(Arrays.asList("temp1"))
+            .build();
+
+    Mockito
+        .when(templateResourceClient.listTemplateMetadata(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, STABLE_TEMPLATE_TYPE, 0, 1, templateFilterPropertiesDTO))
+        .thenReturn(callRequest);
+
+    PageResponse<TemplateMetadataSummaryResponseDTO> pageResponse =
+        PageResponse.<TemplateMetadataSummaryResponseDTO>builder()
+            .content(Collections.singletonList(TemplateMetadataSummaryResponseDTO.builder()
+                                                   .templateEntityType(TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE)
+                                                   .icon("IconString")
+                                                   .identifier("temp1")
+                                                   .build()))
+            .totalPages(1)
+            .pageIndex(0)
+            .pageSize(1)
+            .build();
+
+    when(callRequest.execute()).thenReturn(Response.success(ResponseDTO.newResponse(pageResponse)));
+
+    Map<String, Set<IconDTO>> resultMap = cdOverviewDashboardService.getDeploymentIconMap(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, Arrays.asList(serviceEntity), serviceIdToDeploymentTypeMap);
+
+    List<IconDTO> iconDTO = new ArrayList<>(resultMap.get("s1"));
+    assertThat(iconDTO.get(0).getIcon()).isEqualTo("IconString");
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void test_getDeploymentIconMapWithMultipleServices() throws InvalidRequestException, IOException {
+    String yamlForServiceWithTemplate =
+        "service:\n  name: s-2\n  identifier: s2\n  serviceDefinition:\n    type: CustomDeployment\n    spec:\n      customDeploymentRef:\n        templateRef: temp1\n        versionLabel: \"1\"\n  gitOpsEnabled: false\n";
+
+    ServiceEntity serviceEntity1 = ServiceEntity.builder()
+                                       .yaml(yamlForServiceWithTemplate)
+                                       .identifier("s1")
+                                       .accountId(ACCOUNT_ID)
+                                       .orgIdentifier(ORG_ID)
+                                       .projectIdentifier(PROJECT_ID)
+                                       .build();
+    ServiceEntity serviceEntity2 = ServiceEntity.builder()
+                                       .yaml(yamlForServiceWithTemplate)
+                                       .identifier("s2")
+                                       .accountId(ACCOUNT_ID)
+                                       .orgIdentifier(ORG_ID)
+                                       .projectIdentifier(PROJECT_ID)
+                                       .build();
+
+    Map<String, Set<String>> serviceIdToDeploymentTypeMap = new HashMap<>();
+    serviceIdToDeploymentTypeMap.put("s1", new HashSet<>(Arrays.asList("CustomDeployment")));
+    serviceIdToDeploymentTypeMap.put("s2", new HashSet<>(Arrays.asList("K8s")));
+
+    Call<ResponseDTO<PageResponse<TemplateMetadataSummaryResponseDTO>>> callRequest = mock(Call.class);
+
+    TemplateFilterPropertiesDTO templateFilterPropertiesDTO =
+        TemplateFilterPropertiesDTO.builder()
+            .templateEntityTypes(Collections.singletonList(TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE))
+            .templateIdentifiers(Arrays.asList("temp1"))
+            .build();
+
+    Mockito
+        .when(templateResourceClient.listTemplateMetadata(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, STABLE_TEMPLATE_TYPE, 0, 1, templateFilterPropertiesDTO))
+        .thenReturn(callRequest);
+
+    PageResponse<TemplateMetadataSummaryResponseDTO> pageResponse =
+        PageResponse.<TemplateMetadataSummaryResponseDTO>builder()
+            .content(Collections.singletonList(TemplateMetadataSummaryResponseDTO.builder()
+                                                   .templateEntityType(TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE)
+                                                   .icon("IconString")
+                                                   .identifier("temp1")
+                                                   .build()))
+            .totalPages(1)
+            .pageIndex(0)
+            .pageSize(1)
+            .build();
+
+    when(callRequest.execute()).thenReturn(Response.success(ResponseDTO.newResponse(pageResponse)));
+
+    Map<String, Set<IconDTO>> resultMap = cdOverviewDashboardService.getDeploymentIconMap(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, Arrays.asList(serviceEntity1, serviceEntity2), serviceIdToDeploymentTypeMap);
+
+    List<IconDTO> iconDTO = new ArrayList<>(resultMap.get("s1"));
+    assertThat(iconDTO.get(0).getIcon()).isEqualTo("IconString");
+    iconDTO = new ArrayList<>(resultMap.get("s2"));
+    assertThat(iconDTO.get(0).getIcon()).isEqualTo("");
   }
 }

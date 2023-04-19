@@ -129,8 +129,9 @@ public class GoogleFunctionGenOneCommandTaskHelper {
     // check if function already exists
     Optional<CloudFunction> existingFunctionOptional =
         getFunction(functionName, googleFunctionInfraConfig, logCallback);
-    googleFunctionCommandTaskHelper.printManifestContent(googleFunctionDeployManifestContent, logCallback);
-
+    if (!isRollback) {
+      googleFunctionCommandTaskHelper.printManifestContent(googleFunctionDeployManifestContent, logCallback);
+    }
     if (existingFunctionOptional.isEmpty()) {
       // create new function
       logCallback.saveExecutionLog(format("Creating Function: %s in project: %s and region: %s %n", functionName,
@@ -288,15 +289,17 @@ public class GoogleFunctionGenOneCommandTaskHelper {
     try {
       HTimeLimiter.callInterruptible(timeLimiter, Duration.ofMillis(timeout), () -> {
         while (true) {
-          GetFunctionRequest getFunctionRequest = GetFunctionRequest.newBuilder().setName(functionName).build();
           logCallback.saveExecutionLog(
               format("Function deletion in progress: %s", color(functionName, LogColor.Yellow)));
-          CloudFunction function = googleCloudFunctionGenOneClient.getFunction(getFunctionRequest,
-              googleFunctionCommandTaskHelper.getGcpInternalConfig(gcpGoogleFunctionInfraConfig.getGcpConnectorDTO(),
-                  gcpGoogleFunctionInfraConfig.getRegion(), gcpGoogleFunctionInfraConfig.getProject()));
-          if (CloudFunctionStatus.DELETE_IN_PROGRESS.equals(function.getStatus())) {
-            logCallback.saveExecutionLog(
-                format("Function deletion in progress: %s", color(function.getName(), LogColor.Yellow)));
+          Optional<CloudFunction> optionalCloudFunction =
+              getFunction(functionName, gcpGoogleFunctionInfraConfig, logCallback);
+          if (optionalCloudFunction.isEmpty()) {
+            logCallback.saveExecutionLog(color(format("Deleted Function successfully...%n%n"), LogColor.Green));
+            return false;
+          }
+          if (CloudFunctionStatus.DELETE_IN_PROGRESS.equals(optionalCloudFunction.get().getStatus())) {
+            logCallback.saveExecutionLog(format(
+                "Function deletion in progress: %s", color(optionalCloudFunction.get().getName(), LogColor.Yellow)));
           }
           Morpheus.sleep(ofSeconds(10));
         }
@@ -305,11 +308,8 @@ public class GoogleFunctionGenOneCommandTaskHelper {
       throw new TimeoutException("Timed out waiting for function to achieve steady state before deployment", "Timeout",
           e, WingsException.EVERYBODY);
     } catch (Exception e) {
-      if (e.getCause() instanceof NotFoundException) {
-        logCallback.saveExecutionLog(color(format("Deleted Function successfully...%n%n"), LogColor.Green));
-        return;
-      }
-      throwGetFunctionFailureException(e, logCallback);
+      throw NestedExceptionUtils.hintWithExplanationException(GET_FUNCTION_FAILURE_HINT, GET_FUNCTION_FAILURE_EXPLAIN,
+          new InvalidRequestException(GET_FUNCTION_FAILURE_ERROR));
     }
   }
 
@@ -351,9 +351,7 @@ public class GoogleFunctionGenOneCommandTaskHelper {
             if (Operation.ResultCase.ERROR.equals(operation.getResultCase())) {
               logCallback.saveExecutionLog(color("Function Deployment failed...", LogColor.Red));
               logCallback.saveExecutionLog(color(operation.getError().getMessage(), LogColor.Red));
-              throw NestedExceptionUtils.hintWithExplanationException(CREATE_FUNCTION_GEN_ONE_FAILURE_HINT,
-                  "Cloud Function Deployment failed.",
-                  new InvalidRequestException("Function couldn't able to achieve steady state."));
+              throw new RuntimeException(operation.getError().getMessage());
             }
             return false;
           }
@@ -366,7 +364,9 @@ public class GoogleFunctionGenOneCommandTaskHelper {
       throw new TimeoutException("Timed out waiting for function to achieve steady state before deployment", "Timeout",
           e, WingsException.EVERYBODY);
     } catch (Exception e) {
-      throwGetFunctionFailureException(e, logCallback);
+      throw NestedExceptionUtils.hintWithExplanationException(CREATE_FUNCTION_GEN_ONE_FAILURE_HINT,
+          "Cloud Function Deployment failed.",
+          new InvalidRequestException("Function couldn't able to achieve steady state."));
     }
   }
 

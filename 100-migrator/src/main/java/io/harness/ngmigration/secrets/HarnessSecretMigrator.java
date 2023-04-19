@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
-public class HarnessSecretMigrator implements SecretMigrator {
+public class HarnessSecretMigrator implements io.harness.ngmigration.secrets.SecretMigrator {
   @Inject private SecretService secretService;
 
   @Override
@@ -63,6 +63,16 @@ public class HarnessSecretMigrator implements SecretMigrator {
       log.error(String.format("There was an error processing the secret file %s", encryptedData.getName()));
       return null;
     }
+  }
+
+  @Override
+  public String getEncryptionKey(EncryptedData encryptedData, SecretManagerConfig secretManagerConfig) {
+    return null;
+  }
+
+  @Override
+  public String getEncryptionValue(EncryptedData encryptedData, SecretManagerConfig secretManagerConfig) {
+    return null;
   }
 
   @Override

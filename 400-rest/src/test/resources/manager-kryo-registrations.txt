@@ -833,6 +833,9 @@
 5619:software.wings.delegatetasks.buildsource.BuildSourceResponse
 5620:software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse
 5621:software.wings.delegatetasks.buildsource.BuildSourceParameters.BuildSourceRequestType
+5622:com.amazonaws.services.secretsmanager.model.AWSSecretsManagerException
+5623:com.amazonaws.AmazonServiceException
+5624:com.amazonaws.AmazonServiceException.ErrorType
 5626:software.wings.beans.notification.NotificationSettings
 5671:software.wings.api.EcsSetupElement
 5700:io.harness.waiter.StringNotifyProgressData
@@ -1964,6 +1967,9 @@
 40030:io.harness.perpetualtask.PerpetualTaskClientContext
 40031:io.harness.delegate.beans.Delegate
 40041:io.harness.delegate.beans.DelegateGroup
+40042:io.harness.delegate.beans.K8sConfigDetails
+40043:io.harness.delegate.beans.K8sPermissionType
+40044:io.harness.delegate.beans.DelegateGroupStatus
 40051:io.harness.ccm.cluster.entities.DirectKubernetesCluster
 40052:io.harness.ccm.cluster.entities.EcsCluster
 40053:io.harness.ccm.cluster.entities.GcpKubernetesCluster

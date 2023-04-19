@@ -11,6 +11,7 @@ import static io.harness.idp.provision.ProvisionConstants.NAMESPACE;
 import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFIG;
 import static io.harness.remote.client.CGRestUtils.getResponse;
 
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.client.NgConnectorManagerClient;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
@@ -28,6 +29,9 @@ import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.SecurityContextBuilder;
+import io.harness.security.SourcePrincipalContextBuilder;
+import io.harness.security.dto.Principal;
+import io.harness.security.dto.ServicePrincipal;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.BackstagePermissions;
@@ -106,13 +110,26 @@ public class ProvisionServiceImpl implements ProvisionService {
                                   .build())
                         .build())
             .build();
-    SecretResponseWrapper dto = ngSecretService.create(accountIdentifier, null, null, true, secretRequestWrapper);
+
+    SecretResponseWrapper secretDto = createSecret(accountIdentifier, secretRequestWrapper);
     BackstageEnvSecretVariable backstageEnvSecretVariable = new BackstageEnvSecretVariable();
     backstageEnvSecretVariable.setEnvName(Constants.BACKEND_SECRET);
-    backstageEnvSecretVariable.setHarnessSecretIdentifier(dto.getSecret().getIdentifier());
+    backstageEnvSecretVariable.setHarnessSecretIdentifier(secretDto.getSecret().getIdentifier());
     backstageEnvSecretVariable.setType(BackstageEnvVariable.TypeEnum.SECRET);
     backstageEnvVariableService.create(backstageEnvSecretVariable, accountIdentifier);
     log.info("Created BACKEND_SECRET for account Id - {}", accountIdentifier);
+  }
+
+  private SecretResponseWrapper createSecret(String accountIdentifier, SecretRequestWrapper secretRequestWrapper) {
+    // Source principal should match the owner in case of a private secret
+    // In our case, the source principal is USER, but the owner is IDP Service which is set while creating the client
+    // Hence we are setting source principal manually to IDPService and unsetting it after the create call.
+    Principal currentPrincipal = SourcePrincipalContextBuilder.getSourcePrincipal();
+    SourcePrincipalContextBuilder.setSourcePrincipal(
+        new ServicePrincipal(AuthorizationServiceHeader.IDP_SERVICE.getServiceId()));
+    SecretResponseWrapper dto = ngSecretService.create(accountIdentifier, null, null, true, secretRequestWrapper);
+    SourcePrincipalContextBuilder.setSourcePrincipal(currentPrincipal);
+    return dto;
   }
 
   public static String generateEncodedSecret() {

@@ -55,6 +55,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.gitx.GitXSettingsHelper;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.dto.OrganizationResponse;
 import io.harness.ng.core.dto.ProjectResponse;
@@ -130,6 +131,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Mock private OrganizationClient organizationClient;
   @Mock private TemplateReferenceHelper templateReferenceHelper;
   @Mock private EntitySetupUsageClient entitySetupUsageClient;
+  @Mock GitXSettingsHelper gitXSettingsHelper;
 
   @InjectMocks NGTemplateServiceImpl templateService;
 
@@ -194,6 +196,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
         .isFeatureFlagEnabled("", FeatureName.CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS);
 
     doNothing().when(enforcementClientService).checkAvailability(any(), any());
+    doNothing().when(gitXSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
     entity = TemplateEntity.builder()
                  .accountId(ACCOUNT_ID)
                  .orgIdentifier(ORG_IDENTIFIER)

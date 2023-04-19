@@ -697,6 +697,9 @@
 5619:software.wings.delegatetasks.buildsource.BuildSourceResponse
 5620:software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse
 5621:software.wings.delegatetasks.buildsource.BuildSourceParameters.BuildSourceRequestType
+5622:com.amazonaws.services.secretsmanager.model.AWSSecretsManagerException
+5623:com.amazonaws.AmazonServiceException
+5624:com.amazonaws.AmazonServiceException.ErrorType
 5671:software.wings.api.EcsSetupElement
 5701:software.wings.service.impl.aws.model.embed.AwsLambdaDetails
 6501:io.harness.delegate.beans.DelegateRegisterResponse

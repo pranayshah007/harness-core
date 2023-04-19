@@ -524,7 +524,7 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 	// Environment variables
 	outputVarCmd := ""
 	for _, o := range r.envVarOutputs {
-		outputVarCmd += fmt.Sprintf("\necho %s $%s >> %s", o, o, outputVarFile)
+		outputVarCmd += fmt.Sprintf("\necho %s=$%s >> %s", o, o, outputVarFile)
 	}
 
 	// Config file
@@ -597,7 +597,7 @@ func (r *runTestsTask) execute(ctx context.Context) (map[string]string, error) {
 		agentPath = csharpAgentPath
 	}
 
-	outputFile := filepath.Join(r.tmpFilePath, fmt.Sprintf("%s%s", r.id, outputEnvSuffix))
+	outputFile := filepath.Join(r.tmpFilePath, fmt.Sprintf("%s%s", r.id, outputDotEnvSuffix))
 	cmdToExecute, err := r.getCmd(ctx, agentPath, outputFile)
 	if err != nil {
 		r.log.Errorw("could not create run command", zap.Error(err))
