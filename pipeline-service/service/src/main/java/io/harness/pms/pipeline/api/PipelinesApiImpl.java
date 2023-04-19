@@ -224,8 +224,8 @@ public class PipelinesApiImpl implements PipelinesApi {
             .build();
     log.info(String.format("Importing Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project,
         org, harnessAccount));
-    PipelineEntity savedPipelineEntity = pmsPipelineService.importPipelineFromRemote(
-        harnessAccount, org, project, pipeline, pipelineImportRequestDTO, body.getGitImportInfo().isIsForceImport());
+    PipelineEntity savedPipelineEntity = pmsPipelineService.importPipelineFromRemote(harnessAccount, org, project,
+        pipeline, pipelineImportRequestDTO, Boolean.TRUE.equals(body.getGitImportInfo().isIsForceImport()));
     PipelineSaveResponseBody responseBody = new PipelineSaveResponseBody();
     responseBody.setIdentifier(savedPipelineEntity.getIdentifier());
     return Response.ok().entity(responseBody).build();
