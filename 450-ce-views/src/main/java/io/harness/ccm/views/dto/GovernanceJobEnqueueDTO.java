@@ -28,4 +28,5 @@ public class GovernanceJobEnqueueDTO {
   String targetRegion;
   Boolean isDryRun;
   Boolean isOOTB;
+  String identifier;
 }
