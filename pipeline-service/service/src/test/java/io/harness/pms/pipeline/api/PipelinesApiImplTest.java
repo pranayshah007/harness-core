@@ -19,6 +19,7 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -50,14 +51,18 @@ import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationS
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
+import io.harness.spec.server.pipeline.v1.model.GitImportInfo;
 import io.harness.spec.server.pipeline.v1.model.GitMoveDetails;
 import io.harness.spec.server.pipeline.v1.model.MoveConfigOperationType;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineImportRequestBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineImportRequestDTO;
 import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineMoveConfigRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineMoveConfigResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineSaveResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
@@ -427,5 +432,24 @@ public class PipelinesApiImplTest extends CategoryTest {
                                                        null, null, null, null, null, null, null, null, null)
                                                    .getEntity());
     assertThat(ex).isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testPipelineImport() {
+    PipelineImportRequestDTO pipelineImportRequestDTO = new PipelineImportRequestDTO();
+    GitImportInfo gitImportInfo = new GitImportInfo();
+    gitImportInfo.isForceImport(false);
+    PipelineImportRequestBody pipelineImportRequestBody = new PipelineImportRequestBody();
+    pipelineImportRequestBody.setPipelineImportRequest(pipelineImportRequestDTO);
+    pipelineImportRequestBody.setGitImportInfo(gitImportInfo);
+    doReturn(PipelineEntity.builder().identifier(identifier).build())
+        .when(pmsPipelineService)
+        .importPipelineFromRemote(any(), any(), any(), any(), any(), anyBoolean());
+    Response response =
+        pipelinesApiImpl.importPipelineFromGit(org, project, identifier, pipelineImportRequestBody, account);
+    PipelineSaveResponseBody responseBody = (PipelineSaveResponseBody) response.getEntity();
+    assertEquals(identifier, responseBody.getIdentifier());
   }
 }
