@@ -2043,9 +2043,11 @@ components:
         project_identifier:
           type: string
         created:
-          type: int64
+          type: integer
+          format: int64
         updated:
-          type: int64
+          type: integer
+          format: int64
         error:
           type: string
     PolicySetMetadata:
@@ -2069,7 +2071,8 @@ components:
         identifier:
           type: string
         created:
-          type: int64
+          type: integer
+          format: int64
         account_identifier:
           type: string
         org_identifier:
@@ -2111,7 +2114,8 @@ components:
         action:
           type: string
         created:
-          type: int64
+          type: integer
+          format: int64
     PipelineSaveResponseBody:
       title: Pipeline Save Response Body
       x-stoplight:
