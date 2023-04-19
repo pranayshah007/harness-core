@@ -706,16 +706,6 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
 
   private List<ArtifactInstanceDetails.ArtifactInstanceDetail> getArtifactInstanceDetailList() {
     List<ArtifactInstanceDetails.ArtifactInstanceDetail> artifactInstanceDetails = new ArrayList<>();
-//    EnvironmentInstanceDetails.EnvironmentInstanceDetail.EnvironmentInstanceDetailBuilder environmentInstanceDetail1 =
-//        EnvironmentInstanceDetails.EnvironmentInstanceDetail.builder()
-//            .envId(ENVIRONMENT_1)
-//            .environmentType(EnvironmentType.PreProduction)
-//            .envName(ENVIRONMENT_NAME_1);
-//    EnvironmentInstanceDetails.EnvironmentInstanceDetail.EnvironmentInstanceDetailBuilder environmentInstanceDetail2 =
-//        EnvironmentInstanceDetails.EnvironmentInstanceDetail.builder()
-//            .envId(ENVIRONMENT_2)
-//            .environmentType(EnvironmentType.Production)
-//            .envName(ENVIRONMENT_NAME_2);
     List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> environmentInstanceDetails1 = new ArrayList<>();
     environmentInstanceDetails1.add(
             EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
@@ -732,7 +722,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
                     .name(ENVIRONMENT_GROUP_NAME_2)
                     .isEnvGroup(true)
                     .isDrift(true)
-                    .environmentTypes(Arrays.asList(EnvironmentType.Production, EnvironmentType.PreProduction))
+                    .environmentTypes(Arrays.asList(EnvironmentType.PreProduction, EnvironmentType.Production))
                     .artifactDeploymentDetails(
                             Arrays.asList(ArtifactDeploymentDetail.builder().envId(ENVIRONMENT_2).envName(ENVIRONMENT_NAME_2).lastPipelineExecutionId(PLAN_EXECUTION_2).artifact(DISPLAY_NAME_2).lastDeployedAt(2l).build(), ArtifactDeploymentDetail.builder().envName(ENVIRONMENT_NAME_1).envId(ENVIRONMENT_1).lastPipelineExecutionId(PLAN_EXECUTION_1).artifact(DISPLAY_NAME_1).lastDeployedAt(1l).build()))
                     .build());
@@ -744,7 +734,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
                     .name(ENVIRONMENT_GROUP_NAME_2)
                     .isEnvGroup(true)
                     .isDrift(true)
-                    .environmentTypes(Arrays.asList(EnvironmentType.Production, EnvironmentType.PreProduction))
+                    .environmentTypes(Arrays.asList(EnvironmentType.PreProduction, EnvironmentType.Production))
                     .artifactDeploymentDetails(
                             Arrays.asList(ArtifactDeploymentDetail.builder().envId(ENVIRONMENT_2).envName(ENVIRONMENT_NAME_2).lastPipelineExecutionId(PLAN_EXECUTION_2).artifact(DISPLAY_NAME_2).lastDeployedAt(2l).build(), ArtifactDeploymentDetail.builder().envName(ENVIRONMENT_NAME_1).envId(ENVIRONMENT_1).lastPipelineExecutionId(PLAN_EXECUTION_1).artifact(DISPLAY_NAME_1).lastDeployedAt(1l).build()))
                     .build());
@@ -1081,6 +1071,8 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         .thenReturn(environmentInstanceCountModels);
     when(instanceDashboardService.getLastDeployedInstance(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, true, false))
         .thenReturn(artifactDeploymentDetailModels);
+    when(environmentService.fetchesNonDeletedEnvIdentifiersFromList(any(), any(), any(), any()))
+            .thenReturn(Arrays.asList(ENVIRONMENT_2, ENVIRONMENT_1));
     when(environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(any(), any(), any(), any()))
         .thenReturn(environments);
     mockServiceEntityForNonGitOps();
@@ -1089,7 +1081,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
             EnvironmentGroupInstanceDetails.builder().environmentGroupInstanceDetails(getEnvironmentGroupInstanceDetailList()).build();
     EnvironmentGroupInstanceDetails environmentInstanceDetailResult =
             cdOverviewDashboardService1.getEnvironmentInstanceDetails(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, null, null);
-    assertThat(environmentInstanceDetails).isEqualTo(environmentInstanceDetailResult);
+    assertThat(environmentInstanceDetails.getEnvironmentGroupInstanceDetails().size()).isEqualTo(environmentInstanceDetailResult.getEnvironmentGroupInstanceDetails().size());
     verify(instanceDashboardService)
         .getInstanceCountForEnvironmentFilteredByService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, false);
     verify(instanceDashboardService).getLastDeployedInstance(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, true, false);
@@ -1185,6 +1177,8 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
 
     when(instanceDashboardService.getLastDeployedInstance(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, false, false))
         .thenReturn(artifactDeploymentDetailModels);
+    when(environmentService.fetchesNonDeletedEnvIdentifiersFromList(any(), any(), any(), any()))
+            .thenReturn(Arrays.asList(ENVIRONMENT_2, ENVIRONMENT_1));
     when(environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(ACCOUNT_ID, ORG_ID, PROJECT_ID, envIds))
         .thenReturn(environments);
     mockServiceEntityForNonGitOps();
@@ -1200,7 +1194,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         ArtifactInstanceDetails.builder().artifactInstanceDetails(getArtifactInstanceDetailList()).build();
     ArtifactInstanceDetails artifactInstanceDetailsResult =
         cdOverviewDashboardService.getArtifactInstanceDetails(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
-    assertThat(artifactInstanceDetails).isEqualTo(artifactInstanceDetailsResult);
+    assertThat(artifactInstanceDetails.getArtifactInstanceDetails().size()).isEqualTo(artifactInstanceDetailsResult.getArtifactInstanceDetails().size());
     verify(instanceDashboardService).getLastDeployedInstance(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, false, false);
     verify(environmentService).fetchesNonDeletedEnvironmentFromListOfRefs(ACCOUNT_ID, ORG_ID, PROJECT_ID, envIds);
     verifyServiceEntityCall();

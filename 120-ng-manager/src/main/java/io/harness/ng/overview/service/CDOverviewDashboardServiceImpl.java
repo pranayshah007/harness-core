@@ -2964,7 +2964,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<EnvironmentGroupEntity> environmentGroupEntities = null;
     Criteria criteria = environmentGroupService.formCriteria(accountIdentifier, orgIdentifier, projectIdentifier, false,
             "", "", null,
-            true);
+            false);
     Page<EnvironmentGroupEntity> environmentGroupEntitiesPage =
             environmentGroupService.list(criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier);
     if (environmentGroupEntitiesPage != null) {
@@ -2976,8 +2976,10 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       }
     }
 
+    List<String> scopeSpecificEnvironmentRefs = environmentService.fetchesNonDeletedEnvIdentifiersFromList(
+            accountIdentifier, orgIdentifier, projectIdentifier, new ArrayList<>(envIds));
     List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(
-        accountIdentifier, orgIdentifier, projectIdentifier, new ArrayList<>(envIds));
+        accountIdentifier, orgIdentifier, projectIdentifier, scopeSpecificEnvironmentRefs);
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
     Map<String, EnvironmentType> envIdToEnvTypeMap = new HashMap<>();
     DashboardServiceHelper.constructEnvironmentNameAndTypeMap(environments, envIdToEnvNameMap, envIdToEnvTypeMap);
@@ -3021,8 +3023,10 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       }
     }
 
+    List<String> scopeSpecificEnvironmentRefs = environmentService.fetchesNonDeletedEnvIdentifiersFromList(
+            accountIdentifier, orgIdentifier, projectIdentifier, new ArrayList<>(envIds));
     List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(
-        accountIdentifier, orgIdentifier, projectIdentifier, new ArrayList<>(envIds));
+        accountIdentifier, orgIdentifier, projectIdentifier, scopeSpecificEnvironmentRefs);
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
     Map<String, EnvironmentType> envIdToEnvTypeMap = new HashMap<>();
 

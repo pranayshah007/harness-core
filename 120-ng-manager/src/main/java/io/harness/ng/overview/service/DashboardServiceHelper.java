@@ -432,7 +432,7 @@ public class DashboardServiceHelper {
             continue;
           }
           envTypes.add(envType);
-          if(artifactDeploymentDetail != null) {
+          if(artifactDeploymentDetail != null && EmptyPredicate.isNotEmpty(artifactDeploymentDetail.getArtifact())) {
             artifactDeploymentDetailList.add(artifactDeploymentDetail);
             artifacts.add(artifactDeploymentDetail.getArtifact());
           } else {
@@ -452,7 +452,7 @@ public class DashboardServiceHelper {
                     .isDrift((artifacts.size() > 1) || (artifacts.size() == 1 && deploymentsWithoutArtifact > 0))
                     .build();
             for(ArtifactDeploymentDetail artifactDeploymentDetail : environmentGroupInstanceDetail.getArtifactDeploymentDetails()) {
-              if(uniqueArtifacts.contains(artifactDeploymentDetail.getArtifact())) {
+              if(EmptyPredicate.isEmpty(artifactDeploymentDetail.getArtifact()) || uniqueArtifacts.contains(artifactDeploymentDetail.getArtifact())) {
                 continue;
               }
               uniqueArtifacts.add(artifactDeploymentDetail.getArtifact());
@@ -475,7 +475,7 @@ public class DashboardServiceHelper {
         }
         final String envName = entry.getValue();
         final ArtifactDeploymentDetail artifactDeploymentDetail = envToArtifactMap.get(envId);
-        if (artifactDeploymentDetail == null) {
+        if (artifactDeploymentDetail == null || EmptyPredicate.isEmpty(artifactDeploymentDetail.getArtifact())) {
           continue;
         }
         EnvironmentGroupInstanceDetail environmentGroupInstanceDetail = EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
@@ -717,7 +717,7 @@ public class DashboardServiceHelper {
           if(envType != null) {
             envTypes.add(envType);
           }
-          if(artifactDeploymentDetail != null) {
+          if(artifactDeploymentDetail != null && EmptyPredicate.isNotEmpty(artifactDeploymentDetail.getArtifact())) {
             artifactDeploymentDetailList.add(artifactDeploymentDetail);
             artifacts.add(artifactDeploymentDetail.getArtifact());
           }
@@ -751,7 +751,7 @@ public class DashboardServiceHelper {
       }
     }
 
-    for (Map.Entry<String, Integer> entry : envToCountMap.entrySet()) {
+    for (Map.Entry<String, String> entry : envIdToEnvNameMap.entrySet()) {
       final String envId = entry.getKey();
       if(!envIds.contains(envId)) {
         final EnvironmentType envType = envIdToEnvTypeMap.get(envId);
@@ -759,7 +759,7 @@ public class DashboardServiceHelper {
           continue;
         }
         final String envName = envIdToEnvNameMap.get(envId);
-        final Integer count = entry.getValue();
+        final Integer count = envToCountMap.get(envId);
         final ArtifactDeploymentDetail artifactDeploymentDetail = artifactDeploymentDetailsMap.get(envId);
         if (artifactDeploymentDetail == null) {
           continue;
