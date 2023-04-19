@@ -22,4 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 //@RepositoryDefinition(domainClass = Connector.class, idClass = String.class)
 @OwnedBy(DX)
-public interface ConnectorRepository extends Repository<Connector, String>, ConnectorCustomRepository {}
+public interface ConnectorRepository extends Repository<Connector, String>, ConnectorCustomRepository {
+  Long countByAccountIdentifierAndDeletedIsFalse(String accountIdentifier);
+}
