@@ -478,7 +478,12 @@ public class ArtifactStepHelper {
         encryptedDataDetailsForUsername =
             secretManagerClientService.getEncryptionDetails(ngAccess, githubUsernameTokenDTO);
       }
-      encryptedDataDetails.addAll(encryptedDataDetailsForUsername);
+
+      for (EncryptedDataDetail encryptedDataDetail : encryptedDataDetailsForUsername) {
+        if ("usernameRef".equals(encryptedDataDetail.getFieldName())) {
+          encryptedDataDetails.add(encryptedDataDetail);
+        }
+      }
     }
 
     return encryptedDataDetails;
