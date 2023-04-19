@@ -296,6 +296,7 @@ public class PipelineExecutorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testStartPostExecutionRollback() {
     MockedStatic<UUIDGenerator> mockSettings = Mockito.mockStatic(UUIDGenerator.class);
+    List<String> stageNodeExecutionIds = Collections.singletonList("stageNodeExecutionId");
     when(UUIDGenerator.generateUuid()).thenReturn("planId");
     doReturn(executionTriggerInfo).when(executionHelper).buildTriggerInfo(null);
     ExecutionMetadata originalExecutionMetadata =
@@ -308,7 +309,7 @@ public class PipelineExecutorTest extends CategoryTest {
     doReturn(metadata)
         .when(rollbackModeExecutionHelper)
         .transformExecutionMetadata(originalExecutionMetadata, "planId", executionTriggerInfo, accountId, orgId,
-            projectId, ExecutionMode.POST_EXECUTION_ROLLBACK, null);
+            projectId, ExecutionMode.POST_EXECUTION_ROLLBACK, null, stageNodeExecutionIds);
     PlanExecutionMetadata originalPlanExecutionMetadata =
         PlanExecutionMetadata.builder().planExecutionId(originalExecutionId).build();
     doReturn(Optional.of(originalPlanExecutionMetadata))
@@ -316,12 +317,14 @@ public class PipelineExecutorTest extends CategoryTest {
         .findByPlanExecutionId(originalExecutionId);
     doReturn(planExecutionMetadata)
         .when(rollbackModeExecutionHelper)
-        .transformPlanExecutionMetadata(originalPlanExecutionMetadata, "planId", ExecutionMode.POST_EXECUTION_ROLLBACK);
+        .transformPlanExecutionMetadata(
+            originalPlanExecutionMetadata, "planId", ExecutionMode.POST_EXECUTION_ROLLBACK, stageNodeExecutionIds);
     doReturn(planExecution)
         .when(executionHelper)
         .startExecution(
             accountId, orgId, projectId, metadata, planExecutionMetadata, false, null, originalExecutionId, null);
-    assertThat(pipelineExecutor.startPostExecutionRollback(accountId, orgId, projectId, originalExecutionId))
+    assertThat(pipelineExecutor.startPostExecutionRollback(
+                   accountId, orgId, projectId, originalExecutionId, stageNodeExecutionIds))
         .isEqualTo(planExecution);
     mockSettings.close();
   }
@@ -343,7 +346,7 @@ public class PipelineExecutorTest extends CategoryTest {
     doReturn(metadata)
         .when(rollbackModeExecutionHelper)
         .transformExecutionMetadata(originalExecutionMetadata, "planId", executionTriggerInfo, accountId, orgId,
-            projectId, ExecutionMode.PIPELINE_ROLLBACK, null);
+            projectId, ExecutionMode.PIPELINE_ROLLBACK, null, null);
     PlanExecutionMetadata originalPlanExecutionMetadata =
         PlanExecutionMetadata.builder().planExecutionId(originalExecutionId).build();
     doReturn(Optional.of(originalPlanExecutionMetadata))
@@ -351,7 +354,7 @@ public class PipelineExecutorTest extends CategoryTest {
         .findByPlanExecutionId(originalExecutionId);
     doReturn(planExecutionMetadata)
         .when(rollbackModeExecutionHelper)
-        .transformPlanExecutionMetadata(originalPlanExecutionMetadata, "planId", ExecutionMode.PIPELINE_ROLLBACK);
+        .transformPlanExecutionMetadata(originalPlanExecutionMetadata, "planId", ExecutionMode.PIPELINE_ROLLBACK, null);
     doReturn(planExecution)
         .when(executionHelper)
         .startExecution(
