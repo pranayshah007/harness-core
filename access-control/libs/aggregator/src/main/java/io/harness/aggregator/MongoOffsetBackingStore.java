@@ -15,13 +15,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.mongodb.MongoClientSettings;
-import com.mongodb.MongoClientURI;
 import com.mongodb.ReadPreference;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
