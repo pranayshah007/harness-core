@@ -10,10 +10,7 @@ package io.harness.ccm.views.dao;
 import static io.harness.persistence.HQuery.excludeValidate;
 
 import dev.morphia.query.UpdateOperations;
-import dev.morphia.query.UpdateResults;
 import io.harness.ccm.commons.entities.CCMTimeFilter;
-import io.harness.ccm.commons.entities.billing.CECloudAccount;
-import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
 import io.harness.ccm.views.entities.RuleExecution;
 import io.harness.ccm.views.entities.RuleExecution.RuleExecutionKeys;
 import io.harness.ccm.views.helper.RuleExecutionFilter;
