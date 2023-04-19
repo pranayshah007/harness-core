@@ -1,0 +1,33 @@
+apiVersion: v1
+data:
+  DEPLOY_MODE: KUBERNETES_ONPREM
+  GRPC_MANAGER_TARGET: harness-manager:9879
+  GRPC_MANAGER_AUTHORITY: harness-manager:9879
+  ENABLE_AUDIT_SERVICE: 'true'
+  MOCK_ACCESS_CONTROL_SERVICE: 'false'
+  AUDIT_ENABLED: 'true'
+  ENABLE_RESOURCE_GROUP: 'true'
+  EVENTS_FRAMEWORK_USE_SENTINEL: 'true'
+  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace  }}:26379'
+  LOCK_CONFIG_USE_SENTINEL: 'true'
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: 'harness-redis'
+  LOCK_CONFIG_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace  }}:26379'
+  ACCESS_CONTROL_ENABLED: 'true'
+  LOGGING_LEVEL: {{ .Values.appLogLevel }}
+  DISTRIBUTED_LOCK_IMPLEMENTATION: REDIS
+  MANAGER_CLIENT_BASEURL: 'http://harness-manager:9090/api/'
+  RBAC_URL: 'http://ng-manager:7090/'
+  ACCESS_CONTROL_BASE_URL: 'http://access-control.{{ .Release.Namespace }}.svc.cluster.local:9006/api/'
+  RESOURCE_GROUP_CLIENT_BASE_URL: 'http://platform-service.{{ .Release.Namespace }}.svc.cluster.local:9005/api/'
+  NG_MANAGER_CLIENT_BASEURL: 'http://ng-manager:7090/'
+  PIPELINE_SERVICE_CLIENT_BASEURL: 'http://pipeline-service:12001/api/'
+  TEMPLATE_SERVICE_CLIENT_BASEURL: 'http://template-service:15002/api/'
+  AUDIT_CLIENT_BASEURL: 'http://platform-service.{{ .Release.Namespace }}.svc.cluster.local:9005/api/'
+  TEMPLATE_SERVICE_BASE_URL: 'http://template-service:15002/api/'
+  MEMORY: {{ .Values.java.memory | quote }}
+
+kind: ConfigMap
+metadata:
+  name: platform-service
+  namespace: {{ .Release.Namespace }}
