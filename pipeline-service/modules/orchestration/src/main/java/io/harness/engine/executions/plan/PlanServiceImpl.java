@@ -66,7 +66,11 @@ public class PlanServiceImpl implements PlanService {
       List<NodeEntity> nodeEntities =
           plan.getPlanNodes().stream().map(pn -> NodeEntity.fromNode(pn, plan.getUuid())).collect(Collectors.toList());
       nodeEntityRepository.saveAll(nodeEntities);
-      return planRepository.save(plan.withPlanNodes(new ArrayList<>()));
+      if (!planRepository.existsById(plan.getUuid())) {
+        return planRepository.save(plan.withPlanNodes(new ArrayList<>()));
+      } else {
+        return plan;
+      }
     });
   }
 
@@ -82,6 +86,13 @@ public class PlanServiceImpl implements PlanService {
       return plan.fetchPlanNode(nodeId);
     }
     return PlanNode.fromPlanNodeProto(fetchPlan(planId).fetchNode(nodeId));
+  }
+  @Override
+  public List<Node> fetchNodes(String planId) {
+    return nodeEntityRepository.findNodeEntityByPlanId(planId)
+        .stream()
+        .map(NodeEntity::getNode)
+        .collect(Collectors.toList());
   }
 
   @Override

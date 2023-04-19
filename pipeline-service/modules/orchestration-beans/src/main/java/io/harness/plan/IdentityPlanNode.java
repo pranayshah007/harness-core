@@ -10,11 +10,13 @@ package io.harness.plan;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
@@ -41,6 +43,7 @@ public class IdentityPlanNode implements Node {
   String originalNodeExecutionId;
   String serviceName;
   String executionInputTemplate;
+  Map<ExecutionMode, List<AdviserObtainment>> advisorObtainmentsForExecutionMode;
 
   // if true, the advisor response from the previous execution will be ignored and adviserObtainments will be used
   @With @Builder.Default Boolean useAdviserObtainments = false;
@@ -106,6 +109,7 @@ public class IdentityPlanNode implements Node {
         .serviceName(node.getServiceName())
         .stageFqn(node.getStageFqn())
         .whenCondition(node.getWhenCondition())
+        .advisorObtainmentsForExecutionMode(node.getAdvisorObtainmentsForExecutionMode())
         .originalNodeExecutionId(originalNodeExecutionUuid)
         .build();
   }

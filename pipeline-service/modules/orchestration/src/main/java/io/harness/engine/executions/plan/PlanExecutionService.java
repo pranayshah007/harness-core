@@ -35,7 +35,7 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
       @NonNull String planExecutionId, @NonNull Status status, Consumer<Update> ops, boolean forced);
 
   PlanExecution get(String planExecutionId);
-
+  PlanExecution getWithFieldsIncluded(String planExecutionId, Set<String> fieldsToInclude);
   /**
    * @param planExecutionId planExecutionId
    * @return This method returns PlanExecution but excluding ExecutionMetadata, GovernanceMetadata,
