@@ -557,4 +557,9 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
         pipelineAIHelper.createPipelineWithAi(accountId, orgId, projectId, pipelineIdentifier, pipelineName, prompt);
     return ResponseDTO.newResponse(response);
   }
+
+  @Override
+  public ResponseDTO<String> describeStep(String stageName, String stepName) {
+    return ResponseDTO.newResponse(pipelineAIHelper.getDescription(stageName, stepName));
+  }
 }

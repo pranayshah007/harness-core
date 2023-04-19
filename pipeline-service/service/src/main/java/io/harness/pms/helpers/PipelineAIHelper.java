@@ -12,6 +12,7 @@ import static com.theokanning.openai.service.OpenAiService.defaultObjectMapper;
 import static com.theokanning.openai.service.OpenAiService.defaultRetrofit;
 import static java.lang.String.format;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -51,7 +52,8 @@ public class PipelineAIHelper {
       "Follwing messages are pipelines samples. Your task will arrive after the samples.";
   public static final String PROMPT_2 =
       "When user specifes a deployment, it must be accompanied by appropriate steps under executions.\n"
-      + "Additional steps will be added according to the user input. If the user did not specify where, you will add it at the end of steps.";
+      + "Additional steps will be added according to the user input. If the user did not specify where, you will add it at the end of steps."
+      + "No stages or steps will have the same identifier. Steps can have same names if they are under different stages.";
   public static final String PROMPT_3 =
       "You are an DevOps helper that handles deployment YAML files. You received pipeline samples in YAML format that can be used to create a new deployment.\n"
       + "You NEED to create a new deployment YAML based on the samples and the user input. Parse the user input and create YAML output based on it. Do not try to modify the existing samples, but fit the user\n"
@@ -60,11 +62,23 @@ public class PipelineAIHelper {
       "Pipeline name : %s\nPipeline ID : %s\nPipeline Project: %s\n Pipeline Org : %s\n %s";
 
   public static final String DESCRIBE_PROMPT =
-      "Can you explain this pipeline to me and please go into details? Reply with just an explanation without acknowledging it.\n %s";
+      "Explain the following yaml by going through each 'step' and please go into great detail explaining those steps and what they will do. Do not include any additional details. Return a JSON object that will have parent stage and then step description.Please follow this sample output :\n%s\n YAML to describe and explain:\n %s";
 
+  public static final String EXAMPLE_FOR_DESCRIPTION = "{\n"
+      + "  \"Stage_Identifier\": {\n"
+      + "    \"Step_Identifier\": \"This step will deploy the Kubernetes deployment for the nginx service. It will roll out the deployment in a rolling fashion. It will wait for the specified timeout duration before marking the deployment as successful.\",\n"
+      + "    \"Step_Identifier\": \"This step will execute a shell script on the delegate. The shell script will simply print the string 'test' to the console.\"\n"
+      + "  },\n"
+      + "  \"Stage_Identifier\": {\n"
+      + "    \"Step_Identifier\": \"This step will deploy the Kubernetes deployment for the busybox service. It will roll out the deployment in a rolling fashion. It will wait for the specified timeout duration before marking the deployment as successful.\"\n"
+      + "  }\n"
+      + "}";
   public static final String GPT = "gpt-3.5-turbo";
 
-  public static final String TOKEN = "";
+  public static final String TOKEN = "ToDo";
+
+  public static JsonNode DESCRIPTION_JSON = null;
+
   public String createPipelineWithAi(
       String accountId, String orgId, String projectId, String pipelineIdentifier, String pipelineName, String prompt) {
     OpenAiService service = getApiService();
@@ -100,11 +114,12 @@ public class PipelineAIHelper {
     String cleanedYam = cleanYaml(content);
 
     messages.clear();
-    messages.add(new ChatMessage(ChatMessageRole.SYSTEM.value(), format(DESCRIBE_PROMPT, content)));
+    messages.add(
+        new ChatMessage(ChatMessageRole.SYSTEM.value(), format(DESCRIBE_PROMPT, EXAMPLE_FOR_DESCRIPTION, cleanedYam)));
 
     String description =
         service.createChatCompletion(chatCompletionRequest).getChoices().get(0).getMessage().getContent();
-    System.out.println("DESCRIPTION: " + description);
+    processDescription(description);
     return cleanedYam;
   }
 
@@ -142,5 +157,18 @@ public class PipelineAIHelper {
     } else {
       return content.lines().filter(s -> !s.isEmpty()).collect(Collectors.joining("\n"));
     }
+  }
+
+  private static void processDescription(String description) {
+    try {
+      ObjectMapper objectMapper = new ObjectMapper();
+      DESCRIPTION_JSON = objectMapper.readValue(description, JsonNode.class);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+  public String getDescription(String stageName, String stepName) {
+    return DESCRIPTION_JSON.get(stageName).get(stepName).textValue();
   }
 }
