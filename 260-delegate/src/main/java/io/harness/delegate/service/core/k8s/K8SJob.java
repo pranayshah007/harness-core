@@ -7,8 +7,9 @@
 
 package io.harness.delegate.service.core.k8s;
 
-import static io.harness.delegate.service.core.k8s.K8SConstants.DELEGATE_FIELD_MANAGER;
+import static io.harness.delegate.service.core.util.K8SConstants.DELEGATE_FIELD_MANAGER;
 
+import io.harness.delegate.service.core.util.K8SVolumeUtils;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.BatchV1Api;

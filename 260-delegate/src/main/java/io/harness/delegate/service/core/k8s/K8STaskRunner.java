@@ -11,6 +11,7 @@ import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.core.beans.ExecutionEnvironment;
 import io.harness.delegate.core.beans.TaskDescriptor;
 import io.harness.delegate.core.beans.TaskSecret;
+import io.harness.delegate.service.core.util.K8SVolumeUtils;
 import io.harness.serializer.YamlUtils;
 
 import com.google.inject.Inject;

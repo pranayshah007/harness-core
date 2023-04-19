@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.service.core.k8s;
+package io.harness.delegate.service.core.util;
 
 import lombok.experimental.UtilityClass;
 

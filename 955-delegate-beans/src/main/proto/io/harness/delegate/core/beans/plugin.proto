@@ -19,12 +19,13 @@ message TaskDescriptor {
   string id = 1;  // Id for the task
   ExecutionMode mode = 2;
   ExecutionPriority priority = 3;
-  ExecutionEnvironment runtime = 4;       // Environment in which the task should run
-  TaskInput input = 5;                    // Task inputs
-  repeated TaskSecret input_secrets = 6;  // Task secrets. One instance can contain multiple secrets from same provider
-  repeated Resource resources = 7;        // Any additional resources the task might need (e.g. shared locations)
-  string logging_token = 8;               // Token for sending logs to logging service
-  string callback_token = 9;              // Token for sending notify event to the service that initiated a task
+  ExecutionType execution_type = 4;
+  ExecutionEnvironment runtime = 5;       // Environment in which the task should run
+  TaskInput input = 6;                    // Task inputs
+  repeated TaskSecret input_secrets = 7;  // Task secrets. One instance can contain multiple secrets from same provider
+  repeated Resource resources = 8;        // Any additional resources the task might need (e.g. shared locations)
+  string logging_token = 9;               // Token for sending logs to logging service
+  string callback_token = 10;             // Token for sending notify event to the service that initiated a task
 }
 
 /*
@@ -34,7 +35,7 @@ message TaskDescriptor {
 enum ExecutionMode {
   MODE_UNKNOWN = 0;
   MODE_ONCE = 1;
-  MODE_PERPETUAL = 2;
+  MODE_SCHEDULE = 2;
 }
 
 /*
@@ -47,9 +48,15 @@ enum ExecutionPriority {
   PRIORITY_HIGH = 2;
 }
 
+enum ExecutionType {
+  TYPE_UNKNOWN = 0;
+  TYPE_PLUGIN = 1;
+  TYPE_BACKGROUND = 2;
+}
 /*
   All the data needed to decrypt one or many secrets from specific secret manager using certain runtime environment
  */
+// TODO: Revisit this message depending how secrets will work. - also used as infra secret which doesn't have runtime
 message TaskSecret {
   TaskInput secrets = 1;             // TaskInput may contain any number of secrets, not necessarily just one
   ExecutionEnvironment runtime = 2;  // Environment where the decryption should take place
@@ -59,16 +66,26 @@ message TaskSecret {
 /*
   Defines the environment under which the job needs to be executed.
  */
+// FixMe: Figure out what goes into infra and what stays here and if we need both
 message ExecutionEnvironment {
   string type = 1;  // Type of the plugin, can be anything from enum TaskType or any additional 3rd party plugins. It
                     // can be left out if plugin can execute a single type of task
   PluginSource source = 2;
   string uses = 3;  // source dependant location of the plugin (e.g. docker image tag, git repo etc...)
   ExecutionInfrastructure infra =
-      4;  // Infra under which plugin should run. If left out delegate will use default runner
-  ResourceRequirements resource = 5;  // Resource requirements for infra types that need it (e.g. K8S CPU/Mem)
-  PluginInit init = 6;                // Any kind of init that needs to happen for the plugin (e.g. init script)
-  ExecutionSchedule schedule = 7;     // Schedule on which the plugin runs, applies only for MODE_PERPETUAL
+      4;                        // Infra under which plugin should run. If left out delegate will use default runner
+  TaskSecret infra_secret = 5;  // Secret needed to setup execution environment (e.g. imagePullSecrets)
+  ResourceRequirements resource = 6;  // Resource requirements for infra types that need it (e.g. K8S CPU/Mem)
+  PluginInit init = 7;                // Any kind of init that needs to happen for the plugin (e.g. init script)
+  map<string, string> env = 8;
+  // TODO: below three are only used to correctly setup ports on LE by CI manager. That should move to runner. Check if
+  // still needed.
+  repeated string command = 9;            // TODO: hardcode (/addon/bin/ci-addon)
+  repeated string arg = 10;               // TODO: hardcode (--port <port_num>)
+  repeated int32 port = 11;               // FixMe - should be removed
+  SecurityContext security_context = 12;  // Startup user id for the execution infra
+  string working_dir = 13;
+  ExecutionSchedule schedule = 14;  // Schedule on which the plugin runs, applies only for MODE_PERPETUAL
 }
 
 /*
@@ -116,6 +133,23 @@ message ResourceRequirements {
  */
 message PluginInit {
   // TODO: This can be some sort of init script we run
+}
+/*
+  Defines security context for running a task. Note these values would always be there (unless entire context is
+  omitted) with their defaults. E.g.
+    privileged = false; runAsUser = 0 (root); runAsNonRoot = false; allowPrivilegeEscalation = false;
+
+ */
+message SecurityContext {
+  bool allowPrivilegeEscalation = 1;
+  bool privileged = 2;
+  string procMount = 3;
+  bool readOnlyRootFilesystem = 4;
+  bool runAsNonRoot = 5;
+  int64 runAsGroup = 6;
+  int64 runAsUser = 7;
+  repeated string add_capability = 8;
+  repeated string drop_capability = 9;
 }
 
 /*

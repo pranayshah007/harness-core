@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.service.core.k8s;
+package io.harness.delegate.service.core.util;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -28,7 +28,7 @@ public class K8SVolumeUtils {
   }
 
   public static V1Volume emptyDir(final String name) {
-    return new V1Volume().name(name).emptyDir(new V1EmptyDirVolumeSource().sizeLimit(Quantity.fromString("50Mi")));
+    return new V1Volume().name(name).emptyDir(new V1EmptyDirVolumeSource());
   }
 
   public static V1VolumeMount createVolumeMount(final V1Volume volume, final String mountPath) {

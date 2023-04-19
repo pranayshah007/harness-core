@@ -16,6 +16,7 @@ import io.harness.delegate.core.beans.TaskDescriptor;
 import io.harness.delegate.service.common.SimpleDelegateAgent;
 import io.harness.delegate.service.core.k8s.K8STaskRunner;
 
+import io.harness.delegate.service.core.runner.TaskRunner;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
@@ -30,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class CoreDelegateService extends SimpleDelegateAgent {
-  private final K8STaskRunner taskRunner;
+  private final TaskRunner taskRunner;
 
   @Override
   protected void abortTask(final DelegateTaskAbortEvent taskEvent) {
@@ -39,16 +40,19 @@ public class CoreDelegateService extends SimpleDelegateAgent {
 
   @Override
   protected void executeTask(final @NonNull TaskDescriptor task) {
-    try {
-      validatePluginData(task);
-      taskRunner.launchTask(task);
-    } catch (IOException e) {
-      log.error("Failed to create the task {}", task.getId(), e);
-    } catch (ApiException e) {
-      log.error("APIException: {}, {}, {}, {}, {}", e.getCode(), e.getResponseBody(), e.getMessage(),
-          e.getResponseHeaders(), e.getCause());
-      log.error("Failed to create the task {}", task.getId(), e);
+//    try {
+    validatePluginData(task);
+    if (task.type == INITIALIZATION_PHASE)
+      taskRunner.initTask("le-k8s-test", List.of(task));
+    if(ci_excecute)
+      taskRunner.executeTask("le-k8s-test", List.of(task));
+    if (cleanuyp ) {
+      taskRunner.cleanTask("le-k8s-test", List.of(task));
     }
+
+    taskRunner.initTask("le-k8s-test", List.of(task));
+    taskRunner.executeTask("le-k8s-test", List.of(task));
+    taskRunner.cleanTask("le-k8s-test", List.of(task));
   }
 
   private void validatePluginData(final @NonNull TaskDescriptor task) {
