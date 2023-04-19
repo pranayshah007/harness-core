@@ -34,7 +34,6 @@ import io.harness.product.ci.engine.proto.ExecuteStepRequest;
 import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
-import io.harness.steps.container.execution.ContainerStepCleanupHelper;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
@@ -54,8 +53,6 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public abstract class AbstractContainerStepV2 implements AsyncExecutableWithRbac<StepElementParameters> {
-  @Inject private ContainerStepCleanupHelper containerStepCleanupHelper;
-
   @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private ContainerDelegateTaskHelper containerDelegateTaskHelper;

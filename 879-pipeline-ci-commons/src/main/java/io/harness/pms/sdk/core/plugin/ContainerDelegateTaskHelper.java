@@ -29,7 +29,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.steps.StepUtils;
-import io.harness.steps.container.execution.ContainerExecutionConfig;
 
 import software.wings.beans.SerializationFormat;
 
@@ -53,8 +52,7 @@ public class ContainerDelegateTaskHelper {
 
   @Inject
   public ContainerDelegateTaskHelper(DelegateServiceGrpcClient delegateServiceGrpcClient,
-      Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier,
-      ContainerExecutionConfig containerExecutionConfig) {
+      Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier) {
     this.delegateServiceGrpcClient = delegateServiceGrpcClient;
     this.delegateCallbackTokenSupplier = delegateCallbackTokenSupplier;
   }
