@@ -425,6 +425,10 @@ import io.harness.cvng.statemachine.services.impl.DeploymentStateMachineServiceI
 import io.harness.cvng.statemachine.services.impl.LiveMonitoringStateMachineServiceImpl;
 import io.harness.cvng.statemachine.services.impl.OrchestrationServiceImpl;
 import io.harness.cvng.statemachine.services.impl.SLIAnalysisStateMachineServiceImpl;
+import io.harness.cvng.ticket.clients.TicketServiceRestClientService;
+import io.harness.cvng.ticket.clients.TicketServiceRestClientServiceImpl;
+import io.harness.cvng.ticket.services.TicketService;
+import io.harness.cvng.ticket.services.TicketServiceImpl;
 import io.harness.cvng.usage.impl.SRMLicenseUsageImpl;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.cvng.verificationjob.services.impl.VerificationJobInstanceServiceImpl;
@@ -571,6 +575,8 @@ public class CVServiceModule extends AbstractModule {
     bind(SplunkService.class).to(SplunkServiceImpl.class);
     bind(CVConfigService.class).to(CVConfigServiceImpl.class);
     bind(CompositeSLORecordService.class).to(CompositeSLORecordServiceImpl.class);
+    bind(TicketServiceRestClientService.class).to(TicketServiceRestClientServiceImpl.class);
+    bind(TicketService.class).to(TicketServiceImpl.class);
     MapBinder<DataSourceType, CVConfigToHealthSourceTransformer> dataSourceTypeToHealthSourceTransformerMapBinder =
         MapBinder.newMapBinder(binder(), DataSourceType.class, CVConfigToHealthSourceTransformer.class);
     dataSourceTypeToHealthSourceTransformerMapBinder.addBinding(DataSourceType.APP_DYNAMICS)
