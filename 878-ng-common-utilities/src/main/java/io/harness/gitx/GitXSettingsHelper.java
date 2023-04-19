@@ -8,9 +8,11 @@
 package io.harness.gitx;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -45,6 +47,39 @@ public class GitXSettingsHelper {
       throw new InvalidRequestException(String.format(
           "Git Experience is enforced for the current scope with accountId: %s, orgIdentifier: %s and projIdentifier: %s. Hence Interaction with INLINE entities is forbidden.",
           accountIdentifier, orgIdentifier, projectIdentifier));
+    }
+  }
+
+  public void setConnectorRefForRemoteEntity(String accountIdentifier, String orgIdentifier, String projIdentifier) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (gitEntityInfo != null && StoreType.REMOTE.equals(gitEntityInfo.getStoreType())
+        && (gitEntityInfo.getConnectorRef() == null
+            || GitSyncConstants.DEFAULT.equals(gitEntityInfo.getConnectorRef()))) {
+      String defaultConnectorForGitX =
+          getDefaultConnectorForGitX(accountIdentifier, orgIdentifier, projIdentifier, gitEntityInfo.getConnectorRef());
+
+      if (!isEmpty(defaultConnectorForGitX)) {
+        gitEntityInfo.setConnectorRef(defaultConnectorForGitX);
+        GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
+      }
+    }
+  }
+
+  private String getDefaultConnectorForGitX(
+      String accountIdentifier, String orgIdentifier, String projIdentifier, String connectorRef) {
+    String defaultConnectorForGitExperience;
+
+    // Exceptions are handled for release for backward compatibility for 1 release.
+    try {
+      defaultConnectorForGitExperience =
+          NGRestUtils
+              .getResponse(ngSettingsClient.getSetting(GitSyncConstants.DEFAULT_CONNECTOR_FOR_GIT_EXPERIENCE,
+                  accountIdentifier, orgIdentifier, projIdentifier))
+              .getValue();
+      return defaultConnectorForGitExperience;
+    } catch (Exception ex) {
+      log.warn(String.format("Could not fetch setting: %s", GitSyncConstants.ENFORCE_GIT_EXPERIENCE), ex);
+      return connectorRef;
     }
   }
 

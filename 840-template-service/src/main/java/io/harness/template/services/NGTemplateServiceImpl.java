@@ -169,6 +169,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
     gitXSettingsHelper.enforceGitExperienceIfApplicable(
         templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
+    gitXSettingsHelper.setConnectorRefForRemoteEntity(
+        templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
 
     if (TemplateRefHelper.hasTemplateRef(templateEntity.getYaml())) {
       TemplateUtils.setupGitParentEntityDetails(templateEntity.getAccountIdentifier(),
@@ -542,12 +544,14 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     return deleteMultipleTemplatesHelper(accountId, orgIdentifier, projectIdentifier, templateToDeleteList, null,
         comments, canDeleteStableTemplate, stableTemplate, forceDelete);
   }
+
   private boolean isForceDeleteEnabled(String accountIdentifier) {
     boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
     boolean isForceDeleteEnabledBySettings =
         isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
     return isForceDeleteFFEnabled && isForceDeleteEnabledBySettings;
   }
+
   @VisibleForTesting
   protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
     return parseBoolean(NGRestUtils

@@ -22,4 +22,5 @@ public class GitSyncConstants {
   public static final String ALLOW_DIFFERENT_REPO_FOR_PIPELINE_AND_INPUT_SETS =
       "allow_different_repo_for_pipeline_and_input_sets";
   public static final String ENFORCE_GIT_EXPERIENCE = "enforce_git_experience";
+  public static final String DEFAULT_CONNECTOR_FOR_GIT_EXPERIENCE = "default_connector_for_git_experience";
 }
