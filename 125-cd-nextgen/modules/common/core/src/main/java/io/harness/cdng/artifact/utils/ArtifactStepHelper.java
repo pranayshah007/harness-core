@@ -432,8 +432,7 @@ public class ArtifactStepHelper {
     return encryptedDataDetails;
   }
 
-  private List<EncryptedDataDetail> getGithubEncryptedDetails(
-      GithubConnectorDTO githubConnectorDTO, NGAccess ngAccess) {
+  public List<EncryptedDataDetail> getGithubEncryptedDetails(GithubConnectorDTO githubConnectorDTO, NGAccess ngAccess) {
     List<EncryptedDataDetail> encryptedDataDetails;
 
     if (githubConnectorDTO.getApiAccess() != null) {
@@ -462,6 +461,8 @@ public class ArtifactStepHelper {
       throw new InvalidRequestException("Please select the authentication type for API Access as Token");
     }
 
+    // fetch encryptedDataDetails for decrypting username if provided as a secret
+
     GithubAuthenticationDTO githubAuthenticationDTO = githubConnectorDTO.getAuthentication();
     if (githubAuthenticationDTO != null && GitAuthType.HTTP.equals(githubAuthenticationDTO.getAuthType())) {
       List<EncryptedDataDetail> encryptedDataDetailsForUsername = new ArrayList<>();
@@ -478,7 +479,12 @@ public class ArtifactStepHelper {
         encryptedDataDetailsForUsername =
             secretManagerClientService.getEncryptionDetails(ngAccess, githubUsernameTokenDTO);
       }
-      encryptedDataDetails.addAll(encryptedDataDetailsForUsername);
+
+      for (EncryptedDataDetail encryptedDataDetail : encryptedDataDetailsForUsername) {
+        if ("usernameRef".equals(encryptedDataDetail.getFieldName())) {
+          encryptedDataDetails.add(encryptedDataDetail);
+        }
+      }
     }
 
     return encryptedDataDetails;
