@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.ng.core.k8s.ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ExecutionStrategyType;
 import io.harness.cdng.service.beans.GoogleCloudFunctionsServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
@@ -31,6 +32,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DeploymentMetadataServiceHelper {
   private static final String GOOGLE_FUNCTION_GEN_TWO_ENV_TYPE = "GenTwo";
+  private static final String GOOGLE_FUNCTION_GEN_ONE_ENV_TYPE = "GenOne";
+  private static final String GOOGLE_FUNCTION_GEN_STRATEGY_SUFFIX = "genone";
   public Optional<DeploymentMetadataDto> parseDeploymentMetadataYaml(
       ServiceDefinitionType type, String deploymentMetadataYaml) {
     if (EmptyPredicate.isEmpty(deploymentMetadataYaml)) {
@@ -78,6 +81,26 @@ public class DeploymentMetadataServiceHelper {
             .collect(Collectors.toList());
       default:
         return serviceEntities;
+    }
+  }
+
+  public String filterStrategyTypeOnDeploymentMetadata(
+      ServiceDefinitionType type, String deploymentMetadataYaml, ExecutionStrategyType executionStrategyType) {
+    Optional<DeploymentMetadataDto> deploymentMetadataDtoOptional =
+        parseDeploymentMetadataYaml(type, deploymentMetadataYaml);
+    switch (type.getYamlName()) {
+      case GOOGLE_CLOUD_FUNCTIONS:
+        if (deploymentMetadataDtoOptional.isEmpty()) {
+          return executionStrategyType.getDisplayName().toLowerCase();
+        }
+        GoogleCloudFunctionDeploymentMetadataDto googleCloudFunctionDeploymentMetaDataDto =
+            (GoogleCloudFunctionDeploymentMetadataDto) deploymentMetadataDtoOptional.get();
+        if (GOOGLE_FUNCTION_GEN_ONE_ENV_TYPE.equals(googleCloudFunctionDeploymentMetaDataDto.getEnvironmentType())) {
+          return executionStrategyType.getDisplayName().toLowerCase() + GOOGLE_FUNCTION_GEN_STRATEGY_SUFFIX;
+        }
+        return executionStrategyType.getDisplayName().toLowerCase();
+      default:
+        return executionStrategyType.getDisplayName().toLowerCase();
     }
   }
 
