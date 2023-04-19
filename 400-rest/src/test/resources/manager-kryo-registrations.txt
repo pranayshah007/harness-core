@@ -3187,3 +3187,4 @@
 10000523:io.harness.delegate.task.pcf.artifact.GoogleCloudStorageTasArtifactRequestDetails
 10000524:io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig
 10000526:io.harness.beans.HttpCertificateNG
+10000527:software.wings.beans.ServiceHookDelegateConfig

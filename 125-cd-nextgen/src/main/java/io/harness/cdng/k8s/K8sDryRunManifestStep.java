@@ -9,9 +9,12 @@ package io.harness.cdng.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.delegate.task.k8s.K8sDryRunManifestRequest.K8sDryRunManifestRequestBuilder;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
@@ -73,6 +76,7 @@ public class K8sDryRunManifestStep extends TaskChainExecutableWithRollbackAndRba
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject protected KryoSerializer kryoSerializer;
   @Inject protected StepHelper stepHelper;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
   public TaskChainResponse executeK8sTask(ManifestOutcome k8sManifestOutcome, Ambiance ambiance,
@@ -97,7 +101,7 @@ public class K8sDryRunManifestStep extends TaskChainExecutableWithRollbackAndRba
       isCanaryWorkflow = optionalCanaryOutcome.isFound();
     }
 
-    K8sDryRunManifestRequest k8sDryRunManifestRequest =
+    K8sDryRunManifestRequestBuilder k8sDryRunManifestRequestbuilder =
         K8sDryRunManifestRequest.builder()
             .releaseName(releaseName)
             .commandName(K8S_DRY_RUN_MANIFEST)
@@ -116,9 +120,13 @@ public class K8sDryRunManifestStep extends TaskChainExecutableWithRollbackAndRba
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .useLatestKustomizeVersion(cdStepHelper.isUseLatestKustomizeVersion(accountId))
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
-            .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome))
-            .build();
+            .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome));
 
+    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
+      k8sDryRunManifestRequestbuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));
+    }
+
+    K8sDryRunManifestRequest k8sDryRunManifestRequest = k8sDryRunManifestRequestbuilder.build();
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
     return k8sStepHelper.queueK8sTask(stepParameters, k8sDryRunManifestRequest, ambiance, executionPassThroughData,
         TaskType.K8S_DRY_RUN_MANIFEST_TASK_NG);

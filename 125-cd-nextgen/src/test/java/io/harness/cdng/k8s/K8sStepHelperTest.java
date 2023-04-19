@@ -3428,7 +3428,7 @@ public class K8sStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldCreateTaskRequestWithNonProdEnvType() {
     doReturn(NON_PROD).when(stepHelper).getEnvironmentType(ambiance);
-
+    doReturn(Optional.empty()).when(cdStepHelper).getServiceHooksOutcome(ambiance);
     K8sSpecParameters k8sSpecParameters = K8sRollingStepParameters.infoBuilder().build();
     TaskChainResponse taskChainResponse = k8sStepHelper.queueK8sTask(
         StepElementParameters.builder().spec(k8sSpecParameters).build(),
@@ -3463,7 +3463,7 @@ public class K8sStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldCreateTaskRequestWithProdEnvType() {
     doReturn(PROD).when(stepHelper).getEnvironmentType(ambiance);
-
+    doReturn(Optional.empty()).when(cdStepHelper).getServiceHooksOutcome(ambiance);
     K8sSpecParameters k8sSpecParameters = K8sRollingStepParameters.infoBuilder().build();
     TaskChainResponse taskChainResponse = k8sStepHelper.queueK8sTask(
         StepElementParameters.builder().spec(k8sSpecParameters).build(),
