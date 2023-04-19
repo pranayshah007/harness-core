@@ -23,4 +23,5 @@ public final class OrchestrationConstants {
   public static final String CURRENT_STATUS = "currentStatus";
   public static final String EXECUTION_URL = "executionUrl";
   public static final String LIVE_STATUS = "liveStatus";
+  public static final String ROLLBACK_MODE_EXECUTION = "OnRollbackModeExecution";
 }
