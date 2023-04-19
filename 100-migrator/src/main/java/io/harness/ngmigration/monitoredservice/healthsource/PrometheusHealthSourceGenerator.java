@@ -124,7 +124,7 @@ public class PrometheusHealthSourceGenerator extends HealthSourceGenerator {
     }
     int startIndex = noSpaceQuery.indexOf(CG_HOSTNAME_PLACEHOLDER);
     int endIndex = startIndex + CG_HOSTNAME_PLACEHOLDER.length();
-    if (noSpaceQuery.charAt(endIndex) == '"') {
+    if (endIndex < noSpaceQuery.length() && noSpaceQuery.charAt(endIndex) == '"') {
       endIndex++;
     }
     for (; startIndex > 0; startIndex--) {

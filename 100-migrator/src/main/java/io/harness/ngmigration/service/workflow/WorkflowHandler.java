@@ -28,6 +28,7 @@ import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ngmigration.beans.MigExpressionOverrides;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
@@ -198,7 +199,8 @@ public abstract class WorkflowHandler {
     if (EmptyPredicate.isEmpty(variables)) {
       return new ArrayList<>();
     }
-    MigratorExpressionUtils.render(context, workflow, new HashMap<>());
+    MigratorExpressionUtils.render(
+        context, workflow, MigExpressionOverrides.builder().customExpressions(new HashMap<>()).build());
     return variables.stream()
         .filter(variable -> variable.getType() != VariableType.ENTITY)
         .map(variable
@@ -392,7 +394,11 @@ public abstract class WorkflowHandler {
       return Collections.emptyList();
     }
     MigratorExpressionUtils.render(migrationContext, phaseStep,
-        MigratorUtility.getExpressions(phase, context.getStepExpressionFunctors(), context.getIdentifierCaseFormat()));
+        MigExpressionOverrides.builder()
+            .workflowVarsAsPipeline(context.isWorkflowVarsAsPipeline())
+            .customExpressions(MigratorUtility.getExpressions(
+                phase, context.getStepExpressionFunctors(), context.getIdentifierCaseFormat()))
+            .build());
     List<StepSkipStrategy> cgSkipConditions = phaseStep.getStepSkipStrategies();
     Map<String, String> skipStrategies = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(cgSkipConditions)
@@ -428,9 +434,17 @@ public abstract class WorkflowHandler {
     Map<String, Object> expressions =
         MigratorUtility.getExpressions(phase, context.getStepExpressionFunctors(), context.getIdentifierCaseFormat());
     if (StringUtils.isNotBlank(skipCondition)) {
-      skipCondition = (String) MigratorExpressionUtils.render(migrationContext, skipCondition, expressions);
+      skipCondition = (String) MigratorExpressionUtils.render(migrationContext, skipCondition,
+          MigExpressionOverrides.builder()
+              .workflowVarsAsPipeline(context.isWorkflowVarsAsPipeline())
+              .customExpressions(expressions)
+              .build());
     }
-    MigratorExpressionUtils.render(migrationContext, step, expressions);
+    MigratorExpressionUtils.render(migrationContext, step,
+        MigExpressionOverrides.builder()
+            .workflowVarsAsPipeline(context.isWorkflowVarsAsPipeline())
+            .customExpressions(expressions)
+            .build());
     List<StepExpressionFunctor> expressionFunctors = stepMapper.getExpressionFunctor(context, phase, phaseStep, step);
     if (isNotEmpty(expressionFunctors)) {
       context.getStepExpressionFunctors().addAll(expressionFunctors);
