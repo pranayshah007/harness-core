@@ -33,7 +33,8 @@ public class AssessmentUploadMapper {
         .questions(assessment.getQuestions())
         .baseScore(assessment.getBaseScore())
         .isPublished(assessment.getIsPublished())
-        .version(assessment.getVersion())
+        .majorVersion(assessment.getVersion())
+        .minorVersion(assessment.getMinorVersion())
         .lastUpdatedAt(assessment.getLastUpdatedAt())
         .build();
   }

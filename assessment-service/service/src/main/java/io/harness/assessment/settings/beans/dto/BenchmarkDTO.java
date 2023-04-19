@@ -21,6 +21,6 @@ import lombok.EqualsAndHashCode;
 public class BenchmarkDTO {
   @EqualsAndHashCode.Include @NotNull String benchmarkId;
   @NotNull String benchmarkName;
-  @NotNull Boolean isDefault;
+  Boolean isDefault;
   @Valid @Size(min = 1, max = 200) List<ScoreDTO> scores;
 }

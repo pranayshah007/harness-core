@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 
 @Slf4j
-//@OwnedBy(HarnessTeam.IDP)
+@OwnedBy(HarnessTeam.SEI)
 @UtilityClass
 public class FileUtils {
   public static String readFile(String dir, String fileName, String ext) {

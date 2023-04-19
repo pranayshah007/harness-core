@@ -56,14 +56,14 @@ public class BenchmarkResource {
   }
 
   @GET
-  @Path("{assessmentId}/{version}")
+  @Path("{assessmentId}/{majorVersion}")
   @Produces({"application/json"})
   @ApiOperation(value = "Get list of benchmarks against an assessment in the system.", nickname = "getBenchmarks",
       response = BenchmarkDTO.class, responseContainer = "List")
   public Response
-  getBenchmarks(@PathParam("assessmentId") String assessmentId, @PathParam("version") Long version) {
+  getBenchmarks(@PathParam("assessmentId") String assessmentId, @PathParam("majorVersion") Long majorVersion) {
     try {
-      List<BenchmarkDTO> benchmarks = benchmarkService.getBenchmarks(assessmentId, version);
+      List<BenchmarkDTO> benchmarks = benchmarkService.getBenchmarks(assessmentId, majorVersion);
       return Response.status(Response.Status.OK).entity(benchmarks).build();
     } catch (Exception e) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)

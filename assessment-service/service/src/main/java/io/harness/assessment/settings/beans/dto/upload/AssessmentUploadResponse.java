@@ -20,7 +20,8 @@ import lombok.Data;
 public class AssessmentUploadResponse {
   String assessmentId;
   String assessmentName;
-  Long version;
+  Long majorVersion;
+  Long minorVersion;
   List<Question> questions;
   Long expectedCompletionDuration;
   Long baseScore;

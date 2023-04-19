@@ -22,6 +22,7 @@ import io.harness.assessment.settings.repositories.BenchmarkRepository;
 import com.google.inject.Inject;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -38,22 +39,23 @@ public class BenchmarkServiceImpl implements BenchmarkService {
   @Override
   public List<BenchmarkDTO> uploadBenchmark(BenchmarksListRequest benchmarksListRequest, String assessmentId) {
     // validations of question and scores TODO
-    Long version = benchmarksListRequest.getVersion();
+    Long version = benchmarksListRequest.getMajorVersion();
     Optional<Assessment> assessmentOptional = assessmentRepository.findByAssessmentIdAndVersion(assessmentId, version);
     if (assessmentOptional.isEmpty()) {
       throw new RuntimeException("Assessment Not Found for Id : " + assessmentId);
     }
     Assessment assessment = assessmentOptional.get();
     List<BenchmarkDTO> benchmarks = benchmarksListRequest.getBenchmarks();
-    if (benchmarks.stream().filter(BenchmarkDTO::getIsDefault).count() != 1) {
-      throw new RuntimeException("There has to be one default benchmark for the assessment.");
-    }
-
+    benchmarks.stream()
+        .filter(benchmarkDTO -> Objects.isNull(benchmarkDTO.getIsDefault()))
+        .forEach(benchmarkDTO -> benchmarkDTO.setIsDefault(false));
     if (benchmarks.size() != new HashSet<>(benchmarks).size()) {
       throw new RuntimeException("All benchmark Ids have to be unique");
     }
     benchmarksListRequest.getBenchmarks().forEach(benchmarkDTO -> validateBenchmark(benchmarkDTO, assessment));
-
+    if (benchmarks.stream().filter(BenchmarkDTO::getIsDefault).count() != 1) {
+      throw new RuntimeException("There has to be one default benchmark for the assessment.");
+    }
     for (BenchmarkDTO benchmarkDTO : benchmarks) {
       Optional<Benchmark> benchmarkOptional = benchmarkRepository.findOneByAssessmentIdAndVersionAndBenchmarkId(
           assessmentId, version, benchmarkDTO.getBenchmarkId());
