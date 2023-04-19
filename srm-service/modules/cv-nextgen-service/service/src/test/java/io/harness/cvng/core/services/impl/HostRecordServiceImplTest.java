@@ -37,7 +37,7 @@ public class HostRecordServiceImplTest extends CvNextGenTestBase {
                                       .accountId(generateUuid())
                                       .startTime(Instant.now())
                                       .endTime(Instant.now())
-                                      .hosts(Sets.newHashSet("h1", "h2"))
+                                      .hosts(Sets.newHashSet("h1", "h2", null))
                                       .verificationTaskId(generateUuid())
                                       .build();
     hostRecordService.save(Lists.newArrayList(hostRecordDTO));
