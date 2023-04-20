@@ -45,7 +45,16 @@ public class RuleDAO {
     log.info("deleted rule: {}", uuid);
     return hPersistence.delete(query);
   }
-
+  public List<Rule> forRecommendation() {
+    log.info("creating a query");
+    Query<Rule> rules = hPersistence.createQuery(Rule.class)
+                            .field(RuleId.accountId)
+                            .equal(GLOBAL_ACCOUNT_ID)
+                            .field(RuleId.forRecommendation)
+                            .equal(true);
+    log.info("Rule List forRecommendation: {}", rules.asList());
+    return rules.asList();
+  }
   public RuleList list(GovernanceRuleFilter governancePolicyFilter) {
     RuleList ruleList = RuleList.builder().build();
     Query<Rule> rules = hPersistence.createQuery(Rule.class)
@@ -158,6 +167,9 @@ public class RuleDAO {
     }
     if (rule.getTags() != null) {
       updateOperations.set(RuleId.tags, rule.getTags());
+    }
+    if (rule.getForRecommendation() != null) {
+      updateOperations.set(RuleId.forRecommendation, rule.getForRecommendation());
     }
     log.info("Updated rule: {} {} {}", rule.getUuid(), hPersistence.update(query, updateOperations), query);
     hPersistence.update(query, updateOperations);

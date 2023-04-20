@@ -16,6 +16,7 @@ import io.harness.event.handler.segment.SegmentConfig;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.mongo.MongoConfig;
 import io.harness.notification.NotificationClientConfiguration;
+import io.harness.remote.GovernanceConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.timescaledb.TimeScaleDBConfig;
 
@@ -66,6 +67,8 @@ public class BatchMainConfig {
   @JsonProperty("clickHouseConfig") private ClickHouseConfig clickHouseConfig;
   @JsonProperty(defaultValue = "KUBERNETES") private DeployMode deployMode = DeployMode.KUBERNETES;
   @JsonProperty(defaultValue = "false") private boolean isClickHouseEnabled;
+  @JsonProperty("recommendationConfig") private RecommendationConfig recommendationConfig;
+  @JsonProperty("governanceConfig") private GovernanceConfig governanceConfig;
 
   public List<String> getDbAliases() {
     List<String> dbAliases = new ArrayList<>();
