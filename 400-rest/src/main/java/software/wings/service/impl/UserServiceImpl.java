@@ -934,7 +934,12 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public void addUserToAccount(String userId, String accountId) {
-    addUserToAccount(userId, accountId, MANUAL);
+    UserSource userSource = MANUAL;
+    User user = get(userId);
+    if (user != null && userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, accountId, NG)) {
+      userSource = user.getUserAccountLevelDataMap().get(accountId).getSourceOfProvisioning().get(NG);
+    }
+    addUserToAccount(userId, accountId, userSource);
   }
   @Override
   public void addUserToAccount(String userId, String accountId, UserSource userSource) {
@@ -3063,9 +3068,7 @@ public class UserServiceImpl implements UserService {
         if (!userServiceHelper.isUserProvisionedInThisAccount(user, accountId)) {
           delete(accountId, userId);
         }
-      } else if (NG.equals(generation) && isUserPresent(userId)
-          && userServiceHelper.isUserActiveInNG(user, accountId)) {
-        userServiceHelper.deleteUserFromNG(userId, accountId, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
+      } else if (NG.equals(generation) && isUserPresent(userId)) {
         removeUserFromThisGenInAccount(accountId, userId, generation, user);
         if (!userServiceHelper.isUserProvisionedInThisAccount(user, accountId)) {
           delete(accountId, userId);
