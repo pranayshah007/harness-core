@@ -1,6 +1,7 @@
 BUILD_SCRIPT_PATH="ce-nextgen/build/feature_build.sh"
 DOCKER_FILE_PATH="/harness/dist/ce-nextgen/Dockerfile-ce-nextgen-cie-jdk"
 CONTEXT_PATH="/harness/dist/ce-nextgen"
+CONFIG_FOLDER_PATH="harness-core/ce-nextgen"
 ARTIFACT_REPO="harness/feature-cenextgen-service-openjdk-8u242"
 HELM_CHART_REPO="ce-nextgen/chart"
 HELM_PUBLISH_REPO="us-west1-docker.pkg.dev/platform-205701/harness-helm-artifacts"
