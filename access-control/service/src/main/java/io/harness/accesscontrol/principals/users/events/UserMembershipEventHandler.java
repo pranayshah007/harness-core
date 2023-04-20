@@ -44,6 +44,8 @@ public class UserMembershipEventHandler implements EventHandler {
     UserMembershipDTO userMembershipDTO = null;
     try {
       userMembershipDTO = UserMembershipDTO.parseFrom(message.getMessage().getData());
+      log.info("Handling message {} parsed userMembershipDTO  {} in UserMembershipEventHandler", message.getId(),
+          userMembershipDTO);
     } catch (InvalidProtocolBufferException e) {
       log.error("Exception in unpacking EntityChangeDTO for user group event with key {}", message.getId(), e);
     }
