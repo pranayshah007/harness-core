@@ -56,6 +56,8 @@ import io.harness.gitsync.PushFileResponse;
 import io.harness.gitsync.PushInfo;
 import io.harness.gitsync.RepoDetails;
 import io.harness.gitsync.UpdateFileRequest;
+import io.harness.gitsync.UserDetailsRequest;
+import io.harness.gitsync.UserDetailsResponse;
 import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.gitsync.common.beans.BranchSyncStatus;
 import io.harness.gitsync.common.beans.GitBranch;
@@ -81,6 +83,10 @@ import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
+import io.harness.gitsync.common.dtos.gitAccess.GitAccessDTO;
+import io.harness.gitsync.common.helper.GitAccessMapper;
 import io.harness.gitsync.common.helper.GitFilePathHelper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.helper.ScmExceptionUtils;
@@ -861,6 +867,37 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
     return GetBatchFilesResponse.newBuilder()
         .setStatusCode(HTTP_200)
         .putAllGetFileResponseMap(getFileResponseMap)
+        .build();
+  }
+
+  @Override
+  public UserDetailsResponse getUserDetails(UserDetailsRequest request) {
+    try {
+      GitAccessDTO gitAccessDTO = GitAccessMapper.convertToGitAccessDTO(request);
+      UserDetailsResponseDTO userDetails =
+          scmFacilitatorService.getUserDetails(UserDetailsRequestDTO.builder().gitAccessDTO(gitAccessDTO).build());
+      return prepareAuthenticatedUserResponse(userDetails);
+    } catch (WingsException ex) {
+      ScmException scmException = ScmExceptionUtils.getScmException(ex);
+      if (scmException == null) {
+        return io.harness.gitsync.UserDetailsResponse.newBuilder()
+            .setStatusCode(ex.getCode().getStatus().getCode())
+            .setError(prepareDefaultErrorDetails(ex))
+            .build();
+      }
+      return io.harness.gitsync.UserDetailsResponse.newBuilder()
+          .setStatusCode(ScmErrorCodeToHttpStatusCodeMapping.getHttpStatusCode(scmException.getCode()))
+          .setError(prepareErrorDetails(ex))
+          .build();
+    }
+  }
+
+  private io.harness.gitsync.UserDetailsResponse prepareAuthenticatedUserResponse(
+      UserDetailsResponseDTO userDetailsResponseDTO) {
+    return io.harness.gitsync.UserDetailsResponse.newBuilder()
+        .setStatusCode(HTTP_200)
+        .setUserEmail(userDetailsResponseDTO.getUserEmail())
+        .setUserName(userDetailsResponseDTO.getUserName())
         .build();
   }
 }
