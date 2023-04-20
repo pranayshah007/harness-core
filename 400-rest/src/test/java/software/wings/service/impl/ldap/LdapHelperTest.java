@@ -12,11 +12,12 @@ import static io.harness.rule.OwnerRule.UNKNOWN;
 import static io.harness.rule.OwnerRule.VIKAS;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
@@ -52,17 +53,16 @@ import org.ldaptive.SearchResult;
 import org.ldaptive.auth.AuthenticationResponse;
 import org.ldaptive.auth.Authenticator;
 import org.ldaptive.auth.SearchDnResolver;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * @author Swapnil
  */
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 @PrepareForTest({LdapSearch.class, LdapHelper.class})
 @PowerMockIgnore({"javax.security.*", "javax.net.*"})
 @OwnedBy(HarnessTeam.PL)
@@ -74,7 +74,7 @@ public class LdapHelperTest extends WingsBaseTest {
   private LdapSearch search;
 
   private void mockLdapSearchBuilder(LdapSearch.Builder searchBuilder, LdapSearch search) {
-    PowerMockito.mockStatic(LdapSearch.class);
+    mockStatic(LdapSearch.class);
     when(LdapSearch.builder()).thenReturn(searchBuilder);
     when(searchBuilder.connectionFactory(any())).thenReturn(searchBuilder);
     when(searchBuilder.baseDN(any())).thenReturn(searchBuilder);
@@ -161,7 +161,7 @@ public class LdapHelperTest extends WingsBaseTest {
 
     LdapException ldapException = mock(LdapException.class);
     when(ldapException.getResultCode()).thenReturn(ResultCode.OPERATIONS_ERROR);
-    when(search.execute(Matchers.anyVararg())).thenThrow(ldapException);
+    when(search.execute(ArgumentMatchers.any())).thenThrow(ldapException);
     assertThat(helper.validateGroupConfig(ldapSettings).getStatus()).isEqualTo(Status.FAILURE);
   }
 
@@ -173,7 +173,7 @@ public class LdapHelperTest extends WingsBaseTest {
     LdapEntry group = new LdapEntry("groupDN");
     SearchResult groups = new SearchResult(group);
     mockLdapSearchBuilder(searchBuilder, search);
-    when(search.execute(Matchers.anyVararg())).thenReturn(searchResult);
+    when(search.execute(ArgumentMatchers.any())).thenReturn(searchResult);
     when(searchResult.getEntries()).thenReturn(Collections.singletonList(group));
     when(searchResult.size()).thenReturn(1);
     helper.populateGroupSize(groups, ldapSettings);
@@ -188,7 +188,7 @@ public class LdapHelperTest extends WingsBaseTest {
     LdapEntry group = new LdapEntry("groupDN");
     SearchResult groups = new SearchResult(group);
     mockLdapSearchBuilder(searchBuilder, search);
-    when(search.execute(Matchers.anyVararg()))
+    when(search.execute(ArgumentMatchers.any()))
         .thenThrow(new LdapException("Error", ResultCode.UNAVAILABLE_CRITICAL_EXTENSION))
         .thenReturn(searchResult);
     when(searchResult.getEntries()).thenReturn(Collections.singletonList(group));

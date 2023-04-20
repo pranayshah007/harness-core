@@ -14,6 +14,8 @@ import io.harness.helm.HelmCommandType;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.logging.LogCallback;
 
+import software.wings.beans.ServiceHookDelegateConfig;
+
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -24,6 +26,7 @@ public class HelmInstallCommandRequestNG extends HelmCommandRequestNG {
   private Integer newReleaseVersion;
   private Integer prevReleaseVersion;
   private boolean ignoreReleaseHistFailStatus;
+
   @Builder
   public HelmInstallCommandRequestNG(String releaseName, List<String> valuesYamlList,
       K8sInfraDelegateConfig k8sInfraDelegateConfig, ManifestDelegateConfig manifestDelegateConfig, String accountId,
@@ -31,11 +34,12 @@ public class HelmInstallCommandRequestNG extends HelmCommandRequestNG {
       CommandUnitsProgress commandUnitsProgress, LogCallback logCallback, String namespace, HelmVersion helmVersion,
       String commandFlags, String repoName, String workingDir, String kubeConfigLocation, String ocPath,
       String commandName, boolean useLatestKubectlVersion, Integer prevReleaseVersion, Integer newReleaseVersion,
-      String gcpKeyPath, boolean ignoreReleaseHistFailStatus) {
+      String gcpKeyPath, boolean ignoreReleaseHistFailStatus, String releaseHistoryPrefix,
+      List<ServiceHookDelegateConfig> serviceHooks) {
     super(releaseName, HelmCommandType.INSTALL, valuesYamlList, k8sInfraDelegateConfig, manifestDelegateConfig,
         accountId, k8SteadyStateCheckEnabled, shouldOpenFetchFilesLogStream, commandUnitsProgress, logCallback,
         namespace, helmVersion, commandFlags, repoName, workingDir, kubeConfigLocation, ocPath, commandName,
-        useLatestKubectlVersion, gcpKeyPath);
+        useLatestKubectlVersion, gcpKeyPath, releaseHistoryPrefix, serviceHooks);
     this.prevReleaseVersion = prevReleaseVersion;
     this.newReleaseVersion = newReleaseVersion;
     this.ignoreReleaseHistFailStatus = ignoreReleaseHistFailStatus;

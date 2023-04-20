@@ -81,9 +81,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.lambda.model.AliasConfiguration;
 import software.amazon.awssdk.services.lambda.model.CreateAliasResponse;
@@ -100,8 +99,7 @@ import software.amazon.awssdk.services.lambda.model.PublishVersionResponse;
 import software.amazon.awssdk.services.lambda.model.UpdateAliasResponse;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeRequest;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(AwsLambdaTaskHelper.class)
+@RunWith(MockitoJUnitRunner.class)
 @OwnedBy(CDP)
 public class AwsLambdaTaskHelperTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -412,6 +410,7 @@ public class AwsLambdaTaskHelperTest extends CategoryTest {
     ArtifactoryConnectorDTO artifactoryConnectorDTO = ArtifactoryConnectorDTO.builder().auth(auth).build();
     AwsLambdaArtifactoryArtifactConfig awsLambdaArtifactConfig = AwsLambdaArtifactoryArtifactConfig.builder()
                                                                      .connectorConfig(artifactoryConnectorDTO)
+                                                                     .repository("repo")
                                                                      .artifactPaths(Arrays.asList("path"))
                                                                      .identifier("PACKAGE")
                                                                      .build();

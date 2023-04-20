@@ -97,7 +97,7 @@ public interface EntityTypeConstants {
   String EXTERNAL = "External";
   String FORTIFY_ON_DEMAND = "FortifyOnDemand";
   String FOSSA = "Fossa";
-  String GIT_LEAKS = "GitLeaks";
+  String GIT_LEAKS = "Gitleaks";
   String GRYPE = "Grype";
   String JFROG_XRAY = "JfrogXray";
   String MEND = "Mend";

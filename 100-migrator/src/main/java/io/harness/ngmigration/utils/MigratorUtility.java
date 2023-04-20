@@ -503,9 +503,13 @@ public class MigratorUtility {
   }
 
   public static List<GraphNode> getSteps(Workflow workflow) {
+    List<GraphNode> stepYamls = new ArrayList<>();
+    if (workflow == null || workflow.getOrchestrationWorkflow() == null
+        || !(workflow.getOrchestrationWorkflow() instanceof CanaryOrchestrationWorkflow)) {
+      return stepYamls;
+    }
     CanaryOrchestrationWorkflow orchestrationWorkflow =
         (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
-    List<GraphNode> stepYamls = new ArrayList<>();
     PhaseStep postDeploymentPhaseStep = orchestrationWorkflow.getPostDeploymentSteps();
     if (postDeploymentPhaseStep != null && EmptyPredicate.isNotEmpty(postDeploymentPhaseStep.getSteps())) {
       stepYamls.addAll(postDeploymentPhaseStep.getSteps());

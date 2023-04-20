@@ -19,7 +19,7 @@ public interface BudgetService {
 
   Budget get(String budgetId, String accountId);
 
-  void update(String budgetId, Budget budget, Budget oldBudget);
+  void update(String budgetId, Budget budget);
   void updatePerspectiveName(String accountId, String perspectiveId, String perspectiveName);
 
   List<Budget> list(String accountId);

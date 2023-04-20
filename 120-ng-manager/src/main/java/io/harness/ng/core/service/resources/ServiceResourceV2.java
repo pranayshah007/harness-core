@@ -45,6 +45,7 @@ import io.harness.beans.Scope;
 import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.bean.yaml.ArtifactSourceConfig;
 import io.harness.cdng.artifact.utils.ArtifactSourceTemplateHelper;
+import io.harness.cdng.deploymentmetadata.DeploymentMetadataServiceHelper;
 import io.harness.cdng.hooks.ServiceHookAction;
 import io.harness.cdng.manifest.yaml.K8sCommandFlagType;
 import io.harness.cdng.manifest.yaml.kinds.KustomizeCommandFlagType;
@@ -188,6 +189,7 @@ public class ServiceResourceV2 {
   @Inject ArtifactSourceTemplateHelper artifactSourceTemplateHelper;
   private ServiceEntityYamlSchemaHelper serviceSchemaHelper;
   private ScopeAccessHelper scopeAccessHelper;
+  @Inject private DeploymentMetadataServiceHelper deploymentMetadataServiceHelper;
 
   private final NGFeatureFlagHelperService featureFlagService;
   public static final String SERVICE_PARAM_MESSAGE = "Service Identifier for the entity";
@@ -618,7 +620,8 @@ public class ServiceResourceV2 {
       @QueryParam("deploymentTemplateIdentifier") String deploymentTemplateIdentifier,
       @Parameter(
           description = "The version label of deployment template if infrastructure is of type custom deployment")
-      @QueryParam("versionLabel") String versionLabel) {
+      @QueryParam("versionLabel") String versionLabel,
+      @QueryParam("deploymentMetadataYaml") String deploymentMetaDataYaml) {
     accessControlClient.checkForAccessOrThrow(List.of(scopeAccessHelper.getPermissionCheckDtoForViewAccessForScope(
                                                   Scope.of(accountId, orgIdentifier, projectIdentifier))),
         "Unauthorized to list services");
@@ -638,6 +641,12 @@ public class ServiceResourceV2 {
                                 deploymentTemplateIdentifier, versionLabel, serviceEntity))
                         .map(ServiceElementMapper::toAccessListResponseWrapper)
                         .collect(Collectors.toList());
+    } else if (ServiceDefinitionType.GOOGLE_CLOUD_FUNCTIONS.equals(type)) {
+      List<ServiceEntity> serviceEntities = serviceEntityService.listRunTimePermission(criteria);
+      serviceEntities =
+          deploymentMetadataServiceHelper.filterOnDeploymentMetadata(serviceEntities, type, deploymentMetaDataYaml);
+      serviceList =
+          serviceEntities.stream().map(ServiceElementMapper::toAccessListResponseWrapper).collect(Collectors.toList());
     } else {
       serviceList = serviceEntityService.listRunTimePermission(criteria)
                         .stream()

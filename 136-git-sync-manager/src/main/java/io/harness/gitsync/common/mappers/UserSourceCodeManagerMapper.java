@@ -40,6 +40,8 @@ public abstract class UserSourceCodeManagerMapper<D extends UserSourceCodeManage
     scm.setType(scm.getType());
     scm.setCreatedAt(scmDTO.getCreatedAt());
     scm.setLastModifiedAt(scmDTO.getLastModifiedAt());
+    scm.setUserEmail(scmDTO.getUserEmail());
+    scm.setUserName(scmDTO.getUserName());
   }
 
   private void setCommonFieldsDTO(B scm, D scmDTO) {
@@ -49,6 +51,8 @@ public abstract class UserSourceCodeManagerMapper<D extends UserSourceCodeManage
     scmDTO.setLastModifiedAt(scm.getLastModifiedAt());
     scmDTO.setAccountIdentifier(scm.getAccountIdentifier());
     scmDTO.setType(scm.getType());
+    scmDTO.setUserEmail(scm.getUserEmail());
+    scmDTO.setUserName(scm.getUserName());
   }
 
   public D toServiceDTO(R userSourceCodeManagerRequestDTO) {

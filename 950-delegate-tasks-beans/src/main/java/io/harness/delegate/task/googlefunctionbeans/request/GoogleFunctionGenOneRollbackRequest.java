@@ -32,4 +32,5 @@ public class GoogleFunctionGenOneRollbackRequest implements GoogleFunctionComman
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
   @NonFinal @Expression(ALLOW_SECRETS) String createFunctionRequestAsString;
   boolean isFirstDeployment;
+  @NonFinal @Expression(ALLOW_SECRETS) String googleFunctionDeployManifestContent;
 }

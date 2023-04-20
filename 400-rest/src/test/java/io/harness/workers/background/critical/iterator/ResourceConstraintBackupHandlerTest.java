@@ -9,8 +9,8 @@ package io.harness.workers.background.critical.iterator;
 
 import static io.harness.rule.OwnerRule.YOGESH;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -39,13 +39,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(PersistenceIteratorFactory.class)
-@PowerMockIgnore({"javax.security.*", "javax.net.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class ResourceConstraintBackupHandlerTest extends WingsBaseTest {
   @Mock private ResourceConstraintService mockResourceConstraintService;
   @Mock private PersistenceIteratorFactory mockPersistenceIteratorFactory;

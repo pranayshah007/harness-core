@@ -36,6 +36,7 @@ import io.fabric8.utils.Lists;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -172,6 +173,17 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
     PlanCreatorServiceHelper.decorateResponseWithRollbackModeBehaviour(
         Dependency.newBuilder().setRollbackModeBehaviour(UNDEFINED_BEHAVIOUR).build(), noDependencies);
     assertThat(noDependencies).isEqualTo(noDependenciesCopy);
+
+    PlanCreationResponse noDependenciesAndPlanNode =
+        PlanCreationResponse.builder().node("u2", planNode2).node("u3", planNode3).build();
+    PlanCreationResponse result = PlanCreationResponse.builder()
+                                      .node("u2", planNode2)
+                                      .node("u3", planNode3)
+                                      .preservedNodesInRollbackMode(Arrays.asList("u2", "u3"))
+                                      .build();
+    PlanCreatorServiceHelper.decorateResponseWithRollbackModeBehaviour(
+        Dependency.newBuilder().setRollbackModeBehaviour(PRESERVE).build(), noDependenciesAndPlanNode);
+    assertThat(noDependenciesAndPlanNode).isEqualTo(result);
 
     ByteString randomByteString = ByteString.copyFromUtf8("random");
     PlanCreationResponse withDependencies =

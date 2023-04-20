@@ -203,7 +203,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .stepParameters(stageParameters.build())
             .stepType(getStepType(stageNode))
             .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
-            .whenCondition(RunInfoUtils.getRunConditionForStage(stageNode.getWhen()))
+            .whenCondition(RunInfoUtils.getRunConditionForStage(
+                stageNode.getWhen(), ctx.getGlobalContext().get("metadata").getMetadata().getExecutionMode()))
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())

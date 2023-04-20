@@ -6,10 +6,26 @@
  */
 package io.harness.cvng.downtime.beans;
 
+import static io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventsType.DATA_COLLECTION_FAILURE;
+import static io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventsType.DOWNTIME;
+
+import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventsType;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public enum EntityType {
   @JsonProperty("MaintenanceWindow") MAINTENANCE_WINDOW,
   @JsonProperty("Slo") SLO,
-  @JsonProperty("MonitoredService") MONITORED_SERVICE
+  @JsonProperty("MonitoredService") MONITORED_SERVICE;
+
+  public SecondaryEventsType getSecondaryEventTypeFromEntityType() {
+    switch (this) {
+      case MAINTENANCE_WINDOW:
+        return DOWNTIME;
+      case SLO:
+        return DATA_COLLECTION_FAILURE;
+      default:
+        throw new IllegalStateException("No Secondary event exists for entity " + this.name());
+    }
+  }
 }

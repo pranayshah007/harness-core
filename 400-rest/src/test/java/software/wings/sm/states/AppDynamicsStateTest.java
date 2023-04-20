@@ -22,11 +22,10 @@ import static software.wings.beans.AwsInfrastructureMapping.Builder.anAwsInfrast
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -167,8 +166,7 @@ public class AppDynamicsStateTest extends APMStateVerificationTestBase {
     when(executionContext.getAppId()).thenReturn(appId);
     when(infraMappingService.get(anyString(), anyString()))
         .thenReturn(anAwsInfrastructureMapping().withDeploymentType(DeploymentType.AWS_CODEDEPLOY.name()).build());
-    when(serviceResourceService.getDeploymentType(anyObject(), anyObject(), anyObject()))
-        .thenReturn(DeploymentType.AWS_CODEDEPLOY);
+    when(serviceResourceService.getDeploymentType(any(), any(), any())).thenReturn(DeploymentType.AWS_CODEDEPLOY);
     setupCommonMocks();
   }
 

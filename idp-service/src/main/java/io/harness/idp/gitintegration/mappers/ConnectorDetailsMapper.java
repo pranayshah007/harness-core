@@ -17,6 +17,7 @@ import io.harness.spec.server.idp.v1.model.ConnectorInfoResponse;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -25,19 +26,27 @@ public class ConnectorDetailsMapper {
   public ConnectorDetails toDTO(CatalogConnectorEntity catalogConnectorEntity) {
     ConnectorDetails connectorDetails = new ConnectorDetails();
     connectorDetails.setIdentifier(catalogConnectorEntity.getConnectorIdentifier());
-    connectorDetails.setType(catalogConnectorEntity.getConnectorProviderType());
+    connectorDetails.setType(
+        ConnectorDetails.TypeEnum.valueOf(catalogConnectorEntity.getConnectorProviderType().toUpperCase()));
     return connectorDetails;
   }
 
-  public CatalogConnectorEntity fromDTO(
-      ConnectorDetails connectorDetails, String accountIdentifier, String infraConnectorType) {
+  public CatalogConnectorEntity fromDTO(ConnectorDetails connectorDetails, String accountIdentifier,
+      String infraConnectorType, Set<String> delegateSelectors) {
     return CatalogConnectorEntity.builder()
         .identifier(Constants.IDP_PREFIX + connectorDetails.getIdentifier())
         .accountIdentifier(accountIdentifier)
         .connectorIdentifier(connectorDetails.getIdentifier())
-        .connectorProviderType(connectorDetails.getType())
+        .connectorProviderType(connectorDetails.getType().toString())
         .type(CatalogInfraConnectorType.valueOf(infraConnectorType))
+        .delegateSelectors(delegateSelectors)
         .build();
+  }
+
+  public ConnectorInfoResponse toResponse(CatalogConnectorEntity catalogConnectorEntity) {
+    ConnectorInfoResponse connectorInfoResponse = new ConnectorInfoResponse();
+    connectorInfoResponse.setConnectorDetails(toDTO(catalogConnectorEntity));
+    return connectorInfoResponse;
   }
 
   public List<ConnectorInfoResponse> toResponseList(List<CatalogConnectorEntity> catalogConnectorEntities) {

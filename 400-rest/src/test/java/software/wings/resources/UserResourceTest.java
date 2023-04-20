@@ -28,10 +28,10 @@ import static software.wings.signup.BugsnagConstants.ONBOARDING;
 import static java.util.Arrays.asList;
 import static javax.ws.rs.client.Entity.form;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
@@ -274,7 +274,7 @@ public class UserResourceTest extends WingsBaseTest {
     when(httpServletRequest.getHeader(com.google.common.net.HttpHeaders.REFERER)).thenReturn("headervalue");
     doThrow(new WingsException(DOMAIN_WHITELIST_FILTER_CHECK_FAILED, USER))
         .when(AUTHENTICATION_MANAGER)
-        .samlLogin(any());
+        .samlLogin(any(String[].class));
 
     Response responseWithAccountId = RESOURCES.client()
                                          .target("/users/saml-login")

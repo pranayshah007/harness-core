@@ -11,9 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import io.harness.NgManagerTestBase;
@@ -33,33 +34,35 @@ import io.harness.rule.Owner;
 
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
 import retrofit2.Call;
 
 @OwnedBy(PL)
-@RunWith(PowerMockRunner.class)
 @Slf4j
-@PrepareForTest({SafeHttpCall.class})
 public class OpaServiceImplTest extends NgManagerTestBase {
   @Mock private OpaServiceClient opaServiceClient;
   @Mock private NextGenConfiguration nextGenConfiguration;
+  private MockedStatic<SafeHttpCall> safeHttpCallMockedStatic;
 
   private OpaServiceImpl opaService;
   private Call<OpaEvaluationResponseHolder> request;
 
   @Before
   public void setup() throws IllegalAccessException {
-    PowerMockito.mockStatic(SafeHttpCall.class);
+    safeHttpCallMockedStatic = mockStatic(SafeHttpCall.class);
     opaService = new OpaServiceImpl(opaServiceClient, nextGenConfiguration);
     request = mock(Call.class);
     when(nextGenConfiguration.isOpaConnectivityEnabled()).thenReturn(true);
+  }
+
+  @After
+  public void cleanup() {
+    safeHttpCallMockedStatic.close();
   }
 
   @Test

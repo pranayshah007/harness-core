@@ -9,6 +9,7 @@ package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.beans.FeatureName.NG_SETTINGS;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
@@ -20,6 +21,7 @@ import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 
 import io.harness.EntityType;
+import io.harness.ModuleType;
 import io.harness.PipelineSettingsService;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
@@ -52,10 +54,12 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
+import io.harness.gitx.GitXSettingsHelper;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.governance.PipelineSaveResponse;
@@ -102,6 +106,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.ws.rs.InternalServerErrorException;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -143,7 +148,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final PipelineAsyncValidationService pipelineAsyncValidationService;
   @Inject private final PipelineValidationService pipelineValidationService;
   @Inject @Named("PRIVILEGED") private ProjectClient projectClient;
+  @Inject @Named("PRIVILEGED") private OrganizationClient organizationClient;
   @Inject PmsFeatureFlagService pmsFeatureFlagService;
+  @Inject GitXSettingsHelper gitXSettingsHelper;
 
   @Inject private final AccountClient accountClient;
   @Inject NGSettingsClient settingsClient;
@@ -169,19 +176,28 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
         pipelineEntity.getIdentifier());
+
+    gitXSettingsHelper.enforceGitExperienceIfApplicable(pipelineEntity.getAccountIdentifier(),
+        pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
+    gitXSettingsHelper.setConnectorRefForRemoteEntity(pipelineEntity.getAccountIdentifier(),
+        pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
+
     checkProjectExists(
         pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
+
     GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(
         pipelineEntity, throwExceptionIfGovernanceFails, false);
     try {
       if (governanceMetadata.getDeny()) {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
       }
+
       PipelineEntity entityWithUpdatedInfo =
           pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
       PipelineEntity createdEntity;
       PipelineCRUDResult pipelineCRUDResult = createPipeline(entityWithUpdatedInfo);
       createdEntity = pipelineCRUDResult.getPipelineEntity();
+
       try {
         String branchInRequest = GitAwareContextHelper.getBranchInRequest();
         pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(createdEntity,
@@ -711,6 +727,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public Page<PipelineEntity> list(Criteria criteria, Pageable pageable, String accountId, String orgIdentifier,
       String projectIdentifier, Boolean getDistinctFromBranches) {
+    checkProjectExists(accountId, orgIdentifier, projectIdentifier);
     if (Boolean.TRUE.equals(getDistinctFromBranches)
         && gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
       return pmsPipelineRepository.findAll(criteria, pageable, accountId, orgIdentifier, projectIdentifier, true);
@@ -944,7 +961,17 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   private void checkProjectExists(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     if (isNotEmpty(orgIdentifier) && isNotEmpty(projectIdentifier)) {
       getResponse(projectClient.getProject(projectIdentifier, accountIdentifier, orgIdentifier),
-          String.format("Project with orgIdentifier %s and identifier %s not found", orgIdentifier, projectIdentifier));
+          format("Project with orgIdentifier %s and identifier %s not found", orgIdentifier, projectIdentifier));
+    }
+  }
+  public void checkThatTheModuleExists(String module) {
+    if (isNotEmpty(module)
+        && isEmpty(ModuleType.getModules()
+                       .stream()
+                       .filter(moduleType -> moduleType.name().equalsIgnoreCase(module))
+                       .collect(Collectors.toList()))) {
+      throw new HintException(format(
+          "Invalid module type [%s]. Please select the correct module type %s", module, ModuleType.getModules()));
     }
   }
 }

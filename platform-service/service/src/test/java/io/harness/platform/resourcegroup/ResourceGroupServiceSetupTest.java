@@ -11,7 +11,7 @@ import static io.harness.platform.resourcegroup.ResourceGroupServiceSetup.RESOUR
 import static io.harness.rule.OwnerRule.NISHANT;
 
 import static junit.framework.TestCase.assertEquals;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -48,7 +48,7 @@ public class ResourceGroupServiceSetupTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     when(injector.getInstance(ResourceGroupOpenApiResource.class)).thenReturn(new ResourceGroupOpenApiResource());
     when(environment.jersey()).thenReturn(jerseyEnvironment);
-    doNothing().when(jerseyEnvironment).register(anyObject());
+    doNothing().when(jerseyEnvironment).register(any());
   }
 
   @Test

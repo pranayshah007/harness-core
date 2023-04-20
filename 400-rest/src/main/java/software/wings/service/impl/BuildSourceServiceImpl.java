@@ -918,17 +918,19 @@ public class BuildSourceServiceImpl implements BuildSourceService {
   }
 
   @Override
-  public List<BuildDetails> listArtifactByArtifactStreamAndFilterPath(
+  public List<Artifact> listArtifactByArtifactStreamAndFilterPath(
       List<Artifact> artifacts, ArtifactStream artifactStream) {
     return artifacts.stream()
         .filter(artifact -> {
           List<String> paths = ((GcsArtifactStream) artifactStream).getArtifactPaths();
           return paths.stream().anyMatch(path -> {
-            path = path.replace("*", "");
-            return artifact.getArtifactPath().startsWith(path);
+            String[] parts = path.split("\\*");
+            if (parts.length == 2) {
+              return artifact.getArtifactPath().startsWith(parts[0]) && artifact.getArtifactPath().endsWith(parts[1]);
+            }
+            return artifact.getArtifactPath().startsWith(parts[0]);
           });
         })
-        .map(artifact -> BuildDetails.Builder.aBuildDetails().withNumber(artifact.getBuildNo()).build())
         .collect(toList());
   }
 }

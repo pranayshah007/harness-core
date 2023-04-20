@@ -7,6 +7,8 @@
 
 package io.harness.batch.processing.metrics;
 
+import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
+
 import static java.lang.String.format;
 
 import io.harness.ModuleType;
@@ -18,6 +20,7 @@ import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.beans.recommendation.RecommendationTelemetryStats;
 import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.ccm.commons.entities.billing.Budget;
+import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.commons.utils.CCMLicenseUsageHelper;
 import io.harness.ccm.views.dao.CEReportScheduleDao;
 import io.harness.ccm.views.dao.CEViewDao;
@@ -71,13 +74,7 @@ public class CENGTelemetryServiceImpl implements CENGTelemetryService {
   @Autowired @Inject private BigQueryService bigQueryService;
   @Autowired @Inject private BatchMainConfig config;
   @Autowired @Inject private NgLicenseHttpClient ngLicenseHttpClient;
-
-  public static final String DATA_SET_NAME = "CE_INTERNAL";
-  public static final String TABLE_NAME = "costAggregated";
-  public static final String QUERY_TEMPLATE =
-      "SELECT SUM(cost) AS cost, TIMESTAMP_TRUNC(day, month) AS month, cloudProvider FROM `%s` "
-      + "WHERE day >= TIMESTAMP_MILLIS(%s) AND day <= TIMESTAMP_MILLIS(%s) AND accountId = '%s' "
-      + "GROUP BY month, cloudProvider";
+  @Autowired @Inject private BigQueryHelper bigQueryHelper;
 
   public HashMap<String, Object> getReportMetrics(String accountId) {
     HashMap<String, Object> properties = new HashMap<>();
@@ -110,11 +107,11 @@ public class CENGTelemetryServiceImpl implements CENGTelemetryService {
   }
 
   public HashMap<String, Object> getLicenseUtil(String accountIdentifier) {
-    String gcpProjectId = config.getGcpConfig().getGcpProjectId();
-    String cloudProviderTableName = format("%s.%s.%s", gcpProjectId, DATA_SET_NAME, TABLE_NAME);
     long endOfDay = Instant.now().plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS).toEpochMilli();
     long licenseStartTime = getLicenseStartTime(accountIdentifier, endOfDay);
-    String query = format(QUERY_TEMPLATE, cloudProviderTableName, licenseStartTime, endOfDay, accountIdentifier);
+    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountIdentifier, UNIFIED_TABLE);
+    String query = format(CCMLicenseUsageHelper.QUERY_TEMPLATE_BIGQUERY, cloudProviderTableName,
+        Instant.ofEpochMilli(licenseStartTime), Instant.ofEpochMilli(endOfDay));
 
     BigQuery bigQuery = bigQueryService.get();
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();

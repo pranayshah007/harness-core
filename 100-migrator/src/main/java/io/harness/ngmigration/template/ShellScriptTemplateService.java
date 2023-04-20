@@ -69,7 +69,7 @@ public class ShellScriptTemplateService implements NgTemplateService {
           .distinct()
           .map(String.class ::cast)
           .map(value -> value.substring(2, value.length() - 1))
-          .forEach(value -> variables.add(getEnvironmentVariable(value, null)));
+          .forEach(value -> variables.add(getEnvironmentVariable(value)));
     }
 
     MigratorExpressionUtils.render(context, shellScriptTemplate, customExpressions);
@@ -78,15 +78,20 @@ public class ShellScriptTemplateService implements NgTemplateService {
       template.getVariables()
           .stream()
           .filter(variable -> StringUtils.isNotBlank(variable.getName()))
-          .forEach(variable -> variables.add(getEnvironmentVariable(variable.getName(), variable.getValue())));
+          .forEach(variable -> variables.add(getEnvironmentVariable(variable.getName())));
     }
     Map<String, Object> templateSpec =
         ImmutableMap.<String, Object>builder()
             .put("delegateSelectors", RUNTIME_INPUT)
             .put("onDelegate", true)
             .put("source",
-                ImmutableMap.of(
-                    "type", "Inline", "spec", ImmutableMap.of("script", shellScriptTemplate.getScriptString())))
+                ImmutableMap.<String, Object>builder()
+                    .put("type", "Inline")
+                    .put("spec",
+                        ImmutableMap.<String, String>builder()
+                            .put("script", shellScriptTemplate.getScriptString())
+                            .build())
+                    .build())
             .put("shell", "BASH".equals(shellScriptTemplate.getScriptType()) ? "Bash" : "PowerShell")
             .put("outputVariables", outputVariables)
             .put("environmentVariables", variables)
@@ -109,15 +114,11 @@ public class ShellScriptTemplateService implements NgTemplateService {
     return StringUtils.isNotBlank(val) ? MigratorUtility.generateName(val).replace('-', '_') : "";
   }
 
-  static String valueOrDefaultRuntime(String val) {
-    return StringUtils.isNotBlank(val) ? val.trim() : "<+input>";
-  }
-
-  static Map<String, String> getEnvironmentVariable(String varName, String value) {
+  static Map<String, String> getEnvironmentVariable(String varName) {
     return ImmutableMap.<String, String>builder()
         .put("name", valueOrDefaultEmpty(varName))
         .put("type", "String")
-        .put("value", valueOrDefaultRuntime(value))
+        .put("value", RUNTIME_INPUT)
         .build();
   }
 

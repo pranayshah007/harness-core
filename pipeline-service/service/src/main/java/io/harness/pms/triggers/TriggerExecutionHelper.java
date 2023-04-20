@@ -308,7 +308,6 @@ public class TriggerExecutionHelper {
                pmsGitSyncHelper.createGitSyncBranchContextGuardFromBytes(gitSyncBranchContextByteString, false)) {
         String pipelineYamlWithTemplateRef = pipelineYaml;
         if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
-          log.info("Principal is {}", SourcePrincipalContextBuilder.getSourcePrincipal());
           TemplateMergeResponseDTO templateMergeResponseDTO =
               pipelineTemplateHelper.resolveTemplateRefsInPipelineAndAppendInputSetValidators(
                   pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),

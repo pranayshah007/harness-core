@@ -30,6 +30,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.clients.BackstageCatalogLocationCreateRequest;
 import io.harness.clients.BackstageResourceClient;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
@@ -100,7 +101,6 @@ import org.apache.commons.math3.util.Pair;
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
 public class OnboardingServiceImpl implements OnboardingService {
-  static final String BEARER_TOKEN_FORMAT = "Bearer %s";
   @Inject @Named("onboardingModuleConfig") OnboardingModuleConfig onboardingModuleConfig;
   @Inject @Named("PRIVILEGED") OrganizationClient organizationClient;
   @Inject @Named("PRIVILEGED") ProjectClient projectClient;
@@ -113,7 +113,6 @@ public class OnboardingServiceImpl implements OnboardingService {
   @Inject BackstageResourceClient backstageResourceClient;
   @Inject GitIntegrationService gitIntegrationService;
   @Inject StatusInfoService statusInfoService;
-  @Inject @Named("backstageServiceSecret") private String backstageServiceSecret;
 
   @Override
   public HarnessEntitiesCountResponse getHarnessEntitiesCount(String accountIdentifier) {
@@ -134,9 +133,9 @@ public class OnboardingServiceImpl implements OnboardingService {
 
   @Override
   public PageResponse<HarnessBackstageEntities> getHarnessEntities(String accountIdentifier, int page, int limit,
-      String sort, String order, String searchTerm, List<String> projectsToFilter) {
+      String sort, String order, String searchTerm, String projectToFilter) {
     List<ServiceResponseDTO> services = getServices(accountIdentifier, searchTerm);
-    services = filterByProject.apply(services, projectsToFilter);
+    services = filterByProject.apply(services, projectToFilter);
 
     List<BackstageCatalogComponentEntity> catalogComponents = harnessServiceToBackstageComponent(services);
     log.info("Mapped harness entities to backstage entities for IDP onboarding import");
@@ -166,12 +165,13 @@ public class OnboardingServiceImpl implements OnboardingService {
         catalogConnectorInfo.getInfraConnector().getIdentifier()));
 
     ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(
-        ConnectorType.fromString(catalogConnectorInfo.getInfraConnector().getType()));
+        ConnectorType.fromString(String.valueOf(catalogConnectorInfo.getInfraConnector().getType())));
     log.info("IDP onboarding import - connector processor initialized for type = {}",
         catalogConnectorInfo.getInfraConnector().getType());
 
-    String catalogInfraConnectorType = connectorProcessor.getInfraConnectorType(
+    ConnectorInfoDTO connectorInfoDTO = connectorProcessor.getConnectorInfo(
         accountIdentifier, catalogConnectorInfo.getInfraConnector().getIdentifier());
+    String catalogInfraConnectorType = connectorProcessor.getInfraConnectorType(connectorInfoDTO);
 
     String tmpPathForCatalogInfoYamlStore =
         onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore() + SLASH_DELIMITER + accountIdentifier;
@@ -335,11 +335,12 @@ public class OnboardingServiceImpl implements OnboardingService {
     return serviceResponseDTOS;
   }
 
-  private final BiFunction<List<ServiceResponseDTO>, List<String>, List<ServiceResponseDTO>> filterByProject =
-      (services, projectsToFilter) -> {
-    if (!isEmpty(projectsToFilter)) {
+  private final BiFunction<List<ServiceResponseDTO>, String, List<ServiceResponseDTO>> filterByProject =
+      (services, projectToFilter) -> {
+    if (!isEmpty(projectToFilter)) {
       return services.stream()
-          .filter(service -> projectsToFilter.contains(service.getProjectIdentifier()))
+          .filter(service
+              -> service.getProjectIdentifier() != null && service.getProjectIdentifier().contains(projectToFilter))
           .collect(Collectors.toList());
     }
     return services;
@@ -563,7 +564,7 @@ public class OnboardingServiceImpl implements OnboardingService {
         Constants.IDP_PREFIX + catalogConnectorInfo.getInfraConnector().getIdentifier());
     catalogConnectorEntity.setType(CatalogInfraConnectorType.valueOf(catalogInfraConnectorType));
     catalogConnectorEntity.setConnectorIdentifier(catalogConnectorInfo.getInfraConnector().getIdentifier());
-    catalogConnectorEntity.setConnectorProviderType(catalogConnectorInfo.getInfraConnector().getType());
+    catalogConnectorEntity.setConnectorProviderType(String.valueOf(catalogConnectorInfo.getInfraConnector().getType()));
     catalogConnectorEntity.setCatalogRepositoryDetails(new CatalogRepositoryDetails(
         catalogConnectorInfo.getRepo(), catalogConnectorInfo.getBranch(), catalogConnectorInfo.getPath()));
 
@@ -622,9 +623,8 @@ public class OnboardingServiceImpl implements OnboardingService {
   private void registerLocationInBackstage(String accountIdentifier, String type, List<String> targets) {
     for (String target : targets) {
       try {
-        getGeneralResponse(backstageResourceClient.createCatalogLocation(accountIdentifier,
-            String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret),
-            new BackstageCatalogLocationCreateRequest(type, target)));
+        getGeneralResponse(backstageResourceClient.createCatalogLocation(
+            accountIdentifier, new BackstageCatalogLocationCreateRequest(type, target)));
       } catch (Exception e) {
         log.error("Unable to register target of type = {} with location = {} in backstage, ex = {}", type, target,
             e.getMessage(), e);
@@ -636,7 +636,8 @@ public class OnboardingServiceImpl implements OnboardingService {
       String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo) {
     try {
       gitIntegrationService.createConnectorInBackstage(accountIdentifier,
-          catalogConnectorInfo.getInfraConnector().getIdentifier(), catalogConnectorInfo.getInfraConnector().getType());
+          catalogConnectorInfo.getInfraConnector().getIdentifier(),
+          String.valueOf(catalogConnectorInfo.getInfraConnector().getType()));
     } catch (Exception e) {
       log.error("Unable to create infra connector secrets in backstage k8s, ex = {}", e.getMessage(), e);
     }

@@ -12,6 +12,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.ng.accesscontrol.PlatformPermissions.INVITE_PERMISSION_IDENTIFIER;
+import static io.harness.ng.core.common.beans.UserSource.LDAP;
+import static io.harness.ng.core.common.beans.UserSource.MANUAL;
+import static io.harness.ng.core.common.beans.UserSource.SCIM;
 import static io.harness.ng.core.invites.InviteType.ADMIN_INITIATED_INVITE;
 import static io.harness.ng.core.invites.InviteType.USER_INITIATED_INVITE;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.FAIL;
@@ -35,6 +38,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
@@ -49,8 +53,10 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.AccountOrgProjectHelper;
 import io.harness.ng.core.InviteModule;
 import io.harness.ng.core.account.AuthenticationMechanism;
+import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.dto.UserInviteDTO;
+import io.harness.ng.core.dto.UserInviteDTO.UserInviteDTOBuilder;
 import io.harness.ng.core.events.UserInviteCreateEvent;
 import io.harness.ng.core.events.UserInviteDeleteEvent;
 import io.harness.ng.core.events.UserInviteUpdateEvent;
@@ -205,13 +211,6 @@ public class InviteServiceImpl implements InviteService {
       return InviteOperationResponse.USER_ALREADY_ADDED;
     }
 
-    //    if (!isInviteAcceptanceRequired) {
-    //      updateJWTTokenInInvite(invite);
-    //      // For SCIM user creation flow
-    //      createAndInviteNonPasswordUser(invite.getAccountIdentifier(), invite.getInviteToken(), invite.getEmail());
-    //      return InviteOperationResponse.ACCOUNT_INVITE_ACCEPTED;
-    //    }
-
     Optional<Invite> existingInviteOptional = getExistingInvite(invite);
     if (existingInviteOptional.isPresent()) {
       if (TRUE.equals(existingInviteOptional.get().getApproved())) {
@@ -335,7 +334,8 @@ public class InviteServiceImpl implements InviteService {
       if (isPasswordRequired) {
         return getUserInfoSubmitUrl(baseUrl, resourceUrl, email, jwtToken, inviteAcceptResponse);
       } else {
-        createAndInviteNonPasswordUser(accountIdentifier, jwtToken, decodedEmail.trim(), false, true, null, null, null);
+        createAndInviteNonPasswordUser(
+            accountIdentifier, jwtToken, decodedEmail.trim(), false, true, null, null, null, MANUAL);
         return resourceUrl;
       }
     } else {
@@ -396,25 +396,32 @@ public class InviteServiceImpl implements InviteService {
 
   private void createAndInviteNonPasswordUser(String accountIdentifier, String jwtToken, String email,
       boolean isScimInvite, boolean shouldSendTwoFactorAuthResetEmail, String givenName, String familyName,
-      String externalId) {
-    UserInviteDTO userInviteDTO = UserInviteDTO.builder()
-                                      .accountId(accountIdentifier)
-                                      .email(email)
-                                      .name(email)
-                                      .givenName(givenName)
-                                      .familyName(familyName)
-                                      .externalId(externalId)
-                                      .token(jwtToken)
-                                      .build();
+      String externalId, UserSource userSource) {
+    UserInviteDTOBuilder userInviteDTOBuilder = UserInviteDTO.builder()
+                                                    .accountId(accountIdentifier)
+                                                    .email(email)
+                                                    .name(email)
+                                                    .givenName(givenName)
+                                                    .familyName(familyName)
+                                                    .externalId(externalId)
+                                                    .token(jwtToken);
 
     try {
-      log.info("NG User Invite: making a userClient call to createUserAndCompleteNGInvite");
-      CGRestUtils.getResponse(
-          userClient.createUserAndCompleteNGInvite(userInviteDTO, isScimInvite, shouldSendTwoFactorAuthResetEmail));
+      if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW)) {
+        userInviteDTOBuilder.userSource(userSource);
+        log.info(
+            "NG User Invite: With Account Level Data: Calling CG to create User in account: {} for email: {}, userSource: {}, set2FA: {}",
+            accountIdentifier, email, userSource, shouldSendTwoFactorAuthResetEmail);
+        CGRestUtils.getResponse(userClient.createUserWithAccountLevelDataAndCompleteNGInvite(
+            userInviteDTOBuilder.build(), shouldSendTwoFactorAuthResetEmail));
+      } else {
+        log.info("NG User Invite: Calling CG to create User in account: {} for email: {}, isSCIM: {}, set2FA: {}",
+            accountIdentifier, email, isScimInvite, shouldSendTwoFactorAuthResetEmail);
+        CGRestUtils.getResponse(userClient.createUserAndCompleteNGInvite(
+            userInviteDTOBuilder.build(), isScimInvite, shouldSendTwoFactorAuthResetEmail));
+      }
     } catch (Exception ex) {
-      log.error(
-          "NG User Invite: while making a userClient call to createUserAndCompleteNGInvite an exception occurred: ",
-          ex);
+      log.error("NG User Invite: While making a userClient call to CG to Create User an exception occurred: ", ex);
       throw ex;
     }
   }
@@ -615,11 +622,11 @@ public class InviteServiceImpl implements InviteService {
 
       if (scimLdapArray[0]) {
         createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true, false, invite.getGivenName(),
-            invite.getFamilyName(), invite.getExternalId());
+            invite.getFamilyName(), invite.getExternalId(), SCIM);
         updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
       } else if (scimLdapArray[1] || isAutoInviteAcceptanceEnabled || isPLNoEmailForSamlAccountInvitesEnabled) {
         createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false, false, invite.getGivenName(),
-            invite.getFamilyName(), invite.getExternalId());
+            invite.getFamilyName(), invite.getExternalId(), LDAP);
         updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
       }
 

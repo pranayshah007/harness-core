@@ -44,6 +44,7 @@ import io.harness.spec.server.pipeline.v1.model.ExecutorInfo;
 import io.harness.spec.server.pipeline.v1.model.ExecutorInfo.TriggerTypeEnum;
 import io.harness.spec.server.pipeline.v1.model.GitCreateDetails;
 import io.harness.spec.server.pipeline.v1.model.GitDetails;
+import io.harness.spec.server.pipeline.v1.model.GitImportInfo;
 import io.harness.spec.server.pipeline.v1.model.GitMoveDetails;
 import io.harness.spec.server.pipeline.v1.model.GitUpdateDetails;
 import io.harness.spec.server.pipeline.v1.model.NodeInfo;
@@ -376,6 +377,17 @@ public class PipelinesApiUtils {
         .baseBranch(gitDetails.getBaseBranch())
         .connectorRef(gitDetails.getConnectorRef())
         .storeType(StoreType.getFromStringOrNull(gitDetails.getStoreType().toString()))
+        .repoName(gitDetails.getRepoName())
+        .build();
+  }
+  public static GitEntityInfo populateGitImportDetails(GitImportInfo gitDetails) {
+    if (gitDetails == null) {
+      return GitEntityInfo.builder().build();
+    }
+    return GitEntityInfo.builder()
+        .branch(gitDetails.getBranchName())
+        .filePath(gitDetails.getFilePath())
+        .connectorRef(gitDetails.getConnectorRef())
         .repoName(gitDetails.getRepoName())
         .build();
   }

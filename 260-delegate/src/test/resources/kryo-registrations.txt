@@ -697,6 +697,9 @@
 5619:software.wings.delegatetasks.buildsource.BuildSourceResponse
 5620:software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse
 5621:software.wings.delegatetasks.buildsource.BuildSourceParameters.BuildSourceRequestType
+5622:com.amazonaws.services.secretsmanager.model.AWSSecretsManagerException
+5623:com.amazonaws.AmazonServiceException
+5624:com.amazonaws.AmazonServiceException.ErrorType
 5671:software.wings.api.EcsSetupElement
 5701:software.wings.service.impl.aws.model.embed.AwsLambdaDetails
 6501:io.harness.delegate.beans.DelegateRegisterResponse
@@ -940,6 +943,7 @@
 7434:software.wings.service.impl.aws.model.AwsAmiServiceTrafficShiftAlbDeployRequest
 7435:software.wings.service.impl.aws.model.AwsAmiTrafficShiftAlbSwitchRouteRequest
 7437:io.harness.delegate.beans.executioncapability.KustomizeCapability
+7438:software.wings.helpers.ext.gcb.models.RepoSource
 7439:software.wings.sm.states.gcbconfigs.GcbOptions
 7440:software.wings.sm.states.gcbconfigs.GcbTriggerBuildSpec
 7441:software.wings.sm.states.gcbconfigs.GcbRemoteBuildSpec
@@ -947,6 +951,8 @@
 7443:software.wings.sm.states.gcbconfigs.GcbTriggerBuildSpec.GcbTriggerSource
 7444:software.wings.sm.states.gcbconfigs.GcbRemoteBuildSpec.RemoteFileSource
 7448:software.wings.sm.states.ParameterEntry
+7450:software.wings.helpers.ext.gcb.models.HashType
+7451:software.wings.helpers.ext.gcb.models.Volume
 7452:software.wings.beans.servicenow.ServiceNowFieldType
 7458:io.harness.beans.terraform.TerraformPlanParam
 7459:software.wings.beans.artifact.ArtifactInput
@@ -1661,6 +1667,7 @@
 29310:io.harness.delegate.task.serverless.response.ServerlessPrepareRollbackDataResponse
 29311:io.harness.delegate.beans.serverless.ServerlessPrepareRollbackDataResult
 29312:io.harness.delegate.beans.serverless.ServerlessAwsLambdaPrepareRollbackDataResult
+29313:io.harness.delegate.beans.storeconfig.GitFetchedStoreDelegateConfig
 31010:java.lang.StackTraceElement[]
 31011:java.lang.StackTraceElement
 31012:io.harness.exception.DelegateErrorHandlerException
@@ -2765,3 +2772,4 @@
 10000523:io.harness.delegate.task.pcf.artifact.GoogleCloudStorageTasArtifactRequestDetails
 10000524:io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig
 10000526:io.harness.beans.HttpCertificateNG
+10000527:software.wings.beans.ServiceHookDelegateConfig

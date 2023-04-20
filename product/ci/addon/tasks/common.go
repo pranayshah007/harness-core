@@ -8,6 +8,7 @@ package tasks
 import (
 	"bufio"
 	"context"
+	"errors"
 	"os"
 	"strings"
 	"time"
@@ -17,6 +18,7 @@ import (
 	"github.com/harness/harness-core/commons/go/lib/metrics"
 	"github.com/harness/harness-core/commons/go/lib/utils"
 	"github.com/harness/harness-core/product/ci/addon/resolver"
+	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 )
 
@@ -141,6 +143,26 @@ func fetchOutputVariables(outputFile string, fs filesystem.FileSystem, log *zap.
 	}
 	if err := s.Err(); err != nil {
 		log.Errorw("Failed to create scanner from output file", zap.Error(err))
+		return nil, err
+	}
+	return envVarMap, nil
+}
+
+// Fetches map of env variable and value from .env output File.
+// OutputFile stores all env variable and value
+func fetchOutputVariablesFromDotEnv(outputFile string, log *zap.SugaredLogger) (
+	map[string]string, error) {
+	envVarMap := make(map[string]string)
+	if _, err := os.Stat(outputFile); errors.Is(err, os.ErrNotExist) {
+		return nil, err
+	}
+	envVarMap, err := godotenv.Read(outputFile)
+	if err != nil {
+		content, ferr := os.ReadFile(outputFile)
+		if ferr != nil {
+			log.Errorw("Unable to read exported env file", zap.Error(ferr))
+		}
+		log.Errorw("failed to read exported env file", "content: ", content, zap.Error(err))
 		return nil, err
 	}
 	return envVarMap, nil

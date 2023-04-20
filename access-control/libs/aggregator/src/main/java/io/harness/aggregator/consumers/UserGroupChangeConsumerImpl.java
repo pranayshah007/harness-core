@@ -163,8 +163,16 @@ public class UserGroupChangeConsumerImpl implements ChangeConsumer<UserGroupDBO>
       Set<String> principalRemovedFromUserGroup = Sets.difference(existingPrincipals,
           updatedUserGroup.getUsers() == null ? Collections.emptySet() : updatedUserGroup.getUsers());
 
-      long numberOfACLsDeleted =
-          aclRepository.deleteByRoleAssignmentIdAndPrincipals(roleAssignmentDBO.getId(), principalRemovedFromUserGroup);
+      long offset = 0;
+      long totalACLsDeleted = 0;
+      while (offset < principalRemovedFromUserGroup.size()) {
+        Set<String> subSetPrincipalRemovedFromUserGroup =
+            principalRemovedFromUserGroup.stream().skip(offset).limit(1000).collect(Collectors.toSet());
+        long numberOfACLsDeleted = aclRepository.deleteByRoleAssignmentIdAndPrincipals(
+            roleAssignmentDBO.getId(), subSetPrincipalRemovedFromUserGroup);
+        offset += 1000;
+        totalACLsDeleted += numberOfACLsDeleted;
+      }
 
       long numberOfACLsCreated = 0;
       List<ACL> aclsToCreate =
@@ -175,7 +183,7 @@ public class UserGroupChangeConsumerImpl implements ChangeConsumer<UserGroupDBO>
           aclRepository.insertAllIgnoringDuplicates(changeConsumerService.getImplicitACLsForRoleAssignment(
               roleAssignmentDBO, principalsAddedToUserGroup, new HashSet<>()));
 
-      return new Result(numberOfACLsCreated, numberOfACLsDeleted);
+      return new Result(numberOfACLsCreated, totalACLsDeleted);
     }
   }
 }

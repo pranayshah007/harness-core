@@ -13,6 +13,7 @@ import static io.harness.gitsync.common.scmerrorhandling.ScmErrorCodeToHttpStatu
 import static java.lang.System.currentTimeMillis;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.eventsframework.schemas.entity.EntityScopeInfo;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.exceptionmanager.ExceptionManager;
@@ -45,6 +46,7 @@ import io.harness.gitsync.PushResponse;
 import io.harness.gitsync.RepoDetails;
 import io.harness.gitsync.UpdateFileRequest;
 import io.harness.gitsync.UpdateFileResponse;
+import io.harness.gitsync.UserDetailsResponse;
 import io.harness.gitsync.common.beans.GitOperation;
 import io.harness.gitsync.common.helper.GitSyncLogContextHelper;
 import io.harness.gitsync.common.helper.ScopeIdentifierMapper;
@@ -77,6 +79,7 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
   @Inject ExceptionManager exceptionManager;
   private final String GIT_SERVICE = "Git Service";
   private final String OPERATION_INFO_LOG_FORMAT = "%s %s ops response : %s";
+  private final String EMPTY_STRING = "";
 
   @Override
   public void pushFromHarness(PushInfo request, StreamObserver<PushResponse> responseObserver) {
@@ -170,6 +173,37 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
       }
     }
     responseObserver.onNext(createFileResponse);
+    responseObserver.onCompleted();
+  }
+
+  @Override
+  public void getUserDetails(io.harness.gitsync.UserDetailsRequest request,
+      io.grpc.stub.StreamObserver<io.harness.gitsync.UserDetailsResponse> responseObserver) {
+    UserDetailsResponse userDetailsResponse;
+    Map<String, String> contextMap =
+        GitSyncLogContextHelper.setContextMap(Scope.builder().accountIdentifier(request.getAccountIdentifier()).build(),
+            EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, GitOperation.GET_USER_DETAILS, null);
+
+    try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
+         MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
+      log.info(String.format("%s Grpc request received for getUserDetails ops %s", GIT_SERVICE, request));
+      long startTime = currentTimeMillis();
+      try {
+        userDetailsResponse = harnessToGitHelperService.getUserDetails(request);
+        log.info(String.format("%s getUserDetails ops response : %s", GIT_SERVICE, userDetailsResponse));
+      } catch (Exception ex) {
+        final String errorMessage = getErrorMessageForRuntimeExceptions(GitOperation.GET_USER_DETAILS);
+        log.error(errorMessage, ex);
+        userDetailsResponse = UserDetailsResponse.newBuilder()
+                                  .setStatusCode(HTTP_500)
+                                  .setError(ErrorDetails.newBuilder().setErrorMessage(errorMessage).build())
+                                  .build();
+      } finally {
+        logResponseTime(startTime, GitOperation.GET_USER_DETAILS);
+      }
+    }
+
+    responseObserver.onNext(userDetailsResponse);
     responseObserver.onCompleted();
   }
 

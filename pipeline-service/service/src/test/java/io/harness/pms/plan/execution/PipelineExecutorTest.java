@@ -14,9 +14,9 @@ import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -296,6 +296,7 @@ public class PipelineExecutorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testStartPostExecutionRollback() {
     MockedStatic<UUIDGenerator> mockSettings = Mockito.mockStatic(UUIDGenerator.class);
+    List<String> stageNodeExecutionIds = Collections.singletonList("stageNodeExecutionId");
     when(UUIDGenerator.generateUuid()).thenReturn("planId");
     doReturn(executionTriggerInfo).when(executionHelper).buildTriggerInfo(null);
     ExecutionMetadata originalExecutionMetadata =
@@ -308,7 +309,7 @@ public class PipelineExecutorTest extends CategoryTest {
     doReturn(metadata)
         .when(rollbackModeExecutionHelper)
         .transformExecutionMetadata(originalExecutionMetadata, "planId", executionTriggerInfo, accountId, orgId,
-            projectId, ExecutionMode.POST_EXECUTION_ROLLBACK);
+            projectId, ExecutionMode.POST_EXECUTION_ROLLBACK, null, stageNodeExecutionIds);
     PlanExecutionMetadata originalPlanExecutionMetadata =
         PlanExecutionMetadata.builder().planExecutionId(originalExecutionId).build();
     doReturn(Optional.of(originalPlanExecutionMetadata))
@@ -316,12 +317,14 @@ public class PipelineExecutorTest extends CategoryTest {
         .findByPlanExecutionId(originalExecutionId);
     doReturn(planExecutionMetadata)
         .when(rollbackModeExecutionHelper)
-        .transformPlanExecutionMetadata(originalPlanExecutionMetadata, "planId", ExecutionMode.POST_EXECUTION_ROLLBACK);
+        .transformPlanExecutionMetadata(
+            originalPlanExecutionMetadata, "planId", ExecutionMode.POST_EXECUTION_ROLLBACK, stageNodeExecutionIds);
     doReturn(planExecution)
         .when(executionHelper)
         .startExecution(
             accountId, orgId, projectId, metadata, planExecutionMetadata, false, null, originalExecutionId, null);
-    assertThat(pipelineExecutor.startPostExecutionRollback(accountId, orgId, projectId, originalExecutionId))
+    assertThat(pipelineExecutor.startPostExecutionRollback(
+                   accountId, orgId, projectId, originalExecutionId, stageNodeExecutionIds))
         .isEqualTo(planExecution);
     mockSettings.close();
   }
@@ -343,7 +346,7 @@ public class PipelineExecutorTest extends CategoryTest {
     doReturn(metadata)
         .when(rollbackModeExecutionHelper)
         .transformExecutionMetadata(originalExecutionMetadata, "planId", executionTriggerInfo, accountId, orgId,
-            projectId, ExecutionMode.PIPELINE_ROLLBACK);
+            projectId, ExecutionMode.PIPELINE_ROLLBACK, null, null);
     PlanExecutionMetadata originalPlanExecutionMetadata =
         PlanExecutionMetadata.builder().planExecutionId(originalExecutionId).build();
     doReturn(Optional.of(originalPlanExecutionMetadata))
@@ -351,12 +354,12 @@ public class PipelineExecutorTest extends CategoryTest {
         .findByPlanExecutionId(originalExecutionId);
     doReturn(planExecutionMetadata)
         .when(rollbackModeExecutionHelper)
-        .transformPlanExecutionMetadata(originalPlanExecutionMetadata, "planId", ExecutionMode.PIPELINE_ROLLBACK);
+        .transformPlanExecutionMetadata(originalPlanExecutionMetadata, "planId", ExecutionMode.PIPELINE_ROLLBACK, null);
     doReturn(planExecution)
         .when(executionHelper)
         .startExecution(
             accountId, orgId, projectId, metadata, planExecutionMetadata, false, null, originalExecutionId, null);
-    assertThat(pipelineExecutor.startPipelineRollback(accountId, orgId, projectId, originalExecutionId))
+    assertThat(pipelineExecutor.startPipelineRollback(accountId, orgId, projectId, originalExecutionId, null))
         .isEqualTo(planExecution);
     mockSettings.close();
   }

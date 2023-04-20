@@ -13,9 +13,11 @@ import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS_CONCURRENCY;
 import static io.harness.beans.outcomes.LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME;
 import static io.harness.beans.outcomes.VmDetailsOutcome.VM_DETAILS_OUTCOME;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.INITIALIZE_EXECUTION;
+import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.TASK_SELECTORS;
 import static io.harness.ci.commonconstants.CIExecutionConstants.MAXIMUM_EXPANSION_LIMIT;
 import static io.harness.ci.commonconstants.CIExecutionConstants.MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT;
 import static io.harness.ci.states.InitializeTaskStep.TASK_BUFFER_TIMEOUT_MILLIS;
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
@@ -42,6 +44,7 @@ import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome.VmDetailsOutcomeBuilder;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput;
+import io.harness.beans.sweepingoutputs.TaskSelectorSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
@@ -98,6 +101,7 @@ import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
@@ -176,6 +180,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   @Inject private Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
   @Inject private HsqsClientService hsqsClientService;
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
+  @Inject private CIStagePlanCreationUtils ciStagePlanCreationUtils;
 
   @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject QueueExecutionUtils queueExecutionUtils;
@@ -256,8 +261,8 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepParameters.getSpec();
 
     String logPrefix = getLogPrefix(ambiance);
-    CIStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(accountExecutionMetadataRepository,
-        ciLicenseService, AmbianceUtils.getAccountId(ambiance), initializeStepInfo.getInfrastructure());
+    ciStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(
+        AmbianceUtils.getAccountId(ambiance), initializeStepInfo.getInfrastructure());
 
     populateStrategyExpansion(initializeStepInfo, ambiance);
     CIInitializeTaskParams buildSetupTaskParams =
@@ -284,18 +289,31 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
       emitEvent = true;
     } else if (initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.DOCKER) {
-      DockerInfraYaml dockerInfraYaml = (DockerInfraYaml) initializeStepInfo.getInfrastructure();
-      String platformSelector =
-          dockerInitializeTaskParamsBuilder.getHostedPoolId(dockerInfraYaml.getSpec().getPlatform());
-      TaskSelector taskSelector = TaskSelector.newBuilder().setSelector(platformSelector).build();
-      taskSelectors.add(taskSelector);
+      if (initializeStepInfo.getDelegateSelectors().getValue() != null) {
+        addExternalDelegateSelector(taskSelectors, initializeStepInfo, ambiance);
+      } else {
+        DockerInfraYaml dockerInfraYaml = (DockerInfraYaml) initializeStepInfo.getInfrastructure();
+        String platformSelector =
+            dockerInitializeTaskParamsBuilder.getHostedPoolId(dockerInfraYaml.getSpec().getPlatform());
+        TaskSelector taskSelector = TaskSelector.newBuilder().setSelector(platformSelector).build();
+        taskSelectors.add(taskSelector);
+      }
       // TODO: start emitting & processing event for Docker as well
       // emitEvent = true;
     } else if (initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_DIRECT) {
       ConnectorConfigDTO connectorConfig =
           ((CIK8InitializeTaskParams) buildSetupTaskParams).getK8sConnector().getConnectorConfig();
       Set<String> delegateSelectors = ((KubernetesClusterConfigDTO) connectorConfig).getDelegateSelectors();
-      if (delegateSelectors != null) {
+
+      // Delegate Selector Precedence: 1)Stage ->  2)Pipeline ->  3)Connector .If not specified use any delegate
+      if (initializeStepInfo.getDelegateSelectors().getValue() != null) {
+        addExternalDelegateSelector(taskSelectors, initializeStepInfo, ambiance);
+      } else if (isNotEmpty(delegateSelectors)) {
+        List<TaskSelector> selectorList = delegateSelectors.stream()
+                                              .map(ds -> TaskSelector.newBuilder().setSelector(ds).build())
+                                              .collect(Collectors.toList());
+        taskSelectors.addAll(selectorList);
+      } else {
         List<TaskSelector> selectorList = delegateSelectors.stream()
                                               .map(ds -> TaskSelector.newBuilder().setSelector(ds).build())
                                               .collect(Collectors.toList());
@@ -399,7 +417,6 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     if (initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED
         || initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.HOSTED_VM) {
       sanitizationService.validate(steps);
-      validationService.isAccountValidForExecution(accountIdentifier);
     }
   }
   private void validateConnectors(InitializeStepInfo initializeStepInfo, List<EntityDetail> connectorEntitiesList,
@@ -549,7 +566,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
     Optional<Integer> maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT));
     if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE
-        && CIStagePlanCreationUtils.isHostedInfra(initializeStepInfo.getInfrastructure())) {
+        && ciStagePlanCreationUtils.isHostedInfra(initializeStepInfo.getInfrastructure())) {
       maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT));
     }
 
@@ -749,5 +766,27 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
     return EntityDetail.builder().entityRef(connectorRef).type(EntityType.CONNECTORS).build();
+  }
+
+  private void addExternalDelegateSelector(
+      List<TaskSelector> taskSelectors, InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
+    List<TaskSelector> selectorList = TaskSelectorYaml.toTaskSelector(
+        CollectionUtils.emptyIfNull(getParameterFieldValue(initializeStepInfo.getDelegateSelectors())));
+    if (isNotEmpty(selectorList)) {
+      // Add to selectorList also add to sweeping output so that it can be used during cleanup task
+      taskSelectors.addAll(selectorList);
+      OptionalSweepingOutput optionalSweepingOutput =
+          executionSweepingOutputResolver.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(TASK_SELECTORS));
+      if (!optionalSweepingOutput.isFound()) {
+        try {
+          TaskSelectorSweepingOutput taskSelectorSweepingOutput =
+              TaskSelectorSweepingOutput.builder().taskSelectors(selectorList).build();
+          executionSweepingOutputResolver.consume(
+              ambiance, TASK_SELECTORS, taskSelectorSweepingOutput, StepOutcomeGroup.STAGE.name());
+        } catch (Exception e) {
+          log.error("Error while consuming taskSelector sweeping output", e);
+        }
+      }
+    }
   }
 }

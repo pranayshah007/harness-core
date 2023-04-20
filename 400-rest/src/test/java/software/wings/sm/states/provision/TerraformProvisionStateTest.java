@@ -57,14 +57,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -232,13 +231,11 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     doReturn(Activity.builder().uuid("uuid").build()).when(activityService).save(any(Activity.class));
     doAnswer(doExtractTextVariables)
         .when(infrastructureProvisionerService)
-        .extractTextVariables(anyListOf(NameValuePair.class), any(ExecutionContext.class));
-    doAnswer(doExtractTextVariables)
-        .when(infrastructureProvisionerService)
-        .extractUnresolvedTextVariables(anyListOf(NameValuePair.class));
+        .extractTextVariables(anyList(), any(ExecutionContext.class));
+    doAnswer(doExtractTextVariables).when(infrastructureProvisionerService).extractUnresolvedTextVariables(anyList());
     doAnswer(doExtractEncryptedVariables)
         .when(infrastructureProvisionerService)
-        .extractEncryptedTextVariables(anyListOf(NameValuePair.class), anyString(), anyString());
+        .extractEncryptedTextVariables(anyList(), anyString(), anyString());
     doAnswer(doReturnSameValue).when(executionContext).renderExpression(anyString());
     doAnswer(doReturnSameValue).when(executionContext).renderExpression(anyString(), any(StateExecutionContext.class));
     doReturn(APP_ID).when(executionContext).getAppId();

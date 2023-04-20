@@ -12,6 +12,7 @@ import static software.wings.ngmigration.NGMigrationEntityType.SECRET_MANAGER_TE
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateEntityType;
@@ -128,7 +129,8 @@ public class SecretManagerTemplateMigrationService extends NgMigrationService {
         templateClient
             .createTemplate(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                 inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
-                RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.write(yamlFile.getYaml())))
+                RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.write(yamlFile.getYaml())),
+                StoreType.INLINE)
             .execute();
     log.info("Secret manager template creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);

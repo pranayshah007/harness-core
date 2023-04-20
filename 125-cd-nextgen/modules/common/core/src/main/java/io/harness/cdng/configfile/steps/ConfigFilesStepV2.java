@@ -135,9 +135,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (EmptyPredicate.isEmpty(configFiles)) {
       logCallback.saveExecutionLog(
-          String.format("No config files configured in the service. <+%s> expressions will not work",
-              OutcomeExpressionConstants.CONFIG_FILES),
-          LogLevel.WARN);
+          "No config files configured in the service. configFiles expressions will not work", LogLevel.WARN);
       return StepResponse.builder().status(Status.SKIPPED).build();
     }
     cdExpressionResolver.updateExpressions(ambiance, configFiles);
@@ -171,9 +169,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (EmptyPredicate.isEmpty(configFiles)) {
       logCallback.saveExecutionLog(
-          String.format("No config files configured in the service. <+%s> expressions will not work",
-              OutcomeExpressionConstants.CONFIG_FILES),
-          LogLevel.WARN);
+          "No config files configured in the service. configFiles expressions will not work", LogLevel.WARN);
       return AsyncExecutableResponse.newBuilder().setStatus(Status.SKIPPED).build();
     }
     cdExpressionResolver.updateExpressions(ambiance, configFiles);
@@ -212,6 +208,15 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
     sweepingOutputService.consume(ambiance, CONFIG_FILES_STEP_V2,
         new ConfigFilesStepV2SweepingOutput(gitConfigFileOutcomesMapTaskIds, harnessConfigFilesOutcome),
         StepCategory.STAGE.name());
+
+    if (isEmpty(taskIds)) {
+      ConfigFilesOutcome configFilesOutcomes = new ConfigFilesOutcome();
+      for (ConfigFileOutcome fileOutcome : harnessConfigFilesOutcome) {
+        configFilesOutcomes.put(fileOutcome.getIdentifier(), fileOutcome);
+      }
+      sweepingOutputService.consume(
+          ambiance, OutcomeExpressionConstants.CONFIG_FILES, configFilesOutcomes, StepCategory.STAGE.name());
+    }
 
     return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).setStatus(Status.SUCCEEDED).build();
   }

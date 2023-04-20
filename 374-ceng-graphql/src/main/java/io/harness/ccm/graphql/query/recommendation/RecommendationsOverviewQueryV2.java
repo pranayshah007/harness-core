@@ -26,8 +26,8 @@ import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.LABEL;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.ViewsQueryHelper.getPerspectiveIdFromMetadataFilter;
-import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE_HOURLY_AGGREGRATED;
-import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE_HOURLY_AGGREGRATED_CH;
+import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE_AGGREGRATED;
+import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE_AGGREGRATED_CH;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
 
@@ -562,7 +562,7 @@ public class RecommendationsOverviewQueryV2 {
     final List<QLCEViewFilter> qlCEViewFilters =
         Collections.singletonList(viewParametersHelper.constructQLCEViewFilterFromViewIdCondition(idCondition));
     final String cloudProviderTableName =
-        bigQueryHelper.getCloudProviderTableName(accountId, CLUSTER_TABLE_HOURLY_AGGREGRATED);
+        bigQueryHelper.getCloudProviderTableName(accountId, CLUSTER_TABLE_AGGREGRATED);
     final SelectQuery query = viewsQueryBuilder.getWorkloadAndCloudServiceNamesForLabels(
         qlCEViewFilters, qlCEViewTimeFilters, cloudProviderTableName);
     final QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
@@ -581,7 +581,7 @@ public class RecommendationsOverviewQueryV2 {
       final List<QLCEViewTimeFilter> qlCEViewTimeFilters, final ViewIdCondition idCondition) {
     final List<QLCEViewFilter> qlCEViewFilters =
         Collections.singletonList(viewParametersHelper.constructQLCEViewFilterFromViewIdCondition(idCondition));
-    final String cloudProviderTableName = CLUSTER_TABLE_HOURLY_AGGREGRATED_CH;
+    final String cloudProviderTableName = CLUSTER_TABLE_AGGREGRATED_CH;
     final SelectQuery query = viewsQueryBuilder.getWorkloadAndCloudServiceNamesForLabels(
         qlCEViewFilters, qlCEViewTimeFilters, cloudProviderTableName);
     ResultSet resultSet;

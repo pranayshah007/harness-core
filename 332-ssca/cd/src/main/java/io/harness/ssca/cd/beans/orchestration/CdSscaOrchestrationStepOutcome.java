@@ -10,6 +10,8 @@ package io.harness.ssca.cd.beans.orchestration;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.data.Outcome;
+import io.harness.pms.sdk.core.steps.executables.StepDetailsInfo;
+import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.ssca.execution.orchestration.outcome.PublishedSbomArtifact;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -22,6 +24,11 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.SSCA)
 @TypeAlias("sscaOrchestrationStepOutcome")
 @JsonTypeName("sscaOrchestrationStepOutcome")
-public class CdSscaOrchestrationStepOutcome implements Outcome {
+public class CdSscaOrchestrationStepOutcome implements Outcome, StepDetailsInfo {
   PublishedSbomArtifact sbomArtifact;
+
+  @Override
+  public String toViewJson() {
+    return RecastOrchestrationUtils.toJson(this);
+  }
 }

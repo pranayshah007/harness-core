@@ -167,9 +167,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (noArtifactConfigured(artifacts)) {
       logCallback.saveExecutionLog(
-          String.format(
-              "No primary or sidecar artifacts configured in the service. <+%s> or <%s> expressions will not work",
-              OutcomeExpressionConstants.ARTIFACTS, OutcomeExpressionConstants.ARTIFACT),
+          "No primary or sidecar artifacts configured in the service. artifact/artifacts expressions will not work",
           LogLevel.WARN);
       return AsyncExecutableResponse.newBuilder().build();
     }

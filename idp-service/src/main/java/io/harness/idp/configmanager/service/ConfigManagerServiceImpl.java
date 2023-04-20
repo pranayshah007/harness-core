@@ -28,7 +28,6 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -38,7 +37,6 @@ import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
@@ -71,6 +69,8 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   private static final String INVALID_MERGED_APP_CONFIG_SCHEMA =
       "Invalid schema for merged app-config.yaml for account - %s";
 
+  private static final long baseTimeStamp = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000;
+
   @Override
   public Map<String, Boolean> getAllPluginIdsMap(String accountIdentifier) {
     List<AppConfigEntity> allPluginConfig =
@@ -96,6 +96,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setConfigType(configType);
     appConfigEntity.setEnabledDisabledAt(System.currentTimeMillis());
+    appConfigEntity.setEnabled(false);
     List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
         configEnvVariablesService.insertConfigEnvVariables(appConfig, accountIdentifier);
     AppConfigEntity insertedData = appConfigRepository.save(appConfigEntity);
@@ -177,7 +178,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
             mergedAppConfig, ConfigManagerUtils.readFile(MERGED_APP_CONFIG_JSON_SCHEMA_PATH))) {
       throw new InvalidRequestException(String.format(INVALID_MERGED_APP_CONFIG_SCHEMA, accountIdentifier));
     }
-    updateConfigMap(accountIdentifier, mergedAppConfig);
+    updateConfigMap(accountIdentifier, mergedAppConfig, CONFIG_NAME);
     MergedAppConfigEntity mergedAppConfigEntity =
         MergedAppConfigMapper.getMergedAppConfigEntity(accountIdentifier, mergedAppConfig);
     return mergedAppConfigRepository.saveOrUpdate(mergedAppConfigEntity);
@@ -212,6 +213,11 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
         .envVariables(envVariableAndSecretList);
   }
 
+  @Override
+  public List<AppConfigEntity> deleteDisabledPluginsConfigsDisabledMoreThanAWeekAgo() {
+    return appConfigRepository.deleteDisabledPluginsConfigBasedOnTimestampsForEnabledDisabledTime(baseTimeStamp);
+  }
+
   private String mergeAppConfigs(List<String> configs) throws Exception {
     String baseAppConfig = ConfigManagerUtils.readFile(BASE_APP_CONFIG_PATH);
     JsonNode baseConfig = ConfigManagerUtils.asJsonNode(baseAppConfig);
@@ -227,7 +233,8 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     return ConfigManagerUtils.asYaml(baseConfig.toString());
   }
 
-  private String mergeAllAppConfigsForAccount(String accountIdentifier) throws Exception {
+  @Override
+  public String mergeAllAppConfigsForAccount(String accountIdentifier) throws Exception {
     List<String> enabledPluginConfigs = getAllEnabledConfigs(accountIdentifier);
     return mergeAppConfigs(enabledPluginConfigs);
   }
@@ -241,11 +248,12 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     return allEnabledConfigEntity.stream().map(entity -> entity.getConfigs()).collect(Collectors.toList());
   }
 
-  private void updateConfigMap(String accountIdentifier, String appConfigYamlData) {
+  @Override
+  public void updateConfigMap(String accountIdentifier, String appConfigYamlData, String configName) {
     Map<String, String> data = new HashMap<>();
     data.put(CONFIG_DATA_NAME, appConfigYamlData);
     String namespace = namespaceService.getNamespaceForAccountIdentifier(accountIdentifier).getNamespace();
-    k8sClient.updateConfigMapData(namespace, CONFIG_NAME, data, true);
+    k8sClient.updateConfigMapData(namespace, configName, data, true);
     log.info(
         "Config map successfully created/updated for account - {} in namespace - {}", accountIdentifier, namespace);
   }

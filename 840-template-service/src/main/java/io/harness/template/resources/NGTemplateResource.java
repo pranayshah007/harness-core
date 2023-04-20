@@ -62,7 +62,6 @@ import io.harness.pms.contracts.service.VariablesServiceRequest;
 import io.harness.pms.mappers.VariablesResponseDtoMapper;
 import io.harness.pms.variables.VariableMergeServiceResponse;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.FilterParamsDTO;
@@ -498,10 +497,10 @@ public class NGTemplateResource {
     } else {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
-
     Page<TemplateSummaryResponseDTO> templateSummaryResponseDTOS =
         templateService.list(criteria, pageRequest, accountId, orgId, projectId, getDistinctFromBranches)
             .map(NGTemplateDtoMapper::prepareTemplateSummaryResponseDto);
+
     return ResponseDTO.newResponse(templateSummaryResponseDTOS);
   }
 
@@ -541,8 +540,6 @@ public class NGTemplateResource {
       @Parameter(description = "This contains details of Template filters based on Template Types and Template Names ")
       @Body TemplateFilterPropertiesDTO filterProperties,
       @QueryParam("getDistinctFromBranches") boolean getDistinctFromBranches) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
     log.info(String.format("Get List of templates in project: %s, org: %s, account: %s", projectIdentifier,
         orgIdentifier, accountIdentifier));
 
@@ -770,7 +767,6 @@ public class NGTemplateResource {
       @QueryParam("AppendInputSetValidator") @DefaultValue("false") boolean appendInputSetValidator) {
     log.info("Applying templates V2 to pipeline yaml in project {}, org {}, account {}", projectId, orgId, accountId);
     long start = System.currentTimeMillis();
-    log.info("Principal in the applyTemplate resource layer is {}", SourcePrincipalContextBuilder.getSourcePrincipal());
     if (templateApplyRequestDTO.isGetOnlyFileContent()) {
       TemplateUtils.setUserFlowContext(USER_FLOW.EXECUTION);
     }

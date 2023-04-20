@@ -10,7 +10,7 @@ package software.wings.utils;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.hamcrest.MockitoHamcrest.argThat;
 
 import dev.morphia.query.Query;

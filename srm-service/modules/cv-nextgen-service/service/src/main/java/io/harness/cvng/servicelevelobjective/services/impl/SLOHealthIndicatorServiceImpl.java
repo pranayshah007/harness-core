@@ -7,7 +7,11 @@
 
 package io.harness.cvng.servicelevelobjective.services.impl;
 
+import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.entities.DataCollectionTask;
+import io.harness.cvng.core.services.api.DataCollectionTaskService;
+import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.SLOGraphData;
@@ -16,10 +20,12 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHealthIndicatorKeys;
+import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -35,6 +41,12 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
   @Inject private GraphDataService graphDataService;
   @Inject private Clock clock;
   @Inject private SLOErrorBudgetResetService sloErrorBudgetResetService;
+
+  @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
+  @Inject private VerificationTaskService verificationTaskService;
+  @Inject private DataCollectionTaskService dataCollectionTaskService;
+
+  private static final int MIN_COUNT_OF_DC_FAILED_TO_CONSIDER_SLI_AS_FAILED = 4;
 
   @Override
   public List<SLOHealthIndicator> getByMonitoredServiceIdentifiers(
@@ -112,6 +124,7 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
   private void upsert(ProjectParams projectParams, AbstractServiceLevelObjective serviceLevelObjective) {
     SLOHealthIndicator sloHealthIndicator = getBySLOIdentifier(projectParams, serviceLevelObjective.getIdentifier());
     SLOGraphData sloGraphData = getGraphData(projectParams, serviceLevelObjective);
+    boolean failedState = getFailedState(projectParams, serviceLevelObjective);
     String monitoredServiceIdentifier = "";
     if (serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
       monitoredServiceIdentifier = serviceLevelObjective.mayBeGetMonitoredServiceIdentifier().get();
@@ -126,6 +139,7 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
               .monitoredServiceIdentifier(monitoredServiceIdentifier)
               .errorBudgetRemainingPercentage(sloGraphData.getErrorBudgetRemainingPercentage())
               .errorBudgetRemainingMinutes((int) sloGraphData.getErrorBudgetRemaining())
+              .failedState(failedState)
               .build();
       hPersistence.save(newSloHealthIndicator);
     } else {
@@ -139,9 +153,33 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
       updateOperations.set(SLOHealthIndicatorKeys.errorBudgetRemainingMinutes, sloGraphData.getErrorBudgetRemaining());
       updateOperations.set(SLOHealthIndicatorKeys.errorBudgetBurnRate,
           sloGraphData.dailyBurnRate(serviceLevelObjective.getZoneOffset()));
+      updateOperations.set(SLOHealthIndicatorKeys.failedState, failedState);
       updateOperations.set(SLOHealthIndicatorKeys.lastComputedAt, Instant.now());
       hPersistence.update(sloHealthIndicator, updateOperations);
     }
+  }
+
+  @Override
+  public boolean getFailedState(ProjectParams projectParams, AbstractServiceLevelObjective serviceLevelObjective) {
+    String verificationTaskId;
+    if (serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+      String sliIdentifier = ((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators().get(0);
+      String sliId = serviceLevelIndicatorService.getServiceLevelIndicator(projectParams, sliIdentifier).getUuid();
+      verificationTaskId =
+          verificationTaskService.getSLIVerificationTaskId(projectParams.getAccountIdentifier(), sliId);
+      List<DataCollectionTask> dataCollectionTasks =
+          dataCollectionTaskService.getLatestDataCollectionTasks(projectParams.getAccountIdentifier(),
+              verificationTaskId, MIN_COUNT_OF_DC_FAILED_TO_CONSIDER_SLI_AS_FAILED + 1);
+      if (dataCollectionTasks.size() >= MIN_COUNT_OF_DC_FAILED_TO_CONSIDER_SLI_AS_FAILED) {
+        for (DataCollectionTask dataCollectionTask : dataCollectionTasks) {
+          if (dataCollectionTask.getStatus() == DataCollectionExecutionStatus.SUCCESS) {
+            return false;
+          }
+        }
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

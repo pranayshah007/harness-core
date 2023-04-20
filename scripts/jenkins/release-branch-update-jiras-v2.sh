@@ -30,7 +30,7 @@ EXCLUDED_KEYS_LIST=""
 #checking if Pre QA hotfix already contains RELEASE_BE_SAAS or not
 for KEY in ${EXCLUSION_KEYS}
 do
-    EXCLUDE_PROJECTS=",PIE,"
+    EXCLUDE_PROJECTS=",PIE,IDP,"
     echo "Excluded Key - $KEY"
     IFS="-" read -ra PROJNUM <<< "$KEY"
     PROJ="${PROJNUM[0]}"
@@ -109,7 +109,7 @@ else
 fi
 for KEY in ${KEYS}
 do
-    EXCLUDE_PROJECTS=",PIE,CCM,"
+    EXCLUDE_PROJECTS=",PIE,CCM,IDP,"
     echo $KEY
     IFS="-" read -ra PROJNUM <<< "$KEY"
     PROJ="${PROJNUM[0]}"
@@ -145,7 +145,7 @@ if [ "${EXECUTE_NEW_VERSION_CODE}" == "true" ]; then
   # Version doesn't have trailing 00 - so adding it here
   NEXT_VERSION="$NEXT_VERSION""00"
   echo "Setting Fix Version to $NEXT_VERSION on issues in this release"
-  EXCLUDE_PROJECTS=",ART,CCE,CDC,CDNG,CDP,CE,COMP,CV,CVNG,CVS,DX,ER,GIT,GTM,LWG,OENG,ONP,OPS,SEC,SWAT,PIE,"
+  EXCLUDE_PROJECTS=",ART,CCE,CDC,CDNG,CDP,CE,COMP,CV,CVNG,CVS,DX,ER,GIT,GTM,LWG,OENG,ONP,OPS,SEC,SWAT,PIE,IDP,"
   for KEY in ${KEYS}
   do
     echo "$KEY"
