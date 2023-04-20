@@ -53,7 +53,6 @@ public class InvitationResource {
       nickname = "sendAssessmentInvite", response = AssessmentInviteDTO.class)
   public Response
   sendAssessmentInvite(@Valid AssessmentInviteDTO body) {
-    // A uniquely generated non guessable link.
     try {
       return Response.status(Response.Status.OK).entity(invitationService.sendAssessmentInvite(body)).build();
     } catch (Exception e) {
