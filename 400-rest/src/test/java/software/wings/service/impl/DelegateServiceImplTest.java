@@ -272,7 +272,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     when(assignDelegateService.getEligibleDelegatesToExecuteTask(any(DelegateTask.class)))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
 
-    DelegateResponseData responseData = delegateTaskServiceClassic.executeTask(delegateTask);
+    DelegateResponseData responseData = delegateTaskServiceClassic.executeTaskV2(delegateTask);
     assertThat(responseData).isInstanceOf(HttpStateExecutionResponse.class);
     HttpStateExecutionResponse httpResponse = (HttpStateExecutionResponse) responseData;
     assertThat(httpResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
@@ -348,7 +348,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     DelegateTask delegateTask = getDelegateTask();
     delegateTask.getData().setAsync(false);
     thrown.expect(NoEligibleDelegatesInAccountException.class);
-    delegateTaskServiceClassic.processDelegateTask(delegateTask, DelegateTask.Status.QUEUED);
+    delegateTaskServiceClassic.processDelegateTaskV2(delegateTask, DelegateTask.Status.QUEUED);
     assertThat(delegateTask.getBroadcastCount()).isZero();
     verify(broadcastHelper, times(0)).rebroadcastDelegateTask(any());
   }
@@ -359,7 +359,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   public void shouldSaveDelegateTaskWithPreAssignedDelegateId_Async() {
     DelegateTask delegateTask = getDelegateTask();
     delegateTask.getData().setAsync(true);
-    delegateTaskServiceClassic.processDelegateTask(delegateTask, DelegateTask.Status.QUEUED);
+    delegateTaskServiceClassic.processDelegateTaskV2(delegateTask, DelegateTask.Status.QUEUED);
     assertThat(delegateTask.getBroadcastCount()).isZero();
     verify(broadcastHelper, times(0)).rebroadcastDelegateTask(any());
   }
@@ -381,7 +381,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     when(assignDelegateService.getEligibleDelegatesToExecuteTask(any(DelegateTask.class)))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
 
-    delegateTaskServiceClassic.processDelegateTask(delegateTask, DelegateTask.Status.QUEUED);
+    delegateTaskServiceClassic.processDelegateTaskV2(delegateTask, DelegateTask.Status.QUEUED);
     assertThat(persistence.get(DelegateTask.class, taskId).getPreAssignedDelegateId()).isNotEqualTo(delegateId);
   }
 
@@ -1782,7 +1782,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     when(assignDelegateService.getEligibleDelegatesToExecuteTask(any(DelegateTask.class)))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
 
-    DelegateResponseData responseData = delegateTaskServiceClassic.executeTask(delegateTask);
+    DelegateResponseData responseData = delegateTaskServiceClassic.executeTaskV2(delegateTask);
     assertThat(responseData).isInstanceOf(HttpStateExecutionResponse.class);
     HttpStateExecutionResponse httpResponse = (HttpStateExecutionResponse) responseData;
     assertThat(httpResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);

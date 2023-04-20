@@ -41,33 +41,6 @@ public class DelegateGrpcClientWrapper {
 
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
-  public DelegateResponseData executeSyncTask(DelegateTaskRequest delegateTaskRequest) {
-    final ResponseData responseData = delegateServiceGrpcClient.executeSyncTaskReturningResponseData(
-        delegateTaskRequest, delegateCallbackTokenSupplier.get());
-    DelegateResponseData delegateResponseData;
-    if (disableDeserialization) {
-      BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-      delegateResponseData = (DelegateResponseData) (binaryResponseData.isUsingKryoWithoutReference()
-              ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
-              : kryoSerializer.asInflatedObject(binaryResponseData.getData()));
-      if (delegateResponseData instanceof ErrorNotifyResponseData) {
-        WingsException exception = ((ErrorNotifyResponseData) delegateResponseData).getException();
-        // if task registered to error handling framework on delegate, then exception won't be null
-        if (exception != null) {
-          throw exception;
-        }
-      } else if (delegateResponseData instanceof RemoteMethodReturnValueData) {
-        Throwable throwable = ((RemoteMethodReturnValueData) delegateResponseData).getException();
-        if (throwable != null) {
-          throw new InvalidRequestException(ExceptionUtils.getMessage(throwable), throwable);
-        }
-      }
-    } else {
-      delegateResponseData = (DelegateResponseData) responseData;
-    }
-    return delegateResponseData;
-  }
-
   public DelegateResponseData executeSyncTaskV2(DelegateTaskRequest delegateTaskRequest) {
     final ResponseData responseData = delegateServiceGrpcClient.executeSyncTaskReturningResponseDataV2(
         delegateTaskRequest, delegateCallbackTokenSupplier.get());
@@ -93,11 +66,6 @@ public class DelegateGrpcClientWrapper {
       delegateResponseData = (DelegateResponseData) responseData;
     }
     return delegateResponseData;
-  }
-
-  public String submitAsyncTask(DelegateTaskRequest delegateTaskRequest, Duration holdFor) {
-    return delegateServiceGrpcClient.submitAsyncTask(
-        delegateTaskRequest, delegateCallbackTokenSupplier.get(), holdFor, false);
   }
 
   public String submitAsyncTaskV2(DelegateTaskRequest delegateTaskRequest, Duration holdFor) {

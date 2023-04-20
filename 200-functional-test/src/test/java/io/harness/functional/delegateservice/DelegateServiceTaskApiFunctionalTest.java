@@ -129,7 +129,7 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
 
     TaskId taskId =
         delegateServiceGrpcClient
-            .submitTask(callbackToken, AccountId.newBuilder().setId(getAccount().getUuid()).build(),
+            .submitTaskV2(callbackToken, AccountId.newBuilder().setId(getAccount().getUuid()).build(),
                 TaskSetupAbstractions.newBuilder().build(), TaskLogAbstractions.newBuilder().build(),
                 TaskDetails.newBuilder()
                     .setMode(TaskMode.SYNC)
@@ -184,7 +184,7 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
 
     TaskId taskId =
         delegateServiceGrpcClient
-            .submitTask(callbackToken, AccountId.newBuilder().setId(getAccount().getUuid()).build(),
+            .submitTaskV2(callbackToken, AccountId.newBuilder().setId(getAccount().getUuid()).build(),
                 TaskSetupAbstractions.newBuilder().build(), TaskLogAbstractions.newBuilder().build(),
                 TaskDetails.newBuilder()
                     .setMode(TaskMode.SYNC)
@@ -242,7 +242,7 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
 
     assertThatThrownBy(
         ()
-            -> delegateServiceGrpcClient.submitTask(callbackToken,
+            -> delegateServiceGrpcClient.submitTaskV2(callbackToken,
                 AccountId.newBuilder().setId(getAccount().getUuid()).build(),
                 TaskSetupAbstractions.newBuilder().build(), TaskLogAbstractions.newBuilder().build(),
                 TaskDetails.newBuilder()
@@ -292,7 +292,7 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
 
     TaskId taskId =
         delegateServiceGrpcClient
-            .submitTask(callbackToken, AccountId.newBuilder().setId(getAccount().getUuid()).build(),
+            .submitTaskV2(callbackToken, AccountId.newBuilder().setId(getAccount().getUuid()).build(),
                 TaskSetupAbstractions.newBuilder().build(), TaskLogAbstractions.newBuilder().build(),
                 TaskDetails.newBuilder()
                     .setMode(TaskMode.ASYNC)
@@ -351,7 +351,7 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
 
     TaskId taskId =
         delegateServiceGrpcClient
-            .submitTask(callbackToken, AccountId.newBuilder().setId(getAccount().getUuid()).build(),
+            .submitTaskV2(callbackToken, AccountId.newBuilder().setId(getAccount().getUuid()).build(),
                 TaskSetupAbstractions.newBuilder().build(), TaskLogAbstractions.newBuilder().build(),
                 TaskDetails.newBuilder()
                     .setMode(TaskMode.ASYNC)

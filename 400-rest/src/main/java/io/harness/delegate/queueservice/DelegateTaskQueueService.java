@@ -173,14 +173,14 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
             delegateTaskDequeue.getDelegateTask().getUuid(), itemId);
         if (isNotEmpty(itemId)) {
           if (isDelegateTaskAborted(delegateTaskDequeue)) {
-            delegateTaskServiceClassic.abortTask(
+            delegateTaskServiceClassic.abortTaskV2(
                 delegateTaskDequeue.getDelegateTask().getAccountId(), delegateTaskDequeue.getDelegateTask().getUuid());
             delegateCache.removeFromAbortedTaskList(
                 delegateTaskDequeue.getDelegateTask().getAccountId(), delegateTaskDequeue.getDelegateTask().getUuid());
             return;
           }
           String taskId =
-              delegateTaskServiceClassic.saveAndBroadcastDelegateTask(delegateTaskDequeue.getDelegateTask());
+              delegateTaskServiceClassic.saveAndBroadcastDelegateTaskV2(delegateTaskDequeue.getDelegateTask());
           log.info("Queued task {} broadcasting to delegate.", taskId);
         }
       }
