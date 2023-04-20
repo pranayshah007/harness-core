@@ -204,13 +204,13 @@ public class NGSecretResourceV2Test extends CategoryTest {
         ngSecretResourceV2.createSecretFile(accountIdentifier, orgIdentifier, projectIdentifier, false, null, spec);
       } catch (Exception ignored) {
       }
-      aStatic.verify(times(1), () -> {
+      aStatic.verify(() -> {
         try {
           JsonUtils.asObjectWithExceptionHandlingType(spec, SecretRequestWrapper.class);
         } catch (JsonProcessingException e) {
           e.printStackTrace();
         }
-      });
+      }, times(1));
     }
   }
 

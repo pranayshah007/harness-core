@@ -18,7 +18,7 @@ import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -42,24 +42,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(PL)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(CGRestUtils.class)
 public class NotificationSettingsServiceImplTest extends CategoryTest {
   @Mock private UserGroupClient userGroupClient;
   @Mock private UserClient userClient;
   @Mock private NotificationSettingRepository notificationSettingRepository;
   @Mock private SmtpConfigClient smtpConfigClient;
+  private MockedStatic<CGRestUtils> cgRestUtilsMockedStatic;
   private TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   private NotificationSettingsServiceImpl notificationSettingsService;
   private static final String SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/TL81600E8/B027JT97D5X/";
@@ -104,10 +101,15 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    PowerMockito.mockStatic(CGRestUtils.class);
+    cgRestUtilsMockedStatic = mockStatic(CGRestUtils.class);
     taskSetupAbstractionHelper = new TaskSetupAbstractionHelper();
     notificationSettingsService = new NotificationSettingsServiceImpl(
         userGroupClient, userClient, notificationSettingRepository, smtpConfigClient, taskSetupAbstractionHelper);
+  }
+
+  @After
+  public void cleanup() {
+    cgRestUtilsMockedStatic.close();
   }
 
   @Test
@@ -218,7 +220,7 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
     List<String> userIds = Arrays.asList(USER_ID_1, USER_ID_2, USER_ID_3);
     List<UserInfo> userInfoList = Arrays.asList(UserInfo.builder().email(EMAIL_ID_1).build(),
         UserInfo.builder().email(EMAIL_ID_2).build(), UserInfo.builder().email(EMAIL_ID_3).build());
-    when(CGRestUtils.getResponse(any())).thenReturn(userInfoList);
+    cgRestUtilsMockedStatic.when(() -> CGRestUtils.getResponse(any())).thenReturn(userInfoList);
     List<String> emails = notificationSettingsService.getEmailsForUserIds(userIds, ACCOUNT_ID);
     List<String> expected = Arrays.asList(EMAIL_ID_1, EMAIL_ID_2, EMAIL_ID_3);
     assertEquals(expected, emails);
@@ -238,7 +240,7 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
   public void testGetNotificationSettings() {
     List<String> userIds = Arrays.asList(USER_ID_1);
     List<UserInfo> userInfoList = Arrays.asList(UserInfo.builder().email(EMAIL_ID_1).build());
-    when(CGRestUtils.getResponse(any())).thenReturn(userInfoList);
+    cgRestUtilsMockedStatic.when(() -> CGRestUtils.getResponse(any())).thenReturn(userInfoList);
     List<UserGroupDTO> userGroupDTOList = new ArrayList<>();
     EmailConfigDTO emailConfigDTO = EmailConfigDTO.builder().groupEmail(EMAIL_ID_1).build();
     userGroupDTOList.add(
@@ -254,7 +256,7 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
   public void testEmailNotificationWhenSendAllBooleanIsTrue() {
     List<String> userIds = Arrays.asList(USER_ID_1);
     List<UserInfo> userInfoList = Arrays.asList(UserInfo.builder().email(EMAIL_ID_1).build());
-    when(CGRestUtils.getResponse(any())).thenReturn(userInfoList);
+    cgRestUtilsMockedStatic.when(() -> CGRestUtils.getResponse(any())).thenReturn(userInfoList);
     List<UserGroupDTO> userGroupDTOList = new ArrayList<>();
     EmailConfigDTO emailConfigDTO = EmailConfigDTO.builder().groupEmail(EMAIL_ID_2).sendEmailToAllUsers(true).build();
     userGroupDTOList.add(
@@ -270,7 +272,7 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
   public void testEmailNotificationWhenSendAllBooleanIsEmpty() {
     List<String> userIds = Arrays.asList(USER_ID_1);
     List<UserInfo> userInfoList = Arrays.asList(UserInfo.builder().email(EMAIL_ID_1).build());
-    when(CGRestUtils.getResponse(any())).thenReturn(userInfoList);
+    cgRestUtilsMockedStatic.when(() -> CGRestUtils.getResponse(any())).thenReturn(userInfoList);
     List<UserGroupDTO> userGroupDTOList = new ArrayList<>();
     EmailConfigDTO emailConfigDTO = EmailConfigDTO.builder().groupEmail(EMAIL_ID_2).build();
     userGroupDTOList.add(
@@ -286,7 +288,7 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
   public void testEmailNotificationWhenSendAllBooleanIsFalse() {
     List<String> userIds = Arrays.asList(USER_ID_1);
     List<UserInfo> userInfoList = Arrays.asList(UserInfo.builder().email(EMAIL_ID_1).build());
-    when(CGRestUtils.getResponse(any())).thenReturn(userInfoList);
+    cgRestUtilsMockedStatic.when(() -> CGRestUtils.getResponse(any())).thenReturn(userInfoList);
     List<UserGroupDTO> userGroupDTOList = new ArrayList<>();
     EmailConfigDTO emailConfigDTO = EmailConfigDTO.builder().sendEmailToAllUsers(false).groupEmail(EMAIL_ID_2).build();
     userGroupDTOList.add(

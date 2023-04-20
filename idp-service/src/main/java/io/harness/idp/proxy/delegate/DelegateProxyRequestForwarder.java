@@ -25,6 +25,7 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriBuilder;
 import lombok.AllArgsConstructor;
@@ -67,14 +68,15 @@ public class DelegateProxyRequestForwarder {
     return headerList;
   }
 
-  public HttpStepResponse forwardRequestToDelegate(
-      String accountId, String url, List<HttpHeaderConfig> headerList, String body, String methodType) {
+  public HttpStepResponse forwardRequestToDelegate(String accountId, String url, List<HttpHeaderConfig> headerList,
+      String body, String methodType, Set<String> delegateSelectors) {
     DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(accountId)
             .executionTimeout(java.time.Duration.ofSeconds(EXECUTION_TIMEOUT_IN_SECONDS))
             .taskType(TaskType.HTTP_TASK_NG.name())
             .taskParameters(getTaskParams(url, methodType, headerList, body))
+            .taskSelectors(delegateSelectors)
             .taskDescription("IDP Proxy Http Task")
             .taskSetupAbstraction("ng", "true")
             .build();

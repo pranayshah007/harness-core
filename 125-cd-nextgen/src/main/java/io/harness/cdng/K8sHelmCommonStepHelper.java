@@ -26,8 +26,10 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.HelmSpecParameters;
+import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.k8s.K8sApplyStepParameters;
 import io.harness.cdng.k8s.K8sEntityHelper;
 import io.harness.cdng.k8s.K8sSpecParameters;
@@ -123,6 +125,7 @@ import io.harness.steps.TaskRequestsUtils;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
+import software.wings.beans.ServiceHookDelegateConfig;
 import software.wings.beans.TaskType;
 
 import com.google.common.base.Preconditions;
@@ -159,6 +162,7 @@ public class K8sHelmCommonStepHelper {
   @Inject @Named("referenceFalseKryoSerializer") protected KryoSerializer referenceFalseKryoSerializer;
   @Inject protected StepHelper stepHelper;
   @Inject protected CDStepHelper cdStepHelper;
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   public static final String MANIFEST_OUTCOME_INCOMPATIBLE_ERROR_MESSAGE =
       "Incompatible manifest store type. Cannot convert manifest outcome to HelmChartManifestOutcome.";
@@ -1299,5 +1303,29 @@ public class K8sHelmCommonStepHelper {
       return commandFlags;
     }
     return null;
+  }
+
+  public List<ServiceHookDelegateConfig> getServiceHooks(Ambiance ambiance) {
+    Optional<ServiceHooksOutcome> serviceHookOutcome = cdStepHelper.getServiceHooksOutcome(ambiance);
+    if (serviceHookOutcome.isPresent()) {
+      cdExpressionResolver.updateExpressions(ambiance, serviceHookOutcome);
+      return getServiceHooksDelegateConfig(serviceHookOutcome.get());
+    }
+    return null;
+  }
+
+  private List<ServiceHookDelegateConfig> getServiceHooksDelegateConfig(ServiceHooksOutcome serviceHooksOutcome) {
+    List<ServiceHookDelegateConfig> serviceHooks = new ArrayList<>();
+    serviceHooksOutcome.forEach((identifier, serviceHookOutcome) -> {
+      ServiceHookDelegateConfig serviceHook =
+          ServiceHookDelegateConfig.builder()
+              .hookType(serviceHookOutcome.getType().getDisplayName())
+              .content(((InlineStoreConfig) serviceHookOutcome.getStore()).getContent().getValue())
+              .identifier(identifier)
+              .serviceHookActions(serviceHookOutcome.getActions())
+              .build();
+      serviceHooks.add(serviceHook);
+    });
+    return serviceHooks;
   }
 }

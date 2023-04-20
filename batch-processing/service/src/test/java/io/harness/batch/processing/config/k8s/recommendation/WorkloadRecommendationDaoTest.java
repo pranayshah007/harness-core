@@ -10,7 +10,7 @@ package io.harness.batch.processing.config.k8s.recommendation;
 import static io.harness.rule.OwnerRule.AVMOHAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.CategoryTest;
@@ -29,7 +29,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 @RunWith(MockitoJUnitRunner.class)

@@ -46,6 +46,8 @@ import io.harness.k8s.model.HelmVersion;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import software.wings.beans.ServiceHookDelegateConfig;
+
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -77,6 +79,7 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
   private boolean useLatestKubectlVersion;
   private String gcpKeyPath;
   private String releaseHistoryPrefix;
+  @Expression(ALLOW_SECRETS) List<ServiceHookDelegateConfig> serviceHooks;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

@@ -24,7 +24,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static io.kubernetes.client.custom.Quantity.Format.BINARY_SI;
 import static io.kubernetes.client.custom.Quantity.Format.DECIMAL_SI;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;

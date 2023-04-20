@@ -16,12 +16,15 @@ java_library(
     ],
     deps = [
         "//:lombok",
+        "//878-ng-common-utilities:module",
         "//950-delegate-tasks-beans:module",
+        "//950-log-client:module",
         "//953-yaml-commons:module",
         "//960-yaml-sdk:module",
         "//980-commons:module",
         "//999-annotations:module",
         "//clients/pipeline-service/pms-sdk:module",
+        "//product/ci/engine/proto:ciengine_java_proto",
     ],
 )
 

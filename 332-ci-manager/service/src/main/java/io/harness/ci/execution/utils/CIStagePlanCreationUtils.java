@@ -11,6 +11,7 @@ import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.ci.execution.CIAccountExecutionMetadata;
+import io.harness.ci.validation.CIAccountValidationService;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.licensing.Edition;
@@ -23,6 +24,7 @@ import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.steps.SdkCoreStepUtils;
 import io.harness.yaml.utils.NGVariablesUtils;
 
+import com.google.inject.Inject;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -33,7 +35,11 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class CIStagePlanCreationUtils {
-  public static StageElementParametersBuilder getStageParameters(IntegrationStageNode stageNode) {
+  @Inject CIAccountValidationService validationService;
+  @Inject CILicenseService ciLicenseService;
+  @Inject CIAccountExecutionMetadataRepository accountExecutionMetadataRepository;
+
+  public StageElementParametersBuilder getStageParameters(IntegrationStageNode stageNode) {
     TagUtils.removeUuidFromTags(stageNode.getTags());
 
     StageElementParametersBuilder stageBuilder = StageElementParameters.builder();
@@ -58,9 +64,7 @@ public class CIStagePlanCreationUtils {
         || infrastructure.getType().equals(Infrastructure.Type.KUBERNETES_HOSTED);
   }
 
-  public static void validateFreeAccountStageExecutionLimit(
-      CIAccountExecutionMetadataRepository accountExecutionMetadataRepository, CILicenseService ciLicenseService,
-      String accountId, Infrastructure infrastructure) {
+  public void validateFreeAccountStageExecutionLimit(String accountId, Infrastructure infrastructure) {
     if (isHostedInfra(infrastructure)) {
       LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
       if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
@@ -73,7 +77,7 @@ public class CIStagePlanCreationUtils {
           String day = yearMonth + "-" + startDate.getDayOfMonth();
           Map<String, Long> countPerDay = accountExecutionMetadata.get().getAccountExecutionInfo().getCountPerDay();
           if (countPerDay != null) {
-            if (countPerDay.getOrDefault(day, 0L) >= 5) {
+            if (countPerDay.getOrDefault(day, 0L) >= validationService.getMaxBuildPerDay(accountId)) {
               log.error("Daily stage execution rate limit for free plan has reached for accountId {}", accountId);
               throw new CIStageExecutionException(
                   "Execution limit has reached for the day, Please reach out to Harness support");

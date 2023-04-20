@@ -24,8 +24,8 @@ import static io.harness.rule.OwnerRule.PRAVEEN;
 import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Offset.offset;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anySet;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 

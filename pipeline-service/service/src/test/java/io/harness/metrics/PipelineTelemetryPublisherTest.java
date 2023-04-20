@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -43,14 +43,12 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.data.mongodb.core.query.Criteria;
 import retrofit2.Call;
 
 @OwnedBy(PIPELINE)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({CGRestUtils.class})
+@RunWith(MockitoJUnitRunner.class)
 public class PipelineTelemetryPublisherTest extends CategoryTest {
   @InjectMocks PipelineTelemetryPublisher telemetryPublisher;
   @Mock PMSPipelineService pmsPipelineService;

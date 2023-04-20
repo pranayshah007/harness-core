@@ -10,7 +10,7 @@ package io.harness.connector.validator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -57,8 +57,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -166,11 +166,11 @@ public class AwsConnectorValidatorTest extends CategoryTest {
     on(awsValidationHandler).set("ngConfigMapper", ngConfigMapper);
     on(awsValidationHandler).set("awsClient", awsClient);
     when(awsValidationHandler.validate((ConnectorValidationParams) any(), any())).thenCallRealMethod();
-    when(connectorTypeToConnectorValidationHandlerMap.get(Matchers.eq("Aws"))).thenReturn(awsValidationHandler);
+    when(connectorTypeToConnectorValidationHandlerMap.get(ArgumentMatchers.eq("Aws"))).thenReturn(awsValidationHandler);
 
     AwsValidationParamsProvider awsValidationParamsProvider = new AwsValidationParamsProvider();
     on(awsValidationParamsProvider).set("encryptionHelper", encryptionHelper);
-    when(connectorValidationParamsProviderMap.get(Matchers.eq("Aws"))).thenReturn(awsValidationParamsProvider);
+    when(connectorValidationParamsProviderMap.get(ArgumentMatchers.eq("Aws"))).thenReturn(awsValidationParamsProvider);
     when(connectorService.get(any(), any(), any(), any()))
         .thenReturn(Optional.of(ConnectorResponseDTO.builder()
                                     .connector(ConnectorInfoDTO.builder()
@@ -209,11 +209,11 @@ public class AwsConnectorValidatorTest extends CategoryTest {
                     "Connector with credential type INHERIT_FROM_DELEGATE does not support validation through harness")
                 .build());
     when(awsValidationHandler.validate((ConnectorValidationParams) any(), any())).thenCallRealMethod();
-    when(connectorTypeToConnectorValidationHandlerMap.get(Matchers.eq("Aws"))).thenReturn(awsValidationHandler);
+    when(connectorTypeToConnectorValidationHandlerMap.get(ArgumentMatchers.eq("Aws"))).thenReturn(awsValidationHandler);
 
     AwsValidationParamsProvider awsValidationParamsProvider = new AwsValidationParamsProvider();
     on(awsValidationParamsProvider).set("encryptionHelper", encryptionHelper);
-    when(connectorValidationParamsProviderMap.get(Matchers.eq("Aws"))).thenReturn(awsValidationParamsProvider);
+    when(connectorValidationParamsProviderMap.get(ArgumentMatchers.eq("Aws"))).thenReturn(awsValidationParamsProvider);
     when(connectorService.get(any(), any(), any(), any()))
         .thenReturn(Optional.of(ConnectorResponseDTO.builder()
                                     .connector(ConnectorInfoDTO.builder()

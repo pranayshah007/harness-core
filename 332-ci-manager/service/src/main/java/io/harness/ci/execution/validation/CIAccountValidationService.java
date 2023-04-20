@@ -9,4 +9,5 @@ package io.harness.ci.validation;
 
 public interface CIAccountValidationService {
   boolean isAccountValidForExecution(String accountId);
+  long getMaxBuildPerDay(String accountId);
 }

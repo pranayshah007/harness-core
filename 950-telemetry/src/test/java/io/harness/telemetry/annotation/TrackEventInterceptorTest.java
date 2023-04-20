@@ -222,7 +222,7 @@ public class TrackEventInterceptorTest extends TelemetrySdkTestBase {
     Mockito.when(sendTrackEvent.category()).thenReturn(io.harness.telemetry.Category.GLOBAL);
 
     trackEventInterceptor.processTrackEvent(sendTrackEvent, ARGUMENTS);
-    Mockito.verifyZeroInteractions(segmentReporterImpl);
+    Mockito.verifyNoInteractions(segmentReporterImpl);
   }
 
   @Test
@@ -266,7 +266,7 @@ public class TrackEventInterceptorTest extends TelemetrySdkTestBase {
     Mockito.when(sendTrackEvent.properties()).thenReturn(new EventProperty[] {defaultEventProperty});
 
     trackEventInterceptor.processTrackEvent(sendTrackEvent, ARGUMENTS);
-    Mockito.verifyZeroInteractions(segmentReporterImpl);
+    Mockito.verifyNoInteractions(segmentReporterImpl);
   }
 
   @Test

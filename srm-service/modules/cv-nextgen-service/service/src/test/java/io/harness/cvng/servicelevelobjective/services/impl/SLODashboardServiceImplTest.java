@@ -41,6 +41,8 @@ import io.harness.cvng.downtime.beans.DowntimeStatus;
 import io.harness.cvng.downtime.beans.EntityDetails;
 import io.harness.cvng.downtime.beans.EntityIdentifiersRule;
 import io.harness.cvng.downtime.beans.EntityType;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.beans.OnetimeDowntimeSpec;
 import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 import io.harness.cvng.downtime.services.api.DowntimeService;
@@ -1391,6 +1393,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(sloGraphData1.getErrorBudgetBurned());
     assertThat(sloBreakdown.getSliStatusPercentage()).isEqualTo(sloGraphData1.getSliStatusPercentage());
     assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(1);
+    assertThat(sloBreakdown.isFailedState()).isEqualTo(false);
 
     sloBreakdown = sloConsumptionBreakdownList.get(1);
     assertThat(sloBreakdown.getSloIdentifier()).isEqualTo(serviceLevelObjectiveV2DTO2.getIdentifier());
@@ -1404,6 +1407,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloBreakdown.getSliStatusPercentage()).isEqualTo(sloGraphData2.getSliStatusPercentage());
     assertThat(sloBreakdown.getProjectParams()).isEqualTo(builderFactory.getProjectParams());
     assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(2);
+    assertThat(sloBreakdown.isFailedState()).isEqualTo(false);
   }
 
   @Test
@@ -1612,99 +1616,6 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
-  @Owner(developers = VARSHA_LALWANI)
-  @Category(UnitTests.class)
-  public void testGetUnavailabilityInstancesForCompositeSLO() {
-    String monitoredServiceIdentifier = "monitoredServiceIdentifier";
-    MonitoredServiceDTO monitoredServiceDTO1 =
-        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
-    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO1);
-
-    MonitoredServiceDTO monitoredServiceDTO2 =
-        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier + '1').build();
-    monitoredServiceDTO2.setServiceRef("new");
-    monitoredServiceDTO2.setEnvironmentRef("one");
-    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO2);
-
-    ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO1 =
-        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
-    serviceLevelObjectiveV2DTO1.setName("new two");
-    serviceLevelObjectiveV2DTO1.setIdentifier("new_two");
-    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec1 =
-        (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO1.getSpec();
-    simpleServiceLevelObjectiveSpec1.setMonitoredServiceRef(monitoredServiceIdentifier);
-    serviceLevelObjectiveV2DTO1.setSpec(simpleServiceLevelObjectiveSpec1);
-    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO1);
-
-    ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO2 =
-        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
-    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
-        (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO2.getSpec();
-    WindowBasedServiceLevelIndicatorSpec serviceLevelIndicatorSpec =
-        (WindowBasedServiceLevelIndicatorSpec) simpleServiceLevelObjectiveSpec.getServiceLevelIndicators()
-            .get(0)
-            .getSpec();
-    serviceLevelIndicatorSpec.setSliMissingDataType(SLIMissingDataType.BAD);
-    simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0).setSpec(serviceLevelIndicatorSpec);
-    simpleServiceLevelObjectiveSpec.setMonitoredServiceRef(monitoredServiceIdentifier + '1');
-    serviceLevelObjectiveV2DTO2.setSpec(simpleServiceLevelObjectiveSpec);
-    serviceLevelObjectiveV2DTO2.setName("new three");
-    serviceLevelObjectiveV2DTO2.setIdentifier("new_three");
-    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO2);
-
-    ServiceLevelObjectiveV2DTO compositeSLO =
-        builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
-            .spec(CompositeServiceLevelObjectiveSpec.builder()
-                      .serviceLevelObjectivesDetails(
-                          Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
-                                            .serviceLevelObjectiveRef("new_two")
-                                            .weightagePercentage(75.0)
-                                            .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
-                                            .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
-                                            .accountId(builderFactory.getContext().getAccountId())
-                                            .build(),
-                              ServiceLevelObjectiveDetailsDTO.builder()
-                                  .serviceLevelObjectiveRef("new_three")
-                                  .weightagePercentage(25.0)
-                                  .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
-                                  .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
-                                  .accountId(builderFactory.getContext().getAccountId())
-                                  .build()))
-                      .build())
-            .build();
-    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), compositeSLO);
-
-    long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
-    long endTime = startTime + Duration.ofDays(365).toSeconds();
-
-    DowntimeDTO downtimeDTO = builderFactory.getRecurringDowntimeDTO();
-    downtimeDTO.setEntitiesRule(
-        EntityIdentifiersRule.builder()
-            .entityIdentifiers(Collections.singletonList(
-                EntityDetails.builder().entityRef(monitoredServiceIdentifier).enabled(true).build()))
-            .build());
-    downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
-
-    downtimeDTO = builderFactory.getOnetimeDurationBasedDowntimeDTO();
-    downtimeDTO.setEntitiesRule(
-        EntityIdentifiersRule.builder()
-            .entityIdentifiers(Collections.singletonList(
-                EntityDetails.builder().entityRef(monitoredServiceIdentifier).enabled(true).build()))
-            .build());
-    downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
-
-    List<UnavailabilityInstancesResponse> unavailabilityInstancesResponses =
-        sloDashboardService.getUnavailabilityInstances(
-            builderFactory.getProjectParams(), startTime * 1000, endTime * 1000, compositeSLO.getIdentifier());
-    assertThat(unavailabilityInstancesResponses.size()).isEqualTo(54);
-    assertThat(unavailabilityInstancesResponses.get(0).getEntityType()).isEqualTo(EntityType.MAINTENANCE_WINDOW);
-
-    unavailabilityInstancesResponses = sloDashboardService.getUnavailabilityInstances(builderFactory.getProjectParams(),
-        startTime * 1000, startTime * 1000 + Duration.ofDays(6).toMillis(), compositeSLO.getIdentifier());
-    assertThat(unavailabilityInstancesResponses.size()).isEqualTo(2);
-  }
-
-  @Test
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
   public void testGetSecondaryEventsForSimpleSLO_Success() {
@@ -1720,6 +1631,8 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     spec.setHealthSourceRef(healthSource.getIdentifier());
     serviceLevelObjective.setSpec(spec);
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjective);
+    ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+        builderFactory.getProjectParams(), spec.getServiceLevelIndicators().get(0).getIdentifier());
 
     long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
     long endTime = startTime + Duration.ofDays(365).toSeconds();
@@ -1738,110 +1651,26 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     List<Annotation> annotations =
         annotationService.get(builderFactory.getProjectParams(), serviceLevelObjective.getIdentifier());
 
+    entityUnavailabilityStatusesService.create(builderFactory.getProjectParams(),
+        Collections.singletonList(EntityUnavailabilityStatusesDTO.builder()
+                                      .orgIdentifier(builderFactory.getProjectParams().getOrgIdentifier())
+                                      .projectIdentifier(builderFactory.getProjectParams().getProjectIdentifier())
+                                      .entityType(EntityType.SLO)
+                                      .entityId(serviceLevelIndicator.getUuid())
+                                      .status(EntityUnavailabilityStatus.DATA_COLLECTION_FAILED)
+                                      .startTime(startTime)
+                                      .endTime(endTime)
+                                      .build()));
+
     List<SecondaryEventsResponse> secondaryEvents = sloDashboardService.getSecondaryEvents(
         builderFactory.getProjectParams(), startTime * 1000, endTime * 1000, serviceLevelObjective.getIdentifier());
-    assertThat(secondaryEvents.size()).isEqualTo(54);
-    assertThat(secondaryEvents.get(0).getType()).isEqualTo(SecondaryEventsType.DOWNTIME);
-    assertThat(secondaryEvents.get(0).getStartTime()).isEqualTo(startTime);
-
-    assertThat(secondaryEvents.get(1).getType()).isEqualTo(SecondaryEventsType.ANNOTATION);
-    assertThat(secondaryEvents.get(1).getIdentifiers().get(0)).isEqualTo(annotations.get(0).getUuid());
-  }
-
-  @Test
-  @Owner(developers = KARAN_SARASWAT)
-  @Category(UnitTests.class)
-  public void testGetSecondaryEventsForCompositeSLO_Success() {
-    String monitoredServiceIdentifier = "monitoredServiceIdentifier";
-    MonitoredServiceDTO monitoredServiceDTO1 =
-        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
-    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO1);
-
-    MonitoredServiceDTO monitoredServiceDTO2 =
-        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier + '1').build();
-    monitoredServiceDTO2.setServiceRef("new");
-    monitoredServiceDTO2.setEnvironmentRef("one");
-    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO2);
-
-    ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO1 =
-        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
-    serviceLevelObjectiveV2DTO1.setName("new two");
-    serviceLevelObjectiveV2DTO1.setIdentifier("new_two");
-    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec1 =
-        (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO1.getSpec();
-    simpleServiceLevelObjectiveSpec1.setMonitoredServiceRef(monitoredServiceIdentifier);
-    serviceLevelObjectiveV2DTO1.setSpec(simpleServiceLevelObjectiveSpec1);
-    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO1);
-
-    ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO2 =
-        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
-    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
-        (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO2.getSpec();
-    WindowBasedServiceLevelIndicatorSpec serviceLevelIndicatorSpec =
-        (WindowBasedServiceLevelIndicatorSpec) simpleServiceLevelObjectiveSpec.getServiceLevelIndicators()
-            .get(0)
-            .getSpec();
-    serviceLevelIndicatorSpec.setSliMissingDataType(SLIMissingDataType.BAD);
-    simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0).setSpec(serviceLevelIndicatorSpec);
-    simpleServiceLevelObjectiveSpec.setMonitoredServiceRef(monitoredServiceIdentifier + '1');
-    serviceLevelObjectiveV2DTO2.setSpec(simpleServiceLevelObjectiveSpec);
-    serviceLevelObjectiveV2DTO2.setName("new three");
-    serviceLevelObjectiveV2DTO2.setIdentifier("new_three");
-    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO2);
-
-    ServiceLevelObjectiveV2DTO compositeSLO =
-        builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
-            .spec(CompositeServiceLevelObjectiveSpec.builder()
-                      .serviceLevelObjectivesDetails(
-                          Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
-                                            .serviceLevelObjectiveRef("new_two")
-                                            .weightagePercentage(75.0)
-                                            .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
-                                            .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
-                                            .accountId(builderFactory.getContext().getAccountId())
-                                            .build(),
-                              ServiceLevelObjectiveDetailsDTO.builder()
-                                  .serviceLevelObjectiveRef("new_three")
-                                  .weightagePercentage(25.0)
-                                  .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
-                                  .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
-                                  .accountId(builderFactory.getContext().getAccountId())
-                                  .build()))
-                      .build())
-            .build();
-    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), compositeSLO);
-
-    long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
-    long endTime = startTime + Duration.ofDays(365).toSeconds();
-
-    DowntimeDTO downtimeDTO = builderFactory.getRecurringDowntimeDTO();
-    downtimeDTO.setEntitiesRule(
-        EntityIdentifiersRule.builder()
-            .entityIdentifiers(Collections.singletonList(
-                EntityDetails.builder().entityRef(monitoredServiceIdentifier).enabled(true).build()))
-            .build());
-    downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
-
-    downtimeDTO = builderFactory.getOnetimeDurationBasedDowntimeDTO();
-    downtimeDTO.setEntitiesRule(
-        EntityIdentifiersRule.builder()
-            .entityIdentifiers(Collections.singletonList(
-                EntityDetails.builder().entityRef(monitoredServiceIdentifier).enabled(true).build()))
-            .build());
-    downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
-
-    AnnotationDTO annotationDTO = builderFactory.getAnnotationDTO();
-    annotationDTO.setSloIdentifier(compositeSLO.getIdentifier());
-    annotationService.create(builderFactory.getProjectParams(), annotationDTO);
-
-    List<Annotation> annotations =
-        annotationService.get(builderFactory.getProjectParams(), compositeSLO.getIdentifier());
-
-    List<SecondaryEventsResponse> secondaryEvents = sloDashboardService.getSecondaryEvents(
-        builderFactory.getProjectParams(), startTime * 1000, endTime * 1000, compositeSLO.getIdentifier());
     assertThat(secondaryEvents.size()).isEqualTo(55);
     assertThat(secondaryEvents.get(0).getType()).isEqualTo(SecondaryEventsType.DOWNTIME);
     assertThat(secondaryEvents.get(0).getStartTime()).isEqualTo(startTime);
+
+    assertThat(secondaryEvents.get(1).getType()).isEqualTo(SecondaryEventsType.DATA_COLLECTION_FAILURE);
+    assertThat(secondaryEvents.get(1).getStartTime()).isEqualTo(startTime);
+    assertThat(secondaryEvents.get(1).getEndTime()).isEqualTo(endTime);
 
     assertThat(secondaryEvents.get(2).getType()).isEqualTo(SecondaryEventsType.ANNOTATION);
     assertThat(secondaryEvents.get(2).getIdentifiers().get(0)).isEqualTo(annotations.get(0).getUuid());
@@ -1863,6 +1692,8 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     spec.setHealthSourceRef(healthSource.getIdentifier());
     serviceLevelObjective.setSpec(spec);
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjective);
+    ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+        builderFactory.getProjectParams(), spec.getServiceLevelIndicators().get(0).getIdentifier());
 
     long startTime =
         CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond() + Duration.ofMinutes(1).toSeconds();
@@ -1876,9 +1707,6 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
             .build());
     downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
 
-    List<EntityUnavailabilityStatuses> instances = entityUnavailabilityStatusesService.getAllUnavailabilityInstances(
-        builderFactory.getProjectParams(), startTime, endTime);
-
     AnnotationDTO annotationDTO = builderFactory.getAnnotationDTO();
     annotationService.create(builderFactory.getProjectParams(), annotationDTO);
     annotationDTO.setMessage("new one");
@@ -1888,6 +1716,18 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
         annotationService.get(builderFactory.getProjectParams(), serviceLevelObjective.getIdentifier());
     List<String> annotationIds = annotations.stream().map(Annotation::getUuid).collect(Collectors.toList());
 
+    entityUnavailabilityStatusesService.create(builderFactory.getProjectParams(),
+        Collections.singletonList(EntityUnavailabilityStatusesDTO.builder()
+                                      .orgIdentifier(builderFactory.getProjectParams().getOrgIdentifier())
+                                      .projectIdentifier(builderFactory.getProjectParams().getProjectIdentifier())
+                                      .entityType(EntityType.SLO)
+                                      .entityId(serviceLevelIndicator.getUuid())
+                                      .status(EntityUnavailabilityStatus.DATA_COLLECTION_FAILED)
+                                      .startTime(startTime)
+                                      .endTime(endTime)
+                                      .build()));
+    List<EntityUnavailabilityStatuses> instances = entityUnavailabilityStatusesService.getAllUnavailabilityInstances(
+        builderFactory.getProjectParams(), startTime, endTime);
     SecondaryEventDetailsResponse response = sloDashboardService.getSecondaryEventDetails(
         SecondaryEventsType.DOWNTIME, Collections.singletonList(instances.get(0).getUuid()));
 
@@ -1904,6 +1744,12 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(instanceDetails.getAnnotations().size()).isEqualTo(annotationIds.size());
     assertThat(instanceDetails.getAnnotations().get(0).getUuid()).isEqualTo(annotations.get(0).getUuid());
     assertThat(instanceDetails.getAnnotations().get(0).getMessage()).isEqualTo(annotations.get(0).getMessage());
+
+    response = sloDashboardService.getSecondaryEventDetails(
+        SecondaryEventsType.DATA_COLLECTION_FAILURE, Collections.singletonList(instances.get(1).getUuid()));
+    assertThat(response.getStartTime()).isEqualTo(startTime);
+    assertThat(response.getEndTime()).isEqualTo(endTime);
+    assertThat(response.getType()).isEqualTo(SecondaryEventsType.DATA_COLLECTION_FAILURE);
   }
 
   @Test

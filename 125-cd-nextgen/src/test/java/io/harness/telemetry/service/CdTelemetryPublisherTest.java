@@ -13,9 +13,9 @@ import static io.harness.cd.CDLicenseType.SERVICE_INSTANCES;
 import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.telemetry.Destination.ALL;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -164,6 +164,6 @@ public class CdTelemetryPublisherTest extends CategoryTest {
     doReturn(accountDTOList).when(telemetryPublisher).getAllAccounts();
 
     telemetryPublisher.recordTelemetry();
-    verify(telemetryReporter, times(0)).sendGroupEvent(anyString(), anyString(), anyObject(), anyMap(), anyObject());
+    verify(telemetryReporter, times(0)).sendGroupEvent(anyString(), anyString(), any(), anyMap(), any());
   }
 }

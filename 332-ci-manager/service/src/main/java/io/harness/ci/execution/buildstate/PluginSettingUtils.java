@@ -155,12 +155,14 @@ public class PluginSettingUtils {
   public static final String PLUGIN_DAEMON_OFF = "PLUGIN_DAEMON_OFF";
   public static final String ECR_REGISTRY_PATTERN = "%s.dkr.ecr.%s.amazonaws.com";
   public static final String PLUGIN_DOCKER_REGISTRY = "PLUGIN_DOCKER_REGISTRY";
+  public static final String PLUGIN_CACHE_FROM = "PLUGIN_CACHE_FROM";
+  public static final String PLUGIN_CACHE_TO = "PLUGIN_CACHE_TO";
   @Inject private CodebaseUtils codebaseUtils;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
 
   public Map<String, String> getPluginCompatibleEnvVariables(PluginCompatibleStep stepInfo, String identifier,
-      long timeout, Ambiance ambiance, Type infraType, boolean isMandatory) {
+      long timeout, Ambiance ambiance, Type infraType, boolean isMandatory, boolean isContainerizedPlugin) {
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case ECR:
         return getECRStepInfoEnvVariables(ambiance, (ECRStepInfo) stepInfo, identifier, infraType);
@@ -169,7 +171,7 @@ public class PluginSettingUtils {
       case GCR:
         return getGCRStepInfoEnvVariables((GCRStepInfo) stepInfo, identifier, infraType);
       case DOCKER:
-        return getDockerStepInfoEnvVariables((DockerStepInfo) stepInfo, identifier, infraType);
+        return getDockerStepInfoEnvVariables((DockerStepInfo) stepInfo, identifier, infraType, isContainerizedPlugin);
       case UPLOAD_ARTIFACTORY:
         return getUploadToArtifactoryStepInfoEnvVariables((UploadToArtifactoryStepInfo) stepInfo, identifier);
       case UPLOAD_GCS:
@@ -501,7 +503,7 @@ public class PluginSettingUtils {
   }
 
   private static Map<String, String> getDockerStepInfoEnvVariables(
-      DockerStepInfo stepInfo, String identifier, Type infraType) {
+      DockerStepInfo stepInfo, String identifier, Type infraType, boolean isContainerizedPlugin) {
     Map<String, String> map = new HashMap<>();
 
     setMandatoryEnvironmentVariable(map, PLUGIN_REPO,
@@ -554,6 +556,19 @@ public class PluginSettingUtils {
       }
     } else if (infraType == Type.VM) {
       setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
+      if (!isContainerizedPlugin) {
+        // Only populate cache-from and cache-to if we're using the buildx plugin
+        List<String> cacheFromList =
+            resolveListParameter("cacheFrom", "BuildAndPushDockerRegistry", identifier, stepInfo.getCacheFrom(), false);
+        if (!isEmpty(cacheFromList)) {
+          setOptionalEnvironmentVariable(map, PLUGIN_CACHE_FROM, listToCustomStringSlice(cacheFromList));
+        }
+        String cacheTo =
+            resolveStringParameterV2("cacheTo", "BuildAndPushDockerRegistry", identifier, stepInfo.getCacheTo(), false);
+        if (!isEmpty(cacheTo)) {
+          setOptionalEnvironmentVariable(map, PLUGIN_CACHE_TO, cacheTo);
+        }
+      }
     }
 
     return map;
@@ -967,6 +982,11 @@ public class PluginSettingUtils {
   // converts list "value1", "value2" to string "value1,value2"
   private static String listToStringSlice(List<String> stringList) {
     return String.join(",", stringList);
+  }
+
+  // converts list "value1", "value2" to string "value1;value2"
+  private static String listToCustomStringSlice(List<String> stringList) {
+    return String.join(";", stringList);
   }
 
   private static void setOptionalEnvironmentVariable(Map<String, String> envVarMap, String var, String value) {

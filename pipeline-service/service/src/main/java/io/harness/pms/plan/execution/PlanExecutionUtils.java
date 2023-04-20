@@ -50,6 +50,8 @@ public class PlanExecutionUtils {
     if (planCreationBlobResponse.hasGraphLayoutInfo()) {
       planBuilder.graphLayoutInfo(planCreationBlobResponse.getGraphLayoutInfo());
     }
+    planBuilder.preservedNodesInRollbackMode(planCreationBlobResponse.getPreservedNodesInRollbackModeList());
+
     return planBuilder.build();
   }
 

@@ -29,11 +29,10 @@ import static software.wings.utils.ArtifactType.JAR;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -220,7 +219,7 @@ public class SecretTextTest extends WingsBaseTest {
                                       .environmentType(EnvironmentType.NON_PROD)
                                       .build());
     workflowExecutionId = wingsPersistence.save(WorkflowExecution.builder().name(workflowName).envId(envId).build());
-    when(kmsEncryptor.encryptSecret(anyString(), anyObject(), any())).then(invocation -> {
+    when(kmsEncryptor.encryptSecret(anyString(), any(), any())).then(invocation -> {
       Object[] args = invocation.getArguments();
       if (args[2] instanceof KmsConfig) {
         return EncryptTestUtils.encrypt((String) args[0], ((String) args[1]).toCharArray(), (KmsConfig) args[2]);
@@ -229,7 +228,7 @@ public class SecretTextTest extends WingsBaseTest {
           (String) args[0], (String) args[1], localSecretManagerService.getEncryptionConfig((String) args[0]));
     });
 
-    when(kmsEncryptor.fetchSecretValue(anyString(), anyObject(), any())).then(invocation -> {
+    when(kmsEncryptor.fetchSecretValue(anyString(), any(), any())).then(invocation -> {
       Object[] args = invocation.getArguments();
       if (args[2] instanceof KmsConfig) {
         return EncryptTestUtils.decrypt((EncryptedRecord) args[1], (KmsConfig) args[2]);
@@ -256,7 +255,7 @@ public class SecretTextTest extends WingsBaseTest {
       return null;
     });
 
-    when(vaultEncryptor.fetchSecretValue(anyString(), anyObject(), any())).then(invocation -> {
+    when(vaultEncryptor.fetchSecretValue(anyString(), any(), any())).then(invocation -> {
       Object[] args = invocation.getArguments();
       if (args[2] instanceof VaultConfig) {
         return EncryptTestUtils.decrypt((EncryptedRecord) args[1], (VaultConfig) args[2]);
@@ -264,7 +263,7 @@ public class SecretTextTest extends WingsBaseTest {
       return null;
     });
 
-    when(vaultEncryptor.deleteSecret(anyString(), anyObject(), anyObject())).thenReturn(true);
+    when(vaultEncryptor.deleteSecret(anyString(), any(), any())).thenReturn(true);
 
     when(kmsEncryptorsRegistry.getKmsEncryptor(any())).thenReturn(kmsEncryptor);
     when(vaultEncryptorsRegistry.getVaultEncryptor(any())).thenReturn(vaultEncryptor);

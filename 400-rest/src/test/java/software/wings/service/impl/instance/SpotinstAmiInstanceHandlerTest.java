@@ -49,9 +49,9 @@ import static software.wings.service.impl.instance.InstanceSyncTestConstants.US_
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static wiremock.com.google.common.collect.Lists.newArrayList;

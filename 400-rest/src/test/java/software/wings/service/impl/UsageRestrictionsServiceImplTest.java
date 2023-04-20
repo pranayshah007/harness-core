@@ -36,16 +36,15 @@ import static software.wings.utils.WingsTestConstants.USER_NAME;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -120,7 +119,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
 /**
@@ -1121,15 +1120,15 @@ public class UsageRestrictionsServiceImplTest extends CategoryTest {
     int count = usageRestrictionsService.removeAppEnvReferences(ACCOUNT_ID, APP_ID, ENV_ID);
     assertThat(count).isEqualTo(0);
     assertThat(usageRestrictions.getAppEnvRestrictions()).hasSize(1);
-    verifyZeroInteractions(settingsService);
-    verifyZeroInteractions(secretManager);
+    verifyNoInteractions(settingsService);
+    verifyNoInteractions(secretManager);
 
     count = usageRestrictionsService.removeAppEnvReferences(ACCOUNT_ID, APP_ID_1, ENV_ID_1);
     assertThat(count).isEqualTo(1);
     assertThat(usageRestrictions.getAppEnvRestrictions()).isEmpty();
     verify(settingsService, times(1))
         .updateUsageRestrictionsInternal(eq(SETTING_ATTRIBUTE_ID), any(UsageRestrictions.class));
-    verifyZeroInteractions(secretManager);
+    verifyNoInteractions(secretManager);
   }
 
   @Test
@@ -1141,15 +1140,15 @@ public class UsageRestrictionsServiceImplTest extends CategoryTest {
     int count = usageRestrictionsService.removeAppEnvReferences(ACCOUNT_ID, APP_ID, null);
     assertThat(count).isEqualTo(0);
     assertThat(usageRestrictions.getAppEnvRestrictions()).hasSize(1);
-    verifyZeroInteractions(settingsService);
-    verifyZeroInteractions(secretManager);
+    verifyNoInteractions(settingsService);
+    verifyNoInteractions(secretManager);
 
     count = usageRestrictionsService.removeAppEnvReferences(ACCOUNT_ID, APP_ID_1, null);
     assertThat(count).isEqualTo(1);
     assertThat(usageRestrictions.getAppEnvRestrictions()).isEmpty();
     verify(settingsService, times(1))
         .updateUsageRestrictionsInternal(eq(SETTING_ATTRIBUTE_ID), any(UsageRestrictions.class));
-    verifyZeroInteractions(secretManager);
+    verifyNoInteractions(secretManager);
   }
 
   @Test
@@ -1161,8 +1160,8 @@ public class UsageRestrictionsServiceImplTest extends CategoryTest {
 
     int count = usageRestrictionsService.removeAppEnvReferences(ACCOUNT_ID, APP_ID, null);
     assertThat(count).isEqualTo(0);
-    verifyZeroInteractions(settingsService);
-    verifyZeroInteractions(secretManager);
+    verifyNoInteractions(settingsService);
+    verifyNoInteractions(secretManager);
   }
 
   @Test
@@ -1210,7 +1209,7 @@ public class UsageRestrictionsServiceImplTest extends CategoryTest {
     MorphiaIterator iterator1 = mock(MorphiaIterator.class);
 
     when(mockWingsPersistence.createQuery(eq(SettingAttribute.class))).thenReturn(query1);
-    when(query1.filter(anyString(), anyObject())).thenReturn(query1);
+    when(query1.filter(anyString(), any())).thenReturn(query1);
     when(query1.field(any())).thenReturn(fieldEnd1);
     when(fieldEnd1.exists()).thenReturn(query1);
     when(query1.fetch()).thenReturn(iterator1);
@@ -1222,7 +1221,7 @@ public class UsageRestrictionsServiceImplTest extends CategoryTest {
     MorphiaIterator iterator2 = mock(MorphiaIterator.class);
 
     when(mockWingsPersistence.createQuery(eq(EncryptedData.class))).thenReturn(query2);
-    when(query2.filter(anyString(), anyObject())).thenReturn(query2);
+    when(query2.filter(anyString(), any())).thenReturn(query2);
     when(query2.field(any())).thenReturn(fieldEnd2);
     when(fieldEnd2.equal(any())).thenReturn(query2);
     when(fieldEnd2.exists()).thenReturn(query2);
