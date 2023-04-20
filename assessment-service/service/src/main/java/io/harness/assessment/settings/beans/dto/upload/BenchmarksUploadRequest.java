@@ -8,17 +8,22 @@
 package io.harness.assessment.settings.beans.dto.upload;
 
 import io.harness.assessment.settings.beans.dto.BenchmarkDTO;
+import io.harness.assessment.settings.beans.dto.EntityType;
 
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
-import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
-@Builder
+@SuperBuilder
+@NoArgsConstructor
 public class BenchmarksUploadRequest {
+  @NotNull String assessmentId;
+  @NotNull EntityType type;
   @NotNull Long majorVersion;
   @Size(min = 1, max = 50) @NotNull @Valid List<BenchmarkDTO> benchmarks;
 }

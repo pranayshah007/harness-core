@@ -9,6 +9,7 @@ package io.harness.assessment.settings.mappers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.assessment.settings.beans.dto.EntityType;
 import io.harness.assessment.settings.beans.dto.upload.AssessmentUploadRequest;
 import io.harness.assessment.settings.beans.dto.upload.AssessmentUploadResponse;
 import io.harness.assessment.settings.beans.dto.upload.UploadedOption;
@@ -37,6 +38,7 @@ public class AssessmentUploadMapper {
         .majorVersion(assessment.getVersion())
         .minorVersion(assessment.getMinorVersion())
         .lastUpdatedAt(assessment.getLastUpdatedAt())
+        .type(EntityType.ASSESSMENT)
         .build();
   }
 

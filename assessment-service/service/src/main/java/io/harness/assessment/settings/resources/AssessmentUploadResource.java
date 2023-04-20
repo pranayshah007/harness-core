@@ -62,14 +62,15 @@ public class AssessmentUploadResource {
   @Path("/yaml")
   @Consumes(MULTIPART_FORM_DATA)
   @Produces({"application/json"})
-  @ApiOperation(value = "Upload an assessment to the system.", nickname = "uploadAssessment",
+  @ApiOperation(value = "Upload an assessment to the system.", nickname = "uploadAssessmentYAML",
       response = AssessmentUploadResponse.class)
   public Response
-  uploadAssessmentYAML(
-      @FormDataParam("file") InputStream uploadedInputStream, @FormDataParam("assessmentId") String assessmentId) {
+  uploadAssessmentYAML(@FormDataParam("file") InputStream uploadedInputStream
+      //, @FormDataParam("assessmentId") String assessmentId
+  ) {
     try {
       AssessmentUploadResponse assessmentUploadResponse =
-          assessmentUploadService.uploadNewAssessmentYAML(uploadedInputStream, assessmentId);
+          assessmentUploadService.uploadNewAssessmentYAML(uploadedInputStream);
       if (assessmentUploadResponse.getErrors() != null && assessmentUploadResponse.getErrors().size() > 0) {
         return Response.status(Response.Status.BAD_REQUEST).entity(assessmentUploadResponse).build();
       }

@@ -19,6 +19,5 @@ public interface AssessmentUploadService {
 
   AssessmentUploadResponse getAssessment(String assessmentId);
 
-  AssessmentUploadResponse uploadNewAssessmentYAML(InputStream uploadedInputStream, String assessmentId)
-      throws IOException;
+  AssessmentUploadResponse uploadNewAssessmentYAML(InputStream uploadedInputStream) throws IOException;
 }

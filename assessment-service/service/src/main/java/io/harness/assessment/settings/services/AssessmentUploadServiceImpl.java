@@ -9,6 +9,7 @@ package io.harness.assessment.settings.services;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.assessment.settings.beans.dto.EntityType;
 import io.harness.assessment.settings.beans.dto.upload.AssessmentError;
 import io.harness.assessment.settings.beans.dto.upload.AssessmentUploadRequest;
 import io.harness.assessment.settings.beans.dto.upload.AssessmentUploadResponse;
@@ -50,6 +51,9 @@ public class AssessmentUploadServiceImpl implements AssessmentUploadService {
   public AssessmentUploadResponse uploadNewAssessment(AssessmentUploadRequest assessmentUploadRequest) {
     //  TODO all the entity Id has to be unique in context of a assessment.: assessment,question,section
     //  TODO validation by question types
+    if (assessmentUploadRequest.getType() != EntityType.ASSESSMENT) {
+      throw new RuntimeException("Type must be assessment.");
+    }
     Optional<Assessment> assessmentOptional =
         assessmentRepository.findFirstByAssessmentIdOrderByVersionDesc(assessmentUploadRequest.getAssessmentId());
     Assessment assessmentInDb = null;
@@ -216,8 +220,7 @@ public class AssessmentUploadServiceImpl implements AssessmentUploadService {
   }
 
   @Override
-  public AssessmentUploadResponse uploadNewAssessmentYAML(InputStream uploadedInputStream, String assessmentId)
-      throws IOException {
+  public AssessmentUploadResponse uploadNewAssessmentYAML(InputStream uploadedInputStream) throws IOException {
     String fileAsString = IOUtils.toString(uploadedInputStream, Charset.defaultCharset());
     AssessmentUploadRequest assessmentUploadRequest =
         YamlPipelineUtils.read(fileAsString, AssessmentUploadRequest.class);
