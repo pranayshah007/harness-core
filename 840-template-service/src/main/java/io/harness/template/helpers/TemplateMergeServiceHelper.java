@@ -825,7 +825,7 @@ public class TemplateMergeServiceHelper {
         linkedTemplateInputsFQNs, "Field either not present in template or not a runtime input");
   }
 
-  private TemplateUniqueIdentifier parseYamlAndGetTemplateIdentifierAndVersion(JsonNode yaml) {
+  public TemplateUniqueIdentifier parseYamlAndGetTemplateIdentifierAndVersion(JsonNode yaml) {
     String templateIdentifier = yaml.get(TEMPLATE_REF).asText();
     String versionLabel = "";
     String versionMarker = STABLE_VERSION;

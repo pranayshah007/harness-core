@@ -51,6 +51,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.Optional;
 import org.junit.Test;
@@ -106,7 +107,7 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
     String stageTemplateIdentifier = "stageTemplate";
     when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false), eq(false)))
         .thenReturn(Optional.of(TemplateEntity.builder().yaml(yaml).build()));
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, yaml, false))
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, yaml, false, new HashMap()))
         .thenReturn(updatedYaml);
 
     templateRefreshService.refreshAndUpdateTemplate(
@@ -130,7 +131,7 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
     String stageTemplateIdentifier = "stageTemplate";
     when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false), eq(true)))
         .thenReturn(Optional.of(TemplateEntity.builder().yaml(yaml).build()));
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, yaml, true))
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, yaml, true, new HashMap()))
         .thenReturn(updatedYaml);
 
     templateRefreshService.refreshAndUpdateTemplate(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1", true);
@@ -229,7 +230,7 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
     TemplateEntity templateEntity = TemplateEntity.builder().yaml(yaml).build();
     when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false), eq(false)))
         .thenReturn(Optional.of(templateEntity));
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, yaml, false))
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, yaml, false, new HashMap()))
         .thenReturn(updatedYaml);
 
     YamlDiffResponseDTO responseDTO = templateRefreshService.getYamlDiffOnRefreshingTemplate(
@@ -250,7 +251,7 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
     TemplateEntity templateEntity = TemplateEntity.builder().yaml(yaml).build();
     when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false), eq(true)))
         .thenReturn(Optional.of(templateEntity));
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, yaml, true))
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, yaml, true, new HashMap()))
         .thenReturn(updatedYaml);
 
     YamlDiffResponseDTO responseDTO = templateRefreshService.getYamlDiffOnRefreshingTemplate(
@@ -360,9 +361,9 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
     when(templateService.get(
              anyString(), anyString(), anyString(), eq(stageTemplateIdentifier), anyString(), eq(false), eq(false)))
         .thenReturn(Optional.of(stageTemplateEntity));
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false))
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, new HashMap()))
         .thenReturn(updatedPipelineTemplateYaml);
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageYaml, false))
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageYaml, false, new HashMap()))
         .thenReturn(updatedStageYaml);
     when(templateInputsValidator.validateNestedTemplateInputsForTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID,
              new TemplateEntityGetResponse(pipelineTemplateEntity, EntityGitDetails.builder().build())))
@@ -384,9 +385,9 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
         .validateNestedTemplateInputsForTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID,
             new TemplateEntityGetResponse(pipelineTemplateEntity, EntityGitDetails.builder().build()));
     inOrder.verify(templateInputsRefreshHelper, times(1))
-        .refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageYaml, false);
+        .refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageYaml, false, new HashMap());
     inOrder.verify(templateInputsRefreshHelper, times(1))
-        .refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
+        .refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, new HashMap());
   }
 
   @Test
@@ -451,13 +452,13 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
     when(templateService.get(
              anyString(), eq(null), eq(null), eq(stageTemplateIdentifier), anyString(), eq(false), eq(false)))
         .thenReturn(Optional.of(stageTemplateEntity));
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineTemplateYaml, false))
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineTemplateYaml, false, new HashMap()))
         .thenReturn(updatedPipelineTemplateYaml);
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageYaml, false))
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageYaml, false, new HashMap()))
         .thenReturn(updatedStageYaml);
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, null, null, stageYaml, false))
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, null, null, stageYaml, false, new HashMap()))
         .thenReturn(updatedAccountLevelStageYaml);
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false))
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, new HashMap()))
         .thenReturn(refreshedPipelineYaml);
     when(templateInputsValidator.validateNestedTemplateInputsForGivenYaml(
              ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false))
@@ -484,12 +485,12 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
     verify(templateInputsValidator)
         .validateNestedTemplateInputsForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
     inOrder.verify(templateInputsRefreshHelper, times(1))
-        .refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageYaml, false);
-    inOrder.verify(templateInputsRefreshHelper, times(1)).refreshTemplates(ACCOUNT_ID, null, null, stageYaml, false);
+        .refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageYaml, false, new HashMap());
+    inOrder.verify(templateInputsRefreshHelper, times(1)).refreshTemplates(ACCOUNT_ID, null, null, stageYaml, false, new HashMap());
     inOrder.verify(templateInputsRefreshHelper, times(1))
-        .refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineTemplateYaml, false);
+        .refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineTemplateYaml, false, new HashMap());
     inOrder.verify(templateInputsRefreshHelper, times(1))
-        .refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
+        .refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, new HashMap());
     verify(accessControlClient)
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_ID, PROJECT_ID),
             Resource.of(TEMPLATE, stageTemplateIdentifier), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
@@ -511,7 +512,7 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
     String pipelineYaml = "pipeline yaml";
     String refreshedPipelineYaml = "Refreshed yaml";
 
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false))
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, new HashMap()))
         .thenReturn(refreshedPipelineYaml);
     when(templateInputsValidator.validateNestedTemplateInputsForGivenYaml(
              ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false))
@@ -536,7 +537,7 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
     String pipelineYaml = "pipeline yaml";
     String refreshedPipelineYaml = "Refreshed yaml";
 
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, true))
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, true, new HashMap()))
         .thenReturn(refreshedPipelineYaml);
     when(templateInputsValidator.validateNestedTemplateInputsForGivenYaml(
              ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, true))

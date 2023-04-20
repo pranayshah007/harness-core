@@ -57,6 +57,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.http.Body;
 
+import java.util.HashMap;
+
 @OwnedBy(CDC)
 @Api("refresh-template")
 @Path("refresh-template")
@@ -138,7 +140,7 @@ public class NGTemplateRefreshResource {
     return ResponseDTO.newResponse(
         RefreshResponseDTO.builder()
             .refreshedYaml(templateRefreshService.refreshLinkedTemplateInputs(accountId, orgId, projectId,
-                refreshRequestDTO.getYaml(), NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache)))
+                refreshRequestDTO.getYaml(), NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), new HashMap()))
             .build());
   }
 

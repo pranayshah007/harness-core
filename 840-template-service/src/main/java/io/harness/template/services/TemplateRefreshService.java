@@ -13,6 +13,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.YamlDiffResponseDTO;
 import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
+import io.harness.template.entity.TemplateEntity;
+
+import java.util.Map;
 
 @OwnedBy(CDC)
 public interface TemplateRefreshService {
@@ -20,7 +23,7 @@ public interface TemplateRefreshService {
       String versionLabel, boolean loadFromCache);
 
   String refreshLinkedTemplateInputs(
-      String accountId, String orgId, String projectId, String yaml, boolean loadFromCache);
+      String accountId, String orgId, String projectId, String yaml, boolean loadFromCache, Map<String, TemplateEntity> updatedTemplates);
 
   ValidateTemplateInputsResponseDTO validateTemplateInputsInTemplate(String accountId, String orgId, String projectId,
       String templateIdentifier, String versionLabel, boolean loadFromCache);
