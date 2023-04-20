@@ -7,6 +7,8 @@
 
 package io.harness.assessment.settings.resources;
 
+import static javax.ws.rs.core.MediaType.MULTIPART_FORM_DATA;
+
 import io.harness.assessment.settings.beans.dto.upload.AssessmentUploadRequest;
 import io.harness.assessment.settings.beans.dto.upload.AssessmentUploadResponse;
 import io.harness.assessment.settings.services.AssessmentUploadService;
@@ -15,12 +17,11 @@ import io.harness.eraro.ResponseMessage;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import java.io.InputStream;
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
 import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -28,6 +29,7 @@ import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Path("/v1/assessment")
@@ -56,17 +58,24 @@ public class AssessmentUploadResource {
     }
   }
 
-  @GET
-  @Path("{assessmentId}/template")
+  @POST
+  @Path("/yaml")
+  @Consumes(MULTIPART_FORM_DATA)
   @Produces({"application/json"})
-  @ApiOperation(
-      value = "Get an assessment in the system.", nickname = "getAssessment", response = AssessmentUploadResponse.class)
+  @ApiOperation(value = "Upload an assessment to the system.", nickname = "uploadAssessment",
+      response = AssessmentUploadResponse.class)
   public Response
-  getAssessment(@PathParam("assessmentId") String assessmentId) {
+  uploadAssessmentYAML(
+      @FormDataParam("file") InputStream uploadedInputStream, @FormDataParam("assessmentId") String assessmentId) {
     try {
-      AssessmentUploadResponse assessmentUploadResponse = assessmentUploadService.getAssessment(assessmentId);
+      AssessmentUploadResponse assessmentUploadResponse =
+          assessmentUploadService.uploadNewAssessmentYAML(uploadedInputStream, assessmentId);
+      if (assessmentUploadResponse.getErrors() != null && assessmentUploadResponse.getErrors().size() > 0) {
+        return Response.status(Response.Status.BAD_REQUEST).entity(assessmentUploadResponse).build();
+      }
       return Response.status(Response.Status.OK).entity(assessmentUploadResponse).build();
     } catch (Exception e) {
+      log.error("Error", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();
@@ -83,22 +92,6 @@ public class AssessmentUploadResource {
     try {
       AssessmentUploadResponse assessmentUploadResponse = assessmentUploadService.publishAssessment(assessmentId);
       return Response.status(Response.Status.OK).entity(assessmentUploadResponse).build();
-    } catch (Exception e) {
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(ResponseMessage.builder().message(e.getMessage()).build())
-          .build();
-    }
-  }
-
-  @PUT
-  @Consumes({"application/json"})
-  @Produces({"application/json"})
-  @ApiOperation(value = "Update an assessment to the system.", nickname = "updateAssessment",
-      response = AssessmentUploadResponse.class)
-  public Response
-  updateAssessment(@Valid AssessmentUploadRequest body) {
-    try {
-      return Response.status(Response.Status.OK).entity(assessmentUploadService.updateAssessment(body)).build();
     } catch (Exception e) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())

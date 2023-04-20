@@ -30,7 +30,8 @@ public class AssessmentUploadMapper {
         .createdAt(assessment.getCreatedAt())
         .createdBy(assessment.getCreatedBy())
         .expectedCompletionDuration(assessment.getExpectedCompletionDuration())
-        .questions(assessment.getQuestions())
+        .questions(
+            assessment.getQuestions().stream().map(AssessmentUploadMapper::toQuestionDTO).collect(Collectors.toList()))
         .baseScore(assessment.getBaseScore())
         .isPublished(assessment.getIsPublished())
         .majorVersion(assessment.getVersion())
@@ -63,6 +64,29 @@ public class AssessmentUploadMapper {
                                .collect(Collectors.toList()))
         .sectionId(uploadedQuestion.getSectionId())
         .sectionName(uploadedQuestion.getSectionName())
+        .build();
+  }
+
+  public UploadedQuestion toQuestionDTO(Question question) {
+    return UploadedQuestion.builder()
+        .questionId(question.getQuestionId())
+        .questionNumber(question.getQuestionNumber())
+        .questionText(question.getQuestionText())
+        .questionType(question.getQuestionType())
+        .possibleResponses(question.getPossibleResponses()
+                               .stream()
+                               .map(AssessmentUploadMapper::fromQuestionOption)
+                               .collect(Collectors.toList()))
+        .sectionId(question.getSectionId())
+        .sectionName(question.getSectionName())
+        .build();
+  }
+
+  public UploadedOption fromQuestionOption(QuestionOption questionOption) {
+    return UploadedOption.builder()
+        .optionId(questionOption.getOptionId())
+        .optionPoints(questionOption.getOptionPoints())
+        .optionText(questionOption.getOptionText())
         .build();
   }
 

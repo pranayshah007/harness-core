@@ -9,12 +9,16 @@ package io.harness.assessment.settings.services;
 import io.harness.assessment.settings.beans.dto.upload.AssessmentUploadRequest;
 import io.harness.assessment.settings.beans.dto.upload.AssessmentUploadResponse;
 
+import java.io.IOException;
+import java.io.InputStream;
+
 public interface AssessmentUploadService {
   AssessmentUploadResponse uploadNewAssessment(AssessmentUploadRequest assessmentUploadRequest);
-
-  AssessmentUploadResponse updateAssessment(AssessmentUploadRequest assessmentUploadRequest);
 
   AssessmentUploadResponse publishAssessment(String assessmentId);
 
   AssessmentUploadResponse getAssessment(String assessmentId);
+
+  AssessmentUploadResponse uploadNewAssessmentYAML(InputStream uploadedInputStream, String assessmentId)
+      throws IOException;
 }
