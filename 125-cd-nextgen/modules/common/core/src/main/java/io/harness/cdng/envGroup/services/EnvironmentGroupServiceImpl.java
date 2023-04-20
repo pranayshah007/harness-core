@@ -33,6 +33,7 @@ import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity.EnvironmentGroupKey
 import io.harness.cdng.envGroup.beans.EnvironmentGroupFilterPropertiesDTO;
 import io.harness.cdng.events.EnvironmentGroupDeleteEvent;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.eraro.ErrorMessageConstants;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.Producer;
@@ -151,9 +152,7 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
   public EnvironmentGroupEntity delete(String accountId, String orgIdentifier, String projectIdentifier,
       String envGroupId, Long version, boolean forceDelete) {
     if (forceDelete && !isForceDeleteEnabled(accountId)) {
-      throw new InvalidRequestException(
-          format("Parameter forcedDelete cannot be true. Force Delete is not enabled for account [%s]", accountId),
-          USER);
+      throw new InvalidRequestException(ErrorMessageConstants.FORCE_DELETE_SETTING_NOT_ENABLED, USER);
     }
     Optional<EnvironmentGroupEntity> envGroupEntity =
         get(accountId, orgIdentifier, projectIdentifier, envGroupId, false);

@@ -38,6 +38,7 @@ import io.harness.encryption.Scope;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
+import io.harness.eraro.ErrorMessageConstants;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.TemplateReferenceProtoDTO;
 import io.harness.exception.DuplicateFieldException;
@@ -495,9 +496,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     TemplateEntity templateToDelete = null;
     TemplateEntity stableTemplate = null;
     if (forceDelete && !isForceDeleteEnabled(accountId)) {
-      throw new InvalidRequestException(
-          format("Parameter forcedDelete cannot be true. Force Delete is not enabled for account [%s]", accountId),
-          USER);
+      throw new InvalidRequestException(ErrorMessageConstants.FORCE_DELETE_SETTING_NOT_ENABLED, USER);
     }
     for (TemplateEntity templateEntity : templateEntities) {
       if (deleteVersionLabel.equals(templateEntity.getVersionLabel())) {

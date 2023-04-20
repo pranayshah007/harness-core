@@ -134,7 +134,7 @@ public class ServiceEntityManagementServiceTest extends CategoryTest {
                                accountIdentifier, orgIdentifier, projectIdentifier, identifier, "", true))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
-            "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [accountIdentifier]");
+            "Force Delete is not enabled for this account. Please go to Account Resources > Default Settings > Enable Force Delete of Harness Resources to enable this.");
     verify(instanceService, never()).deleteAll(any());
   }
 
