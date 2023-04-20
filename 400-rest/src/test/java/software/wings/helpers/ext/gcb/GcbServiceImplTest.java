@@ -8,13 +8,16 @@
 package software.wings.helpers.ext.gcb;
 
 import static io.harness.rule.OwnerRule.AGORODETKI;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 
 import static software.wings.helpers.ext.gcb.GcbServiceImpl.GCB_BASE_URL;
 import static software.wings.helpers.ext.gcb.GcbServiceImpl.GCS_BASE_URL;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -38,7 +41,9 @@ import software.wings.helpers.ext.gcb.models.RepoSource;
 import software.wings.helpers.ext.gcs.GcsRestClient;
 import software.wings.service.intfc.security.EncryptionService;
 
+import java.io.EOFException;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import okhttp3.ResponseBody;
@@ -233,5 +238,40 @@ public class GcbServiceImplTest extends CategoryTest {
     when(gcsRestClient.fetchLogs(VALID_AUTH_TOKEN, BUCKET_NAME, FILE_NAME)).thenReturn(callForLogs);
     when(callForLogs.execute()).thenThrow(new IOException());
     gcbService.fetchBuildLogs(gcpConfig, encryptedDataDetails, BUCKET_NAME, FILE_NAME);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldRetryThrowGcbClientExceptionWhenUnknowExceptionIsThrow() {
+    when(gcsRestClient.fetchLogs(anyString(), anyString(), anyString())).thenThrow(NullPointerException.class);
+    assertThatCode(() -> gcbService.retry(() -> gcsRestClient.fetchLogs("A", "B", "C")))
+        .isInstanceOf(GcbClientException.class)
+        .hasMessage("Invalid Google Cloud Platform integration.")
+        .hasCause(new NullPointerException());
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldHandleRetryRethrowInterruptedException() {
+    assertThatCode(() -> gcbService.handleRetryException(new InterruptedException()))
+        .isInstanceOf(InterruptedException.class);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldHandleRetryRethrowInterruptedIOException() {
+    assertThatCode(() -> gcbService.handleRetryException(new InterruptedIOException()))
+        .isInstanceOf(InterruptedIOException.class);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldHandleRetryRethrowIOException() {
+    assertThatCode(() -> gcbService.handleRetryException(new IOException())).isInstanceOf(IOException.class);
+    assertThatCode(() -> gcbService.handleRetryException(new EOFException())).isInstanceOf(IOException.class);
   }
 }
