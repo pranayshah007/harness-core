@@ -2001,7 +2001,7 @@ public class UserServiceImpl implements UserService {
     if (userInvite == null) {
       throw new UnauthorizedException(EXC_MSG_USER_INVITE_INVALID, USER);
     }
-    return completeTrialSignupAndSignIn(userInvite);
+    return completeTrialSignupAndSignIn(userInvite, false);
   }
 
   @Override
@@ -2022,7 +2022,7 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public User completeTrialSignupAndSignIn(UserInvite userInvite) {
+  public User completeTrialSignupAndSignIn(UserInvite userInvite, boolean shouldCreateSampleApp) {
     String accountName = accountService.suggestAccountName(userInvite.getAccountName());
     String companyName = userInvite.getCompanyName();
 
@@ -2035,7 +2035,7 @@ public class UserServiceImpl implements UserService {
                     .utmInfo(userInvite.getUtmInfo())
                     .build();
 
-    completeSignup(user, userInvite, getTrialLicense(), false);
+    completeSignup(user, userInvite, getTrialLicense(), shouldCreateSampleApp);
 
     return authenticationManager.defaultLoginUsingPasswordHash(userInvite.getEmail(), userInvite.getPasswordHash());
   }

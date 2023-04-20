@@ -31,6 +31,7 @@ public class RuleExecutionFilter {
   @Schema(description = "cloudProvider") RuleCloudProviderType cloudProvider;
   @Schema(description = "ruleId") List<String> ruleIds;
   @Schema(description = "rulePackId") List<String> ruleSetIds;
+  @Schema(description = "executionIds") List<String> executionIds;
   @Schema(description = "ruleEnforcementId") List<String> ruleEnforcementId;
   @Schema(description = "Time") List<CCMTimeFilter> time;
   @Schema(description = "limit") int limit;
@@ -39,7 +40,7 @@ public class RuleExecutionFilter {
   @Builder
   public RuleExecutionFilter(String accountId, List<String> accountName, List<String> region, List<String> rulesId,
       List<String> rulePackId, RuleCloudProviderType cloudProvider, List<String> ruleEnforcementId,
-      List<CCMTimeFilter> time, int limit, int offset, ExecutionStatus executionStatus) {
+      List<CCMTimeFilter> time, int limit, int offset, ExecutionStatus executionStatus, List<String> executionIds) {
     this.accountId = accountId;
     this.targetAccount = accountName;
     this.region = region;
@@ -51,5 +52,6 @@ public class RuleExecutionFilter {
     this.limit = limit;
     this.offset = offset;
     this.executionStatus = executionStatus;
+    this.executionIds = executionIds;
   }
 }

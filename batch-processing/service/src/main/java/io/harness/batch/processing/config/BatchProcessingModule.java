@@ -64,7 +64,9 @@ import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingValidati
 import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.DataResponseService;
+import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.PerspectiveAnomalyService;
+import io.harness.ccm.views.service.RuleExecutionService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.service.impl.BigQueryDataResponseServiceImpl;
@@ -72,7 +74,9 @@ import io.harness.ccm.views.service.impl.CEViewFolderServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewServiceImpl;
 import io.harness.ccm.views.service.impl.ClickHouseDataResponseServiceImpl;
 import io.harness.ccm.views.service.impl.ClickHouseViewsBillingServiceImpl;
+import io.harness.ccm.views.service.impl.GovernanceRuleServiceImpl;
 import io.harness.ccm.views.service.impl.PerspectiveAnomalyServiceImpl;
+import io.harness.ccm.views.service.impl.RuleExecutionServiceImpl;
 import io.harness.ccm.views.service.impl.ViewCustomFieldServiceImpl;
 import io.harness.ccm.views.service.impl.ViewsBillingServiceImpl;
 import io.harness.connector.ConnectorResourceClientModule;
@@ -93,11 +97,13 @@ import io.harness.pricing.client.CloudInfoPricingClientModule;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secrets.SecretNGManagerClientModule;
+import io.harness.serializer.morphia.BatchProcessingModuleRegistrars;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.threading.ExecutorModule;
 import io.harness.time.TimeModule;
+import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
 import software.wings.dl.WingsMongoPersistence;
 import software.wings.dl.WingsPersistence;
@@ -113,6 +119,7 @@ import software.wings.service.intfc.instance.DeploymentService;
 import software.wings.service.intfc.security.EncryptedSettingAttributes;
 import software.wings.service.intfc.security.SecretManager;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
@@ -164,6 +171,13 @@ public class BatchProcessingModule extends AbstractModule {
     return batchMainConfig.isClickHouseEnabled();
   }
 
+  @Provides
+  @Singleton
+  @Named("governanceConfig")
+  io.harness.remote.GovernanceConfig governanceConfig() {
+    return batchMainConfig.getGovernanceConfig();
+  }
+
   @Override
   protected void configure() {
     bind(SecretManager.class).to(NoOpSecretManagerImpl.class);
@@ -185,6 +199,8 @@ public class BatchProcessingModule extends AbstractModule {
     bind(BusinessMappingHistoryService.class).to(BusinessMappingHistoryServiceImpl.class);
     bind(BusinessMappingValidationService.class).to(BusinessMappingValidationServiceImpl.class);
     bind(CeAccountExpirationChecker.class).to(CeAccountExpirationCheckerImpl.class);
+    bind(GovernanceRuleService.class).to(GovernanceRuleServiceImpl.class);
+    bind(RuleExecutionService.class).to(RuleExecutionServiceImpl.class);
     bind(AnomalyService.class).to(AnomalyServiceImpl.class);
     install(new ConnectorResourceClientModule(batchMainConfig.getNgManagerServiceHttpClientConfig(),
         batchMainConfig.getNgManagerServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
@@ -279,5 +295,13 @@ public class BatchProcessingModule extends AbstractModule {
   @Singleton
   MongoConfig mongoConfig(BatchMainConfig batchMainConfig) {
     return batchMainConfig.getHarnessMongo();
+  }
+
+  @Provides
+  @Singleton
+  List<YamlSchemaRootClass> yamlSchemaRootClasses() {
+    return ImmutableList.<YamlSchemaRootClass>builder()
+        .addAll(BatchProcessingModuleRegistrars.yamlSchemaRegistrars)
+        .build();
   }
 }

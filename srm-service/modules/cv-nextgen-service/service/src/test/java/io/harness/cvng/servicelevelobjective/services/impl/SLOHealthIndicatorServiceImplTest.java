@@ -7,6 +7,7 @@
 
 package io.harness.cvng.servicelevelobjective.services.impl;
 
+import static io.harness.cvng.beans.DataCollectionExecutionStatus.QUEUED;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.BAD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.GOOD;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -18,10 +19,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
+import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.entities.MonitoredService;
+import io.harness.cvng.core.entities.SLIDataCollectionTask;
+import io.harness.cvng.core.services.api.DataCollectionTaskService;
+import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
@@ -32,6 +38,7 @@ import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjectiv
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
+import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -51,6 +58,10 @@ public class SLOHealthIndicatorServiceImplTest extends CvNextGenTestBase {
   @Inject SLIRecordService sliRecordService;
   @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject MonitoredServiceService monitoredServiceService;
+
+  @Inject HPersistence hPersistence;
+  @Inject private VerificationTaskService verificationTaskService;
+  @Inject private DataCollectionTaskService dataCollectionTaskService;
 
   @Inject Clock clock;
 
@@ -81,6 +92,59 @@ public class SLOHealthIndicatorServiceImplTest extends CvNextGenTestBase {
     assertThat(newSLOHealthIndicator.getServiceLevelObjectiveIdentifier())
         .isEqualTo(serviceLevelObjective.getIdentifier());
     assertThat(newSLOHealthIndicator.getErrorBudgetRisk()).isEqualTo(ErrorBudgetRisk.HEALTHY);
+    assertThat(newSLOHealthIndicator.getFailedState()).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testupsert_insertSuccess_ForFailedStateWithDCfailures() {
+    ProjectParams projectParams = builderFactory.getProjectParams();
+    SimpleServiceLevelObjective serviceLevelObjective = builderFactory.getSimpleServiceLevelObjectiveBuilder().build();
+    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = builderFactory.getServiceLevelIndicatorDTOBuilder();
+    createAndSaveSLI(projectParams, serviceLevelIndicatorDTO, serviceLevelObjective.getIdentifier());
+    DataCollectionTask dataCollectionTask =
+        SLIDataCollectionTask.builder()
+            .verificationTaskId(serviceLevelIndicatorService.getServiceLevelIndicator(projectParams, sliId).getUuid())
+            .dataCollectionWorkerId(generateUuid())
+            .type(DataCollectionTask.Type.SLI)
+            .accountId(projectParams.getAccountIdentifier())
+            .startTime(clock.instant().minus(Duration.ofMinutes(7)))
+            .endTime(clock.instant().minus(Duration.ofMinutes(2)))
+            .status(QUEUED)
+            .lastPickedAt(clock.instant().minus(Duration.ofMinutes(5)))
+            .build();
+    hPersistence.save(dataCollectionTask);
+    dataCollectionTask.setUuid(generateUuid());
+    hPersistence.save(dataCollectionTask);
+    dataCollectionTask.setUuid(generateUuid());
+    dataCollectionTask.setStatus(DataCollectionExecutionStatus.QUEUED);
+    hPersistence.save(dataCollectionTask);
+
+    sloHealthIndicatorService.upsert(serviceLevelObjective);
+    SLOHealthIndicator newSLOHealthIndicator =
+        sloHealthIndicatorService.getBySLOIdentifier(projectParams, serviceLevelObjective.getIdentifier());
+
+    assertThat(newSLOHealthIndicator.getServiceLevelObjectiveIdentifier())
+        .isEqualTo(serviceLevelObjective.getIdentifier());
+    assertThat(newSLOHealthIndicator.getErrorBudgetRisk()).isEqualTo(ErrorBudgetRisk.HEALTHY);
+    assertThat(newSLOHealthIndicator.getFailedState()).isEqualTo(false);
+
+    dataCollectionTask.setUuid(generateUuid());
+    dataCollectionTask.setStatus(DataCollectionExecutionStatus.FAILED);
+    hPersistence.save(dataCollectionTask);
+    sloHealthIndicatorService.upsert(serviceLevelObjective);
+    newSLOHealthIndicator =
+        sloHealthIndicatorService.getBySLOIdentifier(projectParams, serviceLevelObjective.getIdentifier());
+    assertThat(newSLOHealthIndicator.getFailedState()).isEqualTo(true);
+
+    dataCollectionTask.setUuid(generateUuid());
+    dataCollectionTask.setStatus(DataCollectionExecutionStatus.SUCCESS);
+    hPersistence.save(dataCollectionTask);
+    sloHealthIndicatorService.upsert(serviceLevelObjective);
+    newSLOHealthIndicator =
+        sloHealthIndicatorService.getBySLOIdentifier(projectParams, serviceLevelObjective.getIdentifier());
+    assertThat(newSLOHealthIndicator.getFailedState()).isEqualTo(false);
   }
 
   @Test

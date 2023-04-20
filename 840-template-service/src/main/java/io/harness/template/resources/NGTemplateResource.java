@@ -62,7 +62,6 @@ import io.harness.pms.contracts.service.VariablesServiceRequest;
 import io.harness.pms.mappers.VariablesResponseDtoMapper;
 import io.harness.pms.variables.VariableMergeServiceResponse;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.FilterParamsDTO;
@@ -768,7 +767,6 @@ public class NGTemplateResource {
       @QueryParam("AppendInputSetValidator") @DefaultValue("false") boolean appendInputSetValidator) {
     log.info("Applying templates V2 to pipeline yaml in project {}, org {}, account {}", projectId, orgId, accountId);
     long start = System.currentTimeMillis();
-    log.info("Principal in the applyTemplate resource layer is {}", SourcePrincipalContextBuilder.getSourcePrincipal());
     if (templateApplyRequestDTO.isGetOnlyFileContent()) {
       TemplateUtils.setUserFlowContext(USER_FLOW.EXECUTION);
     }

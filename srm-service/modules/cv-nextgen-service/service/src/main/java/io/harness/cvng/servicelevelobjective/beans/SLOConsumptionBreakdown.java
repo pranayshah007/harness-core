@@ -30,4 +30,6 @@ public class SLOConsumptionBreakdown {
   @NotNull ProjectParams projectParams;
   String orgName;
   String projectName;
+
+  boolean failedState;
 }

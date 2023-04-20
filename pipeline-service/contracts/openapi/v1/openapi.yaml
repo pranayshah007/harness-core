@@ -530,6 +530,25 @@ paths:
         $ref: '#/components/requestBodies/PipelineImportRequestBody'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+  '/v1/orgs/{org}/projects/{project}/input-sets/{input-set}/import':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+      - $ref: '#/components/parameters/InputSetParam'
+    post:
+      summary: Get Input Set YAML from Git Repository
+      operationId: importInputSetFromGit
+      responses:
+        '200':
+          $ref: '#/components/responses/InputSetImportResponseBody'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/PipelineInputSetParam'
+      requestBody:
+        $ref: '#/components/requestBodies/InputSetImportRequestBody'
+      description: Fetches InputSet YAML from Git Repository and saves a record for it in Harness
+      tags:
+        - Input Sets
 components:
   schemas:
     GitDetails:
@@ -2140,6 +2159,37 @@ components:
           $ref: '#/components/schemas/GitImportInfo'
         pipeline_import_request:
           $ref: '#/components/schemas/PipelineImportRequestDTO'
+    InputSetImportRequestDTO:
+      title: InputSet Import Request DTO
+      x-stoplight:
+        id: f89uniiyzwrc3
+      type: object
+      description: Information of InputSet import request DTO
+      properties:
+        input_set_name:
+          type: string
+        input_set_description:
+          type: string
+    InputSetImportRequestBody:
+      title: InputSet Import Request Body
+      x-stoplight:
+        id: m2fw6smd096g1
+      type: object
+      description: InputSet import request body
+      properties:
+        git_import_info:
+          $ref: '#/components/schemas/GitImportInfo'
+        input_set_import_request:
+          $ref: '#/components/schemas/InputSetImportRequestDTO'
+    InputSetImportResponseBody:
+      title: InputSet Import Response Body
+      x-stoplight:
+        id: 8yb2a8hs1jk4o
+      type: object
+      properties:
+        input_set_identifier:
+          type: string
+      description: Response body for Input Set import.
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2738,6 +2788,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/PipelineSaveResponseBody'
+    InputSetImportResponseBody:
+      description: Response body for input set import.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InputSetImportResponseBody'
   requestBodies:
     PipelineCreateRequestBody:
       content:
@@ -3254,3 +3310,9 @@ components:
           schema:
             $ref: '#/components/schemas/PipelineImportRequestBody'
       description: Pipeline import request body
+    InputSetImportRequestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InputSetImportRequestBody'
+      description: Input Set import request body

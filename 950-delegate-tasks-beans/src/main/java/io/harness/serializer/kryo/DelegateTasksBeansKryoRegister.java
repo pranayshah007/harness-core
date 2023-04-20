@@ -375,6 +375,7 @@ import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.GitFetchedStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
@@ -2114,6 +2115,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ServerlessPrepareRollbackDataResponse.class, 29310);
     kryo.register(ServerlessPrepareRollbackDataResult.class, 29311);
     kryo.register(ServerlessAwsLambdaPrepareRollbackDataResult.class, 29312);
+    kryo.register(GitFetchedStoreDelegateConfig.class, 29313);
     kryo.register(AzureWebAppSlotDeploymentRequest.class, 55321);
     kryo.register(AzureWebAppSlotDeploymentResponse.class, 55322);
     kryo.register(AzureArtifactConfig.class, 55323);

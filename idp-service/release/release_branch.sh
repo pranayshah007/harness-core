@@ -145,3 +145,12 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     git commit --allow-empty -m "Set the proper version branch release/${PURPOSE}/${newBranch}"
     git push origin release/${PURPOSE}/${newBranch}
 fi
+
+
+#creating the fix version
+chmod +x idp-service/release/release-branch-create-idp-version.sh
+idp-service/release/release-branch-create-idp-version.sh
+
+#updating jiras with fix version
+chmod +x idp-service/release/release-branch-update-jiras.sh
+idp-service/release/release-branch-update-jiras.sh
