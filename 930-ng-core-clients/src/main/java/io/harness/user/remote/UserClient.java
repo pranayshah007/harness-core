@@ -13,6 +13,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageResponse;
 import io.harness.ng.core.common.beans.UserSource;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.UserInviteDTO;
@@ -108,7 +109,7 @@ public interface UserClient {
 
   @POST(USER_SIGNUP_MARKETPLACE)
   Call<RestResponse<UserInfo>> createMarketplaceUserAndCompleteSignup(
-      @Body SignupDTO dto, String inviteId, String marketPlaceToken);
+      @Body SignupDTO dto, String inviteId, String marketPlaceToken, AccountDTO account);
 
   @POST(USER_SIGNUP_COMMUNITY)
   Call<RestResponse<UserInfo>> createCommunityUserAndCompleteSignup(@Body SignupInviteDTO userRequest);

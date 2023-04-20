@@ -195,8 +195,7 @@ public class SignupServiceImpl implements SignupService {
   public UserInfo marketplaceSignup(SignupDTO dto, String inviteId, String marketPlaceToken) throws WingsException {
     AccountDTO account = createAccount(dto);
 
-    return userClient.createMarketplaceUserAndCompleteSignup(
-        SignupDTO dto, String inviteId, String marketPlaceToken, AccountDTO account)
+    return userClient.createMarketplaceUserAndCompleteSignup(dto, inviteId, marketPlaceToken, account);
   }
 
   /**
