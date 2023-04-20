@@ -11,14 +11,11 @@ import static io.harness.ci.commonconstants.ContainerExecutionConstants.PORT_STA
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.cdng.aws.sam.AwsSamDeployStepInfo;
-import io.harness.cdng.aws.sam.AwsSamDeployStepNode;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.ci.utils.PortFinder;
-import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ConnectorDetails;
@@ -49,7 +46,6 @@ public class AwsSamDeployPluginInfoProvider extends CDPluginInfoProvider {
   @Override
   public PluginCreationResponse getPluginInfo(PluginCreationRequest request) {
     String stepJsonNode = request.getStepJsonNode();
-    AwsSamDeployStepNode awsSamDeployStepNode;
     CdAbstractStepNode cdAbstractStepNode;
 
     try {
@@ -61,15 +57,11 @@ public class AwsSamDeployPluginInfoProvider extends CDPluginInfoProvider {
 
     AwsSamDeployStepInfo awsSamDeployStepInfo = (AwsSamDeployStepInfo) cdAbstractStepNode.getStepSpecType();
 
-    Integer cpu = awsSamDeployStepInfo.getResources() != null
-        ? Integer.parseInt(awsSamDeployStepInfo.getResources().getRequests().getCpu().getValue())
-        : 250;
-    Integer memory = awsSamDeployStepInfo.getResources() != null
-        ? Integer.parseInt(awsSamDeployStepInfo.getResources().getRequests().getMemory().getValue())
-        : 250;
-
     PluginContainerResources pluginContainerResources =
-        PluginContainerResources.newBuilder().setCpu(cpu).setMemory(memory).build();
+        PluginContainerResources.newBuilder()
+            .setCpu(PluginInfoProviderHelper.getCPU(awsSamDeployStepInfo.getResources()))
+            .setMemory(PluginInfoProviderHelper.getMemory(awsSamDeployStepInfo.getResources()))
+            .build();
 
     ImageDetails imageDetails =
         ImageDetails.newBuilder()
@@ -79,7 +71,7 @@ public class AwsSamDeployPluginInfoProvider extends CDPluginInfoProvider {
             .setImageInformation(
                 ImageInformation.newBuilder()
                     .setImageName(StringValue.of(awsSamDeployStepInfo.getImage().getValue()))
-                    .setImagePullPolicy(getImagePullPolicyEnum(awsSamDeployStepInfo.getImagePullPolicy().getValue()))
+                    .setImagePullPolicy(StringValue.of(awsSamDeployStepInfo.getImagePullPolicy().getValue().toString()))
                     .build())
 
             .build();
@@ -89,8 +81,8 @@ public class AwsSamDeployPluginInfoProvider extends CDPluginInfoProvider {
     Set<Integer> usedPorts = new HashSet<>(request.getUsedPortDetails().getUsedPortsList());
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
     portFinder.getNextPort();
-
     HashSet<Integer> ports = new HashSet<>(portFinder.getUsedPorts());
+
     return PluginCreationResponse.newBuilder()
         .setPluginDetails(PluginDetails.newBuilder()
                               .setResource(pluginContainerResources)
@@ -110,19 +102,6 @@ public class AwsSamDeployPluginInfoProvider extends CDPluginInfoProvider {
       return true;
     }
     return false;
-  }
-
-  private StringValue getImagePullPolicyEnum(ImagePullPolicy imagePullPolicy) {
-    String imagePullPolicyStr = imagePullPolicy.toString();
-    if (imagePullPolicyStr.equals(ImagePullPolicy.ALWAYS.toString())) {
-      return StringValue.of(ImagePullPolicy.ALWAYS.toString());
-    } else if (imagePullPolicyStr.equals(ImagePullPolicy.NEVER.toString())) {
-      return StringValue.of(ImagePullPolicy.NEVER.name());
-    } else if (imagePullPolicyStr.equals(ImagePullPolicy.IFNOTPRESENT.toString())) {
-      return StringValue.of(ImagePullPolicy.IFNOTPRESENT.name());
-    } else {
-      throw new InvalidRequestException("ImagePolicy Not Supported");
-    }
   }
 
   private Map<String, String> getEnvironmentVariables(

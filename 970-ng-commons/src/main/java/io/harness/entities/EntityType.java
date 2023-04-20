@@ -545,6 +545,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.AWS_SAM_DEPLOY)
   AWS_SAM_DEPLOY(
       ModuleType.CD, EntityTypeConstants.AWS_SAM_DEPLOY, IdentifierRef.class, EntityYamlRootNames.AWS_SAM_DEPLOY),
+  @JsonProperty(EntityTypeConstants.AWS_SAM_BUILD)
+  AWS_SAM_BUILD(
+      ModuleType.CD, EntityTypeConstants.AWS_SAM_BUILD, IdentifierRef.class, EntityYamlRootNames.AWS_SAM_BUILD),
   @JsonProperty(EntityTypeConstants.AWS_SAM_ROLLBACK)
   AWS_SAM_ROLLBACK(
       ModuleType.CD, EntityTypeConstants.AWS_SAM_ROLLBACK, IdentifierRef.class, EntityYamlRootNames.AWS_SAM_ROLLBACK),
