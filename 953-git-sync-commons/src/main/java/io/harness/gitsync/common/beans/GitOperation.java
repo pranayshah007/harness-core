@@ -21,6 +21,7 @@ public enum GitOperation {
   LIST_FILES("list files"),
   BG_THREAD_GET_FILE("background thread get file"),
   GET_BATCH_FILES("get batch files"),
+  GET_USER_DETAILS("get user details"),
   ;
 
   private String value;
