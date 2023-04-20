@@ -2888,7 +2888,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn("").when(spyHelperBase).writeValuesToFile(any(), any());
 
     final List<FileData> manifestFiles = spyHelperBase.renderTemplateForHelm("helm", "./chart", new ArrayList<>(),
-        "release", "namespace", executionLogCallback, HelmVersion.V3, 9000, commandFlag, "");
+        "release", "namespace", executionLogCallback, HelmVersion.V3, 9000, commandFlag);
 
     verify(spyHelperBase, times(1)).executeShellCommand(eq("./chart"), anyString(), any(), anyLong());
     assertThat(manifestFiles.size()).isEqualTo(1);
@@ -3199,7 +3199,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(renderedFiles)
         .when(spyHelper)
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND, "");
+            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND);
 
     List<FileData> result = spyHelper.renderTemplate(K8sDelegateTaskParams.builder().helmPath(helmPath).build(),
         manifestDelegateConfig, manifestDirectory, valuesList, "release", "namespace", executionLogCallback, 10);
@@ -3207,7 +3207,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isEqualTo(renderedFiles);
     verify(spyHelper, times(1))
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND, "");
+            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND);
   }
 
   private void testRenderTemplateWithHelmSubChart(ManifestDelegateConfig manifestDelegateConfig,
@@ -3220,7 +3220,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(renderedFiles)
         .when(spyHelper)
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE, "charts/first-child");
+            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE);
 
     List<FileData> result = spyHelper.renderTemplate(K8sDelegateTaskParams.builder().helmPath(helmPath).build(),
         manifestDelegateConfig, manifestDirectory, valuesList, "release", "namespace", executionLogCallback, 10);
@@ -3228,7 +3228,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isEqualTo(renderedFiles);
     verify(spyHelper, times(1))
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE, "charts/first-child");
+            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE);
   }
 
   @Test

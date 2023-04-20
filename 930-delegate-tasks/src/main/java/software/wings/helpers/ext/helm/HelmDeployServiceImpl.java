@@ -340,11 +340,10 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       throws Exception {
     String workingDirPath = Paths.get(commandRequest.getWorkingDir()).normalize().toAbsolutePath().toString();
 
-    List<FileData> manifestFiles =
-        k8sTaskHelperBase.renderTemplateForHelm(helmClient.getHelmPath(commandRequest.getHelmVersion()), workingDirPath,
-            variableOverridesYamlFiles, commandRequest.getReleaseName(),
-            commandRequest.getContainerServiceParams().getNamespace(), executionLogCallback,
-            commandRequest.getHelmVersion(), timeoutInMillis, commandRequest.getHelmCommandFlag(), "");
+    List<FileData> manifestFiles = k8sTaskHelperBase.renderTemplateForHelm(
+        helmClient.getHelmPath(commandRequest.getHelmVersion()), workingDirPath, variableOverridesYamlFiles,
+        commandRequest.getReleaseName(), commandRequest.getContainerServiceParams().getNamespace(),
+        executionLogCallback, commandRequest.getHelmVersion(), timeoutInMillis, commandRequest.getHelmCommandFlag());
 
     List<KubernetesResource> resources = k8sTaskHelperBase.readManifests(manifestFiles, executionLogCallback);
     k8sTaskHelperBase.setNamespaceToKubernetesResourcesIfRequired(
