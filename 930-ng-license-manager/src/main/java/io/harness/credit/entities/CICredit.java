@@ -28,4 +28,14 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Persistent
 @TypeAlias("io.harness.credit.entities.CICredit")
-public class CICredit extends Credit {}
+public class CICredit extends Credit {
+    @Override
+    public Long obtainNextIteration(String fieldName) {
+        return null;
+    }
+
+    @Override
+    public String getUuid() {
+        return null;
+    }
+}

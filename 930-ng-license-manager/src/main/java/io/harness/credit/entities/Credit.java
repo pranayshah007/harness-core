@@ -14,6 +14,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.credit.utils.CreditStatus;
 import io.harness.data.validator.Trimmed;
+import io.harness.iterator.PersistentIterable;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.NGAccountAccess;
 import io.harness.persistence.PersistentEntity;
@@ -35,7 +36,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Document("credits")
 @Persistent
-public abstract class Credit implements PersistentEntity, NGAccountAccess {
+public abstract class Credit implements PersistentEntity, NGAccountAccess, PersistentIterable {
   @Id protected String id;
   @Trimmed @NotEmpty protected String accountIdentifier;
   @NotEmpty protected CreditStatus creditStatus;
@@ -44,4 +45,6 @@ public abstract class Credit implements PersistentEntity, NGAccountAccess {
   @NotEmpty protected long expiryTime;
   @NotEmpty protected CreditType creditType;
   @NotEmpty protected ModuleType moduleType;
+
+  private Long creditExpiryCheckIteration;
 }
