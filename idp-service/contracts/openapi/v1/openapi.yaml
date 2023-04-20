@@ -1031,6 +1031,11 @@ components:
           type: string
         type:
           type: string
+          enum:
+            - Github
+            - Gitlab
+            - Bitbucket
+            - AzureRepo
       required:
         - identifier
         - type
