@@ -18,10 +18,12 @@ import io.harness.spec.server.template.v1.model.GitCreateDetails;
 import io.harness.spec.server.template.v1.model.GitFindDetails;
 import io.harness.spec.server.template.v1.model.GitUpdateDetails;
 import io.harness.spec.server.template.v1.model.TemplateCreateRequestBody;
+import io.harness.spec.server.template.v1.model.TemplateImportRequestBody;
 import io.harness.spec.server.template.v1.model.TemplateUpdateRequestBody;
 
 import com.google.inject.Inject;
 import java.util.List;
+import javax.validation.Valid;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -72,6 +74,13 @@ public class AccountTemplateApiImpl implements AccountTemplateApi {
       String description, List<String> entityTypes, List<String> childTypes) {
     return templateResourceApiUtils.getTemplates(account, null, null, page, limit, sort, order, searchTerm, listType,
         recursive, names, identifiers, description, entityTypes, childTypes);
+  }
+
+  @Override
+  public Response importTemplateAcc(@ResourceIdentifier String template, @Valid TemplateImportRequestBody body,
+      @AccountIdentifier String harnessAccount) {
+    return templateResourceApiUtils.importTemplate(
+        harnessAccount, null, null, template, body.getGitImportDetails(), body.getTemplateImportRequest());
   }
 
   @Override
