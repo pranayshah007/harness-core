@@ -641,8 +641,9 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
 
   private void populateTicketsForLogFeedbacks(List<LogAnalysisRadarChartListDTO> logAnalysisRadarChartListDtos) {
     log.info("Populating ticket details for logFeedbacks.");
-    logAnalysisRadarChartListDtos.forEach(
-        logAnalysis -> logAnalysis.setFeedback(getLogFeedbackWithTicket(logAnalysis.getFeedback())));
+    logAnalysisRadarChartListDtos.stream()
+        .filter(logAnalysis -> Objects.nonNull(logAnalysis.getFeedback()))
+        .forEach(logAnalysis -> logAnalysis.setFeedback(getLogFeedbackWithTicket(logAnalysis.getFeedback())));
   }
 
   private LogFeedback getLogFeedbackWithTicket(LogFeedback logFeedback) {
