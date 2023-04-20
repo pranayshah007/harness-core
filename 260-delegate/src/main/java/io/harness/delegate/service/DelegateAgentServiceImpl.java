@@ -49,9 +49,11 @@ import static io.harness.delegate.message.MessengerType.DELEGATE;
 import static io.harness.delegate.message.MessengerType.WATCHER;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_CONNECTED;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_DISCONNECTED;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.MEMORY_USAGE_ABOVE_THRESHOLD;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_CURRENTLY_EXECUTING;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_IN_QUEUE;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_EXECUTION_TIME;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_FAILED;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_TIMEOUT;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
 import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
@@ -736,6 +738,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           "Reached resource threshold, temporarily reject incoming task request. CurrentProcessRSSMB {} ThresholdMB {}",
           currentRSSMB, maxProcessRSSThresholdMB);
       rejectRequest.compareAndSet(false, true);
+      metricRegistry.recordGaugeInc(MEMORY_USAGE_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME});
       return;
     }
 
@@ -745,6 +748,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           "Reached resource threshold, temporarily reject incoming task request. CurrentPodRSSMB {} ThresholdMB {}",
           currentPodRSSMB, maxPodRSSThresholdMB);
       rejectRequest.compareAndSet(false, true);
+      metricRegistry.recordGaugeInc(MEMORY_USAGE_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME});
       return;
     }
     log.info("Process info CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
@@ -2729,6 +2733,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         response = delegateAgentManagerClient.sendTaskStatus(delegateId, taskId, accountId, taskResponse).execute();
         if (response != null && response.code() >= 200 && response.code() <= 299) {
           log.debug("Task {} response sent to manager", taskId);
+          metricRegistry.recordGaugeInc(TASK_FAILED, new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()});
           break;
         }
         log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId,
@@ -2745,6 +2750,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
     } catch (IOException e) {
       log.error("Unable to send response to manager", e);
+      metricRegistry.recordGaugeInc(TASK_FAILED, new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()});
     } finally {
       if (response != null && response.errorBody() != null && !response.isSuccessful()) {
         response.errorBody().close();
@@ -2765,9 +2771,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     DelegateTaskResponse taskResponse =
         DelegateTaskResponse.builder()
             .accountId(delegateTaskPackage.getAccountId())
+            .taskTypeName(delegateTaskPackage.getData().getTaskType())
             .responseCode(DelegateTaskResponse.ResponseCode.FAILED)
             .response(ErrorNotifyResponseData.builder().errorMessage(ExceptionUtils.getMessage(exception)).build())
             .build();
+    metricRegistry.recordGaugeInc(TASK_FAILED, new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()});
     log.error("Sending error response for task{} due to exception", taskId, exception);
     try {
       Response<ResponseBody> resp;

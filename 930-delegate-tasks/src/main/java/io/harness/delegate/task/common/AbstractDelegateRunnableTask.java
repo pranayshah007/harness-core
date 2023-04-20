@@ -37,6 +37,7 @@ import io.harness.exception.FailureType;
 import io.harness.globalcontex.ErrorHandlingGlobalContextData;
 import io.harness.logging.AccountLogContext;
 import io.harness.manage.GlobalContextManager;
+import io.harness.metrics.HarnessMetricRegistry;
 import io.harness.secret.SecretSanitizerThreadLocal;
 
 import com.google.inject.Inject;
@@ -63,8 +64,10 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
   private Consumer<DelegateTaskResponse> consumer;
   private BooleanSupplier preExecute;
   @Inject DelegateExceptionManager delegateExceptionManager;
+  @Inject HarnessMetricRegistry metricRegistry;
 
   @Inject private DataCollectionExecutorService dataCollectionService;
+  public static final String TASK_FAILED = "task_failed";
 
   public AbstractDelegateRunnableTask(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
@@ -102,7 +105,7 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
     DelegateMetaInfo delegateMetaInfo = DelegateMetaInfo.builder().hostName(delegateHostname).id(delegateId).build();
 
     DelegateTaskResponseBuilder taskResponse =
-        DelegateTaskResponse.builder().accountId(accountId).responseCode(ResponseCode.OK);
+        DelegateTaskResponse.builder().accountId(accountId).taskTypeName(taskType).responseCode(ResponseCode.OK);
 
     ErrorNotifyResponseDataBuilder errorNotifyResponseDataBuilder =
         ErrorNotifyResponseData.builder().delegateMetaInfo(delegateMetaInfo);
@@ -154,6 +157,7 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
       taskResponse.response(delegateExceptionManager.getResponseData(
           throwable, errorNotifyResponseDataBuilder, isSupportingErrorFramework()));
       taskResponse.responseCode(ResponseCode.FAILED);
+      metricRegistry.recordGaugeInc(TASK_FAILED, new String[] {delegateHostname, taskType});
     } finally {
       GlobalContextManager.unset();
       if (consumer != null) {
