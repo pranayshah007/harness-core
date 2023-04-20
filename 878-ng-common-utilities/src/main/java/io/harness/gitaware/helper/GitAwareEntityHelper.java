@@ -19,6 +19,7 @@ import io.harness.gitaware.dto.GetFileGitContextRequestParams;
 import io.harness.gitaware.dto.GitContextRequestParams;
 import io.harness.gitsync.common.beans.GitOperation;
 import io.harness.gitsync.common.helper.GitSyncLogContextHelper;
+import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.scm.SCMGitSyncHelper;
 import io.harness.gitsync.scm.beans.ScmCreateFileGitRequest;
@@ -57,6 +58,9 @@ public class GitAwareEntityHelper {
     // if branch is empty, then git sdk will figure out the default branch for the repo by itself
     String branch =
         isNullOrDefault(gitContextRequestParams.getBranchName()) ? "" : gitContextRequestParams.getBranchName();
+
+    GitContextHelper.setIsDefaultBranchInGitEntityInfoWithParameter(branch);
+
     String filePath = gitContextRequestParams.getFilePath();
     if (isNullOrDefault(filePath)) {
       throw new InvalidRequestException("No file path provided.");

@@ -8,6 +8,7 @@
 package io.harness.gitsync.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.gitsync.interceptor.GitSyncConstants.DEFAULT;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -81,7 +82,7 @@ public class GitContextHelper {
   }
 
   public boolean isNullOrDefault(String val) {
-    return EmptyPredicate.isEmpty(val) || val.equals(DEFAULT);
+    return isEmpty(val) || val.equals(DEFAULT);
   }
 
   public String getBranch() {
@@ -90,5 +91,30 @@ public class GitContextHelper {
       return null;
     }
     return gitEntityInfo.getBranch();
+  }
+
+  public void setIsDefaultBranchInGitEntityInfo() {
+    GitEntityInfo gitEntityInfo = getGitEntityInfo();
+
+    if (gitEntityInfo != null) {
+      gitEntityInfo.setDefaultBranch(isEmpty(gitEntityInfo.getBranch()));
+    }
+  }
+
+  public boolean getIsDefaultBranchFromGitEntityInfo() {
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+
+    if (gitEntityInfo != null) {
+      return gitEntityInfo.isDefaultBranch();
+    }
+
+    return false;
+  }
+
+  public void setIsDefaultBranchInGitEntityInfoWithParameter(String branch) {
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    if (gitEntityInfo != null) {
+      gitEntityInfo.setDefaultBranch(isEmpty(branch));
+    }
   }
 }

@@ -61,22 +61,14 @@ import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.contracts.steps.StepInfo;
+import io.harness.pms.filter.creation.FilterCreatorMergeService;
+import io.harness.pms.filter.creation.FilterCreatorMergeServiceResponse;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.helpers.PipelineCloneHelper;
-import io.harness.pms.pipeline.ClonePipelineDTO;
-import io.harness.pms.pipeline.CommonStepInfo;
-import io.harness.pms.pipeline.ExecutionSummaryInfo;
-import io.harness.pms.pipeline.MoveConfigOperationDTO;
-import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
-import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.*;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
-import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.PipelineMetadataV2.PipelineMetadataV2Keys;
-import io.harness.pms.pipeline.StepCategory;
-import io.harness.pms.pipeline.StepPalleteFilterWrapper;
-import io.harness.pms.pipeline.StepPalleteInfo;
-import io.harness.pms.pipeline.StepPalleteModuleInfo;
 import io.harness.pms.pipeline.filters.PMSPipelineFilterHelper;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
@@ -102,10 +94,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.ws.rs.InternalServerErrorException;
 import lombok.AccessLevel;
@@ -150,6 +139,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject @Named("PRIVILEGED") private ProjectClient projectClient;
   @Inject @Named("PRIVILEGED") private OrganizationClient organizationClient;
   @Inject PmsFeatureFlagService pmsFeatureFlagService;
+
+  private final PipelineSetupUsageHelper pipelineSetupUsageHelper;
+
+  @Inject private final FilterCreatorMergeService filterCreatorMergeService;
+
   @Inject GitXSettingsHelper gitXSettingsHelper;
 
   @Inject private final AccountClient accountClient;
@@ -192,11 +186,20 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
       }
 
-      PipelineEntity entityWithUpdatedInfo =
+      GitContextHelper.setIsDefaultBranchInGitEntityInfo();
+
+      PipelineEntityWithReferencesDTO entityWithUpdatedInfoWithReferences =
           pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
+
+      PipelineEntity entityWithUpdatedInfo = entityWithUpdatedInfoWithReferences.getPipelineEntity();
+
       PipelineEntity createdEntity;
       PipelineCRUDResult pipelineCRUDResult = createPipeline(entityWithUpdatedInfo);
       createdEntity = pipelineCRUDResult.getPipelineEntity();
+
+      String branch = GitAwareContextHelper.getBranchInSCMGitMetadata();
+
+      publishSetupUsages(createdEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), branch);
 
       try {
         String branchInRequest = GitAwareContextHelper.getBranchInRequest();
@@ -210,6 +213,30 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     } catch (IOException ex) {
       log.error(format(INVALID_YAML_IN_NODE, YamlUtils.getErrorNodePartialFQN(ex)), ex);
       throw new InvalidYamlException(format(INVALID_YAML_IN_NODE, YamlUtils.getErrorNodePartialFQN(ex)), ex);
+    }
+  }
+
+  private boolean doPublishSetupUsages(PipelineEntity pipelineEntity) {
+    boolean defaultBranchCheckForGitX = GitContextHelper.getIsDefaultBranchFromGitEntityInfo();
+
+    if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType().equals(StoreType.INLINE)
+        || (pipelineEntity.getStoreType() == StoreType.REMOTE && defaultBranchCheckForGitX)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private void publishSetupUsages(
+      PipelineEntity pipelineEntity, List<EntityDetailProtoDTO> referredEntities, String branch) {
+    if (doPublishSetupUsages(pipelineEntity)) {
+      Map<String, String> metadata = new HashMap<>();
+
+      if (branch != null) {
+        metadata.put("branch", branch);
+      }
+
+      pipelineSetupUsageHelper.publishSetupUsageEvent(pipelineEntity, referredEntities, metadata);
     }
   }
 
@@ -342,7 +369,24 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       validateStoredYaml(pipelineEntity);
 
       return optionalPipelineEntity;
+    } else if (pipelineEntity.getStoreType() == StoreType.REMOTE) {
+      try {
+        FilterCreatorMergeServiceResponse filtersAndStageCount =
+            FilterCreatorMergeServiceResponse.builder().referredEntities(new ArrayList<>()).build();
+
+        if (pipelineEntity.getHarnessVersion().equals(PipelineVersion.V0)) {
+          filtersAndStageCount = filterCreatorMergeService.getPipelineInfo(pipelineEntity);
+        }
+
+        String branch = GitAwareContextHelper.getBranchInSCMGitMetadata();
+
+        publishSetupUsages(pipelineEntity, filtersAndStageCount.getReferredEntities(), branch);
+
+      } catch (IOException e) {
+        log.error("Error while getting referred entities for publishing setup usages.", e);
+      }
     }
+
     if (EmptyPredicate.isEmpty(pipelineEntity.getData())) {
       String errorMessage = PipelineCRUDErrorResponse.errorMessageForEmptyYamlOnGit(
           orgIdentifier, projectIdentifier, identifier, GitAwareContextHelper.getBranchInRequest());
@@ -561,18 +605,30 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       PipelineEntity pipelineEntity, PipelineEntity oldEntity, ChangeType changeType, boolean isOldFlow) {
     try {
       PipelineEntity entityWithUpdatedInfo;
+      PipelineEntityWithReferencesDTO entityWithUpdatedInfoWithReferences = null;
       if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
         entityWithUpdatedInfo = pipelineEntity;
       } else {
-        entityWithUpdatedInfo =
+        entityWithUpdatedInfoWithReferences =
             pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
+
+        entityWithUpdatedInfo = entityWithUpdatedInfoWithReferences.getPipelineEntity();
       }
+
+      GitContextHelper.setIsDefaultBranchInGitEntityInfo();
+
       PipelineEntity updatedResult;
       if (isOldFlow) {
         updatedResult =
             pmsPipelineRepository.updatePipelineYamlForOldGitSync(entityWithUpdatedInfo, oldEntity, changeType);
       } else {
         updatedResult = pmsPipelineRepository.updatePipelineYaml(entityWithUpdatedInfo);
+      }
+
+      String branch = GitAwareContextHelper.getBranchInSCMGitMetadata();
+
+      if (pipelineEntity.getIsDraft() == null || !pipelineEntity.getIsDraft()) {
+        publishSetupUsages(pipelineEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), branch);
       }
 
       if (updatedResult == null) {
@@ -750,8 +806,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     pipelineEntity.setRepoURL(repoUrl);
 
     try {
-      PipelineEntity entityWithUpdatedInfo =
+      PipelineEntityWithReferencesDTO entityWithUpdatedInfoWithReferences =
           pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineVersion);
+
+      PipelineEntity entityWithUpdatedInfo = entityWithUpdatedInfoWithReferences.getPipelineEntity();
+
       PipelineEntity savedPipelineEntity =
           pmsPipelineRepository.savePipelineEntityForImportedYAML(entityWithUpdatedInfo);
       pmsPipelineServiceHelper.sendPipelineSaveTelemetryEvent(savedPipelineEntity, CREATING_PIPELINE);

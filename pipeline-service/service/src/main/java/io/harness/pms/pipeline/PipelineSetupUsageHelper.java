@@ -131,7 +131,8 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
     }
   }
 
-  public void publishSetupUsageEvent(PipelineEntity pipelineEntity, List<EntityDetailProtoDTO> referredEntities) {
+  public void publishSetupUsageEvent(
+      PipelineEntity pipelineEntity, List<EntityDetailProtoDTO> referredEntities, Map<String, String> metadata) {
     if (EmptyPredicate.isEmpty(referredEntities)) {
       deleteSetupUsagesForGivenPipeline(pipelineEntity);
       return;
@@ -140,7 +141,7 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
         EntityDetailProtoDTO.newBuilder()
             .setIdentifierRef(IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(pipelineEntity.getAccountId(),
                 pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(),
-                pipelineEntity.getIdentifier()))
+                pipelineEntity.getIdentifier(), metadata))
             .setType(EntityTypeProtoEnum.PIPELINES)
             .setName(pipelineEntity.getName())
             .build();
