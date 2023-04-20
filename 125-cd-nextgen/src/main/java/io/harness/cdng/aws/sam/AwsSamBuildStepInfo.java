@@ -69,7 +69,7 @@ public class AwsSamBuildStepInfo extends AwsSamBuildBaseStepInfo implements CDAb
 
   @Override
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
+    return OrchestrationFacilitatorType.ASYNC;
   }
 
   @Override

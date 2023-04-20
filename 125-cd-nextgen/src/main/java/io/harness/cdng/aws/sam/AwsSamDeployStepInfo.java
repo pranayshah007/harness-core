@@ -69,7 +69,7 @@ public class AwsSamDeployStepInfo extends AwsSamDeployBaseStepInfo implements CD
 
   @Override
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
+    return OrchestrationFacilitatorType.ASYNC;
   }
 
   @Override

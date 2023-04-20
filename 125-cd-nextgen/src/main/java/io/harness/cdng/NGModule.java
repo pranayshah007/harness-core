@@ -69,6 +69,8 @@ import io.harness.cdng.k8s.resources.gcp.service.impl.GcpResourceServiceImpl;
 import io.harness.cdng.manifest.resources.HelmChartService;
 import io.harness.cdng.manifest.resources.HelmChartServiceImpl;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
+import io.harness.cdng.plugininfoproviders.AwsSamBuildPluginInfoProvider;
+import io.harness.cdng.plugininfoproviders.AwsSamDeployPluginInfoProvider;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsServiceImpl;
 import io.harness.cdng.provision.terraformcloud.executiondetails.TerraformCloudPlanExecutionDetailsService;
@@ -187,8 +189,9 @@ public class NGModule extends AbstractModule {
         .to(EnvironmentGroupFilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.ENVIRONMENT.toString()).to(EnvironmentFilterPropertiesMapper.class);
 
-    //    Multibinder<PluginInfoProvider> pluginInfoProviderMultibinder =
-    //        Multibinder.newSetBinder(binder(), new TypeLiteral<>() {});
-    //    pluginInfoProviderMultibinder.addBinding().to(CDPluginInfoProvider.class);
+    Multibinder<PluginInfoProvider> pluginInfoProviderMultibinder =
+        Multibinder.newSetBinder(binder(), new TypeLiteral<>() {});
+    pluginInfoProviderMultibinder.addBinding().to(AwsSamDeployPluginInfoProvider.class);
+    pluginInfoProviderMultibinder.addBinding().to(AwsSamBuildPluginInfoProvider.class);
   }
 }

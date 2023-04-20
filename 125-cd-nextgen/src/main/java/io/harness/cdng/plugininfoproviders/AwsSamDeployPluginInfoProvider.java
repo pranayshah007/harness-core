@@ -7,6 +7,8 @@
 
 package io.harness.cdng.plugininfoproviders;
 
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.PORT_STARTING_RANGE;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
@@ -15,7 +17,9 @@ import io.harness.cdng.aws.sam.AwsSamDeployStepNode;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
+import io.harness.ci.utils.PortFinder;
 import io.harness.exception.InvalidRequestException;
+import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ConnectorDetails;
 import io.harness.pms.contracts.plan.ImageDetails;
@@ -24,6 +28,7 @@ import io.harness.pms.contracts.plan.PluginContainerResources;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.plan.PluginDetails;
+import io.harness.pms.contracts.plan.PortDetails;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
@@ -32,8 +37,10 @@ import com.google.inject.Inject;
 import com.google.protobuf.StringValue;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.jooq.tools.StringUtils;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -52,49 +59,66 @@ public class AwsSamDeployPluginInfoProvider extends CDPluginInfoProvider {
           String.format("Error in parsing CD step for step type [%s]", request.getType()), e);
     }
 
-    awsSamDeployStepNode = (AwsSamDeployStepNode) cdAbstractStepNode.getStepSpecType();
-    AwsSamDeployStepInfo awsSamDeployStepInfo = awsSamDeployStepNode.getAwsSamDeployStepInfo();
+    AwsSamDeployStepInfo awsSamDeployStepInfo = (AwsSamDeployStepInfo) cdAbstractStepNode.getStepSpecType();
 
+    Integer cpu = awsSamDeployStepInfo.getResources() != null
+        ? Integer.parseInt(awsSamDeployStepInfo.getResources().getRequests().getCpu().getValue())
+        : 250;
+    Integer memory = awsSamDeployStepInfo.getResources() != null
+        ? Integer.parseInt(awsSamDeployStepInfo.getResources().getRequests().getMemory().getValue())
+        : 250;
+
+    PluginContainerResources pluginContainerResources =
+        PluginContainerResources.newBuilder().setCpu(cpu).setMemory(memory).build();
+
+    ImageDetails imageDetails =
+        ImageDetails.newBuilder()
+            .setConnectorDetails(ConnectorDetails.newBuilder()
+                                     .setConnectorRef(awsSamDeployStepInfo.getConnectorRef().getValue())
+                                     .build())
+            .setImageInformation(
+                ImageInformation.newBuilder()
+                    .setImageName(StringValue.of(awsSamDeployStepInfo.getImage().getValue()))
+                    .setImagePullPolicy(getImagePullPolicyEnum(awsSamDeployStepInfo.getImagePullPolicy().getValue()))
+                    .build())
+
+            .build();
+    Integer runAsUser =
+        awsSamDeployStepInfo.getRunAsUser() != null ? awsSamDeployStepInfo.getRunAsUser().getValue() : 1000;
+
+    Set<Integer> usedPorts = new HashSet<>(request.getUsedPortDetails().getUsedPortsList());
+    PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
+    portFinder.getNextPort();
+
+    HashSet<Integer> ports = new HashSet<>(portFinder.getUsedPorts());
     return PluginCreationResponse.newBuilder()
-        .setPluginDetails(
-            PluginDetails.newBuilder()
-                .setResource(
-                    PluginContainerResources.newBuilder()
-                        .setCpu(Integer.parseInt(awsSamDeployStepInfo.getResources().getRequests().getCpu().getValue()))
-                        .setMemory(
-                            Integer.parseInt(awsSamDeployStepInfo.getResources().getRequests().getMemory().getValue()))
-                        .build())
-                .setRunAsUser(awsSamDeployStepInfo.getRunAsUser().getValue())
-                .putAllEnvVariables(
-                    getEnvironmentVariables(request.getAmbiance(), awsSamDeployStepInfo.getDeployCommandOptions()))
-                .setImageDetails(
-                    ImageDetails.newBuilder()
-                        .setConnectorDetails(ConnectorDetails.newBuilder()
-                                                 .setConnectorRef(awsSamDeployStepInfo.getConnectorRef().getValue())
-                                                 .build())
-                        .setImageInformation(
-                            ImageInformation.newBuilder()
-                                .setImageName(StringValue.of(awsSamDeployStepInfo.getImage().getValue()))
-                                .setImagePullPolicy(
-                                    getImagePullPolicyEnum(awsSamDeployStepInfo.getImagePullPolicy().getValue()))
-                                .build())
-
-                        .build())
-                .build())
+        .setPluginDetails(PluginDetails.newBuilder()
+                              .setResource(pluginContainerResources)
+                              .setRunAsUser(runAsUser)
+                              .putAllEnvVariables(getEnvironmentVariables(
+                                  request.getAmbiance(), awsSamDeployStepInfo.getDeployCommandOptions()))
+                              .setImageDetails(imageDetails)
+                              .addAllPortUsed(ports)
+                              .setTotalPortUsedDetails(PortDetails.newBuilder().addAllUsedPorts(ports).build())
+                              .build())
         .build();
   }
 
   @Override
   public boolean isSupported(String stepType) {
-    return true;
+    if (stepType.equals(StepSpecTypeConstants.AWS_SAM_DEPLOY)) {
+      return true;
+    }
+    return false;
   }
 
   private StringValue getImagePullPolicyEnum(ImagePullPolicy imagePullPolicy) {
-    if (imagePullPolicy.equals(ImagePullPolicy.ALWAYS.name())) {
+    String imagePullPolicyStr = imagePullPolicy.toString();
+    if (imagePullPolicyStr.equals(ImagePullPolicy.ALWAYS.toString())) {
       return StringValue.of(ImagePullPolicy.ALWAYS.toString());
-    } else if (imagePullPolicy.equals(ImagePullPolicy.NEVER.name())) {
+    } else if (imagePullPolicyStr.equals(ImagePullPolicy.NEVER.toString())) {
       return StringValue.of(ImagePullPolicy.NEVER.name());
-    } else if (imagePullPolicy.equals(ImagePullPolicy.IFNOTPRESENT.name())) {
+    } else if (imagePullPolicyStr.equals(ImagePullPolicy.IFNOTPRESENT.toString())) {
       return StringValue.of(ImagePullPolicy.IFNOTPRESENT.name());
     } else {
       throw new InvalidRequestException("ImagePolicy Not Supported");
