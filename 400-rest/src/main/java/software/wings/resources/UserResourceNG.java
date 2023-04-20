@@ -213,7 +213,7 @@ public class UserResourceNG {
   @POST
   @Path("/signup-invite/marketplace")
   public RestResponse<UserInfo> createMarketplaceUserAndCompleteSignup(
-      SignupDTO dto, String inviteId, String marketPlaceToken) {
+      SignupDTO dto, String inviteId, String marketPlaceToken, AccountDTO account) {
     MarketPlace marketPlace;
 
     UserInvite existingInvite = wingsPersistence.get(UserInvite.class, inviteId);
@@ -228,8 +228,6 @@ public class UserResourceNG {
     userService.verifyRegisteredOrAllowed(email);
 
     dto.setEmail(dto.getEmail().toLowerCase());
-
-    AccountDTO account = createAccount(dto);
 
     User user = convertMarketplaceRequestToUser(dto, account);
 
@@ -680,27 +678,6 @@ public class UserResourceNG {
     } catch (Exception e) {
       throw e;
     }
-  }
-
-  private AccountDTO createAccount(SignupDTO dto) {
-    try {
-      // Should be creating account in CG. Ex. AccountServiceImpl.java uses CGRestUtils
-      // We then call AccountResourceNG.java bridge to create an account
-      return accountService.createAccount(dto);
-    } catch (Exception e) {
-      throw e;
-    }
-  }
-
-  private AccountDTO mapToAccountDTO(AccountInfo accountInfo) {
-    return AccountDTO.builder()
-        .companyName(accountInfo.getCompanyName())
-        .name(accountInfo.getName())
-        .defaultExperience(DefaultExperience.NG)
-        .authenticationMechanism(AuthenticationMechanism.USER_PASSWORD)
-        .isNextGenEnabled(true)
-        .isProductLed(true)
-        .build();
   }
 
   private User convertNgUserToUserWithNameUpdated(UserInfo userInfo) {

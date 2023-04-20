@@ -286,8 +286,6 @@ public interface AccountService {
 
   Account updateDefaultExperience(String accountIdentifier, DefaultExperience defaultExperience);
 
-  AccountDTO createAccount(AccountDTO accountDTO);
-
   Account updateCrossGenerationAccessEnabled(
       String accountIdentifier, boolean isCrossGenerationAccessEnabled, boolean isNextGen);
 }

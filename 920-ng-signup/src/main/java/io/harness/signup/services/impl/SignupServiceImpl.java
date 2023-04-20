@@ -193,7 +193,10 @@ public class SignupServiceImpl implements SignupService {
    */
   @Override
   public UserInfo marketplaceSignup(SignupDTO dto, String inviteId, String marketPlaceToken) throws WingsException {
-    return userClient.createMarketplaceUserAndCompleteSignup(SignupDTO dto, String inviteId, String marketPlaceToken)
+    AccountDTO account = createAccount(dto);
+
+    return userClient.createMarketplaceUserAndCompleteSignup(
+        SignupDTO dto, String inviteId, String marketPlaceToken, AccountDTO account)
   }
 
   /**
