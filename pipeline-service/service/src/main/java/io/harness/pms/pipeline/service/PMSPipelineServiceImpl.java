@@ -209,12 +209,13 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
       PipelineEntity createdEntity;
       PipelineCRUDResult pipelineCRUDResult = createPipeline(entityWithUpdatedInfo);
+
       createdEntity = pipelineCRUDResult.getPipelineEntity();
 
       String branch = GitAwareContextHelper.getBranchFromSCMGitMetadata();
 
       publishSetupUsages(createdEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), branch);
-      
+
       try {
         String branchInRequest = GitAwareContextHelper.getBranchInRequest();
         pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(createdEntity,
