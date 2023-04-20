@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -69,6 +70,7 @@ import io.harness.pms.pipeline.service.PipelineEnforcementService;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.plan.creation.PlanCreatorMergeService;
 import io.harness.pms.plan.execution.beans.ExecArgs;
+import io.harness.pms.plan.execution.beans.ProcessStageExecutionInfoResult;
 import io.harness.pms.rbac.validator.PipelineRbacService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
@@ -894,6 +896,23 @@ public class ExecutionHelperTest extends CategoryTest {
     verify(pipelineRbacServiceImpl, times(0))
         .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, pipelineYamlV1);
     verify(planExecutionMetadataService, times(0)).findByPlanExecutionId(anyString());
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testProcessStageExecutionInfo() {
+    buildExecutionArgsMocks();
+    ProcessStageExecutionInfoResult processStageExecutionInfoResult = executionHelper.processStageExecutionInfo(
+        Collections.singletonList("s2"), true, pipelineEntity, mergedPipelineYamlForS2, mergedPipelineYamlForS2, null);
+    assertThat(processStageExecutionInfoResult.getStagesExecutionInfo().isStagesExecution()).isEqualTo(true);
+    assertThat(processStageExecutionInfoResult.getStagesExecutionInfo().getFullPipelineYaml())
+        .isEqualTo(mergedPipelineYamlForS2);
+    assertThat(processStageExecutionInfoResult.getStagesExecutionInfo().getStageIdentifiers())
+        .isEqualTo(Collections.singletonList("s2"));
+    assertThat(processStageExecutionInfoResult.getStagesExecutionInfo().getExpressionValues()).isNull();
+    assertThat(processStageExecutionInfoResult.getFilteredPipelineYamlWithTemplateRef())
+        .isEqualTo(mergedPipelineYamlForS2);
   }
 
   private String readFile(String filename) {

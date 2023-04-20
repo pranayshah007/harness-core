@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static software.wings.settings.SettingVariableTypes.KUBERNETES_CLUSTER;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -33,6 +34,7 @@ import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDeta
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
+import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.api.DeploymentEvent;
 import software.wings.api.DeploymentSummary;
@@ -96,6 +98,7 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
   @Mock private DeploymentService deploymentService;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private InstanceSyncPerpetualTaskService instanceSyncPerpetualTaskService;
+  @Mock private DelegateTaskService delegateTaskService;
 
   @Before
   public void setup() {
@@ -105,6 +108,56 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
         .when(persistentLocker)
         .tryToAcquireLock(eq(InfrastructureMapping.class), any(), eq(Duration.ofSeconds(180)));
     doReturn(containerInstanceHandler).when(instanceHandlerFactory).getInstanceHandler(any());
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testHandleInstanceSyncException() {
+    DeploymentEvent deploymentEvent =
+        DeploymentEvent.builder()
+            .deploymentSummaries(Collections.singletonList(DeploymentSummary.builder()
+                                                               .appId("appId")
+                                                               .infraMappingId("infraMappingId")
+                                                               .accountId("accountId")
+                                                               .k8sDeploymentKey(K8sDeploymentKey.builder().build())
+                                                               .deploymentInfo(K8sDeploymentInfo.builder()
+                                                                                   .releaseName("releaseName")
+                                                                                   .namespace("namespace")
+                                                                                   .clusterName("clusterName")
+                                                                                   .build())
+                                                               .build()))
+            .build();
+
+    InfrastructureMapping infraMapping = new DirectKubernetesInfrastructureMapping();
+    infraMapping.setComputeProviderSettingId("varID");
+    infraMapping.setComputeProviderType(String.valueOf(KUBERNETES_CLUSTER));
+    doReturn(infraMapping).when(infrastructureMappingService).get(anyString(), anyString());
+    doReturn(SettingAttribute.Builder.aSettingAttribute()
+                 .withAccountId("accountId")
+                 .withAppId("appId")
+                 .withValue(KubernetesClusterConfig.builder().accountId("accountId").masterUrl("masterURL").build())
+                 .build())
+        .when(cloudProviderService)
+        .get(anyString());
+
+    doReturn(null).when(taskDetailsService).getForInfraMapping(anyString(), anyString());
+
+    doReturn(false).when(delegateTaskService).isTaskTypeSupportedByAllDelegates(anyString(), anyString());
+
+    doReturn(InstanceSyncTaskDetails.builder()
+                 .perpetualTaskId("perpetualTaskId")
+                 .accountId("accountId")
+                 .appId("appId")
+                 .cloudProviderId("cpID")
+                 .build())
+        .when(taskDetailsService)
+        .fetchForCloudProvider(anyString(), anyString());
+
+    doReturn(k8sHandler).when(handlerFactory).getHelper(any(SettingVariableTypes.class));
+
+    assertThatThrownBy(() -> cgInstanceSyncServiceV2.handleInstanceSync(deploymentEvent))
+        .isInstanceOf(UnsupportedOperationException.class);
   }
 
   @Test

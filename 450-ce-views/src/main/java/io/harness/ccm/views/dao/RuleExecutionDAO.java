@@ -19,6 +19,7 @@ import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.CriteriaContainer;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import java.util.List;
@@ -44,9 +45,10 @@ public class RuleExecutionDAO {
 
   public RuleExecutionList filterExecution(RuleExecutionFilter ruleExecutionFilter) {
     RuleExecutionList ruleExecutionList = RuleExecutionList.builder().build();
-    Query<RuleExecution> query = hPersistence.createQuery(RuleExecution.class)
-                                     .field(RuleExecutionKeys.accountId)
-                                     .equal(ruleExecutionFilter.getAccountId());
+    Query<RuleExecution> query = hPersistence.createQuery(RuleExecution.class);
+    CriteriaContainer criteria = query.or(query.criteria(RuleExecutionKeys.executionType).notEqual("INTERNAL"),
+        query.criteria(RuleExecutionKeys.executionType).doesNotExist());
+    query.and(criteria, query.criteria(RuleExecutionKeys.accountId).equal(ruleExecutionFilter.getAccountId()));
     if (ruleExecutionFilter.getTargetAccount() != null) {
       query.field(RuleExecutionKeys.targetAccount).in(ruleExecutionFilter.getTargetAccount());
     }

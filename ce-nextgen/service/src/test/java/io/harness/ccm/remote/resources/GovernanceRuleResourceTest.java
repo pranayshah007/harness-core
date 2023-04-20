@@ -96,6 +96,7 @@ public class GovernanceRuleResourceTest extends CategoryTest {
   private static final String NAME = "Name";
   private static final String NAMESET = "NameSet";
   private static final String REGION = "REGION";
+  private static final Boolean REC = false;
   private static final String POLICY =
       "policies:\n  - name: test\n    resource: elb\n    filters:\n      - Instances: []\n    actions:\n      - type: tag\n        tag: tag\n        value: tagged\n";
   private static final Boolean OOTB = false;
@@ -137,6 +138,7 @@ public class GovernanceRuleResourceTest extends CategoryTest {
                .rulesYaml(POLICY)
                .isOOTB(OOTB)
                .cloudProvider(CLOUD)
+               .forRecommendation(REC)
                .build();
     when(governanceRuleService.fetchById(ACCOUNT_ID, UUID, false)).thenReturn(rule);
     GovernanceRuleFilter governancePolicyFilter = GovernanceRuleFilter.builder().build();

@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ccm.governance.faktory;
+package io.harness.faktory;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;

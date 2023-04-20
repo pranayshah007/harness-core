@@ -31,6 +31,7 @@ service HarnessToGitPushInfoService {
   rpc getBranchHeadCommitDetails(GetBranchHeadCommitRequest) returns (GetBranchHeadCommitResponse);
   rpc listFiles(ListFilesRequest) returns (ListFilesResponse);
   rpc getBatchFiles(GetBatchFilesRequest) returns (GetBatchFilesResponse);
+  rpc getUserDetails(UserDetailsRequest) returns (UserDetailsResponse);
 }
 
 message PushInfo {
@@ -269,6 +270,58 @@ message GetBatchFilesResponse {
   ErrorDetails error = 3;
 }
 
+message UserDetailsRequest {
+  string accountIdentifier = 1;
+  GitAccessRequest gitAccessRequest = 2;
+}
+
+message GitAccessRequest {
+  oneof hook {
+    GithubAccessRequest github = 1;
+    GitlabAccessRequest gitlab = 2;
+    AzureRepoAccessRequest azureRepo = 3;
+  }
+}
+
+message GithubAccessRequest {
+  bool isGithubApp = 1;
+  oneof hook {
+    GithubTokenAccessRequest tokenRequest = 2;
+    GithubAppAccessRequest appRequest = 3;
+  }
+}
+
+message GitlabAccessRequest {
+  SecretRefData tokenRef = 1;
+}
+
+message AzureRepoAccessRequest {
+  SecretRefData tokenRef = 1;
+}
+
+message SecretRefData {
+  string identifier = 1;
+  ScopeIdentifiers scope = 2;
+}
+
+message GithubTokenAccessRequest {
+  SecretRefData tokenRef = 1;
+}
+
+message GithubAppAccessRequest {
+  string installationId = 1;
+  string applicationId = 2;
+  SecretRefData applicationIdRef = 3;
+  SecretRefData privateKeyRef = 4;
+  SecretRefData installationIdRef = 5;
+}
+
+message UserDetailsResponse {
+  string userName = 1;
+  string userEmail = 2;
+  ErrorDetails error = 3;
+  int32 statusCode = 4;
+}
 message FileGitDetails {
   string path = 1;
   string commitId = 2;
