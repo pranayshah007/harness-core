@@ -91,7 +91,7 @@ managerClientConfig:
   readTimeOutSeconds: 15
 
 backstageHttpClientConfig:
-  baseUrl: http://localhost:7007/
+  baseUrl: https://localhost:7007
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
@@ -139,3 +139,6 @@ provisionModuleConfig:
 
 env: ""
 prEnvDefaultBackstageNamespace: ""
+
+backstageAppBaseUrl: https://localhost:3000
+backstagePostgresHost: ""

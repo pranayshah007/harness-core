@@ -662,6 +662,26 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
+  /v1/sync-app-config:
+    put:
+      summary: Sync merged app-config for a given account
+      operationId: sync-app-config
+      responses:
+        '204':
+          description: No Content
+      description: API to sync app-config for a given account. This API can be accessed by Support User only.
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - schema:
+            type: boolean
+          in: query
+          name: base_config
+          description: Set true to sync base app-config too
+      tags:
+        - MergedPluginsConfig
 components:
   schemas:
     BackstageEnvVariable:
