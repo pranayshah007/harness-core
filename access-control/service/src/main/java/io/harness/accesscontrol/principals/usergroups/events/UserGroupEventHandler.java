@@ -45,6 +45,8 @@ public class UserGroupEventHandler implements EventHandler {
     EntityChangeDTO entityChangeDTO = null;
     try {
       entityChangeDTO = EntityChangeDTO.parseFrom(message.getMessage().getData());
+      log.info(
+          "Handling message {} parsed entityChangeDTO  {} in UserGroupEventHandler", message.getId(), entityChangeDTO);
     } catch (InvalidProtocolBufferException e) {
       log.error("Exception in unpacking EntityChangeDTO for user group event with key {}", message.getId(), e);
     }

@@ -78,6 +78,7 @@ public abstract class EventListener extends RedisTraceConsumer {
       messageProcessed = handleMessage(message);
       if (messageProcessed) {
         redisConsumer.acknowledge(messageId);
+        log.info("message {} acknowledged", messageId);
       }
     }
   }
@@ -85,6 +86,7 @@ public abstract class EventListener extends RedisTraceConsumer {
   @Override
   protected boolean processMessage(Message message) {
     if (message.getMessage() == null) {
+      log.info("message received is null {}", message);
       return true;
     }
     Set<EventConsumer> filteredConsumers =
@@ -100,6 +102,7 @@ public abstract class EventListener extends RedisTraceConsumer {
             .collect(Collectors.toSet());
     return filteredConsumers.stream().allMatch(eventConsumer -> {
       try {
+        log.info("Consumer {} picking up message {}", eventConsumer, message);
         return eventConsumer.getEventHandler().handle(message);
       } catch (Exception e) {
         log.error("Event Handler failed to process the message {} due to exception", message, e);

@@ -46,6 +46,8 @@ public class ResourceGroupEventHandler implements EventHandler {
     ResourceGroupEntityChangeDTO resourceGroupEntityChangeDTO = null;
     try {
       resourceGroupEntityChangeDTO = ResourceGroupEntityChangeDTO.parseFrom(message.getMessage().getData());
+      log.info("Handling message {} parsed resourceGroupEntityChangeDTO  {} in ResourceGroupEventHandler",
+          message.getId(), resourceGroupEntityChangeDTO);
     } catch (InvalidProtocolBufferException e) {
       log.error("Exception in unpacking ResourceGroupEntityChangeDTO for key {}", message.getId(), e);
     }
