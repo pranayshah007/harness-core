@@ -10,12 +10,12 @@ package io.harness.ng.core.account;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public interface AccountTrustLevel {
+public class AccountTrustLevel {
   Logger log = LoggerFactory.getLogger(AccountTrustLevel.class);
 
-  Integer UNINITIALIZED = -1;
-  Integer NEW_USER = 0;
-  Integer BASIC_USER = 1;
-  Integer MEMBER = 2;
-  Integer REGULAR = 3;
+  public static final int UNINITIALIZED = -1;
+  public static final int NEW_USER = 0;
+  public static final int BASIC_USER = 1;
+  public static final int MEMBER = 2;
+  public static final int REGULAR = 3;
 }
