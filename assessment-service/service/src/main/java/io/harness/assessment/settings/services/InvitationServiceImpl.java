@@ -20,8 +20,9 @@ import io.harness.assessment.settings.repositories.UserInvitationRepository;
 import io.harness.assessment.settings.repositories.UserRepository;
 
 import com.google.inject.Inject;
-import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.ws.rs.BadRequestException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +35,6 @@ public class InvitationServiceImpl implements InvitationService {
   private UserRepository userRepository;
   private OrganizationRepository organizationRepository;
   private AssessmentRepository assessmentRepository;
-
   private UserInvitationRepository userInvitationRepository;
 
   @Override
@@ -51,36 +51,54 @@ public class InvitationServiceImpl implements InvitationService {
     // check for repeat emails and reject those TODO
     for (String userEmail : assessmentInviteDTO.getEmails()) {
       try {
-        String organizationId = StringUtils.substringAfter(userEmail, "@");
-        Optional<Organization> organizationOptional = organizationRepository.findById(organizationId);
-        if (organizationOptional.isEmpty()) {
-          organizationRepository.save(
-              Organization.builder().id(organizationId).organizationName(organizationId).build());
+        boolean checkValidEmail = checkValidEmail(userEmail);
+        //        boolean isBusinessEmail = isBusinessEmail(userEmail);
+        if (checkValidEmail) {
+          String organizationId = StringUtils.substringAfter(userEmail, "@");
+          Optional<Organization> organizationOptional = organizationRepository.findById(organizationId);
+          if (organizationOptional.isEmpty()) {
+            organizationRepository.save(
+                Organization.builder().id(organizationId).organizationName(organizationId).build());
+          }
+          encoded = TokenGenerationUtil.generateInviteFromEmail(userEmail, assessmentId);
+          String invitedBy = assessmentInviteDTO.getInvitedBy().orElse("Self");
+          // check user is not already there TODO
+          // tie to correct org.
+          Optional<User> optionalUser = userRepository.findOneByUserId(userEmail);
+          if (optionalUser.isEmpty()) {
+            User user = User.builder().userId(userEmail).organizationId(organizationId).build();
+            userRepository.save(user);
+          }
+          UserInvitation userInvitation = UserInvitation.builder()
+                                              .userId(userEmail)
+                                              .generatedCode(encoded)
+                                              .assessmentId(assessmentId)
+                                              .invitedBy(invitedBy)
+                                              .build();
+          userInvitationRepository.save(userInvitation);
+        } else {
+          log.info("Invalid email : " + userEmail);
         }
-        encoded = TokenGenerationUtil.generateInviteFromEmail(userEmail, assessmentId);
-        String invitedBy = assessmentInviteDTO.getInvitedBy().orElse("Self");
-        // check user is not already there TODO
-        // tie to correct org.
-        Optional<User> optionalUser = userRepository.findOneByUserId(userEmail);
-        if (optionalUser.isEmpty()) {
-          User user = User.builder().userId(userEmail).organizationId(organizationId).build();
-          userRepository.save(user);
-        }
-        UserInvitation userInvitation = UserInvitation.builder()
-                                            .userId(userEmail)
-                                            .generatedCode(encoded)
-                                            .assessmentId(assessmentId)
-                                            .invitedBy(invitedBy)
-                                            .build();
-        userInvitationRepository.save(userInvitation);
-      } catch (NoSuchAlgorithmException e) {
-        //        throw new RuntimeException(e);
+      } catch (Exception e) {
         log.error("Cannot invite : {} for assessment {}", userEmail, assessmentId);
       }
     }
-    // TODO generate a unique code and send it to email.
-    // Create the user in DB
     // call sending invite.
     return assessmentInviteDTO;
+  }
+
+  private static boolean isBusinessEmail(String userEmail) {
+    Pattern REGEX_FILTER = Pattern.compile(
+        "/^([\\w-\\.]+@(?!gmail.com)(?!yahoo.com)(?!hotmail.com)(?!yahoo.co.in)(?!aol.com)(?!abc.com)(?!xyz.com)(?!pqr.com)(?!rediffmail.com)(?!live.com)(?!outlook.com)(?!me.com)(?!msn.com)(?!ymail.com)([\\w-]+\\.)+[\\w-]{2,4})?$/");
+    Matcher matcher = REGEX_FILTER.matcher(userEmail);
+    return matcher.matches();
+  }
+
+  private static boolean checkValidEmail(String userEmail) {
+    String regex =
+        "^[\\w!#$%&amp;'*+/=?`{|}~^-]+(?:\\.[\\w!#$%&amp;'*+/=?`{|}~^-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,6}$";
+    Pattern pattern = Pattern.compile(regex);
+    Matcher matcher = pattern.matcher(userEmail);
+    return matcher.matches();
   }
 }
