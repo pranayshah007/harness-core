@@ -8,6 +8,7 @@
 package io.harness.template.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.template.resources.NGTemplateResource.TEMPLATE;
 
@@ -15,6 +16,7 @@ import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -37,6 +39,9 @@ import io.harness.pms.contracts.service.VariablesServiceGrpc;
 import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceBlockingStub;
 import io.harness.pms.contracts.service.VariablesServiceRequest;
 import io.harness.rule.Owner;
+import io.harness.spec.server.template.v1.model.GitImportDetails;
+import io.harness.spec.server.template.v1.model.TemplateImportRequestDTO;
+import io.harness.spec.server.template.v1.model.TemplateImportResponseBody;
 import io.harness.spec.server.template.v1.model.TemplateMetadataSummaryResponse;
 import io.harness.spec.server.template.v1.model.TemplateResponse;
 import io.harness.spec.server.template.v1.model.TemplateUpdateStableResponse;
@@ -205,6 +210,22 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     TemplateResponse templateResponseFinal = (TemplateResponse) response.getEntity();
     assertThat(response.getEntityTag().getValue()).isEqualTo("1");
     assertEquals(templateResponseFinal.getIdentifier(), TEMPLATE_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testImportTemplates() {
+    GitImportDetails gitImportDetails = new GitImportDetails();
+    gitImportDetails.isForceImport(false);
+    TemplateImportRequestDTO templateImportRequestDTO = new TemplateImportRequestDTO();
+    doReturn(TemplateEntity.builder().identifier(TEMPLATE_IDENTIFIER).build())
+        .when(templateService)
+        .importTemplateFromRemote(any(), any(), any(), any(), any(), anyBoolean());
+    Response response = templateResourceApiUtils.importTemplate(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, gitImportDetails, templateImportRequestDTO);
+    TemplateImportResponseBody responseBody = (TemplateImportResponseBody) response.getEntity();
+    assertEquals(responseBody.getTemplateIdentifier(), TEMPLATE_IDENTIFIER);
   }
 
   @Test
