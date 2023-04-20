@@ -111,7 +111,7 @@ public class NGLdapGroupSyncHelper {
       }
     } catch (Exception exc) {
       log.error("NGLDAP: Sync Error while updating user Group or its users {} in account {}", userGroup.getIdentifier(),
-          userGroup.getAccountIdentifier());
+          userGroup.getAccountIdentifier(), exc);
       failedUserGroups.add(userGroup);
     }
   }
