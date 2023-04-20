@@ -40,7 +40,7 @@ ENV PATH="$JAVA_HOME/bin:${PATH}"
 
 ARG TARGETARCH
 ARG BASEURL=https://app.harness.io/public/shared/delegates
-ARG DELEGATEVERSION=79102
+ARG DELEGATEVERSION=79103
 
 RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
   && curl -s -L -o client-tools/kubectl/v1.24.3/kubectl https://app.harness.io/public/shared/tools/kubectl/release/v1.24.3/bin/linux/$TARGETARCH/kubectl \
