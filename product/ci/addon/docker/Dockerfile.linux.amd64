@@ -34,7 +34,7 @@ RUN  microdnf install -y wget \
   && microdnf install -y xz \
   && wget https://github.com/harness/tmate/releases/download/1.0/tmate-1.0-static-linux-amd64.tar.xz \
   && tar -xf tmate-1.0-static-linux-amd64.tar.xz \
-  && mv tmate-2.4.0-static-linux-amd64/tmate /usr/local/bin/tmate \
+  && mv tmate-1.0-static-linux-amd64/tmate /usr/local/bin/tmate \
   && chmod +x /usr/local/bin/tmate
 
 RUN groupadd harness && adduser -g harness -s /bin/sh -u 1000 harness
