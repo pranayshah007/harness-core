@@ -79,6 +79,7 @@ import io.harness.pms.plan.creation.PlanCreatorMergeService;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.beans.ProcessStageExecutionInfoResult;
 import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
 import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
@@ -237,25 +238,10 @@ public class ExecutionHelper {
           throw new InvalidRequestException("version not supported");
       }
 
-      StagesExecutionInfo stagesExecutionInfo;
-      if (isNotEmpty(stagesToRun)) {
-        if (!allowedStageExecution) {
-          throw new InvalidRequestException(
-              String.format("Stage executions are not allowed for pipeline [%s]", pipelineEntity.getIdentifier()));
-        }
-
-        StagesExecutionHelper.throwErrorIfAllStagesAreDeleted(pipelineYaml, stagesToRun);
-        pipelineYaml = StagesExpressionExtractor.replaceExpressions(pipelineYaml, expressionValues);
-        stagesExecutionInfo = StagesExecutionHelper.getStagesExecutionInfo(pipelineYaml, stagesToRun, expressionValues);
-        pipelineYamlWithTemplateRef =
-            InputSetMergeHelper.removeNonRequiredStages(pipelineYamlWithTemplateRef, stagesToRun);
-      } else {
-        stagesExecutionInfo = StagesExecutionInfo.builder()
-                                  .isStagesExecution(false)
-                                  .pipelineYamlToRun(pipelineYaml)
-                                  .allowStagesExecution(allowedStageExecution)
-                                  .build();
-      }
+      ProcessStageExecutionInfoResult processStageExecutionInfoResult = processStageExecutionInfo(stagesToRun,
+          allowedStageExecution, pipelineEntity, pipelineYaml, pipelineYamlWithTemplateRef, expressionValues);
+      StagesExecutionInfo stagesExecutionInfo = processStageExecutionInfoResult.getStagesExecutionInfo();
+      pipelineYamlWithTemplateRef = processStageExecutionInfoResult.getFilteredPipelineYamlWithTemplateRef();
 
       /*
     For schema validations, we don't want input set validators to be appended. For example, if some timeout field in
@@ -650,5 +636,33 @@ public class ExecutionHelper {
       log.info("NodeExecution is null for plan node: {} ", stageNodeId);
     }
     return null;
+  }
+
+  public ProcessStageExecutionInfoResult processStageExecutionInfo(List<String> stagesToRun,
+      boolean allowedStageExecution, PipelineEntity pipelineEntity, String pipelineYaml,
+      String pipelineYamlWithTemplateRef, Map<String, String> expressionValues) {
+    StagesExecutionInfo stagesExecutionInfo;
+    if (isNotEmpty(stagesToRun)) {
+      if (!allowedStageExecution) {
+        throw new InvalidRequestException(
+            String.format("Stage executions are not allowed for pipeline [%s]", pipelineEntity.getIdentifier()));
+      }
+
+      StagesExecutionHelper.throwErrorIfAllStagesAreDeleted(pipelineYaml, stagesToRun);
+      pipelineYaml = StagesExpressionExtractor.replaceExpressions(pipelineYaml, expressionValues);
+      stagesExecutionInfo = StagesExecutionHelper.getStagesExecutionInfo(pipelineYaml, stagesToRun, expressionValues);
+      pipelineYamlWithTemplateRef =
+          InputSetMergeHelper.removeNonRequiredStages(pipelineYamlWithTemplateRef, stagesToRun);
+    } else {
+      stagesExecutionInfo = StagesExecutionInfo.builder()
+                                .isStagesExecution(false)
+                                .pipelineYamlToRun(pipelineYaml)
+                                .allowStagesExecution(allowedStageExecution)
+                                .build();
+    }
+    return ProcessStageExecutionInfoResult.builder()
+        .stagesExecutionInfo(stagesExecutionInfo)
+        .filteredPipelineYamlWithTemplateRef(pipelineYamlWithTemplateRef)
+        .build();
   }
 }
