@@ -109,4 +109,11 @@ public class GitContextHelper {
 
     return false;
   }
+
+  public static void setIsDefaultBranchInGitEntityInfoWithParameter(String branch) {
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    if (gitEntityInfo != null) {
+      gitEntityInfo.setDefaultBranch(isEmpty(branch));
+    }
+  }
 }
