@@ -19,8 +19,12 @@ import io.harness.assessment.settings.beans.entities.QuestionType;
 import io.harness.assessment.settings.mappers.AssessmentUploadMapper;
 import io.harness.assessment.settings.mappers.QuestionUtils;
 import io.harness.assessment.settings.repositories.AssessmentRepository;
+import io.harness.utils.YamlPipelineUtils;
 
 import com.google.inject.Inject;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,6 +34,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.BadRequestException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -43,12 +48,13 @@ public class AssessmentUploadServiceImpl implements AssessmentUploadService {
   private AssessmentRepository assessmentRepository;
   @Override
   public AssessmentUploadResponse uploadNewAssessment(AssessmentUploadRequest assessmentUploadRequest) {
-    // TODO all the entity Id has to be unique in context of a assessment.: assessment,question,section
-    // TODO validation by question types
+    //  TODO all the entity Id has to be unique in context of a assessment.: assessment,question,section
+    //  TODO validation by question types
     Optional<Assessment> assessmentOptional =
         assessmentRepository.findFirstByAssessmentIdOrderByVersionDesc(assessmentUploadRequest.getAssessmentId());
+    Assessment assessmentInDb = null;
     if (assessmentOptional.isPresent()) {
-      throw new BadRequestException("Assessment already exists, for Id : " + assessmentUploadRequest.getAssessmentId());
+      assessmentInDb = assessmentOptional.get();
     }
     Assessment assessmentUploaded = AssessmentUploadMapper.fromDTO(assessmentUploadRequest);
     autofillQuestions(assessmentUploaded);
@@ -56,15 +62,28 @@ public class AssessmentUploadServiceImpl implements AssessmentUploadService {
     if (errorsList.size() > 0) {
       return AssessmentUploadResponse.builder().errors(errorsList).build();
     }
-    assessmentUploaded.setVersion(1L);
-    assessmentUploaded.setMinorVersion(0L);
+    boolean areTheyEqual = compareAssessmentsDiff(assessmentInDb, assessmentUploaded);
+    if (!areTheyEqual) {
+      long version = assessmentOptional.isPresent() ? assessmentInDb.getVersion() : 0;
+      assessmentUploaded.setVersion(version + 1);
+      assessmentUploaded.setMinorVersion(0L);
+      assessmentUploaded.setIsPublished(false);
+      log.info("Adding new major version for assessment: {}", assessmentUploadRequest.getAssessmentId());
+      // do other things TODO
+    } else {
+      assessmentUploaded.setVersion(assessmentInDb.getVersion());
+      assessmentUploaded.setMinorVersion(assessmentInDb.getMinorVersion() + 1);
+      assessmentUploaded.setId(assessmentInDb.getId());
+      assessmentUploaded.setCreatedAt(assessmentInDb.getCreatedAt());
+      // this should be updated to old, not new version
+      log.info("updating minor version for assessment: {}", assessmentUploadRequest.getAssessmentId());
+    }
     int numOfQuestions = assessmentUploadRequest.getQuestions().size();
     assessmentUploaded.setBaseScore(numOfQuestions * QUESTION_SCORE); // calculate
     assessmentUploaded.getQuestions().forEach(question -> {
       question.setScoreWeightage(QUESTION_SCORE_WEIGHTAGE);
       question.setMaxScore(QUESTION_SCORE);
     });
-    assessmentUploaded.setIsPublished(false);
     assessmentUploaded.setCreatedBy("System"); // TODO implement some form of basic auth
     assessmentRepository.save(assessmentUploaded);
     return AssessmentUploadMapper.toDTO(assessmentUploaded);
@@ -127,52 +146,11 @@ public class AssessmentUploadServiceImpl implements AssessmentUploadService {
     }
     return errors;
   }
-  @Override
-  public AssessmentUploadResponse updateAssessment(AssessmentUploadRequest assessmentUploadRequest) {
-    // TODO check if its a allowed update.
-    // TODO Change of question type is also new assessment.
-    log.info("Updating assessment with request: {}", assessmentUploadRequest);
-    String assessmentId = assessmentUploadRequest.getAssessmentId();
-    Assessment assessmentUploaded = AssessmentUploadMapper.fromDTO(assessmentUploadRequest);
-    autofillQuestions(assessmentUploaded);
-    List<AssessmentError> errorsList = validateAssessment(assessmentUploaded);
-    if (errorsList.size() > 0) {
-      return AssessmentUploadResponse.builder().errors(errorsList).build();
-    }
-    Optional<Assessment> assessmentOptional =
-        assessmentRepository.findFirstByAssessmentIdOrderByVersionDesc(assessmentId);
-    if (assessmentOptional.isEmpty()) {
-      throw new BadRequestException("Assessment not found, for Id : " + assessmentId);
-    }
-    Assessment assessmentInDb = assessmentOptional.get();
-    boolean areTheyEqual = compareAssessmentsDiff(assessmentInDb, assessmentUploaded);
-
-    if (!areTheyEqual) {
-      assessmentUploaded.setVersion(assessmentInDb.getVersion() + 1);
-      assessmentUploaded.setMinorVersion(0L);
-      log.info("updating major version for assessment: {}", assessmentUploadRequest.getAssessmentId());
-      // do other things TODO
-    } else {
-      assessmentUploaded.setVersion(assessmentInDb.getVersion());
-      assessmentUploaded.setMinorVersion(assessmentInDb.getMinorVersion() + 1);
-      assessmentUploaded.setId(assessmentInDb.getId());
-      assessmentUploaded.setCreatedAt(assessmentInDb.getCreatedAt());
-      // this should be updated to old, not new version
-      log.info("updating minor version for assessment: {}", assessmentUploadRequest.getAssessmentId());
-    }
-    assessmentUploaded.setBaseScore(assessmentInDb.getBaseScore()); // calculate
-    assessmentUploaded.getQuestions().forEach(question -> {
-      question.setScoreWeightage(QUESTION_SCORE_WEIGHTAGE); // change this TODO
-      question.setMaxScore(QUESTION_SCORE);
-    });
-    assessmentUploaded.setIsPublished(false);
-    assessmentUploaded.setCreatedBy("System"); // TODO Update with new token
-    return AssessmentUploadMapper.toDTO(assessmentRepository.saveOrUpdate(assessmentUploaded));
-    // Algorithm to find update without version change
-    // check all question Ids are present
-  }
 
   private static boolean compareAssessmentsDiff(Assessment assessmentInDb, Assessment assessmentUploaded) {
+    if (assessmentInDb == null) {
+      return false;
+    }
     LinkedHashMap<String, List<QuestionOption>> questionsInDBMap = new LinkedHashMap<>();
     assessmentInDb.getQuestions().forEach(question -> {
       String questionKey = getQuestionKey(question);
@@ -235,5 +213,14 @@ public class AssessmentUploadServiceImpl implements AssessmentUploadService {
     }
     log.info("{}", assessmentOptional.get());
     return AssessmentUploadMapper.toDTO(assessmentOptional.get());
+  }
+
+  @Override
+  public AssessmentUploadResponse uploadNewAssessmentYAML(InputStream uploadedInputStream, String assessmentId)
+      throws IOException {
+    String fileAsString = IOUtils.toString(uploadedInputStream, Charset.defaultCharset());
+    AssessmentUploadRequest assessmentUploadRequest =
+        YamlPipelineUtils.read(fileAsString, AssessmentUploadRequest.class);
+    return uploadNewAssessment(assessmentUploadRequest);
   }
 }

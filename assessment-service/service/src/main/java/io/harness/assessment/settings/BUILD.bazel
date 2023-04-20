@@ -29,5 +29,7 @@ java_library(
         "@maven//:org_springframework_data_spring_data_commons",
         "@maven//:org_springframework_data_spring_data_mongodb",
         "@maven//:org_apache_commons_commons_collections4",
+        "@maven//:org_glassfish_jersey_core_jersey_server",
+        "@maven//:org_glassfish_jersey_media_jersey_media_multipart",
     ],
 )

@@ -7,8 +7,6 @@
 
 package io.harness.assessment.settings.beans.dto.upload;
 
-import io.harness.assessment.settings.beans.entities.Question;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 import lombok.Builder;
@@ -22,7 +20,7 @@ public class AssessmentUploadResponse {
   String assessmentName;
   Long majorVersion;
   Long minorVersion;
-  List<Question> questions;
+  List<UploadedQuestion> questions;
   Long expectedCompletionDuration;
   Long baseScore;
   List<AssessmentError> errors;

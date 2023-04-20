@@ -43,16 +43,16 @@ public class BenchmarkMapper {
         .benchmarkId(benchmark.getBenchmarkId())
         .benchmarkName(benchmark.getBenchmarkName())
         .isDefault(benchmark.getIsDefault())
-        .scores(benchmark.getScores()
-                    .stream()
-                    .map(score
-                        -> ScoreDTO.builder()
-                               .score(score.getScore())
-                               .scoreType(score.getScoreType())
-                               .entityId(score.getEntityId())
-                               .maxScore(score.getMaxScore())
-                               .build())
-                    .collect(Collectors.toList()))
+        .scores(benchmark.getScores().stream().map(BenchmarkMapper::fromScore).collect(Collectors.toList()))
+        .build();
+  }
+
+  public ScoreDTO fromScore(Score score) {
+    return ScoreDTO.builder()
+        .score(score.getScore())
+        .scoreType(score.getScoreType())
+        .entityId(score.getEntityId())
+        .maxScore(score.getMaxScore())
         .build();
   }
 }

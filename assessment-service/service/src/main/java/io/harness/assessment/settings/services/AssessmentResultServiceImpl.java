@@ -19,6 +19,7 @@ import io.harness.assessment.settings.beans.entities.QuestionOption;
 import io.harness.assessment.settings.beans.entities.Score;
 import io.harness.assessment.settings.beans.entities.ScoreType;
 import io.harness.assessment.settings.mappers.AssessmentResponseMapper;
+import io.harness.assessment.settings.mappers.BenchmarkMapper;
 import io.harness.assessment.settings.repositories.AssessmentRepository;
 import io.harness.assessment.settings.repositories.AssessmentResponseRepository;
 import io.harness.assessment.settings.repositories.BenchmarkRepository;
@@ -144,12 +145,14 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
         ScoreOverviewDTO.builder()
             .selfScore(assessmentResultsResponse.getUserScores()
                            .stream()
-                           .filter(x -> x.getScoreType() == ScoreType.ASSESSMENT_LEVEL)
+                           .filter(score -> score.getScoreType() == ScoreType.ASSESSMENT_LEVEL)
+                           .map(BenchmarkMapper::fromScore)
                            .findFirst()
                            .orElse(null))
             .organizationScore(assessmentResultsResponse.getOrganizationScores()
                                    .stream()
-                                   .filter(x -> x.getScoreType() == ScoreType.ASSESSMENT_LEVEL)
+                                   .filter(score -> score.getScoreType() == ScoreType.ASSESSMENT_LEVEL)
+                                   .map(BenchmarkMapper::fromScore)
                                    .findFirst()
                                    .orElse(null))
             .build();
@@ -171,12 +174,11 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
       Benchmark benchmark = benchmarkOptional.get();
       scoreOverviewDTO.setBenchmarkId(benchmark.getBenchmarkId());
       scoreOverviewDTO.setBenchmarkName(benchmark.getBenchmarkName());
-      Score benchmarkScore = benchmark.getScores()
-                                 .stream()
-                                 .filter(score -> score.getScoreType() == ScoreType.ASSESSMENT_LEVEL)
-                                 .findFirst()
-                                 .orElse(null);
-      scoreOverviewDTO.setBenchmarkScore(benchmarkScore);
+      benchmark.getScores()
+          .stream()
+          .filter(score -> score.getScoreType() == ScoreType.ASSESSMENT_LEVEL)
+          .findFirst()
+          .ifPresent(benchmarkScore -> scoreOverviewDTO.setBenchmarkScore(BenchmarkMapper.fromScore(benchmarkScore)));
       Integer percentageDiffBenchmark = Math.toIntExact(
           Math.round(((scoreOverviewDTO.getSelfScore().getScore() - scoreOverviewDTO.getBenchmarkScore().getScore())
                          / scoreOverviewDTO.getSelfScore().getMaxScore())

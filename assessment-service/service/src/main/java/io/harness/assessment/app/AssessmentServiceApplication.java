@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.Path;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.model.Resource;
 
 @Slf4j
@@ -125,6 +126,7 @@ public class AssessmentServiceApplication extends Application<AssessmentServiceC
     jersey.register(WingsExceptionMapperV2.class);
     jersey.register(NotFoundExceptionMapper.class);
     jersey.register(NotAllowedExceptionMapper.class);
+    jersey.register(MultiPartFeature.class);
   }
 
   // TODO there can be a step to register auth filters etc.

@@ -7,8 +7,6 @@
 
 package io.harness.assessment.settings.beans.dto;
 
-import io.harness.assessment.settings.beans.entities.Score;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 import lombok.Builder;
@@ -18,9 +16,9 @@ import lombok.Data;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ScoreOverviewDTO {
-  Score selfScore;
-  Score organizationScore;
-  Score benchmarkScore;
+  ScoreDTO selfScore;
+  ScoreDTO organizationScore;
+  ScoreDTO benchmarkScore;
   Long numberOfResponses;
   Integer percentageDiffOrg;
   Integer percentageDiffBenchmark;
