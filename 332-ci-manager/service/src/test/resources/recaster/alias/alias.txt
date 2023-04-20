@@ -352,3 +352,9 @@ io.harness.ci.config.VmContainerlessStepConfig
 io.harness.pms.sdk.core.steps.io.EmptyStepParameters
 io.harness.steps.plugin.ContainerStepOutcome
 io.harness.ci.config.CIDockerLayerCachingConfig
+io.harness.steps.plugin.infrastructure.ContainerInfraYamlSpec
+io.harness.steps.plugin.infrastructure.volumes.EmptyDirYaml
+io.harness.steps.plugin.infrastructure.volumes.PersistentVolumeClaimYaml
+io.harness.steps.container.execution.ContainerExecutionConfig
+io.harness.steps.plugin.infrastructure.ContainerK8sInfra
+io.harness.steps.plugin.infrastructure.volumes.HostPathYaml
