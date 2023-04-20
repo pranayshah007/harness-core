@@ -7,6 +7,7 @@
 
 package io.harness.utils;
 
+import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.NAMAN;
@@ -103,7 +104,7 @@ public class IdentifierRefHelperTest extends CategoryTest {
 
     assertThatThrownBy(
         () -> IdentifierRefHelper.getIdentifierRef(identifier, accountIdentifier, orgIdentifier, projectIdentifier))
-        .isInstanceOf(IllegalArgumentException.class);
+        .isInstanceOf(InvalidIdentifierRefException.class);
   }
 
   @Test
@@ -332,6 +333,17 @@ public class IdentifierRefHelperTest extends CategoryTest {
         () -> IdentifierRefHelper.getIdentifierRefOrThrowException(null, "Account", null, null, "service"))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Empty identifier ref cannot be used for service");
+  }
+
+  @Test
+  @Owner(developers = ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  public void testIncorrectScopeCreation() {
+    assertThatThrownBy(
+        () -> IdentifierRefHelper.getIdentifierRef("<+pipeline.var", "Account", "ORGANIZATION", "PROJECT", null))
+        .isInstanceOf(InvalidIdentifierRefException.class)
+        .hasMessage(
+            "Invalid Identifier Reference <+pipeline.var. Valid references must be one of the following formats [ id, org.id, account.id ]  for scope [ project, organisation, account ] respectively");
   }
 
   @Test

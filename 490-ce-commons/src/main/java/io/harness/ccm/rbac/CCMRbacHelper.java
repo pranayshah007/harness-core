@@ -52,7 +52,15 @@ public interface CCMRbacHelper {
   void checkRuleEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   void checkRuleViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   void checkRuleDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkRuleExecutePermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String ruleId);
+  Set<String> checkRuleIdsGivenPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, Set<String> ruleIds, String permission);
 
+  void checkAccountExecutePermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String accountId);
+  Set<String> checkAccountIdsGivenPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      Set<String> accountIds, String permission);
   void checkRuleSetViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   void checkRuleSetDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   void checkRuleSetEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);

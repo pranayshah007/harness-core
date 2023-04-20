@@ -17,7 +17,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -55,6 +54,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
@@ -94,22 +94,22 @@ public class AzureARMRollbackStepTest extends CategoryTest {
     List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
     when(azureCommonHelper.getAzureEncryptionDetails(any(), any())).thenReturn(encryptedDataDetails);
     when(stepHelper.getEnvironmentType(any())).thenReturn(EnvironmentType.NON_PROD);
-    Mockito.mockStatic(TaskRequestsUtils.class);
+    MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class);
     when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
-    Class<ArrayList<TaskSelector>> delegateSelectors = (Class<ArrayList<TaskSelector>>) (Class) ArrayList.class;
-    ArgumentCaptor<ArrayList<TaskSelector>> taskSelectorsArgumentCaptor = ArgumentCaptor.forClass(delegateSelectors);
+    ArgumentCaptor<List<TaskSelector>> taskSelectorsArgumentCaptor = ArgumentCaptor.forClass(List.class);
     StepInputPackage inputPackage = StepInputPackage.builder().build();
     StepElementParameters steps = StepElementParameters.builder().spec(getParams()).build();
 
     azureARMRollbackStep.obtainTaskAfterRbac(azureHelperTest.getAmbiance(), steps, inputPackage);
 
     verify(azureARMConfigDAL).getAzureARMConfig(any(), eq("abc"));
-    verifyStatic(TaskRequestsUtils.class, times(1));
-    TaskRequestsUtils.prepareCDTaskRequest(
-        any(), taskDataArgumentCaptor.capture(), any(), any(), any(), taskSelectorsArgumentCaptor.capture(), any());
+    aStatic.verify(()
+                       -> TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(),
+                           any(), taskSelectorsArgumentCaptor.capture(), any()),
+        times(1));
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     AzureARMTaskNGParameters taskNGParameters =

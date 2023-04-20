@@ -4599,7 +4599,7 @@ go_repository(
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.19.6")
+go_register_toolchains(version = "1.19.8")
 
 gazelle_dependencies()
 
@@ -5053,7 +5053,7 @@ plain_artifacts = [
     "javax:javaee-api:8.0",
     "joda-time:joda-time:2.10.6",
     "net.arnx:nashorn-promise:0.1.1",
-    "net.bytebuddy:byte-buddy:1.10.7",
+    "net.bytebuddy:byte-buddy:1.14.1",
     "net.engio:mbassador:1.3.0",
     "net.i2p.crypto:eddsa:0.3.0",
     "net.java.dev.jna:jna-platform:5.5.0",
@@ -5312,16 +5312,16 @@ plain_artifacts = [
     "org.springframework.kafka:spring-kafka:2.3.7.RELEASE",
     "org.springframework.retry:spring-retry:1.2.5.RELEASE",
     "org.springframework.security:spring-security-crypto:5.3.5.RELEASE",
-    "org.springframework:spring-aop:5.3.26",
-    "org.springframework:spring-beans:5.3.26",
-    "org.springframework:spring-context:5.3.26",
-    "org.springframework:spring-core:5.3.26",
-    "org.springframework:spring-expression:5.3.26",
-    "org.springframework:spring-jcl:5.3.26",
-    "org.springframework:spring-messaging:5.3.26",
-    "org.springframework:spring-test:5.3.26",
-    "org.springframework:spring-tx:5.3.26",
-    "org.springframework:spring-web:5.3.26",
+    "org.springframework:spring-aop:5.3.27",
+    "org.springframework:spring-beans:5.3.27",
+    "org.springframework:spring-context:5.3.27",
+    "org.springframework:spring-core:5.3.27",
+    "org.springframework:spring-expression:5.3.27",
+    "org.springframework:spring-jcl:5.3.27",
+    "org.springframework:spring-messaging:5.3.27",
+    "org.springframework:spring-test:5.3.27",
+    "org.springframework:spring-tx:5.3.27",
+    "org.springframework:spring-web:5.3.27",
     "org.threeten:threetenbp:1.4.1",
     "org.webjars.npm:viz.js-for-graphviz-java:2.1.3",
     "org.xerial.snappy:snappy-java:1.1.7.3",
@@ -5537,10 +5537,11 @@ maven_install(
         maven_test_artifact("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2:2.23.1"),
         maven_test_artifact("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-inmemory:2.23.1"),
         maven_test_artifact("org.glassfish.jersey.test-framework:jersey-test-framework-core:2.23.1"),
-        maven_test_artifact("org.mockito:mockito-core:3.4.4"),
-        maven_test_artifact("org.mockito:mockito-inline:3.4.4"),
+        maven_test_artifact("org.mockito:mockito-core:5.2.0"),
+        maven_test_artifact("org.mockito:mockito-inline:5.2.0"),
         maven_test_artifact("pl.pragmatists:JUnitParams:1.0.4"),
         maven_test_artifact("pl.pragmatists:JUnitParams:1.0.4"),
+        maven_test_artifact("uk.org.webcompere:system-stubs-core:2.0.2"),
     ],
     excluded_artifacts = [],
     maven_install_json = "//project:main_maven_install.json",
@@ -5725,7 +5726,10 @@ filegroup(
     urls = ["https://www.python.org/ftp/python/3.9.10/Python-3.9.10.tar.xz"],
 )
 
-register_toolchains("//:harness_no_fdLimit_jdk11_toolchain_definition")
+register_toolchains(
+    "//:harness_no_fdLimit_jdk11_toolchain_definition",
+    "//:harness_no_fdLimit_jdk17_toolchain_definition",
+)
 
 register_toolchains("//:py_toolchain")
 

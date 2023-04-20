@@ -280,7 +280,7 @@ public class MicrosoftTeamsMessageDispatcherTest extends WingsBaseTest {
   public void testDispatchEmptyNotification() {
     List<Notification> notifications = new ArrayList<>();
     microsoftTeamsMessageDispatcher.dispatch(notifications, MICROSOFT_TEAMS_WEBHOOK_URL);
-    Mockito.verifyZeroInteractions(microsoftTeamsNotificationService);
+    Mockito.verifyNoInteractions(microsoftTeamsNotificationService);
   }
 
   private List<String> getExpectedMessageValues() throws IOException {

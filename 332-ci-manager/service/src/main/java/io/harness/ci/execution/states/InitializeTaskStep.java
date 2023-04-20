@@ -90,7 +90,6 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.remote.client.CGRestUtils;
-import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
 import io.harness.steps.executable.TaskExecutableWithRbac;
@@ -150,7 +149,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   @Inject private CIYAMLSanitizationService sanitizationService;
   @Inject private BackgroundTaskUtility backgroundTaskUtility;
   @Inject private CILicenseService ciLicenseService;
-  @Inject CIAccountExecutionMetadataRepository accountExecutionMetadataRepository;
+  @Inject private CIStagePlanCreationUtils ciStagePlanCreationUtils;
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
@@ -252,8 +251,8 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
 
     String logPrefix = getLogPrefix(ambiance);
-    CIStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(accountExecutionMetadataRepository,
-        ciLicenseService, AmbianceUtils.getAccountId(ambiance), initializeStepInfo.getInfrastructure());
+    ciStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(
+        AmbianceUtils.getAccountId(ambiance), initializeStepInfo.getInfrastructure());
 
     populateStrategyExpansion(initializeStepInfo, ambiance);
     CIInitializeTaskParams buildSetupTaskParams =
@@ -382,7 +381,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
     Optional<Integer> maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT));
     if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE
-        && CIStagePlanCreationUtils.isHostedInfra(initializeStepInfo.getInfrastructure())) {
+        && ciStagePlanCreationUtils.isHostedInfra(initializeStepInfo.getInfrastructure())) {
       maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT));
     }
 

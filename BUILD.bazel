@@ -103,6 +103,15 @@ default_java_toolchain(
     target_version = "11",
 )
 
+default_java_toolchain(
+    name = "harness_no_fdLimit_jdk17_toolchain",
+    configuration = dict(),
+    java_runtime = "@bazel_tools//tools/jdk:remotejdk_17",
+    jvm_opts = BASE_JDK9_JVM_OPTS + ["-XX:-MaxFDLimit"],  # Additional JDK options
+    source_version = "17",
+    target_version = "17",
+)
+
 java_plugin(
     name = "lombok_plugin",
     processor_class = "lombok.launch.AnnotationProcessorHider$AnnotationProcessor",

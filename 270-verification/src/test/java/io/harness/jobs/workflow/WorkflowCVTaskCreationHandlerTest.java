@@ -10,11 +10,11 @@ package io.harness.jobs.workflow;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import io.harness.VerificationBase;
 import io.harness.category.element.UnitTests;
@@ -54,7 +54,7 @@ public class WorkflowCVTaskCreationHandlerTest extends VerificationBase {
     workflowCVTaskCreationHandler.handle(analysisContext);
     AnalysisContext updatedContext = wingsPersistence.get(AnalysisContext.class, analysisContext.getUuid());
     assertThat(updatedContext.isCvTasksCreated()).isTrue();
-    verifyZeroInteractions(cvTaskService);
+    verifyNoInteractions(cvTaskService);
   }
 
   @Test

@@ -11,6 +11,7 @@ option java_multiple_files = true;
 
 import "io/harness/pms/contracts/plan/trigger_info.proto";
 import "io/harness/pms/contracts/plan/principal_info.proto";
+import "io/harness/pms/contracts/execution/executable_response.proto";
 
 // next ID: 18
 message ExecutionMetadata {
@@ -30,6 +31,7 @@ message ExecutionMetadata {
   bool isDebug = 18;
   ExecutionMode executionMode = 19;
   bool useMatrixFieldName = 20;
+  repeated PostExecutionRollbackInfo postExecutionRollbackInfo = 21;
 }
 
 message RetryExecutionInfo {
@@ -46,6 +48,11 @@ message PipelineStageInfo {
   string projectId = 5;
   string orgId = 6;
   int32 runSequence = 7;
+}
+
+message PostExecutionRollbackInfo {
+  string postExecutionRollbackStageId = 1;
+  io.harness.pms.contracts.execution.StrategyMetadata rollbackStageStrategyMetadata = 2;
 }
 
 enum PipelineStoreType {

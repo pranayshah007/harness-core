@@ -30,6 +30,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.clients.BackstageCatalogLocationCreateRequest;
 import io.harness.clients.BackstageResourceClient;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
@@ -164,12 +165,13 @@ public class OnboardingServiceImpl implements OnboardingService {
         catalogConnectorInfo.getInfraConnector().getIdentifier()));
 
     ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(
-        ConnectorType.fromString(catalogConnectorInfo.getInfraConnector().getType()));
+        ConnectorType.fromString(String.valueOf(catalogConnectorInfo.getInfraConnector().getType())));
     log.info("IDP onboarding import - connector processor initialized for type = {}",
         catalogConnectorInfo.getInfraConnector().getType());
 
-    String catalogInfraConnectorType = connectorProcessor.getInfraConnectorType(
+    ConnectorInfoDTO connectorInfoDTO = connectorProcessor.getConnectorInfo(
         accountIdentifier, catalogConnectorInfo.getInfraConnector().getIdentifier());
+    String catalogInfraConnectorType = connectorProcessor.getInfraConnectorType(connectorInfoDTO);
 
     String tmpPathForCatalogInfoYamlStore =
         onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore() + SLASH_DELIMITER + accountIdentifier;
@@ -562,7 +564,7 @@ public class OnboardingServiceImpl implements OnboardingService {
         Constants.IDP_PREFIX + catalogConnectorInfo.getInfraConnector().getIdentifier());
     catalogConnectorEntity.setType(CatalogInfraConnectorType.valueOf(catalogInfraConnectorType));
     catalogConnectorEntity.setConnectorIdentifier(catalogConnectorInfo.getInfraConnector().getIdentifier());
-    catalogConnectorEntity.setConnectorProviderType(catalogConnectorInfo.getInfraConnector().getType());
+    catalogConnectorEntity.setConnectorProviderType(String.valueOf(catalogConnectorInfo.getInfraConnector().getType()));
     catalogConnectorEntity.setCatalogRepositoryDetails(new CatalogRepositoryDetails(
         catalogConnectorInfo.getRepo(), catalogConnectorInfo.getBranch(), catalogConnectorInfo.getPath()));
 
@@ -634,7 +636,8 @@ public class OnboardingServiceImpl implements OnboardingService {
       String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo) {
     try {
       gitIntegrationService.createConnectorInBackstage(accountIdentifier,
-          catalogConnectorInfo.getInfraConnector().getIdentifier(), catalogConnectorInfo.getInfraConnector().getType());
+          catalogConnectorInfo.getInfraConnector().getIdentifier(),
+          String.valueOf(catalogConnectorInfo.getInfraConnector().getType()));
     } catch (Exception e) {
       log.error("Unable to create infra connector secrets in backstage k8s, ex = {}", e.getMessage(), e);
     }

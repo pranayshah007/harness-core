@@ -11,10 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -51,12 +51,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import retrofit2.Call;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -97,7 +97,7 @@ public class AwsSshInstanceSyncExecutorTest extends DelegateTestBase {
         executor.runOnce(PerpetualTaskId.newBuilder().setId("id").build(), perpetualTaskParams, Instant.now());
 
     verify(ec2ServiceDelegate, Mockito.times(1))
-        .listEc2Instances(any(AwsConfig.class), anyList(), Matchers.eq("us-east-1"), anyList(), eq(true));
+        .listEc2Instances(any(AwsConfig.class), anyList(), ArgumentMatchers.eq("us-east-1"), anyList(), eq(true));
 
     verify(delegateAgentManagerClient, times(1)).publishInstanceSyncResult(eq("id"), eq("accountId"), captor.capture());
 
@@ -139,7 +139,7 @@ public class AwsSshInstanceSyncExecutorTest extends DelegateTestBase {
         executor.runOnce(PerpetualTaskId.newBuilder().setId("id").build(), perpetualTaskParams, Instant.now());
 
     verify(ec2ServiceDelegate, Mockito.times(1))
-        .listEc2Instances(any(AwsConfig.class), anyList(), Matchers.eq("us-east-1"), anyList(), eq(true));
+        .listEc2Instances(any(AwsConfig.class), anyList(), ArgumentMatchers.eq("us-east-1"), anyList(), eq(true));
 
     verify(delegateAgentManagerClient, times(1)).publishInstanceSyncResult(eq("id"), eq("accountId"), captor.capture());
 

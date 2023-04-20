@@ -12,7 +12,7 @@ import static io.harness.delegate.beans.connector.docker.DockerAuthType.USER_PAS
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -53,8 +53,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -138,7 +138,7 @@ public class DockerConnectionValidatorTest extends CategoryTest {
     DockerValidationHandler dockerValidationHandler = mock(DockerValidationHandler.class);
     on(dockerValidationHandler).set("dockerArtifactTaskHelper", dockerArtifactTaskHelper);
     when(dockerValidationHandler.validate(any(), any())).thenCallRealMethod();
-    when(connectorTypeToConnectorValidationHandlerMap.get(Matchers.eq("DockerRegistry")))
+    when(connectorTypeToConnectorValidationHandlerMap.get(ArgumentMatchers.eq("DockerRegistry")))
         .thenReturn(dockerValidationHandler);
 
     ArtifactTaskExecutionResponse taskExecutionResponse =
@@ -153,7 +153,7 @@ public class DockerConnectionValidatorTest extends CategoryTest {
     DockerConnectorValidationParamsProvider dockerConnectorValidationParamsProvider =
         new DockerConnectorValidationParamsProvider();
     on(dockerConnectorValidationParamsProvider).set("encryptionHelper", encryptionHelper);
-    when(connectorValidationParamsProviderMap.get(Matchers.eq("DockerRegistry")))
+    when(connectorValidationParamsProviderMap.get(ArgumentMatchers.eq("DockerRegistry")))
         .thenReturn(dockerConnectorValidationParamsProvider);
 
     ConnectorValidationResult validationResult = dockerConnectionValidator.validate(

@@ -10,6 +10,7 @@ package io.harness.cdng.artifact.mappers;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.PRAGYESH;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.VINICIUS;
 
@@ -29,6 +30,9 @@ import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleCloudSourceArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleCloudSourceFetchType;
+import io.harness.cdng.artifact.bean.yaml.GoogleCloudStorageArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScriptInfo;
@@ -65,6 +69,8 @@ import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.exception.InvalidArtifactServerException;
@@ -1436,5 +1442,131 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(acrDelegateRequest.getRepository()).isEqualTo(acrArtifactConfig.getRepository().getValue());
     assertThat(acrDelegateRequest.getTagRegex()).isEqualTo(ACCEPT_ALL_REGEX);
     assertThat(acrDelegateRequest.getTag()).isEqualTo("");
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testGetGCStorageDelegateRequest() {
+    GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =
+        GoogleCloudStorageArtifactConfig.builder()
+            .project(ParameterField.createValueField("test-project"))
+            .bucket(ParameterField.createValueField("test-bucket"))
+            .artifactPath(ParameterField.createValueField("test/path"))
+            .build();
+    GcpConnectorDTO connectorDTO = GcpConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    GoogleCloudStorageArtifactDelegateRequest googleCloudStorageArtifactDelegateRequest =
+        ArtifactConfigToDelegateReqMapper.getGoogleCloudStorageArtifactDelegateRequest(
+            googleCloudStorageArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(googleCloudStorageArtifactDelegateRequest.getGcpConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(googleCloudStorageArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(googleCloudStorageArtifactDelegateRequest.getArtifactPath())
+        .isEqualTo(googleCloudStorageArtifactConfig.getArtifactPath().getValue());
+    assertThat(googleCloudStorageArtifactDelegateRequest.getBucket())
+        .isEqualTo(googleCloudStorageArtifactConfig.getBucket().getValue());
+    assertThat(googleCloudStorageArtifactDelegateRequest.getProject())
+        .isEqualTo(googleCloudStorageArtifactConfig.getProject().getValue());
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testGetGCSourceDelegateRequestWithBranch() {
+    GoogleCloudSourceArtifactConfig googleCloudSourceArtifactConfig =
+        GoogleCloudSourceArtifactConfig.builder()
+            .project(ParameterField.createValueField("test-project"))
+            .repository(ParameterField.createValueField("test-repo"))
+            .sourceDirectory(ParameterField.createValueField("test/path"))
+            .fetchType(GoogleCloudSourceFetchType.BRANCH)
+            .branch(ParameterField.createValueField("test-branch"))
+            .build();
+    GcpConnectorDTO connectorDTO = GcpConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    GoogleCloudSourceArtifactDelegateRequest googleCloudSourceArtifactDelegateRequest =
+        ArtifactConfigToDelegateReqMapper.getGoogleCloudSourceArtifactDelegateRequest(
+            googleCloudSourceArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(googleCloudSourceArtifactDelegateRequest.getGcpConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(googleCloudSourceArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(googleCloudSourceArtifactDelegateRequest.getBranch())
+        .isEqualTo(googleCloudSourceArtifactConfig.getBranch().getValue());
+    assertThat(googleCloudSourceArtifactDelegateRequest.getSourceDirectory())
+        .isEqualTo(googleCloudSourceArtifactConfig.getSourceDirectory().getValue());
+    assertThat(googleCloudSourceArtifactDelegateRequest.getRepository())
+        .isEqualTo(googleCloudSourceArtifactConfig.getRepository().getValue());
+    assertThat(googleCloudSourceArtifactDelegateRequest.getGoogleCloudSourceFetchType().toString())
+        .isEqualTo(googleCloudSourceArtifactConfig.getFetchType().toString());
+    assertThat(googleCloudSourceArtifactDelegateRequest.getProject())
+        .isEqualTo(googleCloudSourceArtifactConfig.getProject().getValue());
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testGetGCSourceDelegateRequestWithTag() {
+    GoogleCloudSourceArtifactConfig googleCloudSourceArtifactConfig =
+        GoogleCloudSourceArtifactConfig.builder()
+            .project(ParameterField.createValueField("test-project"))
+            .repository(ParameterField.createValueField("test-repo"))
+            .sourceDirectory(ParameterField.createValueField("test/path"))
+            .fetchType(GoogleCloudSourceFetchType.TAG)
+            .tag(ParameterField.createValueField("test-tag"))
+            .build();
+    GcpConnectorDTO connectorDTO = GcpConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    GoogleCloudSourceArtifactDelegateRequest googleCloudSourceArtifactDelegateRequest =
+        ArtifactConfigToDelegateReqMapper.getGoogleCloudSourceArtifactDelegateRequest(
+            googleCloudSourceArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(googleCloudSourceArtifactDelegateRequest.getGcpConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(googleCloudSourceArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(googleCloudSourceArtifactDelegateRequest.getTag())
+        .isEqualTo(googleCloudSourceArtifactConfig.getTag().getValue());
+    assertThat(googleCloudSourceArtifactDelegateRequest.getSourceDirectory())
+        .isEqualTo(googleCloudSourceArtifactConfig.getSourceDirectory().getValue());
+    assertThat(googleCloudSourceArtifactDelegateRequest.getRepository())
+        .isEqualTo(googleCloudSourceArtifactConfig.getRepository().getValue());
+    assertThat(googleCloudSourceArtifactDelegateRequest.getGoogleCloudSourceFetchType().toString())
+        .isEqualTo(googleCloudSourceArtifactConfig.getFetchType().toString());
+    assertThat(googleCloudSourceArtifactDelegateRequest.getProject())
+        .isEqualTo(googleCloudSourceArtifactConfig.getProject().getValue());
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testGetGCSourceDelegateRequestWithCommitId() {
+    GoogleCloudSourceArtifactConfig googleCloudSourceArtifactConfig =
+        GoogleCloudSourceArtifactConfig.builder()
+            .project(ParameterField.createValueField("test-project"))
+            .repository(ParameterField.createValueField("test-repo"))
+            .sourceDirectory(ParameterField.createValueField("test/path"))
+            .fetchType(GoogleCloudSourceFetchType.COMMIT)
+            .commitId(ParameterField.createValueField("test-commit"))
+            .build();
+    GcpConnectorDTO connectorDTO = GcpConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    GoogleCloudSourceArtifactDelegateRequest googleCloudSourceArtifactDelegateRequest =
+        ArtifactConfigToDelegateReqMapper.getGoogleCloudSourceArtifactDelegateRequest(
+            googleCloudSourceArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(googleCloudSourceArtifactDelegateRequest.getGcpConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(googleCloudSourceArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(googleCloudSourceArtifactDelegateRequest.getCommitId())
+        .isEqualTo(googleCloudSourceArtifactConfig.getCommitId().getValue());
+    assertThat(googleCloudSourceArtifactDelegateRequest.getSourceDirectory())
+        .isEqualTo(googleCloudSourceArtifactConfig.getSourceDirectory().getValue());
+    assertThat(googleCloudSourceArtifactDelegateRequest.getRepository())
+        .isEqualTo(googleCloudSourceArtifactConfig.getRepository().getValue());
+    assertThat(googleCloudSourceArtifactDelegateRequest.getGoogleCloudSourceFetchType().toString())
+        .isEqualTo(googleCloudSourceArtifactConfig.getFetchType().toString());
+    assertThat(googleCloudSourceArtifactDelegateRequest.getProject())
+        .isEqualTo(googleCloudSourceArtifactConfig.getProject().getValue());
   }
 }

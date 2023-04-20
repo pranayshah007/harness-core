@@ -105,7 +105,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   @Inject private CIIntegrationStageModifier ciIntegrationStageModifier;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private ConnectorUtils connectorUtils;
-
+  @Inject private CIStagePlanCreationUtils cIStagePlanCreationUtils;
   @Inject private IACMServiceUtils serviceUtils;
 
   /**
@@ -327,7 +327,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     stageNode.setName(StrategyUtils.getIdentifierWithExpression(ctx, stageNode.getName()));
 
     StageElementParametersBuilder stageParameters =
-        CIStagePlanCreationUtils.getStageParameters(getIntegrationStageNode(stageNode));
+        cIStagePlanCreationUtils.getStageParameters(getIntegrationStageNode(stageNode));
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));

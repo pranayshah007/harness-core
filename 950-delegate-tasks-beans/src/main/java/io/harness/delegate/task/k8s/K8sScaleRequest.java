@@ -15,6 +15,8 @@ import io.harness.beans.NGInstanceUnitType;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.expression.Expression;
 
+import software.wings.beans.ServiceHookDelegateConfig;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -54,5 +56,10 @@ public class K8sScaleRequest implements K8sDeployRequest {
   @Override
   public List<String> getOpenshiftParamList() {
     return Collections.emptyList();
+  }
+
+  @Override
+  public List<ServiceHookDelegateConfig> getServiceHooks() {
+    return null;
   }
 }

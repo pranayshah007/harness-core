@@ -22,7 +22,7 @@ public class CatalogConnectorMapper {
     CatalogConnectorInfo catalogConnectorInfo = new CatalogConnectorInfo();
     ConnectorDetails connectorDetails = new ConnectorDetails();
     connectorDetails.setIdentifier(catalogConnectorEntity.getConnectorIdentifier());
-    connectorDetails.setType(catalogConnectorEntity.getConnectorProviderType());
+    connectorDetails.setType(ConnectorDetails.TypeEnum.valueOf(catalogConnectorEntity.getConnectorProviderType()));
     catalogConnectorInfo.setInfraConnector(connectorDetails);
     catalogConnectorInfo.setRepo(catalogConnectorEntity.getCatalogRepositoryDetails().getRepo());
     catalogConnectorInfo.setBranch(catalogConnectorEntity.getCatalogRepositoryDetails().getBranch());

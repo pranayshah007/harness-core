@@ -11,6 +11,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 
+import software.wings.beans.ServiceHookDelegateConfig;
+
 import java.util.Collections;
 import java.util.List;
 import lombok.Builder;
@@ -49,6 +51,11 @@ public class K8sSwapServiceSelectorsRequest implements K8sDeployRequest {
 
   @Override
   public String getReleaseName() {
+    return null;
+  }
+
+  @Override
+  public List<ServiceHookDelegateConfig> getServiceHooks() {
     return null;
   }
 }

@@ -17,8 +17,8 @@ import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REG
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -47,20 +47,14 @@ import com.amazonaws.services.ecs.model.AmazonECSException;
 import com.amazonaws.services.ecs.model.ClusterNotFoundException;
 import com.amazonaws.services.ecs.model.ServiceNotFoundException;
 import com.amazonaws.services.lambda.model.AWSLambdaException;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({WebIdentityTokenCredentialsProvider.class})
-@PowerMockIgnore({"javax.security.*", "javax.net.*", "javax.management.*", "javax.crypto.*"})
 @OwnedBy(CDP)
 public class AwsHelperServiceDelegateBaseTest extends WingsBaseTest {
   @Mock private AwsEcrApiHelperServiceDelegateBase awsEcrApiHelperServiceDelegateBase;
@@ -123,24 +117,23 @@ public class AwsHelperServiceDelegateBaseTest extends WingsBaseTest {
   @Test(expected = com.amazonaws.SdkClientException.class)
   @Owner(developers = RAGHVENDRA)
   @Category(UnitTests.class)
-  public void testAttachCredentialsAndBackoffPolicyWithIRSA() {
-    PowerMockito.mockStatic(System.class);
-    PowerMockito.when(System.getenv(SDKGlobalConfiguration.AWS_ROLE_ARN_ENV_VAR))
-        .thenAnswer(invocationOnMock -> "abcd");
-    PowerMockito.when(System.getenv(SDKGlobalConfiguration.AWS_WEB_IDENTITY_ENV_VAR))
-        .thenAnswer(invocationOnMock -> "/jkj");
-    AwsInternalConfig awsInternalConfig = mock(AwsInternalConfig.class);
-    when(awsInternalConfig.isUseEc2IamCredentials()).thenReturn(false);
-    when(awsInternalConfig.isUseIRSA()).thenReturn(true);
-    when(awsInternalConfig.isAssumeCrossAccountRole()).thenReturn(false);
-    AwsClientBuilder awsClientBuilder = AmazonEC2ClientBuilder.standard().withRegion("us-east-1");
-    doCallRealMethod()
-        .when(awsEcrApiHelperServiceDelegateBase)
-        .attachCredentialsAndBackoffPolicy(eq(awsClientBuilder), eq(awsInternalConfig));
+  public void testAttachCredentialsAndBackoffPolicyWithIRSA() throws Exception {
+    Map<String, String> envVarsMap = Map.ofEntries(Map.entry(SDKGlobalConfiguration.AWS_ROLE_ARN_ENV_VAR, "abcd"),
+        Map.entry(SDKGlobalConfiguration.AWS_WEB_IDENTITY_ENV_VAR, "/jkj"));
+    new EnvironmentVariables(envVarsMap).execute(() -> {
+      AwsInternalConfig awsInternalConfig = mock(AwsInternalConfig.class);
+      when(awsInternalConfig.isUseEc2IamCredentials()).thenReturn(false);
+      when(awsInternalConfig.isUseIRSA()).thenReturn(true);
+      when(awsInternalConfig.isAssumeCrossAccountRole()).thenReturn(false);
+      AwsClientBuilder awsClientBuilder = AmazonEC2ClientBuilder.standard().withRegion("us-east-1");
+      doCallRealMethod()
+          .when(awsEcrApiHelperServiceDelegateBase)
+          .attachCredentialsAndBackoffPolicy(eq(awsClientBuilder), eq(awsInternalConfig));
 
-    awsEcrApiHelperServiceDelegateBase.attachCredentialsAndBackoffPolicy(awsClientBuilder, awsInternalConfig);
+      awsEcrApiHelperServiceDelegateBase.attachCredentialsAndBackoffPolicy(awsClientBuilder, awsInternalConfig);
 
-    assertThat(awsClientBuilder.getCredentials()).isInstanceOf(WebIdentityTokenCredentialsProvider.class);
-    awsClientBuilder.getCredentials().getCredentials().getAWSSecretKey();
+      assertThat(awsClientBuilder.getCredentials()).isInstanceOf(WebIdentityTokenCredentialsProvider.class);
+      awsClientBuilder.getCredentials().getCredentials().getAWSSecretKey();
+    });
   }
 }

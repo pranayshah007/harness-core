@@ -60,6 +60,7 @@ func TestPluginSuccess(t *testing.T) {
 	cmd.EXPECT().ProcessState().Return(pstate)
 	pstate.EXPECT().MaxRss().Return(int64(100), nil)
 	cmd.EXPECT().Wait().Return(nil)
+	fs.EXPECT().Stat("step1-output.env").Return(nil, fmt.Errorf("file not found"))
 	fs.EXPECT().Stat("step1.out").Return(nil, nil)
 
 	_, _, retries, err := e.Run(ctx)
@@ -105,6 +106,7 @@ func TestPluginNonZeroStatus(t *testing.T) {
 	cmd.EXPECT().ProcessState().Return(pstate)
 	pstate.EXPECT().MaxRss().Return(int64(100), nil)
 	cmd.EXPECT().Wait().Return(&exec.ExitError{})
+	fs.EXPECT().Stat("step1-output.env").Return(nil, fmt.Errorf("file not found"))
 	fs.EXPECT().Stat("step1.out").Return(nil, nil)
 
 	_, _, retries, err := e.Run(ctx)

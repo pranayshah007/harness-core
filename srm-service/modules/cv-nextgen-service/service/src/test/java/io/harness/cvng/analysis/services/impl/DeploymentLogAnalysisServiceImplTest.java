@@ -25,6 +25,8 @@ import static io.harness.rule.OwnerRule.PRAVEEN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
@@ -52,6 +54,8 @@ import io.harness.cvng.core.beans.LogFeedback;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentLogAnalysisFilter;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.ticket.beans.TicketResponseDto;
+import io.harness.cvng.ticket.services.TicketService;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.data.structure.CollectionUtils;
@@ -76,14 +80,17 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
 
 public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private DeploymentLogAnalysisService deploymentLogAnalysisService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
+  @Mock TicketService ticketService;
 
   private String accountId;
   private String cvConfigId;
@@ -94,7 +101,7 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
   private String verificationTaskId;
 
   @Before
-  public void setUp() throws IOException {
+  public void setUp() throws IOException, IllegalAccessException {
     builderFactory = BuilderFactory.getDefault();
     accountId = builderFactory.getContext().getAccountId();
     VerificationJobInstance verificationJobInstance = builderFactory.verificationJobInstanceBuilder().build();
@@ -107,6 +114,9 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
     VerificationJobInstance radarChartVerificationJobInstance = builderFactory.verificationJobInstanceBuilder().build();
     radarChartVerificationJobInstanceId = verificationJobInstanceService.create(radarChartVerificationJobInstance);
     setUpDummyDeploymentLogAnalysis();
+    FieldUtils.writeField(deploymentLogAnalysisService, "ticketService", ticketService, true);
+    when(ticketService.getTicketForFeedbackId(any()))
+        .thenReturn(TicketResponseDto.builder().id("id").url("url").externalId("externalId").build());
   }
 
   @Test
@@ -1186,6 +1196,9 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
     LogAnalysisRadarChartListDTO content1 =
         logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent().get(0);
     assertThat(content1.getFeedback()).isNotNull();
+    assertThat(content1.getFeedback().getTicket().getExternalId()).isEqualTo("externalId");
+    assertThat(content1.getFeedback().getTicket().getId()).isEqualTo("id");
+    assertThat(content1.getFeedback().getTicket().getUrl()).isEqualTo("url");
     assertThat(content1.getFeedbackApplied()).isNotNull();
 
     LogAnalysisRadarChartListDTO content2 =
@@ -1604,7 +1617,9 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
         .count(count)
         .label(label)
         .testFrequencyData(testFrequencyData)
-        .feedback(LogFeedback.builder().build())
+        .feedback(LogFeedback.builder()
+                      .ticket(TicketResponseDto.builder().externalId("externalId").id("id").url("url").build())
+                      .build())
         .feedbackApplied(LogFeedback.builder().build())
         .frequencyData(Collections.singletonList(
             DeploymentLogAnalysisDTO.HostFrequencyData.builder()

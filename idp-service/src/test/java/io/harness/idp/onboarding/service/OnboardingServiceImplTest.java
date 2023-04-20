@@ -150,18 +150,21 @@ public class OnboardingServiceImplTest extends CategoryTest {
   public void testImportHarnessEntities() {
     when(connectorProcessorFactory.getConnectorProcessor(ConnectorType.fromString("Github")))
         .thenReturn(githubConnectorProcessor);
-    when(githubConnectorProcessor.getInfraConnectorType(any(), any())).thenReturn("DIRECT");
+    when(githubConnectorProcessor.getInfraConnectorType(any())).thenReturn("DIRECT");
     ImportEntitiesResponse importEntitiesResponse = onboardingServiceImpl.importHarnessEntities(ACCOUNT_IDENTIFIER,
         new ImportHarnessEntitiesRequest()
             .allImport(true)
             .entities(Collections.emptyList())
-            .catalogConnectorInfo(
-                new CatalogConnectorInfo()
-                    .infraConnector(new ConnectorDetails().identifier("account.sathishgithub").type("Github"))
-                    .sourceConnector(new ConnectorDetails().identifier("account.sathishgithub").type("Github"))
-                    .repo("https://github.com/sathish-soundarapandian/onboarding-test")
-                    .branch("main")
-                    .path("idp")));
+            .catalogConnectorInfo(new CatalogConnectorInfo()
+                                      .infraConnector(new ConnectorDetails()
+                                                          .identifier("account.sathishgithub")
+                                                          .type(ConnectorDetails.TypeEnum.GITHUB))
+                                      .sourceConnector(new ConnectorDetails()
+                                                           .identifier("account.sathishgithub")
+                                                           .type(ConnectorDetails.TypeEnum.GITHUB))
+                                      .repo("https://github.com/sathish-soundarapandian/onboarding-test")
+                                      .branch("main")
+                                      .path("idp")));
     assertNotNull(importEntitiesResponse);
     assertEquals("SUCCESS", importEntitiesResponse.getStatus());
   }

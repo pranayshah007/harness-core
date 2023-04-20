@@ -7,12 +7,14 @@
 
 package io.harness.ci.stateutils.buildstate;
 
+import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.TASK_SELECTORS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.AMAN;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
+import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -26,6 +28,7 @@ import static org.mockito.Mockito.when;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.FeatureName;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
+import io.harness.beans.sweepingoutputs.TaskSelectorSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
 import io.harness.category.element.UnitTests;
@@ -394,10 +397,53 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
                                     .containerNames(new ArrayList<>())
                                     .build())
                         .build());
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(TASK_SELECTORS)))
+        .thenReturn(OptionalSweepingOutput.builder().found(false).build());
 
     List<TaskSelector> taskSelectors = connectorUtils.fetchDelegateSelector(ambiance, executionSweepingOutputResolver);
     assertThat(taskSelectors)
         .isEqualTo(Arrays.asList(TaskSelector.newBuilder().setSelector("delegate").setOrigin("default").build()));
+  }
+
+  @Test
+  @Owner(developers = SOUMYAJIT)
+  @Category(UnitTests.class)
+  public void shouldAddPipelineDelegateSelector() throws IOException {
+    Call<ResponseDTO<Optional<ConnectorDTO>>> getConnectorResourceCall = mock(Call.class);
+    ResponseDTO<Optional<ConnectorDTO>> responseDTO = ResponseDTO.newResponse(Optional.of(k8sConnectorFromDelegate));
+    when(featureFlagService.isEnabled(FeatureName.DISABLE_CI_STAGE_DEL_SELECTOR, "accountId")).thenReturn(false);
+
+    when(getConnectorResourceCall.execute()).thenReturn(Response.success(responseDTO));
+    when(connectorResourceClient.get(any(), any(), any(), any())).thenReturn(getConnectorResourceCall);
+    when(featureFlagService.isEnabled(FeatureName.DISABLE_CI_STAGE_DEL_SELECTOR, "accountId")).thenReturn(false);
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(K8StageInfraDetails.builder()
+                                    .podName("podName")
+                                    .infrastructure(K8sDirectInfraYaml.builder()
+                                                        .spec(K8sDirectInfraYamlSpec.builder()
+                                                                  .connectorRef(ParameterField.createValueField("fd"))
+                                                                  .build())
+                                                        .build())
+                                    .containerNames(new ArrayList<>())
+                                    .build())
+                        .build());
+    List<TaskSelector> selectorList = new ArrayList<>();
+    selectorList.add(TaskSelector.newBuilder().setSelector("PipelineDelegate").setOrigin("Pipeline").build());
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(TASK_SELECTORS)))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(TaskSelectorSweepingOutput.builder().taskSelectors(selectorList).build())
+                        .build());
+
+    List<TaskSelector> taskSelectors = connectorUtils.fetchDelegateSelector(ambiance, executionSweepingOutputResolver);
+    assertThat(taskSelectors)
+        .isEqualTo(
+            Arrays.asList(TaskSelector.newBuilder().setSelector("PipelineDelegate").setOrigin("Pipeline").build()));
   }
 
   @Test

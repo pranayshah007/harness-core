@@ -35,6 +35,7 @@ import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.BambooArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.exception.InvalidRequestException;
@@ -242,15 +243,15 @@ public class ArtifactUtils {
       case GOOGLE_CLOUD_SOURCE_ARTIFACT:
         GoogleCloudSourceArtifactConfig googleCloudSourceArtifactConfig =
             (GoogleCloudSourceArtifactConfig) artifactConfig;
-        String branchFormat;
-        String branchValue;
-        if (googleCloudSourceArtifactConfig.getBranch().getValue() != null) {
+        String branchFormat = "";
+        String branchValue = "";
+        if (ParameterFieldHelper.getParameterFieldValue(googleCloudSourceArtifactConfig.getBranch()) != null) {
           branchFormat = "\nbranch: %s";
           branchValue = googleCloudSourceArtifactConfig.getBranch().getValue();
-        } else if (googleCloudSourceArtifactConfig.getCommitId().getValue() != null) {
+        } else if (ParameterFieldHelper.getParameterFieldValue(googleCloudSourceArtifactConfig.getCommitId()) != null) {
           branchFormat = "\ncommitId: %s";
           branchValue = googleCloudSourceArtifactConfig.getCommitId().getValue();
-        } else {
+        } else if (ParameterFieldHelper.getParameterFieldValue(googleCloudSourceArtifactConfig.getTag()) != null) {
           branchFormat = "\ntag: %s";
           branchValue = googleCloudSourceArtifactConfig.getTag().getValue();
         }

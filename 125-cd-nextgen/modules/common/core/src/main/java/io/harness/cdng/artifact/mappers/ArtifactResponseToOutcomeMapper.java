@@ -52,6 +52,7 @@ import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse;
@@ -288,6 +289,10 @@ public class ArtifactResponseToOutcomeMapper {
         .repository(googleCloudSourceArtifactConfig.getRepository().getValue())
         .sourceDirectory(googleCloudSourceArtifactConfig.getSourceDirectory().getValue())
         .primaryArtifact(googleCloudSourceArtifactConfig.isPrimaryArtifact())
+        .branch(ParameterFieldHelper.getParameterFieldValue(googleCloudSourceArtifactConfig.getBranch()))
+        .gitTag(ParameterFieldHelper.getParameterFieldValue(googleCloudSourceArtifactConfig.getTag()))
+        .commitId(ParameterFieldHelper.getParameterFieldValue(googleCloudSourceArtifactConfig.getCommitId()))
+        .fetchType(googleCloudSourceArtifactConfig.getFetchType().getName())
         .build();
   }
 

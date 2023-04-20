@@ -109,6 +109,7 @@ import io.harness.cvng.statemachine.beans.AnalysisOrchestratorStatus;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator.AnalysisOrchestratorKeys;
 import io.harness.cvng.statemachine.jobs.AnalysisOrchestrationJob;
+import io.harness.cvng.ticket.clients.TicketServiceRestClientModule;
 import io.harness.cvng.utils.SRMServiceAuthIfHasApiKey;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.ExecutionStatus;
@@ -465,6 +466,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     modules.add(PmsSdkModule.getInstance(pmsSdkConfiguration));
     modules.add(PipelineServiceUtilityModule.getInstance());
     modules.add(NGMigrationSdkModule.getInstance());
+    modules.add(new TicketServiceRestClientModule(configuration.getTicketServiceRestClientConfig().getBaseUrl()));
     Injector injector = Guice.createInjector(modules);
     YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
     initializeServiceSecretKeys();

@@ -43,8 +43,8 @@ import static software.wings.utils.WingsTestConstants.USER_NAME;
 import static software.wings.utils.WingsTestConstants.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -115,8 +115,8 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.http.client.utils.URIBuilder;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import retrofit2.Call;
@@ -153,7 +153,7 @@ public class UserServiceImplTest extends WingsBaseTest {
     UserInvite userInvite =
         anUserInvite().withEmail(email).withCompanyName("companyName").withAccountName("accountName").build();
     userInvite.setPassword("somePassword".toCharArray());
-    when(signupService.getUserInviteByEmail(Matchers.eq(email))).thenReturn(null);
+    when(signupService.getUserInviteByEmail(ArgumentMatchers.eq(email))).thenReturn(null);
     userServiceImpl.trialSignup(userInvite);
     // Verifying that the mail is sent and event is published when a new user sign ups for trial
     Mockito.verify(accountService, times(1)).validateAccount(any(Account.class));

@@ -14,7 +14,7 @@ import static io.harness.rule.OwnerRule.HINGER;
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -56,22 +56,14 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import retrofit2.Call;
 import retrofit2.Response;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({"javax.management.*", "com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*", "org.w3c.dom.*",
-    "com.sun.org.apache.xalan.*", "javax.activation.*", "jdk.internal.reflect.*"})
 @OwnedBy(PIPELINE)
-@PrepareForTest(NGRestUtils.class)
 public class ApprovalResourceImplServiceImplTest extends CategoryTest {
   @Mock private ApprovalInstanceService approvalInstanceService;
   @Mock private ApprovalInstanceResponseMapper approvalInstanceResponseMapper;

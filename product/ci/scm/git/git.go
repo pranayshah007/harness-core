@@ -586,7 +586,9 @@ func GetAuthenticatedUser(ctx context.Context, request *pb.GetAuthenticatedUserR
 	log.Infow("GetAuthenticatedUser success", "elapsed_time_ms", utils.TimeSince(start))
 
 	out = &pb.GetAuthenticatedUserResponse{
-		Username: response.Name,
+		Username:  response.Name,
+		UserLogin: response.Login,
+		Email:     response.Email,
 	}
 	return out, nil
 }

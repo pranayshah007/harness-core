@@ -25,13 +25,12 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -50,7 +49,6 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ff.FeatureFlagService;
-import io.harness.k8s.model.K8sPod;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.tasks.ResponseData;
@@ -234,9 +232,7 @@ public class K8sScaleTest extends CategoryTest {
                                                             .build();
     Map<String, ResponseData> response = new HashMap<>();
     response.put(ACTIVITY_ID, k8sTaskExecutionResponse);
-    doReturn(InstanceElementListParam.builder().build())
-        .when(k8sScale)
-        .fetchInstanceElementListParam(anyListOf(K8sPod.class));
+    doReturn(InstanceElementListParam.builder().build()).when(k8sScale).fetchInstanceElementListParam(anyList());
     doReturn(emptyList()).when(k8sScale).fetchInstanceStatusSummaries(any(), any());
     k8sScale.handleAsyncResponse(executionContext, response);
     verify(activityService, times(1)).updateStatus(nullable(String.class), anyString(), any(ExecutionStatus.class));

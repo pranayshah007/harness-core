@@ -28,4 +28,6 @@ import lombok.NoArgsConstructor;
 public class CustomSecretRequestWrapper implements YamlDTO {
   @Valid @NotNull private SecretDTOV2 secret;
   @JsonIgnore private String fileContent;
+  @JsonIgnore private String encryptionKey;
+  @JsonIgnore private String encryptionValue;
 }

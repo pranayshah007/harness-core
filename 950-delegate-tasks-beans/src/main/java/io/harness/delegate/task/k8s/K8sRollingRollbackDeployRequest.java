@@ -15,6 +15,8 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.expression.Expression;
 import io.harness.k8s.model.KubernetesResourceId;
 
+import software.wings.beans.ServiceHookDelegateConfig;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -53,5 +55,10 @@ public class K8sRollingRollbackDeployRequest implements K8sDeployRequest {
   @Override
   public List<String> getOpenshiftParamList() {
     return Collections.emptyList();
+  }
+
+  @Override
+  public List<ServiceHookDelegateConfig> getServiceHooks() {
+    return null;
   }
 }

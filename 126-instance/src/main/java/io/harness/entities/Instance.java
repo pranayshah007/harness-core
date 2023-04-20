@@ -17,6 +17,7 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.environment.beans.EnvironmentType;
+import io.harness.pms.contracts.execution.Status;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
@@ -205,6 +206,8 @@ public class Instance {
 
   private String lastPipelineExecutionId;
   private String lastPipelineExecutionName;
+  String stageNodeExecutionId;
+  Status stageStatus;
 
   private InstanceInfo instanceInfo;
 

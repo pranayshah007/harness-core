@@ -46,7 +46,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.math3.util.Pair;
 import org.eclipse.jgit.lib.Ref;
 
 @Slf4j
@@ -57,9 +56,9 @@ public abstract class ConnectorProcessor {
   @Inject public GitClientV2Impl gitClientV2;
   @Inject public HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub harnessToGitPushInfoService;
 
-  public abstract String getInfraConnectorType(String accountIdentifier, String connectorIdentifier);
+  public abstract String getInfraConnectorType(ConnectorInfoDTO connectorInfoDTO);
 
-  protected ConnectorInfoDTO getConnectorInfo(String accountIdentifier, String connectorIdentifier) {
+  public ConnectorInfoDTO getConnectorInfo(String accountIdentifier, String connectorIdentifier) {
     Optional<ConnectorDTO> connectorDTO =
         NGRestUtils.getResponse(connectorResourceClient.get(connectorIdentifier, accountIdentifier, null, null));
     if (connectorDTO.isEmpty()) {
@@ -69,8 +68,8 @@ public abstract class ConnectorProcessor {
     return connectorDTO.get().getConnectorInfo();
   }
 
-  public abstract Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> getConnectorAndSecretsInfo(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier);
+  public abstract Map<String, BackstageEnvVariable> getConnectorAndSecretsInfo(
+      String accountIdentifier, ConnectorInfoDTO connectorInfoDTO);
 
   public abstract void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
       String locationParentPath, List<String> filesToPush);

@@ -485,7 +485,9 @@ public enum TaskType {
   GOOGLE_FUNCTION_GEN_ONE_DEPLOY_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Deploy Task"),
   GOOGLE_FUNCTION_GEN_ONE_ROLLBACK_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Rollback Task"),
   GOOGLE_FUNCTION_GEN_ONE_PREPARE_ROLLBACK_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Prepare Rollback Task"),
-  TERRAFORM_TASK_NG_V6(TaskGroup.TERRAFORM_NG, "Terraform Task NG V6");
+  TERRAFORM_TASK_NG_V6(TaskGroup.TERRAFORM_NG, "Terraform Task NG V6"),
+  K8S_COMMAND_TASK_NG_V2(TaskGroup.K8S_NG, "K8s Task with service Hooks"),
+  HELM_COMMAND_TASK_NG_V2(TaskGroup.HELM, "Helm Command Task with service Hooks");
 
   private final TaskGroup taskGroup;
   private final String displayName;

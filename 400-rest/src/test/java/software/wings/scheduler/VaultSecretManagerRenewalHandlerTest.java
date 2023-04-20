@@ -13,8 +13,8 @@ import static io.harness.rule.OwnerRule.VIKAS_M;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.alert.AlertType.InvalidKMS;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
