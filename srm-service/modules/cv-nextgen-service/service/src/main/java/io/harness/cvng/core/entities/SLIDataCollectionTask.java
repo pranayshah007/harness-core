@@ -29,11 +29,12 @@ public class SLIDataCollectionTask extends DataCollectionTask {
 
   public static final Duration SLI_MAX_DATA_RETRY_DURATION = Duration.ofHours(28);
 
-  @VisibleForTesting public static int MAX_RETRY_COUNT = 10;
+  @VisibleForTesting public static final int MAX_RETRY_COUNT = 10;
 
   private static final List<Duration> RETRY_WAIT_DURATIONS =
-      Lists.newArrayList(Duration.ofSeconds(5), Duration.ofSeconds(10), Duration.ofSeconds(60), Duration.ofMinutes(5),
-          Duration.ofMinutes(15), Duration.ofHours(1), Duration.ofHours(3));
+      Lists.newArrayList(Duration.ofSeconds(5), Duration.ofSeconds(5), Duration.ofSeconds(15), Duration.ofSeconds(15),
+          Duration.ofSeconds(60), Duration.ofSeconds(60), Duration.ofMinutes(5), Duration.ofMinutes(5),
+          Duration.ofMinutes(20), Duration.ofMinutes(20), Duration.ofMinutes(30));
   @Override
   public boolean shouldCreateNextTask() {
     return true;
