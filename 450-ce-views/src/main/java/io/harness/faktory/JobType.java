@@ -5,10 +5,20 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ccm.governance.faktory;
+package io.harness.faktory;
 
-public class FaktoryException extends RuntimeException {
-  public FaktoryException(String message) {
-    super(message);
+/**
+ * Faktory JobType
+ * @author Sikandar Ali Awan
+ */
+public class JobType {
+  String name;
+
+  private JobType(String name) {
+    this.name = name;
+  }
+
+  public static JobType of(String name) {
+    return new JobType(name);
   }
 }
