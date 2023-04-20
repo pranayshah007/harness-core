@@ -113,6 +113,7 @@ public class HealthService extends HealthCheck {
         try {
           if (response.future.get() != null) {
             // if the system is in initial state, we would like to be checking more often
+            // Ignore - comment for BT-3649 testing
             if (initial) {
               startCheck(monitor);
             }
