@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.assessment.settings.beans.entities.OrganizationEvaluation;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;
 
@@ -20,4 +21,5 @@ import org.springframework.data.repository.CrudRepository;
 public interface OrganizationEvaluationRepository extends CrudRepository<OrganizationEvaluation, String> {
   Optional<OrganizationEvaluation> findOneByAssessmentIdAndOrganizationIdAndVersion(
       String assessmentId, String organizationId, long version);
+  List<OrganizationEvaluation> findAllByAssessmentIdAndVersion(String assessmentId, long version);
 }

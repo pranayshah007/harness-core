@@ -7,7 +7,12 @@
 package io.harness.assessment.settings.services;
 
 import io.harness.assessment.settings.beans.dto.AssessmentResultsResponse;
+import io.harness.assessment.settings.beans.dto.AssessmentSummaryResponse;
+
+import java.util.List;
 
 public interface AssessmentResultService {
   AssessmentResultsResponse getResults(String resultCode, String benchmarkId);
+
+  List<AssessmentSummaryResponse> assessmentResultService();
 }
