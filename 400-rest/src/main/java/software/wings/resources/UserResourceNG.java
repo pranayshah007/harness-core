@@ -15,6 +15,8 @@ import static io.harness.security.dto.PrincipalType.USER;
 
 import static software.wings.security.PermissionAttribute.PermissionType.USER_PERMISSION_MANAGEMENT;
 
+import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -23,6 +25,8 @@ import io.harness.beans.FeatureFlag;
 import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.exception.UserRegistrationException;
@@ -30,6 +34,7 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.mappers.AccountMapper;
 import io.harness.ng.core.common.beans.UserSource;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.dto.UserInviteDTO;
 import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.PasswordChangeDTO;
@@ -46,12 +51,16 @@ import io.harness.scim.service.ScimUserService;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.signup.dto.SignupDTO;
 import io.harness.signup.dto.SignupInviteDTO;
 import io.harness.user.remote.UserFilterNG;
 
+import software.wings.beans.Account;
+import software.wings.beans.MarketPlace;
 import software.wings.beans.User;
 import software.wings.beans.UserInvite;
 import software.wings.beans.marketplace.MarketPlaceConstants;
+import software.wings.dl.WingsPersistence;
 import software.wings.security.JWT_CATEGORY;
 import software.wings.security.SecretManager;
 import software.wings.security.annotations.AuthRule;
@@ -63,14 +72,17 @@ import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.SignupService;
 import software.wings.service.intfc.UserService;
 
+import com.auth0.jwt.interfaces.Claim;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Operation;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -89,6 +101,7 @@ import javax.ws.rs.QueryParam;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import retrofit2.http.Body;
 
 @Api(value = "/ng/user", hidden = true)
@@ -110,9 +123,11 @@ public class UserResourceNG {
   private static final String COMMUNITY_ACCOUNT_EXISTS = "A community account already exists";
   private static final String ACCOUNT_ADMINISTRATOR_USER_GROUP = "Account Administrator";
   private static final String EXC_USER_ALREADY_REGISTERED = "User is already registered";
+  private static final String EXISTING_INVITE_ALREADY_COMPLETED = "Existing invite is already completed";
 
   @Inject private FeatureFlagService featureFlagService;
   @Inject private SecretManager secretManager;
+  @Inject private WingsPersistence wingsPersistence;
 
   @POST
   public RestResponse<UserInfo> createNewUserAndSignIn(UserRequestDTO userRequest) {
@@ -204,28 +219,19 @@ public class UserResourceNG {
     UserInvite existingInvite = wingsPersistence.get(UserInvite.class, inviteId);
     if (existingInvite.isCompleted()) {
       log.error("Unexpected state: Existing invite is already completed. ID = {}", inviteId);
-      return;
+      throw new UserRegistrationException(
+          EXISTING_INVITE_ALREADY_COMPLETED, ErrorCode.USER_INVITE_OPERATION_FAILED, WingsException.USER);
     }
 
     String email = dto.getEmail().toLowerCase();
-    User existingUser = userService.getUserByEmail(email);
-    if (existingUser != null) {
-      throw new UserRegistrationException(EXC_USER_ALREADY_REGISTERED, ErrorCode.USER_ALREADY_REGISTERED, USER);
-      return;
-    }
 
-    verifySignupDTO(dto);
+    userService.verifyRegisteredOrAllowed(email);
 
     dto.setEmail(dto.getEmail().toLowerCase());
 
     AccountDTO account = createAccount(dto);
 
     User user = convertMarketplaceRequestToUser(dto, account);
-
-    User createdUser = userService.createNewUserAndSignIn(user, accountId, NG);
-
-    sendSucceedTelemetryEvent(dto.getEmail(), dto.getUtmInfo(), account.getIdentifier(), user,
-        SignupType.MARKETPLACE_PROVISION, account.getName(), referer, null, null);
 
     Map<String, Claim> claims = secretManager.verifyJWTToken(marketPlaceToken, JWT_CATEGORY.MARKETPLACE_SIGNUP);
     String userInviteID = claims.get(MarketPlaceConstants.USERINVITE_ID_CLAIM_KEY).asString();
@@ -240,12 +246,13 @@ public class UserResourceNG {
       throw new GeneralException(String.format("No MarketPlace found with marketPlaceID=[{%s}]", marketPlaceID));
     }
 
-    userInvite = wingsPersistence.get(UserInvite.class, inviteId);
+    UserInvite userInvite = wingsPersistence.get(UserInvite.class, inviteId);
     if (userInvite == null) {
       throw new GeneralException(String.format("No UserInvite found with inviteId=[{%s}]", inviteId));
     }
 
     String accountId = userService.setupAccountBasedOnProduct(user, userInvite, marketPlace);
+    User createdUser = userService.createNewUserAndSignIn(user, accountId, NG);
 
     marketPlace.setAccountId(accountId);
     wingsPersistence.save(marketPlace);
@@ -648,20 +655,20 @@ public class UserResourceNG {
         .build();
   }
 
-  private User convertMarketplaceRequestToUser(SignupDTO dto, Account account) {
+  private User convertMarketplaceRequestToUser(SignupDTO dto, AccountDTO account) {
     if (dto == null) {
       return null;
     }
 
     try {
-      String passwordHash = hashpw(signupDTO.getPassword(), BCrypt.gensalt());
-      List<AccountDTO> accountList = new ArrayList<>();
-      accountList.add(account);
+      String passwordHash = hashpw(dto.getPassword(), BCrypt.gensalt());
+      List<Account> accountList = new ArrayList<>();
+      accountList.add(AccountMapper.fromAccountDTO(account));
 
       String name = account.getName();
 
-      return UserRequestDTO.builder()
-          .email(signupDTO.getEmail())
+      return User.Builder.anUser()
+          .email(dto.getEmail())
           .name(name)
           .passwordHash(passwordHash)
           .accountName(account.getName())
@@ -671,18 +678,29 @@ public class UserResourceNG {
           .defaultAccountId(account.getIdentifier())
           .build();
     } catch (Exception e) {
-      sendFailedTelemetryEvent(signupDTO.getEmail(), signupDTO.getUtmInfo(), e, account, "User creation");
       throw e;
     }
   }
 
   private AccountDTO createAccount(SignupDTO dto) {
     try {
+      // Should be creating account in CG. Ex. AccountServiceImpl.java uses CGRestUtils
+      // We then call AccountResourceNG.java bridge to create an account
       return accountService.createAccount(dto);
     } catch (Exception e) {
-      sendFailedTelemetryEvent(dto.getEmail(), dto.getUtmInfo(), e, null, "Account creation");
       throw e;
     }
+  }
+
+  private AccountDTO mapToAccountDTO(AccountInfo accountInfo) {
+    return AccountDTO.builder()
+        .companyName(accountInfo.getCompanyName())
+        .name(accountInfo.getName())
+        .defaultExperience(DefaultExperience.NG)
+        .authenticationMechanism(AuthenticationMechanism.USER_PASSWORD)
+        .isNextGenEnabled(true)
+        .isProductLed(true)
+        .build();
   }
 
   private User convertNgUserToUserWithNameUpdated(UserInfo userInfo) {

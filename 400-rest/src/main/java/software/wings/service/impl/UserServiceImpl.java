@@ -3589,9 +3589,9 @@ public class UserServiceImpl implements UserService {
     account.setAppId(GLOBAL_APP_ID);
     account.setDefaultExperience(DefaultExperience.NG);
     account.setCreatedFromNG(true);
-    account.setIsProductLed(true);
+    account.setProductLed(true);
 
-    Account savedAccount = accountService.save(account, false, shouldCreateSampleApp);
+    Account savedAccount = accountService.save(account, false, false);
     log.info("New account created with accountId {} and licenseType {}", account.getUuid(),
         account.getLicenseInfo().getAccountType());
     return savedAccount;

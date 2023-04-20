@@ -27,6 +27,7 @@ import io.harness.rest.RestResponse;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimUser;
+import io.harness.signup.dto.SignupDTO;
 import io.harness.signup.dto.SignupInviteDTO;
 
 import java.util.List;
