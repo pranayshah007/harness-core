@@ -567,9 +567,11 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
           break;
         case "version":
           if (sortOrder.getOrderType().equals(SortOrder.OrderType.DESC)) {
-            delegateGroupDetails.sort(Comparator.comparing(DelegateGroupDetails::getGroupVersion).reversed());
+            delegateGroupDetails.sort(
+                Comparator.comparing(del -> isEmpty(del.getGroupVersion()) ? "" : del.getGroupName()));
           } else {
-            delegateGroupDetails.sort(Comparator.comparing(DelegateGroupDetails::getGroupVersion));
+            delegateGroupDetails.sort(
+                Comparator.comparing(del -> isEmpty(del.getGroupVersion()) ? "" : del.getGroupName()));
           }
           break;
         default:
