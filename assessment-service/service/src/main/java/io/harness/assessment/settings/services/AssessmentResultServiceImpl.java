@@ -8,6 +8,8 @@
 package io.harness.assessment.settings.services;
 
 import io.harness.assessment.settings.beans.dto.AssessmentResultsResponse;
+import io.harness.assessment.settings.beans.dto.AssessmentStatus;
+import io.harness.assessment.settings.beans.dto.AssessmentSummaryResponse;
 import io.harness.assessment.settings.beans.dto.ScoreOverviewDTO;
 import io.harness.assessment.settings.beans.dto.UserResponsesResponse;
 import io.harness.assessment.settings.beans.entities.Assessment;
@@ -29,6 +31,7 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -108,6 +111,39 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
     Long numOfResponses = organizationEvaluation.getNumOfResponses();
     setResultsOverview(benchmarkId, assessmentResultsResponse, numOfResponses);
     return assessmentResultsResponse;
+  }
+
+  @Override
+  public List<AssessmentSummaryResponse> assessmentResultService() {
+    List<Assessment> assessmentList = assessmentRepository.findTop100By();
+    // TODO we need logic management of draft.
+    List<AssessmentSummaryResponse> assessmentSummaryResponses =
+        assessmentList.stream()
+            .map(assessment -> {
+              AssessmentStatus status = assessment.getIsPublished() != null && assessment.getIsPublished()
+                  ? AssessmentStatus.ACTIVE
+                  : AssessmentStatus.DEPRECATED;
+              return AssessmentSummaryResponse.builder()
+                  .assessmentId(assessment.getAssessmentId())
+                  .assessmentName(assessment.getAssessmentName())
+                  .minorVersion(assessment.getMinorVersion())
+                  .majorVersion(assessment.getVersion())
+                  .status(status)
+                  .createdOn(assessment.getCreatedAt())
+                  .updatedOn(assessment.getLastUpdatedAt())
+                  .build();
+            })
+            .collect(Collectors.toList());
+    // We need to run a group by sum query. TODO
+    for (AssessmentSummaryResponse assessmentSummaryResponse : assessmentSummaryResponses) {
+      List<OrganizationEvaluation> organizationEvaluations =
+          organizationEvaluationRepository.findAllByAssessmentIdAndVersion(
+              assessmentSummaryResponse.getAssessmentId(), assessmentSummaryResponse.getMajorVersion());
+      long totalNumOfResponses =
+          organizationEvaluations.stream().mapToLong(OrganizationEvaluation::getNumOfResponses).sum();
+      assessmentSummaryResponse.setNumberOfResponses(totalNumOfResponses);
+    }
+    return assessmentSummaryResponses;
   }
 
   @NotNull

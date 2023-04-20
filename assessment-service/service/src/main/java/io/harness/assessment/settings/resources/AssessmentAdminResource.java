@@ -10,8 +10,10 @@ package io.harness.assessment.settings.resources;
 import static java.lang.String.format;
 import static javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM;
 
+import io.harness.assessment.settings.beans.dto.AssessmentSummaryResponse;
 import io.harness.assessment.settings.beans.dto.upload.AssessmentUploadRequest;
 import io.harness.assessment.settings.beans.dto.upload.AssessmentUploadResponse;
+import io.harness.assessment.settings.services.AssessmentResultService;
 import io.harness.assessment.settings.services.AssessmentUploadService;
 import io.harness.eraro.ResponseMessage;
 import io.harness.utils.YamlPipelineUtils;
@@ -20,6 +22,7 @@ import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import java.time.ZonedDateTime;
+import java.util.List;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -36,13 +39,15 @@ import lombok.extern.slf4j.Slf4j;
 public class AssessmentAdminResource {
   private AssessmentUploadService assessmentUploadService;
 
+  private AssessmentResultService assessmentResultService;
+
   @GET
   @Path("{assessmentId}/template")
   @Produces({"application/json"})
   @ApiOperation(
       value = "Get an assessment in the system.", nickname = "getAssessment", response = AssessmentUploadResponse.class)
   public Response
-  getAssessment(@PathParam("assessmentId") String assessmentId) {
+  getAssessmentSummary(@PathParam("assessmentId") String assessmentId) {
     try {
       AssessmentUploadResponse assessmentUploadResponse = assessmentUploadService.getAssessment(assessmentId);
       return Response.status(Response.Status.OK).entity(assessmentUploadResponse).build();
@@ -68,5 +73,23 @@ public class AssessmentAdminResource {
   }
   private static String prepareAssessmentFileName(String assessmentId, long currentTs) {
     return format("%s-%s.yaml", assessmentId, currentTs);
+  }
+
+  @GET
+  @Path("summary")
+  @Produces({"application/json"})
+  @ApiOperation(value = "Get assessment summary", nickname = "getAssessmentSummary",
+      response = AssessmentSummaryResponse.class, responseContainer = "List")
+  public Response
+  getAssessmentSummary() {
+    try {
+      List<AssessmentSummaryResponse> assessmentSummaryResponses = assessmentResultService.assessmentResultService();
+      return Response.status(Response.Status.OK).entity(assessmentSummaryResponses).build();
+    } catch (Exception e) {
+      log.error("error", e);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
+    }
   }
 }

@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.assessment.settings.beans.entities.Assessment;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;
 
@@ -21,4 +22,6 @@ public interface AssessmentRepository extends CrudRepository<Assessment, String>
   Optional<Assessment> findByAssessmentIdAndVersion(String assessmentId, Long version);
 
   Optional<Assessment> findFirstByAssessmentIdOrderByVersionDesc(String assessmentId);
+
+  List<Assessment> findTop100By();
 }

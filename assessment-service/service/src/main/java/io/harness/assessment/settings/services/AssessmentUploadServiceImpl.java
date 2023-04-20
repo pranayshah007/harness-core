@@ -79,6 +79,7 @@ public class AssessmentUploadServiceImpl implements AssessmentUploadService {
       assessmentUploaded.setMinorVersion(assessmentInDb.getMinorVersion() + 1);
       assessmentUploaded.setId(assessmentInDb.getId());
       assessmentUploaded.setCreatedAt(assessmentInDb.getCreatedAt());
+      assessmentUploaded.setIsPublished(assessmentInDb.getIsPublished());
       // this should be updated to old, not new version
       log.info("updating minor version for assessment: {}", assessmentUploadRequest.getAssessmentId());
     }
