@@ -1,5 +1,3 @@
 proxy:
   '/harness/prod':
     target: 'https://app.harness.io/'
-    headers:
-      'x-api-key': ${HARNESS_QA_API_KEY}
