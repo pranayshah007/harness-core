@@ -431,6 +431,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
         .fetchExpandedPipelineJSONFromYaml(pipelineEntityV1.getAccountId(), pipelineEntityV1.getOrgIdentifier(),
             pipelineEntityV1.getProjectIdentifier(), pipelineEntityV1.getYaml(),
             OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
+    doReturn(false).when(pmsFeatureFlagHelper).isEnabled("acc", FeatureName.CDS_NG_TRIGGER_SELECTIVE_STAGE_EXECUTION);
     triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequest(
         triggerDetails, payloadBuilder.build(), triggerWebhookEvent, null, null);
   }
