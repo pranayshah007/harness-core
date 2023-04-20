@@ -79,7 +79,6 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Operation;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -255,7 +254,6 @@ public class UserResourceNG {
     marketPlace.setAccountId(accountId);
     wingsPersistence.save(marketPlace);
 
-    // return createdUser;
     return new RestResponse<>(convertUserToNgUser(createdUser));
   }
 
@@ -676,7 +674,7 @@ public class UserResourceNG {
           .defaultAccountId(account.getIdentifier())
           .build();
     } catch (Exception e) {
-      throw e;
+      throw new InvalidRequestException("Unable to convert Marketplace Request to User", e);
     }
   }
 

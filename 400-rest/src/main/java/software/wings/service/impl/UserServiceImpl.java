@@ -297,7 +297,6 @@ import javax.validation.executable.ValidateOnExecution;
 import javax.ws.rs.core.UriInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.NameValuePair;
@@ -3585,7 +3584,6 @@ public class UserServiceImpl implements UserService {
   }
 
   private Account setupNGAccount(Account account) {
-    // Double check if we should setup sampleApp for NG
     account.setAppId(GLOBAL_APP_ID);
     account.setDefaultExperience(DefaultExperience.NG);
     account.setCreatedFromNG(true);
