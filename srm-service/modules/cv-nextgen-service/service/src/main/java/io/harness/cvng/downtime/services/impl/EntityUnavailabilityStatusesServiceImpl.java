@@ -105,7 +105,7 @@ public class EntityUnavailabilityStatusesServiceImpl implements EntityUnavailabi
   }
 
   @Override
-  public EntityUnavailabilityStatuses getInstanceById(String uuid) {
+  public EntityUnavailabilityStatuses getInstanceById(EntityType entityType, String uuid) {
     return hPersistence.get(EntityUnavailabilityStatuses.class, uuid);
   }
 
