@@ -747,7 +747,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       rejectRequest.compareAndSet(false, true);
       return;
     }
-    log.debug("Process info CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
+    log.info("Process info CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
         currentRSSMB, maxProcessRSSThresholdMB, currentPodRSSMB, maxPodRSSThresholdMB);
 
     if (rejectRequest.compareAndSet(true, false)) {
