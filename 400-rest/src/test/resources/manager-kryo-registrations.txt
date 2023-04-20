@@ -1911,6 +1911,7 @@
 29310:io.harness.delegate.task.serverless.response.ServerlessPrepareRollbackDataResponse
 29311:io.harness.delegate.beans.serverless.ServerlessPrepareRollbackDataResult
 29312:io.harness.delegate.beans.serverless.ServerlessAwsLambdaPrepareRollbackDataResult
+29313:io.harness.delegate.beans.storeconfig.GitFetchedStoreDelegateConfig
 31010:java.lang.StackTraceElement[]
 31011:java.lang.StackTraceElement
 31012:io.harness.exception.DelegateErrorHandlerException
