@@ -7,17 +7,24 @@
 
 package io.harness.assessment.settings.beans.dto.upload;
 
+import io.harness.assessment.settings.beans.dto.EntityType;
+
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
+@SuperBuilder
+@NoArgsConstructor
 public class AssessmentUploadRequest {
   @NotNull String assessmentId;
   @NotNull String assessmentName;
+  @NotNull EntityType type;
   @Size(min = 1, max = 100) @NotEmpty @Valid List<UploadedQuestion> questions;
   @NotNull Long expectedCompletionDuration;
 }

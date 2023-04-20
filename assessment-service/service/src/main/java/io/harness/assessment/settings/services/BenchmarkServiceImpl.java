@@ -9,6 +9,7 @@ package io.harness.assessment.settings.services;
 
 import io.harness.assessment.settings.beans.dto.BenchmarkDTO;
 import io.harness.assessment.settings.beans.dto.EntityType;
+import io.harness.assessment.settings.beans.dto.ScoreDTO;
 import io.harness.assessment.settings.beans.dto.upload.AssessmentError;
 import io.harness.assessment.settings.beans.dto.upload.BenchmarkUploadResponse;
 import io.harness.assessment.settings.beans.dto.upload.BenchmarksUploadRequest;
@@ -21,8 +22,12 @@ import io.harness.assessment.settings.mappers.BenchmarkMapper;
 import io.harness.assessment.settings.mappers.BenchmarkUtils;
 import io.harness.assessment.settings.repositories.AssessmentRepository;
 import io.harness.assessment.settings.repositories.BenchmarkRepository;
+import io.harness.utils.YamlPipelineUtils;
 
 import com.google.inject.Inject;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -34,6 +39,7 @@ import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.IOUtils;
 
 @Slf4j
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -42,10 +48,15 @@ public class BenchmarkServiceImpl implements BenchmarkService {
   private AssessmentRepository assessmentRepository;
 
   @Override
-  public BenchmarkUploadResponse uploadBenchmark(BenchmarksUploadRequest benchmarksUploadRequest, String assessmentId) {
+  public BenchmarkUploadResponse uploadBenchmark(BenchmarksUploadRequest benchmarksUploadRequest) {
+    // TODO action needs to be taken based on if assessment and section level benchmark are always derived.
     List<AssessmentError> assessmentErrors = new ArrayList<>();
+    String assessmentId = benchmarksUploadRequest.getAssessmentId();
     Long version = benchmarksUploadRequest.getMajorVersion();
     Optional<Assessment> assessmentOptional = assessmentRepository.findByAssessmentIdAndVersion(assessmentId, version);
+    if (benchmarksUploadRequest.getType() != EntityType.BENCHMARK) {
+      throw new RuntimeException("Type must be benchmark.");
+    }
     if (assessmentOptional.isEmpty()) {
       throw new RuntimeException("Assessment Not Found for Id : " + assessmentId);
     }
@@ -66,7 +77,12 @@ public class BenchmarkServiceImpl implements BenchmarkService {
     autoFill(assessment, benchmarks);
     validateBenchmarks(assessment, benchmarks, assessmentErrors);
     if (assessmentErrors.size() > 0) {
-      return BenchmarkUploadResponse.builder().errors(assessmentErrors).build();
+      return BenchmarkUploadResponse.builder()
+          .assessmentId(assessmentId)
+          .type(EntityType.BENCHMARK)
+          .majorVersion(version)
+          .errors(assessmentErrors)
+          .build();
     }
     for (BenchmarkDTO benchmarkDTO : benchmarks) {
       Optional<Benchmark> benchmarkOptional = benchmarkRepository.findOneByAssessmentIdAndVersionAndBenchmarkId(
@@ -77,6 +93,7 @@ public class BenchmarkServiceImpl implements BenchmarkService {
       double assessmentTotal = benchmark.getScores().stream().mapToDouble(Score::getScore).sum();
       long assessmentMaxScore = benchmark.getScores().stream().mapToLong(Score::getMaxScore).sum();
       // TODO add section level scores later.
+      // Should we only fill section and assessment level if its not supplied ?
       benchmark.getScores().add(Score.builder()
                                     .score(assessmentTotal)
                                     .scoreType(ScoreType.ASSESSMENT_LEVEL)
@@ -90,7 +107,13 @@ public class BenchmarkServiceImpl implements BenchmarkService {
     benchmarksInDB = benchmarkRepository.findAllByAssessmentIdAndVersion(assessmentId, version);
     List<BenchmarkDTO> benchmarkDTOList =
         benchmarksInDB.stream().map(BenchmarkMapper::toDTO).collect(Collectors.toList());
-    return BenchmarkUploadResponse.builder().benchmarks(benchmarkDTOList).errors(assessmentErrors).build();
+    return BenchmarkUploadResponse.builder()
+        .assessmentId(assessmentId)
+        .type(EntityType.BENCHMARK)
+        .majorVersion(version)
+        .benchmarks(filterOnlyQuestionLevel(benchmarkDTOList))
+        .errors(assessmentErrors)
+        .build();
   }
 
   private static void validateBenchmarks(
@@ -115,8 +138,35 @@ public class BenchmarkServiceImpl implements BenchmarkService {
   }
 
   @Override
-  public List<BenchmarkDTO> getBenchmarks(String assessmentId, Long version) {
+  public BenchmarkUploadResponse getBenchmarks(String assessmentId, Long version) {
     List<Benchmark> benchmarksInDB = benchmarkRepository.findAllByAssessmentIdAndVersion(assessmentId, version);
-    return benchmarksInDB.stream().map(BenchmarkMapper::toDTO).collect(Collectors.toList());
+    List<BenchmarkDTO> benchmarkDTOList =
+        benchmarksInDB.stream().map(BenchmarkMapper::toDTO).collect(Collectors.toList());
+    return BenchmarkUploadResponse.builder()
+        .assessmentId(assessmentId)
+        .type(EntityType.BENCHMARK)
+        .majorVersion(version)
+        .benchmarks(filterOnlyQuestionLevel(benchmarkDTOList))
+        .build();
+  }
+
+  @Override
+  public BenchmarkUploadResponse uploadNewBenchmarkYAML(InputStream uploadedInputStream) throws IOException {
+    String fileAsString = IOUtils.toString(uploadedInputStream, Charset.defaultCharset());
+    BenchmarksUploadRequest benchmarksUploadRequest =
+        YamlPipelineUtils.read(fileAsString, BenchmarksUploadRequest.class);
+    return uploadBenchmark(benchmarksUploadRequest);
+  }
+
+  List<BenchmarkDTO> filterOnlyQuestionLevel(List<BenchmarkDTO> benchmarkDTOList) {
+    return benchmarkDTOList.stream()
+        .peek(benchmarkDTO -> {
+          List<ScoreDTO> filteredScores = benchmarkDTO.getScores()
+                                              .stream()
+                                              .filter(scoreDTO -> scoreDTO.getScoreType() == ScoreType.QUESTION_LEVEL)
+                                              .collect(Collectors.toList());
+          benchmarkDTO.setScores(filteredScores);
+        })
+        .collect(Collectors.toList());
   }
 }

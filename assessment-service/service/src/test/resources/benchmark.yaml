@@ -1,0 +1,32 @@
+---
+assessmentId: "DEVOPSTest"
+assessmentName: "DevOps Test"
+type: "ASSESSMENT"
+questions:
+  - questionId: "ques1"
+    questionNumber: 1
+    questionType: "RADIO_BUTTON"
+    sectionId: "section_res"
+    sectionName: "System Resilience"
+    questionText: "Do you have redundancy for all your microservices and infrastructure?"
+    possibleResponses:
+      - optionId: "opt1"
+        optionText: "Yes"
+        optionPoints: 10
+      - optionId: "opt2"
+        optionText: "No"
+        optionPoints: 0
+  - questionId: "ques2"
+    questionNumber: 2
+    questionType: "RADIO_BUTTON"
+    sectionId: "section_res"
+    sectionName: "System Resilience"
+    questionText: "Do you you high Test Coverage?"
+    possibleResponses:
+      - optionId: "opt1"
+        optionText: "Yes"
+        optionPoints: 10
+      - optionId: "opt2"
+        optionText: "No"
+        optionPoints: 2
+expectedCompletionDuration: 10

@@ -7,14 +7,16 @@
 
 package io.harness.assessment.settings.services;
 
-import io.harness.assessment.settings.beans.dto.BenchmarkDTO;
 import io.harness.assessment.settings.beans.dto.upload.BenchmarkUploadResponse;
 import io.harness.assessment.settings.beans.dto.upload.BenchmarksUploadRequest;
 
-import java.util.List;
+import java.io.IOException;
+import java.io.InputStream;
 
 public interface BenchmarkService {
-  BenchmarkUploadResponse uploadBenchmark(BenchmarksUploadRequest benchmarksUploadRequest, String assessmentId);
+  BenchmarkUploadResponse uploadBenchmark(BenchmarksUploadRequest benchmarksUploadRequest);
 
-  List<BenchmarkDTO> getBenchmarks(String assessmentId, Long version);
+  BenchmarkUploadResponse getBenchmarks(String assessmentId, Long version);
+
+  BenchmarkUploadResponse uploadNewBenchmarkYAML(InputStream uploadedInputStream) throws IOException;
 }

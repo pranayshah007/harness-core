@@ -10,6 +10,7 @@ package io.harness.assessment.settings.resources;
 import static java.lang.String.format;
 import static javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM;
 
+import io.harness.assessment.settings.beans.dto.upload.AssessmentUploadRequest;
 import io.harness.assessment.settings.beans.dto.upload.AssessmentUploadResponse;
 import io.harness.assessment.settings.services.AssessmentUploadService;
 import io.harness.eraro.ResponseMessage;
@@ -55,11 +56,11 @@ public class AssessmentAdminResource {
   @GET
   @Path("{assessmentId}/template/yaml")
   @Produces(APPLICATION_OCTET_STREAM)
-  @ApiOperation(
-      value = "Get an assessment in the system.", nickname = "getAssessment", response = AssessmentUploadResponse.class)
+  @ApiOperation(value = "Get an assessment in the system.", nickname = "getAssessmentYAML",
+      response = AssessmentUploadRequest.class)
   public Response
   getAssessmentYAML(@PathParam("assessmentId") String assessmentId) {
-    AssessmentUploadResponse assessmentUploadResponse = assessmentUploadService.getAssessment(assessmentId);
+    AssessmentUploadRequest assessmentUploadResponse = assessmentUploadService.getAssessment(assessmentId).getRequest();
     return Response.ok(YamlPipelineUtils.writeYamlString(assessmentUploadResponse), APPLICATION_OCTET_STREAM)
         .header("Content-Disposition",
             "attachment; filename=" + prepareAssessmentFileName(assessmentId, ZonedDateTime.now().toEpochSecond()))

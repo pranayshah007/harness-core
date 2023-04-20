@@ -7,25 +7,34 @@
 
 package io.harness.assessment.settings.beans.dto.upload;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
 
-@Builder
+@SuperBuilder
 @Data
+@EqualsAndHashCode(callSuper = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AssessmentUploadResponse {
-  String assessmentId;
-  String assessmentName;
+public class AssessmentUploadResponse extends AssessmentUploadRequest {
   Long majorVersion;
   Long minorVersion;
-  List<UploadedQuestion> questions;
-  Long expectedCompletionDuration;
   Long baseScore;
   List<AssessmentError> errors;
   Long createdAt;
   String createdBy;
   Boolean isPublished;
   Long lastUpdatedAt;
+  @JsonIgnore
+  public AssessmentUploadRequest getRequest() {
+    return AssessmentUploadRequest.builder()
+        .assessmentId(assessmentId)
+        .type(type)
+        .assessmentName(assessmentName)
+        .expectedCompletionDuration(expectedCompletionDuration)
+        .questions(questions)
+        .build();
+  }
 }
