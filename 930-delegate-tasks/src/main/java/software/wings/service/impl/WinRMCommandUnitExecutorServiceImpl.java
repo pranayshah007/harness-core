@@ -133,7 +133,7 @@ public class WinRMCommandUnitExecutorServiceImpl implements CommandUnitExecutorS
                 .logLine(errorMessage)
                 .executionResult(commandExecutionStatus)
                 .build());
-        throw(WingsException) e.getCause();
+        throw (WingsException) e.getCause();
       } else {
         logService.save(context.getAccountId(),
             aLog()

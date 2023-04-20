@@ -84,5 +84,7 @@ public abstract class SSOSettings extends Base implements AccountAccess {
 
   public abstract SSOType getType();
 
-  public static final class SSOSettingsKeys { public static final String accountId = AccountAccess.ACCOUNT_ID_KEY; }
+  public static final class SSOSettingsKeys {
+    public static final String accountId = AccountAccess.ACCOUNT_ID_KEY;
+  }
 }

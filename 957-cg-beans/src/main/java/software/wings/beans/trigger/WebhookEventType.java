@@ -40,7 +40,9 @@ public enum WebhookEventType {
     WebhookHolder.map.put(value, this);
   }
 
-  private static class WebhookHolder { static Map<String, WebhookEventType> map = new HashMap<>(); }
+  private static class WebhookHolder {
+    static Map<String, WebhookEventType> map = new HashMap<>();
+  }
 
   public static WebhookEventType find(String val) {
     WebhookEventType t = WebhookHolder.map.get(val);

@@ -140,7 +140,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
         // If e.getCause() instance of InvalidYamlException then it means we got some legit schema-validation errors and
         // it has error info according to the schema-error-experience.
         if (e.getCause() != null && e.getCause() instanceof io.harness.yaml.validator.InvalidYamlException) {
-          throw(io.harness.yaml.validator.InvalidYamlException) e.getCause();
+          throw (io.harness.yaml.validator.InvalidYamlException) e.getCause();
         }
         throw new RuntimeException(e.getCause());
       } catch (TimeoutException | InterruptedException e) {

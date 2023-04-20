@@ -101,7 +101,7 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
           if (e instanceof AWSSecretsManagerException) {
             log.error("AWS_SECRETS_MANAGER_OPERATION_ERROR : validateSecretManagerConfiguration {}",
                 ((AWSSecretsManagerException) e).getErrorMessage());
-            throw(AWSSecretsManagerException) e;
+            throw (AWSSecretsManagerException) e;
           } else if (e instanceof UncheckedTimeoutException) {
             throw timeoutException(e);
           } else {
@@ -130,7 +130,7 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
           if (e instanceof AWSSecretsManagerException) {
             log.error("AWS_SECRETS_MANAGER_OPERATION_ERROR : validateSecretManagerConfiguration {}",
                 ((AWSSecretsManagerException) e).getErrorMessage());
-            throw(AWSSecretsManagerException) e;
+            throw (AWSSecretsManagerException) e;
           } else if (e instanceof UncheckedTimeoutException) {
             throw timeoutException(e);
           } else {
@@ -159,7 +159,7 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
           if (e instanceof AWSSecretsManagerException) {
             log.error("AWS_SECRETS_MANAGER_OPERATION_ERROR : validateSecretManagerConfiguration {}",
                 ((AWSSecretsManagerException) e).getErrorMessage());
-            throw(AWSSecretsManagerException) e;
+            throw (AWSSecretsManagerException) e;
           } else if (e instanceof UncheckedTimeoutException) {
             throw timeoutException(e);
           } else {
@@ -210,7 +210,7 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
           if (e instanceof AWSSecretsManagerException) {
             log.error("AWS_SECRETS_MANAGER_OPERATION_ERROR : validateSecretManagerConfiguration {}",
                 ((AWSSecretsManagerException) e).getErrorMessage());
-            throw(AWSSecretsManagerException) e;
+            throw (AWSSecretsManagerException) e;
           } else if (e instanceof UncheckedTimeoutException) {
             throw timeoutException(e);
           } else {

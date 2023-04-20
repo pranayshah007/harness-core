@@ -1337,7 +1337,7 @@ public class ApplicationManifestServiceImpl implements ApplicationManifestServic
       throw new WingsException(((ErrorNotifyResponseData) notifyResponseData).getErrorMessage());
     } else if ((notifyResponseData instanceof RemoteMethodReturnValueData)
         && (((RemoteMethodReturnValueData) notifyResponseData).getException() instanceof InvalidRequestException)) {
-      throw(InvalidRequestException)((RemoteMethodReturnValueData) notifyResponseData).getException();
+      throw (InvalidRequestException) ((RemoteMethodReturnValueData) notifyResponseData).getException();
     } else if (!(notifyResponseData instanceof GitCommandExecutionResponse)) {
       throw new WingsException(ErrorCode.GENERAL_ERROR)
           .addParam("message", "Unknown Response from delegate")

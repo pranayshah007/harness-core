@@ -398,7 +398,7 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
     } else if (responseData instanceof RemoteMethodReturnValueData) {
       RemoteMethodReturnValueData remoteMethodReturnValueData = (RemoteMethodReturnValueData) responseData;
       if (remoteMethodReturnValueData.getException() instanceof InvalidRequestException) {
-        throw(InvalidRequestException)(remoteMethodReturnValueData.getException());
+        throw (InvalidRequestException) (remoteMethodReturnValueData.getException());
       } else {
         throw new ArtifactoryRegistryException("Unexpected error during authentication to artifactory server "
             + remoteMethodReturnValueData.getReturnValue());

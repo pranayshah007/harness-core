@@ -835,7 +835,7 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
       throw new WingsException(((ErrorNotifyResponseData) notifyResponseData).getErrorMessage());
     } else if ((notifyResponseData instanceof RemoteMethodReturnValueData)
         && (((RemoteMethodReturnValueData) notifyResponseData).getException() instanceof InvalidRequestException)) {
-      throw(InvalidRequestException)((RemoteMethodReturnValueData) notifyResponseData).getException();
+      throw (InvalidRequestException) ((RemoteMethodReturnValueData) notifyResponseData).getException();
     } else if (!(notifyResponseData instanceof TerraformInputVariablesTaskResponse)) {
       throw new WingsException(ErrorCode.GENERAL_ERROR)
           .addParam("message", "Unknown Response from delegate")
@@ -974,7 +974,7 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
       throw new WingsException(((ErrorNotifyResponseData) responseData).getErrorMessage());
     } else if (responseData instanceof RemoteMethodReturnValueData
         && ((RemoteMethodReturnValueData) responseData).getException() instanceof InvalidRequestException) {
-      throw(InvalidRequestException)((RemoteMethodReturnValueData) responseData).getException();
+      throw (InvalidRequestException) ((RemoteMethodReturnValueData) responseData).getException();
     } else if (!(responseData instanceof TerraformExecutionData)) {
       throw new WingsException("Unknown response from delegate.").addContext(DelegateResponseData.class, responseData);
     }

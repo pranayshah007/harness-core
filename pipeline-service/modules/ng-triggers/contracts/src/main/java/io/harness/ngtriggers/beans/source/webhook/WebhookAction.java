@@ -71,7 +71,9 @@ public enum WebhookAction {
   public String getValue() {
     return value;
   }
-  private static class EventActionHolder { static Map<String, WebhookAction> map = new HashMap<>(); }
+  private static class EventActionHolder {
+    static Map<String, WebhookAction> map = new HashMap<>();
+  }
 
   public static WebhookAction find(String val) {
     WebhookAction action = EventActionHolder.map.get(val);

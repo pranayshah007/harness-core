@@ -41,7 +41,9 @@ public enum GithubAction {
     GitHubActionHolder.map.put(value, this);
   }
 
-  private static class GitHubActionHolder { static Map<String, GithubAction> map = new HashMap<>(); }
+  private static class GitHubActionHolder {
+    static Map<String, GithubAction> map = new HashMap<>();
+  }
 
   public static GithubAction find(String val) {
     GithubAction githubAction = GitHubActionHolder.map.get(val);

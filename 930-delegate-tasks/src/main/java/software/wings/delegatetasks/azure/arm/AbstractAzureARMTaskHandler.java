@@ -44,7 +44,7 @@ public abstract class AbstractAzureARMTaskHandler {
 
       return handleARMTaskResponse(azureARMTaskResponse);
     } catch (AzureClientException ex) {
-      throw(AzureClientException) ExceptionMessageSanitizer.sanitizeException(ex);
+      throw (AzureClientException) ExceptionMessageSanitizer.sanitizeException(ex);
     } catch (Exception ex) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
       String message = AzureResourceUtility.getAzureCloudExceptionMessage(sanitizedException);

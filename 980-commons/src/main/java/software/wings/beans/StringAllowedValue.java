@@ -17,5 +17,7 @@ import lombok.NoArgsConstructor;
 public class StringAllowedValue implements AllowedValueYaml {
   String value;
 
-  public static final class Yaml { private String value; }
+  public static final class Yaml {
+    private String value;
+  }
 }

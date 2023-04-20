@@ -794,7 +794,7 @@ public class SettingValidationService {
         throw new WingsException(((ErrorNotifyResponseData) notifyResponseData).getErrorMessage());
       } else if ((notifyResponseData instanceof RemoteMethodReturnValueData)
           && (((RemoteMethodReturnValueData) notifyResponseData).getException() instanceof InvalidRequestException)) {
-        throw(InvalidRequestException)((RemoteMethodReturnValueData) notifyResponseData).getException();
+        throw (InvalidRequestException) ((RemoteMethodReturnValueData) notifyResponseData).getException();
       } else if (!(notifyResponseData instanceof HelmRepoConfigValidationResponse)) {
         throw new WingsException(ErrorCode.GENERAL_ERROR)
             .addParam("message", "Unknown response from delegate")

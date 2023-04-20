@@ -112,7 +112,7 @@ public class AwsCodeDeployTask extends AbstractDelegateRunnableTask {
         }
       }
     } catch (WingsException exception) {
-      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(exception);
+      throw (WingsException) ExceptionMessageSanitizer.sanitizeException(exception);
     } catch (Exception ex) {
       throw new InvalidRequestException(
           ExceptionMessageSanitizer.sanitizeException(ex).getMessage(), WingsException.USER);

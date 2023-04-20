@@ -165,7 +165,7 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
     } else if (responseData instanceof RemoteMethodReturnValueData) {
       RemoteMethodReturnValueData remoteMethodReturnValueData = (RemoteMethodReturnValueData) responseData;
       if (remoteMethodReturnValueData.getException() instanceof InvalidRequestException) {
-        throw(InvalidRequestException)(remoteMethodReturnValueData.getException());
+        throw (InvalidRequestException) (remoteMethodReturnValueData.getException());
       } else {
         throw new ServiceNowException("Unexpected error during authentication to ServiceNow server "
                 + remoteMethodReturnValueData.getReturnValue(),

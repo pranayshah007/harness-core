@@ -181,11 +181,11 @@ public class GcbServiceImpl implements GcbService {
   @VisibleForTesting
   void handleRetryException(Exception e) throws InterruptedException, IOException {
     if (e instanceof InterruptedException) {
-      throw(InterruptedException) e;
+      throw (InterruptedException) e;
     } else if (e instanceof InterruptedIOException) {
-      throw(InterruptedIOException) e;
+      throw (InterruptedIOException) e;
     } else if (e instanceof IOException) {
-      throw(IOException) e;
+      throw (IOException) e;
     }
   }
 

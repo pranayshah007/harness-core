@@ -49,9 +49,9 @@ public class HTimeLimiter {
     } catch (TimeoutException exception) {
       throw new UncheckedTimeoutException(exception);
     } catch (UncheckedExecutionException | ExecutionException exception) {
-      throw(Exception) exception.getCause();
+      throw (Exception) exception.getCause();
     } catch (ExecutionError error) {
-      throw(Error) error.getCause();
+      throw (Error) error.getCause();
     }
   }
 
@@ -69,9 +69,9 @@ public class HTimeLimiter {
     } catch (TimeoutException exception) {
       throw new UncheckedTimeoutException(exception);
     } catch (UncheckedExecutionException | ExecutionException exception) {
-      throw(Exception) exception.getCause();
+      throw (Exception) exception.getCause();
     } catch (ExecutionError error) {
-      throw(Error) error.getCause();
+      throw (Error) error.getCause();
     }
   }
 

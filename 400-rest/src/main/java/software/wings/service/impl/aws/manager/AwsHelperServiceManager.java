@@ -145,7 +145,7 @@ public class AwsHelperServiceManager {
       throw new WingsException(INIT_TIMEOUT)
           .addParam("message", "Timed out waiting for all instances to be in running state");
     } catch (WingsException e) {
-      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(e);
+      throw (WingsException) ExceptionMessageSanitizer.sanitizeException(e);
     } catch (Exception e) {
       throw new InvalidRequestException("Error while waiting for all instances to be in running state",
           ExceptionMessageSanitizer.sanitizeException(e));

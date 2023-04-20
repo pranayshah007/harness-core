@@ -33,7 +33,9 @@ public enum ReleaseAction {
     ReleaseActionHolder.map.put(value, this);
   }
 
-  private static class ReleaseActionHolder { static Map<String, ReleaseAction> map = new HashMap<>(); }
+  private static class ReleaseActionHolder {
+    static Map<String, ReleaseAction> map = new HashMap<>();
+  }
 
   public static ReleaseAction find(String val) {
     ReleaseAction releaseAction = ReleaseActionHolder.map.get(val);

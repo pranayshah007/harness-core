@@ -545,7 +545,7 @@ public class LdapGroupSyncJobHelper {
       throw ex;
     } catch (ExecutionException ex) {
       if (ex.getCause() instanceof WingsException) {
-        throw(WingsException) ex.getCause();
+        throw (WingsException) ex.getCause();
       }
       throw ex;
     }

@@ -104,7 +104,7 @@ public class AwsElbTask extends AbstractDelegateRunnableTask {
         }
       }
     } catch (WingsException exception) {
-      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(exception);
+      throw (WingsException) ExceptionMessageSanitizer.sanitizeException(exception);
     } catch (Exception exception) {
       throw new InvalidRequestException(
           ExceptionMessageSanitizer.sanitizeException(exception).getMessage(), WingsException.USER);

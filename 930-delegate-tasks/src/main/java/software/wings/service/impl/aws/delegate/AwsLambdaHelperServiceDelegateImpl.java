@@ -584,7 +584,7 @@ public class AwsLambdaHelperServiceDelegateImpl
       throw new TimeoutException("Timed out waiting for function to reach " + ACTIVE_FUNCTION_STATE + " state",
           "Timeout", ExceptionMessageSanitizer.sanitizeException(e), WingsException.SRE);
     } catch (WingsException e) {
-      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(e);
+      throw (WingsException) ExceptionMessageSanitizer.sanitizeException(e);
     } catch (Exception e) {
       throw new InvalidRequestException("Error while waiting for function to reach " + ACTIVE_FUNCTION_STATE + " state",
           ExceptionMessageSanitizer.sanitizeException(e));
@@ -622,7 +622,7 @@ public class AwsLambdaHelperServiceDelegateImpl
       throw new TimeoutException("Timed out waiting for function to reach " + ACTIVE_LAST_UPDATE_STATUS + " status",
           "Timeout", ExceptionMessageSanitizer.sanitizeException(e), WingsException.SRE);
     } catch (WingsException e) {
-      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(e);
+      throw (WingsException) ExceptionMessageSanitizer.sanitizeException(e);
     } catch (Exception e) {
       throw new InvalidRequestException(
           "Error while waiting for function to reach " + ACTIVE_LAST_UPDATE_STATUS + " status", e);

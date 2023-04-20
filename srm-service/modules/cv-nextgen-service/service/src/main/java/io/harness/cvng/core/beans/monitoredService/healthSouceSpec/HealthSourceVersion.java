@@ -9,4 +9,6 @@ package io.harness.cvng.core.beans.monitoredService.healthSouceSpec;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public enum HealthSourceVersion { @JsonProperty("v2") V2; }
+public enum HealthSourceVersion {
+  @JsonProperty("v2") V2;
+}

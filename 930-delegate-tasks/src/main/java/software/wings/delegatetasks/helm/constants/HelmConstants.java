@@ -6,4 +6,6 @@
  */
 
 package software.wings.delegatetasks.helm.constants;
-public final class HelmConstants { public static final String REGISTRY_URL_PREFIX = "oci://%s"; }
+public final class HelmConstants {
+  public static final String REGISTRY_URL_PREFIX = "oci://%s";
+}

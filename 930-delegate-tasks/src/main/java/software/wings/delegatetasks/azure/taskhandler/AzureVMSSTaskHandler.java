@@ -187,7 +187,7 @@ public abstract class AzureVMSSTaskHandler {
       logCallBack.saveExecutionLog(message, ERROR, FAILURE);
       throw new InvalidRequestException(message, e);
     } catch (WingsException e) {
-      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(e);
+      throw (WingsException) ExceptionMessageSanitizer.sanitizeException(e);
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       String message = "Error while waiting for provisioning VMSS VM instances to desired capacity. \n"

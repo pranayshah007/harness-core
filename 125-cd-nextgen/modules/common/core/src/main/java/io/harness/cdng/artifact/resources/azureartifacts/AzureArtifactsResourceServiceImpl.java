@@ -332,7 +332,7 @@ public class AzureArtifactsResourceServiceImpl implements AzureArtifactsResource
       RemoteMethodReturnValueData remoteMethodReturnValueData = (RemoteMethodReturnValueData) responseData;
 
       if (remoteMethodReturnValueData.getException() instanceof InvalidRequestException) {
-        throw(InvalidRequestException)(remoteMethodReturnValueData.getException());
+        throw (InvalidRequestException) (remoteMethodReturnValueData.getException());
       } else {
         throw new ArtifactServerException("Unexpected error during authentication to Azure Artifacts Server "
                 + remoteMethodReturnValueData.getReturnValue(),

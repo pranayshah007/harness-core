@@ -17,5 +17,7 @@ import lombok.NoArgsConstructor;
 public class NumberAllowedValue implements AllowedValueYaml {
   Number number;
 
-  public static final class Yaml { private Number number; }
+  public static final class Yaml {
+    private Number number;
+  }
 }

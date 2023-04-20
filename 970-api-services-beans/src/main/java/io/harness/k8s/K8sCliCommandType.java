@@ -7,4 +7,6 @@
 
 package io.harness.k8s;
 
-public enum K8sCliCommandType { Apply; }
+public enum K8sCliCommandType {
+  Apply;
+}

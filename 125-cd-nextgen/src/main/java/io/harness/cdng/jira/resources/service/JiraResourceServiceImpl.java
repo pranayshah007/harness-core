@@ -191,7 +191,7 @@ public class JiraResourceServiceImpl implements JiraResourceService {
     } else if (responseData instanceof RemoteMethodReturnValueData) {
       RemoteMethodReturnValueData remoteMethodReturnValueData = (RemoteMethodReturnValueData) responseData;
       if (remoteMethodReturnValueData.getException() instanceof InvalidRequestException) {
-        throw(InvalidRequestException)(remoteMethodReturnValueData.getException());
+        throw (InvalidRequestException) (remoteMethodReturnValueData.getException());
       } else {
         throw new HarnessJiraException(
             "Unexpected error during authentication to JIRA server " + remoteMethodReturnValueData.getReturnValue(),

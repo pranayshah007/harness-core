@@ -250,7 +250,7 @@ public class ArtifactoryClientImpl {
               serverMayNotBeRunningMessaage, ErrorCode.INVALID_ARTIFACT_SERVER, reportTargets));
     }
     if (e instanceof WingsException) {
-      throw(WingsException) e;
+      throw (WingsException) e;
     }
     throw NestedExceptionUtils.hintWithExplanationException(
         "Check if the URL is correct. Consider appending `/artifactory` to the endpoint if you have not already.",

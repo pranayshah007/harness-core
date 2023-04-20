@@ -59,7 +59,7 @@ public class AwsS3Task extends AbstractDelegateRunnableTask {
         throw new InvalidRequestException("Invalid request type [" + requestType + "]", WingsException.USER);
       }
     } catch (WingsException exception) {
-      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(exception);
+      throw (WingsException) ExceptionMessageSanitizer.sanitizeException(exception);
     } catch (Exception ex) {
       throw new InvalidRequestException(
           ExceptionMessageSanitizer.sanitizeException(ex).getMessage(), WingsException.USER);

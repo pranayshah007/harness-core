@@ -26,7 +26,7 @@ public class DelegateTaskUtils {
           SECRET_MANAGEMENT_ERROR, ((ErrorNotifyResponseData) delegateResponseData).getErrorMessage(), USER);
     } else if (delegateResponseData instanceof RemoteMethodReturnValueData
         && (((RemoteMethodReturnValueData) delegateResponseData).getException() instanceof InvalidRequestException)) {
-      throw(InvalidRequestException)((RemoteMethodReturnValueData) delegateResponseData).getException();
+      throw (InvalidRequestException) ((RemoteMethodReturnValueData) delegateResponseData).getException();
     }
   }
 }

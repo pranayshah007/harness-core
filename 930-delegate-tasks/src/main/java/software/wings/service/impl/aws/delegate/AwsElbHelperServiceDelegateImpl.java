@@ -409,7 +409,7 @@ public class AwsElbHelperServiceDelegateImpl
       logCallback.saveExecutionLog(errorMessage, ERROR);
       throw new WingsException(INIT_TIMEOUT).addParam("message", errorMessage);
     } catch (WingsException e) {
-      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(e);
+      throw (WingsException) ExceptionMessageSanitizer.sanitizeException(e);
     } catch (Exception e) {
       throw new InvalidRequestException(
           format("Registration timed out for Asg: [%s]", asgName), ExceptionMessageSanitizer.sanitizeException(e));
@@ -461,7 +461,7 @@ public class AwsElbHelperServiceDelegateImpl
       logCallback.saveExecutionLog(errorMessage, ERROR);
       throw new WingsException(INIT_TIMEOUT).addParam("message", errorMessage);
     } catch (WingsException e) {
-      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(e);
+      throw (WingsException) ExceptionMessageSanitizer.sanitizeException(e);
     } catch (Exception e) {
       throw new InvalidRequestException(
           format("Registration timed out for Asg: [%s]", asgName), ExceptionMessageSanitizer.sanitizeException(e));
@@ -516,7 +516,7 @@ public class AwsElbHelperServiceDelegateImpl
       logCallback.saveExecutionLog(errorMessage, ERROR);
       throw new WingsException(INIT_TIMEOUT).addParam("message", errorMessage);
     } catch (WingsException e) {
-      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(e);
+      throw (WingsException) ExceptionMessageSanitizer.sanitizeException(e);
     } catch (Exception e) {
       throw new InvalidRequestException(
           format("Registration timed out for Asg: [%s]", asgName), ExceptionMessageSanitizer.sanitizeException(e));
@@ -569,7 +569,7 @@ public class AwsElbHelperServiceDelegateImpl
       logCallback.saveExecutionLog(errorMessage, ERROR);
       throw new WingsException(INIT_TIMEOUT).addParam("message", errorMessage);
     } catch (WingsException e) {
-      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(e);
+      throw (WingsException) ExceptionMessageSanitizer.sanitizeException(e);
     } catch (Exception e) {
       throw new InvalidRequestException(
           format("Registration timed out for Asg: [%s]", asgName), ExceptionMessageSanitizer.sanitizeException(e));

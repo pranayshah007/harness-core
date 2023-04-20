@@ -240,7 +240,7 @@ public class BambooResourceServiceImpl implements BambooResourceService {
     if (responseData instanceof RemoteMethodReturnValueData) {
       RemoteMethodReturnValueData remoteMethodReturnValueData = (RemoteMethodReturnValueData) responseData;
       if (remoteMethodReturnValueData.getException() instanceof InvalidRequestException) {
-        throw(InvalidRequestException)(remoteMethodReturnValueData.getException());
+        throw (InvalidRequestException) (remoteMethodReturnValueData.getException());
       } else {
         throw new ArtifactServerException(
             "Unexpected error during authentication to bamboo server " + remoteMethodReturnValueData.getReturnValue(),

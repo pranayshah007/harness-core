@@ -146,7 +146,7 @@ public class SshCommandUnitExecutorServiceImpl implements CommandUnitExecutorSer
         String errorMessage = ExceptionUtils.getMessage(ex);
         logService.save(context.getAccountId(),
             logBuilder.logLevel(ERROR).logLine(errorMessage).executionResult(commandExecutionStatus).build());
-        throw(WingsException) e.getCause();
+        throw (WingsException) e.getCause();
       } else {
         logService.save(context.getAccountId(),
             logBuilder.logLevel(ERROR)

@@ -198,7 +198,7 @@ public class BambooBuildStepHelperServiceImpl implements BambooBuildStepHelperSe
     } else if (responseData instanceof RemoteMethodReturnValueData) {
       RemoteMethodReturnValueData remoteMethodReturnValueData = (RemoteMethodReturnValueData) responseData;
       if (remoteMethodReturnValueData.getException() instanceof InvalidRequestException) {
-        throw(InvalidRequestException)(remoteMethodReturnValueData.getException());
+        throw (InvalidRequestException) (remoteMethodReturnValueData.getException());
       } else {
         throw new ArtifactServerException(
             "Unexpected error during authentication to docker server " + remoteMethodReturnValueData.getReturnValue(),

@@ -246,7 +246,9 @@ public class AppDynamicsServiceImpl implements AppDynamicsService {
     }
     metricPathSoFar.append("|Individual Nodes|*");
     for (; index < metricPathFolders.length; index++) {
-      { metricPathSoFar.append('|').append(metricPathFolders[index]); }
+      {
+        metricPathSoFar.append('|').append(metricPathFolders[index]);
+      }
     }
     return metricPathSoFar.substring(1, metricPathSoFar.length());
   }
@@ -315,7 +317,9 @@ public class AppDynamicsServiceImpl implements AppDynamicsService {
     }
     metricPathSoFar.append("|Individual Nodes|*");
     for (; index < metricPathFolders.length; index++) {
-      { metricPathSoFar.append('|').append(metricPathFolders[index]); }
+      {
+        metricPathSoFar.append('|').append(metricPathFolders[index]);
+      }
     }
     return metricPathSoFar.toString();
   }

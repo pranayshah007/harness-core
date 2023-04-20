@@ -284,7 +284,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       if (isMongoExecutionTimeoutException(ex)) {
         log.error("count operation for collection [{}] exceeded max time limit of [{}] ms with error {}.",
             collectionName, maxOperationTimeInMillis, ex);
-        throw(MongoExecutionTimeoutException) ex.getCause();
+        throw (MongoExecutionTimeoutException) ex.getCause();
       }
       throw ex;
     }
@@ -370,7 +370,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   private void logAndThrowMongoExecutionTimeoutException(Query query, String collectionName, Exception ex)
       throws MongoExecutionTimeoutException {
     log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, collectionName, maxOperationTimeInMillis, ex);
-    throw(MongoExecutionTimeoutException) ex.getCause();
+    throw (MongoExecutionTimeoutException) ex.getCause();
   }
 
   private boolean isMongoExecutionTimeoutException(Exception ex) {

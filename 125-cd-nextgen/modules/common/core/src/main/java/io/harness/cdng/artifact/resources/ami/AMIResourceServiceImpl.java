@@ -176,7 +176,7 @@ public class AMIResourceServiceImpl implements AMIResourceService {
       RemoteMethodReturnValueData remoteMethodReturnValueData = (RemoteMethodReturnValueData) responseData;
 
       if (remoteMethodReturnValueData.getException() instanceof InvalidRequestException) {
-        throw(InvalidRequestException)(remoteMethodReturnValueData.getException());
+        throw (InvalidRequestException) (remoteMethodReturnValueData.getException());
       } else {
         throw new ArtifactServerException("Unexpected error during authentication to AMI Artifacts Server"
                 + remoteMethodReturnValueData.getReturnValue(),

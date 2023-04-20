@@ -588,7 +588,7 @@ public class AwsAsgHelperServiceDelegateImpl
       throw new WingsException(INIT_TIMEOUT)
           .addParam("message", "Timed out waiting for autoscaling group to be deleted");
     } catch (WingsException e) {
-      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(e);
+      throw (WingsException) ExceptionMessageSanitizer.sanitizeException(e);
     } catch (Exception e) {
       throw new InvalidRequestException(
           "Error while waiting for autoscaling group to be deleted", ExceptionMessageSanitizer.sanitizeException(e));
@@ -659,7 +659,7 @@ public class AwsAsgHelperServiceDelegateImpl
       throw new WingsException(INIT_TIMEOUT)
           .addParam("message", "Timed out waiting for all instances to be in running state");
     } catch (WingsException e) {
-      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(e);
+      throw (WingsException) ExceptionMessageSanitizer.sanitizeException(e);
     } catch (Exception e) {
       throw new InvalidRequestException("Error while waiting for all instances to be in running state",
           ExceptionMessageSanitizer.sanitizeException(e));
@@ -692,7 +692,7 @@ public class AwsAsgHelperServiceDelegateImpl
       throw new WingsException(INIT_TIMEOUT)
           .addParam("message", "Timed out waiting for Auto Scaling Group to be in InService and Healthy state");
     } catch (WingsException e) {
-      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(e);
+      throw (WingsException) ExceptionMessageSanitizer.sanitizeException(e);
     } catch (Exception e) {
       throw new InvalidRequestException("Error while waiting for all instances to be in InService and Healthy state",
           ExceptionMessageSanitizer.sanitizeException(e));

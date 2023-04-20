@@ -329,7 +329,7 @@ public class NGHostValidationServiceImpl implements NGHostValidationService {
       throw new InvalidRequestException(ex.getMessage(), USER);
     } catch (ExecutionException ex) {
       if (ex.getCause() instanceof WingsException) {
-        throw(WingsException) ex.getCause();
+        throw (WingsException) ex.getCause();
       }
       throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
     }

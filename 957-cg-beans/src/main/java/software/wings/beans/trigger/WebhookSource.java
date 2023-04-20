@@ -129,7 +129,9 @@ public enum WebhookSource {
       }
     }
 
-    public static class BitBucketEventHolder { @Getter static Map<String, BitBucketEventType> map = new HashMap<>(); }
+    public static class BitBucketEventHolder {
+      @Getter static Map<String, BitBucketEventType> map = new HashMap<>();
+    }
 
     public static BitBucketEventType find(String val) {
       return BitBucketEventType.BitBucketEventHolder.map.get(val);
@@ -162,7 +164,9 @@ public enum WebhookSource {
       GitLabEventHolder.map.put(eventKeyValue, this);
     }
 
-    public static class GitLabEventHolder { @Getter static Map<String, GitLabEventType> map = new HashMap<>(); }
+    public static class GitLabEventHolder {
+      @Getter static Map<String, GitLabEventType> map = new HashMap<>();
+    }
 
     public static GitLabEventType find(String eventKeyValue) {
       return GitLabEventType.GitLabEventHolder.map.get(eventKeyValue);
