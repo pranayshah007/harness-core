@@ -149,8 +149,8 @@ public class NGMigrationServiceImpl implements NGMigrationService {
     if (currentVersion < maxVersion) {
       executorService.submit(() -> {
         MigrationType migrationType = migrationDetail.getMigrationTypeName();
-        try (AcquiredLock ignore = persistentLocker.acquireLock(
-                 NGSchema.class, "Background-" + NG_SCHEMA_ID + microservice + migrationType, ofMinutes(120 + 1))) {
+        try (AcquiredLock ignore = persistentLocker.waitToAcquireLock(NGSchema.class,
+                 "Background-" + NG_SCHEMA_ID + microservice + migrationType, ofMinutes(115), ofMinutes(120 + 1))) {
           HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofHours(2), () -> {
             doMigration(true, currentVersion, maxVersion, migrations, migrationType, schemaClass, serviceName);
             return true;
@@ -166,6 +166,11 @@ public class NGMigrationServiceImpl implements NGMigrationService {
   void doMigration(boolean isBackground, int currentVersion, int maxVersion,
       Map<Integer, Class<? extends NGMigration>> migrations, MigrationType migrationTypeName,
       Class<? extends NGSchema> schemaClass, String serviceName) {
+    if (isBackground) {
+      NGSchema schema = mongoTemplate.findOne(new Query(), schemaClass);
+      Map<MigrationType, Integer> allSchemaMigrations = schema.getMigrationDetails();
+      currentVersion = allSchemaMigrations.getOrDefault(migrationTypeName, 0);
+    }
     log.info("[Migration] - {} : Updating {} version from {} to {}", serviceName, migrationTypeName, currentVersion,
         maxVersion);
 
