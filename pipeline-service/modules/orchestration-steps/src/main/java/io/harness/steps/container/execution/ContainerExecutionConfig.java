@@ -9,6 +9,7 @@ package io.harness.steps.container.execution;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.execution.ExecutionServiceConfig;
+import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.steps.container.execution.plugin.PluginConfig;
 
 import java.beans.ConstructorProperties;
@@ -21,7 +22,7 @@ import org.springframework.data.annotation.TypeAlias;
 @EqualsAndHashCode(callSuper = true)
 @TypeAlias("ContainerExecutionConfig")
 @RecasterAlias("io.harness.steps.container.execution.ContainerExecutionConfig")
-public class ContainerExecutionConfig extends ExecutionServiceConfig {
+public class ContainerExecutionConfig extends ExecutionServiceConfig implements ExecutionSweepingOutput {
   String logStreamingContainerStepBaseUrl;
   PluginConfig pluginConfig;
 
