@@ -264,7 +264,7 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
         if (expression instanceof ParameterField) {
           ParameterField<?> expr = (ParameterField<?>) expression;
           if (expr.isExpression()) {
-            Object evaluatedValue = engineExpressionService.resolve(
+            Object evaluatedValue = engineExpressionService.evaluateExpression(
                 ambiance, expr.getExpressionValue(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED, contextMap);
             if (evaluatedValue != null) {
               outputVariablesEvaluated.put(name, evaluatedValue.toString());
