@@ -149,7 +149,7 @@ public abstract class VerificationBaseService extends StepMapper {
           .build();
     } else {
       return MonitoredServiceNode.builder()
-          .type(MonitoredServiceSpecType.DEFAULT.name())
+          .type(MonitoredServiceSpecType.DEFAULT.getName())
           .spec(DefaultMonitoredServiceSpec.builder().build())
           .build();
     }
