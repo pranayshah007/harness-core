@@ -38,6 +38,7 @@ import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.TemplateReferenceProtoDTO;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
@@ -85,6 +86,7 @@ import io.harness.template.beans.PermissionTypes;
 import io.harness.template.beans.TemplateImportRequestDTO;
 import io.harness.template.beans.TemplateListRepoResponse;
 import io.harness.template.beans.TemplateMoveConfigResponse;
+import io.harness.template.beans.UpdateGitDetailsParams;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
@@ -1377,6 +1379,31 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       throw new NotFoundException(
           String.format("Template with the given Identifier: %s and versionLabel %s does not exist or has been deleted",
               templateIdentifier, versionLabel));
+    }
+  }
+
+  @Override
+  public void updateGitDetails(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, String versionLabel, UpdateGitDetailsParams updateGitDetailsParams) {
+    Criteria templateCriteria = Criteria.where(TemplateEntityKeys.accountId)
+                                    .is(accountIdentifier)
+                                    .and(TemplateEntityKeys.orgIdentifier)
+                                    .is(orgIdentifier)
+                                    .and(TemplateEntityKeys.projectIdentifier)
+                                    .is(projectIdentifier)
+                                    .and(TemplateEntityKeys.identifier)
+                                    .is(templateIdentifier)
+                                    .and(TemplateEntityKeys.versionLabel)
+                                    .is(versionLabel)
+                                    .and(TemplateEntityKeys.storeType)
+                                    .is(StoreType.REMOTE);
+
+    Update update = templateServiceHelper.getGitDetailsUpdate(updateGitDetailsParams);
+    TemplateEntity templateEntity =
+        templateRepository.updateV2(accountIdentifier, orgIdentifier, projectIdentifier, templateCriteria, update);
+    if (templateEntity == null) {
+      throw new EntityNotFoundException(String.format(
+          "Template not found for template identifier [%s] and version label [%s]", templateIdentifier, versionLabel));
     }
   }
 
