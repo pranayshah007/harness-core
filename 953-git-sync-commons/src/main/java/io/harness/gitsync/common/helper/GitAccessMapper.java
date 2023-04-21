@@ -13,13 +13,16 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.gitsync.AzureRepoAccessRequest;
+import io.harness.gitsync.AzureRepoOAuthAccessRequest;
+import io.harness.gitsync.AzureRepoTokenAccessRequest;
 import io.harness.gitsync.GitAccessRequest;
 import io.harness.gitsync.GithubAccessRequest;
 import io.harness.gitsync.GithubAppAccessRequest;
 import io.harness.gitsync.GithubTokenAccessRequest;
 import io.harness.gitsync.GitlabAccessRequest;
 import io.harness.gitsync.UserDetailsRequest;
-import io.harness.gitsync.common.dtos.gitAccess.AzureRepoAccessDTO;
+import io.harness.gitsync.common.dtos.gitAccess.AzureRepoOAuthAccessDTO;
+import io.harness.gitsync.common.dtos.gitAccess.AzureRepoTokenAccessDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GitAccessDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GithubAccessTokenDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GithubAppAccessDTO;
@@ -70,13 +73,26 @@ public class GitAccessMapper {
           .build();
     } else {
       AzureRepoAccessRequest azureRepoAccessRequest = gitAccessRequest.getAzureRepo();
-      io.harness.gitsync.SecretRefData tokenRef = azureRepoAccessRequest.getTokenRef();
-      ScopeIdentifiers scopeIdentifiers = tokenRef.getScope();
-      return AzureRepoAccessDTO.builder()
-          .tokenRef(prepareSecretRefData(tokenRef))
-          .tokenScope(getScope(scopeIdentifiers.getAccountIdentifier(), scopeIdentifiers.getOrgIdentifier(),
-              scopeIdentifiers.getProjectIdentifier()))
-          .build();
+      if (azureRepoAccessRequest.hasOauth()) {
+        AzureRepoOAuthAccessRequest azureRepoOAuthAccessRequest = azureRepoAccessRequest.getOauth();
+        io.harness.gitsync.SecretRefData tokenRef = azureRepoOAuthAccessRequest.getTokenRef();
+        ScopeIdentifiers scopeIdentifiers = tokenRef.getScope();
+        return AzureRepoOAuthAccessDTO.builder()
+            .tokenRef(prepareSecretRefData(tokenRef))
+            .tokenScope(getScope(scopeIdentifiers.getAccountIdentifier(), scopeIdentifiers.getOrgIdentifier(),
+                scopeIdentifiers.getProjectIdentifier()))
+            .refreshTokenRef(prepareSecretRefData(azureRepoOAuthAccessRequest.getRefreshTokenRef()))
+            .build();
+      } else {
+        AzureRepoTokenAccessRequest azureRepoTokenAccessRequest = azureRepoAccessRequest.getToken();
+        io.harness.gitsync.SecretRefData tokenRef = azureRepoTokenAccessRequest.getTokenRef();
+        ScopeIdentifiers scopeIdentifiers = tokenRef.getScope();
+        return AzureRepoTokenAccessDTO.builder()
+            .tokenRef(prepareSecretRefData(tokenRef))
+            .tokenScope(getScope(scopeIdentifiers.getAccountIdentifier(), scopeIdentifiers.getOrgIdentifier(),
+                scopeIdentifiers.getProjectIdentifier()))
+            .build();
+      }
     }
   }
 

@@ -10,6 +10,7 @@ package io.harness.impl.scm;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.common.dtos.gitAccess.AzureRepoAccessDTO;
+import io.harness.gitsync.common.dtos.gitAccess.AzureRepoTokenAccessDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GitAccessDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GithubAccessDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GithubAccessTokenDTO;
@@ -68,9 +69,14 @@ public class SCMGitAccessToProviderMapper {
   }
 
   private Provider mapToAzureRepoProvider(AzureRepoAccessDTO azureRepoAccessDTO) {
-    String personalAccessToken = String.valueOf(azureRepoAccessDTO.getTokenRef().getDecryptedValue());
-    AzureProvider azureProvider = AzureProvider.newBuilder().setPersonalAccessToken(personalAccessToken).build();
-    return Provider.newBuilder().setAzure(azureProvider).build();
+    if (azureRepoAccessDTO instanceof AzureRepoTokenAccessDTO) {
+      AzureRepoTokenAccessDTO azureRepoTokenAccessDTO = (AzureRepoTokenAccessDTO) azureRepoAccessDTO;
+      String personalAccessToken = String.valueOf(azureRepoTokenAccessDTO.getTokenRef().getDecryptedValue());
+      AzureProvider azureProvider = AzureProvider.newBuilder().setPersonalAccessToken(personalAccessToken).build();
+      return Provider.newBuilder().setAzure(azureProvider).build();
+    } else {
+      return Provider.newBuilder().setAzure(AzureProvider.newBuilder().build()).build();
+    }
   }
 
   private Provider mapToGitLabProvider(GitlabAccessDTO gitlabAccessDTO) {

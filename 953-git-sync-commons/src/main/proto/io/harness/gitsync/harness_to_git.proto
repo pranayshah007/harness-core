@@ -296,6 +296,18 @@ message GitlabAccessRequest {
 }
 
 message AzureRepoAccessRequest {
+  oneof hook {
+    AzureRepoOAuthAccessRequest oauth = 1;
+    AzureRepoTokenAccessRequest token = 2;
+  }
+}
+
+message AzureRepoOAuthAccessRequest {
+  SecretRefData tokenRef = 1;
+  SecretRefData refreshTokenRef = 2;
+}
+
+message AzureRepoTokenAccessRequest {
   SecretRefData tokenRef = 1;
 }
 
