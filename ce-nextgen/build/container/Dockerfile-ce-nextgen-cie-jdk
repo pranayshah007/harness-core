@@ -41,4 +41,4 @@ USER root
 RUN microdnf install -y yum \
 && microdnf clean all
 RUN yum install -y procps vim hostname tar gzip python3 iputils nc
-RUN pip3 install c7n
+RUN pip3 install c7n==0.9.26
