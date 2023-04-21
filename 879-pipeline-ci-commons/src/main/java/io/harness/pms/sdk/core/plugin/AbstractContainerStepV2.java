@@ -31,6 +31,7 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.product.ci.engine.proto.ExecuteStepRequest;
 import io.harness.product.ci.engine.proto.UnitStep;
@@ -57,7 +58,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
-public abstract class AbstractContainerStepV2 implements AsyncExecutableWithRbac<StepElementParameters> {
+public abstract class AbstractContainerStepV2<T extends StepParameters> implements AsyncExecutableWithRbac<T> {
   @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private ContainerDelegateTaskHelper containerDelegateTaskHelper;
@@ -71,7 +72,7 @@ public abstract class AbstractContainerStepV2 implements AsyncExecutableWithRbac
 
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, T stepElementParameters, StepInputPackage inputPackage) {
     log.info("Starting run in container step");
     String accountId = AmbianceUtils.getAccountId(ambiance);
 
@@ -83,8 +84,8 @@ public abstract class AbstractContainerStepV2 implements AsyncExecutableWithRbac
     TaskData runStepTaskData = getStepTask(ambiance, stepElementParameters, AmbianceUtils.getAccountId(ambiance),
         getLogPrefix(ambiance), timeout, parkedTaskId);
     String liteEngineTaskId = containerDelegateTaskHelper.queueTask(ambiance, runStepTaskData, accountId);
-    log.info("Created parked task {} and lite engine task {} for  step {}", parkedTaskId, liteEngineTaskId,
-        stepElementParameters.getIdentifier());
+    //    log.info("Created parked task {} and lite engine task {} for  step {}", parkedTaskId, liteEngineTaskId,
+    //        stepElementParameters.getIdentifier());
 
     return AsyncExecutableResponse.newBuilder()
         .addCallbackIds(parkedTaskId)
@@ -93,20 +94,16 @@ public abstract class AbstractContainerStepV2 implements AsyncExecutableWithRbac
         .build();
   }
 
-  @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
-  }
+  @Override public abstract Class<T> getStepParametersClass();
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {
+  public void handleAbort(Ambiance ambiance, T stepParameters, AsyncExecutableResponse executableResponse) {
     // can be overriden by child methods
   }
 
   @Override
-  public void handleForCallbackId(Ambiance ambiance, StepElementParameters containerStepInfo,
-      List<String> allCallbackIds, String callbackId, ResponseData responseData) {
+  public void handleForCallbackId(Ambiance ambiance, T containerStepInfo, List<String> allCallbackIds,
+      String callbackId, ResponseData responseData) {
     responseData = serializedResponseDataHelper.deserialize(responseData);
     Object response = responseData;
     if (responseData instanceof BinaryResponseData) {
@@ -124,7 +121,7 @@ public abstract class AbstractContainerStepV2 implements AsyncExecutableWithRbac
 
   @Override
   public StepResponse handleAsyncResponse(
-      Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
+      Ambiance ambiance, T stepParameters, Map<String, ResponseData> responseDataMap) {
     StepResponse.StepOutcome extraOutcome = getAnyOutComeForStep(ambiance, stepParameters, responseDataMap);
     return containerStepExecutionResponseHelper.handleAsyncResponseInternal(ambiance, responseDataMap, extraOutcome);
   }
@@ -143,8 +140,8 @@ public abstract class AbstractContainerStepV2 implements AsyncExecutableWithRbac
                 .build()));
   }
 
-  public TaskData getStepTask(Ambiance ambiance, StepElementParameters containerStepInfo, String accountId,
-      String logKey, long timeout, String parkedTaskId) {
+  public TaskData getStepTask(
+      Ambiance ambiance, T containerStepInfo, String accountId, String logKey, long timeout, String parkedTaskId) {
     UnitStep unitStep = getSerialisedStep(ambiance, containerStepInfo, accountId, logKey, timeout, parkedTaskId);
     LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome = (LiteEnginePodDetailsOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME));
@@ -180,11 +177,11 @@ public abstract class AbstractContainerStepV2 implements AsyncExecutableWithRbac
     return containerPortHelper.getPort(ambiance, stepIdentifier);
   }
 
-  public abstract long getTimeout(Ambiance ambiance, StepElementParameters stepElementParameters);
+  public abstract long getTimeout(Ambiance ambiance, T stepElementParameters);
 
-  public abstract UnitStep getSerialisedStep(Ambiance ambiance, StepElementParameters containerStepInfo,
-      String accountId, String logKey, long timeout, String parkedTaskId);
+  public abstract UnitStep getSerialisedStep(
+      Ambiance ambiance, T containerStepInfo, String accountId, String logKey, long timeout, String parkedTaskId);
 
   public abstract StepResponse.StepOutcome getAnyOutComeForStep(
-      Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap);
+      Ambiance ambiance, T stepParameters, Map<String, ResponseData> responseDataMap);
 }

@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 @OwnedBy(HarnessTeam.CDP)
-public class AwsSamBuildStep extends AbstractContainerStepV2 {
+public class AwsSamBuildStep extends AbstractContainerStepV2<StepElementParameters> {
   @Inject Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
 
   public static final StepType STEP_TYPE = StepType.newBuilder()

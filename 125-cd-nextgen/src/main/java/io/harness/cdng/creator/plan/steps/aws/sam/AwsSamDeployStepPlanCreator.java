@@ -40,10 +40,6 @@ public class AwsSamDeployStepPlanCreator extends CDPMSStepPlanCreatorV2<AwsSamDe
 
   @Override
   protected StepParameters getStepParameters(PlanCreationContext ctx, AwsSamDeployStepNode stepNode) {
-    final StepParameters stepParameters = super.getStepParameters(ctx, stepNode);
-    AwsSamDeployStepParameters awsSamDeployStepParameters =
-        (AwsSamDeployStepParameters) ((StepElementParameters) stepParameters).getSpec();
-    awsSamDeployStepParameters.setDelegateSelectors(stepNode.getAwsSamDeployStepInfo().getDelegateSelectors());
-    return stepParameters;
+    return super.getStepParameters(ctx, stepNode);
   }
 }

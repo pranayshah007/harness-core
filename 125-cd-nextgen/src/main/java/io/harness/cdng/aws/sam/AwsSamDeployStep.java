@@ -60,83 +60,13 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class AwsSamDeployStep extends AbstractContainerStepV2 {
-  //  @Inject Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
+public class AwsSamDeployStep extends AbstractContainerStepV2<StepElementParameters> {
+  @Inject Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
 
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.AWS_SAM_DEPLOY.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
-
-  //  @Override
-  //  public Class<StepElementParameters> getStepParametersClass() {
-  //    return StepElementParameters.class;
-  //  }
-  //
-  //  @Override
-  //  public long getTimeout(Ambiance ambiance, StepElementParameters stepElementParameters) {
-  //    return Timeout.fromString((String) stepElementParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis();
-  //  }
-  //
-  //  @Override
-  //  public UnitStep getSerialisedStep(Ambiance ambiance, StepElementParameters stepElementParameters, String
-  //  accountId,
-  //      String logKey, long timeout, String parkedTaskId) {
-  //    // todo: add env variable and image and entrypoint
-  //    AwsSamDeployStepParameters awsSamDeployStepParameters = (AwsSamDeployStepParameters)
-  //    stepElementParameters.getSpec(); return ContainerUnitStepUtils.serializeStepWithStepParameters(
-  //        getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
-  //        stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
-  //        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, Collections.emptyMap(),
-  //        awsSamDeployStepParameters.getImage(), Collections.EMPTY_LIST);
-  //  }
-  //
-  //  @Override
-  //  public StepResponse.StepOutcome getAnyOutComeForStep(
-  //      Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-  //    // todo: if required to consume any output do it here.
-  //    return null;
-  //  }
-  //
-  //  @Override
-  //  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-  //    // we need to check if rbac check is req or not.
-  //  }
-
-  @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
-  @Inject private WaitNotifyEngine waitNotifyEngine;
-  @Inject private ContainerDelegateTaskHelper containerDelegateTaskHelper;
-  @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
-  @Inject OutcomeService outcomeService;
-  @Inject ContainerPortHelper containerPortHelper;
-  @Inject Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
-  @Inject ExecutionSweepingOutputService executionSweepingOutputService;
-  public static String DELEGATE_SVC_ENDPOINT = "delegate-service:8080";
-
-  @Override
-  public AsyncExecutableResponse executeAsyncAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
-    log.info("Starting run in container step");
-    String accountId = AmbianceUtils.getAccountId(ambiance);
-
-    long timeout = getTimeout(ambiance, stepElementParameters);
-    timeout = Math.max(timeout, 100);
-
-    String parkedTaskId = containerDelegateTaskHelper.queueParkedDelegateTask(ambiance, timeout, accountId);
-
-    TaskData runStepTaskData = getStepTask(ambiance, stepElementParameters, AmbianceUtils.getAccountId(ambiance),
-        getLogPrefix(ambiance), timeout, parkedTaskId);
-    String liteEngineTaskId = containerDelegateTaskHelper.queueTask(ambiance, runStepTaskData, accountId);
-    log.info("Created parked task {} and lite engine task {} for  step {}", parkedTaskId, liteEngineTaskId,
-        stepElementParameters.getIdentifier());
-
-    return AsyncExecutableResponse.newBuilder()
-        .addCallbackIds(parkedTaskId)
-        .addCallbackIds(liteEngineTaskId)
-        .addAllLogKeys(CollectionUtils.emptyIfNull(Collections.singletonList(getLogPrefix(ambiance))))
-        .build();
-  }
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -144,92 +74,33 @@ public class AwsSamDeployStep extends AbstractContainerStepV2 {
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    // can be overriden by child methods
+  public long getTimeout(Ambiance ambiance, StepElementParameters stepElementParameters) {
+    return Timeout.fromString((String) stepElementParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis();
   }
 
   @Override
-  public void handleForCallbackId(Ambiance ambiance, StepElementParameters containerStepInfo,
-      List<String> allCallbackIds, String callbackId, ResponseData responseData) {
-    responseData = serializedResponseDataHelper.deserialize(responseData);
-    Object response = responseData;
-    if (responseData instanceof BinaryResponseData) {
-      response = referenceFalseKryoSerializer.asInflatedObject(((BinaryResponseData) responseData).getData());
-    }
-    if (response instanceof K8sTaskExecutionResponse
-        && (((K8sTaskExecutionResponse) response).getCommandExecutionStatus() == CommandExecutionStatus.FAILURE
-            || ((K8sTaskExecutionResponse) response).getCommandExecutionStatus() == CommandExecutionStatus.SKIPPED)) {
-      abortTasks(allCallbackIds, callbackId, ambiance);
-    }
-    if (response instanceof ErrorNotifyResponseData) {
-      abortTasks(allCallbackIds, callbackId, ambiance);
-    }
-  }
-
-  @Override
-  public StepResponse handleAsyncResponse(
-      Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    StepResponse.StepOutcome extraOutcome = getAnyOutComeForStep(ambiance, stepParameters, responseDataMap);
-    return containerStepExecutionResponseHelper.handleAsyncResponseInternal(ambiance, responseDataMap, extraOutcome);
-  }
-
-  private String getLogPrefix(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, "STEP");
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
-  }
-  private void abortTasks(List<String> allCallbackIds, String callbackId, Ambiance ambiance) {
-    List<String> callBackIds =
-        allCallbackIds.stream().filter(cid -> !cid.equals(callbackId)).collect(Collectors.toList());
-    callBackIds.forEach(callbackId1
-        -> waitNotifyEngine.doneWith(callbackId1,
-            ErrorNotifyResponseData.builder()
-                .errorMessage("Delegate is not able to connect to created build farm")
-                .build()));
-  }
-
-  public TaskData getStepTask(Ambiance ambiance, StepElementParameters containerStepInfo, String accountId,
+  public UnitStep getSerialisedStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId,
       String logKey, long timeout, String parkedTaskId) {
-    UnitStep unitStep = getSerialisedStep(ambiance, containerStepInfo, accountId, logKey, timeout, parkedTaskId);
-    LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome = (LiteEnginePodDetailsOutcome) outcomeService.resolve(
-        ambiance, RefObjectUtils.getOutcomeRefObject(LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME));
-    String ip = liteEnginePodDetailsOutcome.getIpAddress();
-
-    ExecuteStepRequest executeStepRequest = ExecuteStepRequest.newBuilder()
-                                                .setExecutionId(ambiance.getPlanExecutionId())
-                                                .setStep(unitStep)
-                                                .setTmpFilePath(TMP_PATH)
-                                                .build();
-
-    boolean isLocal = false;
-    String delegateSvcEndpoint = DELEGATE_SVC_ENDPOINT;
-    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(ContainerStepConstants.CONTAINER_EXECUTION_CONFIG));
-    if (optionalSweepingOutput.isFound()) {
-      ContainerExecutionConfig output = (ContainerExecutionConfig) optionalSweepingOutput.getOutput();
-      isLocal = output.isLocal();
-      delegateSvcEndpoint = output.getDelegateServiceEndpointVariableValue();
-    }
-
-    CIK8ExecuteStepTaskParams params = CIK8ExecuteStepTaskParams.builder()
-                                           .ip(ip)
-                                           .port(LITE_ENGINE_PORT)
-                                           .serializedStep(executeStepRequest.toByteArray())
-                                           .isLocal(isLocal)
-                                           .delegateSvcEndpoint(delegateSvcEndpoint)
-                                           .build();
-    return containerDelegateTaskHelper.getDelegateTaskDataForExecuteStep(ambiance, timeout, params);
+    // Todo: Add entrypoint
+    AwsSamBuildStepParameters awsSamBuildStepParameters = (AwsSamBuildStepParameters) stepElementParameters.getSpec();
+    stepElementParameters.getSpec();
+    return ContainerUnitStepUtils.serializeStepWithStepParameters(
+        getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
+        stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
+        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance,
+        awsSamBuildStepParameters.getEnvVariables().getValue(), awsSamBuildStepParameters.getImage().getValue(),
+        Collections.EMPTY_LIST);
   }
 
-  public Integer getPort(Ambiance ambiance, String stepIdentifier) {
-    return containerPortHelper.getPort(ambiance, stepIdentifier);
+  @Override
+  public StepResponse.StepOutcome getAnyOutComeForStep(
+      Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
+    // todo: if required to consume any output do it here.
+    return null;
   }
 
-  public abstract long getTimeout(Ambiance ambiance, StepElementParameters stepElementParameters);
-
-  public abstract UnitStep getSerialisedStep(Ambiance ambiance, StepElementParameters containerStepInfo,
-      String accountId, String logKey, long timeout, String parkedTaskId);
-
-  public abstract StepResponse.StepOutcome getAnyOutComeForStep(
-      Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap);
+  @Override
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+    // we need to check if rbac check is req or not.
+  }
 }

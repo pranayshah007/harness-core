@@ -262,6 +262,7 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.filters.EmptyAnyFilterJsonCreator;
 import io.harness.filters.EmptyFilterJsonCreator;
 import io.harness.ng.core.k8s.ServiceSpecType;
+import io.harness.plancreator.steps.pluginstep.StepGroupPMSPlanCreatorV2;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
@@ -391,7 +392,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new ManifestsPlanCreator());
     planCreators.add(new IndividualManifestPlanCreator());
     planCreators.add(new CDStepsPlanCreator());
-    planCreators.add(new CDStepGroupPmsPlanCreator());
+    planCreators.add(new StepGroupPMSPlanCreatorV2());
     planCreators.add(new ServerlessAwsLambdaDeployStepPlanCreator());
     planCreators.add(new ServerlessAwsLambdaRollbackStepPlanCreator());
     planCreators.add(new CloudformationCreateStackStepPlanCreator());

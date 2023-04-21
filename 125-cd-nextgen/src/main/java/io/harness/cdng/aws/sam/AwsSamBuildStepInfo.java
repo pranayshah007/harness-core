@@ -56,9 +56,9 @@ public class AwsSamBuildStepInfo extends AwsSamBuildBaseStepInfo implements CDAb
   @Builder(builderMethodName = "infoBuilder")
   public AwsSamBuildStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
-      ContainerResource resources, ParameterField<Map<String, ParameterField<String>>> envVariables,
-      ParameterField<Boolean> privileged, ParameterField<Integer> runAsUser,
-      ParameterField<ImagePullPolicy> imagePullPolicy, ParameterField<List<String>> buildCommandOptions) {
+      ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
+      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
+      ParameterField<List<String>> buildCommandOptions) {
     super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
         imagePullPolicy, buildCommandOptions);
   }

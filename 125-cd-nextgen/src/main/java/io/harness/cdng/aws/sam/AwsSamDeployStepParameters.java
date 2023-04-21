@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.plancreator.steps.TaskSelectorYaml;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
@@ -30,7 +31,8 @@ import org.springframework.data.annotation.TypeAlias;
 @EqualsAndHashCode(callSuper = true)
 @TypeAlias("awsSamDeployStepParameters")
 @RecasterAlias("io.harness.cdng.aws.sam.AwsSamDeployStepParameters")
-public class AwsSamDeployStepParameters extends AwsSamDeployBaseStepInfo implements AwsSamSpecParameters {
+public class AwsSamDeployStepParameters
+    extends AwsSamDeployBaseStepInfo implements AwsSamSpecParameters, StepParameters {
   @Builder(builderMethodName = "infoBuilder")
   public AwsSamDeployStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
