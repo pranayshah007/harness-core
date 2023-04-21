@@ -74,7 +74,10 @@ import io.harness.template.beans.TemplateImportRequestDTO;
 import io.harness.template.beans.TemplateImportSaveResponse;
 import io.harness.template.beans.TemplateListRepoResponse;
 import io.harness.template.beans.TemplateMoveConfigResponse;
+import io.harness.template.beans.TemplateUpdateGitMetadataRequest;
+import io.harness.template.beans.TemplateUpdateGitMetadataResponse;
 import io.harness.template.beans.TemplateWrapperResponseDTO;
+import io.harness.template.beans.UpdateGitDetailsParams;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
@@ -991,5 +994,35 @@ public class NGTemplateResource {
     TemplateMoveConfigResponse templateMoveConfigResponse = templateService.moveTemplateStoreTypeConfig(
         accountId, orgId, projectId, templateIdentifier, templateMoveConfigRequestDTO);
     return ResponseDTO.newResponse(templateMoveConfigResponse);
+  }
+
+  @POST
+  @Path("/update/git-metadata/{templateIdentifier}/{versionLabel}")
+  @ApiOperation(value = "Update git metadata details for a remote template", nickname = "updateGitDetails")
+  @Operation(operationId = "moveTemplateConfigs", summary = "Move Template YAML from inline to remote",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Fetches Template YAML from Harness DB and creates a remote entity")
+      })
+  public ResponseDTO<TemplateUpdateGitMetadataResponse>
+  updateGitMetadataDetails(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                               NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = TEMPLATE_PARAM_MESSAGE) @PathParam(
+          "templateIdentifier") @ResourceIdentifier String templateIdentifier,
+      @Parameter(description = "Version Label") @PathParam(
+          NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
+      @Parameter(description = "This contains details of Git Entity like Git Branch info to be updated")
+      TemplateUpdateGitMetadataRequest request) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
+    templateService.updateGitDetails(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier,
+        versionLabel,
+        UpdateGitDetailsParams.builder().filepath(request.getFilepath()).repoName(request.getRepoName()).build());
+    return ResponseDTO.newResponse(TemplateUpdateGitMetadataResponse.builder().status(true).build());
   }
 }
