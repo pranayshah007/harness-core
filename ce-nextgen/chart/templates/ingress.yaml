@@ -2,7 +2,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: nextgen-ce
+  name: ce-nextgen
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /ccm/api/$2
 spec:
@@ -12,7 +12,7 @@ spec:
         paths:
           - backend:
               service:
-                name: nextgen-ce
+                name: ce-nextgen
                 port:
                   number: {{ .Values.service.port }}
             path: /ccm/api(/|$)(.*)

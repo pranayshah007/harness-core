@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nextgen-ce
+  name: ce-nextgen
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "nextgen-ce.labels" . | nindent 4 }}
+    {{- include "ce-nextgen.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
@@ -16,7 +16,7 @@ spec:
       maxUnavailable: {{.Values.maxUnavailable}}
   selector:
     matchLabels:
-      {{- include "nextgen-ce.selectorLabels" . | nindent 6 }}
+      {{- include "ce-nextgen.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -24,14 +24,14 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        app: nextgen-ce
-        {{- include "nextgen-ce.selectorLabels" . | nindent 8 }}
+        app: ce-nextgen
+        {{- include "ce-nextgen.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "nextgen-ce.serviceAccountName" . }}
+      serviceAccountName: {{ include "ce-nextgen.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       initContainers:
@@ -49,7 +49,7 @@ spec:
           - "pod"
           - "-lapp=access-control"
       containers:
-        - name: nextgen-ce
+        - name: ce-nextgen
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
@@ -70,9 +70,9 @@ spec:
             periodSeconds: 15
           envFrom:
             - configMapRef:
-                name: nextgen-ce
+                name: ce-nextgen
             - secretRef:
-                name: nextgen-ce
+                name: ce-nextgen
           env:
             - name: MONGODB_USERNAME
               valueFrom:
@@ -113,7 +113,7 @@ spec:
               - key: app
                 operator: In
                 values:
-                - nextgen-ce
+                - ce-nextgen
             topologyKey: "kubernetes.io/hostname"
       {{- with .Values.nodeSelector }}
       nodeSelector:

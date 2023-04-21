@@ -1,10 +1,10 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: nextgen-ce
+  name: ce-nextgen
   namespace: {{ .Release.Namespace }}
 spec:
   minAvailable: "50%"
   selector:
    matchLabels:
-    app: nextgen-ce
+    app: ce-nextgen
