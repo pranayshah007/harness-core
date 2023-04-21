@@ -87,6 +87,7 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
+import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
@@ -108,6 +109,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 @Singleton
@@ -379,48 +381,61 @@ public class AwsApiHelperService {
         .collect(toList());
   }
 
-  private BuildDetails getArtifactBuildDetails(AwsInternalConfig awsInternalConfig, String bucketName, String key,
-      boolean versioningEnabledForBucket, long artifactFileSize, String region) {
+  private BuildDetails getArtifactBuildDetails(AwsInternalConfig awsInternalConfig, String bucketName,
+      String keyWithVersionId, boolean versioningEnabledForBucket, long artifactFileSize, String region) {
+    String key = keyWithVersionId;
     String versionId = null;
-    ObjectMetadata objectMetadata = getObjectMetadataFromS3(awsInternalConfig, bucketName, key, region);
+    if (versioningEnabledForBucket && key.contains(":")) {
+      int index = StringUtils.lastIndexOf(key, ":");
+      if (index > -1 && index < keyWithVersionId.length() - 1) {
+        key = StringUtils.substring(keyWithVersionId, 0, index);
+        versionId = StringUtils.substring(keyWithVersionId, index + 1);
+      }
+    }
+    String outputVersionKey = null;
+    ObjectMetadata objectMetadata = getObjectMetadataFromS3(awsInternalConfig, region, bucketName, key, versionId);
     if (objectMetadata == null) {
       throw new InvalidRequestException("The provided key does not exist");
     }
     if (versioningEnabledForBucket) {
-      versionId = key + ":" + objectMetadata.getVersionId();
+      outputVersionKey = key + ":" + objectMetadata.getVersionId();
     }
 
-    if (versionId == null) {
-      versionId = key;
+    if (outputVersionKey == null) {
+      outputVersionKey = key;
     }
 
     Map<String, String> map = new HashMap<>();
 
     map.put(ArtifactMetadataKeys.url, "https://s3.amazonaws.com/" + bucketName + "/" + key);
-    map.put(ArtifactMetadataKeys.buildNo, versionId);
+    map.put(ArtifactMetadataKeys.buildNo, outputVersionKey);
     map.put(ArtifactMetadataKeys.bucketName, bucketName);
     map.put(ArtifactMetadataKeys.artifactPath, key);
     map.put(ArtifactMetadataKeys.key, key);
+    map.put(ArtifactMetadataKeys.versionId, versionId);
     map.put(ArtifactMetadataKeys.artifactFileSize, String.valueOf(artifactFileSize));
 
     return aBuildDetails()
-        .withNumber(versionId)
-        .withRevision(versionId)
+        .withNumber(outputVersionKey)
+        .withRevision(outputVersionKey)
         .withArtifactPath(key)
         .withArtifactFileSize(String.valueOf(artifactFileSize))
         .withBuildParameters(map)
-        .withUiDisplayName("Build# " + versionId)
+        .withUiDisplayName("Build# " + outputVersionKey)
         .build();
   }
 
   private ObjectMetadata getObjectMetadataFromS3(
-      AwsInternalConfig awsInternalConfig, String bucketName, String key, String region) {
+      AwsInternalConfig awsInternalConfig, String region, String bucketName, String key, String versionId) {
     try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
              new CloseableAmazonWebServiceClient(getAmazonS3Client(awsInternalConfig, region))) {
       tracker.trackS3Call("Get Object Metadata");
-
-      return closeableAmazonS3Client.getClient().getObjectMetadata(bucketName, key);
-
+      if (StringUtils.isBlank(versionId)) {
+        return closeableAmazonS3Client.getClient().getObjectMetadata(bucketName, key);
+      } else {
+        return closeableAmazonS3Client.getClient().getObjectMetadata(
+            new GetObjectMetadataRequest(bucketName, key, versionId));
+      }
     } catch (AmazonServiceException amazonServiceException) {
       handleAmazonServiceException(amazonServiceException);
     } catch (AmazonClientException amazonClientException) {
