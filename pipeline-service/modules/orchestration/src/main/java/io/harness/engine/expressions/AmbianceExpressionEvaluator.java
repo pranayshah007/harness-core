@@ -10,6 +10,7 @@ package io.harness.engine.expressions;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.plan.PlanService;
@@ -32,6 +33,7 @@ import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.EngineJexlContext;
 import io.harness.expression.ExpressionEvaluatorUtils;
+import io.harness.expression.JsonFunctor;
 import io.harness.expression.RegexFunctor;
 import io.harness.expression.ResolveObjectResponse;
 import io.harness.expression.VariableResolverTracker;
@@ -97,6 +99,8 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
   private NodeExecutionsCache nodeExecutionsCache;
   private final String SECRETS = "secrets";
 
+  private boolean contextMapProvided = false;
+
   @Builder
   public AmbianceExpressionEvaluator(VariableResolverTracker variableResolverTracker, Ambiance ambiance,
       Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific, Map<String, String> contextMap) {
@@ -105,7 +109,8 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
     this.entityTypes = entityTypes == null ? NodeExecutionEntityType.allEntities() : entityTypes;
     this.refObjectSpecific = refObjectSpecific;
     this.groupAliases = new HashMap<>();
-    if (contextMap != null) {
+    if (EmptyPredicate.isNotEmpty(contextMap)) {
+      contextMapProvided = true;
       contextMap.forEach(this::addToContext);
     }
   }
@@ -119,7 +124,12 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
     if (!refObjectSpecific) {
       // Add basic functors.
       addToContext("regex", new RegexFunctor());
-      addToContext("json", new NGJsonFunctor());
+      // Todo(Archit): revisit NGJsonFunctor(PIE-9772)
+      if (contextMapProvided) {
+        addToContext("json", new JsonFunctor());
+      } else {
+        addToContext("json", new NGJsonFunctor());
+      }
       addToContext("xml", new XmlFunctor());
       if (pmsFeatureFlagService.isEnabled(
               AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_USE_SECRET_FUNCTOR_WITH_RBAC)) {

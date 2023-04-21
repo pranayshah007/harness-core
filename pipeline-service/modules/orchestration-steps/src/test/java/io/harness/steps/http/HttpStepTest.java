@@ -129,7 +129,7 @@ public class HttpStepTest extends CategoryTest {
     // mocked pms evaluator
     doReturn("metadataValue")
         .when(engineExpressionService)
-        .resolve(any(), eq("<+json.object(httpResponseBody).metaData>"), any(), any());
+        .evaluateExpression(any(), eq("<+json.object(httpResponseBody).metaData>"), any(), any());
 
     Map<String, String> evaluatedVariables = httpStep.evaluateOutputVariables(variables, response1, null);
     assertThat(evaluatedVariables).isNotEmpty();
