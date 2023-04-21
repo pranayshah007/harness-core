@@ -10,6 +10,7 @@ package io.harness.pms.plan.execution.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.contracts.interrupts.InterruptType.ABORT_ALL;
 import static io.harness.rule.OwnerRule.DEVESH;
+import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAMARTH;
@@ -47,6 +48,7 @@ import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.merger.helpers.InputSetTemplateHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.ResolveInputYamlType;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
@@ -245,11 +247,56 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
     doReturn(template).when(validateAndMergeHelper).getPipelineTemplate(any(), any(), any(), any(), any());
 
     String inputSet = pmsExecutionService
-                          .getInputSetYamlWithTemplate(
-                              ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PLAN_EXECUTION_ID, PIPELINE_DELETED, false)
+                          .getInputSetYamlWithTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PLAN_EXECUTION_ID,
+                              PIPELINE_DELETED, false, ResolveInputYamlType.UNKNOWN)
                           .getInputSetYaml();
 
     assertThat(inputSet).isEqualTo(inputSetYaml);
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testGetInputSetYamlWithResolvedTriggerExpressions() throws IOException {
+    ClassLoader classLoaderWithTriggerExpression = this.getClass().getClassLoader();
+    String inputSetWithTriggerExpressionFilename = "inputsetWithTriggerExpression.yaml";
+    String inputSetYamlWithTriggerExpression = Resources.toString(
+        Objects.requireNonNull(classLoaderWithTriggerExpression.getResource(inputSetWithTriggerExpressionFilename)),
+        StandardCharsets.UTF_8);
+
+    String inputSetWithResolvedTriggerExpressionFilename = "inputsetWithResolvedTriggerExpressions.yaml";
+    String inputSetYamlWithResolvedTriggerExpression = Resources.toString(
+        Objects.requireNonNull(
+            classLoaderWithTriggerExpression.getResource(inputSetWithResolvedTriggerExpressionFilename)),
+        StandardCharsets.UTF_8);
+
+    PipelineExecutionSummaryEntity executionSummaryEntity1 = PipelineExecutionSummaryEntity.builder()
+                                                                 .accountId(ACCOUNT_ID)
+                                                                 .orgIdentifier(ORG_IDENTIFIER)
+                                                                 .projectIdentifier(PROJ_IDENTIFIER)
+                                                                 .pipelineIdentifier(PIPELINE_IDENTIFIER)
+                                                                 .planExecutionId(PLAN_EXECUTION_ID)
+                                                                 .name(PLAN_EXECUTION_ID)
+                                                                 .runSequence(0)
+                                                                 .inputSetYaml(inputSetYamlWithTriggerExpression)
+                                                                 .pipelineTemplate(template)
+                                                                 .build();
+    doReturn(Optional.of(executionSummaryEntity1))
+        .when(pmsExecutionSummaryRepository)
+        .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PLAN_EXECUTION_ID, !PIPELINE_DELETED);
+    doReturn(null).when(pmsGitSyncHelper).getEntityGitDetailsFromBytes(any());
+    doReturn(template).when(validateAndMergeHelper).getPipelineTemplate(any(), any(), any(), any(), any());
+    doReturn(inputSetWithResolvedTriggerExpressionFilename)
+        .when(yamlExpressionResolveHelper)
+        .resolveExpressionsInYaml(
+            inputSetYamlWithTriggerExpression, PLAN_EXECUTION_ID, ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS);
+    String inputSet = pmsExecutionService
+                          .getInputSetYamlWithTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PLAN_EXECUTION_ID,
+                              PIPELINE_DELETED, false, ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS)
+                          .getInputSetYaml();
+
+    assertThat(inputSet).isEqualTo(inputSetWithResolvedTriggerExpressionFilename);
   }
 
   @Test
@@ -263,9 +310,10 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
     doReturn(null).when(pmsGitSyncHelper).getEntityGitDetailsFromBytes(any());
     doReturn(template).when(validateAndMergeHelper).getPipelineTemplate(any(), any(), any(), any(), any());
 
-    assertThatThrownBy(()
-                           -> pmsExecutionService.getInputSetYamlWithTemplate(ACCOUNT_ID, ORG_IDENTIFIER,
-                               PROJ_IDENTIFIER, INVALID_PLAN_EXECUTION_ID, PIPELINE_DELETED, false))
+    assertThatThrownBy(
+        ()
+            -> pmsExecutionService.getInputSetYamlWithTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                INVALID_PLAN_EXECUTION_ID, PIPELINE_DELETED, false, ResolveInputYamlType.UNKNOWN))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Invalid request : Input Set did not exist or pipeline execution has been deleted");
   }
@@ -413,7 +461,6 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
         PlanExecutionMetadata.builder()
             .yaml(executionYaml)
             .planExecutionId(planExecutionID)
-            .inputSetYaml("inputSetYaml")
             .triggerPayload(TriggerPayload.newBuilder()
                                 .setType(Type.MANIFEST)
                                 .setManifestData(ManifestData.newBuilder().setVersion("1.0").build())
@@ -423,15 +470,11 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
     doReturn(Optional.of(planExecutionMetadata))
         .when(planExecutionMetadataService)
         .findByPlanExecutionId(planExecutionID);
-    doReturn("resolvedYaml")
-        .when(yamlExpressionResolveHelper)
-        .resolveExpressionsInYaml("inputSetYaml", planExecutionID);
     ExecutionMetaDataResponseDetailsDTO executionData = pmsExecutionService.getExecutionDataDetails(planExecutionID);
 
     assertThat(executionData.getExecutionYaml()).isEqualTo(planExecutionMetadata.getYaml());
     assertThat(executionData.getTriggerPayload().getType()).isEqualTo(Type.MANIFEST);
     assertThat(executionData.getTriggerPayload().getManifestData().getVersion()).isEqualTo("1.0");
-    assertThat(executionData.getResolvedYaml()).isEqualTo("resolvedYaml");
     verify(planExecutionMetadataService, times(1)).findByPlanExecutionId(planExecutionID);
   }
 
