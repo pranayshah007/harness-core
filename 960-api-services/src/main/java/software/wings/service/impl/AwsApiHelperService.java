@@ -418,7 +418,7 @@ public class AwsApiHelperService {
     return aBuildDetails()
         .withNumber(outputVersionKey)
         .withRevision(outputVersionKey)
-        .withArtifactPath(key)
+        .withArtifactPath(keyWithVersionId)
         .withArtifactFileSize(String.valueOf(artifactFileSize))
         .withBuildParameters(map)
         .withUiDisplayName("Build# " + outputVersionKey)
