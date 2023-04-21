@@ -10,9 +10,12 @@ package io.harness.gitsync.common.mappers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoApiAccess;
+import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoOAuth;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessSpecDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoOAuthDTO;
+import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.UnknownEnumTypeException;
 import io.harness.gitsync.common.beans.AzureRepoSCM;
 import io.harness.gitsync.common.dtos.AzureRepoSCMDTO;
@@ -48,6 +51,12 @@ public class AzureRepoSCMMapper extends UserSourceCodeManagerMapper<AzureRepoSCM
 
   AzureRepoApiAccess toApiAccess(AzureRepoApiAccessSpecDTO spec, AzureRepoApiAccessType apiAccessType) {
     switch (apiAccessType) {
+      case OAUTH:
+        final AzureRepoOAuthDTO azureRepoOAuth = (AzureRepoOAuthDTO) spec;
+        return AzureRepoOAuth.builder()
+            .refreshTokenRef(SecretRefHelper.getSecretConfigString(azureRepoOAuth.getRefreshTokenRef()))
+            .tokenRef(SecretRefHelper.getSecretConfigString(azureRepoOAuth.getTokenRef()))
+            .build();
       default:
         throw new UnknownEnumTypeException("Azure Repo Api Access Type ", apiAccessType.getDisplayName());
     }
@@ -56,8 +65,16 @@ public class AzureRepoSCMMapper extends UserSourceCodeManagerMapper<AzureRepoSCM
   AzureRepoApiAccessDTO toApiAccessDTO(AzureRepoApiAccessType apiAccessType, AzureRepoApiAccess azureRepoApiAccess) {
     AzureRepoApiAccessSpecDTO apiAccessSpecDTO = null;
     switch (apiAccessType) {
+      case OAUTH:
+        final AzureRepoOAuth azureRepoOAuth = (AzureRepoOAuth) azureRepoApiAccess;
+        apiAccessSpecDTO = AzureRepoOAuthDTO.builder()
+                               .tokenRef(SecretRefHelper.createSecretRef(azureRepoOAuth.getTokenRef()))
+                               .refreshTokenRef(SecretRefHelper.createSecretRef(azureRepoOAuth.getRefreshTokenRef()))
+                               .build();
+        break;
       default:
         throw new UnknownEnumTypeException("Azure Repo Api Access Type ", apiAccessType.getDisplayName());
     }
+    return AzureRepoApiAccessDTO.builder().type(apiAccessType).spec(apiAccessSpecDTO).build();
   }
 }

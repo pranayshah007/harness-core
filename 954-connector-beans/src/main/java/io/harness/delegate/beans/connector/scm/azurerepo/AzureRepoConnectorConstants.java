@@ -13,6 +13,6 @@ import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(HarnessTeam.PL)
 public class AzureRepoConnectorConstants {
   public static final String TOKEN = "Token";
-
+  public static final String OAUTH = "OAuth";
   public static final String USERNAME_AND_TOKEN = "UsernameToken";
 }

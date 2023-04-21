@@ -15,7 +15,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 @OwnedBy(HarnessTeam.PL)
 public enum AzureRepoApiAccessType {
-  @JsonProperty(AzureRepoConnectorConstants.TOKEN) TOKEN(AzureRepoConnectorConstants.TOKEN);
+  @JsonProperty(AzureRepoConnectorConstants.TOKEN) TOKEN(AzureRepoConnectorConstants.TOKEN),
+  @JsonProperty(AzureRepoConnectorConstants.OAUTH) OAUTH(AzureRepoConnectorConstants.OAUTH);
 
   private final String displayName;
 

@@ -9,14 +9,18 @@ package io.harness.gitsync.common.dtos.gitAccess;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.encryption.SecretRefData;
+import io.harness.secret.SecretReference;
 
 import lombok.AccessLevel;
-import lombok.Data;
+import lombok.Value;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 
-@Data
+@Value
 @SuperBuilder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.PIPELINE)
-public abstract class AzureRepoAccessDTO extends GitAccessDTO {}
+public class AzureRepoTokenAccessDTO extends AzureRepoAccessDTO {
+  @SecretReference SecretRefData tokenRef;
+}
