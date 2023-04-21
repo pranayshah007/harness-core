@@ -662,6 +662,25 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
+  /v1/layout/ingest:
+    post:
+      summary: Ingest plugin layout
+      operationId: layout-ingest
+      responses:
+        '200':
+          description: OK
+      tags:
+        - LayoutProxy
+      description: Ingest plugin layout
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LayoutIngestRequest'
   /v1/sync-app-config:
     put:
       summary: Sync merged app-config for a given account
@@ -1157,38 +1176,27 @@ components:
       title: PluginDetailedInfo
       x-stoplight:
         id: ggn3lgk0pl7jx
-      type: object
-      properties:
-        plugin_details:
-          $ref: '#/components/schemas/PluginInfo'
+      allOf:
+        - $ref: '#/components/schemas/PluginDetails'
           x-stoplight:
-            id: zfeuzsbo3e90v
-        config:
-          type: string
-          x-stoplight:
-            id: 4arnqctb1wfyl
-        exports:
-          $ref: '#/components/schemas/Exports'
-          x-stoplight:
-            id: ns1ky9089aalt
-        env_variables:
-          x-stoplight:
-            id: 4tj9fofa4b3hn
-          type: array
-          items:
-            $ref: '#/components/schemas/BackstageEnvSecretVariable'
-            x-stoplight:
-              id: v8fluu5h3dt3n
-        saved:
-          type: boolean
-          x-stoplight:
-            id: b06clr6ww9ku0
-      required:
-        - plugin_details
-        - config
-        - exports
-        - env_variables
-        - saved
+            id: 8r3tc7aptshub
+        - type: object
+          properties:
+            env_variables:
+              x-stoplight:
+                id: 4tj9fofa4b3hn
+              type: array
+              items:
+                $ref: '#/components/schemas/BackstageEnvSecretVariable'
+                x-stoplight:
+                  id: v8fluu5h3dt3n
+            saved:
+              type: boolean
+              x-stoplight:
+                id: b06clr6ww9ku0
+          required:
+            - env_variables
+            - saved
     ManualImportEntityRequest:
       title: ManualImportEntityRequest
       x-stoplight:
@@ -1354,10 +1362,28 @@ components:
           type: integer
           x-stoplight:
             id: ksifiqe7f9p5w
+        default_entity_types:
+          type: array
+          x-stoplight:
+            id: rubpg21bu2st4
+          items:
+            x-stoplight:
+              id: kth23yj667xa3
+            type: string
+        export_details:
+          x-stoplight:
+            id: xszvlkfetqvdo
+          type: array
+          items:
+            $ref: '#/components/schemas/ExportDetails'
+            x-stoplight:
+              id: ypu1bnoyc701c
       required:
         - pages
         - tab_contents
         - cards
+        - default_entity_types
+        - export_details
     MergedPluginConfigs:
       title: MergedPluginConfigs
       x-stoplight:
@@ -1438,6 +1464,69 @@ components:
       required:
         - plugin_requests
       description: Returns all plugin requests for an account
+    ExportDetails:
+      title: ExportDetails
+      x-stoplight:
+        id: dg5ogyutt74c2
+      type: object
+      properties:
+        type:
+          type: string
+          x-stoplight:
+            id: aurd52xhuftpn
+        name:
+          type: string
+          x-stoplight:
+            id: sq45ohcxqr9do
+        add_by_default:
+          type: boolean
+          x-stoplight:
+            id: 6tc18j0qbdoes
+        default_route:
+          type: string
+          x-stoplight:
+            id: oyrgvybpm6nik
+        layout_schema_specs:
+          type: object
+          x-stoplight:
+            id: aqq2o3sg33kiz
+      required:
+        - type
+        - name
+    PluginDetails:
+      title: PluginDetails
+      x-stoplight:
+        id: 4rsv9twy48kan
+      type: object
+      properties:
+        plugin_details:
+          $ref: '#/components/schemas/PluginInfo'
+          x-stoplight:
+            id: 78o6cgyocvp5q
+        config:
+          type: string
+          x-stoplight:
+            id: knh0tubwda57c
+        exports:
+          $ref: '#/components/schemas/Exports'
+          x-stoplight:
+            id: d75z7rk3lvcbb
+      required:
+        - plugin_details
+        - config
+        - exports
+    LayoutIngestRequest:
+      title: LayoutIngestRequest
+      x-stoplight:
+        id: e8du2q55p26u5
+      type: object
+      properties:
+        plugin:
+          $ref: '#/components/schemas/PluginDetails'
+          x-stoplight:
+            id: jqr3z1zl2f5vs
+      required:
+        - plugin
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -1656,6 +1745,11 @@ components:
           schema:
             $ref: '#/components/schemas/RequestPlugin'
       description: Details of the plugin being requested
+    LayoutIngestRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LayoutIngestRequest'
   responses:
     BackstageEnvVariableResponse:
       description: Example response
