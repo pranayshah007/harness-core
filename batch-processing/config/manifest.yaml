@@ -1,5 +1,5 @@
 BUILD_SCRIPT_PATH="batch-processing/build/feature_build.sh"
-DOCKER_FILE_PATH="/harness/harness-core/dist/batch-processing/Dockerfile-cie-jdk"
+DOCKER_FILE_PATH="/harness/harness-core/dist/batch-processing/Dockerfile-batch-processing-cie-jdk"
 CONTEXT_PATH="/harness/harness-core/dist/batch-processing"
 ARTIFACT_REPO="harness/feature-batch-processing-openjdk-8u242"
 HELM_CHART_REPO="harness-core/batch-processing/chart"
