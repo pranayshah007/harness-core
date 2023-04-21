@@ -188,8 +188,6 @@ public class IndexManagerSession {
 
       DBCollection collection = datastore.getCollection(mc.getClazz());
 
-      //      log.info("Store and collection info: {} {}", store.getName(), collection.getName());
-
       Set<String> storeInSet = new HashSet<>();
       addStoreInInSet(mc, storeInSet);
       if (isNotEmpty(storeInSet)) {
@@ -382,8 +380,7 @@ public class IndexManagerSession {
 
     switch (mode) {
       case AUTO:
-        log.warn("Creating index {} {} {}", indexCreator.getOptions().toString(), indexCreator.getKeys().toString(),
-            indexCreator.getCollection().toString());
+        log.warn("Creating index {} {}", indexCreator.getOptions().toString(), indexCreator.getKeys().toString());
         for (int i = 0; i < 10; i++) {
           try {
             indexCreator.getCollection().createIndex(indexCreator.getKeys(), indexCreator.getOptions());
@@ -532,9 +529,6 @@ public class IndexManagerSession {
     AtomicBoolean actionPerformed = new AtomicBoolean(false);
     try {
       Map<String, IndexCreator> creators = indexCreators(mc, collection);
-      if (collection.getName().contains("delegate")) {
-        log.info("Index creators anupam: {}", creators.toString());
-      }
       IndexManagerCollectionSession collectionSession = createCollectionSession(collection);
       // We should be attempting to drop indexes only if we successfully created all new ones
 
@@ -594,7 +588,6 @@ public class IndexManagerSession {
         actionPerformed.set(true);
       }
     });
-    log.info("processedCollections anupam {}", processedCollections.toString());
 
     Set<String> whitelistCollections = ImmutableSet.<String>of(
         // Files and chunks
@@ -614,8 +607,6 @@ public class IndexManagerSession {
         "ciTelemetrySentStatus", "ciAccountExecutionMetadata", "pluginMetadataConfig", "pluginMetadataStatus",
         // cd-telemetry
         "cdTelemetrySentStatus", "cdAccountExecutionMetadata");
-
-    log.info("all collections per datastore anupam: {}", datastore.getDB().getCollectionNames());
 
     List<String> obsoleteCollections = datastore.getDB()
                                            .getCollectionNames()

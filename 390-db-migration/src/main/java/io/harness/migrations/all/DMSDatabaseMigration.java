@@ -90,7 +90,7 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
     log.info("working for entity {}", collection);
     if (persistToNewDatabase(collection)) {
       log.info("Going to toggle flag");
-      toggleFlag(collectionClass.getCanonicalName(), true, true);
+      toggleFlag(collectionClass.getCanonicalName(), true);
       if (!postToggleCorrectness(collectionClass)) {
         throw new DelegateDBMigrationFailed(
             String.format("Delegate DB migration failed for collection: %s", collection));
@@ -106,7 +106,7 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
 
   private void finishMigration() {
     // Migration is done, set on_prem flag as true.
-    DelegateMigrationFlag onPremMigrationFlag = new DelegateMigrationFlag(ON_PREM_MIGRATION, true, true);
+    DelegateMigrationFlag onPremMigrationFlag = new DelegateMigrationFlag(ON_PREM_MIGRATION, true);
     persistence.save(onPremMigrationFlag);
     log.info("time taken to finish migration {}", System.currentTimeMillis() - startTime);
   }
@@ -115,7 +115,7 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
     log.info("Initiating rollback for db migration");
     for (String collection : entityList) {
       Class<?> collectionClass = getClassForCollectionName(collection);
-      toggleFlag(collectionClass.getCanonicalName(), false, false);
+      toggleFlag(collectionClass.getCanonicalName(), false);
       // Drop the collection from DMS DB.
       persistence.getCollection(dmsStore, collection).drop();
     }
@@ -151,9 +151,9 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
     return store.getName().equals(DMS);
   }
 
-  private void toggleFlag(String cls, boolean value, boolean smpMigrationEnabled) {
+  private void toggleFlag(String cls, boolean value) {
     log.info("Toggling flag to {} for {}", value, cls);
-    DelegateMigrationFlag flag = new DelegateMigrationFlag(cls, value, smpMigrationEnabled);
+    DelegateMigrationFlag flag = new DelegateMigrationFlag(cls, value);
     persistence.save(flag);
   }
 

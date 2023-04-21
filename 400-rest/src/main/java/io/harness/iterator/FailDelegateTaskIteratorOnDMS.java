@@ -34,7 +34,6 @@ public class FailDelegateTaskIteratorOnDMS
   @Override
   public void createAndStartIterator(
       PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval) {
-    System.out.println("Starting DMS Iteartor");
     iterator = (MongoPersistenceIterator<DelegateTask, MorphiaFilterExpander<DelegateTask>>)
                    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
                        FailDelegateTaskIteratorOnDMS.class,

@@ -38,7 +38,6 @@ public class DelegateListDataFetcher
   @AuthRule(permissionType = PermissionAttribute.PermissionType.MANAGE_DELEGATES)
   protected QLDelegateList fetchConnection(List<QLDelegateFilter> qlDelegateFilters,
       QLPageQueryParameters pageQueryParameters, List<QLNoOpSortCriteria> sortCriteria) {
-    System.out.print("Class called for analytics Deelgate list fetcher");
     Query<Delegate> delegateQuery = populateFilters(wingsPersistence, qlDelegateFilters, Delegate.class, true)
                                         .order(Sort.descending(DelegateKeys.createdAt));
 

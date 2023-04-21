@@ -30,11 +30,8 @@ public class AccountDataProviderImpl implements AccountDataProvider {
 
   @Override
   public DelegateRing getDelegateRing(String accountId) {
-    log.info("Getting into ring");
-    DelegateRing delegateRing = persistence.createQuery(DelegateRing.class)
-                                    .filter(DelegateRingKeys.ringName, accountService.get(accountId).getRingName())
-                                    .get();
-    log.info("Getting into ring, {}", delegateRing.toString());
-    return delegateRing;
+    return persistence.createQuery(DelegateRing.class)
+        .filter(DelegateRingKeys.ringName, accountService.get(accountId).getRingName())
+        .get();
   }
 }
