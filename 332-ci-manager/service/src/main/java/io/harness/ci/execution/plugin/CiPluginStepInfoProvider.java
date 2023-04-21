@@ -56,15 +56,11 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
           String.format("Error in parsing CI step for step type [%s]", request.getType()), e);
     }
     // todo(abhinav): get used ports from request
-    pluginCompatibleStep = (PluginCompatibleStep) ciAbstractStepNode.getStepSpecType();
+    // pluginCompatibleStep = (PluginCompatibleStep) ciAbstractStepNode.getStepSpecType();
     Set<Integer> usedPorts = new HashSet<>(request.getUsedPortDetails().getUsedPortsList());
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
-    long timeout =
-        TimeoutUtils.getTimeoutInSeconds(ciAbstractStepNode.getTimeout(), pluginCompatibleStep.getDefaultTimeout());
-
     ContainerDefinitionInfo containerDefinitionInfo =
-        k8InitializeStepUtils.createPluginCompatibleStepContainerDefinition(pluginCompatibleStep, null, null,
-            portFinder, 0, ciAbstractStepNode.getIdentifier(), ciAbstractStepNode.getName(), request.getType(), timeout,
+        k8InitializeStepUtils.createStepContainerDefinition(ciAbstractStepNode, null, null, portFinder, 0,
             request.getAccountId(), OSType.fromString(request.getOsType()), request.getAmbiance(), 0, 0);
     List<SecretVariable> secretVariables = containerDefinitionInfo.getSecretVariables()
                                                .stream()
@@ -108,11 +104,6 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
 
   @Override
   public boolean isSupported(String stepType) {
-    // todo: support more steps as they come.
-    if (GIT_CLONE.getDisplayName().equals(stepType)) {
-      return true;
-    }
-    log.warn("step Type {} not supported by CI yet", stepType);
-    return false;
+    return true;
   }
 }

@@ -22,6 +22,7 @@ import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.pms.contracts.plan.PluginDetails;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.plugin.ImageDetailsUtils;
 import io.harness.pms.sdk.core.plugin.SecretNgVariableUtils;
 import io.harness.pms.yaml.ParameterField;
@@ -29,6 +30,7 @@ import io.harness.steps.plugin.InitContainerV2StepInfo;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.yaml.core.variables.SecretNGVariable;
 
+import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,13 +43,18 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ContainerStepV2DefinitionCreator {
-  public List<ContainerDefinitionInfo> getContainerDefinitionInfo(InitContainerV2StepInfo initContainerV2StepInfo) {
+  public List<ContainerDefinitionInfo> getContainerDefinitionInfo(
+      InitContainerV2StepInfo initContainerV2StepInfo, String stepGroupIdentifier) {
     ParameterField<OSType> os = ((ContainerK8sInfra) initContainerV2StepInfo.getInfrastructure()).getSpec().getOs();
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
 
     initContainerV2StepInfo.getPluginsData().forEach((stepInfo, value) -> {
       PluginDetails pluginDetails = value.getPluginDetails();
-      String identifier = getKubernetesStandardPodName(stepInfo.getStepIdentifier());
+      String stepIdentifier = stepInfo.getStepIdentifier();
+      if (Strings.isNotBlank(stepGroupIdentifier)) {
+        stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
+      }
+      String identifier = getKubernetesStandardPodName(stepIdentifier);
       String containerName = String.format("%s%s", STEP_PREFIX, identifier).toLowerCase();
       Map<String, String> envMap = new HashMap<>(pluginDetails.getEnvVariablesMap());
       List<SecretNGVariable> secretNGVariableMap = pluginDetails.getSecretVariableList()

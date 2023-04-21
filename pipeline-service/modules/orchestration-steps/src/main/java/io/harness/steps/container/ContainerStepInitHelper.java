@@ -8,6 +8,7 @@
 package io.harness.steps.container;
 
 import static io.harness.beans.sweepingoutputs.ContainerPortDetails.PORT_DETAILS;
+import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_SERVICE_LOG_KEY_VARIABLE;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.PORT_STARTING_RANGE;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_PREFIX;
@@ -31,6 +32,7 @@ import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.environment.pod.container.ContainerImageDetails;
 import io.harness.beans.sweepingoutputs.ContainerPortDetails;
+import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.StepContainerUtils;
 import io.harness.ci.utils.ContainerSecretEvaluator;
@@ -78,6 +80,7 @@ import io.harness.yaml.core.variables.SecretNGVariable;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -105,23 +108,7 @@ public class ContainerStepInitHelper {
 
   public CIK8InitializeTaskParams getK8InitializeTaskParams(
       ContainerStepSpec containerStepInfo, Ambiance ambiance, String logPrefix) {
-    ContainerStepInfra infra = containerStepInfo.getInfrastructure();
-    if (infra == null) {
-      throw new ContainerStepExecutionException("Input infrastructure can not be empty");
-    }
-
-    if (infra.getType() != KUBERNETES_DIRECT) {
-      throw new ContainerStepExecutionException(format("Invalid infrastructure type: %s", infra.getType()));
-    }
-    ContainerK8sInfra infrastructure = (ContainerK8sInfra) containerStepInfo.getInfrastructure();
-
-    ContainerDetailsSweepingOutput k8PodDetails = ContainerDetailsSweepingOutput.builder()
-                                                      .stepIdentifier(containerStepInfo.getIdentifier())
-                                                      .accountId(AmbianceUtils.getAccountId(ambiance))
-                                                      .build();
-    k8sPodInitUtils.consumeSweepingOutput(ambiance, k8PodDetails, INIT_POD);
-
-    return buildK8DirectTaskParams(containerStepInfo, k8PodDetails, infrastructure, ambiance, logPrefix);
+    return getK8InitializeTaskParams(containerStepInfo, ambiance, logPrefix, containerStepInfo.getIdentifier());
   }
 
   private CIK8InitializeTaskParams buildK8DirectTaskParams(ContainerStepSpec containerStepInfo,
@@ -391,6 +378,13 @@ public class ContainerStepInitHelper {
             .cleanUpContainerNames(containerNames)
             .build(),
         CLEANUP_DETAILS);
+    k8sPodInitUtils.consumeSweepingOutput(ambiance,
+        K8StageInfraDetails.builder()
+            .infrastructure(infrastructure.toCIInfra())
+            .podName(podName)
+            .containerNames(containerNames)
+            .build(),
+        STAGE_INFRA_DETAILS);
   }
 
   private String getPodName(Ambiance ambiance, String stageId) {
@@ -414,7 +408,10 @@ public class ContainerStepInitHelper {
         return Collections.singletonList(
             createPluginStepContainerDefinition((PluginStep) containerStepInfo, portFinder, accountId, os, ambiance));
       case INIT_CONTAINER_V2:
-        return ContainerStepV2DefinitionCreator.getContainerDefinitionInfo((InitContainerV2StepInfo) containerStepInfo);
+        String stepGroupIdentifier = AmbianceUtils.obtainStepGroupIdentifier(ambiance);
+
+        return ContainerStepV2DefinitionCreator.getContainerDefinitionInfo(
+            (InitContainerV2StepInfo) containerStepInfo, stepGroupIdentifier);
       default:
         throw new ContainerStepExecutionException("Container step initialization not handled");
     }
@@ -423,8 +420,12 @@ public class ContainerStepInitHelper {
   private ContainerDefinitionInfo createPluginStepContainerDefinition(
       PluginStep pluginStep, PortFinder portFinder, String accountId, OSType os, Ambiance ambiance) {
     Integer port = portFinder.getNextPort();
-
-    String identifier = getKubernetesStandardPodName(pluginStep.getIdentifier());
+    String stepGroupIdentifier = AmbianceUtils.obtainStepGroupIdentifier(ambiance);
+    String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
+    if (Strings.isNotBlank(stepGroupIdentifier)) {
+      stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
+    }
+    String identifier = getKubernetesStandardPodName(stepIdentifier);
     String containerName = format("%s%s", STEP_PREFIX, identifier).toLowerCase();
 
     Map<String, String> envMap =
@@ -514,18 +515,18 @@ public class ContainerStepInitHelper {
   }
 
   public CIK8InitializeTaskParams getK8InitializeTaskParams(
-      InitContainerV2StepInfo initContainerV2StepInfo, Ambiance ambiance, String logPrefix) {
-    ContainerStepInfra infra = initContainerV2StepInfo.getInfrastructure();
+      ContainerStepSpec containerStepSpec, Ambiance ambiance, String logPrefix, String stepIdentifier) {
+    ContainerStepInfra infra = containerStepSpec.getInfrastructure();
     if (infra.getType() != KUBERNETES_DIRECT) {
       throw new ContainerStepExecutionException(format("Invalid infrastructure type: %s", infra.getType()));
     }
     ContainerK8sInfra infrastructure = (ContainerK8sInfra) infra;
 
     ContainerDetailsSweepingOutput k8PodDetails = ContainerDetailsSweepingOutput.builder()
-                                                      .stepIdentifier(initContainerV2StepInfo.getStepGroupIdentifier())
+                                                      .stepIdentifier(stepIdentifier)
                                                       .accountId(AmbianceUtils.getAccountId(ambiance))
                                                       .build();
     k8sPodInitUtils.consumeSweepingOutput(ambiance, k8PodDetails, INIT_POD);
-    return buildK8DirectTaskParams(initContainerV2StepInfo, k8PodDetails, infrastructure, ambiance, logPrefix);
+    return buildK8DirectTaskParams(containerStepSpec, k8PodDetails, infrastructure, ambiance, logPrefix);
   }
 }
