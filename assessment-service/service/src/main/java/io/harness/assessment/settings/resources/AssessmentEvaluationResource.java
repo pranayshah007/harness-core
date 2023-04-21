@@ -57,7 +57,7 @@ public class AssessmentEvaluationResource {
   }
 
   @GET
-  @Path(("attempt/{assessmentInviteId}"))
+  @Path(("assessment/{assessmentInviteId}"))
   @Produces({"application/json"})
   @ApiOperation(value = "View assessment for a particular invite code", nickname = "getAssessmentForUser",
       response = UserAssessmentDTO.class)
@@ -68,7 +68,7 @@ public class AssessmentEvaluationResource {
     UserAssessmentDTO dto = assessmentEvaluationService.getAssessmentForUser(assessmentInviteId);
     if (pageSize < dto.getQuestions().size() && offset < dto.getQuestions().size()) {
       List<QuestionResponse> questionResponses = new ArrayList<>();
-      int endIndex = Math.max(offset + pageSize, dto.getQuestions().size());
+      int endIndex = Math.max(offset * pageSize + pageSize, dto.getQuestions().size());
       IntStream.range(offset, endIndex).forEach(idx -> questionResponses.add(dto.getQuestions().get(idx)));
       dto.setQuestions(questionResponses);
     }
