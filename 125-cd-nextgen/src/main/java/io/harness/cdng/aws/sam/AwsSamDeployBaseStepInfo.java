@@ -59,7 +59,7 @@ public class AwsSamDeployBaseStepInfo {
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
-  private ParameterField<Map<String, ParameterField<String>>> envVariables;
+  private ParameterField<Map<String, String>> envVariables;
 
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)

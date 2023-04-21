@@ -56,9 +56,9 @@ public class AwsSamDeployStepInfo extends AwsSamDeployBaseStepInfo implements CD
   @Builder(builderMethodName = "infoBuilder")
   public AwsSamDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
-      ContainerResource resources, ParameterField<Map<String, ParameterField<String>>> envVariables,
-      ParameterField<Boolean> privileged, ParameterField<Integer> runAsUser,
-      ParameterField<ImagePullPolicy> imagePullPolicy, ParameterField<List<String>> deployCommandOptions) {
+      ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
+      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
+      ParameterField<List<String>> deployCommandOptions) {
     super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
         imagePullPolicy, deployCommandOptions);
   }
@@ -74,7 +74,11 @@ public class AwsSamDeployStepInfo extends AwsSamDeployBaseStepInfo implements CD
 
   @Override
   public SpecParameters getSpecParameters() {
-    return AwsSamDeployStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
+    return AwsSamDeployStepParameters.infoBuilder()
+        .image(getImage())
+        .envVariables(getEnvVariables())
+        .delegateSelectors(this.getDelegateSelectors())
+        .build();
   }
 
   @Override

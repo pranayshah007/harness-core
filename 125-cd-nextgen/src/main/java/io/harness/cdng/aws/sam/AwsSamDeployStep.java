@@ -51,6 +51,7 @@ import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,14 +83,13 @@ public class AwsSamDeployStep extends AbstractContainerStepV2<StepElementParamet
   public UnitStep getSerialisedStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId,
       String logKey, long timeout, String parkedTaskId) {
     // Todo: Add entrypoint
-    AwsSamBuildStepParameters awsSamBuildStepParameters = (AwsSamBuildStepParameters) stepElementParameters.getSpec();
+    AwsSamDeployStepParameters awsSamBuildStepParameters = (AwsSamDeployStepParameters) stepElementParameters.getSpec();
     stepElementParameters.getSpec();
     return ContainerUnitStepUtils.serializeStepWithStepParameters(
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
         stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
-        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance,
-        awsSamBuildStepParameters.getEnvVariables().getValue(), awsSamBuildStepParameters.getImage().getValue(),
-        Collections.EMPTY_LIST);
+        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, new HashMap<>(),
+        awsSamBuildStepParameters.getImage().getValue(), Collections.EMPTY_LIST);
   }
 
   @Override
