@@ -995,9 +995,16 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       SLOErrorBudgetBurnRateCondition conditionSpec = (SLOErrorBudgetBurnRateCondition) condition;
       LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
       int totalErrorBudgetMinutes = serviceLevelObjective.getTotalErrorBudgetMinutes(currentLocalDate);
-      double errorBudgetBurnRate = sliRecordService.getErrorBudgetBurnRate(
-          ((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators().get(0),
-          conditionSpec.getLookBackDuration(), totalErrorBudgetMinutes);
+      String sliId = serviceLevelIndicatorService
+                         .getServiceLevelIndicator(ProjectParams.builder()
+                                                       .accountIdentifier(serviceLevelObjective.getAccountId())
+                                                       .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                                                       .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                                                       .build(),
+                             ((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators().get(0))
+                         .getUuid();
+      double errorBudgetBurnRate =
+          sliRecordService.getErrorBudgetBurnRate(sliId, conditionSpec.getLookBackDuration(), totalErrorBudgetMinutes);
       sloHealthIndicator.setErrorBudgetBurnRate(errorBudgetBurnRate);
     }
 

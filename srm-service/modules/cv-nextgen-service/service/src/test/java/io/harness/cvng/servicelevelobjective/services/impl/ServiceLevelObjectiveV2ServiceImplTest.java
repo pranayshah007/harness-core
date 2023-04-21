@@ -2676,8 +2676,11 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
     AbstractServiceLevelObjective serviceLevelObjective =
         serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
-    createSLIRecords(((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators().get(0));
-
+    String sliId = serviceLevelIndicatorService
+                       .getServiceLevelIndicator(projectParams,
+                           ((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators().get(0))
+                       .getUuid();
+    createSLIRecords(sliId);
     SLONotificationRule.SLOErrorBudgetBurnRateCondition condition =
         SLONotificationRule.SLOErrorBudgetBurnRateCondition.builder()
             .threshold(0.04)
