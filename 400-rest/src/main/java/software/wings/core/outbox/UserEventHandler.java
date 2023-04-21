@@ -31,6 +31,8 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.usermembership.remote.UserMembershipClient;
 
+import software.wings.app.MainConfiguration;
+
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import lombok.extern.slf4j.Slf4j;
@@ -38,11 +40,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class UserEventHandler implements OutboxEventHandler {
   private final AuditClientService auditClientService;
-  @Inject @Named("PRIVILEGED") private UserMembershipClient userMembershipClient;
+  private final MainConfiguration mainConfiguration;
+  private final UserMembershipClient userMembershipClient;
 
   @Inject
-  public UserEventHandler(AuditClientService auditClientService) {
+  public UserEventHandler(AuditClientService auditClientService,
+      @Named("PRIVILEGED") UserMembershipClient userMembershipClient, MainConfiguration mainConfiguration) {
     this.auditClientService = auditClientService;
+    this.userMembershipClient = userMembershipClient;
+    this.mainConfiguration = mainConfiguration;
   }
 
   @Override
@@ -79,7 +85,7 @@ public class UserEventHandler implements OutboxEventHandler {
     log.info("NG Login Audits: start publishing audit for account {} and user with userId {} and outboxEventId {}",
         accountIdentifier, userId, outboxEvent.getId());
     try {
-      if (isUserInScope(userId, accountIdentifier)) {
+      if (mainConfiguration.isEnableAudit() && isUserInScope(userId, accountIdentifier)) {
         log.info(
             "NG Login Audits: for account {} the user with userId {} is in scope and now publishing the audit for Login",
             accountIdentifier, userId);
