@@ -21,10 +21,13 @@ public class PortFinder {
   @NotNull private Integer startingPort;
 
   public Integer getNextPort() {
+    Integer temp;
     while (usedPorts.contains(startingPort)) {
       startingPort++;
     }
-    return startingPort++;
+    temp = startingPort + 1;
+    usedPorts.add(temp);
+    return temp;
   }
 
   public Set<Integer> getUsedPorts() {

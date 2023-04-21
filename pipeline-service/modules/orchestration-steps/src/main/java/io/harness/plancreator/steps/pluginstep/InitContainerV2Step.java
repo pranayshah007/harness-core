@@ -153,7 +153,7 @@ public class InitContainerV2Step implements TaskExecutableWithRbac<InitContainer
     executionSweepingOutputService.consume(
         ambiance, ContextElement.stageDetails, stageDetails, StepOutcomeGroup.STEP_GROUP.name());
 
-    // consumeExecutionConfig(ambiance);
+    consumeExecutionConfig(ambiance);
     TaskData taskData = getTaskData(stepParameters, buildSetupTaskParams);
     return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2, null, true,
         TaskType.valueOf(taskData.getTaskType()).getDisplayName(), taskSelectors, Scope.PROJECT, EnvironmentType.ALL,
