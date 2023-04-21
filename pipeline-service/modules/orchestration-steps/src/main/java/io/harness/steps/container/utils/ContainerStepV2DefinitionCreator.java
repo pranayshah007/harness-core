@@ -50,11 +50,12 @@ public class ContainerStepV2DefinitionCreator {
 
     initContainerV2StepInfo.getPluginsData().forEach((stepInfo, value) -> {
       PluginDetails pluginDetails = value.getPluginDetails();
-      String stepIdentifier = stepInfo.getStepIdentifier();
-      if (Strings.isNotBlank(stepGroupIdentifier)) {
-        stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
-      }
-      String identifier = getKubernetesStandardPodName(stepIdentifier);
+      // Todo(Sahil): Currently with ci it is not working. A small change is required inorder to find the port in CI.
+      //      String stepIdentifier = stepInfo.getStepIdentifier();
+      //      if (Strings.isNotBlank(stepGroupIdentifier)) {
+      //        stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
+      //      }
+      String identifier = getKubernetesStandardPodName(stepInfo.getStepIdentifier());
       String containerName = String.format("%s%s", STEP_PREFIX, identifier).toLowerCase();
       Map<String, String> envMap = new HashMap<>(pluginDetails.getEnvVariablesMap());
       List<SecretNGVariable> secretNGVariableMap = pluginDetails.getSecretVariableList()
