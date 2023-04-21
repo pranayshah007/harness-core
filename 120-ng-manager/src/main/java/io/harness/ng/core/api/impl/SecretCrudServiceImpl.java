@@ -427,7 +427,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
               .list(criteria,
                   getPageRequest(PageRequest.builder()
                                      .pageIndex(0)
-                                     .pageIndex(50000) // keeping the default max supported value
+                                     .pageSize(50000) // keeping the default max supported value
                                      .sortOrders(pageRequest.getSortOrders())
                                      .build()))
               .getContent();
