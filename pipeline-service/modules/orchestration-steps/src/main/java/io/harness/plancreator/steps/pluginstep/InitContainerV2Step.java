@@ -7,24 +7,37 @@
 
 package io.harness.plancreator.steps.pluginstep;
 
+import static io.harness.beans.outcomes.LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME;
+
 import io.harness.beans.EnvironmentType;
+import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
+import io.harness.beans.sweepingoutputs.ContextElement;
+import io.harness.beans.sweepingoutputs.K8PodDetails;
+import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
+import io.harness.delegate.beans.ci.k8s.CiK8sTaskResponse;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
+import io.harness.delegate.beans.ci.k8s.PodStatus;
 import io.harness.encryption.Scope;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
 import io.harness.steps.container.ContainerStepInitHelper;
+import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerExecutionConfig;
 import io.harness.steps.container.execution.ContainerStepRbacHelper;
 import io.harness.steps.executable.TaskExecutableWithRbac;
@@ -63,7 +76,49 @@ public class InitContainerV2Step implements TaskExecutableWithRbac<InitContainer
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, InitContainerV2StepInfo stepParameters,
       ThrowingSupplier<K8sTaskExecutionResponse> responseDataSupplier) throws Exception {
+    K8sTaskExecutionResponse k8sTaskExecutionResponse = responseDataSupplier.get();
+    CommandExecutionStatus commandExecutionStatus = k8sTaskExecutionResponse.getCommandExecutionStatus();
+    Status status = getStatus(commandExecutionStatus);
+    checkIfEverythingIsHealthy(k8sTaskExecutionResponse);
+
+    return StepResponse.builder()
+        .status(status)
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(POD_DETAILS_OUTCOME)
+                         .outcome(getPodDetailsOutcome(k8sTaskExecutionResponse.getK8sTaskResponse()))
+                         .group(StepCategory.STEP_GROUP.name())
+                         .build())
+        .build();
+  }
+
+  private LiteEnginePodDetailsOutcome getPodDetailsOutcome(CiK8sTaskResponse ciK8sTaskResponse) {
+    if (ciK8sTaskResponse != null) {
+      String ip = ciK8sTaskResponse.getPodStatus().getIp();
+      String namespace = ciK8sTaskResponse.getPodNamespace();
+      return LiteEnginePodDetailsOutcome.builder().ipAddress(ip).namespace(namespace).build();
+    }
     return null;
+  }
+
+  private Status getStatus(CommandExecutionStatus commandExecutionStatus) {
+    Status status;
+    if (commandExecutionStatus == CommandExecutionStatus.SUCCESS) {
+      status = Status.SUCCEEDED;
+    } else {
+      status = Status.FAILED;
+    }
+    return status;
+  }
+
+  private void checkIfEverythingIsHealthy(K8sTaskExecutionResponse k8sTaskExecutionResponse) {
+    if (!k8sTaskExecutionResponse.getCommandExecutionStatus().equals(CommandExecutionStatus.SUCCESS)) {
+      throw new ContainerStepExecutionException(
+          String.format("Container creation ran into error: %s", k8sTaskExecutionResponse.getErrorMessage()));
+    }
+    if (!k8sTaskExecutionResponse.getK8sTaskResponse().getPodStatus().getStatus().equals(PodStatus.Status.RUNNING)) {
+      throw new ContainerStepExecutionException(String.format("Container creation ran into error: %s",
+          k8sTaskExecutionResponse.getK8sTaskResponse().getPodStatus().getErrorMessage()));
+    }
   }
 
   @Override
@@ -79,7 +134,26 @@ public class InitContainerV2Step implements TaskExecutableWithRbac<InitContainer
 
     String stageId = ambiance.getStageExecutionId();
     List<TaskSelector> taskSelectors = new ArrayList<>();
-    consumeExecutionConfig(ambiance);
+
+    StageDetails stageDetails = StageDetails.builder()
+                                    .stageID(stepParameters.getIdentifier())
+                                    .stageRuntimeID(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
+                                    .accountId(AmbianceUtils.getAccountId(ambiance))
+                                    .build();
+
+    K8PodDetails k8PodDetails = K8PodDetails.builder()
+                                    .stageID(stepParameters.getIdentifier())
+                                    .stageName(stepParameters.getName())
+                                    .accountId(AmbianceUtils.getAccountId(ambiance))
+                                    .build();
+
+    executionSweepingOutputService.consume(
+        ambiance, ContextElement.podDetails, k8PodDetails, StepOutcomeGroup.STEP_GROUP.name());
+
+    executionSweepingOutputService.consume(
+        ambiance, ContextElement.stageDetails, stageDetails, StepOutcomeGroup.STEP_GROUP.name());
+
+    // consumeExecutionConfig(ambiance);
     TaskData taskData = getTaskData(stepParameters, buildSetupTaskParams);
     return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2, null, true,
         TaskType.valueOf(taskData.getTaskType()).getDisplayName(), taskSelectors, Scope.PROJECT, EnvironmentType.ALL,
