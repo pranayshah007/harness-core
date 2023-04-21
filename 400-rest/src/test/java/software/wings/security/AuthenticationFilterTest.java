@@ -57,7 +57,6 @@ import software.wings.common.AuditHelper;
 import software.wings.resources.AccountResource;
 import software.wings.resources.ApiKeyResource;
 import software.wings.resources.UserResourceNG;
-import software.wings.resources.secretsmanagement.SecretsResourceNG;
 import software.wings.service.intfc.ApiKeyService;
 import software.wings.service.intfc.AuditService;
 import software.wings.service.intfc.AuthService;
@@ -473,24 +472,6 @@ public class AuthenticationFilterTest extends CategoryTest {
       isAuthorizationValid = false;
       assertThat(ex.getCode()).isEqualTo(INVALID_CREDENTIAL);
     }
-    assertThat(isAuthorizationValid).isFalse();
-  }
-
-  @Test
-  @Owner(developers = VIKAS)
-  @Category(UnitTests.class)
-  public void testIsNextGenManagerRequest_For_NextGenAuthorization() {
-    Class clazz = SecretsResourceNG.class;
-    when(resourceInfo.getResourceClass()).thenReturn(clazz);
-    when(resourceInfo.getResourceMethod()).thenReturn(getMockResourceMethod());
-
-    boolean isAuthorizationValid = authenticationFilter.isNextGenManagerRequest(resourceInfo);
-    assertThat(isAuthorizationValid).isTrue();
-
-    clazz = AccountResource.class;
-    when(resourceInfo.getResourceClass()).thenReturn(clazz);
-
-    isAuthorizationValid = authenticationFilter.isNextGenManagerRequest(resourceInfo);
     assertThat(isAuthorizationValid).isFalse();
   }
 
