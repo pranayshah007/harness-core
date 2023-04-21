@@ -8,6 +8,7 @@
 package io.harness.cvng.servicelevelobjective.services.impl;
 
 import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
+import static io.harness.cvng.downtime.utils.DateTimeUtils.dtf;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.BAD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.GOOD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.NO_DATA;
@@ -101,6 +102,7 @@ import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -622,7 +624,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
                 EntityDetails.builder().enabled(true).entityRef(monitoredServiceIdentifier).build()))
             .build());
     OnetimeDowntimeSpec onetimeDowntimeSpec = (OnetimeDowntimeSpec) downtimeDTO.getSpec().getSpec();
-    onetimeDowntimeSpec.setStartTime(clock.instant().minus(Duration.ofMinutes(5)).getEpochSecond());
+    onetimeDowntimeSpec.setStartDateTime(dtf.format(LocalDateTime.now(clock).minusMinutes(5)));
     downtimeDTO.getSpec().setSpec(onetimeDowntimeSpec);
     downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
 
@@ -813,7 +815,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     DowntimeDTO downtimeDTO = builderFactory.getOnetimeDurationBasedDowntimeDTO();
     downtimeDTO.setEntitiesRule(AllEntitiesRule.builder().build());
     OnetimeDowntimeSpec onetimeDowntimeSpec = (OnetimeDowntimeSpec) downtimeDTO.getSpec().getSpec();
-    onetimeDowntimeSpec.setStartTime(clock.instant().minus(Duration.ofMinutes(5)).getEpochSecond());
+    onetimeDowntimeSpec.setStartDateTime(dtf.format(LocalDateTime.now(clock).minusMinutes(5)));
     downtimeDTO.getSpec().setSpec(onetimeDowntimeSpec);
     downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
 

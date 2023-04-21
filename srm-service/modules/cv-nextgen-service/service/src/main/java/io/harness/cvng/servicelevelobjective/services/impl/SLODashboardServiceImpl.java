@@ -676,12 +676,16 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           .sliIdentifier(simpleServiceLevelObjective.getServiceLevelIndicators().get(0))
           .downtimeStatusDetails(
               monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap.containsKey(monitoredService.getIdentifier())
-                  ? DowntimeStatusDetails.getDowntimeStatusDetailsInstance(
-                      monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap.get(monitoredService.getIdentifier())
-                          .getStartTime(),
-                      monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap.get(monitoredService.getIdentifier())
-                          .getEndTime(),
-                      clock)
+                  ? DowntimeStatusDetails
+                        .getDowntimeStatusDetailsInstanceBuilder(
+                            monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap
+                                .get(monitoredService.getIdentifier())
+                                .getStartTime(),
+                            monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap
+                                .get(monitoredService.getIdentifier())
+                                .getEndTime(),
+                            clock)
+                        .build()
                   : null)
           .build();
     }
