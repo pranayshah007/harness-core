@@ -16,6 +16,18 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 public interface ServiceOverrideService {
+  /***
+   *
+   * @param accountId
+   * @param orgIdentifier
+   * @param projectIdentifier
+   * @param environmentRef
+   * method works with both environment scoped ref or environment identifier condition given with identifier
+   * account/org/projectId params should be according to scope to search in.
+   * @param serviceRef
+   * method expects serviceRef param to be qualified scoped ref
+   * @return
+   */
   Optional<NGServiceOverridesEntity> get(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String serviceRef);
 

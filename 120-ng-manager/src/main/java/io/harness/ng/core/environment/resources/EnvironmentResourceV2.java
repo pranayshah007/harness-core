@@ -273,6 +273,10 @@ public class EnvironmentResourceV2 {
     return featureFlagHelperService.isEnabled(accountId, FeatureName.CDS_OrgAccountLevelServiceEnvEnvGroup);
   }
 
+  private boolean checkFeatureFlagForOverridesV2(String accountId) {
+    return featureFlagHelperService.isEnabled(accountId, FeatureName.CDS_SERVICE_OVERRIDES_2_0);
+  }
+
   @DELETE
   @Path("{environmentIdentifier}")
   @ApiOperation(value = "Delete en environment by identifier", nickname = "deleteEnvironmentV2")
@@ -718,8 +722,9 @@ public class EnvironmentResourceV2 {
     throwExceptionForNoRequestDTO(serviceOverrideRequestDTO);
     validateServiceOverrideScope(serviceOverrideRequestDTO, accountId);
 
+    boolean isOverridesV2 = checkFeatureFlagForOverridesV2(accountId);
     NGServiceOverridesEntity serviceOverridesEntity =
-        ServiceOverridesMapper.toServiceOverridesEntity(accountId, serviceOverrideRequestDTO);
+        ServiceOverridesMapper.toServiceOverridesEntity(accountId, serviceOverrideRequestDTO, isOverridesV2);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(serviceOverridesEntity.getOrgIdentifier(),
         serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getAccountId());
     environmentValidationHelper.checkThatEnvExists(serviceOverridesEntity.getAccountId(),
