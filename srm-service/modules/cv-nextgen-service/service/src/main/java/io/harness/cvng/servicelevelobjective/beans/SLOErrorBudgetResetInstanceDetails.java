@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cvng.downtime.beans;
+package io.harness.cvng.servicelevelobjective.beans;
 
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetails;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
@@ -15,9 +15,11 @@ import lombok.Value;
 
 @Value
 @Builder
-public class DowntimeInstanceDetails extends SecondaryEventDetails {
+public class SLOErrorBudgetResetInstanceDetails extends SecondaryEventDetails {
+  Integer errorBudgetIncrementMinutes;
+
   @Override
   public SecondaryEventsType getType() {
-    return SecondaryEventsType.DOWNTIME;
+    return SecondaryEventsType.ERROR_BUDGET_RESET;
   }
 }

@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cvng.servicelevelobjective.beans.secondaryEvents;
+package io.harness.cvng.servicelevelobjective.beans.secondaryevents;
 
 import static io.harness.cvng.CVConstants.SECONDARY_EVENTS_TYPE;
 
@@ -20,8 +20,8 @@ import lombok.Value;
 @Builder
 public class SecondaryEventDetailsResponse {
   @JsonProperty(SECONDARY_EVENTS_TYPE) @NotNull SecondaryEventsType type;
-  @NotNull long startTime;
-  @NotNull long endTime;
+  @NotNull Long startTime;
+  Long endTime;
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = SECONDARY_EVENTS_TYPE, include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
   @NotNull

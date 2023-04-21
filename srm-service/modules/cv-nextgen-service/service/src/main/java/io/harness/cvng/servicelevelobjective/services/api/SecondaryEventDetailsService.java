@@ -5,19 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cvng.downtime.beans;
+package io.harness.cvng.servicelevelobjective.services.api;
 
-import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetails;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
 
-import lombok.Builder;
-import lombok.Value;
+import java.util.List;
 
-@Value
-@Builder
-public class DowntimeInstanceDetails extends SecondaryEventDetails {
-  @Override
-  public SecondaryEventsType getType() {
-    return SecondaryEventsType.DOWNTIME;
-  }
+public interface SecondaryEventDetailsService {
+  SecondaryEventDetailsResponse getInstanceByUuids(List<String> uuids, SecondaryEventsType eventType);
 }
