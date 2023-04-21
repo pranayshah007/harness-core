@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.context.GlobalContext;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -134,5 +135,9 @@ public class GitAwareContextHelper {
       return null;
     }
     return scmGitMetaData.getBranchName();
+  }
+
+  public boolean isRemoteEntity(GitEntityInfo gitEntityInfo) {
+    return gitEntityInfo != null && StoreType.REMOTE.equals(gitEntityInfo.getStoreType());
   }
 }

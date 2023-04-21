@@ -156,6 +156,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Inject NGSettingsClient settingsClient;
   @Inject GitXSettingsHelper gitXSettingsHelper;
   @Inject private TemplateRbacHelper templateRbacHelper;
+
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Template [%s] of versionLabel [%s] under Project[%s], Organization [%s] already exists";
 
@@ -1537,5 +1538,11 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           criteria, Pageable.unpaged(), filterParamsDTO.isGetDistinctFromBranches());
     }
     return templateEntities;
+  }
+
+  private void applyGitXSettingsIfApplicable(String accountIdentifier, String orgIdentifier, String projIdentifier) {
+    gitXSettingsHelper.enforceGitExperienceIfApplicable(accountIdentifier, orgIdentifier, projIdentifier);
+    gitXSettingsHelper.setConnectorRefForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
+    gitXSettingsHelper.setDefaultStoreTypeForEntities(accountIdentifier, orgIdentifier, projIdentifier);
   }
 }
