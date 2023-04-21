@@ -16,10 +16,20 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.ExecutionInfoUtility;
+import io.harness.cdng.execution.ExecutionSummaryDetails;
+import io.harness.cdng.execution.ServiceExecutionSummaryDetails;
 import io.harness.cdng.execution.StageExecutionInfo;
+import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoBuilder;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
+import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.plancreator.steps.common.StageElementParameters;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.repositories.executions.StageExecutionInfoRepository;
 import io.harness.utils.StageStatus;
 
@@ -29,6 +39,8 @@ import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.UpdateResult;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -142,5 +154,149 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
     Criteria criteria =
         createScopeCriteria(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier());
     stageExecutionInfoRepository.deleteAll(criteria);
+  }
+
+  @Override
+  public StageExecutionInfo findStageExecutionInfo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String stageExecutionId) {
+    Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
+    return stageExecutionInfoRepository.findByStageExecutionId(stageExecutionId, scope);
+  }
+
+  @Override
+  public StageExecutionInfo createStageExecutionInfo(
+      Ambiance ambiance, StageElementParameters stageElementParameters, Level stageLevel) {
+    StageExecutionInfoBuilder stageExecutionInfoBuilder =
+        StageExecutionInfo.builder()
+            .stageExecutionId(ambiance.getStageExecutionId())
+            .executionSummaryDetails(ExecutionSummaryDetails.builder().build())
+            .planExecutionId(ambiance.getPlanExecutionId())
+            .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
+            .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
+            .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
+            .status(Status.RUNNING)
+            .stageStatus(StageStatus.IN_PROGRESS);
+    final List<String> tags = new LinkedList<>();
+    stageElementParameters.getTags().forEach((key, value) -> tags.add(key + ":" + value));
+    if (stageLevel != null) {
+      stageExecutionInfoBuilder.startts(stageLevel.getStartTs());
+    }
+    if (EmptyPredicate.isNotEmpty(tags)) {
+      stageExecutionInfoBuilder.tags(tags.toArray(new String[0]));
+    }
+    return save(stageExecutionInfoBuilder.build());
+  }
+
+  @Override
+  public StageExecutionInfo updateStageExecutionInfo(
+      Ambiance ambiance, StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO) {
+    String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
+    String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+    String stageExecutionId = ambiance.getStageExecutionId();
+    StageExecutionInfo stageExecutionInfo =
+        findStageExecutionInfo(accountIdentifier, orgIdentifier, projectIdentifier, stageExecutionId);
+    Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
+    if (stageExecutionInfo == null) {
+      log.error(String.format(
+          "StageExecutionInfo should not be null for accountIdentifier %s, orgIdentifier %s, projectIdentifier %s and stageExecutionId %s",
+          accountIdentifier, orgIdentifier, projectIdentifier, stageExecutionId));
+      save(createStageExecutionInfoFromStageExecutionInfoUpdateDTO(ambiance, stageExecutionInfoUpdateDTO));
+    } else {
+      Map<String, Object> updates = new HashMap<>();
+      updateStageExecutionInfoFromStageExecutionInfoUpdateDTO(stageExecutionInfoUpdateDTO, stageExecutionInfo, updates);
+      update(scope, stageExecutionId, updates);
+    }
+    return stageExecutionInfoRepository.findByStageExecutionId(stageExecutionId, scope);
+  }
+
+  private void updateStageExecutionInfoFromStageExecutionInfoUpdateDTO(
+      StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO, StageExecutionInfo stageExecutionInfo,
+      Map<String, Object> updates) {
+    ExecutionSummaryDetails executionSummaryDetails = stageExecutionInfo.getExecutionSummaryDetails() == null
+        ? ExecutionSummaryDetails.builder().build()
+        : stageExecutionInfo.getExecutionSummaryDetails();
+    boolean executionSummaryDetailsUpdated = false;
+    if (stageExecutionInfoUpdateDTO.getServiceInfo() != null) {
+      ServiceExecutionSummaryDetails serviceExecutionSummaryDetails = stageExecutionInfoUpdateDTO.getServiceInfo();
+      if (executionSummaryDetails.getServiceInfo() != null
+          && executionSummaryDetails.getServiceInfo().getArtifacts() != null) {
+        serviceExecutionSummaryDetails.setArtifacts(executionSummaryDetails.getServiceInfo().getArtifacts());
+      }
+      executionSummaryDetailsUpdated = true;
+      executionSummaryDetails.setServiceInfo(serviceExecutionSummaryDetails);
+    }
+    if (stageExecutionInfoUpdateDTO.getArtifactsSummary() != null) {
+      ServiceExecutionSummaryDetails.ArtifactsSummary artifactsSummary =
+          stageExecutionInfoUpdateDTO.getArtifactsSummary();
+      executionSummaryDetailsUpdated = true;
+      if (executionSummaryDetails.getServiceInfo() != null) {
+        executionSummaryDetails.getServiceInfo().setArtifacts(artifactsSummary);
+      } else {
+        executionSummaryDetails.setServiceInfo(
+            ServiceExecutionSummaryDetails.builder().artifacts(artifactsSummary).build());
+      }
+    }
+    if (stageExecutionInfoUpdateDTO.getInfraExecutionSummary() != null) {
+      executionSummaryDetailsUpdated = true;
+      executionSummaryDetails.setInfraExecutionSummary(stageExecutionInfoUpdateDTO.getInfraExecutionSummary());
+    }
+    if (stageExecutionInfoUpdateDTO.getGitOpsExecutionSummary() != null) {
+      executionSummaryDetailsUpdated = true;
+      executionSummaryDetails.setGitOpsExecutionSummary(stageExecutionInfoUpdateDTO.getGitOpsExecutionSummary());
+    }
+    if (stageExecutionInfoUpdateDTO.getGitOpsAppSummary() != null) {
+      executionSummaryDetailsUpdated = true;
+      executionSummaryDetails.setGitOpsAppSummary(stageExecutionInfoUpdateDTO.getGitOpsAppSummary());
+    }
+    if (stageExecutionInfoUpdateDTO.getFailureInfo() != null) {
+      executionSummaryDetailsUpdated = true;
+      executionSummaryDetails.setFailureInfo(stageExecutionInfoUpdateDTO.getFailureInfo());
+    }
+
+    if (executionSummaryDetailsUpdated) {
+      updates.put(StageExecutionInfoKeys.executionSummaryDetails, executionSummaryDetails);
+    }
+    if (stageExecutionInfoUpdateDTO.getStageStatus() != null) {
+      updates.put(StageExecutionInfoKeys.stageStatus, stageExecutionInfoUpdateDTO.getStageStatus());
+    }
+    if (stageExecutionInfoUpdateDTO.getStatus() != null) {
+      updates.put(StageExecutionInfoKeys.status, stageExecutionInfoUpdateDTO.getStatus());
+    }
+    if (stageExecutionInfoUpdateDTO.getEndTs() != null) {
+      updates.put(StageExecutionInfoKeys.endts, stageExecutionInfoUpdateDTO.getEndTs());
+    }
+  }
+
+  private StageExecutionInfo createStageExecutionInfoFromStageExecutionInfoUpdateDTO(
+      Ambiance ambiance, StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO) {
+    ServiceExecutionSummaryDetails serviceExecutionSummaryDetails = stageExecutionInfoUpdateDTO.getServiceInfo();
+    if (stageExecutionInfoUpdateDTO.getArtifactsSummary() != null) {
+      if (serviceExecutionSummaryDetails == null) {
+        ServiceExecutionSummaryDetails.builder().artifacts(stageExecutionInfoUpdateDTO.getArtifactsSummary()).build();
+      } else {
+        serviceExecutionSummaryDetails.setArtifacts(stageExecutionInfoUpdateDTO.getArtifactsSummary());
+      }
+    }
+    ExecutionSummaryDetails executionSummaryDetails =
+        ExecutionSummaryDetails.builder()
+            .serviceInfo(serviceExecutionSummaryDetails)
+            .freezeExecutionSummary(stageExecutionInfoUpdateDTO.getFreezeExecutionSummary())
+            .failureInfo(stageExecutionInfoUpdateDTO.getFailureInfo())
+            .infraExecutionSummary(stageExecutionInfoUpdateDTO.getInfraExecutionSummary())
+            .gitOpsExecutionSummary(stageExecutionInfoUpdateDTO.getGitOpsExecutionSummary())
+            .gitOpsAppSummary(stageExecutionInfoUpdateDTO.getGitOpsAppSummary())
+            .build();
+
+    return StageExecutionInfo.builder()
+        .stageExecutionId(ambiance.getStageExecutionId())
+        .executionSummaryDetails(executionSummaryDetails)
+        .planExecutionId(ambiance.getPlanExecutionId())
+        .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
+        .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
+        .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
+        .status(Status.RUNNING)
+        .stageStatus(StageStatus.IN_PROGRESS)
+        .build();
   }
 }

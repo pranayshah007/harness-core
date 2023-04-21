@@ -733,7 +733,10 @@ public enum FeatureName {
       "Enables Blue Green Scale Down Stage Scale Down Step. This will help bring down the stage environment in Blue Green Deployment. Epic: https://harness.atlassian.net/browse/CDS-55822",
       HarnessTeam.CDP),
   CDS_K8S_SERVICE_HOOKS_NG("Enables Service hooks support for K8s/Native Helm Services", HarnessTeam.CDP),
-  CIE_USE_DOCKER_BUILDX("Enable docker build and push step to use buildx", HarnessTeam.CI);
+  CIE_USE_DOCKER_BUILDX("Enable docker build and push step to use buildx", HarnessTeam.CI),
+  CDS_STAGE_EXECUTION_DATA_SYNC(
+      "This flag controls if you want CD Stage execution data saved in cd service and eventually synced to timescale",
+      HarnessTeam.CDC);
 
   @Deprecated
   FeatureName() {

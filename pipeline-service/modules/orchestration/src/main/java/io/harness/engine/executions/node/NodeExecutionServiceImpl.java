@@ -705,7 +705,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
                                .setStepParameters(nodeExecution.getResolvedStepParametersBytes())
                                .setEventType(orchestrationEventType)
                                .setServiceName(nodeExecution.getModule())
-                               .setTriggerPayload(triggerPayload);
+                               .setTriggerPayload(triggerPayload)
+                               .setEndTs(nodeExecution.getEndTs() == null ? 0 : nodeExecution.getEndTs());
 
     updateEventIfCausedByAutoAbortThroughTrigger(nodeExecution, orchestrationEventType, eventBuilder);
     eventEmitter.emitEvent(eventBuilder.build());

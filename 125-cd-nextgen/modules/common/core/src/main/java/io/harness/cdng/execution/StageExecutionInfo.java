@@ -17,6 +17,7 @@ import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.utils.StageStatus;
 
 import com.google.common.collect.ImmutableList;
@@ -55,14 +56,21 @@ public class StageExecutionInfo implements PersistentEntity, UuidAware {
   @NotNull private String accountIdentifier;
   @NotNull private String orgIdentifier;
   @NotNull private String projectIdentifier;
-  @NotNull private String envIdentifier;
-  @NotNull private String infraIdentifier;
-  @NotNull private String serviceIdentifier;
+  @Nullable private String envIdentifier;
+  @Nullable private String infraIdentifier;
+  @Nullable private String serviceIdentifier;
   @NotNull private String stageExecutionId;
+  @NotNull private String planExecutionId;
   @NotNull private StageStatus stageStatus;
+  @NotNull private Status status;
   @Nullable private String deploymentIdentifier;
+  @Nullable private ExecutionSummaryDetails executionSummaryDetails;
+  @Nullable private long rollbackDuration;
+  @Nullable private Long startts;
+  @Nullable private Long endts;
 
-  @NotNull private ExecutionDetails executionDetails;
+  @Nullable private String[] tags;
+  @Nullable private ExecutionDetails executionDetails;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -97,6 +105,13 @@ public class StageExecutionInfo implements PersistentEntity, UuidAware {
                  .field(StageExecutionInfoKeys.serviceIdentifier)
                  .field(StageExecutionInfoKeys.deploymentIdentifier)
                  .field(StageExecutionInfoKeys.stageExecutionId)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("unique_stage_execution_info_using_stage_execution_id_idx")
+                 .field(StageExecutionInfoKeys.accountIdentifier)
+                 .field(StageExecutionInfoKeys.stageExecutionId)
+                 .field(StageExecutionInfoKeys.orgIdentifier)
+                 .field(StageExecutionInfoKeys.projectIdentifier)
                  .build())
         .build();
   }
