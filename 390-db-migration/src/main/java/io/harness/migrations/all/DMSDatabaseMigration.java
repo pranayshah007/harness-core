@@ -18,7 +18,6 @@ import io.harness.persistence.store.Store;
 
 import com.google.inject.Inject;
 import com.mongodb.BulkWriteOperation;
-import com.mongodb.BulkWriteResult;
 import com.mongodb.DBCollection;
 import dev.morphia.Morphia;
 import dev.morphia.query.Query;
@@ -30,15 +29,7 @@ import org.joda.time.DateTime;
 @Slf4j
 public class DMSDatabaseMigration implements Migration, SeedDataMigration {
   @Inject private HPersistence persistence;
-
   @Inject IndexManager indexManager;
-
-  // At some places we need collection Name which is entity Name
-  // At some places we need class path, esp when we toggle flag in migration collection.
-
-  // We also need to retry migration in case of exceptions. Implement that too.
-  // For Duplicate key exception, just catch it and dont do anything with it.
-
   @Inject Morphia morphia;
 
   final Store dmsStore = Store.builder().name(DMS).build();
@@ -47,95 +38,81 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
 
   private static final String DEPLOY_MODE = System.getenv(DeployMode.DEPLOY_MODE);
 
+  long startTime;
+
+  // agentMTLS, delegateRing collection are not used smp.
   private final List<String> entityList = Arrays.asList("versionOverride", "delegateConnectionResults",
       "delegateGroups", "delegateProfiles", "delegateRing", "delegateScopes", "delegateSequenceConfig",
       "delegateTokens", "delegates", "perpetualTask", "perpetualTaskScheduleConfig", "taskSelectorMaps");
 
-  // agentMTLS ??
+  // Do not fail migration if migration of these collection fails.
+  private final List<String> failSafeCollection = Arrays.asList("delegateConnectionResults");
+
   @Override
   public void migrate() throws DelegateDBMigrationFailed {
-    //    // Ignore migration for SAAS
-    //        if (!DeployMode.isOnPrem(DEPLOY_MODE)) {
-    //          return;
-    //        }
-
-    log.info("DMS DB Migration started");
-
-    final DateTime validity = DateTime.now().plusDays(5);
-
-    // Putting some entries to VersionOverride collection for testing.
-    for (int i = 0; i < 10; i++) {
-      String override = "a";
-      VersionOverride versionOverride = VersionOverride.builder("AccountID")
-                                            .overrideType(VersionOverrideType.DELEGATE_IMAGE_TAG)
-                                            .version(override.concat(Integer.toString(i)))
-                                            .validUntil(validity.toDate())
-                                            .build();
-      log.info(" Added entry to db for override {}", persistence.save(versionOverride));
-    }
-
-    // We need to ensure that all pods end in same state after migration runs.
-    // It shouln't happen that migration succeeded for one pod and failed for another.
-    // Migration should be atomic for all pods.
-    // Check with multiple manager pods.
-
-    // Check if we already did the migration
-    // This is for case if we run the migration again.
-    if (persistence.isMigrationEnabled(ON_PREM_MIGRATION)) {
+    // Ignore migration for SAAS
+    if (!DeployMode.isOnPrem(DEPLOY_MODE)) {
       return;
     }
 
-    // WE can check ON_PREM_MIGRATION for every collection.
+    log.info("DMS DB Migration started");
 
-    // We will need to handle duplicate insertion error in bulkWrite.execute, that happens when same document is tried
-    // to insert again based on unique index.
+    startTime = System.currentTimeMillis();
+
+    // Check if we already did the migration
+    if (persistence.isMigrationEnabled(ON_PREM_MIGRATION)) {
+      return;
+    }
 
     // Create indexes and collections in DMS DB
     indexManager.ensureIndexes(
         IndexManager.Mode.AUTO, persistence.getDatastore(Store.builder().name(DMS).build()), morphia, dmsStore);
 
-    for (String collection : entityList) {
-      // Only proceed if migration is not started by another process.
-      // I think we don't need this, duplicate records will not be inserted anyways in DB and bulk write will not throw
-      // exception on duplicate writes.
-
-      //      if (!smpMigrationStartedForCollection(collection)) {
-      //        // Set migration started flag in DB
-      //        DelegateMigrationFlag delegateMigrationFlagToSave =
-      //            new DelegateMigrationFlag(collection.getName(), false, true);
-      //        persistence.save(delegateMigrationFlagToSave);
-
-      // Write to collection in DMS DB
-      // If write is successful, follow next set to steps.
-      // In case of rollback, drop the created collection.
-      log.info("working for entity {}", collection);
-      if (persistToNewDatabase(collection)) {
-        log.info("Going to toggle flag");
-        // String className = classesHavingMigrationEnabled.get(0);
-
-        Class<?> collectionClass = getClassForCollectionName(collection);
-        toggleFlag(collectionClass.getCanonicalName(), true, true);
-        // Check if we reading data from DMS DB after toggle.
-        // If we are still reading from old db, initiate rollback.
-        if (!postToggleCorrectness(collectionClass)) {
-          rollback();
-          throw new DelegateDBMigrationFailed(
-              String.format("Delegate DB migration failed for collection: {}", collection));
+    try {
+      for (String collection : entityList) {
+        // Retry once per collection migration failure.
+        try {
+          migrateCollection(collection);
+        } catch (Exception ex) {
+          log.warn("Migration for collection {} failed in attempt 1 with exception {}", collection, ex);
+          migrateCollection(collection);
         }
-      } else {
-        // writing data failed, hence drop the collection and end migration.
-        rollback();
+      }
+    } catch (Exception ex) {
+      rollback();
+      throw new DelegateDBMigrationFailed(String.format("Delegate DB migration failed, exception %s", ex));
+    }
+    finishMigration();
+  }
+
+  private void migrateCollection(String collection) throws DelegateDBMigrationFailed {
+    Class<?> collectionClass = getClassForCollectionName(collection);
+    log.info("working for entity {}", collection);
+    if (persistToNewDatabase(collection)) {
+      log.info("Going to toggle flag");
+      toggleFlag(collectionClass.getCanonicalName(), true, true);
+      if (!postToggleCorrectness(collectionClass)) {
         throw new DelegateDBMigrationFailed(
-            String.format("Delegate DB migration failed for collection: {}", collection));
+            String.format("Delegate DB migration failed for collection: %s", collection));
+      }
+    } else {
+      // only throw exception if collection is not fail safe.
+      if (!failSafeCollection.contains(collection)) {
+        throw new DelegateDBMigrationFailed(
+            String.format("Delegate DB migration failed for collection: %s", collection));
       }
     }
-    log.info("Migration is done");
+  }
+
+  private void finishMigration() {
     // Migration is done, set on_prem flag as true.
     DelegateMigrationFlag onPremMigrationFlag = new DelegateMigrationFlag(ON_PREM_MIGRATION, true, true);
     persistence.save(onPremMigrationFlag);
+    log.info("time taken to finish migration {}", System.currentTimeMillis() - startTime);
   }
 
   private void rollback() {
+    log.info("Initiating rollback for db migration");
     for (String collection : entityList) {
       Class<?> collectionClass = getClassForCollectionName(collection);
       toggleFlag(collectionClass.getCanonicalName(), false, false);
@@ -154,17 +131,16 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
     try (HIterator<PersistentEntity> records = new HIterator<>(query.fetch())) {
       for (PersistentEntity record : records) {
         insertDocCount++;
-        log.info("Delegate migration info {}", record.toString());
         bulkWriteOperation.insert(morphia.toDBObject(record));
       }
     }
-    BulkWriteResult result = null;
     try {
-      result = bulkWriteOperation.execute();
+      bulkWriteOperation.execute();
     } catch (Exception ex) {
-      log.warn("Exception occured while copying data {}", ex.getMessage());
+      // This will have many duplicate key exception during bulkwrite.execute by different pods but it's expected.
+      log.warn("Exception occured while copying data", ex);
     }
-    return verifyWriteOperation(result, insertDocCount, collection);
+    return verifyWriteOperation(insertDocCount, collection);
   }
 
   private boolean postToggleCorrectness(Class<?> cls) {
@@ -176,20 +152,18 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
   }
 
   private void toggleFlag(String cls, boolean value, boolean smpMigrationEnabled) {
-    log.info("Toggling flag to true for {}", cls);
+    log.info("Toggling flag to {} for {}", value, cls);
     DelegateMigrationFlag flag = new DelegateMigrationFlag(cls, value, smpMigrationEnabled);
     persistence.save(flag);
   }
 
-  private boolean verifyWriteOperation(BulkWriteResult bulkWriteResult, int insertCount, String collection) {
+  private boolean verifyWriteOperation(int insertCount, String collection) {
     // Check if entire data is written
     // dont check based on bulkWriteResult because now copy is running on multiple machines, so this value will vary.
 
     long documentsInNewDB = persistence.getCollection(dmsStore, collection).count();
 
-    log.info("verifyWriteOperation, bulkWriteResult.getInsertedCount and actual count {}, {}", documentsInNewDB,
-        insertCount);
-    //    log.info("ack value {}", bulkWriteResult.isAcknowledged());
+    log.info("verifyWriteOperation, documents in new db and old db {}, {}", documentsInNewDB, insertCount);
     boolean insertSuccessful = documentsInNewDB == insertCount;
     if (!insertSuccessful) {
       return false;
@@ -211,19 +185,7 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
 
     log.info("Value of store in collection {}", store.getName());
 
-    if (!store.getName().equals(HARNESS)) {
-      return false;
-    }
-
-    return true;
-  }
-
-  private boolean smpMigrationStartedForCollection(Class<?> collection) {
-    DelegateMigrationFlag delegateMigrationFlag =
-        persistence.createQuery(DelegateMigrationFlag.class)
-            .filter(DelegateMigrationFlag.DelegateMigrationFlagKeys.className, collection.getName())
-            .get();
-    return delegateMigrationFlag.isOnPremMigrationTriggered();
+    return store.getName().equals(HARNESS);
   }
 
   Class<?> getClassForCollectionName(String collectionName) {

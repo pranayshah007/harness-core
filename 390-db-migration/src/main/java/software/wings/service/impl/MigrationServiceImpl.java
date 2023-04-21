@@ -290,6 +290,8 @@ public class MigrationServiceImpl implements MigrationService {
             schema.getTimescaleDBDataVersion());
       }
 
+    } catch (DelegateDBMigrationFailed ex) {
+      throw ex;
     } catch (RuntimeException e) {
       log.error("[Migration] - Migration failed.", e);
     }

@@ -38,7 +38,7 @@ public class SeedDataMigrationList {
         .add(Pair.of(13, ReImportTemplatesMigration.class))
         .add(Pair.of(14, BaseSeedDataMigration.class))
         .add(Pair.of(15, AddRingDetailsToDelegateRing.class))
-        .add(Pair.of(48, DMSDatabaseMigration.class))
+        .add(Pair.of(16, DMSDatabaseMigration.class))
         .build();
   }
 }
