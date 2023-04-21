@@ -50,11 +50,12 @@ public class AwsSamBuildStep extends AbstractContainerStepV2<StepElementParamete
   public UnitStep getSerialisedStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId,
       String logKey, long timeout, String parkedTaskId) {
     // todo: add env variable and image and entrypoint
+    AwsSamBuildStepParameters awsSamBuildStepParameters = (AwsSamBuildStepParameters) stepElementParameters.getSpec();
     return ContainerUnitStepUtils.serializeStepWithStepParameters(
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
         stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
-        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, Collections.emptyMap(), "",
-        Collections.EMPTY_LIST);
+        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, Collections.emptyMap(),
+        "harnessdev/sambuild:sainathtest", Collections.EMPTY_LIST);
   }
 
   @Override

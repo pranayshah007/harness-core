@@ -20,6 +20,7 @@ import io.harness.cdng.aws.asg.AsgRollingDeployStepNode;
 import io.harness.cdng.aws.asg.AsgRollingRollbackStepNode;
 import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepNode;
 import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepNode;
+import io.harness.cdng.aws.sam.AwsSamBuildStepNode;
 import io.harness.cdng.aws.sam.AwsSamDeployStepNode;
 import io.harness.cdng.aws.sam.AwsSamRollbackStepNode;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStepNode;
@@ -1140,7 +1141,7 @@ public class CDNGRegistrars {
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
-                   .clazz(AwsSamDeployStepNode.class)
+                   .clazz(AwsSamBuildStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))

@@ -22,6 +22,7 @@ import io.harness.pms.contracts.plan.ImageDetails;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.plan.PluginInfoProviderServiceGrpc;
+import io.harness.pms.contracts.plan.PortDetails;
 import io.harness.pms.contracts.steps.SdkStep;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.PmsSdkInstanceService;
@@ -59,6 +60,7 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
   public Map<StepInfo, PluginCreationResponse> getPluginsData(
       InitContainerV2StepInfo initContainerV2StepInfo, Ambiance ambiance) {
     Set<StepInfo> stepInfos = getStepInfos(initContainerV2StepInfo.getStepsExecutionConfig());
+    Set<Integer> usedPorts = new HashSet<>();
     return stepInfos.stream()
         .map(stepInfo -> {
           OSType os = k8sPodInitUtils.getOS(initContainerV2StepInfo.getInfrastructure());
@@ -70,6 +72,7 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
                                       .setAmbiance(ambiance)
                                       .setAccountId(AmbianceUtils.getAccountId(ambiance))
                                       .setOsType(os.getYamlName())
+                                      .setUsedPortDetails(PortDetails.newBuilder().addAllUsedPorts(usedPorts).build())
                                       .build());
           if (pluginInfo.hasError()) {
             log.error("Encountered error in plugin info collection {}", pluginInfo.getError());
@@ -94,6 +97,7 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
                     .setPluginDetails(pluginInfo.getPluginDetails().toBuilder().setImageDetails(imageDetails).build())
                     .build();
           }
+          usedPorts.addAll(pluginInfo.getPluginDetails().getTotalPortUsedDetails().getUsedPortsList());
           return Pair.of(stepInfo, pluginInfo);
         })
         .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));

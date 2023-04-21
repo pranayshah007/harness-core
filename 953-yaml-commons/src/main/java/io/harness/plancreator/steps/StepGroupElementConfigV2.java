@@ -39,6 +39,7 @@ import lombok.experimental.SuperBuilder;
 @OwnedBy(PIPELINE)
 public class StepGroupElementConfigV2 extends StepGroupElementConfig {
   StepGroupInfra stepGroupInfra;
+  ParameterField<List<String>> sharedPaths;
 
   public StepGroupElementConfigV2(String uuid,
       @NotNull @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN) String identifier,
@@ -46,8 +47,9 @@ public class StepGroupElementConfigV2 extends StepGroupElementConfig {
       ParameterField<String> skipCondition, ParameterField<StepWhenCondition> when, TemplateLinkConfig template,
       ParameterField<List<FailureStrategyConfig>> failureStrategies, @Size(min = 1) List<ExecutionWrapperConfig> steps,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<StrategyConfig> strategy,
-      StepGroupInfra stepGroupInfra) {
+      StepGroupInfra stepGroupInfra, ParameterField<List<String>> sharedPaths) {
     super(uuid, identifier, name, skipCondition, when, template, failureStrategies, steps, delegateSelectors, strategy);
     this.stepGroupInfra = stepGroupInfra;
+    this.sharedPaths = sharedPaths;
   }
 }

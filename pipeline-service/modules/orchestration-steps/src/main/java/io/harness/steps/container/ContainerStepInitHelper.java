@@ -14,6 +14,7 @@ import static io.harness.ci.commonconstants.ContainerExecutionConstants.PORT_STA
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_PREFIX;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_REQUEST_MEMORY_MIB;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_REQUEST_MILLI_CPU;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.steps.container.constants.ContainerStepExecutionConstants.CLEANUP_DETAILS;
@@ -188,7 +189,8 @@ public class ContainerStepInitHelper {
   private Pair<CIK8ContainerParams, List<CIK8ContainerParams>> getStepContainers(ContainerStepSpec containerStepInfo,
       ContainerDetailsSweepingOutput k8PodDetails, ContainerK8sInfra infrastructure, Ambiance ambiance,
       List<PodVolume> volumes, String logPrefix) {
-    Map<String, String> volumeToMountPath = k8sPodInitUtils.getVolumeToMountPath(volumes);
+    List<String> sharedPaths = getSharedPaths(containerStepInfo);
+    Map<String, String> volumeToMountPath = k8sPodInitUtils.getVolumeToMountPath(sharedPaths, volumes);
     OSType os = k8sPodInitUtils.getOS(infrastructure);
     String accountId = AmbianceUtils.getAccountId(ambiance);
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
@@ -226,6 +228,14 @@ public class ContainerStepInitHelper {
     return Pair.of(setupAddOnContainerParams, containerParams);
   }
 
+  private List<String> getSharedPaths(ContainerStepSpec initializeStepInfo) {
+    if (initializeStepInfo instanceof InitContainerV2StepInfo) {
+      InitContainerV2StepInfo initConfig = (InitContainerV2StepInfo) initializeStepInfo;
+      return (List<String>) initConfig.getSharedPaths().fetchFinalValue();
+    }
+    return Collections.emptyList();
+  }
+
   private List<ContainerDefinitionInfo> getContainerDefinitionInfos(ContainerStepSpec containerStepInfo,
       ContainerK8sInfra infrastructure, Ambiance ambiance, String logPrefix, Map<String, String> volumeToMountPath,
       OSType os, NGAccess ngAccess, Map<String, String> commonEnvVars, ConnectorDetails harnessInternalImageConnector,
@@ -243,22 +253,22 @@ public class ContainerStepInitHelper {
     return stepCtrDefinitions;
   }
 
-  private Map<String, List<ConnectorConversionInfo>> getStepConnectorRefs(ContainerStepSpec containerStepInfo) {
-    Map<String, List<ConnectorConversionInfo>> stepConnectorMap = new HashMap<>();
-    if (containerStepInfo instanceof PluginStep) {
-      PluginStep pluginStep = (PluginStep) containerStepInfo;
-      String identifier = ContainerUnitStepUtils.getKubernetesStandardPodName(containerStepInfo.getIdentifier());
-      stepConnectorMap.put(identifier, new ArrayList<>());
-      String connectorRef = PluginUtils.getConnectorRef(pluginStep);
-      if (EmptyPredicate.isEmpty(connectorRef)) {
-        return stepConnectorMap;
-      }
-      Map<EnvVariableEnum, String> envToSecretMap = PluginUtils.getConnectorSecretEnvMap(pluginStep.getType());
-      stepConnectorMap.get(identifier)
-          .add(ConnectorConversionInfo.builder().connectorRef(connectorRef).envToSecretsMap(envToSecretMap).build());
-    }
-    return stepConnectorMap;
-  }
+  //  private Map<String, List<ConnectorConversionInfo>> getStepConnectorRefs(ContainerStepSpec containerStepInfo) {
+  //    Map<String, List<ConnectorConversionInfo>> stepConnectorMap = new HashMap<>();
+  //    if (containerStepInfo instanceof PluginStep) {
+  //      PluginStep pluginStep = (PluginStep) containerStepInfo;
+  //      String identifier = ContainerUnitStepUtils.getKubernetesStandardPodName(containerStepInfo.getIdentifier());
+  //      stepConnectorMap.put(identifier, new ArrayList<>());
+  //      String connectorRef = PluginUtils.getConnectorRef(pluginStep);
+  //      if (EmptyPredicate.isEmpty(connectorRef)) {
+  //        return stepConnectorMap;
+  //      }
+  //      Map<EnvVariableEnum, String> envToSecretMap = PluginUtils.getConnectorSecretEnvMap(pluginStep.getType());
+  //      stepConnectorMap.get(identifier)
+  //          .add(ConnectorConversionInfo.builder().connectorRef(connectorRef).envToSecretsMap(envToSecretMap).build());
+  //    }
+  //    return stepConnectorMap;
+  //  }
 
   private CIK8ContainerParams getLiteEngineContainerParams(ContainerDetailsSweepingOutput k8PodDetails,
       ContainerK8sInfra infrastructure, Ambiance ambiance, String logPrefix, Map<String, String> volumeToMountPath,
@@ -533,5 +543,47 @@ public class ContainerStepInitHelper {
                                                       .build();
     k8sPodInitUtils.consumeSweepingOutput(ambiance, k8PodDetails, INIT_POD);
     return buildK8DirectTaskParams(initContainerV2StepInfo, k8PodDetails, infrastructure, ambiance, logPrefix);
+  }
+
+  private Map<EnvVariableEnum, String> convertDetailMap(Map<String, String> connectorSecretEnvMapMap) {
+    return emptyIfNull(connectorSecretEnvMapMap)
+        .entrySet()
+        .stream()
+        .collect(Collectors.toMap(e -> EnvVariableEnum.valueOf(e.getKey()), Map.Entry::getValue));
+  }
+
+  private Map<String, List<ConnectorConversionInfo>> getStepConnectorRefs(ContainerStepSpec containerStepInfo) {
+    Map<String, List<ConnectorConversionInfo>> stepConnectorMap = new HashMap<>();
+    if (containerStepInfo instanceof PluginStep) {
+      PluginStep pluginStep = (PluginStep) containerStepInfo;
+      String identifier = ContainerUnitStepUtils.getKubernetesStandardPodName(containerStepInfo.getIdentifier());
+      stepConnectorMap.put(identifier, new ArrayList<>());
+      String connectorRef = PluginUtils.getConnectorRef(pluginStep);
+      if (EmptyPredicate.isEmpty(connectorRef)) {
+        return stepConnectorMap;
+      }
+      Map<EnvVariableEnum, String> envToSecretMap = PluginUtils.getConnectorSecretEnvMap(pluginStep.getType());
+      stepConnectorMap.get(identifier)
+          .add(ConnectorConversionInfo.builder().connectorRef(connectorRef).envToSecretsMap(envToSecretMap).build());
+    } else if (containerStepInfo instanceof InitContainerV2StepInfo) {
+      InitContainerV2StepInfo initContainerV2StepInfo = (InitContainerV2StepInfo) containerStepInfo;
+      initContainerV2StepInfo.getPluginsData().forEach((stepinfo, pluginCreationResponse) -> {
+        List<io.harness.pms.contracts.plan.ConnectorDetails> connectorsForStepList =
+            pluginCreationResponse.getPluginDetails().getConnectorsForStepList();
+        if (isNotEmpty(connectorsForStepList)) {
+          List<ConnectorConversionInfo> connectorConversionInfo =
+              connectorsForStepList.stream()
+                  .map(detail
+                      -> ConnectorConversionInfo.builder()
+                             .connectorRef(detail.getConnectorRef())
+                             .envToSecretsMap(new HashMap<>(convertDetailMap(detail.getConnectorSecretEnvMapMap())))
+                             .build())
+                  .collect(toList());
+          stepConnectorMap.put(ContainerUnitStepUtils.getKubernetesStandardPodName(stepinfo.getStepIdentifier()),
+              connectorConversionInfo);
+        }
+      });
+    }
+    return stepConnectorMap;
   }
 }

@@ -301,8 +301,8 @@ orchestrationStepConfig:
     pvcDefaultStorageSize: 25600
     #delegateServiceEndpointVariableValue: "delegate-service:8080"
     delegateServiceEndpointVariableValue: "2.tcp.ngrok.io:10322"
-    addonImage: harness/ci-addon:1.14.19
-    liteEngineImage: harness/ci-lite-engine:1.14.22
+    addonImage: harness/ci-addon:1.16.7
+    liteEngineImage: harness/ci-lite-engine:1.16.7
     #isLocal: false
     isLocal: true
     logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-https://qa.harness.io/log-service/}

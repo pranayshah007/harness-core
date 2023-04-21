@@ -17,6 +17,7 @@ import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.matrix.StrategyExpansionData;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
@@ -24,6 +25,7 @@ import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.List;
 import java.util.Map;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -49,6 +51,8 @@ public class InitContainerV2StepInfo implements PMSStepInfo, Visitable, SpecPara
   @NotExpression private StepsExecutionConfig stepsExecutionConfig;
   @NotExpression Map<StepInfo, PluginCreationResponse> pluginsData;
   Map<String, StrategyExpansionData> strategyExpansionMap;
+
+  ParameterField<List<String>> sharedPaths;
 
   @Override
   @JsonIgnore

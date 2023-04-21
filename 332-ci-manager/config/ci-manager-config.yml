@@ -181,8 +181,8 @@ ciExecutionServiceConfig:
   pvcDefaultStorageSize: 25600
   #delegateServiceEndpointVariableValue: "delegate-service:8080"
   delegateServiceEndpointVariableValue: "2.tcp.ngrok.io:10322"
-  addonImage: harness/ci-addon:1.16.8
-  liteEngineImage: harness/ci-lite-engine:1.16.8
+  addonImage: harness/ci-addon:1.16.7
+  liteEngineImage: harness/ci-lite-engine:1.16.7
   #isLocal: false
   isLocal: true
   remoteDebugTimeout: 3600

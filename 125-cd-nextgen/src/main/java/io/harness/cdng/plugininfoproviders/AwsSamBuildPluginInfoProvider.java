@@ -75,9 +75,10 @@ public class AwsSamBuildPluginInfoProvider extends CDPluginInfoProvider {
         awsSamBuildStepInfo.getRunAsUser() != null ? awsSamBuildStepInfo.getRunAsUser().getValue() : 1000;
 
     Set<Integer> usedPorts = new HashSet<>(request.getUsedPortDetails().getUsedPortsList());
-    PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
-    portFinder.getNextPort();
+    PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE + 1).usedPorts(usedPorts).build();
+    Integer nextPort = portFinder.getNextPort();
     HashSet<Integer> ports = new HashSet<>(portFinder.getUsedPorts());
+    HashSet<Integer> nextports = new HashSet<>(nextPort);
 
     return PluginCreationResponse.newBuilder()
         .setPluginDetails(PluginDetails.newBuilder()
@@ -86,7 +87,7 @@ public class AwsSamBuildPluginInfoProvider extends CDPluginInfoProvider {
                               .putAllEnvVariables(getEnvironmentVariables(
                                   request.getAmbiance(), awsSamBuildStepInfo.getBuildCommandOptions()))
                               .setImageDetails(imageDetails)
-                              .addAllPortUsed(ports)
+                              .addPortUsed(nextPort)
                               .setTotalPortUsedDetails(PortDetails.newBuilder().addAllUsedPorts(ports).build())
                               .build())
         .build();

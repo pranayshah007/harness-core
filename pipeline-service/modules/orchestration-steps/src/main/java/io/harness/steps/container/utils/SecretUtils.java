@@ -15,6 +15,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
+import io.harness.delegate.beans.ci.pod.SSHKeyDetails;
 import io.harness.delegate.beans.ci.pod.SecretVariableDTO;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
 import io.harness.encryption.SecretRefData;
@@ -24,9 +25,14 @@ import io.harness.network.SafeHttpCall;
 import io.harness.ng.core.DecryptableEntityWithEncryptionConsumers;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.NGAccessWithEncryptionConsumer;
+import io.harness.ng.core.dto.secrets.SSHConfigDTO;
+import io.harness.ng.core.dto.secrets.SSHCredentialType;
+import io.harness.ng.core.dto.secrets.SSHKeyReferenceCredentialDTO;
+import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.pms.expression.ExpressionResolverUtils;
+import io.harness.secretmanagerclient.SSHAuthScheme;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -220,5 +226,45 @@ public class SecretUtils {
     }
 
     return SecretVariableDetails.builder().encryptedDataDetailList(encryptionDetails).secretVariableDTO(secret).build();
+  }
+
+  public SSHKeyDetails getSshKey(NGAccess ngAccess, SecretRefData secretRefData) {
+    String secretIdentifier = null;
+    if (secretRefData != null) {
+      secretIdentifier = secretRefData.getIdentifier();
+    }
+
+    if (secretIdentifier == null) {
+      log.warn("Failed to resolve secret variable, secretIdentifier is null");
+      return null;
+    }
+
+    log.info("Getting ssh key details for secret ref [{}]", secretIdentifier);
+    IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(secretRefData.toSecretRefStringValue(),
+        ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+
+    SecretDTOV2 secretDTOV2 = getSecret(identifierRef);
+    if (secretDTOV2.getType() != SecretType.SSHKey) {
+      throw new ContainerStepSecretException(format("Secret id:[%s] type should be SSHKey", secretIdentifier));
+    }
+    SSHKeySpecDTO spec = (SSHKeySpecDTO) secretDTOV2.getSpec();
+    if (spec.getAuth().getAuthScheme() != SSHAuthScheme.SSH) {
+      throw new ContainerStepSecretException(format("Secret id:[%s] auth scheme type should be SSH", secretIdentifier));
+    }
+    SSHConfigDTO sshConfigDTO = (SSHConfigDTO) spec.getAuth().getSpec();
+    if (sshConfigDTO.getCredentialType() != SSHCredentialType.KeyReference) {
+      throw new ContainerStepSecretException(
+          format("Secret id:[%s] credential type should be KeyReference", secretIdentifier));
+    }
+    SSHKeyReferenceCredentialDTO credentialSpecDTO = (SSHKeyReferenceCredentialDTO) sshConfigDTO.getSpec();
+
+    log.info(
+        "Getting secret encryption details for secret type:[{}] ref:[{}]", secretDTOV2.getType(), secretIdentifier);
+    List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(ngAccess, credentialSpecDTO);
+    if (isEmpty(encryptionDetails)) {
+      throw new ContainerStepSecretException("Secret encrypted details can't be empty or null");
+    }
+
+    return SSHKeyDetails.builder().encryptedDataDetails(encryptionDetails).sshKeyReference(credentialSpecDTO).build();
   }
 }
