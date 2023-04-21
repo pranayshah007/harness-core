@@ -2993,6 +2993,13 @@
 955018:io.harness.beans.FileGitDetails
 955019:io.harness.beans.ContentType
 955021:io.harness.beans.GetBatchFileRequestIdentifier
+955022:io.harness.gitsync.common.dtos.gitAccess.GitAccessDTO
+955023:io.harness.gitsync.common.dtos.gitAccess.GithubAccessDTO
+955024:io.harness.gitsync.common.dtos.gitAccess.GitlabAccessDTO
+955025:io.harness.gitsync.common.dtos.gitAccess.GithubAccessTokenDTO
+955026:io.harness.gitsync.common.dtos.gitAccess.AzureRepoAccessDTO
+955027:io.harness.gitsync.common.dtos.gitAccess.GithubAppAccessDTO
+955028:io.harness.beans.Scope
 970001:io.harness.request.RequestContextData
 970002:io.harness.request.RequestContext
 970003:io.harness.gitsync.interceptor.GitSyncBranchContext

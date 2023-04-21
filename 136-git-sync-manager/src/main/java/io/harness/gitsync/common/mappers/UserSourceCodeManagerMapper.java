@@ -81,5 +81,7 @@ public abstract class UserSourceCodeManagerMapper<D extends UserSourceCodeManage
     responseDTO.setType(dto.getType());
     responseDTO.setAccountIdentifier(dto.getAccountIdentifier());
     responseDTO.setUserIdentifier(dto.getUserIdentifier());
+    responseDTO.setUserEmail(dto.getUserEmail());
+    responseDTO.setUserName(dto.getUserName());
   }
 }

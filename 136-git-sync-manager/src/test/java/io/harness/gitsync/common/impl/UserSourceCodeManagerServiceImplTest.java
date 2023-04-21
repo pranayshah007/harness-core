@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,6 +23,8 @@ import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.gitsync.GitSyncTestBase;
+import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc;
+import io.harness.gitsync.UserDetailsResponse;
 import io.harness.gitsync.common.beans.UserSourceCodeManager;
 import io.harness.gitsync.common.dtos.GithubSCMDTO;
 import io.harness.gitsync.common.dtos.UserSourceCodeManagerDTO;
@@ -42,6 +45,9 @@ import org.mockito.Mock;
 public class UserSourceCodeManagerServiceImplTest extends GitSyncTestBase {
   @Mock private UserSourceCodeManagerRepository userSourceCodeManagerRepository;
   @Inject private SCMMapperHelper scmMapperHelper;
+  @Mock
+  private HarnessToGitPushInfoServiceGrpc
+      .HarnessToGitPushInfoServiceBlockingStub harnessToGitPushInfoServiceBlockingStub;
   @Inject @InjectMocks UserSourceCodeManagerServiceImpl userSourceCodeManagerService;
   UserSourceCodeManagerDTO userSourceCodeManagerDTO;
   String accountIdentifier = "accountId";
@@ -54,6 +60,8 @@ public class UserSourceCodeManagerServiceImplTest extends GitSyncTestBase {
         GithubSCMDTO.builder()
             .accountIdentifier(accountIdentifier)
             .userIdentifier(userIdentifier)
+            .userName("user1")
+            .userEmail("email")
             .type(scmType)
             .apiAccess(
                 GithubApiAccessDTO.builder()
@@ -78,6 +86,11 @@ public class UserSourceCodeManagerServiceImplTest extends GitSyncTestBase {
         .deleteByAccountIdentifierAndUserIdentifierAndType(accountIdentifier, userIdentifier, scmType);
     doReturn(userSourceCodeManager).when(userSourceCodeManagerRepository).save(userSourceCodeManager);
     on(userSourceCodeManagerService).set("userSourceCodeManagerRepository", userSourceCodeManagerRepository);
+    on(userSourceCodeManagerService)
+        .set("harnessToGitPushInfoServiceBlockingStub", harnessToGitPushInfoServiceBlockingStub);
+    doReturn(UserDetailsResponse.newBuilder().setUserEmail("email").setUserName("user1").build())
+        .when(harnessToGitPushInfoServiceBlockingStub)
+        .getUserDetails(any());
   }
 
   @Test
