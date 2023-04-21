@@ -7,13 +7,17 @@
 
 package io.harness.ng.oauth;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class OauthAccessTokenDTO {
-  String accessToken;
-  String refreshToken;
-  UserDetailsDTO userDetailsDTO;
+@OwnedBy(HarnessTeam.PIPELINE)
+public class UserDetailsDTO {
+  String userName;
+  String userEmail;
+  String userIdentifier;
 }

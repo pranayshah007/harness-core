@@ -23,6 +23,7 @@ import dev.morphia.annotations.Entity;
 import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -35,6 +36,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @SuperBuilder
+@NoArgsConstructor
 @EqualsAndHashCode
 @FieldNameConstants(innerTypeName = "UserSourceCodeManagerKeys")
 @StoreIn(DbAliases.NG_MANAGER)
