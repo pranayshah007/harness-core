@@ -41,7 +41,7 @@ public class DelegateMigrationFlagGenerator {
   }
 
   private void enableMigrationFlag(String className) {
-    DelegateMigrationFlag flag = new DelegateMigrationFlag(className, false);
+    DelegateMigrationFlag flag = new DelegateMigrationFlag(className, true);
     persistence.save(flag);
   }
 }

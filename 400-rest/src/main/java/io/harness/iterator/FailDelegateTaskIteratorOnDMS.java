@@ -57,7 +57,6 @@ public class FailDelegateTaskIteratorOnDMS
   @Override
   public void createAndStartRedisBatchIterator(
       PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
-    System.out.println("Starting DMS redis Iteartor");
     iterator = (MongoPersistenceIterator<DelegateTask, MorphiaFilterExpander<DelegateTask>>)
                    persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
                        FailDelegateTaskIteratorOnDMS.class,
