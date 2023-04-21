@@ -19,6 +19,7 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.steps.environment.EnvironmentOutcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDP)
 @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
@@ -30,4 +31,5 @@ public interface InfrastructureOutcome extends Outcome, PassThroughData, Executi
   String getInfraIdentifier();
   String getInfraName();
   Connector getConnector();
+  Map<String, String> getTags();
 }

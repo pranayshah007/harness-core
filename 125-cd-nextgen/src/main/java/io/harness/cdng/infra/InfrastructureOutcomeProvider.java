@@ -20,6 +20,8 @@ import io.harness.steps.environment.EnvironmentOutcome;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.HashMap;
+import java.util.Map;
 import javax.annotation.Nonnull;
 
 @Singleton
@@ -35,6 +37,16 @@ public class InfrastructureOutcomeProvider {
         providerExpressionEvaluatorProvider.getProviderExpressionEvaluator(
             ambiance, infrastructure.getProvisionerStepIdentifier());
     return infrastructureMapper.toOutcome(infrastructure, expressionEvaluator, environmentOutcome, service,
-        accountIdentifier, orgIdentifier, projectIdentifier);
+        accountIdentifier, orgIdentifier, projectIdentifier, new HashMap<>());
+  }
+
+  public InfrastructureOutcome getOutcome(Ambiance ambiance, @Nonnull Infrastructure infrastructure,
+      EnvironmentOutcome environmentOutcome, ServiceStepOutcome service, final String accountIdentifier,
+      final String orgIdentifier, final String projectIdentifier, Map<String, String> tags) {
+    ProvisionerExpressionEvaluator expressionEvaluator =
+        providerExpressionEvaluatorProvider.getProviderExpressionEvaluator(
+            ambiance, infrastructure.getProvisionerStepIdentifier());
+    return infrastructureMapper.toOutcome(infrastructure, expressionEvaluator, environmentOutcome, service,
+        accountIdentifier, orgIdentifier, projectIdentifier, tags);
   }
 }

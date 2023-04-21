@@ -80,6 +80,7 @@ import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
@@ -93,7 +94,8 @@ public class InfrastructureMapper {
   @NotNull
   public InfrastructureOutcome toOutcome(@Nonnull Infrastructure infrastructure,
       ProvisionerExpressionEvaluator expressionEvaluator, EnvironmentOutcome environmentOutcome,
-      ServiceStepOutcome service, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+      ServiceStepOutcome service, String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      Map<String, String> tags) {
     final InfrastructureOutcomeAbstract infrastructureOutcome;
     final boolean isDynamicallyProvisioned = infrastructure.isDynamicallyProvisioned();
     switch (infrastructure.getKind()) {
@@ -227,14 +229,14 @@ public class InfrastructureMapper {
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, infrastructure.getInfrastructureKeyValues()))
-                .tags(getParameterFieldValueOrEvaluateProvisionerExpression(expressionEvaluator,
-                    isDynamicallyProvisioned, sshWinRmAwsInfrastructure.getAwsInstanceFilter().getTags(),
-                    ExpressionMode.RETURN_NULL_IF_UNRESOLVED))
                 .hostConnectionType(getParameterFieldValue(sshWinRmAwsInfrastructure.getHostConnectionType()))
                 .build();
 
         setInfraIdentifierAndName(sshWinRmAwsInfrastructureOutcome, sshWinRmAwsInfrastructure.getInfraIdentifier(),
             sshWinRmAwsInfrastructure.getInfraName());
+        sshWinRmAwsInfrastructureOutcome.setTags(
+            getParameterFieldValueOrEvaluateProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
+                sshWinRmAwsInfrastructure.getAwsInstanceFilter().getTags(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED));
         infrastructureOutcome = sshWinRmAwsInfrastructureOutcome;
         break;
 
@@ -250,9 +252,6 @@ public class InfrastructureMapper {
                     getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
                         sshWinRmAzureInfrastructure.getResourceGroup(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
                 .credentialsRef(getParameterFieldValue(sshWinRmAzureInfrastructure.getCredentialsRef()))
-                .tags(
-                    getParameterFieldValueOrEvaluateProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        sshWinRmAzureInfrastructure.getTags(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED))
                 .hostConnectionType(getParameterFieldValue(sshWinRmAzureInfrastructure.getHostConnectionType()))
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
@@ -260,6 +259,9 @@ public class InfrastructureMapper {
                 .build();
         setInfraIdentifierAndName(sshWinRmAzureInfrastructureOutcome, sshWinRmAzureInfrastructure.getInfraIdentifier(),
             sshWinRmAzureInfrastructure.getInfraName());
+        sshWinRmAzureInfrastructureOutcome.setTags(
+            getParameterFieldValueOrEvaluateProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
+                sshWinRmAzureInfrastructure.getTags(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED));
         infrastructureOutcome = sshWinRmAzureInfrastructureOutcome;
         break;
 
@@ -490,6 +492,7 @@ public class InfrastructureMapper {
 
     setConnectorInOutcome(infrastructure, accountIdentifier, projectIdentifier, orgIdentifier, infrastructureOutcome);
 
+    infrastructureOutcome.setTags(tags);
     return infrastructureOutcome;
   }
 

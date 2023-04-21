@@ -316,9 +316,9 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
     infrastructureValidator.validate(spec);
 
-    final InfrastructureOutcome infrastructureOutcome =
-        infrastructureOutcomeProvider.getOutcome(ambiance, spec, environmentOutcome, serviceOutcome,
-            ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    final InfrastructureOutcome infrastructureOutcome = infrastructureOutcomeProvider.getOutcome(ambiance, spec,
+        environmentOutcome, serviceOutcome, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(),
+        ngAccess.getProjectIdentifier(), infrastructure.getInfrastructureDefinitionConfig().getTags());
 
     // save spec sweeping output for further use within the step
     executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_OUTPUT,
