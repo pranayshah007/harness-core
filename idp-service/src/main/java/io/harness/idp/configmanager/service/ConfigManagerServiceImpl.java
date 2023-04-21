@@ -92,11 +92,10 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   @Override
   public AppConfig saveConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType)
       throws Exception {
-    validateSchemaForPlugin(appConfig.getConfigs(), appConfig.getConfigId());
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setConfigType(configType);
     appConfigEntity.setEnabledDisabledAt(System.currentTimeMillis());
-    appConfigEntity.setEnabled(false);
+    appConfigEntity.setEnabled(getEnabledFlagBasedOnConfigType(configType));
     List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
         configEnvVariablesService.insertConfigEnvVariables(appConfig, accountIdentifier);
     AppConfigEntity insertedData = appConfigRepository.save(appConfigEntity);
@@ -108,7 +107,6 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   @Override
   public AppConfig updateConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType)
       throws Exception {
-    validateSchemaForPlugin(appConfig.getConfigs(), appConfig.getConfigId());
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setConfigType(configType);
     List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
@@ -258,7 +256,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
         "Config map successfully created/updated for account - {} in namespace - {}", accountIdentifier, namespace);
   }
 
-  private void validateSchemaForPlugin(String config, String configId) throws Exception {
+  public void validateSchemaForPlugin(String config, String configId) throws Exception {
     String pluginSchema = ConfigManagerUtils.getPluginConfigSchema(configId);
     if (pluginSchema == null) {
       throw new UnsupportedOperationException(INVALID_CONFIG_ID_PROVIDED);
@@ -295,5 +293,12 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   private List<String> getAllEnvVariablesForMultiplePluginIds(String accountIdentifier, List<String> pluginIds) {
     return configEnvVariablesService.getAllEnvVariablesForAccountIdentifierAndMultiplePluginIds(
         accountIdentifier, pluginIds);
+  }
+
+  private Boolean getEnabledFlagBasedOnConfigType(ConfigType configType) {
+    if (configType.equals(ConfigType.PLUGIN)) {
+      return false;
+    }
+    return true;
   }
 }

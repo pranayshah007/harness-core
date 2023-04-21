@@ -40,4 +40,6 @@ public interface ConfigManagerService {
   String mergeAllAppConfigsForAccount(String account) throws Exception;
 
   void updateConfigMap(String accountIdentifier, String appConfigYamlData, String configName);
+
+  void validateSchemaForPlugin(String config, String configId) throws Exception;
 }
