@@ -226,10 +226,13 @@ instrPackages: %s`, dir, r.packages)
 /*
 Creates config.yaml file for .NET agent to consume and returns the path to config.yaml file on successful creation.
 Args:
-  None
+
+	None
+
 Returns:
-  configPath (string): Path to the config.yaml file. Empty string on errors.
-  err (error): Error if there's one, nil otherwise.
+
+	configPath (string): Path to the config.yaml file. Empty string on errors.
+	err (error): Error if there's one, nil otherwise.
 */
 func (r *runTestsTask) createDotNetConfigFile() (string, error) {
 	// Create config file
@@ -402,15 +405,15 @@ func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testinte
 
 	r.log.Info("Splitting the tests as parallelism is enabled")
 
-	stepIdx, _ := getStepStrategyIteration()
-	stepTotal, _ := getStepStrategyIterations()
-	if !isStepParallelismEnabled() {
+	stepIdx, _ := getStepStrategyIteration(r.environment)
+	stepTotal, _ := getStepStrategyIterations(r.environment)
+	if !isStepParallelismEnabled(r.environment) {
 		stepIdx = 0
 		stepTotal = 1
 	}
-	stageIdx, _ := getStageStrategyIteration()
-	stageTotal, _ := getStageStrategyIterations()
-	if !isStageParallelismEnabled() {
+	stageIdx, _ := getStageStrategyIteration(r.environment)
+	stageTotal, _ := getStageStrategyIterations(r.environment)
+	if !isStageParallelismEnabled(r.environment) {
 		stageIdx = 0
 		stageTotal = 1
 	}
@@ -549,7 +552,7 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 	}
 
 	// Test splitting: only when parallelism is enabled
-	if isParallelismEnabled() {
+	if isParallelismEnabled(r.environment) {
 		r.computeSelectedTests(ctx, runner, &selection)
 	}
 

@@ -45,8 +45,8 @@ var args struct {
 var log *zap.SugaredLogger
 
 /*
-	Parses the command line args, sets default values and overrides if
-	environment variables are set.
+Parses the command line args, sets default values and overrides if
+environment variables are set.
 */
 func parseArgs() {
 	// Set defaults here
@@ -56,11 +56,11 @@ func parseArgs() {
 	arg.MustParse(&args)
 
 	if args.SplitTotal == -1 {
-		args.SplitTotal, _ = external.GetStepStrategyIterations()
+		args.SplitTotal, _ = external.GetStepStrategyIterationsFromEnv()
 	}
 
 	if args.SplitIndex == -1 {
-		args.SplitIndex, _ = external.GetStepStrategyIteration()
+		args.SplitIndex, _ = external.GetStepStrategyIterationFromEnv()
 	}
 
 	if args.SplitTotal == 0 || args.SplitIndex < 0 || args.SplitIndex > args.SplitTotal {
