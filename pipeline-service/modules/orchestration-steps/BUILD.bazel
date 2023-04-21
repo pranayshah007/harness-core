@@ -16,9 +16,11 @@ java_library(
     visibility = [
         "//100-migrator:__subpackages__",
         "//pipeline-service:__subpackages__",
+        "//125-cd-nextgen:__subpackages__",
     ],
     deps = [
         "//:lombok",
+        "//332-ci-manager/contracts:module",
         "//332-ssca/cd:module",
         "//878-ng-common-utilities:module",
         "//880-pipeline-cd-commons:module",

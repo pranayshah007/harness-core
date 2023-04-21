@@ -280,6 +280,9 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.AWS_SAM_DEPLOY)
   AWS_SAM_DEPLOY(
       "AWS SAM Deploy", Arrays.asList(ServiceDefinitionType.AWS_SAM), "AWS SAM", StepSpecTypeConstants.AWS_SAM_DEPLOY),
+  @JsonProperty(StepSpecTypeConstants.AWS_SAM_BUILD)
+  AWS_SAM_BUILD(
+      "AWS SAM Build", Arrays.asList(ServiceDefinitionType.AWS_SAM), "AWS SAM", StepSpecTypeConstants.AWS_SAM_BUILD),
   @JsonProperty(StepSpecTypeConstants.AWS_SAM_ROLLBACK)
   AWS_SAM_ROLLBACK("AWS SAM Rollback", Arrays.asList(ServiceDefinitionType.AWS_SAM), "AWS SAM",
       StepSpecTypeConstants.AWS_SAM_ROLLBACK),

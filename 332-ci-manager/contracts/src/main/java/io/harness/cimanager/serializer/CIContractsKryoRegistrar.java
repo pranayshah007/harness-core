@@ -133,8 +133,8 @@ public class CIContractsKryoRegistrar implements KryoRegistrar {
     kryo.register(K8sDirectInfraYamlSpec.class, 100041);
 
     kryo.register(CIVolume.class, 390005);
-    kryo.register(EmptyDirYaml.class, 390006);
-    kryo.register(HostPathYaml.class, 390007);
+    kryo.register(EmptyDirYaml.class, 390016);
+    kryo.register(HostPathYaml.class, 390017);
     kryo.register(PersistentVolumeClaimYaml.class, 390008);
 
     kryo.register(IntegrationStageNodeV1.class, 110118);

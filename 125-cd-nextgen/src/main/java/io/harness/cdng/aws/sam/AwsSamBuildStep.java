@@ -26,15 +26,13 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Supplier;
-import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
-@Slf4j
-public class AwsSamDeployStep extends AbstractContainerStepV2 {
+public class AwsSamBuildStep extends AbstractContainerStepV2 {
   @Inject Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
 
   public static final StepType STEP_TYPE = StepType.newBuilder()
-                                               .setType(ExecutionNodeType.AWS_SAM_DEPLOY.getYamlType())
+                                               .setType(ExecutionNodeType.AWS_SAM_BUILD.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 

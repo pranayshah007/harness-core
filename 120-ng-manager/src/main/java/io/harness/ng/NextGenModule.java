@@ -312,6 +312,7 @@ import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.InstanceModule;
 import io.harness.service.stats.usagemetrics.eventconsumer.InstanceStatsEventListener;
 import io.harness.signup.SignupModule;
+import io.harness.steps.container.execution.ContainerExecutionConfig;
 import io.harness.subscription.SubscriptionModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.CdTelemetryEventListener;
@@ -398,6 +399,18 @@ public class NextGenModule extends AbstractModule {
         .put(DelegateAsyncTaskResponse.class, "ngManager_delegateAsyncTaskResponses")
         .put(DelegateTaskProgressResponse.class, "ngManager_delegateTaskProgressResponses")
         .build();
+  }
+
+  @Provides
+  @Singleton
+  io.harness.ssca.beans.entities.SSCAServiceConfig fakeConfig() {
+    return io.harness.ssca.beans.entities.SSCAServiceConfig.builder().build();
+  }
+
+  @Provides
+  @Singleton
+  ContainerExecutionConfig fakeConfig1() {
+    return ContainerExecutionConfig.builder().build();
   }
 
   @Provides

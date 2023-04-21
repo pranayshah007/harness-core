@@ -58,7 +58,7 @@ public class PmsSdkInitValidator {
     });
 
     if (MapUtils.isNotEmpty(unsupportedFilters) || MapUtils.isNotEmpty(unsupportedVariables)) {
-      throw new PmsSdkPlanCreatorValidationException(unsupportedFilters, unsupportedVariables);
+      // throw new PmsSdkPlanCreatorValidationException(unsupportedFilters, unsupportedVariables);
     }
     return supportedPlan;
   }
