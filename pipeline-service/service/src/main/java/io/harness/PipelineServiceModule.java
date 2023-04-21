@@ -54,6 +54,7 @@ import io.harness.logstreaming.LogStreamingModule;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.logstreaming.LogStreamingServiceRestClient;
 import io.harness.logstreaming.NGLogStreamingClientFactory;
+import io.harness.manage.ManagedExecutorService;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
@@ -740,11 +741,12 @@ public class PipelineServiceModule extends AbstractModule {
   @Singleton
   @Named("PipelineAsyncValidationExecutorService")
   public Executor pipelineAsyncValidationExecutorService() {
-    return ThreadPool.create(configuration.getPipelineAsyncValidationPoolConfig().getCorePoolSize(),
-        configuration.getPipelineAsyncValidationPoolConfig().getMaxPoolSize(),
-        configuration.getPipelineAsyncValidationPoolConfig().getIdleTime(),
-        configuration.getPipelineAsyncValidationPoolConfig().getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("PipelineAsyncValidationExecutorService-%d").build());
+    return new ManagedExecutorService(
+        ThreadPool.create(configuration.getPipelineAsyncValidationPoolConfig().getCorePoolSize(),
+            configuration.getPipelineAsyncValidationPoolConfig().getMaxPoolSize(),
+            configuration.getPipelineAsyncValidationPoolConfig().getIdleTime(),
+            configuration.getPipelineAsyncValidationPoolConfig().getTimeUnit(),
+            new ThreadFactoryBuilder().setNameFormat("PipelineAsyncValidationExecutorService-%d").build()));
   }
 
   @Provides
