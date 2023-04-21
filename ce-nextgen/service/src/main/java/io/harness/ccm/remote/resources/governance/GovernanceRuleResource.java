@@ -15,7 +15,6 @@ import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
 import static io.harness.ccm.remote.resources.TelemetryConstants.RULE_NAME;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
@@ -29,7 +28,6 @@ import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.audittrails.events.RuleCreateEvent;
 import io.harness.ccm.audittrails.events.RuleDeleteEvent;
 import io.harness.ccm.audittrails.events.RuleUpdateEvent;
-import io.harness.ccm.governance.faktory.FaktoryProducer;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dao.RuleEnforcementDAO;
@@ -63,6 +61,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
+import io.harness.faktory.FaktoryProducer;
 import io.harness.filter.FilterType;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -370,6 +369,7 @@ public class GovernanceRuleResource {
     rule.setStoreType(RuleStoreType.INLINE);
     rule.setVersionLabel("0.0.1");
     rule.setDeleted(false);
+    rule.setForRecommendation(false);
     governanceRuleService.validateAWSSchema(rule);
     governanceRuleService.custodianValidate(rule);
     governanceRuleService.save(rule);
@@ -681,69 +681,9 @@ public class GovernanceRuleResource {
                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Valid String accountId,
       @RequestBody(required = true, description = "Request body for queuing the governance job")
       @Valid GovernanceJobEnqueueDTO governanceJobEnqueueDTO) throws IOException {
-    // TO DO: Refactor and make this method smaller
-    // Step-1 Fetch from mongo
     rbacHelper.checkRuleExecutePermission(accountId, null, null, governanceJobEnqueueDTO.getRuleId());
     rbacHelper.checkAccountExecutePermission(accountId, null, null, governanceJobEnqueueDTO.getIdentifier());
-    String ruleEnforcementUuid = governanceJobEnqueueDTO.getRuleEnforcementId();
-    List<String> enqueuedRuleExecutionIds = new ArrayList<>();
-    // Call is from UI for adhoc evaluation. Directly enqueue in this case
-    // TO DO: See if UI adhoc requests can be sent to higher priority queue. This should also change in worker.
-    log.info("enqueuing for ad-hoc request");
-    if (isEmpty(accountId)) {
-      throw new InvalidRequestException("Missing accountId");
-    }
-    List<Rule> rulesList = governanceRuleService.list(accountId, Arrays.asList(governanceJobEnqueueDTO.getRuleId()));
-    if (rulesList == null) {
-      log.error("For rule id {}: no rules exists in mongo. Nothing to enqueue", governanceJobEnqueueDTO.getRuleId());
-      return ResponseDTO.newResponse(GovernanceEnqueueResponseDTO.builder().ruleExecutionId(null).build());
-    }
-    try {
-      GovernanceJobDetailsAWS governanceJobDetailsAWS = GovernanceJobDetailsAWS.builder()
-                                                            .accountId(accountId)
-                                                            .awsAccountId(governanceJobEnqueueDTO.getTargetAccountId())
-                                                            .externalId(governanceJobEnqueueDTO.getExternalId())
-                                                            .roleArn(governanceJobEnqueueDTO.getRoleArn())
-                                                            .isDryRun(governanceJobEnqueueDTO.getIsDryRun())
-                                                            .ruleId(governanceJobEnqueueDTO.getRuleId())
-                                                            .region(governanceJobEnqueueDTO.getTargetRegion())
-                                                            .ruleEnforcementId("") // This is adhoc run
-                                                            .policy(governanceJobEnqueueDTO.getPolicy())
-                                                            .isOOTB(governanceJobEnqueueDTO.getIsOOTB())
-                                                            .build();
-      Gson gson = new GsonBuilder().create();
-      String json = gson.toJson(governanceJobDetailsAWS);
-      log.info("Enqueuing job in Faktory {}", json);
-      // jobType, jobQueue, json
-      String jid = FaktoryProducer.push(configuration.getGovernanceConfig().getAwsFaktoryJobType(),
-          configuration.getGovernanceConfig().getAwsFaktoryQueueName(), json);
-      log.info("Pushed job in Faktory: {}", jid);
-      // Make a record in Mongo
-      RuleExecution ruleExecution = RuleExecution.builder()
-                                        .accountId(accountId)
-                                        .jobId(jid)
-                                        .cloudProvider(governanceJobEnqueueDTO.getRuleCloudProviderType())
-                                        .executionLogPath("") // Updated by worker when execution finishes
-                                        .isDryRun(governanceJobEnqueueDTO.getIsDryRun())
-                                        .ruleEnforcementIdentifier(ruleEnforcementUuid)
-                                        .executionCompletedAt(null) // Updated by worker when execution finishes
-                                        .ruleIdentifier(governanceJobEnqueueDTO.getRuleId())
-                                        .targetAccount(governanceJobEnqueueDTO.getTargetAccountId())
-                                        .targetRegions(Arrays.asList(governanceJobEnqueueDTO.getTargetRegion()))
-                                        .executionLogBucketType("")
-                                        .resourceCount(0)
-                                        .ruleName(rulesList.get(0).getName())
-                                        .OOTB(rulesList.get(0).getIsOOTB())
-                                        .executionStatus(RuleExecutionStatusType.ENQUEUED)
-                                        .build();
-      enqueuedRuleExecutionIds.add(ruleExecutionService.save(ruleExecution));
-    } catch (Exception e) {
-      log.warn("Exception enqueueing job for ruleEnforcementUuid: {} for targetAccount: {} for targetRegions: {}, {}",
-          ruleEnforcementUuid, governanceJobEnqueueDTO.getTargetAccountId(), governanceJobEnqueueDTO.getTargetRegion(),
-          e);
-    }
-    return ResponseDTO.newResponse(
-        GovernanceEnqueueResponseDTO.builder().ruleExecutionId(enqueuedRuleExecutionIds).build());
+    return governanceRuleService.enqueueAdhoc(accountId, governanceJobEnqueueDTO);
   }
 
   @NextGenManagerAuth

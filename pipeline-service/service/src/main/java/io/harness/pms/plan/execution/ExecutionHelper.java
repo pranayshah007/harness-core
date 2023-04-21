@@ -34,6 +34,7 @@ import io.harness.exception.InvalidYamlException;
 import io.harness.exception.WingsException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.PlanExecutionMetadata.Builder;
 import io.harness.gitsync.beans.StoreType;
@@ -78,6 +79,7 @@ import io.harness.pms.plan.creation.PlanCreatorMergeService;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.beans.ProcessStageExecutionInfoResult;
 import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
 import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
@@ -104,9 +106,11 @@ import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -234,25 +238,10 @@ public class ExecutionHelper {
           throw new InvalidRequestException("version not supported");
       }
 
-      StagesExecutionInfo stagesExecutionInfo;
-      if (isNotEmpty(stagesToRun)) {
-        if (!allowedStageExecution) {
-          throw new InvalidRequestException(
-              String.format("Stage executions are not allowed for pipeline [%s]", pipelineEntity.getIdentifier()));
-        }
-
-        StagesExecutionHelper.throwErrorIfAllStagesAreDeleted(pipelineYaml, stagesToRun);
-        pipelineYaml = StagesExpressionExtractor.replaceExpressions(pipelineYaml, expressionValues);
-        stagesExecutionInfo = StagesExecutionHelper.getStagesExecutionInfo(pipelineYaml, stagesToRun, expressionValues);
-        pipelineYamlWithTemplateRef =
-            InputSetMergeHelper.removeNonRequiredStages(pipelineYamlWithTemplateRef, stagesToRun);
-      } else {
-        stagesExecutionInfo = StagesExecutionInfo.builder()
-                                  .isStagesExecution(false)
-                                  .pipelineYamlToRun(pipelineYaml)
-                                  .allowStagesExecution(allowedStageExecution)
-                                  .build();
-      }
+      ProcessStageExecutionInfoResult processStageExecutionInfoResult = processStageExecutionInfo(stagesToRun,
+          allowedStageExecution, pipelineEntity, pipelineYaml, pipelineYamlWithTemplateRef, expressionValues);
+      StagesExecutionInfo stagesExecutionInfo = processStageExecutionInfoResult.getStagesExecutionInfo();
+      pipelineYamlWithTemplateRef = processStageExecutionInfoResult.getFilteredPipelineYamlWithTemplateRef();
 
       /*
     For schema validations, we don't want input set validators to be appended. For example, if some timeout field in
@@ -491,15 +480,23 @@ public class ExecutionHelper {
     try (AutoLogContext ignore =
              PlanCreatorUtils.autoLogContext(executionMetadata, accountId, orgIdentifier, projectIdentifier)) {
       PlanCreationBlobResponse resp;
+      Plan plan;
       try {
-        String version = executionMetadata.getHarnessVersion();
-        resp = planCreatorMergeService.createPlanVersioned(
-            accountId, orgIdentifier, projectIdentifier, version, executionMetadata, planExecutionMetadata);
+        if (executionMetadata.getExecutionMode() == ExecutionMode.POST_EXECUTION_ROLLBACK) {
+          String originalPlanId =
+              planExecutionService.getWithFieldsIncluded(previousExecutionId, Set.of(PlanExecutionKeys.planId))
+                  .getPlanId();
+          plan = planService.fetchPlan(originalPlanId).withPlanNodes(planService.fetchNodes(originalPlanId));
+        } else {
+          String version = executionMetadata.getHarnessVersion();
+          resp = planCreatorMergeService.createPlanVersioned(
+              accountId, orgIdentifier, projectIdentifier, version, executionMetadata, planExecutionMetadata);
+          plan = PlanExecutionUtils.extractPlan(resp);
+        }
       } catch (IOException e) {
         log.error(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(e)), e);
         throw new InvalidYamlException(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(e)), e);
       }
-      Plan plan = PlanExecutionUtils.extractPlan(resp);
       ImmutableMap<String, String> abstractions = ImmutableMap.<String, String>builder()
                                                       .put(SetupAbstractionKeys.accountId, accountId)
                                                       .put(SetupAbstractionKeys.orgIdentifier, orgIdentifier)
@@ -508,21 +505,25 @@ public class ExecutionHelper {
       long endTs = System.currentTimeMillis();
       log.info("[PMS_PLAN] Time taken to complete plan: {}ms ", endTs - startTs);
       ExecutionMode executionMode = executionMetadata.getExecutionMode();
-      plan = transformPlan(
-          resp, plan, isRetry, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier, executionMode);
+      List<String> rollbackStageIds = Collections.emptyList();
+      if (planExecutionMetadata.getStagesExecutionMetadata() != null) {
+        rollbackStageIds = planExecutionMetadata.getStagesExecutionMetadata().getStageIdentifiers();
+      }
+      plan = transformPlan(plan, isRetry, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier,
+          executionMode, rollbackStageIds);
       return orchestrationService.startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
     }
   }
 
-  Plan transformPlan(PlanCreationBlobResponse resp, Plan plan, boolean isRetry, List<String> identifierOfSkipStages,
-      String previousExecutionId, List<String> retryStagesIdentifier, ExecutionMode executionMode) {
+  Plan transformPlan(Plan plan, boolean isRetry, List<String> identifierOfSkipStages, String previousExecutionId,
+      List<String> retryStagesIdentifier, ExecutionMode executionMode, List<String> rollbackStageIds) {
     if (isRetry) {
       return retryExecutionHelper.transformPlan(
           plan, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier);
     }
     if (isRollbackMode(executionMode)) {
       return rollbackModeExecutionHelper.transformPlanForRollbackMode(
-          plan, previousExecutionId, resp.getPreservedNodesInRollbackModeList(), executionMode);
+          plan, previousExecutionId, plan.getPreservedNodesInRollbackMode(), executionMode, rollbackStageIds);
     }
     return plan;
   }
@@ -635,5 +636,33 @@ public class ExecutionHelper {
       log.info("NodeExecution is null for plan node: {} ", stageNodeId);
     }
     return null;
+  }
+
+  public ProcessStageExecutionInfoResult processStageExecutionInfo(List<String> stagesToRun,
+      boolean allowedStageExecution, PipelineEntity pipelineEntity, String pipelineYaml,
+      String pipelineYamlWithTemplateRef, Map<String, String> expressionValues) {
+    StagesExecutionInfo stagesExecutionInfo;
+    if (isNotEmpty(stagesToRun)) {
+      if (!allowedStageExecution) {
+        throw new InvalidRequestException(
+            String.format("Stage executions are not allowed for pipeline [%s]", pipelineEntity.getIdentifier()));
+      }
+
+      StagesExecutionHelper.throwErrorIfAllStagesAreDeleted(pipelineYaml, stagesToRun);
+      pipelineYaml = StagesExpressionExtractor.replaceExpressions(pipelineYaml, expressionValues);
+      stagesExecutionInfo = StagesExecutionHelper.getStagesExecutionInfo(pipelineYaml, stagesToRun, expressionValues);
+      pipelineYamlWithTemplateRef =
+          InputSetMergeHelper.removeNonRequiredStages(pipelineYamlWithTemplateRef, stagesToRun);
+    } else {
+      stagesExecutionInfo = StagesExecutionInfo.builder()
+                                .isStagesExecution(false)
+                                .pipelineYamlToRun(pipelineYaml)
+                                .allowStagesExecution(allowedStageExecution)
+                                .build();
+    }
+    return ProcessStageExecutionInfoResult.builder()
+        .stagesExecutionInfo(stagesExecutionInfo)
+        .filteredPipelineYamlWithTemplateRef(pipelineYamlWithTemplateRef)
+        .build();
   }
 }

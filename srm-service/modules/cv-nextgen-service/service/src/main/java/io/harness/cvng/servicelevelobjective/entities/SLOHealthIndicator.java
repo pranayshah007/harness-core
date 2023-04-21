@@ -79,6 +79,8 @@ public class SLOHealthIndicator
   Instant lastComputedAt;
   @FdIndex private long timescaleIteration;
 
+  Boolean failedState;
+
   @Override
   public Long obtainNextIteration(String fieldName) {
     if (SLOHealthIndicatorKeys.timescaleIteration.equals(fieldName)) {

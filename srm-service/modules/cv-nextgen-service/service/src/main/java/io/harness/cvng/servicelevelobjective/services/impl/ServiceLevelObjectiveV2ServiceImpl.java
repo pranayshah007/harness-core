@@ -340,6 +340,16 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   }
 
   @Override
+  public AbstractServiceLevelObjective getEntity(ServiceLevelObjectivesDetail serviceLevelObjectivesDetail) {
+    return hPersistence.createQuery(AbstractServiceLevelObjective.class)
+        .filter(ServiceLevelObjectiveV2Keys.accountId, serviceLevelObjectivesDetail.getAccountId())
+        .filter(ServiceLevelObjectiveV2Keys.orgIdentifier, serviceLevelObjectivesDetail.getOrgIdentifier())
+        .filter(ServiceLevelObjectiveV2Keys.projectIdentifier, serviceLevelObjectivesDetail.getProjectIdentifier())
+        .filter(ServiceLevelObjectiveV2Keys.identifier, serviceLevelObjectivesDetail.getServiceLevelObjectiveRef())
+        .get();
+  }
+
+  @Override
   public void deleteByProjectIdentifier(
       Class<AbstractServiceLevelObjective> clazz, String accountId, String orgIdentifier, String projectIdentifier) {
     List<AbstractServiceLevelObjective> serviceLevelObjectives =
@@ -995,9 +1005,16 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       SLOErrorBudgetBurnRateCondition conditionSpec = (SLOErrorBudgetBurnRateCondition) condition;
       LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
       int totalErrorBudgetMinutes = serviceLevelObjective.getTotalErrorBudgetMinutes(currentLocalDate);
-      double errorBudgetBurnRate = sliRecordService.getErrorBudgetBurnRate(
-          ((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators().get(0),
-          conditionSpec.getLookBackDuration(), totalErrorBudgetMinutes);
+      String sliId = serviceLevelIndicatorService
+                         .getServiceLevelIndicator(ProjectParams.builder()
+                                                       .accountIdentifier(serviceLevelObjective.getAccountId())
+                                                       .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                                                       .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                                                       .build(),
+                             ((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators().get(0))
+                         .getUuid();
+      double errorBudgetBurnRate =
+          sliRecordService.getErrorBudgetBurnRate(sliId, conditionSpec.getLookBackDuration(), totalErrorBudgetMinutes);
       sloHealthIndicator.setErrorBudgetBurnRate(errorBudgetBurnRate);
     }
 
@@ -1377,7 +1394,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     double runningBadCount = 0;
     return compositeSLORecordService.getCompositeSLORecordsFromSLIsDetails(
         serviceLevelObjectivesDetailCompositeSLORecordMap, objectivesDetailSLIMissingDataTypeMap, 0, runningGoodCount,
-        runningBadCount, null);
+        runningBadCount, null, SLIEvaluationType.WINDOW);
   }
 
   @Value

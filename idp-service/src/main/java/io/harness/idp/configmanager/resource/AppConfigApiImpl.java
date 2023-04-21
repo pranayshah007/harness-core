@@ -39,8 +39,10 @@ public class AppConfigApiImpl implements AppConfigApi {
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
   public Response saveOrUpdatePluginAppConfig(@Valid AppConfigRequest body, @AccountIdentifier String harnessAccount) {
     try {
+      AppConfig appConfig = body.getAppConfig();
+      configManagerService.validateSchemaForPlugin(appConfig.getConfigs(), appConfig.getConfigId());
       AppConfig updatedAppConfig =
-          configManagerService.saveOrUpdateConfigForAccount(body.getAppConfig(), harnessAccount, ConfigType.PLUGIN);
+          configManagerService.saveOrUpdateConfigForAccount(appConfig, harnessAccount, ConfigType.PLUGIN);
       configManagerService.mergeAndSaveAppConfig(harnessAccount);
       AppConfigResponse appConfigResponse = new AppConfigResponse();
       appConfigResponse.appConfig(updatedAppConfig);

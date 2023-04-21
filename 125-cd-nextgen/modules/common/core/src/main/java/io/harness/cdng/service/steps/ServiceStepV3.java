@@ -23,6 +23,7 @@ import static java.lang.String.format;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.ConfigFilesOutcome;
@@ -665,7 +666,12 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
                            .build());
     }
     // Todo: Add azure outcomes here
-    return stepResponse.withStepOutcomes(stepOutcomes);
+    stepResponse = stepResponse.withStepOutcomes(stepOutcomes);
+    if (ngFeatureFlagHelperService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
+      serviceStepsHelper.saveServiceExecutionDataToStageInfo(ambiance, stepResponse);
+    }
+    return stepResponse;
   }
 
   private ServicePartResponse executeServicePart(

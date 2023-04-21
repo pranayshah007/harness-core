@@ -11,7 +11,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.logging.AutoLogContext;
 import io.harness.plancreator.steps.internal.PmsStepPlanCreatorUtils;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
@@ -61,8 +63,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
+@Slf4j
 public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStageNode> {
   @Inject private PipelineStageHelper pipelineStageHelper;
   @Inject private PMSPipelineService pmsPipelineService;
@@ -117,71 +121,74 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
     setSourcePrincipal(ctx.getMetadata());
     setGitContextForChildPipeline(ctx);
 
-    Optional<PipelineEntity> childPipelineEntity = pmsPipelineService.getPipeline(
-        ctx.getAccountIdentifier(), config.getOrg(), config.getProject(), config.getPipeline(), false, false);
+    try (AutoLogContext ignore = GitAwareContextHelper.autoLogContext()) {
+      log.info("Retrieving nested pipeline for pipeline stage");
+      Optional<PipelineEntity> childPipelineEntity = pmsPipelineService.getPipeline(
+          ctx.getAccountIdentifier(), config.getOrg(), config.getProject(), config.getPipeline(), false, false);
 
-    if (!childPipelineEntity.isPresent()) {
-      throw new InvalidRequestException(String.format("Child pipeline does not exists %s ", config.getPipeline()));
+      if (!childPipelineEntity.isPresent()) {
+        throw new InvalidRequestException(String.format("Child pipeline does not exists %s ", config.getPipeline()));
+      }
+
+      pipelineStageHelper.validateNestedChainedPipeline(childPipelineEntity.get(), stageNode.getName());
+      pipelineStageHelper.validateFailureStrategy(stageNode.getFailureStrategies());
+
+      // TODO: remove this to enable Strategy support for Pipeline Stage
+      if (ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY) != null) {
+        throw new InvalidRequestException(
+            String.format("Strategy is not supported for Pipeline stage %s", stageNode.getIdentifier()));
+      }
+
+      Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
+      Map<String, ByteString> metadataMap = new HashMap<>();
+
+      // This will be empty till we enable strategy support for Pipeline Stage
+      addDependencyForStrategy(ctx, stageNode, dependenciesNodeMap, metadataMap);
+
+      // Here planNodeId is used to support strategy. Same node id will be passed to child execution for navigation to
+      // parent execution
+      String planNodeId = StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid());
+
+      PlanNodeBuilder builder =
+          PlanNode.builder()
+              .uuid(planNodeId)
+              .name(stageNode.getName())
+              .identifier(stageNode.getIdentifier())
+              .group(StepCategory.STAGE.name())
+              .stepType(PipelineStageStep.STEP_TYPE)
+              .expressionMode(
+                  ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED) // Do not want null if expression is
+              // unresolved. Used in envV2 implementation
+              .stepParameters(getStepParameter(config,
+                  ctx.getCurrentField()
+                      .getNode()
+                      .getField(YAMLFieldNameConstants.SPEC)
+                      .getNode()
+                      .getField(YAMLFieldNameConstants.INPUTS),
+                  planNodeId, childPipelineEntity.get().getHarnessVersion()))
+              .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
+              .whenCondition(RunInfoUtils.getRunConditionForStage(stageNode.getWhen()))
+              .facilitatorObtainment(
+                  FacilitatorObtainment.newBuilder()
+                      .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
+                      .build())
+              .adviserObtainments(PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(
+                  kryoSerializer, ctx.getCurrentField(), true));
+      if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
+        builder.executionInputTemplate(ctx.getExecutionInputTemplate());
+      }
+
+      // Dependencies is added for strategy node
+      return PlanCreationResponse.builder()
+          .graphLayoutResponse(getLayoutNodeInfo(ctx, stageNode))
+          .planNode(builder.build())
+          .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
+                            .toBuilder()
+                            .putDependencyMetadata(
+                                stageNode.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                            .build())
+          .build();
     }
-
-    pipelineStageHelper.validateNestedChainedPipeline(childPipelineEntity.get(), stageNode.getName());
-    pipelineStageHelper.validateFailureStrategy(stageNode.getFailureStrategies());
-
-    // TODO: remove this to enable Strategy support for Pipeline Stage
-    if (ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY) != null) {
-      throw new InvalidRequestException(
-          String.format("Strategy is not supported for Pipeline stage %s", stageNode.getIdentifier()));
-    }
-
-    Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
-    Map<String, ByteString> metadataMap = new HashMap<>();
-
-    // This will be empty till we enable strategy support for Pipeline Stage
-    addDependencyForStrategy(ctx, stageNode, dependenciesNodeMap, metadataMap);
-
-    // Here planNodeId is used to support strategy. Same node id will be passed to child execution for navigation to
-    // parent execution
-    String planNodeId = StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid());
-
-    PlanNodeBuilder builder =
-        PlanNode.builder()
-            .uuid(planNodeId)
-            .name(stageNode.getName())
-            .identifier(stageNode.getIdentifier())
-            .group(StepCategory.STAGE.name())
-            .stepType(PipelineStageStep.STEP_TYPE)
-            .expressionMode(
-                ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED) // Do not want null if expression is
-                                                                         // unresolved. Used in envV2 implementation
-            .stepParameters(getStepParameter(config,
-                ctx.getCurrentField()
-                    .getNode()
-                    .getField(YAMLFieldNameConstants.SPEC)
-                    .getNode()
-                    .getField(YAMLFieldNameConstants.INPUTS),
-                planNodeId, childPipelineEntity.get().getHarnessVersion()))
-            .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
-            .whenCondition(RunInfoUtils.getRunConditionForStage(stageNode.getWhen()))
-            .facilitatorObtainment(
-                FacilitatorObtainment.newBuilder()
-                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
-                    .build())
-            .adviserObtainments(
-                PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), true));
-    if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
-      builder.executionInputTemplate(ctx.getExecutionInputTemplate());
-    }
-
-    // Dependencies is added for strategy node
-    return PlanCreationResponse.builder()
-        .graphLayoutResponse(getLayoutNodeInfo(ctx, stageNode))
-        .planNode(builder.build())
-        .dependencies(
-            DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
-                .toBuilder()
-                .putDependencyMetadata(stageNode.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
-                .build())
-        .build();
   }
 
   private void setGitContextForChildPipeline(PlanCreationContext ctx) {

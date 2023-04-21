@@ -407,24 +407,20 @@ func TestComputeSelected(t *testing.T) {
 	tests := []struct {
 		name string
 		// Input
-		runOnlySelectedTestsBool      bool
-		parallelizeTestsBool          bool
-		isParallelismEnabledBool      bool
-		isStepParallelismEnabled      bool
-		isStageParallelismEnabled     bool
-		getStepStrategyIterationInt   int
-		getStepStrategyIterationErr   error
-		getStepStrategyIterationsInt  int
-		getStepStrategyIterationsErr  error
-		getStageStrategyIterationInt  int
-		getStageStrategyIterationErr  error
-		getStageStrategyIterationsInt int
-		getStageStrategyIterationsErr error
-		runnableTests                 []types.RunnableTest
-		runnerAutodetectExpect        bool
-		runnerAutodetectTestsVal      []types.RunnableTest
-		runnerAutodetectTestsErr      error
-		testGlobsString               string
+		runOnlySelectedTestsBool  bool
+		parallelizeTestsBool      bool
+		isParallelismEnabledBool  bool
+		isStepParallelismEnabled  bool
+		isStageParallelismEnabled bool
+		stepStrategyIteration     string
+		stepStrategyIterations    string
+		stageStrategyIteration    string
+		stageStrategyIterations   string
+		runnableTests             []types.RunnableTest
+		runnerAutodetectExpect    bool
+		runnerAutodetectTestsVal  []types.RunnableTest
+		runnerAutodetectTestsErr  error
+		testGlobsString           string
 		// Verify
 		runOnlySelectedTests     bool
 		selectTestsResponseTests []types.RunnableTest
@@ -461,24 +457,20 @@ func TestComputeSelected(t *testing.T) {
 		{
 			name: "ManualAutodetectPass",
 			// Input
-			runOnlySelectedTestsBool:      false,
-			parallelizeTestsBool:          true,
-			isParallelismEnabledBool:      true,
-			isStepParallelismEnabled:      true,
-			isStageParallelismEnabled:     false,
-			getStepStrategyIterationInt:   0,
-			getStepStrategyIterationErr:   nil,
-			getStepStrategyIterationsInt:  2,
-			getStepStrategyIterationsErr:  nil,
-			getStageStrategyIterationInt:  -1,
-			getStageStrategyIterationErr:  fmt.Errorf("no stage parallelism"),
-			getStageStrategyIterationsInt: -1,
-			getStageStrategyIterationsErr: fmt.Errorf("no stage parallelism"),
-			runnableTests:                 []types.RunnableTest{}, // Manual run - No TI test selection
-			runnerAutodetectExpect:        true,
-			runnerAutodetectTestsVal:      []types.RunnableTest{rts[0], rts[1]},
-			runnerAutodetectTestsErr:      nil,
-			testGlobsString:               emptyTestGlobsString,
+			runOnlySelectedTestsBool:  false,
+			parallelizeTestsBool:      true,
+			isParallelismEnabledBool:  true,
+			isStepParallelismEnabled:  true,
+			isStageParallelismEnabled: false,
+			stepStrategyIteration:     "0",
+			stepStrategyIterations:    "2",
+			stageStrategyIteration:    "",
+			stageStrategyIterations:   "",
+			runnableTests:             []types.RunnableTest{}, // Manual run - No TI test selection
+			runnerAutodetectExpect:    true,
+			runnerAutodetectTestsVal:  []types.RunnableTest{rts[0], rts[1]},
+			runnerAutodetectTestsErr:  nil,
+			testGlobsString:           emptyTestGlobsString,
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[0]},
@@ -487,24 +479,20 @@ func TestComputeSelected(t *testing.T) {
 		{
 			name: "ManualAutodetectPass_TestGlobsProvided",
 			// Input
-			runOnlySelectedTestsBool:      false,
-			parallelizeTestsBool:          true,
-			isParallelismEnabledBool:      true,
-			isStepParallelismEnabled:      true,
-			isStageParallelismEnabled:     false,
-			getStepStrategyIterationInt:   0,
-			getStepStrategyIterationErr:   nil,
-			getStepStrategyIterationsInt:  2,
-			getStepStrategyIterationsErr:  nil,
-			getStageStrategyIterationInt:  -1,
-			getStageStrategyIterationErr:  fmt.Errorf("no stage parallelism"),
-			getStageStrategyIterationsInt: -1,
-			getStageStrategyIterationsErr: fmt.Errorf("no stage parallelism"),
-			runnableTests:                 []types.RunnableTest{}, // Manual run - No TI test selection
-			runnerAutodetectExpect:        true,
-			runnerAutodetectTestsVal:      []types.RunnableTest{rts[0], rts[1]},
-			runnerAutodetectTestsErr:      nil,
-			testGlobsString:               testGlobsString,
+			runOnlySelectedTestsBool:  false,
+			parallelizeTestsBool:      true,
+			isParallelismEnabledBool:  true,
+			isStepParallelismEnabled:  true,
+			isStageParallelismEnabled: false,
+			stepStrategyIteration:     "0",
+			stepStrategyIterations:    "2",
+			stageStrategyIteration:    "",
+			stageStrategyIterations:   "",
+			runnableTests:             []types.RunnableTest{}, // Manual run - No TI test selection
+			runnerAutodetectExpect:    true,
+			runnerAutodetectTestsVal:  []types.RunnableTest{rts[0], rts[1]},
+			runnerAutodetectTestsErr:  nil,
+			testGlobsString:           testGlobsString,
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[0]},
@@ -513,24 +501,20 @@ func TestComputeSelected(t *testing.T) {
 		{
 			name: "ManualAutodetectFailStepZero",
 			// Input
-			runOnlySelectedTestsBool:      false,
-			parallelizeTestsBool:          true,
-			isParallelismEnabledBool:      true,
-			isStepParallelismEnabled:      true,
-			isStageParallelismEnabled:     false,
-			getStepStrategyIterationInt:   0,
-			getStepStrategyIterationErr:   nil,
-			getStepStrategyIterationsInt:  2,
-			getStepStrategyIterationsErr:  nil,
-			getStageStrategyIterationInt:  -1,
-			getStageStrategyIterationErr:  fmt.Errorf("no stage parallelism"),
-			getStageStrategyIterationsInt: -1,
-			getStageStrategyIterationsErr: fmt.Errorf("no stage parallelism"),
-			runnableTests:                 []types.RunnableTest{}, // Manual run - No TI test selection
-			runnerAutodetectExpect:        true,
-			runnerAutodetectTestsVal:      []types.RunnableTest{},
-			runnerAutodetectTestsErr:      fmt.Errorf("error in autodetection"),
-			testGlobsString:               emptyTestGlobsString,
+			runOnlySelectedTestsBool:  false,
+			parallelizeTestsBool:      true,
+			isParallelismEnabledBool:  true,
+			isStepParallelismEnabled:  true,
+			isStageParallelismEnabled: false,
+			stepStrategyIteration:     "0",
+			stepStrategyIterations:    "2",
+			stageStrategyIteration:    "",
+			stageStrategyIterations:   "",
+			runnableTests:             []types.RunnableTest{}, // Manual run - No TI test selection
+			runnerAutodetectExpect:    true,
+			runnerAutodetectTestsVal:  []types.RunnableTest{},
+			runnerAutodetectTestsErr:  fmt.Errorf("error in autodetection"),
+			testGlobsString:           emptyTestGlobsString,
 			// Expect
 			runOnlySelectedTests:     false,
 			selectTestsResponseTests: []types.RunnableTest{},
@@ -539,24 +523,20 @@ func TestComputeSelected(t *testing.T) {
 		{
 			name: "ManualAutodetectFailStepNonZero",
 			// Input
-			runOnlySelectedTestsBool:      false,
-			parallelizeTestsBool:          true,
-			isParallelismEnabledBool:      true,
-			isStepParallelismEnabled:      true,
-			isStageParallelismEnabled:     false,
-			getStepStrategyIterationInt:   1,
-			getStepStrategyIterationErr:   nil,
-			getStepStrategyIterationsInt:  2,
-			getStepStrategyIterationsErr:  nil,
-			getStageStrategyIterationInt:  -1,
-			getStageStrategyIterationErr:  fmt.Errorf("no stage parallelism"),
-			getStageStrategyIterationsInt: -1,
-			getStageStrategyIterationsErr: fmt.Errorf("no stage parallelism"),
-			runnableTests:                 []types.RunnableTest{}, // Manual run - No TI test selection
-			runnerAutodetectExpect:        true,
-			runnerAutodetectTestsVal:      []types.RunnableTest{},
-			runnerAutodetectTestsErr:      fmt.Errorf("error in autodetection"),
-			testGlobsString:               emptyTestGlobsString,
+			runOnlySelectedTestsBool:  false,
+			parallelizeTestsBool:      true,
+			isParallelismEnabledBool:  true,
+			isStepParallelismEnabled:  true,
+			isStageParallelismEnabled: false,
+			stepStrategyIteration:     "1",
+			stepStrategyIterations:    "2",
+			stageStrategyIteration:    "",
+			stageStrategyIterations:   "",
+			runnableTests:             []types.RunnableTest{}, // Manual run - No TI test selection
+			runnerAutodetectExpect:    true,
+			runnerAutodetectTestsVal:  []types.RunnableTest{},
+			runnerAutodetectTestsErr:  fmt.Errorf("error in autodetection"),
+			testGlobsString:           emptyTestGlobsString,
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: make([]types.RunnableTest, 0),
@@ -565,20 +545,16 @@ func TestComputeSelected(t *testing.T) {
 		{
 			name: "TestParallelism_StageParallelismOnly",
 			// Input
-			runOnlySelectedTestsBool:      true,
-			parallelizeTestsBool:          true,
-			isParallelismEnabledBool:      true,
-			isStepParallelismEnabled:      true,
-			isStageParallelismEnabled:     false,
-			getStepStrategyIterationInt:   0,
-			getStepStrategyIterationErr:   nil,
-			getStepStrategyIterationsInt:  2,
-			getStepStrategyIterationsErr:  nil,
-			getStageStrategyIterationInt:  -1,
-			getStageStrategyIterationErr:  fmt.Errorf("no stage parallelism"),
-			getStageStrategyIterationsInt: -1,
-			getStageStrategyIterationsErr: fmt.Errorf("no stage parallelism"),
-			runnableTests:                 []types.RunnableTest{rts[0], rts[1]}, // t1, t2
+			runOnlySelectedTestsBool:  true,
+			parallelizeTestsBool:      true,
+			isParallelismEnabledBool:  true,
+			isStepParallelismEnabled:  true,
+			isStageParallelismEnabled: false,
+			stepStrategyIteration:     "0",
+			stepStrategyIterations:    "2",
+			stageStrategyIteration:    "",
+			stageStrategyIterations:   "",
+			runnableTests:             []types.RunnableTest{rts[0], rts[1]}, // t1, t2
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[0]}, // (Stage 0, Step) - t1
@@ -586,20 +562,16 @@ func TestComputeSelected(t *testing.T) {
 		{
 			name: "TestParallelism_StepParallelismOnly",
 			// Input
-			runOnlySelectedTestsBool:      true,
-			parallelizeTestsBool:          true,
-			isParallelismEnabledBool:      true,
-			isStepParallelismEnabled:      false,
-			isStageParallelismEnabled:     true,
-			getStepStrategyIterationInt:   -1,
-			getStepStrategyIterationErr:   fmt.Errorf("no step parallelism"),
-			getStepStrategyIterationsInt:  -1,
-			getStepStrategyIterationsErr:  fmt.Errorf("no step parallelism"),
-			getStageStrategyIterationInt:  0,
-			getStageStrategyIterationErr:  nil,
-			getStageStrategyIterationsInt: 2,
-			getStageStrategyIterationsErr: nil,
-			runnableTests:                 []types.RunnableTest{rts[0], rts[1]}, // t1, t2
+			runOnlySelectedTestsBool:  true,
+			parallelizeTestsBool:      true,
+			isParallelismEnabledBool:  true,
+			isStepParallelismEnabled:  false,
+			isStageParallelismEnabled: true,
+			stepStrategyIteration:     "",
+			stepStrategyIterations:    "",
+			stageStrategyIteration:    "0",
+			stageStrategyIterations:   "2",
+			runnableTests:             []types.RunnableTest{rts[0], rts[1]}, // t1, t2
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[0]}, // (Stage, Step 1) - t2
@@ -607,20 +579,16 @@ func TestComputeSelected(t *testing.T) {
 		{
 			name: "TestParallelism_StageStepParallelism_v1",
 			// Input
-			runOnlySelectedTestsBool:      true,
-			parallelizeTestsBool:          true,
-			isParallelismEnabledBool:      true,
-			isStepParallelismEnabled:      true,
-			isStageParallelismEnabled:     true,
-			getStepStrategyIterationInt:   1,
-			getStepStrategyIterationErr:   nil,
-			getStepStrategyIterationsInt:  2,
-			getStepStrategyIterationsErr:  nil,
-			getStageStrategyIterationInt:  0,
-			getStageStrategyIterationErr:  nil,
-			getStageStrategyIterationsInt: 2,
-			getStageStrategyIterationsErr: nil,
-			runnableTests:                 []types.RunnableTest{rts[0], rts[1], rts[2], rts[3]}, // t1, t2, t3, t4
+			runOnlySelectedTestsBool:  true,
+			parallelizeTestsBool:      true,
+			isParallelismEnabledBool:  true,
+			isStepParallelismEnabled:  true,
+			isStageParallelismEnabled: true,
+			stepStrategyIteration:     "1",
+			stepStrategyIterations:    "2",
+			stageStrategyIteration:    "0",
+			stageStrategyIterations:   "2",
+			runnableTests:             []types.RunnableTest{rts[0], rts[1], rts[2], rts[3]}, // t1, t2, t3, t4
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[1]}, // (Stage 0, Step 1) - t2
@@ -628,20 +596,16 @@ func TestComputeSelected(t *testing.T) {
 		{
 			name: "TestParallelism_StageStepParallelism_v2",
 			// Input
-			runOnlySelectedTestsBool:      true,
-			parallelizeTestsBool:          true,
-			isParallelismEnabledBool:      true,
-			isStepParallelismEnabled:      true,
-			isStageParallelismEnabled:     true,
-			getStepStrategyIterationInt:   1,
-			getStepStrategyIterationErr:   nil,
-			getStepStrategyIterationsInt:  2,
-			getStepStrategyIterationsErr:  nil,
-			getStageStrategyIterationInt:  1,
-			getStageStrategyIterationErr:  nil,
-			getStageStrategyIterationsInt: 2,
-			getStageStrategyIterationsErr: nil,
-			runnableTests:                 []types.RunnableTest{rts[0], rts[1], rts[2], rts[3]}, // t1, t2, t3, t4
+			runOnlySelectedTestsBool:  true,
+			parallelizeTestsBool:      true,
+			isParallelismEnabledBool:  true,
+			isStepParallelismEnabled:  true,
+			isStageParallelismEnabled: true,
+			stepStrategyIteration:     "1",
+			stepStrategyIterations:    "2",
+			stageStrategyIteration:    "1",
+			stageStrategyIterations:   "2",
+			runnableTests:             []types.RunnableTest{rts[0], rts[1], rts[2], rts[3]}, // t1, t2, t3, t4
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[3]}, // (Stage 1, Step 1) - t4
@@ -649,20 +613,16 @@ func TestComputeSelected(t *testing.T) {
 		{
 			name: "TestParallelism_StageStepParallelism_v30",
 			// Input
-			runOnlySelectedTestsBool:      true,
-			parallelizeTestsBool:          true,
-			isParallelismEnabledBool:      true,
-			isStepParallelismEnabled:      true,
-			isStageParallelismEnabled:     true,
-			getStepStrategyIterationInt:   0,
-			getStepStrategyIterationErr:   nil,
-			getStepStrategyIterationsInt:  2,
-			getStepStrategyIterationsErr:  nil,
-			getStageStrategyIterationInt:  0,
-			getStageStrategyIterationErr:  nil,
-			getStageStrategyIterationsInt: 3,
-			getStageStrategyIterationsErr: nil,
-			runnableTests:                 rts[:6], // t1, t2, t3, t4, t5, t6
+			runOnlySelectedTestsBool:  true,
+			parallelizeTestsBool:      true,
+			isParallelismEnabledBool:  true,
+			isStepParallelismEnabled:  true,
+			isStageParallelismEnabled: true,
+			stepStrategyIteration:     "0",
+			stepStrategyIterations:    "2",
+			stageStrategyIteration:    "0",
+			stageStrategyIterations:   "3",
+			runnableTests:             rts[:6], // t1, t2, t3, t4, t5, t6
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[0]}, // (Stage 0, Step 0) - t1
@@ -670,20 +630,16 @@ func TestComputeSelected(t *testing.T) {
 		{
 			name: "TestParallelism_StageStepParallelism_v31",
 			// Input
-			runOnlySelectedTestsBool:      true,
-			parallelizeTestsBool:          true,
-			isParallelismEnabledBool:      true,
-			isStepParallelismEnabled:      true,
-			isStageParallelismEnabled:     true,
-			getStepStrategyIterationInt:   1,
-			getStepStrategyIterationErr:   nil,
-			getStepStrategyIterationsInt:  2,
-			getStepStrategyIterationsErr:  nil,
-			getStageStrategyIterationInt:  0,
-			getStageStrategyIterationErr:  nil,
-			getStageStrategyIterationsInt: 3,
-			getStageStrategyIterationsErr: nil,
-			runnableTests:                 rts[:6], // t1, t2, t3, t4, t5, t6
+			runOnlySelectedTestsBool:  true,
+			parallelizeTestsBool:      true,
+			isParallelismEnabledBool:  true,
+			isStepParallelismEnabled:  true,
+			isStageParallelismEnabled: true,
+			stepStrategyIteration:     "1",
+			stepStrategyIterations:    "2",
+			stageStrategyIteration:    "0",
+			stageStrategyIterations:   "3",
+			runnableTests:             rts[:6], // t1, t2, t3, t4, t5, t6
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[1]}, // (Stage 0, Step 1) - t2
@@ -691,20 +647,16 @@ func TestComputeSelected(t *testing.T) {
 		{
 			name: "TestParallelism_StageStepParallelism_v32",
 			// Input
-			runOnlySelectedTestsBool:      true,
-			parallelizeTestsBool:          true,
-			isParallelismEnabledBool:      true,
-			isStepParallelismEnabled:      true,
-			isStageParallelismEnabled:     true,
-			getStepStrategyIterationInt:   0,
-			getStepStrategyIterationErr:   nil,
-			getStepStrategyIterationsInt:  2,
-			getStepStrategyIterationsErr:  nil,
-			getStageStrategyIterationInt:  1,
-			getStageStrategyIterationErr:  nil,
-			getStageStrategyIterationsInt: 3,
-			getStageStrategyIterationsErr: nil,
-			runnableTests:                 rts[:6], // t1, t2, t3, t4, t5, t6
+			runOnlySelectedTestsBool:  true,
+			parallelizeTestsBool:      true,
+			isParallelismEnabledBool:  true,
+			isStepParallelismEnabled:  true,
+			isStageParallelismEnabled: true,
+			stepStrategyIteration:     "0",
+			stepStrategyIterations:    "2",
+			stageStrategyIteration:    "1",
+			stageStrategyIterations:   "3",
+			runnableTests:             rts[:6], // t1, t2, t3, t4, t5, t6
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[2]}, // (Stage 1, Step 0) - t3
@@ -712,20 +664,16 @@ func TestComputeSelected(t *testing.T) {
 		{
 			name: "TestParallelism_StageStepParallelism_v33",
 			// Input
-			runOnlySelectedTestsBool:      true,
-			parallelizeTestsBool:          true,
-			isParallelismEnabledBool:      true,
-			isStepParallelismEnabled:      true,
-			isStageParallelismEnabled:     true,
-			getStepStrategyIterationInt:   1,
-			getStepStrategyIterationErr:   nil,
-			getStepStrategyIterationsInt:  2,
-			getStepStrategyIterationsErr:  nil,
-			getStageStrategyIterationInt:  1,
-			getStageStrategyIterationErr:  nil,
-			getStageStrategyIterationsInt: 3,
-			getStageStrategyIterationsErr: nil,
-			runnableTests:                 rts[:6], // t1, t2, t3, t4, t5, t6
+			runOnlySelectedTestsBool:  true,
+			parallelizeTestsBool:      true,
+			isParallelismEnabledBool:  true,
+			isStepParallelismEnabled:  true,
+			isStageParallelismEnabled: true,
+			stepStrategyIteration:     "1",
+			stepStrategyIterations:    "2",
+			stageStrategyIteration:    "1",
+			stageStrategyIterations:   "3",
+			runnableTests:             rts[:6], // t1, t2, t3, t4, t5, t6
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[3]}, // (Stage 1, Step 1) - t4
@@ -733,20 +681,16 @@ func TestComputeSelected(t *testing.T) {
 		{
 			name: "TestParallelism_StageStepParallelism_v34",
 			// Input
-			runOnlySelectedTestsBool:      true,
-			parallelizeTestsBool:          true,
-			isParallelismEnabledBool:      true,
-			isStepParallelismEnabled:      true,
-			isStageParallelismEnabled:     true,
-			getStepStrategyIterationInt:   0,
-			getStepStrategyIterationErr:   nil,
-			getStepStrategyIterationsInt:  2,
-			getStepStrategyIterationsErr:  nil,
-			getStageStrategyIterationInt:  2,
-			getStageStrategyIterationErr:  nil,
-			getStageStrategyIterationsInt: 3,
-			getStageStrategyIterationsErr: nil,
-			runnableTests:                 rts[:6], // t1, t2, t3, t4, t5, t6
+			runOnlySelectedTestsBool:  true,
+			parallelizeTestsBool:      true,
+			isParallelismEnabledBool:  true,
+			isStepParallelismEnabled:  true,
+			isStageParallelismEnabled: true,
+			stepStrategyIteration:     "0",
+			stepStrategyIterations:    "2",
+			stageStrategyIteration:    "2",
+			stageStrategyIterations:   "3",
+			runnableTests:             rts[:6], // t1, t2, t3, t4, t5, t6
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[4]}, // (Stage 2, Step 0) - t5
@@ -754,20 +698,16 @@ func TestComputeSelected(t *testing.T) {
 		{
 			name: "TestParallelism_StageStepParallelism_v35",
 			// Input
-			runOnlySelectedTestsBool:      true,
-			parallelizeTestsBool:          true,
-			isParallelismEnabledBool:      true,
-			isStepParallelismEnabled:      true,
-			isStageParallelismEnabled:     true,
-			getStepStrategyIterationInt:   1,
-			getStepStrategyIterationErr:   nil,
-			getStepStrategyIterationsInt:  2,
-			getStepStrategyIterationsErr:  nil,
-			getStageStrategyIterationInt:  2,
-			getStageStrategyIterationErr:  nil,
-			getStageStrategyIterationsInt: 3,
-			getStageStrategyIterationsErr: nil,
-			runnableTests:                 rts[:6], // t1, t2, t3, t4, t5, t6
+			runOnlySelectedTestsBool:  true,
+			parallelizeTestsBool:      true,
+			isParallelismEnabledBool:  true,
+			isStepParallelismEnabled:  true,
+			isStageParallelismEnabled: true,
+			stepStrategyIteration:     "1",
+			stepStrategyIterations:    "2",
+			stageStrategyIteration:    "2",
+			stageStrategyIterations:   "3",
+			runnableTests:             rts[:6], // t1, t2, t3, t4, t5, t6
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[5]}, // (Stage 2, Step 1) - t5
@@ -784,42 +724,11 @@ func TestComputeSelected(t *testing.T) {
 				runner.EXPECT().AutoDetectTests(ctx, tt.testGlobs).Return(tt.runnerAutodetectTestsVal, tt.runnerAutodetectTestsErr)
 			}
 
-			oldGetStepStrategyIteration := getStepStrategyIteration
-			oldGetStepStrategyIterations := getStepStrategyIterations
-			oldGetStageStrategyIteration := getStageStrategyIteration
-			oldGetStageStrategyIterations := getStageStrategyIterations
-			oldIsParallelismEnabled := isParallelismEnabled
-			oldIsStepParallelismEnabled := isStepParallelismEnabled
-			oldIsStageParallelismEnabled := isStageParallelismEnabled
-			defer func() {
-				getStepStrategyIteration = oldGetStepStrategyIteration
-				getStepStrategyIterations = oldGetStepStrategyIterations
-				getStageStrategyIteration = oldGetStageStrategyIteration
-				getStageStrategyIterations = oldGetStageStrategyIterations
-				isParallelismEnabled = oldIsParallelismEnabled
-				isStepParallelismEnabled = oldIsStepParallelismEnabled
-				isStageParallelismEnabled = oldIsStageParallelismEnabled
-			}()
-			isParallelismEnabled = func() bool {
-				return tt.isParallelismEnabledBool
-			}
-			isStepParallelismEnabled = func() bool {
-				return tt.isStepParallelismEnabled
-			}
-			isStageParallelismEnabled = func() bool {
-				return tt.isStageParallelismEnabled
-			}
-			getStepStrategyIteration = func() (int, error) {
-				return tt.getStepStrategyIterationInt, tt.getStepStrategyIterationErr
-			}
-			getStepStrategyIterations = func() (int, error) {
-				return tt.getStepStrategyIterationsInt, tt.getStepStrategyIterationsErr
-			}
-			getStageStrategyIteration = func() (int, error) {
-				return tt.getStageStrategyIterationInt, tt.getStageStrategyIterationErr
-			}
-			getStageStrategyIterations = func() (int, error) {
-				return tt.getStageStrategyIterationsInt, tt.getStageStrategyIterationsErr
+			envMap := map[string]string{
+				"HARNESS_STEP_INDEX":  tt.stepStrategyIteration,
+				"HARNESS_STEP_TOTAL":  tt.stepStrategyIterations,
+				"HARNESS_STAGE_INDEX": tt.stageStrategyIteration,
+				"HARNESS_STAGE_TOTAL": tt.stageStrategyIterations,
 			}
 
 			r := runTestsTask{
@@ -835,6 +744,7 @@ func TestComputeSelected(t *testing.T) {
 				testSplitStrategy:    countTestSplitStrategy,
 				parallelizeTests:     tt.parallelizeTestsBool,
 				testGlobs:            tt.testGlobsString,
+				environment:          envMap,
 			}
 			selectTestsResponse := types.SelectTestsResp{}
 			selectTestsResponse.Tests = tt.runnableTests

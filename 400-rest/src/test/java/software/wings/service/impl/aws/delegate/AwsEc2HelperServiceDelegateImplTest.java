@@ -121,7 +121,7 @@ public class AwsEc2HelperServiceDelegateImplTest extends WingsBaseTest {
         false, "", null, false, false, null, null, null, false, null);
     AmazonEC2Exception exception = new AmazonEC2Exception("Invalid Aws Credentials");
     exception.setStatusCode(401);
-    doReturn(mockClient).when(awsEc2HelperServiceDelegate).getAmazonEc2Client(anyString(), any());
+    doReturn(mockClient).when(awsEc2HelperServiceDelegate).getAmazonEc2Client(any());
     doReturn(null).when(mockEncryptionService).decrypt(any(), anyList(), eq(false));
     when(mockClient.describeRegions()).thenThrow(exception);
     doNothing().when(mockTracker).trackEC2Call(anyString());
@@ -141,7 +141,7 @@ public class AwsEc2HelperServiceDelegateImplTest extends WingsBaseTest {
         null, false, false, null, null, null, false, null);
     AmazonEC2Exception exception = new AmazonEC2Exception("Invalid Aws Credentials");
     exception.setStatusCode(401);
-    doReturn(mockClient).when(awsEc2HelperServiceDelegate).getAmazonEc2Client(anyString(), any());
+    doReturn(mockClient).when(awsEc2HelperServiceDelegate).getAmazonEc2Client(any());
     doReturn(null).when(mockEncryptionService).decrypt(any(), anyList(), eq(false));
     when(mockClient.describeRegions()).thenThrow(exception);
     doNothing().when(mockTracker).trackEC2Call(anyString());
@@ -162,7 +162,7 @@ public class AwsEc2HelperServiceDelegateImplTest extends WingsBaseTest {
         "ACCESS_KEY".toCharArray(), null, "", "", false, "", null, false, false, null, null, null, false, null);
     AmazonEC2Exception exception = new AmazonEC2Exception("Invalid Aws Credentials");
     exception.setStatusCode(401);
-    doReturn(mockClient).when(awsEc2HelperServiceDelegate).getAmazonEc2Client(anyString(), any());
+    doReturn(mockClient).when(awsEc2HelperServiceDelegate).getAmazonEc2Client(any());
     doReturn(null).when(mockEncryptionService).decrypt(any(), anyList(), eq(false));
     when(mockClient.describeRegions()).thenThrow(exception);
     doNothing().when(mockTracker).trackEC2Call(anyString());
@@ -180,7 +180,7 @@ public class AwsEc2HelperServiceDelegateImplTest extends WingsBaseTest {
     AmazonEC2Client mockClient = mock(AmazonEC2Client.class);
     AmazonEC2Exception exception = new AmazonEC2Exception("Invalid Aws Credentials");
     exception.setStatusCode(401);
-    doReturn(mockClient).when(awsEc2HelperServiceDelegate).getAmazonEc2Client(anyString(), any());
+    doReturn(mockClient).when(awsEc2HelperServiceDelegate).getAmazonEc2Client(any());
     doReturn(null).when(mockEncryptionService).decrypt(any(), anyList(), eq(false));
     doThrow(exception).when(mockTracker).trackEC2Call(anyString());
     doCallRealMethod().when(awsEcrApiHelperServiceDelegateBase).attachCredentialsAndBackoffPolicy(any(), any());

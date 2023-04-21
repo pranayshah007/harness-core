@@ -9,6 +9,7 @@ package io.harness.pms.plan.execution;
 
 import static io.harness.pms.contracts.plan.ExecutionMode.PIPELINE_ROLLBACK;
 import static io.harness.pms.contracts.plan.ExecutionMode.POST_EXECUTION_ROLLBACK;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -49,9 +50,11 @@ import io.harness.rule.Owner;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.Before;
@@ -272,6 +275,7 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
 
     PlanNode toBeReplaced = PlanNode.builder()
                                 .uuid("uuid1")
+                                .stageFqn("pipeline.stages.s1")
                                 .stepType(stepType)
                                 .advisorObtainmentsForExecutionMode(Collections.singletonMap(POST_EXECUTION_ROLLBACK,
                                     Collections.singletonList(AdviserObtainment.newBuilder().build())))
@@ -292,8 +296,8 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
         .fetchNodeExecutionsForGivenStageFQNs(prevExecId, Collections.singletonList("pipeline.stages.s1"),
             NodeProjectionUtils.fieldsForIdentityNodeCreation);
 
-    Plan transformedPlan = rollbackModeExecutionHelper.transformPlanForRollbackMode(
-        createdPlan, prevExecId, Collections.singletonList("uuid2"), POST_EXECUTION_ROLLBACK);
+    Plan transformedPlan = rollbackModeExecutionHelper.transformPlanForRollbackMode(createdPlan, prevExecId,
+        Collections.singletonList("uuid2"), POST_EXECUTION_ROLLBACK, Collections.singletonList("pipeline.stages.s1"));
     List<Node> nodes = transformedPlan.getPlanNodes();
     assertThat(nodes).hasSize(3);
     assertThat(nodes).contains(
@@ -306,6 +310,55 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
     assertThat(identityNode.getSkipGraphType()).isEqualTo(SkipType.SKIP_NODE);
     assertThat(identityNode.getAdviserObtainments()).hasSize(1);
     assertThat(identityNode.getUseAdviserObtainments()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testAddAdvisorsToIdentityNodes() {
+    Map<String, Node> planNodeIDToUpdatedPlanNodes = new HashMap<>();
+    planNodeIDToUpdatedPlanNodes.put("uuid1", IdentityPlanNode.builder().build());
+    StepType stepType = StepType.newBuilder().setStepCategory(StepCategory.STEP).build();
+    PlanNode tobePreserved = PlanNode.builder().uuid("uuid2").stepType(stepType).skipGraphType(SkipType.NOOP).build();
+    PlanNode toBeReplaced =
+        PlanNode.builder()
+            .uuid("uuid1")
+            .stageFqn("pipeline.stages.s1")
+            .stepType(stepType)
+            .advisorObtainmentsForExecutionMode(
+                Map.of(POST_EXECUTION_ROLLBACK, Collections.singletonList(AdviserObtainment.newBuilder().build()),
+                    PIPELINE_ROLLBACK, Collections.singletonList(AdviserObtainment.newBuilder().build())))
+            .skipGraphType(SkipType.NOOP)
+            .build();
+    PlanNode stageNode = PlanNode.builder()
+                             .uuid("s1")
+                             .stageFqn("pipeline.stages.s1")
+                             .stepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                             .skipGraphType(SkipType.NOOP)
+                             .build();
+    Plan createdPlan =
+        Plan.builder().planNode(toBeReplaced).planNode(tobePreserved).planNode(stageNode).valid(true).build();
+
+    rollbackModeExecutionHelper.addAdvisorsToIdentityNodes(createdPlan, planNodeIDToUpdatedPlanNodes,
+        POST_EXECUTION_ROLLBACK, Collections.singletonList("pipeline.stages.s1"));
+
+    IdentityPlanNode updatedNode = (IdentityPlanNode) planNodeIDToUpdatedPlanNodes.get("uuid1");
+    assertThat(updatedNode.getUseAdviserObtainments()).isTrue();
+    assertThat(updatedNode.getAdviserObtainments()).hasSize(1);
+
+    planNodeIDToUpdatedPlanNodes.put("uuid1", IdentityPlanNode.builder().build());
+    rollbackModeExecutionHelper.addAdvisorsToIdentityNodes(
+        createdPlan, planNodeIDToUpdatedPlanNodes, POST_EXECUTION_ROLLBACK, null);
+    updatedNode = (IdentityPlanNode) planNodeIDToUpdatedPlanNodes.get("uuid1");
+    assertThat(updatedNode.getUseAdviserObtainments()).isFalse();
+    assertThat(updatedNode.getAdviserObtainments()).isNull();
+
+    planNodeIDToUpdatedPlanNodes.put("uuid1", IdentityPlanNode.builder().build());
+    rollbackModeExecutionHelper.addAdvisorsToIdentityNodes(
+        createdPlan, planNodeIDToUpdatedPlanNodes, PIPELINE_ROLLBACK, Collections.emptyList());
+    updatedNode = (IdentityPlanNode) planNodeIDToUpdatedPlanNodes.get("uuid1");
+    assertThat(updatedNode.getUseAdviserObtainments()).isTrue();
+    assertThat(updatedNode.getAdviserObtainments()).hasSize(1);
   }
 
   public static <T> CloseableIterator<T> createCloseableIterator(Iterator<T> iterator) {

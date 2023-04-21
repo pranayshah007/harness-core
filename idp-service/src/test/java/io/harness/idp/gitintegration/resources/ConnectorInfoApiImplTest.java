@@ -96,7 +96,7 @@ public class ConnectorInfoApiImplTest {
     ConnectorInfoRequest request = new ConnectorInfoRequest();
     ConnectorDetails connectorDetails = new ConnectorDetails();
     connectorDetails.setIdentifier(GITHUB_IDENTIFIER);
-    connectorDetails.setType(GITHUB_CONNECTOR_TYPE);
+    connectorDetails.setType(ConnectorDetails.TypeEnum.GITHUB);
     request.setConnectorDetails(connectorDetails);
     when(gitIntegrationService.saveConnectorDetails(ACCOUNT_ID, connectorDetails))
         .thenReturn(getGithubConnectorEntity());

@@ -57,7 +57,7 @@ public class CCMLicenseUsageHelper {
       activeSpendResultSet.add(ActiveSpendResultSetDTO.builder()
                                    .cloudProvider(getCloudProvider(row))
                                    .month(row.get(MONTH).getStringValue())
-                                   .cost(getNumericValue(row, COST))
+                                   .cost(getDoubleValue(row, COST))
                                    .maxDay(row.get(MAX_START_TIME).getTimestampValue())
                                    .minDay(row.get(MIN_START_TIME).getTimestampValue())
                                    .build());
@@ -72,7 +72,7 @@ public class CCMLicenseUsageHelper {
       activeSpendResultSet.add(ActiveSpendResultSetDTO.builder()
                                    .cloudProvider(fetchStringValue(result, CLOUD_PROVIDER))
                                    .month(fetchStringValue(result, MONTH))
-                                   .cost(fetchNumericValue(result, COST))
+                                   .cost(fetchDoubleValue(result, COST))
                                    .maxDay(fetchTimestampValue(result, MAX_DAY))
                                    .minDay(fetchTimestampValue(result, MIN_DAY))
                                    .build());
@@ -86,7 +86,7 @@ public class CCMLicenseUsageHelper {
       activeSpendResultSet.add(ActiveSpendResultSetDTO.builder()
                                    .cloudProvider(getCloudProvider(row))
                                    .month(row.get(MONTH).getStringValue())
-                                   .cost(getNumericValue(row, COST))
+                                   .cost(getDoubleValue(row, COST))
                                    .build());
     }
     return activeSpendResultSet;
@@ -98,7 +98,7 @@ public class CCMLicenseUsageHelper {
       activeSpendResultSet.add(ActiveSpendResultSetDTO.builder()
                                    .cloudProvider(fetchStringValue(result, CLOUD_PROVIDER))
                                    .month(fetchStringValue(result, MONTH))
-                                   .cost(fetchNumericValue(result, COST))
+                                   .cost(fetchDoubleValue(result, COST))
                                    .build());
     }
     return activeSpendResultSet;
@@ -114,8 +114,8 @@ public class CCMLicenseUsageHelper {
     return cloudProvider;
   }
 
-  public static Long computeDeduplicatedActiveSpend(List<ActiveSpendResultSetDTO> activeSpendResultSet) {
-    long cost = 0L;
+  public static Double computeDeduplicatedActiveSpend(List<ActiveSpendResultSetDTO> activeSpendResultSet) {
+    double cost = 0.0D;
     Multimap<String, String> multiMap = ArrayListMultimap.create();
 
     // Will maintain a multi map with Month - [Cloud Provider] mapping
@@ -138,16 +138,19 @@ public class CCMLicenseUsageHelper {
         cost += activeSpendResultSetDTO.getCost();
       }
     }
-    return Math.round(cost * 100L) / 100L;
+    return Math.round(cost * 100.0D) / 100.0D;
   }
 
-  private static long getNumericValue(FieldValueList row, String fieldName) {
+  private static Double getDoubleValue(FieldValueList row, String fieldName) {
     FieldValue value = row.get(fieldName);
-    return Math.round(value.getNumericValue().doubleValue() * 100L) / 100L;
+    if (!value.isNull()) {
+      return value.getNumericValue().doubleValue();
+    }
+    return 0.0D;
   }
 
-  private static long fetchNumericValue(ResultSet resultSet, String field) throws SQLException {
-    return resultSet.getLong(field);
+  private static Double fetchDoubleValue(ResultSet resultSet, String field) throws SQLException {
+    return resultSet.getDouble(field);
   }
 
   private static String fetchStringValue(ResultSet resultSet, String field) throws SQLException {

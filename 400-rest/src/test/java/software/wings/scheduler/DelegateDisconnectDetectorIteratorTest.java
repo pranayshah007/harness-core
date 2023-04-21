@@ -35,7 +35,6 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
 import io.harness.iterator.DelegateDisconnectDetectorIterator;
 import io.harness.iterator.PersistenceIteratorFactory;
-import io.harness.iterator.ValidationFailedTaskMessageHelper;
 import io.harness.network.LocalhostUtils;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskSchedule;
@@ -93,7 +92,6 @@ public class DelegateDisconnectDetectorIteratorTest extends WingsBaseTest {
   @Mock private AssignDelegateService assignDelegateService;
   @InjectMocks @Inject private DelegateTaskServiceClassicImpl delegateTaskServiceClassic;
   @Inject private HPersistence persistence;
-  @Inject private ValidationFailedTaskMessageHelper validationFailedTaskMessageHelper;
 
   @Mock private LoadingCache<String, List<Delegate>> accountDelegatesCache;
   @Inject private PerpetualTaskRecordDao perpetualTaskRecordDao;

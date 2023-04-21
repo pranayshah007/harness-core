@@ -235,14 +235,14 @@ public class RollbackModeExecutionHelper {
    * Step6: For all IDs in `nodeIDsToPreserve`, remove the Identity Plan Nodes in the map, and put the
    * Plan nodes from `createdPlan`
    */
-  public Plan transformPlanForRollbackMode(
-      Plan createdPlan, String previousExecutionId, List<String> nodeIDsToPreserve, ExecutionMode executionMode) {
+  public Plan transformPlanForRollbackMode(Plan createdPlan, String previousExecutionId, List<String> nodeIDsToPreserve,
+      ExecutionMode executionMode, List<String> rollbackStageIds) {
     // steps 1, 2, and 3
     Map<String, Node> planNodeIDToUpdatedPlanNodes =
         buildIdentityNodes(previousExecutionId, createdPlan.getPlanNodes());
 
     // step 4
-    addAdvisorsToIdentityNodes(createdPlan, planNodeIDToUpdatedPlanNodes, executionMode);
+    addAdvisorsToIdentityNodes(createdPlan, planNodeIDToUpdatedPlanNodes, executionMode, rollbackStageIds);
 
     // steps 5 and 6
     addPreservedPlanNodes(createdPlan, nodeIDsToPreserve, planNodeIDToUpdatedPlanNodes);
@@ -288,11 +288,16 @@ public class RollbackModeExecutionHelper {
         previousExecutionId, stageFQNs, NodeProjectionUtils.fieldsForIdentityNodeCreation);
   }
 
-  void addAdvisorsToIdentityNodes(
-      Plan createdPlan, Map<String, Node> planNodeIDToUpdatedPlanNodes, ExecutionMode executionMode) {
+  void addAdvisorsToIdentityNodes(Plan createdPlan, Map<String, Node> planNodeIDToUpdatedPlanNodes,
+      ExecutionMode executionMode, List<String> stageFQNsToRollback) {
     for (Node planNode : createdPlan.getPlanNodes()) {
       if (EmptyPredicate.isEmpty(planNode.getAdvisorObtainmentsForExecutionMode())) {
         continue;
+      }
+      if (executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK) {
+        if (EmptyPredicate.isEmpty(stageFQNsToRollback) || !stageFQNsToRollback.contains(planNode.getStageFqn())) {
+          continue;
+        }
       }
       List<AdviserObtainment> adviserObtainments = planNode.getAdvisorObtainmentsForExecutionMode().get(executionMode);
       if (EmptyPredicate.isNotEmpty(adviserObtainments)) {

@@ -55,17 +55,26 @@ public class PopulateYamlFieldInNGEnvironmentMigration implements NGMigration {
           try (HIterator<Environment> iterator = new HIterator<>(environmentQuery.fetch())) {
             for (Environment envEntity : iterator) {
               if (isBlank(envEntity.getYaml())) {
-                NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(envEntity);
-                String yaml = EnvironmentMapper.toYaml(ngEnvironmentConfig);
+                try {
+                  NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(envEntity);
+                  String yaml = EnvironmentMapper.toYaml(ngEnvironmentConfig);
 
-                Criteria criteria = Criteria.where(EnvironmentKeys.id).is(envEntity.getId());
-                org.springframework.data.mongodb.core.query.Query query =
-                    new org.springframework.data.mongodb.core.query.Query(criteria);
-                Update update = new Update();
-                update.set(EnvironmentKeys.yaml, yaml);
+                  Criteria criteria = Criteria.where(EnvironmentKeys.id).is(envEntity.getId());
+                  org.springframework.data.mongodb.core.query.Query query =
+                      new org.springframework.data.mongodb.core.query.Query(criteria);
+                  Update update = new Update();
+                  update.set(EnvironmentKeys.yaml, yaml);
 
-                mongoTemplate.findAndModify(
-                    query, update, new FindAndModifyOptions().returnNew(true), Environment.class);
+                  mongoTemplate.findAndModify(
+                      query, update, new FindAndModifyOptions().returnNew(true), Environment.class);
+                } catch (Exception e) {
+                  log.info(
+                      String.format(DEBUG_LOG
+                              + "Migration of populating yaml failed for envIdentifier: [%s], envName: [%s], projectId: [%s], orgId: [%s], accountId: [%s]",
+                          envEntity.getIdentifier(), envEntity.getName(), envEntity.getProjectIdentifier(),
+                          envEntity.getOrgIdentifier(), envEntity.getAccountId()),
+                      e);
+                }
               }
             }
           }

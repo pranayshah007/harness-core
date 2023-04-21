@@ -33,6 +33,7 @@ import com.mongodb.ReadPreference;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Sort;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -262,6 +263,41 @@ public class SLIRecordServiceImpl implements SLIRecordService {
       }
     }
     return Pair.of(serviceLevelObjectivesDetailSLIRecordMap, objectivesDetailSLIMissingDataTypeMap);
+  }
+
+  @Override
+  public Map<String, SLIRecord> getLastCompositeSLOsSLIRecord(
+      List<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList,
+      Instant startTime) {
+    Map<String, SLIRecord> scopedIdentifierSLIRecordMap = new HashMap<>();
+    for (CompositeServiceLevelObjective.ServiceLevelObjectivesDetail objectivesDetail :
+        serviceLevelObjectivesDetailList) {
+      SimpleServiceLevelObjective simpleServiceLevelObjective =
+          (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(objectivesDetail);
+      Preconditions.checkState(simpleServiceLevelObjective.getServiceLevelIndicators().size() == 1,
+          "Only one service level indicator is supported");
+      ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+          ProjectParams.builder()
+              .accountIdentifier(simpleServiceLevelObjective.getAccountId())
+              .orgIdentifier(simpleServiceLevelObjective.getOrgIdentifier())
+              .projectIdentifier(simpleServiceLevelObjective.getProjectIdentifier())
+              .build(),
+          simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
+      String sliId = serviceLevelIndicator.getUuid();
+      int sliVersion = serviceLevelIndicator.getVersion();
+      SLIRecord sliRecord = getLastSLIRecord(sliId, startTime);
+      if (Objects.isNull(sliRecord)) {
+        sliRecord = SLIRecord.builder()
+                        .sliState(SLIRecord.SLIState.GOOD)
+                        .runningBadCount(0)
+                        .runningGoodCount(0)
+                        .sliVersion(sliVersion)
+                        .timestamp(startTime.minus(Duration.ofMinutes(1)))
+                        .build();
+      }
+      scopedIdentifierSLIRecordMap.put(serviceLevelObjectiveV2Service.getScopedIdentifier(objectivesDetail), sliRecord);
+    }
+    return scopedIdentifierSLIRecordMap;
   }
 
   private SLIRecord getLatestSLIRecordSLIVersion(String sliId, int sliVersion) {

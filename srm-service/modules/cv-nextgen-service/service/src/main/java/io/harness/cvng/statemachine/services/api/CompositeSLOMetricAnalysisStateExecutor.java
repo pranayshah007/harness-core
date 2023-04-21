@@ -7,9 +7,11 @@
 
 package io.harness.cvng.statemachine.services.api;
 
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.beans.SLOMetricContext;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
@@ -30,6 +32,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -59,6 +62,15 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
     String sloId = verificationTaskService.getCompositeSLOId(verificationTaskId);
     CompositeServiceLevelObjective compositeServiceLevelObjective =
         (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.get(sloId);
+    SLIEvaluationType evaluationType =
+        serviceLevelObjectiveV2Service
+            .getEvaluationType(ProjectParams.builder()
+                                   .accountIdentifier(compositeServiceLevelObjective.getAccountId())
+                                   .orgIdentifier(compositeServiceLevelObjective.getOrgIdentifier())
+                                   .projectIdentifier(compositeServiceLevelObjective.getProjectIdentifier())
+                                   .build(),
+                Collections.singletonList(compositeServiceLevelObjective))
+            .get(compositeServiceLevelObjective);
     LocalDateTime currentLocalDate =
         LocalDateTime.ofInstant(clock.instant(), compositeServiceLevelObjective.getZoneOffset());
     Instant startTimeForCurrentRange = compositeServiceLevelObjective.getCurrentTimeRange(currentLocalDate)
@@ -81,7 +93,7 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
         == compositeServiceLevelObjective.getServiceLevelObjectivesDetails().size()) {
       compositeSLORecordService.create(sloDetailsSLIRecordsAndSLIMissingDataType.getKey(),
           sloDetailsSLIRecordsAndSLIMissingDataType.getValue(), compositeServiceLevelObjective.getVersion(),
-          verificationTaskId, startTime, endTime);
+          verificationTaskId, startTime, endTime, evaluationType);
       sloHealthIndicatorService.upsert(compositeServiceLevelObjective);
     }
     try (SLOMetricContext sloMetricContext = new SLOMetricContext(compositeServiceLevelObjective)) {

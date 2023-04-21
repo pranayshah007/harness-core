@@ -26,6 +26,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.storeconfig.GitFetchedStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
 import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
@@ -94,6 +95,22 @@ public class WinRmCopyCommandHandlerTest {
   public void testShouldCopyConfigWithWinRmExecutor() {
     List<String> outputVariables = Collections.singletonList("variable");
     WinrmTaskParameters winrmTaskParameters = getWinrmTaskParameters(copyConfigCommandUnit, outputVariables);
+    when(fileBasedWinRmExecutorNG.copyConfigFiles(any(ConfigFileParameters.class)))
+        .thenReturn(CommandExecutionStatus.SUCCESS);
+    CommandExecutionStatus result = winRmCopyCommandHandler
+                                        .handle(winrmTaskParameters, copyConfigCommandUnit, iLogStreamingTaskClient,
+                                            CommandUnitsProgress.builder().build(), taskContext)
+                                        .getStatus();
+    assertThat(result).isEqualTo(CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testShouldCopyConfigWithWinRmExecutorFromGit() {
+    List<String> outputVariables = Collections.singletonList("variable");
+    WinrmTaskParameters winrmTaskParameters =
+        getWinRmTaskParameters(copyConfigCommandUnit, outputVariables, getFileDelegateConfigFromGit(true));
     when(fileBasedWinRmExecutorNG.copyConfigFiles(any(ConfigFileParameters.class)))
         .thenReturn(CommandExecutionStatus.SUCCESS);
     CommandExecutionStatus result = winRmCopyCommandHandler
@@ -192,6 +209,28 @@ public class WinRmCopyCommandHandlerTest {
     return FileDelegateConfig.builder()
         .stores(singletonList(
             HarnessStoreDelegateConfig.builder()
+                .configFiles(Arrays.asList(ConfigFileParameters.builder()
+                                               .fileContent("hello world")
+                                               .fileName("test.txt")
+                                               .fileSize(withSize ? 11L : 0L)
+                                               .build(),
+                    ConfigFileParameters.builder()
+                        .fileName("secret-ref")
+                        .isEncrypted(true)
+                        .encryptionDataDetails(singletonList(encryptedDataDetail))
+                        .secretConfigFile(
+                            SecretConfigFile.builder()
+                                .encryptedConfigFile(SecretRefData.builder().identifier("secret-ref").build())
+                                .build())
+                        .build()))
+                .build()))
+        .build();
+  }
+
+  private FileDelegateConfig getFileDelegateConfigFromGit(boolean withSize) {
+    return FileDelegateConfig.builder()
+        .stores(singletonList(
+            GitFetchedStoreDelegateConfig.builder()
                 .configFiles(Arrays.asList(ConfigFileParameters.builder()
                                                .fileContent("hello world")
                                                .fileName("test.txt")

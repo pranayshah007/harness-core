@@ -45,6 +45,7 @@ public class CreditServiceImpl implements CreditService {
   @Override
   public CreditDTO purchaseCredit(String accountIdentifier, CreditDTO creditDTO) {
     Credit credit = creditObjectConverter.toEntity(creditDTO);
+    credit.setAccountIdentifier(accountIdentifier);
     Credit savedCredit = creditRepository.save(credit);
     return creditObjectConverter.toDTO(savedCredit);
   }

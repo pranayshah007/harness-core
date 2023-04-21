@@ -718,7 +718,7 @@ public class K8sTaskHelperTest extends CategoryTest {
         K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).helmPath("helm").build();
     doReturn(Arrays.asList(FileData.builder().filePath("test").fileContent("manifest").build()))
         .when(mockK8sTaskHelperBase)
-        .renderTemplateForHelm(any(), any(), anyList(), any(), any(), any(), any(), anyLong(), any(), eq(""));
+        .renderTemplateForHelm(any(), any(), anyList(), any(), any(), any(), any(), anyLong(), any());
 
     final List<FileData> manifestFiles = helper.renderTemplate(k8sDelegateTaskParams,
         K8sDelegateManifestConfig.builder().manifestStoreTypes(HelmSourceRepo).build(), ".", valuesFiles, "release",
@@ -727,7 +727,7 @@ public class K8sTaskHelperTest extends CategoryTest {
     assertThat(manifestFiles.size()).isEqualTo(1);
     verify(mockK8sTaskHelperBase, times(1))
         .renderTemplateForHelm(eq("helm"), eq("."), eq(valuesFiles), eq("release"), eq("namespace"),
-            eq(executionLogCallback), eq(HelmVersion.V3), anyLong(), any(), eq(""));
+            eq(executionLogCallback), eq(HelmVersion.V3), anyLong(), any());
   }
 
   @Test
@@ -784,8 +784,8 @@ public class K8sTaskHelperTest extends CategoryTest {
         ".", new ArrayList<>(), "release", "namespace", executionLogCallback, K8sApplyTaskParameters.builder().build());
 
     verify(mockK8sTaskHelperBase, times(1))
-        .renderTemplateForHelm(eq("helm"), eq("./chart"), anyList(), any(), any(), eq(executionLogCallback), any(),
-            anyLong(), any(), eq(""));
+        .renderTemplateForHelm(
+            eq("helm"), eq("./chart"), anyList(), any(), any(), eq(executionLogCallback), any(), anyLong(), any());
   }
 
   /**
@@ -807,8 +807,8 @@ public class K8sTaskHelperTest extends CategoryTest {
         ".", new ArrayList<>(), "release", "namespace", executionLogCallback, K8sApplyTaskParameters.builder().build());
 
     verify(mockK8sTaskHelperBase, times(1))
-        .renderTemplateForHelm(eq("helm"), eq("./nginx"), anyList(), any(), any(), eq(executionLogCallback), any(),
-            anyLong(), any(), eq(""));
+        .renderTemplateForHelm(
+            eq("helm"), eq("./nginx"), anyList(), any(), any(), eq(executionLogCallback), any(), anyLong(), any());
   }
 
   @Test

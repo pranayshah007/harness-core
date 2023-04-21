@@ -10,6 +10,7 @@ package io.harness.engine.expressions;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.plan.PlanService;
@@ -32,6 +33,7 @@ import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.EngineJexlContext;
 import io.harness.expression.ExpressionEvaluatorUtils;
+import io.harness.expression.JsonFunctor;
 import io.harness.expression.RegexFunctor;
 import io.harness.expression.ResolveObjectResponse;
 import io.harness.expression.VariableResolverTracker;
@@ -51,6 +53,7 @@ import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,6 +100,8 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
   private NodeExecutionsCache nodeExecutionsCache;
   private final String SECRETS = "secrets";
 
+  private boolean contextMapProvided = false;
+
   @Builder
   public AmbianceExpressionEvaluator(VariableResolverTracker variableResolverTracker, Ambiance ambiance,
       Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific, Map<String, String> contextMap) {
@@ -105,7 +110,8 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
     this.entityTypes = entityTypes == null ? NodeExecutionEntityType.allEntities() : entityTypes;
     this.refObjectSpecific = refObjectSpecific;
     this.groupAliases = new HashMap<>();
-    if (contextMap != null) {
+    if (EmptyPredicate.isNotEmpty(contextMap)) {
+      contextMapProvided = true;
       contextMap.forEach(this::addToContext);
     }
   }
@@ -119,7 +125,12 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
     if (!refObjectSpecific) {
       // Add basic functors.
       addToContext("regex", new RegexFunctor());
-      addToContext("json", new NGJsonFunctor());
+      // Todo(Archit): revisit NGJsonFunctor(PIE-9772)
+      if (contextMapProvided) {
+        addToContext("json", new JsonFunctor());
+      } else {
+        addToContext("json", new NGJsonFunctor());
+      }
       addToContext("xml", new XmlFunctor());
       if (pmsFeatureFlagService.isEnabled(
               AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_USE_SECRET_FUNCTOR_WITH_RBAC)) {
@@ -267,8 +278,7 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
               AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_ENGINE_V2)) {
         String normalizedExpression = applyStaticAliases(expressionBlock);
         // Apply all the prefixes and return first one that evaluates successfully.
-        List<String> finalExpressions =
-            ExpandedJsonFunctorUtils.getExpressions(ambiance, groupAliases, normalizedExpression);
+        List<String> finalExpressions = fetchExpressionsV2(normalizedExpression);
         Object obj = ExpandedJsonFunctor.builder()
                          .planExpansionService(planExpansionService)
                          .ambiance(ambiance)
@@ -290,5 +300,20 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
           String.format("Could not resolve via V2 expression engine: %s. Falling back to V1", expressionBlock), ex);
     }
     return super.evaluatePrefixCombinations(expressionBlock, ctx, depth, expressionMode);
+  }
+
+  private List<String> fetchExpressionsV2(String normalizedExpression) {
+    if (hasExpressions(normalizedExpression)) {
+      return Collections.singletonList(normalizedExpression);
+    }
+    ImmutableList.Builder<String> listBuilder = ImmutableList.builder();
+    if (entityTypes.contains(NodeExecutionEntityType.OUTCOME)) {
+      listBuilder.add(String.format("outcome.%s", normalizedExpression));
+    }
+    if (entityTypes.contains(NodeExecutionEntityType.SWEEPING_OUTPUT)) {
+      listBuilder.add(String.format("output.%s", normalizedExpression));
+    }
+    listBuilder.addAll(ExpandedJsonFunctorUtils.getExpressions(ambiance, groupAliases, normalizedExpression));
+    return listBuilder.build();
   }
 }

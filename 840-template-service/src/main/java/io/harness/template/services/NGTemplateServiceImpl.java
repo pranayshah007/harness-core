@@ -38,9 +38,11 @@ import io.harness.encryption.Scope;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
+import io.harness.eraro.ErrorMessageConstants;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.TemplateReferenceProtoDTO;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
@@ -89,6 +91,7 @@ import io.harness.template.beans.PermissionTypes;
 import io.harness.template.beans.TemplateImportRequestDTO;
 import io.harness.template.beans.TemplateListRepoResponse;
 import io.harness.template.beans.TemplateMoveConfigResponse;
+import io.harness.template.beans.UpdateGitDetailsParams;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
@@ -153,6 +156,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Inject NGSettingsClient settingsClient;
   @Inject GitXSettingsHelper gitXSettingsHelper;
   @Inject private TemplateRbacHelper templateRbacHelper;
+
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Template [%s] of versionLabel [%s] under Project[%s], Organization [%s] already exists";
 
@@ -495,9 +499,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     TemplateEntity templateToDelete = null;
     TemplateEntity stableTemplate = null;
     if (forceDelete && !isForceDeleteEnabled(accountId)) {
-      throw new InvalidRequestException(
-          format("Parameter forcedDelete cannot be true. Force Delete is not enabled for account [%s]", accountId),
-          USER);
+      throw new InvalidRequestException(ErrorMessageConstants.FORCE_DELETE_SETTING_NOT_ENABLED, USER);
     }
     for (TemplateEntity templateEntity : templateEntities) {
       if (deleteVersionLabel.equals(templateEntity.getVersionLabel())) {
@@ -1392,6 +1394,31 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     }
   }
 
+  @Override
+  public void updateGitDetails(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, String versionLabel, UpdateGitDetailsParams updateGitDetailsParams) {
+    Criteria templateCriteria = Criteria.where(TemplateEntityKeys.accountId)
+                                    .is(accountIdentifier)
+                                    .and(TemplateEntityKeys.orgIdentifier)
+                                    .is(orgIdentifier)
+                                    .and(TemplateEntityKeys.projectIdentifier)
+                                    .is(projectIdentifier)
+                                    .and(TemplateEntityKeys.identifier)
+                                    .is(templateIdentifier)
+                                    .and(TemplateEntityKeys.versionLabel)
+                                    .is(versionLabel)
+                                    .and(TemplateEntityKeys.storeType)
+                                    .is(StoreType.REMOTE);
+
+    Update update = templateServiceHelper.getGitDetailsUpdate(updateGitDetailsParams);
+    TemplateEntity templateEntity =
+        templateRepository.updateV2(accountIdentifier, orgIdentifier, projectIdentifier, templateCriteria, update);
+    if (templateEntity == null) {
+      throw new EntityNotFoundException(String.format(
+          "Template not found for template identifier [%s] and version label [%s]", templateIdentifier, versionLabel));
+    }
+  }
+
   @VisibleForTesting
   protected TemplateEntity moveTemplateEntity(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, String versionLabel, TemplateMoveConfigOperationDTO moveConfigOperationDTO,
@@ -1511,5 +1538,11 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           criteria, Pageable.unpaged(), filterParamsDTO.isGetDistinctFromBranches());
     }
     return templateEntities;
+  }
+
+  private void applyGitXSettingsIfApplicable(String accountIdentifier, String orgIdentifier, String projIdentifier) {
+    gitXSettingsHelper.enforceGitExperienceIfApplicable(accountIdentifier, orgIdentifier, projIdentifier);
+    gitXSettingsHelper.setConnectorRefForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
+    gitXSettingsHelper.setDefaultStoreTypeForEntities(accountIdentifier, orgIdentifier, projIdentifier);
   }
 }

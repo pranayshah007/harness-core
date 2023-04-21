@@ -9,6 +9,7 @@ package io.harness.event.handlers;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.contracts.execution.ChildrenExecutableResponse.Child;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,10 +26,15 @@ import io.harness.execution.InitiateNodeHelper;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
+import io.harness.pms.contracts.execution.MatrixMetadata;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.contracts.execution.events.SdkResponseEventType;
 import io.harness.pms.contracts.execution.events.SpawnChildrenRequest;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
+import io.harness.pms.contracts.plan.PostExecutionRollbackInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.rule.Owner;
@@ -114,6 +120,94 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
     assertThat(engineResumeCallback.getAmbiance()).isEqualTo(ambiance);
     assertThat(exIdCaptor.getAllValues().stream().flatMap(Arrays::stream).collect(Collectors.toList()))
         .containsExactlyInAnyOrder(runtimeIds.get(0), runtimeIds.get(1), runtimeIds.get(0), runtimeIds.get(1));
+
+    verify(nodeExecutionService).updateV2(eq(nodeExecutionId), any());
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testHandleSpawnChildrenEventForRollbackMode() {
+    String planId = generateUuid();
+    String planExecutionId = generateUuid();
+    String planNodeId = generateUuid();
+    String nodeExecutionId = generateUuid();
+    String child1Id = generateUuid();
+
+    StrategyMetadata rollbackSTrategyMetadata =
+        StrategyMetadata.newBuilder()
+            .setMatrixMetadata(MatrixMetadata.newBuilder().putMatrixValues("serviceRef", "svc1").build())
+            .build();
+    StrategyMetadata nonRollbackSTrategyMetadata =
+        StrategyMetadata.newBuilder()
+            .setMatrixMetadata(MatrixMetadata.newBuilder().putMatrixValues("serviceRef", "svc2").build())
+            .build();
+
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setPlanId(planId)
+            .setPlanExecutionId(planExecutionId)
+            .setMetadata(
+                ExecutionMetadata.newBuilder()
+                    .setExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK)
+                    .addPostExecutionRollbackInfo(PostExecutionRollbackInfo.newBuilder()
+                                                      .setPostExecutionRollbackStageId(child1Id)
+                                                      .setRollbackStageStrategyMetadata(rollbackSTrategyMetadata)
+                                                      .build())
+                    .build())
+            .addLevels(
+                Level.newBuilder()
+                    .setIdentifier("IDENTIFIER")
+                    .setStepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.FORK).build())
+                    .setRuntimeId(nodeExecutionId)
+                    .setSetupId(planNodeId)
+                    .build())
+            .build();
+
+    SdkResponseEventProto event =
+        SdkResponseEventProto.newBuilder()
+            .setSdkResponseEventType(SdkResponseEventType.SPAWN_CHILDREN)
+            .setSpawnChildrenRequest(
+                SpawnChildrenRequest.newBuilder()
+                    .setChildren(ChildrenExecutableResponse.newBuilder()
+                                     .addChildren(Child.newBuilder()
+                                                      .setChildNodeId(child1Id)
+                                                      .setStrategyMetadata(rollbackSTrategyMetadata)
+                                                      .build())
+                                     .addChildren(Child.newBuilder()
+                                                      .setChildNodeId(child1Id)
+                                                      .setStrategyMetadata(nonRollbackSTrategyMetadata)
+                                                      .build())
+                                     .build())
+                    .build())
+            .setAmbiance(ambiance)
+            .build();
+
+    processor.handleEvent(event);
+
+    ArgumentCaptor<String> nodeIdCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<String> runtimeIdCaptor = ArgumentCaptor.forClass(String.class);
+
+    verify(initiateNodeHelper, times(1))
+        .publishEvent(eq(ambiance), nodeIdCaptor.capture(), runtimeIdCaptor.capture(), eq(rollbackSTrategyMetadata),
+            eq(InitiateMode.CREATE_AND_START));
+
+    List<String> nodeIds = nodeIdCaptor.getAllValues();
+    assertThat(nodeIds).hasSize(1);
+    assertThat(nodeIds).contains(child1Id);
+
+    List<String> runtimeIds = runtimeIdCaptor.getAllValues();
+    assertThat(runtimeIds).hasSize(1);
+
+    ArgumentCaptor<OldNotifyCallback> callbackCaptor = ArgumentCaptor.forClass(OldNotifyCallback.class);
+    ArgumentCaptor<String[]> exIdCaptor = ArgumentCaptor.forClass(String[].class);
+    verify(waitNotifyEngine, times(2)).waitForAllOn(any(), callbackCaptor.capture(), exIdCaptor.capture());
+
+    assertThat(callbackCaptor.getAllValues().get(1)).isInstanceOf(EngineResumeCallback.class);
+    EngineResumeCallback engineResumeCallback = (EngineResumeCallback) callbackCaptor.getAllValues().get(1);
+    assertThat(engineResumeCallback.getAmbiance()).isEqualTo(ambiance);
+    assertThat(exIdCaptor.getAllValues().stream().flatMap(Arrays::stream).collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(runtimeIds.get(0), runtimeIds.get(0));
 
     verify(nodeExecutionService).updateV2(eq(nodeExecutionId), any());
   }

@@ -211,6 +211,8 @@ public class GitSyncTestRule implements InjectorRuleMixin, MethodRule, MongoRule
         bind(GitFullSyncConfigService.class).toInstance(mock(GitFullSyncConfigServiceImpl.class));
         bind(FullSyncJobService.class).toInstance(mock(FullSyncJobServiceImpl.class));
         bind(ScmClient.class).toInstance(mock(SCMServiceGitClientImpl.class));
+        bind(HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub.class)
+            .toInstance(mock(HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub.class));
         MapBinder<SCMType, UserSourceCodeManagerMapper> sourceCodeManagerMapBinder =
             MapBinder.newMapBinder(binder(), SCMType.class, UserSourceCodeManagerMapper.class);
         sourceCodeManagerMapBinder.addBinding(SCMType.GITHUB).to(GithubSCMMapper.class);

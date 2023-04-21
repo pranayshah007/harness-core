@@ -44,6 +44,8 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
 
   AbstractServiceLevelObjective getEntity(ProjectParams projectParams, String identifier);
 
+  AbstractServiceLevelObjective getEntity(ServiceLevelObjectivesDetail serviceLevelObjectivesDetail);
+
   boolean delete(ProjectParams projectParams, String identifier);
 
   void setMonitoredServiceSLOsEnableFlag(

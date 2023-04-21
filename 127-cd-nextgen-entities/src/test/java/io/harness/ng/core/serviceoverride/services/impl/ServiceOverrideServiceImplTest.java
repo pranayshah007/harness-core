@@ -8,6 +8,7 @@
 package io.harness.ng.core.serviceoverride.services.impl;
 
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.YOGESH;
 import static io.harness.rule.OwnerRule.vivekveman;
 
@@ -385,7 +386,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
             .environmentRef(ENV_REF)
             .serviceRef(ACCOUNT_SERVICE_REF)
             .yaml(
-                "serviceOverrides:\n  orgIdentifier: orgIdentifier\\\n  environmentRef: envIdentifier\n  serviceRef: account.serviceIdentifier\n  variableOverrides: \n    - name: memory\n      value: var1\n      type: String\n    - name: cpu\n      value: var1\n      type: String")
+                "serviceOverrides:\n  orgIdentifier: orgIdentifier\n  environmentRef: envIdentifier\n  serviceRef: account.serviceIdentifier\n  variableOverrides: \n    - name: memory\n      value: var1\n      type: String\n    - name: cpu\n      value: var1\n      type: String")
             .build();
     NGServiceOverridesEntity upsertedServiceOverridesEntity = serviceOverrideService.upsert(serviceOverridesEntity);
     assertThat(upsertedServiceOverridesEntity).isNotNull();
@@ -394,7 +395,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
         .isEqualTo(serviceOverridesEntity.getProjectIdentifier());
     assertThat(upsertedServiceOverridesEntity.getServiceRef()).isEqualTo(serviceOverridesEntity.getServiceRef());
     assertThat(upsertedServiceOverridesEntity.getEnvironmentRef())
-        .isEqualTo(serviceOverridesEntity.getEnvironmentRef());
+        .isEqualTo("org." + serviceOverridesEntity.getEnvironmentRef());
     assertThat(upsertedServiceOverridesEntity.getYaml()).isNotNull();
 
     NGServiceOverridesEntity serviceOverridesEntity2 =
@@ -404,7 +405,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
             .environmentRef(ENV_REF)
             .serviceRef(ORG_SERVICE_REF)
             .yaml(
-                "serviceOverrides:\n  orgIdentifier: orgIdentifier\\\n  environmentRef: envIdentifier\n  serviceRef: org.serviceIdentifier\n  variableOverrides: \n    - name: memory\n      value: var1\n      type: String\n    - name: cpu\n      value: var1\n      type: String")
+                "serviceOverrides:\n  orgIdentifier: orgIdentifier\n  environmentRef: envIdentifier\n  serviceRef: org.serviceIdentifier\n  variableOverrides: \n    - name: memory\n      value: var1\n      type: String\n    - name: cpu\n      value: var1\n      type: String")
             .build();
     serviceOverrideService.upsert(serviceOverridesEntity2);
     // list
@@ -421,6 +422,46 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
     // delete
     assertThat(serviceOverrideService.delete(ACCOUNT_ID, ORG_IDENTIFIER, null, ORG_ENV_REF, ACCOUNT_SERVICE_REF))
         .isTrue();
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testCRUDWithScopedEnvironmentRef() {
+    NGServiceOverridesEntity serviceOverridesEntity =
+        NGServiceOverridesEntity.builder()
+            .accountId(ACCOUNT_ID)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .environmentRef("org." + ENV_REF)
+            .serviceRef(ACCOUNT_SERVICE_REF)
+            .yaml(
+                "serviceOverrides:\n  orgIdentifier: orgIdentifier\n  environmentRef: account.envIdentifier\n  serviceRef: account.serviceIdentifier\n  variableOverrides: \n    - name: memory\n      value: var1\n      type: String\n    - name: cpu\n      value: var1\n      type: String")
+            .build();
+    NGServiceOverridesEntity upsertedServiceOverridesEntity = serviceOverrideService.upsert(serviceOverridesEntity);
+    assertThat(upsertedServiceOverridesEntity).isNotNull();
+    assertThat(upsertedServiceOverridesEntity.getEnvironmentRef())
+        .isEqualTo(serviceOverridesEntity.getEnvironmentRef());
+    assertThat(upsertedServiceOverridesEntity.getYaml()).isNotNull();
+
+    // get with scoped environment ref and environment identifier
+    assertThat(
+        serviceOverrideService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ORG_ENV_REF, ACCOUNT_SERVICE_REF))
+        .isPresent();
+    assertThat(serviceOverrideService.get(ACCOUNT_ID, ORG_IDENTIFIER, null, ORG_ENV_REF, ACCOUNT_SERVICE_REF))
+        .isPresent();
+    assertThat(serviceOverrideService.get(ACCOUNT_ID, ORG_IDENTIFIER, null, ENV_REF, ACCOUNT_SERVICE_REF)).isPresent();
+
+    // delete with scoped environment ref
+    assertThat(serviceOverrideService.delete(ACCOUNT_ID, ORG_IDENTIFIER, null, ORG_ENV_REF, ACCOUNT_SERVICE_REF))
+        .isTrue();
+
+    serviceOverrideService.upsert(serviceOverridesEntity);
+    assertThat(
+        serviceOverrideService.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ORG_ENV_REF, ACCOUNT_SERVICE_REF))
+        .isTrue();
+
+    serviceOverrideService.upsert(serviceOverridesEntity);
+    assertThat(serviceOverrideService.delete(ACCOUNT_ID, ORG_IDENTIFIER, null, ENV_REF, ACCOUNT_SERVICE_REF)).isTrue();
   }
 
   @Test

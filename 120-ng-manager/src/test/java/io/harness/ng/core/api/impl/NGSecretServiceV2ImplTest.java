@@ -37,6 +37,7 @@ import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.HintException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.ng.core.api.NGSecretActivityService;
 import io.harness.ng.core.dto.secrets.SSHCredentialType;
@@ -99,6 +100,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
   private TransactionTemplate transactionTemplate;
   private AccessControlClient accessControlClient;
   private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private ExceptionManager exceptionManager;
 
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
@@ -136,7 +138,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
 
     secretServiceV2 = new NGSecretServiceV2Impl(secretRepository, delegateGrpcClientWrapper, sshKeySpecDTOHelper,
         ngSecretActivityService, outboxService, transactionTemplate, taskSetupAbstractionHelper,
-        winRmCredentialsSpecDTOHelper, accessControlClient, ngFeatureFlagHelperService);
+        winRmCredentialsSpecDTOHelper, accessControlClient, ngFeatureFlagHelperService, exceptionManager);
     secretServiceV2Spy = spy(secretServiceV2);
     secretForceDeleteEventArgumentCaptor = ArgumentCaptor.forClass(SecretForceDeleteEvent.class);
     secretDeleteEventArgumentCaptor = ArgumentCaptor.forClass(SecretDeleteEvent.class);

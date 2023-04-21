@@ -163,6 +163,10 @@ ciExecutionServiceConfig:
   defaultCPULimit: 400
   defaultInternalImageConnector: ''
   executionLimits:
+    freeNewUser:
+      dailyMaxBuildsCount: 5
+    freeBasicUser:
+      dailyMaxBuildsCount: 25
     free:
       defaultTotalExecutionCount: 20
       defaultMacExecutionCount: 5

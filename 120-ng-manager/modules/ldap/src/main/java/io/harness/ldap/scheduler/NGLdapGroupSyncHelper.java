@@ -38,6 +38,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -69,8 +70,11 @@ public class NGLdapGroupSyncHelper {
         userGroup.getIdentifier(), userGroup.getAccountIdentifier(), ldapGroup.getDn());
     try {
       syncUserGroupMetadata(userGroup, ldapGroup);
-      Set<String> ldapUserEmails =
-          ldapGroup.getUsers().stream().map(LdapUserResponse::getEmail).collect(Collectors.toSet());
+      Set<String> ldapUserEmails = ldapGroup.getUsers()
+                                       .stream()
+                                       .map(LdapUserResponse::getEmail)
+                                       .filter(Objects::nonNull)
+                                       .collect(Collectors.toSet());
       List<UserInfo> usersInfo = new ArrayList<>();
 
       // can cause issue, check if our APIs support querying ~1K list of users
@@ -109,17 +113,19 @@ public class NGLdapGroupSyncHelper {
         removeUserFromGroup(userGroup, emailToUserInfoMap, usersToRemove);
       }
     } catch (Exception exc) {
-      log.error("NGLDAP: Sync Error while updating user Group or its users {} in account {}", userGroup.getIdentifier(),
-          userGroup.getAccountIdentifier());
+      log.error("NGLDAP: Sync Error while updating user Group or its users {} in account {} : ",
+          userGroup.getIdentifier(), userGroup.getAccountIdentifier(), exc);
       failedUserGroups.add(userGroup);
     }
   }
 
   private void updateUserInGroup(UserGroup userGroup, LdapUserResponse userResponse) {
-    log.info("NGLDAP: updating user {}, in group: {} for account {} and externalUserId {}", userResponse.getEmail(),
-        userGroup.getIdentifier(), userGroup.getAccountIdentifier(), userResponse.getUserId());
-    CGRestUtils.getResponse(
-        userClient.updateUser(UserInfo.builder().name(userResponse.getName()).email(userResponse.getEmail()).build()));
+    if (isNotEmpty(userResponse.getEmail())) {
+      log.info("NGLDAP: updating user {}, in group: {} for account {} and externalUserId {}", userResponse.getEmail(),
+          userGroup.getIdentifier(), userGroup.getAccountIdentifier(), userResponse.getUserId());
+      CGRestUtils.getResponse(userClient.updateUser(
+          UserInfo.builder().name(userResponse.getName()).email(userResponse.getEmail()).build()));
+    }
   }
 
   private void removeUserFromGroup(
@@ -137,49 +143,51 @@ public class NGLdapGroupSyncHelper {
   }
 
   private void addMemberToGroup(UserGroup userGroup, LdapUserResponse userResponse) {
-    Optional<UserInfo> userInfoOptional = ngUserService.getUserInfoByEmailFromCG(userResponse.getEmail());
-    if (userInfoOptional.isEmpty() || !checkUserPartOfAccount(userGroup.getAccountIdentifier(), userInfoOptional)) {
-      inviteUserToAccount(userResponse, userGroup.getAccountIdentifier());
+    if (isNotEmpty(userResponse.getEmail())) {
+      Optional<UserInfo> userInfoOptional = ngUserService.getUserInfoByEmailFromCG(userResponse.getEmail());
+      if (userInfoOptional.isEmpty() || !checkUserPartOfAccount(userGroup.getAccountIdentifier(), userInfoOptional)) {
+        inviteUserToAccount(userResponse, userGroup.getAccountIdentifier());
+      }
+
+      Optional<UserMetadataDTO> userOptional = ngUserService.getUserByEmail(userResponse.getEmail(), false);
+
+      if (userInfoOptional.isPresent() && userOptional.isEmpty()) {
+        log.info(
+            "NGLDAP: User {} with externalUserId {}, not present in NG. Adding to NG at user group {}, in account: {}.",
+            userInfoOptional.get().getUuid(), userResponse.getUserId(), userGroup.getIdentifier(),
+            userGroup.getAccountIdentifier());
+        userOptional = addUserToScopeAndReturnMetadataDTO(userResponse, userInfoOptional.get().getUuid(),
+            userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier());
+      }
+
+      if (userOptional.isPresent()
+          && !checkUserPartOfAccountInNg(userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(),
+              userGroup.getProjectIdentifier(), userOptional.get())) {
+        log.info(
+            "NGLDAP: User {} with externalUserId {}, present in NG but not in this account {}. Adding to NG for the user group {}.",
+            userInfoOptional.get().getUuid(), userResponse.getUserId(), userGroup.getAccountIdentifier(),
+            userGroup.getIdentifier());
+        userOptional = addUserToScopeAndReturnMetadataDTO(userResponse, userOptional.get().getUuid(),
+            userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier());
+      }
+
+      if (userOptional.isEmpty()
+          || !checkUserPartOfAccountInNg(userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(),
+              userGroup.getProjectIdentifier(), userOptional.get())) {
+        log.warn(
+            "NGLDAP: Invite user with id {} and with externalUserId {}, or adding user to scope- account: {}, organization: {}, project: {} failed",
+            userOptional.get().getUuid(), userResponse.getUserId(), userGroup.getAccountIdentifier(),
+            userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier());
+        // throw here to be caught above and added to 'failedUserGroups' count
+        throw new IllegalStateException("NGLDAP: Illegal state value of user to be added as member to user group");
+      }
+
+      log.info("NGLDAP: adding new user {}, to group: {} in account {} and externalUserId {}",
+          userOptional.get().getUuid(), userGroup.getIdentifier(), userGroup.getAccountIdentifier(),
+          userResponse.getUserId());
+      userGroupService.addMember(userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(),
+          userGroup.getProjectIdentifier(), userGroup.getIdentifier(), userOptional.get().getUuid());
     }
-
-    Optional<UserMetadataDTO> userOptional = ngUserService.getUserByEmail(userResponse.getEmail(), false);
-
-    if (userInfoOptional.isPresent() && userOptional.isEmpty()) {
-      log.info(
-          "NGLDAP: User {} with externalUserId {}, not present in NG. Adding to NG at user group {}, in account: {}.",
-          userInfoOptional.get().getUuid(), userResponse.getUserId(), userGroup.getIdentifier(),
-          userGroup.getAccountIdentifier());
-      userOptional = addUserToScopeAndReturnMetadataDTO(userResponse, userInfoOptional.get().getUuid(),
-          userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier());
-    }
-
-    if (userOptional.isPresent()
-        && !checkUserPartOfAccountInNg(userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(),
-            userGroup.getProjectIdentifier(), userOptional.get())) {
-      log.info(
-          "NGLDAP: User {} with externalUserId {}, present in NG but not in this account {}. Adding to NG for the user group {}.",
-          userInfoOptional.get().getUuid(), userResponse.getUserId(), userGroup.getAccountIdentifier(),
-          userGroup.getIdentifier());
-      userOptional = addUserToScopeAndReturnMetadataDTO(userResponse, userOptional.get().getUuid(),
-          userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier());
-    }
-
-    if (userOptional.isEmpty()
-        || !checkUserPartOfAccountInNg(userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(),
-            userGroup.getProjectIdentifier(), userOptional.get())) {
-      log.warn(
-          "NGLDAP: Invite user with id {} and with externalUserId {}, or adding user to scope- account: {}, organization: {}, project: {} failed",
-          userOptional.get().getUuid(), userResponse.getUserId(), userGroup.getAccountIdentifier(),
-          userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier());
-      // throw here to be caught above and added to 'failedUserGroups' count
-      throw new IllegalStateException("NGLDAP: Illegal state value of user to be added as member to user group");
-    }
-
-    log.info("NGLDAP: adding new user {}, to group: {} in account {} and externalUserId {}",
-        userOptional.get().getUuid(), userGroup.getIdentifier(), userGroup.getAccountIdentifier(),
-        userResponse.getUserId());
-    userGroupService.addMember(userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(),
-        userGroup.getProjectIdentifier(), userGroup.getIdentifier(), userOptional.get().getUuid());
   }
 
   private boolean checkUserPartOfAccount(String accountId, Optional<UserInfo> userInfoOptional) {

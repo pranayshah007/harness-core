@@ -110,4 +110,9 @@ public class SshExceptionConstants {
 
   public final String SSH_INVALID_CREDENTIALS_HINT = "Please provide correct %s credentials.";
   public final String SSH_INVALID_CREDENTIALS_EXPLANATION = "Provided %s credentials are not authorized.";
+
+  public final String INVALID_STORE_DELEGATE_CONFIG_TYPE_FAILED = "Invalid store type for config provided";
+  public final String INVALID_STORE_DELEGATE_CONFIG_TYPE_HINT = "Please provide a valid config store type.";
+  public final String INVALID_STORE_DELEGATE_CONFIG_TYPE_EXPLANATION =
+      "Provided store type `%s` is not supported for Ssh/WinRm.";
 }

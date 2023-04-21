@@ -15,6 +15,7 @@ import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
+import io.harness.security.dto.UserPrincipal;
 
 import com.google.inject.Inject;
 import java.util.Date;
@@ -30,7 +31,8 @@ public class OauthSecretService {
   String oauthRefreshTokenSecretName = "harnessoauthsecrettoken_%s_%s";
 
   public OauthAccessTokenResponseDTO createSecrets(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String provider, OauthAccessTokenDTO accessToken, String secretManagerIdentifier) {
+      String projectIdentifier, String provider, OauthAccessTokenDTO accessToken, String secretManagerIdentifier,
+      boolean isPrivateSecret, UserDetailsDTO userDetailsDTO) {
     SecretTextSpecDTO accessTokenSecretDTO = SecretTextSpecDTO.builder()
                                                  .secretManagerIdentifier(secretManagerIdentifier)
                                                  .value(accessToken.getAccessToken())
@@ -42,7 +44,7 @@ public class OauthSecretService {
                                                   .valueType(ValueType.Inline)
                                                   .build();
     String randomUUID = UUID.randomUUID().toString();
-    SecretResponseWrapper accessTokenResponse = ngSecretService.create(accountIdentifier,
+    SecretDTOV2 accessTokenSecretDTOV2 =
         SecretDTOV2.builder()
             .identifier(format(oauthAccessTokenSecretName, provider, (new Date()).getTime()))
             .name(format("Harness-Oauth-access-token-%s", randomUUID))
@@ -50,7 +52,12 @@ public class OauthSecretService {
             .type(SecretType.SecretText)
             .orgIdentifier(orgIdentifier)
             .projectIdentifier(projectIdentifier)
-            .build());
+            .build();
+    if (isPrivateSecret) {
+      accessTokenSecretDTOV2.setOwner(new UserPrincipal(userDetailsDTO.getUserIdentifier(),
+          userDetailsDTO.getUserEmail(), userDetailsDTO.getUserName(), accountIdentifier));
+    }
+    SecretResponseWrapper accessTokenResponse = ngSecretService.create(accountIdentifier, accessTokenSecretDTOV2);
 
     // github doesn't provides refresh token
     if (provider.equals("github")) {
@@ -59,7 +66,7 @@ public class OauthSecretService {
           .build();
     }
 
-    SecretResponseWrapper refreshTokenResponse = ngSecretService.create(accountIdentifier,
+    SecretDTOV2 refreshTokenSecretDTOV2 =
         SecretDTOV2.builder()
             .identifier(format(oauthRefreshTokenSecretName, provider, (new Date()).getTime()))
             .name(format("Harness-Oauth-refresh-token-%s", randomUUID))
@@ -67,7 +74,12 @@ public class OauthSecretService {
             .type(SecretType.SecretText)
             .orgIdentifier(orgIdentifier)
             .projectIdentifier(projectIdentifier)
-            .build());
+            .build();
+    if (isPrivateSecret) {
+      refreshTokenSecretDTOV2.setOwner(new UserPrincipal(userDetailsDTO.getUserIdentifier(),
+          userDetailsDTO.getUserEmail(), userDetailsDTO.getUserName(), accountIdentifier));
+    }
+    SecretResponseWrapper refreshTokenResponse = ngSecretService.create(accountIdentifier, refreshTokenSecretDTOV2);
     return OauthAccessTokenResponseDTO.builder()
         .accessTokenRef(accessTokenResponse.getSecret().getIdentifier())
         .refreshTokenRef(refreshTokenResponse.getSecret().getIdentifier())

@@ -12,6 +12,7 @@ import static io.harness.delegate.task.helm.CustomManifestFetchTaskHelper.unzipM
 import static io.harness.delegate.task.helm.CustomManifestFetchTaskHelper.zipManifestDirectory;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static java.lang.String.format;
@@ -123,6 +124,57 @@ public class CustomManifestFetchTaskHelperTest extends CategoryTest {
         .when(customManifestService)
         .fetchValues(eq(MISSING_FILE), anyString(), eq(ACTIVITY_ID), eq(logCallback), eq(true));
     doReturn("WORK_DIR").when(customManifestService).getWorkingDirectory();
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testZipAndUnzipOperationsWithHelmIgnore() throws IOException {
+    final String destDirPath = "./repository/helm/dest/ACTIVITY_ID";
+    final String sourceDirPath = "./repository/helm/source/manifests";
+    final File zipDir = new File("./repository/helm/zip/ACTIVITY_ID");
+    final File zipFile = new File(format("%s/destZipFile.zip", zipDir.getPath()));
+
+    FileIo.createDirectoryIfDoesNotExist(destDirPath);
+    FileIo.createDirectoryIfDoesNotExist(sourceDirPath);
+    Files.createFile(Paths.get(sourceDirPath, "test1.yaml"));
+    Files.createFile(Paths.get(sourceDirPath, "test2.yaml"));
+    Files.createFile(Paths.get(sourceDirPath, ".helmignore"));
+    FileIo.createDirectoryIfDoesNotExist(zipDir.getPath());
+    Files.write(Paths.get(sourceDirPath, "test1.yaml"), "test script 1".getBytes());
+    Files.write(Paths.get(sourceDirPath, "test2.yaml"), "test script 2".getBytes());
+
+    // test zip directory operation
+    zipManifestDirectory(sourceDirPath, zipFile.getPath());
+    File[] resultZippedFiles = zipDir.listFiles(file -> !file.isHidden());
+    assertThat(resultZippedFiles).isNotNull();
+    assertThat(resultZippedFiles).hasSize(1);
+    assertThat(resultZippedFiles[0]).hasName("destZipFile.zip");
+    assertThat(FileUtils.openInputStream(new File(resultZippedFiles[0].getPath()))).isNotNull();
+
+    InputStream targetStream = FileUtils.openInputStream(new File(zipFile.getPath()));
+    ZipInputStream zipTargetStream = new ZipInputStream(targetStream);
+    File destDir = new File(destDirPath);
+
+    // test unzip directory operation
+    unzipManifestFiles(destDir, zipTargetStream);
+    String[] unzippedFiles = destDir.list((dir, name) -> !dir.isHidden());
+    assertThat(unzippedFiles).hasSize(1);
+    assertThat(unzippedFiles[0]).contains("manifests");
+    Path path = Paths.get(destDirPath, unzippedFiles[0]);
+    File resultFile = new File(path.toString());
+    File[] resultTestFiles = resultFile.listFiles(file -> !file.isHidden());
+    assertThat(resultFile.list()).contains("test1.yaml", "test2.yaml", ".helmignore");
+
+    List<String> filesContent = new ArrayList<>();
+    filesContent.add(readFileToString(resultTestFiles[0], "UTF-8"));
+    filesContent.add(readFileToString(resultTestFiles[1], "UTF-8"));
+    assertThat(filesContent).containsExactlyInAnyOrder("test script 1", "test script 2");
+
+    // clean up
+    FileIo.deleteDirectoryAndItsContentIfExists(destDirPath);
+    FileIo.deleteDirectoryAndItsContentIfExists(sourceDirPath);
+    FileIo.deleteDirectoryAndItsContentIfExists(zipDir.getPath());
   }
 
   @Test

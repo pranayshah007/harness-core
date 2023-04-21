@@ -15,6 +15,7 @@ import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -166,5 +167,30 @@ public class SettingResourceNgTest extends WingsBaseTest {
     }
     verify(secretManager).saveSecretText(any(String.class), argumentCaptor.capture(), any(Boolean.class));
     assertThat(argumentCaptor.getValue().getValue()).isEqualTo("");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(UnitTests.class)
+  public void testSaveSmtpSetting_withMetaCharsSecret_throwsSecretManagementExceptionWithErrorMsg() {
+    SecretManagerConfig secretManagerConfig = KmsConfig.builder().build();
+    when(secretManagerConfigService.getDefaultSecretManager(ACCOUNT_ID)).thenReturn(secretManagerConfig);
+    when(settingsService.getGlobalSettingAttributesByType(ACCOUNT_ID, SettingVariableTypes.SMTP.name()))
+        .thenReturn(new ArrayList<>());
+    // When saveSecretText is invoked throw a SecretManagementException
+    when(secretManager.saveSecretText(any(String.class), any(SecretText.class), any(Boolean.class)))
+        .thenThrow(new SecretManagementException("Secret with smtp-test-secret already exists"));
+    doNothing().when(settingAuthHandler).authorize(any(SettingAttribute.class), any(String.class));
+    when(settingsService.saveWithPruning(any(SettingAttribute.class), any(String.class), any(String.class)))
+        .thenReturn(attributeWithMetaCharPassword);
+    doNothing()
+        .when(settingServiceHelper)
+        .updateSettingAttributeBeforeResponse(any(SettingAttribute.class), any(Boolean.class));
+    ArgumentCaptor<SecretText> argumentCaptor = ArgumentCaptor.forClass(SecretText.class);
+
+    // Now try saving the secret with same name again.
+    SecretManagementException ex = assertThrows(SecretManagementException.class,
+        () -> { settingResourceNg.save(APP_ID, ACCOUNT_ID, attributeWithMetaCharPassword); });
+    assertThat(ex.getMessage()).isEqualTo("Secret with smtp-test-secret already exists");
   }
 }

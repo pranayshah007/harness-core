@@ -12,9 +12,11 @@ import static io.harness.eraro.ErrorCode.FREEZE_EXCEPTION;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.freeze.FreezeOutcome;
 import io.harness.cdng.helpers.NgExpressionHelper;
 import io.harness.cdng.service.steps.constants.ServiceStepConstants;
+import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.eraro.Level;
 import io.harness.freeze.beans.FreezeEntityType;
@@ -36,6 +38,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.SyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
@@ -71,6 +74,8 @@ public class ServiceStep implements SyncExecutable<ServiceStepParameters> {
   @Inject private NotificationHelper notificationHelper;
   @Inject private EngineExpressionService engineExpressionService;
   @Inject NgExpressionHelper ngExpressionHelper;
+  @Inject private OutcomeService outcomeService;
+  @Inject private ServiceStepsHelper serviceStepsHelper;
 
   @Override
   public Class<ServiceStepParameters> getStepParametersClass() {
@@ -95,14 +100,20 @@ public class ServiceStep implements SyncExecutable<ServiceStepParameters> {
     if (stepResponse != null) {
       return stepResponse;
     }
-    return StepResponse.builder()
-        .status(Status.SUCCEEDED)
-        .stepOutcome(StepOutcome.builder()
-                         .name(OutcomeExpressionConstants.SERVICE)
-                         .outcome(ServiceStepOutcome.fromServiceEntity(stepParameters.getType(), serviceEntity))
-                         .group(StepOutcomeGroup.STAGE.name())
-                         .build())
-        .build();
+    stepResponse =
+        StepResponse.builder()
+            .status(Status.SUCCEEDED)
+            .stepOutcome(StepOutcome.builder()
+                             .name(OutcomeExpressionConstants.SERVICE)
+                             .outcome(ServiceStepOutcome.fromServiceEntity(stepParameters.getType(), serviceEntity))
+                             .group(StepOutcomeGroup.STAGE.name())
+                             .build())
+            .build();
+    if (ngFeatureFlagHelperService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
+      serviceStepsHelper.saveServiceExecutionDataToStageInfo(ambiance, stepResponse);
+    }
+    return stepResponse;
   }
 
   protected StepResponse executeFreezePart(Ambiance ambiance, Map<FreezeEntityType, List<String>> entityMap,
