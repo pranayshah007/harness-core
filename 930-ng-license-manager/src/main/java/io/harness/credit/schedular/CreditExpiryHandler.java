@@ -26,7 +26,6 @@ import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 
-// import software.wings.app.JobsFrequencyConfig;
 import com.google.inject.Inject;
 import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
@@ -43,7 +42,6 @@ public class CreditExpiryHandler extends IteratorPumpAndRedisModeHandler impleme
   private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(15);
 
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
-  // @Inject private JobsFrequencyConfig jobsFrequencyConfig;
   @Inject private MorphiaPersistenceProvider<Credit> persistenceProvider;
   @Inject private CreditService creditService;
 
@@ -99,6 +97,38 @@ public class CreditExpiryHandler extends IteratorPumpAndRedisModeHandler impleme
 
     // Register the iterator with the iterator config handler.
     iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
+  }
+
+  public void registerIterator(int threadPoolSize) {
+    registerIteratorFactory(threadPoolSize);
+  }
+
+  public void registerIteratorFactory(int threadPoolSize) {
+    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
+        PersistenceIteratorFactory.PumpExecutorOptions.builder()
+            .name(this.getClass().getName())
+            .poolSize(threadPoolSize)
+            // need to determine later
+            .interval(ofSeconds(5))
+            .build(),
+        Credit.class,
+        MongoPersistenceIterator.<Credit, MorphiaFilterExpander<Credit>>builder()
+            .clazz(Credit.class)
+            .fieldName(Credit.CreditsKeys.creditExpiryCheckIteration)
+            .targetInterval(ofSeconds(31))
+            .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+            .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
+            .handler(this)
+            .filterExpander(query
+                -> query.field(Credit.CreditsKeys.creditStatus)
+                       .equal(Credit.CreditsKeys.creditStatus.equals(CreditStatus.ACTIVE))
+                       .field(Credit.CreditsKeys.expiryTime)
+                       .greaterThan(0)
+                       .field(Credit.CreditsKeys.expiryTime)
+                       .lessThan(System.currentTimeMillis()))
+            .schedulingType(REGULAR)
+            .persistenceProvider(persistenceProvider)
+            .redistribute(true));
   }
 
   @Override
