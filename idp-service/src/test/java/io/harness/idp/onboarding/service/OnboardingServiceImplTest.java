@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.SATHISH;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -19,6 +20,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.idp.common.CommonUtils;
 import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
 import io.harness.idp.gitintegration.processor.impl.GithubConnectorProcessor;
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
@@ -35,13 +37,15 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
 import io.harness.spec.server.idp.v1.model.ConnectorDetails;
+import io.harness.spec.server.idp.v1.model.GenerateYamlRequest;
+import io.harness.spec.server.idp.v1.model.GenerateYamlResponse;
 import io.harness.spec.server.idp.v1.model.HarnessBackstageEntities;
 import io.harness.spec.server.idp.v1.model.HarnessEntitiesCountResponse;
+import io.harness.spec.server.idp.v1.model.ImportEntitiesBase;
 import io.harness.spec.server.idp.v1.model.ImportEntitiesResponse;
-import io.harness.spec.server.idp.v1.model.ImportHarnessEntitiesRequest;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.AccessLevel;
@@ -61,6 +65,8 @@ public class OnboardingServiceImplTest extends CategoryTest {
   static final String ACCOUNT_IDENTIFIER = "123";
   static final String ACCOUNT_IDENTIFIER_DUMMY = "dummy_account_identifier";
   static final String TEST_SERVICE_IDENTIFIER = "serviceId";
+  static final String GENERATE_YAML_DEF =
+      "apiVersion: backstage.io/v1alpha1\nkind: Component\nmetadata:\n  name: my-example-service\n  description: |\n    My Example service which has something to do with APIs and database.\n  links:\n    - title: Website\n      url: http://my-internal-website.com\n  annotations:\n    github.com/project-slug: myorg/myrepo\n    backstage.io/techdocs-ref: dir:.\n    lighthouse.com/website-url: https://harness.io\n# labels:\n#   key1: value1\n# tags: \nspec:\n  type: service\n  owner: my-team\n  lifecycle: experimental\n  system: my-project\n#  dependsOn:\n#    - resource:default/my-db\n#  consumesApis:\n#    - user-api\n#  providesApis:\n#    - example-api";
   AutoCloseable openMocks;
   @InjectMocks private OnboardingServiceImpl onboardingServiceImpl;
   @InjectMocks HarnessOrgToBackstageDomain harnessOrgToBackstageDomain;
@@ -71,6 +77,8 @@ public class OnboardingServiceImplTest extends CategoryTest {
   @Mock StatusInfoService statusInfoService;
   final OnboardingModuleConfig onboardingModuleConfig =
       OnboardingModuleConfig.builder()
+          .descriptionForSampleEntity(
+              "This is an example of how the corresponding service definition YAML files will be created.")
           .tmpPathForCatalogInfoYamlStore("/tmp")
           .harnessCiCdAnnotations(Map.of("projectUrl",
               "https://localhost:8181/ng/account/accountIdentifier/home/orgs/orgIdentifier/projects/projectIdentifier/details"))
@@ -147,21 +155,32 @@ public class OnboardingServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SATHISH)
   @Category(UnitTests.class)
+  public void testGenerateYaml() {
+    mockStatic(CommonUtils.class);
+    when(CommonUtils.readFileFromClassPath(any())).thenReturn(GENERATE_YAML_DEF);
+    GenerateYamlResponse generateYamlResponse =
+        onboardingServiceImpl.generateYaml(ACCOUNT_IDENTIFIER, new GenerateYamlRequest().entities(new ArrayList<>()));
+    assertNotNull(generateYamlResponse);
+    assertEquals(onboardingModuleConfig.getDescriptionForSampleEntity(), generateYamlResponse.getDescription());
+    assertEquals(GENERATE_YAML_DEF, generateYamlResponse.getYamlDef());
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
   public void testImportHarnessEntities() {
+    mockStatic(CommonUtils.class);
+    when(CommonUtils.readFileFromClassPath(any())).thenReturn("");
     when(connectorProcessorFactory.getConnectorProcessor(ConnectorType.fromString("Github")))
         .thenReturn(githubConnectorProcessor);
     when(githubConnectorProcessor.getInfraConnectorType(any())).thenReturn("DIRECT");
     ImportEntitiesResponse importEntitiesResponse = onboardingServiceImpl.importHarnessEntities(ACCOUNT_IDENTIFIER,
-        new ImportHarnessEntitiesRequest()
-            .allImport(true)
-            .entities(Collections.emptyList())
+        new ImportEntitiesBase()
+            .type(ImportEntitiesBase.TypeEnum.SAMPLE)
             .catalogConnectorInfo(new CatalogConnectorInfo()
-                                      .infraConnector(new ConnectorDetails()
-                                                          .identifier("account.sathishgithub")
-                                                          .type(ConnectorDetails.TypeEnum.GITHUB))
-                                      .sourceConnector(new ConnectorDetails()
-                                                           .identifier("account.sathishgithub")
-                                                           .type(ConnectorDetails.TypeEnum.GITHUB))
+                                      .connector(new ConnectorDetails()
+                                                     .identifier("account.sathishgithub")
+                                                     .type(ConnectorDetails.TypeEnum.GITHUB))
                                       .repo("https://github.com/sathish-soundarapandian/onboarding-test")
                                       .branch("main")
                                       .path("idp")));

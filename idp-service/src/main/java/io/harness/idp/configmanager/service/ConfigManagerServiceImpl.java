@@ -6,6 +6,8 @@
  */
 package io.harness.idp.configmanager.service;
 
+import static io.harness.idp.common.CommonUtils.readFileFromClassPath;
+
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -172,8 +174,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   @Override
   public MergedAppConfigEntity mergeAndSaveAppConfig(String accountIdentifier) throws Exception {
     String mergedAppConfig = mergeAllAppConfigsForAccount(accountIdentifier);
-    if (!ConfigManagerUtils.isValidSchema(
-            mergedAppConfig, ConfigManagerUtils.readFile(MERGED_APP_CONFIG_JSON_SCHEMA_PATH))) {
+    if (!ConfigManagerUtils.isValidSchema(mergedAppConfig, readFileFromClassPath(MERGED_APP_CONFIG_JSON_SCHEMA_PATH))) {
       throw new InvalidRequestException(String.format(INVALID_MERGED_APP_CONFIG_SCHEMA, accountIdentifier));
     }
     updateConfigMap(accountIdentifier, mergedAppConfig, CONFIG_NAME);
@@ -217,7 +218,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   }
 
   private String mergeAppConfigs(List<String> configs) throws Exception {
-    String baseAppConfig = ConfigManagerUtils.readFile(BASE_APP_CONFIG_PATH);
+    String baseAppConfig = readFileFromClassPath(BASE_APP_CONFIG_PATH);
     JsonNode baseConfig = ConfigManagerUtils.asJsonNode(baseAppConfig);
     Iterator<String> itr = configs.iterator();
     while (itr.hasNext()) {

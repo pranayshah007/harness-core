@@ -75,13 +75,13 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
   public void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
       String locationParentPath, List<String> filesToPush) {
     ConnectorInfoDTO connectorInfoDTO =
-        getConnectorInfo(accountIdentifier, catalogConnectorInfo.getInfraConnector().getIdentifier());
+        getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier());
     Map<String, BackstageEnvVariable> connectorSecretsInfo =
         getConnectorAndSecretsInfo(accountIdentifier, connectorInfoDTO);
     BackstageEnvSecretVariable envSecretVariable =
         (BackstageEnvSecretVariable) connectorSecretsInfo.get(Constants.BITBUCKET_TOKEN);
     String bitbucketConnectorSecret = GitIntegrationUtils.decryptSecret(ngSecretService, accountIdentifier, null, null,
-        envSecretVariable.getHarnessSecretIdentifier(), catalogConnectorInfo.getSourceConnector().getIdentifier());
+        envSecretVariable.getHarnessSecretIdentifier(), catalogConnectorInfo.getConnector().getIdentifier());
 
     BitbucketConnectorDTO config = (BitbucketConnectorDTO) connectorInfoDTO.getConnectorConfig();
     BitbucketHttpCredentialsOutcomeDTO outcome =

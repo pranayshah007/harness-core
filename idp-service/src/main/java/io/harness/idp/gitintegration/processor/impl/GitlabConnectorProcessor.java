@@ -74,13 +74,13 @@ public class GitlabConnectorProcessor extends ConnectorProcessor {
   public void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
       String locationParentPath, List<String> filesToPush) {
     ConnectorInfoDTO connectorInfoDTO =
-        getConnectorInfo(accountIdentifier, catalogConnectorInfo.getInfraConnector().getIdentifier());
+        getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier());
     Map<String, BackstageEnvVariable> connectorSecretsInfo =
         getConnectorAndSecretsInfo(accountIdentifier, connectorInfoDTO);
     BackstageEnvSecretVariable envSecretVariable =
         (BackstageEnvSecretVariable) connectorSecretsInfo.get(Constants.GITLAB_TOKEN);
     String gitlabConnectorSecret = GitIntegrationUtils.decryptSecret(ngSecretService, accountIdentifier, null, null,
-        envSecretVariable.getHarnessSecretIdentifier(), catalogConnectorInfo.getSourceConnector().getIdentifier());
+        envSecretVariable.getHarnessSecretIdentifier(), catalogConnectorInfo.getConnector().getIdentifier());
 
     GitlabConnectorDTO config = (GitlabConnectorDTO) connectorInfoDTO.getConnectorConfig();
     GitlabHttpCredentialsOutcomeDTO outcome =

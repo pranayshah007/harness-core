@@ -7,6 +7,7 @@
 
 package io.harness.idp.configmanager.resource;
 
+import static io.harness.idp.common.CommonUtils.readFileFromClassPath;
 import static io.harness.idp.common.Constants.IDP_PERMISSION;
 import static io.harness.idp.common.Constants.IDP_RESOURCE_TYPE;
 
@@ -81,7 +82,7 @@ public class MergedPluginsConfigApiImpl implements MergedPluginsConfigApi {
       idpCommonService.checkUserAuthorization();
       if (baseConfig != null && baseConfig) {
         String nameSpace = namespaceService.getNamespaceForAccountIdentifier(harnessAccount).getNamespace();
-        String appConfig = ConfigManagerUtils.readFile(APP_CONFIG_PATH);
+        String appConfig = readFileFromClassPath(APP_CONFIG_PATH);
         JsonNode config = ConfigManagerUtils.asJsonNode(appConfig);
         String baseAppConfig = ConfigManagerUtils.asYaml(config.toString());
         String finalBaseAppConfig = baseAppConfig.replace("${ACCOUNT_ID}", harnessAccount)

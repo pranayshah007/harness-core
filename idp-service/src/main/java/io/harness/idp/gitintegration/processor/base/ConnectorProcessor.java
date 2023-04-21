@@ -81,7 +81,7 @@ public abstract class ConnectorProcessor {
             .repoUrl(catalogConnectorInfo.getRepo())
             .authRequest(
                 UsernamePasswordAuthRequest.builder().username(username).password(password.toCharArray()).build())
-            .connectorId(catalogConnectorInfo.getInfraConnector().getIdentifier())
+            .connectorId(catalogConnectorInfo.getConnector().getIdentifier())
             .accountId(accountIdentifier)
             .build();
     Map<String, Ref> remoteList = gitClientV2.listRemote(gitBaseRequest);
@@ -116,7 +116,7 @@ public abstract class ConnectorProcessor {
                 .setRepoName(repoName)
                 .setBranchName(catalogConnectorInfo.getBranch())
                 .setFilePath(filePathInRepo)
-                .setConnectorRef(ACCOUNT_SCOPED + catalogConnectorInfo.getInfraConnector().getIdentifier())
+                .setConnectorRef(ACCOUNT_SCOPED + catalogConnectorInfo.getConnector().getIdentifier())
                 .setFileContent(Files.readString(Path.of(fileToPush)))
                 .setIsCommitToNewBranch(commitToNewBranch)
                 .setBaseBranchName(baseBranchName)

@@ -701,6 +701,23 @@ paths:
           description: Set true to sync base app-config too
       tags:
         - MergedPluginsConfig
+  /v1/onboarding/generate-yaml:
+    post:
+      summary: Generate YAML Definition for entity
+      operationId: onboarding-generate-yaml
+      responses:
+        '200':
+          $ref: '#/components/responses/GenerateYamlResponse'
+      tags:
+        - OnboardingResource
+      x-internal: true
+      description: Generate YAML Definition for entity
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/GenerateYamlRequest'
 components:
   schemas:
     BackstageEnvVariable:
@@ -916,30 +933,6 @@ components:
       x-stoplight:
         id: 06dd99ce217ed
       description: Namespace response body
-    ImportHarnessEntitiesRequest:
-      title: ImportHarnessEntitiesRequest
-      x-stoplight:
-        id: amr368rxqugif
-      type: object
-      x-examples: {}
-      description: Details of Harness Entities and Catalog Location info
-      properties:
-        catalog_connector_info:
-          $ref: '#/components/schemas/CatalogConnectorInfo'
-          x-stoplight:
-            id: 2dpge46q45sn2
-        entities:
-          type: array
-          minItems: 0
-          items:
-            $ref: '#/components/schemas/EntitiesForImport'
-        all_import:
-          type: boolean
-          x-stoplight:
-            id: dsm3fnlholwsp
-      required:
-        - catalog_connector_info
-        - entities
     CatalogConnectorInfo:
       title: CatalogConnectorInfo
       x-stoplight:
@@ -947,7 +940,7 @@ components:
       type: object
       description: Details of IDP catalog connector
       properties:
-        source_connector:
+        connector:
           $ref: '#/components/schemas/ConnectorDetails'
           x-stoplight:
             id: 218l3eejs3pvn
@@ -957,16 +950,11 @@ components:
           type: string
         path:
           type: string
-        infra_connector:
-          $ref: '#/components/schemas/ConnectorDetails'
-          x-stoplight:
-            id: y4jr5csvofm3c
       required:
-        - source_connector
+        - connector
         - repo
         - branch
         - path
-        - infra_connector
     HarnessEntitiesCountResponse:
       title: HarnessEntitiesCountResponse
       x-stoplight:
@@ -1527,6 +1515,115 @@ components:
             id: jqr3z1zl2f5vs
       required:
         - plugin
+    GenerateYamlRequest:
+      title: GenerateYamlRequest
+      x-stoplight:
+        id: 6afrksdt6yzf8
+      type: object
+      properties:
+        entities:
+          type: array
+          x-stoplight:
+            id: x1bjzeq0xhqe9
+          items:
+            $ref: '#/components/schemas/EntitiesForImport'
+            x-stoplight:
+              id: mn1sipjammn91
+      required:
+        - entities
+      description: Request to generate yaml for any one entity if provided or generate sample entity yaml definition
+    GenerateYamlResponse:
+      title: GenerateYamlResponse
+      x-stoplight:
+        id: lu8lnvc5d1ycn
+      type: object
+      description: Response contianing entity yaml definition and description about the entity
+      properties:
+        yaml_def:
+          type: string
+          x-stoplight:
+            id: b9a1z1ixle6e0
+        description:
+          type: string
+          x-stoplight:
+            id: n4cd9raohifd2
+      required:
+        - yaml_def
+        - description
+    AllEntitiesImport:
+      title: AllEntitiesImport
+      x-stoplight:
+        id: icn79gqklynqb
+      allOf:
+        - $ref: '#/components/schemas/ImportEntitiesBase'
+        - type: object
+          x-stoplight:
+            id: befy5yjyk1mho
+      x-discriminator-value: All
+      description: Import all harness entities
+    SampleEntitiesImport:
+      title: SampleEntitiesImport
+      x-stoplight:
+        id: 0n4jic9y62wnk
+      description: Import sample entities
+      x-discriminator-value: Sample
+      allOf:
+        - $ref: '#/components/schemas/ImportEntitiesBase'
+          x-stoplight:
+            id: ow59y8dd42ark
+        - type: object
+          x-stoplight:
+            id: a3pg2s49ri981
+    IndividualEntitiesImport:
+      title: IndividualEntitiesImport
+      x-stoplight:
+        id: sef7xljum4s1e
+      x-discriminator-value: Individual
+      description: Import selected harness entities
+      allOf:
+        - $ref: '#/components/schemas/ImportEntitiesBase'
+        - type: object
+          x-stoplight:
+            id: r3bpmjiqu80hs
+          properties:
+            entities:
+              x-stoplight:
+                id: wpilxcdq1y8fu
+              type: array
+              items:
+                $ref: '#/components/schemas/EntitiesForImport'
+                x-stoplight:
+                  id: ig9bbn1ayo7ou
+          required:
+            - entities
+    ImportEntitiesBase:
+      title: ImportEntitiesBase
+      x-stoplight:
+        id: wjxl1hwpwycv4
+      type: object
+      description: Abstract base for import entities
+      discriminator:
+        propertyName: type
+        mapping:
+          All: '#/components/schemas/AllEntitiesImport'
+          Individual: '#/components/schemas/IndividualEntitiesImport'
+          Sample: '#/components/schemas/SampleEntitiesImport'
+      properties:
+        type:
+          type: string
+          x-stoplight:
+            id: ivlkqhisxcx6w
+          enum:
+            - All
+            - Individual
+            - Sample
+        catalog_connector_info:
+          $ref: '#/components/schemas/CatalogConnectorInfo'
+          x-stoplight:
+            id: 2g3sd1omi2h4x
+      required:
+        - type
+        - catalog_connector_info
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -1693,7 +1790,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ImportHarnessEntitiesRequest'
+            $ref: '#/components/schemas/ImportEntitiesBase'
           examples: {}
       description: Details of Harness Entities and Catalog Location info
     ManualImportEntityRequest:
@@ -1750,6 +1847,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/LayoutIngestRequest'
+    GenerateYamlRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GenerateYamlRequest'
+      description: Request to generate yaml for any one entity if provided or generate sample entity yaml definition
   responses:
     BackstageEnvVariableResponse:
       description: Example response
@@ -1943,6 +2046,19 @@ components:
           schema:
             type: integer
           description: Maximum page size in Paginated response.
+    GenerateYamlResponse:
+      description: Response contianing entity yaml definition and description about the entity
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              generated_yaml:
+                $ref: '#/components/schemas/GenerateYamlResponse'
+                x-stoplight:
+                  id: bphw0sqlu2jkj
+            required:
+              - generated_yaml
   securitySchemes:
     x-api-key:
       name: x-api-key
