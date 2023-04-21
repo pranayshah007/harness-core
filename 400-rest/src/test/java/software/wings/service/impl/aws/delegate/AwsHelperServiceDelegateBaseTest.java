@@ -32,6 +32,7 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
+import software.wings.service.impl.AwsApiHelperService;
 import software.wings.service.impl.delegate.AwsEcrApiHelperServiceDelegateBase;
 
 import com.amazonaws.AmazonClientException;
@@ -51,13 +52,17 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 @OwnedBy(CDP)
 public class AwsHelperServiceDelegateBaseTest extends WingsBaseTest {
-  @Mock private AwsEcrApiHelperServiceDelegateBase awsEcrApiHelperServiceDelegateBase;
+  @InjectMocks @Spy private AwsEcrApiHelperServiceDelegateBase awsEcrApiHelperServiceDelegateBase;
+
+  @Mock private AwsApiHelperService awsApiHelperService;
 
   @Before
   public void setup() {

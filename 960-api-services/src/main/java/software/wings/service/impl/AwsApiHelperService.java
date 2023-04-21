@@ -27,6 +27,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.streaming.dtos.AuditBatchDTO;
 import io.harness.audit.streaming.dtos.PutObjectResultResponse;
 import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
+import io.harness.aws.AwsSdkClientBackoffStrategyOverride;
+import io.harness.aws.AwsSdkClientBackoffStrategyOverrideType;
+import io.harness.aws.AwsSdkClientEqualJitterBackoffStrategy;
+import io.harness.aws.AwsSdkClientFullJitterBackoffStrategy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.util.AwsCallTracker;
 import io.harness.data.structure.EmptyPredicate;
@@ -565,7 +569,14 @@ public class AwsApiHelperService {
   }
 
   @NotNull
-  private RetryPolicy getRetryPolicy(AwsInternalConfig awsConfig) {
+  public RetryPolicy getRetryPolicy(AwsInternalConfig awsConfig) {
+    AwsSdkClientBackoffStrategyOverride awsSdkClientBackoffStrategyOverride =
+        awsConfig.getAwsSdkClientBackoffStrategyOverride();
+    if (awsSdkClientBackoffStrategyOverride != null) {
+      // use backoff strategy provided by aws connector
+      return getRetryPolicy(awsSdkClientBackoffStrategyOverride);
+    }
+
     AmazonClientSDKDefaultBackoffStrategy defaultBackoffStrategy = awsConfig.getAmazonClientSDKDefaultBackoffStrategy();
     return defaultBackoffStrategy != null
         ? new RetryPolicy(new PredefinedRetryPolicies.SDKDefaultRetryCondition(),
@@ -574,6 +585,34 @@ public class AwsApiHelperService {
             defaultBackoffStrategy.getMaxErrorRetry(), false)
         : new RetryPolicy(new PredefinedRetryPolicies.SDKDefaultRetryCondition(),
             new PredefinedBackoffStrategies.SDKDefaultBackoffStrategy(), DEFAULT_BACKOFF_MAX_ERROR_RETRIES, false);
+  }
+
+  private RetryPolicy getRetryPolicy(AwsSdkClientBackoffStrategyOverride awsSdkClientBackoffStrategyOverride) {
+    AwsSdkClientBackoffStrategyOverrideType awsBackoffStrategyOverrideType =
+        awsSdkClientBackoffStrategyOverride.getAwsBackoffStrategyOverrideType();
+    if (awsBackoffStrategyOverrideType == AwsSdkClientBackoffStrategyOverrideType.EQUAL_JITTER_BACKOFF_STRATEGY) {
+      AwsSdkClientEqualJitterBackoffStrategy awsSdkClientEqualJitterBackoffStrategy =
+          (AwsSdkClientEqualJitterBackoffStrategy) awsSdkClientBackoffStrategyOverride;
+      return new RetryPolicy(new PredefinedRetryPolicies.SDKDefaultRetryCondition(),
+          new PredefinedBackoffStrategies.EqualJitterBackoffStrategy(
+              (int) awsSdkClientEqualJitterBackoffStrategy.getBaseDelay(),
+              (int) awsSdkClientEqualJitterBackoffStrategy.getMaxBackoffTime()),
+          awsSdkClientBackoffStrategyOverride.getRetryCount(), false);
+    }
+
+    if (awsBackoffStrategyOverrideType == AwsSdkClientBackoffStrategyOverrideType.FULL_JITTER_BACKOFF_STRATEGY) {
+      AwsSdkClientFullJitterBackoffStrategy awsSdkClientFullJitterBackoffStrategy =
+          (AwsSdkClientFullJitterBackoffStrategy) awsSdkClientBackoffStrategyOverride;
+      return new RetryPolicy(new PredefinedRetryPolicies.SDKDefaultRetryCondition(),
+          new PredefinedBackoffStrategies.FullJitterBackoffStrategy(
+              (int) awsSdkClientFullJitterBackoffStrategy.getBaseDelay(),
+              (int) awsSdkClientFullJitterBackoffStrategy.getMaxBackoffTime()),
+          awsSdkClientBackoffStrategyOverride.getRetryCount(), false);
+    }
+
+    // AWS SDK v1 does not contain a fixed delay backoff strategy compatible with v1 RetryPolicy
+    return new RetryPolicy(new PredefinedRetryPolicies.SDKDefaultRetryCondition(),
+        new PredefinedBackoffStrategies.SDKDefaultBackoffStrategy(), DEFAULT_BACKOFF_MAX_ERROR_RETRIES, false);
   }
 
   public AWSCredentialsProvider getAwsCredentialsProvider(AwsInternalConfig awsConfig) {
