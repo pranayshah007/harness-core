@@ -461,7 +461,7 @@ public interface UserService extends OwnedByAccount {
    */
   User completeTrialSignupAndSignIn(String userInviteId);
 
-  User completeTrialSignupAndSignIn(UserInvite userInvite);
+  User completeTrialSignupAndSignIn(UserInvite userInvite, boolean shouldCreateSampleApp);
 
   User completePaidSignupAndSignIn(UserInvite userInvite);
 

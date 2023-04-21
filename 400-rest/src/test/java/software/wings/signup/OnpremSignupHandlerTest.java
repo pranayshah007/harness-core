@@ -113,7 +113,7 @@ public class OnpremSignupHandlerTest extends WingsBaseTest {
 
     onpremSignupHandler.handle(userInvite);
     Mockito.verify(userService, times(1)).saveUserInvite(userInvite);
-    Mockito.verify(userService, times(1)).completeTrialSignupAndSignIn(userInvite);
+    Mockito.verify(userService, times(1)).completeTrialSignupAndSignIn(userInvite, true);
     Mockito.verify(userService, times(0)).createNewUserAndSignIn(Mockito.any(), Mockito.anyString());
   }
 
@@ -129,7 +129,7 @@ public class OnpremSignupHandlerTest extends WingsBaseTest {
 
     onpremSignupHandler.handle(userInvite);
     Mockito.verify(userService, times(0)).saveUserInvite(userInvite);
-    Mockito.verify(userService, times(0)).completeTrialSignupAndSignIn(userInvite);
+    Mockito.verify(userService, times(0)).completeTrialSignupAndSignIn(userInvite, true);
     Mockito.verify(userService, times(1)).createNewUserAndSignIn(Mockito.any(), Mockito.eq(account.getUuid()));
   }
 
