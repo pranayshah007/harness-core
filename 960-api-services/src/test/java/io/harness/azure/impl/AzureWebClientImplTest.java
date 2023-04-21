@@ -365,7 +365,7 @@ public class AzureWebClientImplTest extends CategoryTest {
   }
 
   public AzureClientContext buildAzureClientContext() {
-    return new AzureClientContext(buildAzureConfig(), "subscriptionId", "resourceGroupName");
+    return new AzureClientContext(buildAzureConfig(), "subscriptionId", "resourceGroupName", false);
   }
 
   private AzureConfig buildAzureConfig() {

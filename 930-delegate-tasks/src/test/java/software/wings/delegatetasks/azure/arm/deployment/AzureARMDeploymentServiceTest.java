@@ -366,7 +366,7 @@ public class AzureARMDeploymentServiceTest extends CategoryTest {
   private AzureClientContext getAzureClientContext() {
     @NonNull String subscriptionId = "SUBSCRIPTION_ID";
     @NonNull String resourceGroupName = "RESOURCE_GROUP_NAME";
-    return new AzureClientContext(getAzureConfig(), subscriptionId, resourceGroupName);
+    return new AzureClientContext(getAzureConfig(), subscriptionId, resourceGroupName, false);
   }
 
   private AzureConfig getAzureConfig() {

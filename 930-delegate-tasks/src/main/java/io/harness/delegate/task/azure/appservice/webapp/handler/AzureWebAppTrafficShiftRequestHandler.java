@@ -33,7 +33,7 @@ public class AzureWebAppTrafficShiftRequestHandler extends AzureWebAppRequestHan
     double trafficPercent = taskRequest.getTrafficPercentage();
     azureAppServiceResourceUtilities.validateSlotShiftTrafficParameters(webAppName, deploymentSlot, trafficPercent);
 
-    AzureWebClientContext webClientContext = buildAzureWebClientContext(infrastructure, azureConfig);
+    AzureWebClientContext webClientContext = buildAzureWebClientContext(infrastructure, azureConfig, true);
     updateSlotTrafficWeight(deploymentSlot, webClientContext, trafficPercent, logCallbackProvider);
 
     return AzureWebAppTrafficShiftResponse.builder().deploymentProgressMarker(SLOT_TRAFFIC_PERCENTAGE).build();

@@ -795,7 +795,7 @@ public class AzureManagementClientImplTest extends CategoryTest {
 
   @NotNull
   private AzureClientContext getAzureClientContext(String subscriptionId, String resourceGroupName) {
-    return new AzureClientContext(getAzureConfig(), subscriptionId, resourceGroupName);
+    return new AzureClientContext(getAzureConfig(), subscriptionId, resourceGroupName, false);
   }
 
   @NotNull
