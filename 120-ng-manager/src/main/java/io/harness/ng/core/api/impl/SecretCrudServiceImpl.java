@@ -422,10 +422,14 @@ public class SecretCrudServiceImpl implements SecretCrudService {
       }
       return ngSecretService.list(criteria, getPageRequest(pageRequest)).map(this::getResponseWrapper);
     } else {
-      List<Secret> allMatchingSecrets =
-          ngSecretService
-              .list(criteria, getPageRequest(PageRequest.builder().sortOrders(pageRequest.getSortOrders()).build()))
-              .getContent();
+      List<Secret> allMatchingSecrets = ngSecretService
+                                            .list(criteria,
+                                                getPageRequest(PageRequest.builder()
+                                                                   .pageIndex(0)
+                                                                   .pageIndex(50000)
+                                                                   .sortOrders(pageRequest.getSortOrders())
+                                                                   .build()))
+                                            .getContent();
       allMatchingSecrets = ngSecretService.getPermitted(allMatchingSecrets);
       return ngSecretService
           .getPaginatedResult(allMatchingSecrets, pageRequest.getPageIndex(), pageRequest.getPageSize())
