@@ -39,6 +39,7 @@ public class ModuleLicenseMigrationDetails implements MigrationDetails {
         .add(Pair.of(4, LocalAdminCELicenseMigration.class))
         .add(Pair.of(5, LocalAdminCFLicenseMigration.class))
         .add(Pair.of(6, LocalAdminSRMLicenseMigration.class))
+        .add(Pair.of(7, LocalAdminSRMLicenseMigration.class))
         .build();
   }
 }
