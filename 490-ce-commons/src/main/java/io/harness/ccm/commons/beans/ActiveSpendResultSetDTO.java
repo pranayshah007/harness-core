@@ -23,7 +23,7 @@ import lombok.experimental.FieldDefaults;
 @EqualsAndHashCode(callSuper = false)
 @OwnedBy(CE)
 public class ActiveSpendResultSetDTO {
-  Long cost;
+  Double cost;
   String month;
   String cloudProvider;
   Long maxDay;
