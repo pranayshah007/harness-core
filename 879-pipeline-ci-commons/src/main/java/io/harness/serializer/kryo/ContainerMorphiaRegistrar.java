@@ -9,6 +9,13 @@ package io.harness.serializer.kryo;
 
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.sweepingoutputs.ContainerPortDetails;
+import io.harness.beans.sweepingoutputs.ContextElement;
+import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
+import io.harness.beans.sweepingoutputs.K8PodDetails;
+import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
+import io.harness.beans.sweepingoutputs.StageDetails;
+import io.harness.beans.sweepingoutputs.StageInfraDetails;
+import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 
@@ -19,6 +26,13 @@ public class ContainerMorphiaRegistrar implements MorphiaRegistrar {
   public void registerClasses(Set<Class> set) {
     set.add(ContainerPortDetails.class);
     set.add(LiteEnginePodDetailsOutcome.class);
+    set.add(K8StageInfraDetails.class);
+    set.add(StageDetails.class);
+    set.add(ContextElement.class);
+    set.add(VmStageInfraDetails.class);
+    set.add(K8PodDetails.class);
+    set.add(StageInfraDetails.class);
+    set.add(DliteVmStageInfraDetails.class);
   }
 
   @Override
