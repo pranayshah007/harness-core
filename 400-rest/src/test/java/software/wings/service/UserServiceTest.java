@@ -620,6 +620,16 @@ public class UserServiceTest extends WingsBaseTest {
     marketPlace.setProductCode(ffProductCode);
     user = userService.completeMarketPlaceSignup(savedUser, testInvite, MarketPlaceType.AWS);
     assertThat(user).isEqualTo(savedUser);
+
+    // AWS marketplace signUp for CI
+    String ciProductCode = "CI";
+    when(configuration.getMarketPlaceConfig())
+        .thenReturn(MarketPlaceConfig.builder().awsMarketPlaceProductCode("").build());
+    when(configuration.getMarketPlaceConfig())
+        .thenReturn(MarketPlaceConfig.builder().awsMarketPlaceFfProductCode(ciProductCode).build());
+    marketPlace.setProductCode(ciProductCode);
+    user = userService.completeMarketPlaceSignup(savedUser, testInvite, MarketPlaceType.AWS);
+    assertThat(user).isEqualTo(savedUser);
   }
 
   /**

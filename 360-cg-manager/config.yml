@@ -96,6 +96,11 @@ mktPlaceConfig:
   awsMarketPlaceProductCode: awsMktPlaceProductCodePlaceHolder
   awsMarketPlaceCeProductCode: awsMktPlaceCeProductCodePlaceHolder
   awsMarketPlaceFfProductCode: awsMktPlaceFfProductCodePlaceHolder
+  awsMarketPlaceCiProductCode: awsMktPlaceCiProductCodePlaceHolder
+  awsMarketPlaceStoProductCode: awsMktPlaceStoProductCodePlaceHolder
+  awsMarketPlaceSrmProductCode: awsMktPlaceSrmProductCodePlaceHolder
+  awsMarketPlaceCdProductCode: awsMktPlaceCdProductCodePlaceHolder
+  awsMarketPlaceCcmProductCode: awsMktPlaceCcmProductCodePlaceHolder
   azureMarketplaceAccessKey: "ZWRlZDEzMjMtYTk5Zi00MDc0LWJmMjMtOWFhZTYzN2M4ZGQy"
   azureMarketplaceSecretKey: "UmU4QmtxZkdKal9aWWhyTjlCTU5zRnFIcFNAXUI9ODc="
 

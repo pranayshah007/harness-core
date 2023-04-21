@@ -46,5 +46,14 @@ public interface LicenseService {
 
   void setLicense(Account account);
 
-  boolean updateLicenseForProduct(String productCode, String accountId, Integer orderQuantity, long expirationTime);
+  Edition getDimensionPlan(String dimension);
+
+  Long getNumberOfClientMAUs(Edition plan);
+
+  LicenseType getModuleLicenseType(String dimension, Edition plan);
+
+  boolean hasPremierSupport(String dimension);
+
+  boolean updateLicenseForProduct(
+      String productCode, String accountId, Integer orderQuantity, long expirationTime, String dimension);
 }

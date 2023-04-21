@@ -98,7 +98,12 @@ import io.harness.invites.remote.NgInviteClient;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.LicenseType;
+import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
+import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
+import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
+import io.harness.licensing.beans.modules.SRMModuleLicenseDTO;
+import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
 import io.harness.licensing.remote.admin.AdminLicenseHttpClient;
 import io.harness.limits.ActionType;
 import io.harness.limits.LimitCheckerFactory;
@@ -4124,6 +4129,16 @@ public class UserServiceImpl implements UserService {
                                   .expiryTime(marketPlace.getExpirationDate().getTime())
                                   .accountStatus(AccountStatus.ACTIVE)
                                   .build();
+
+    String dimension = marketPlace.getDimension();
+    Edition plan = licenseService.getDimensionPlan(dimension);
+    boolean premiumSupport = licenseService.hasPremierSupport(dimension);
+    LicenseType licenseType = licenseService.getModuleLicenseType(dimension, plan);
+    Integer orderQuantity = awsMarketPlaceApiHandler.getDimensionQuantity(dimension);
+
+    log.info("dimension:{}, plan:{}, premiumSupport:{}, icenseType:{}, orderQuantity:{}", dimension, plan,
+        premiumSupport, licenseType, orderQuantity);
+
     if (marketPlace.getProductCode().equals(configuration.getMarketPlaceConfig().getAwsMarketPlaceProductCode())) {
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         licenseInfo.setAccountType(AccountType.TRIAL);
@@ -4144,20 +4159,131 @@ public class UserServiceImpl implements UserService {
               .licenseType(ceLicenseType)
               .build());
     } else if (marketPlace.getProductCode().equals(
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceCdProductCode())) {
+      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
+        licenseInfo.setAccountType(AccountType.TRIAL);
+      }
+
+      // TODO: please add trial logic here [PLG-1942]
+      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+      adminLicenseHttpClient.createAccountLicense(accountId,
+          CDModuleLicenseDTO.builder()
+              .serviceInstances(orderQuantity)
+              .accountIdentifier(accountId)
+              .moduleType(ModuleType.CD)
+              .edition(plan)
+              .licenseType(licenseType)
+              .premiumSupport(premiumSupport)
+              .status(LicenseStatus.ACTIVE)
+              .startTime(DateTime.now().getMillis())
+              .expiryTime(marketPlace.getExpirationDate().getTime())
+              .build());
+    } else if (marketPlace.getProductCode().equals(
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceCcmProductCode())) {
+      CeLicenseType ceLicenseType = CeLicenseType.PAID;
+      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
+        ceLicenseType = CeLicenseType.FULL_TRIAL;
+      }
+      Long spendLimit = Long.valueOf(orderQuantity);
+      log.info("spendLimit:{}", spendLimit);
+
+      // TODO: please add trial logic here [PLG-1942]
+      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+
+      licenseService.updateCeLicense(accountId,
+          CeLicenseInfo.builder()
+              .expiryTime(marketPlace.getExpirationDate().getTime())
+              .licenseType(ceLicenseType)
+              .build());
+
+      adminLicenseHttpClient.createAccountLicense(accountId,
+          CEModuleLicenseDTO.builder()
+              .spendLimit(spendLimit)
+              .accountIdentifier(accountId)
+              .moduleType(ModuleType.CE)
+              .edition(plan)
+              .licenseType(licenseType)
+              .premiumSupport(premiumSupport)
+              .status(LicenseStatus.ACTIVE)
+              .startTime(DateTime.now().getMillis())
+              .expiryTime(marketPlace.getExpirationDate().getTime())
+              .build());
+    } else if (marketPlace.getProductCode().equals(
                    configuration.getMarketPlaceConfig().getAwsMarketPlaceFfProductCode())) {
+      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
+        licenseInfo.setAccountType(AccountType.TRIAL);
+      }
+      Long numberOfClientMAUs = licenseService.getNumberOfClientMAUs(plan);
+      log.info("numberOfClientMAUs:{}", numberOfClientMAUs);
+
+      // TODO: please add trial logic here [PLG-1942]
+      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+      adminLicenseHttpClient.createAccountLicense(accountId,
+          CFModuleLicenseDTO.builder()
+              .numberOfClientMAUs(numberOfClientMAUs)
+              .numberOfUsers(orderQuantity)
+              .accountIdentifier(accountId)
+              .moduleType(ModuleType.CF)
+              .edition(plan)
+              .licenseType(licenseType)
+              .premiumSupport(premiumSupport)
+              .status(LicenseStatus.ACTIVE)
+              .startTime(DateTime.now().getMillis())
+              .expiryTime(marketPlace.getExpirationDate().getTime())
+              .build());
+    } else if (marketPlace.getProductCode().equals(
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceCiProductCode())) {
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
       // TODO: please add trial logic here [PLG-1942]
       accountId = setupAccountForUser(user, userInvite, licenseInfo);
       adminLicenseHttpClient.createAccountLicense(accountId,
-          CFModuleLicenseDTO.builder()
-              .numberOfClientMAUs(TEST_FF_NUMBER_OF_CLIENT_MAUS)
-              .numberOfUsers(TEST_FF_NUMBER_OF_USERS)
+          CIModuleLicenseDTO.builder()
+              .numberOfCommitters(orderQuantity)
               .accountIdentifier(accountId)
-              .moduleType(ModuleType.CF)
-              .edition(Edition.ENTERPRISE)
-              .licenseType(LicenseType.PAID)
+              .moduleType(ModuleType.CI)
+              .edition(plan)
+              .licenseType(licenseType)
+              .premiumSupport(premiumSupport)
+              .status(LicenseStatus.ACTIVE)
+              .startTime(DateTime.now().getMillis())
+              .expiryTime(marketPlace.getExpirationDate().getTime())
+              .build());
+    } else if (marketPlace.getProductCode().equals(
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceSrmProductCode())) {
+      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
+        licenseInfo.setAccountType(AccountType.TRIAL);
+      }
+      // TODO: please add trial logic here [PLG-1942]
+      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+      adminLicenseHttpClient.createAccountLicense(accountId,
+          SRMModuleLicenseDTO.builder()
+              .numberOfServices(orderQuantity)
+              .accountIdentifier(accountId)
+              .moduleType(ModuleType.SRM)
+              .edition(plan)
+              .licenseType(licenseType)
+              .premiumSupport(premiumSupport)
+              .status(LicenseStatus.ACTIVE)
+              .startTime(DateTime.now().getMillis())
+              .expiryTime(marketPlace.getExpirationDate().getTime())
+              .build());
+    } else if (marketPlace.getProductCode().equals(
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceStoProductCode())) {
+      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
+        licenseInfo.setAccountType(AccountType.TRIAL);
+      }
+      // TODO: please add trial logic here [PLG-1942]
+      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+      adminLicenseHttpClient.createAccountLicense(accountId,
+          STOModuleLicenseDTO.builder()
+              .numberOfDevelopers(orderQuantity)
+              .accountIdentifier(accountId)
+              .moduleType(ModuleType.STO)
+              .edition(plan)
+              .licenseType(licenseType)
+              .premiumSupport(premiumSupport)
               .status(LicenseStatus.ACTIVE)
               .startTime(DateTime.now().getMillis())
               .expiryTime(marketPlace.getExpirationDate().getTime())
