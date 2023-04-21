@@ -150,8 +150,8 @@ public class FreezeTimeUtilsTest extends CategoryTest {
     List<FreezeWindow> windows2 = new ArrayList<>();
     windows2.add(freezeWindow2);
     CurrentOrUpcomingWindow currentOrUpcomingWindow1 = FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(windows2);
-    assertThat(currentOrUpcomingWindow1.getStartTime()).isEqualTo(1682074800000L);
-    assertThat(currentOrUpcomingWindow1.getEndTime()).isEqualTo(1682076600000L);
+    assertThat(currentOrUpcomingWindow1.getStartTime()).isEqualTo(1684666800000L);
+    assertThat(currentOrUpcomingWindow1.getEndTime()).isEqualTo(1684668600000L);
   }
 
   @Test
@@ -218,7 +218,7 @@ public class FreezeTimeUtilsTest extends CategoryTest {
     List<FreezeWindow> windows2 = new ArrayList<>();
     windows2.add(freezeWindow2);
     List<Long> nextWindow1 = FreezeTimeUtils.fetchUpcomingTimeWindow(windows2);
-    assertThat(nextWindow1.get(0)).isEqualTo(1682074800000L);
+    assertThat(nextWindow1.get(0)).isEqualTo(1684666800000L);
   }
 
   @Test
