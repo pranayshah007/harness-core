@@ -39,45 +39,53 @@ public class CCMMetaDataService {
   public CCMMetaData getCCMMetaData(@NonNull final String accountId) {
     CEMetadataRecord ceMetadataRecord = metadataRecordDao.getByAccountId(accountId);
     CCMMetaDataBuilder ccmMetaDataBuilder = CCMMetaData.builder();
-    if (ceMetadataRecord != null) {
-      ccmMetaDataBuilder.applicationDataPresent(getFieldBooleanValue(ceMetadataRecord.getApplicationDataPresent()));
-      ccmMetaDataBuilder.clusterDataPresent(getFieldBooleanValue(ceMetadataRecord.getClusterDataConfigured()));
-      ccmMetaDataBuilder.k8sClusterConnectorPresent(
-          getFieldBooleanValue(ceMetadataRecord.getClusterConnectorConfigured()));
-      ccmMetaDataBuilder.awsConnectorsPresent(getFieldBooleanValue(ceMetadataRecord.getAwsConnectorConfigured()));
-      ccmMetaDataBuilder.gcpConnectorsPresent(getFieldBooleanValue(ceMetadataRecord.getGcpConnectorConfigured()));
-      ccmMetaDataBuilder.azureConnectorsPresent(getFieldBooleanValue(ceMetadataRecord.getAzureConnectorConfigured()));
-      ccmMetaDataBuilder.cloudDataPresent(isCloudDataPresent(ceMetadataRecord));
-      ccmMetaDataBuilder.currencyPreference(ceMetadataRecord.getCurrencyPreference());
-    }
-    DefaultViewIdDto defaultViewIds = ceViewService.getDefaultViewIds(accountId);
-    ccmMetaDataBuilder.defaultAwsPerspectiveId(defaultViewIds.getAwsViewId());
-    ccmMetaDataBuilder.defaultAzurePerspectiveId(defaultViewIds.getAzureViewId());
-    ccmMetaDataBuilder.defaultGcpPerspectiveId(defaultViewIds.getGcpViewId());
-    ccmMetaDataBuilder.defaultClusterPerspectiveId(defaultViewIds.getClusterViewId());
-
     try {
-      Boolean isSegmentModuleInterfaceLoadedEventSent = null;
-      if (null != ceMetadataRecord) {
-        isSegmentModuleInterfaceLoadedEventSent = ceMetadataRecord.getSegmentModuleInterfaceLoadedEventSent();
+      log.info("ceMetadataRecord : in getCCMMetaData");
+      if (ceMetadataRecord != null) {
+        log.info("ceMetadataRecord : is not null");
+        ccmMetaDataBuilder.applicationDataPresent(getFieldBooleanValue(ceMetadataRecord.getApplicationDataPresent()));
+        ccmMetaDataBuilder.clusterDataPresent(getFieldBooleanValue(ceMetadataRecord.getClusterDataConfigured()));
+        ccmMetaDataBuilder.k8sClusterConnectorPresent(
+                getFieldBooleanValue(ceMetadataRecord.getClusterConnectorConfigured()));
+        ccmMetaDataBuilder.awsConnectorsPresent(getFieldBooleanValue(ceMetadataRecord.getAwsConnectorConfigured()));
+        ccmMetaDataBuilder.gcpConnectorsPresent(getFieldBooleanValue(ceMetadataRecord.getGcpConnectorConfigured()));
+        ccmMetaDataBuilder.azureConnectorsPresent(getFieldBooleanValue(ceMetadataRecord.getAzureConnectorConfigured()));
+        ccmMetaDataBuilder.cloudDataPresent(isCloudDataPresent(ceMetadataRecord));
+        ccmMetaDataBuilder.currencyPreference(ceMetadataRecord.getCurrencyPreference());
       }
-      if (isSegmentModuleInterfaceLoadedEventSent == null || !isSegmentModuleInterfaceLoadedEventSent) {
-        HashMap<String, Object> properties = new HashMap<>();
-        properties.put("module", "CCM");
-        telemetryReporter.sendTrackEvent(MODULE_INTERFACE_LOADED, null, accountId, properties,
-            Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-        if (null == ceMetadataRecord) {
-          ceMetadataRecord = CEMetadataRecord.builder().build();
-        }
-        ceMetadataRecord.setSegmentModuleInterfaceLoadedEventSent(true);
-        metadataRecordDao.upsert(ceMetadataRecord);
-      }
-    } catch (Exception ex) {
-      log.error("Encountered exception while getSegmentModuleInterfaceLoadedEventSent.", ex);
-    }
+      log.info("ceMetadataRecord ");
+      DefaultViewIdDto defaultViewIds = ceViewService.getDefaultViewIds(accountId);
+      log.info("ceMetadataRecord : got defaultViewIds");
+      ccmMetaDataBuilder.defaultAwsPerspectiveId(defaultViewIds.getAwsViewId());
+      ccmMetaDataBuilder.defaultAzurePerspectiveId(defaultViewIds.getAzureViewId());
+      ccmMetaDataBuilder.defaultGcpPerspectiveId(defaultViewIds.getGcpViewId());
+      ccmMetaDataBuilder.defaultClusterPerspectiveId(defaultViewIds.getClusterViewId());
 
-    // Checking cost overview permissions
-    ccmMetaDataBuilder.showCostOverview(rbacHelper.hasCostOverviewPermission(accountId, null, null));
+      try {
+        Boolean isSegmentModuleInterfaceLoadedEventSent = null;
+        if (null != ceMetadataRecord) {
+          isSegmentModuleInterfaceLoadedEventSent = ceMetadataRecord.getSegmentModuleInterfaceLoadedEventSent();
+        }
+        log.info("ceMetadataRecord : isSegmentModuleInterfaceLoadedEventSent");
+        if (isSegmentModuleInterfaceLoadedEventSent == null || !isSegmentModuleInterfaceLoadedEventSent) {
+          HashMap<String, Object> properties = new HashMap<>();
+          properties.put("module", "CCM");
+          telemetryReporter.sendTrackEvent(MODULE_INTERFACE_LOADED, null, accountId, properties,
+                  Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+          if (null == ceMetadataRecord) {
+            ceMetadataRecord = CEMetadataRecord.builder().build();
+          }
+          ceMetadataRecord.setSegmentModuleInterfaceLoadedEventSent(true);
+          metadataRecordDao.upsert(ceMetadataRecord);
+        }
+      } catch (Exception ex) {
+        log.error("Encountered exception while getSegmentModuleInterfaceLoadedEventSent.", ex);
+      }
+      // Checking cost overview permissions
+      ccmMetaDataBuilder.showCostOverview(rbacHelper.hasCostOverviewPermission(accountId, null, null));
+    } catch (Exception e){
+      log.error("caught exception", e);
+    }
     return ccmMetaDataBuilder.build();
   }
 
