@@ -312,8 +312,7 @@ public class ScimUserServiceImpl implements ScimUserService {
           patchOperation.getValue(String.class));
     }
 
-    if (featureFlagService.isEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM, accountId)
-        && "userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
+    if ("userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
         && !user.getEmail().equalsIgnoreCase(patchOperation.getValue(String.class))) {
       updateUser(patchOperation, user, UserKeys.email);
       log.info("SCIM: Updated user's {}, email from {} to email id: {}", userId, user.getEmail(),
@@ -454,8 +453,7 @@ public class ScimUserServiceImpl implements ScimUserService {
       final String userPrimaryEmail =
           isEmpty(userResource.getUserName()) ? null : userResource.getUserName().toLowerCase();
 
-      if (featureFlagService.isEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM, accountId) && userPrimaryEmail != null
-          && !userPrimaryEmail.equals(user.getEmail())) {
+      if (userPrimaryEmail != null && !userPrimaryEmail.equals(user.getEmail())) {
         updateOperations.set(UserKeys.email, userPrimaryEmail);
         userUpdate = true;
         log.info(

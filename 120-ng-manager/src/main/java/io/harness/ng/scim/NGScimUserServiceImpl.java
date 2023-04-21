@@ -290,8 +290,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
       }
 
       String updatedEmail = getPrimaryEmail(scimUser);
-      if (ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.UPDATE_EMAILS_VIA_SCIM)
-          && existingUser.getEmail() != null && !existingUser.getEmail().equals(updatedEmail)) {
+      if (existingUser.getEmail() != null && !existingUser.getEmail().equals(updatedEmail)) {
         userMetadata.setEmail(updatedEmail);
         userMetadata.setExternallyManaged(true);
         log.info("NGSCIM: Updating email for user {} ; Updated email: {}", userId, updatedEmail);
@@ -363,8 +362,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
       }
     }
 
-    if (ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.UPDATE_EMAILS_VIA_SCIM)
-        && "userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
+    if ("userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
         && !userMetadataDTO.getEmail().equalsIgnoreCase(patchOperation.getValue(String.class))) {
       String updatedEmail = patchOperation.getValue(String.class).toLowerCase();
       userMetadataDTO.setEmail(updatedEmail);

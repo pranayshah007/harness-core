@@ -466,7 +466,6 @@ public class ScimUserServiceTest extends WingsBaseTest {
     userInvite.setUuid(generateUuid());
 
     when(userService.get(account.getUuid(), user.getUuid())).thenReturn(user);
-    when(featureFlagService.isEnabled(eq(FeatureName.UPDATE_EMAILS_VIA_SCIM), any())).thenReturn(true);
     when(wingsPersistence.createUpdateOperations(User.class)).thenReturn(updateOperations);
     Response response = scimUserService.updateUser(user.getUuid(), account.getUuid(), scimUser);
     verify(userService, times(1)).updateUser(user.getUuid(), updateOperations);
@@ -501,7 +500,6 @@ public class ScimUserServiceTest extends WingsBaseTest {
     userInvite.setUuid(generateUuid());
 
     when(userService.get(account.getUuid(), user.getUuid())).thenReturn(user);
-    when(featureFlagService.isEnabled(eq(FeatureName.UPDATE_EMAILS_VIA_SCIM), any())).thenReturn(false);
     when(wingsPersistence.createUpdateOperations(User.class)).thenReturn(updateOperations);
     Response response = scimUserService.updateUser(user.getUuid(), account.getUuid(), scimUser);
     verify(userService, times(1)).updateUser(user.getUuid(), updateOperations);
@@ -655,7 +653,6 @@ public class ScimUserServiceTest extends WingsBaseTest {
     user.setUuid(userId);
     user.setEmail("admin@harness.io");
 
-    when(featureFlagService.isEnabled(eq(FeatureName.UPDATE_EMAILS_VIA_SCIM), anyString())).thenReturn(true);
     when(wingsPersistence.createUpdateOperations(User.class)).thenReturn(updateOperations);
     when(userService.get(accountId, userId)).thenReturn(user);
 
@@ -691,7 +688,6 @@ public class ScimUserServiceTest extends WingsBaseTest {
     userInvite.setUuid(generateUuid());
 
     when(userService.get(account.getUuid(), user.getUuid())).thenReturn(user);
-    when(featureFlagService.isEnabled(eq(FeatureName.UPDATE_EMAILS_VIA_SCIM), any())).thenReturn(true);
     when(wingsPersistence.createUpdateOperations(User.class)).thenReturn(updateOperations);
     Response response = scimUserService.updateUser(user.getUuid(), account.getUuid(), scimUser);
     verify(userService, times(1)).updateUser(user.getUuid(), updateOperations);
@@ -724,7 +720,6 @@ public class ScimUserServiceTest extends WingsBaseTest {
     userInvite.setUuid(generateUuid());
 
     when(userService.get(account.getUuid(), user.getUuid())).thenReturn(user);
-    when(featureFlagService.isEnabled(eq(FeatureName.UPDATE_EMAILS_VIA_SCIM), any())).thenReturn(true);
     when(wingsPersistence.createUpdateOperations(User.class)).thenReturn(updateOperations);
     Response response = scimUserService.updateUser(user.getUuid(), account.getUuid(), scimUser);
     verify(userService, times(1)).updateUser(user.getUuid(), updateOperations);
@@ -757,7 +752,6 @@ public class ScimUserServiceTest extends WingsBaseTest {
     userInvite.setUuid(generateUuid());
 
     when(userService.get(account.getUuid(), user.getUuid())).thenReturn(user);
-    when(featureFlagService.isEnabled(eq(FeatureName.UPDATE_EMAILS_VIA_SCIM), any())).thenReturn(true);
     when(wingsPersistence.createUpdateOperations(User.class)).thenReturn(updateOperations);
     Response response = scimUserService.updateUser(user.getUuid(), account.getUuid(), scimUser);
     verify(userService, times(0)).updateUser(user.getUuid(), updateOperations);
