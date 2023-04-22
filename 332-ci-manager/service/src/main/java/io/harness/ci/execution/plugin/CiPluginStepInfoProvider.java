@@ -15,6 +15,8 @@ import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIAbstractStepNode;
+import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
+import io.harness.beans.steps.stepinfo.V1.BackgroundStepInfoV1;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.integrationstage.K8InitializeStepUtils;
 import io.harness.ci.utils.PortFinder;
@@ -57,7 +59,7 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
           String.format("Error in parsing CI step for step type [%s]", request.getType()), e);
     }
     // todo(abhinav): get used ports from request
-    PluginCompatibleStep pluginCompatibleStep = (PluginCompatibleStep) ciAbstractStepNode.getStepSpecType();
+
     Set<Integer> usedPorts = new HashSet<>(request.getUsedPortDetails().getUsedPortsList());
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
     ContainerDefinitionInfo containerDefinitionInfo =
@@ -90,6 +92,13 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
             .setTotalPortUsedDetails(PortDetails.newBuilder().addAllUsedPorts(ports).build())
             .setResource(getPluginContainerResources(containerDefinitionInfo))
             .addAllSecretVariable(secretVariables);
+
+    if (ciAbstractStepNode.getStepSpecType() instanceof BackgroundStepInfo
+        || ciAbstractStepNode.getStepSpecType() instanceof BackgroundStepInfoV1) {
+      return PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();
+    }
+
+    PluginCompatibleStep pluginCompatibleStep = (PluginCompatibleStep) ciAbstractStepNode.getStepSpecType();
 
     String stepConnectorRef =
         ExpressionResolverUtils.resolveStringParameter("connectorRef", pluginCompatibleStep.getStepType().toString(),

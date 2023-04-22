@@ -25,8 +25,9 @@ public class PortFinder {
     while (usedPorts.contains(startingPort)) {
       startingPort++;
     }
-    temp = startingPort + 1;
+    temp = startingPort;
     usedPorts.add(temp);
+    startingPort++;
     return temp;
   }
 
