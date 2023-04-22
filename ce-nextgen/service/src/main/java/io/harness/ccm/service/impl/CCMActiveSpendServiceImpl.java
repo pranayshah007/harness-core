@@ -79,9 +79,8 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
   @Override
   public CostOverviewDTO getActiveSpendStats(long startTime, long endTime, String accountIdentifier) {
     ActiveSpendDTO activeSpendDTO = getActiveSpend(startTime, endTime, accountIdentifier);
-    double activeSpend = Double.valueOf(activeSpendDTO.getCost());
-    double previousPeriodActiveSpend =
-        Double.valueOf(getActiveSpendForPreviousPeriod(startTime, endTime, accountIdentifier));
+    double activeSpend = activeSpendDTO.getCost();
+    double previousPeriodActiveSpend = getActiveSpendForPreviousPeriod(startTime, endTime, accountIdentifier);
     double trend = getTrendForActiveSpend(activeSpend, previousPeriodActiveSpend);
     return CostOverviewDTO.builder()
         .statsLabel(ACTIVE_SPEND_LABEL)
@@ -102,7 +101,7 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
     long endTimeForForecastedCost = startOfCurrentDay - THOUSAND;
     ActiveSpendDTO activeSpendDTO =
         getActiveSpend(startTimeForForecastedCost, endTimeForForecastedCost, accountIdentifier);
-    double currentSpend = Double.valueOf(activeSpendDTO.getCost());
+    double currentSpend = activeSpendDTO.getCost();
     long spendPeriod = ONE_DAY_MILLIS;
     if (!activeSpendDTO.getMaxDay().equals(activeSpendDTO.getMinDay())) {
       spendPeriod = (activeSpendDTO.getMaxDay() - activeSpendDTO.getMinDay()) / THOUSAND + ONE_DAY_MILLIS;
@@ -143,7 +142,7 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
       log.error("Failed to getActiveSpend for Account:{}, {}", accountIdentifier, e);
       Thread.currentThread().interrupt();
     }
-    return ActiveSpendDTO.builder().cost(0L).maxDay(0L).minDay(0L).build();
+    return ActiveSpendDTO.builder().cost(0.0D).maxDay(0L).minDay(0L).build();
   }
 
   private ActiveSpendDTO getActiveSpendClickHouse(long startTime, long endTime, String accountIdentifier) {
@@ -160,7 +159,7 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
     } finally {
       DBUtils.close(resultSet);
     }
-    return ActiveSpendDTO.builder().cost(0L).maxDay(0L).minDay(0L).build();
+    return ActiveSpendDTO.builder().cost(0.0D).maxDay(0L).minDay(0L).build();
   }
 
   private static ActiveSpendDTO getActiveSpendDTO(List<ActiveSpendResultSetDTO> activeSpendResultSet) {
@@ -180,7 +179,7 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
         .build();
   }
 
-  private Long getActiveSpendForPreviousPeriod(long startTime, long endTime, String accountIdentifier) {
+  private Double getActiveSpendForPreviousPeriod(long startTime, long endTime, String accountIdentifier) {
     long diffMillis = endTime - startTime;
     long endTimeForPreviousPeriod = startTime - THOUSAND;
     long startTimeForPreviousPeriod = endTimeForPreviousPeriod - diffMillis;
@@ -216,7 +215,7 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
   @FieldDefaults(level = AccessLevel.PRIVATE)
   @EqualsAndHashCode(callSuper = false)
   private static class ActiveSpendDTO {
-    Long cost;
+    Double cost;
     Long maxDay;
     Long minDay;
   }

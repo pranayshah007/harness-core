@@ -90,16 +90,10 @@ public class ViewBusinessMappingResponseHelper {
 
     if (!sharedCostBusinessMappings.isEmpty()) {
       updatedDataPoints = addSharedCostsFromFilters(updatedDataPoints, sharedCosts);
+      updatedDataPoints.sort(
+          (dataPoints1,
+              dataPoints2) -> Double.compare(dataPoints2.getCost().doubleValue(), dataPoints1.getCost().doubleValue()));
     }
-
-    updatedDataPoints =
-        updatedDataPoints.stream()
-            .filter(dataPoint
-                -> Objects.nonNull(dataPoint.getCost()) && Double.compare(dataPoint.getCost().doubleValue(), 0.0D) != 0)
-            .collect(Collectors.toList());
-    updatedDataPoints.sort(
-        (dataPoints1,
-            dataPoints2) -> Double.compare(dataPoints2.getCost().doubleValue(), dataPoints1.getCost().doubleValue()));
 
     return QLCEViewGridData.builder().data(updatedDataPoints).fields(response.getFields()).build();
   }
