@@ -468,7 +468,9 @@ public class SSOServiceImpl implements SSOService {
   @Override
   public LdapTestResponse validateLdapUserSettings(
       @NotNull LdapSettings ldapSettings, @NotBlank final String accountId) {
-    boolean temporaryEncryption = !populateEncryptedFields(ldapSettings);
+    populateEncryptedFields(ldapSettings);
+    boolean temporaryEncryption = isNotEmpty(ldapSettings.getConnectionSettings().getBindPassword())
+        && !ldapSettings.getConnectionSettings().getBindPassword().equals(LdapConstants.MASKED_STRING);
     encryptSecretIfFFisEnabled(ldapSettings);
     ldapSettings.encryptLdapInlineSecret(secretManager, false);
     EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
@@ -488,7 +490,9 @@ public class SSOServiceImpl implements SSOService {
   @Override
   public LdapTestResponse validateLdapGroupSettings(
       @NotNull LdapSettings ldapSettings, @NotBlank final String accountId) {
-    boolean temporaryEncryption = !populateEncryptedFields(ldapSettings);
+    populateEncryptedFields(ldapSettings);
+    boolean temporaryEncryption = isNotEmpty(ldapSettings.getConnectionSettings().getBindPassword())
+        && !ldapSettings.getConnectionSettings().getBindPassword().equals(LdapConstants.MASKED_STRING);
     encryptSecretIfFFisEnabled(ldapSettings);
     ldapSettings.encryptLdapInlineSecret(secretManager, false);
     EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
@@ -684,8 +688,7 @@ public class SSOServiceImpl implements SSOService {
         ldapSettings.getConnectionSettings(), secretManager, ldapSettings.getAccountId());
   }
 
-  private void deleteTempSecret(
-      boolean temporaryEncryption, EncryptedDataDetail encryptedDataDetail, String accountId) {
+  public void deleteTempSecret(boolean temporaryEncryption, EncryptedDataDetail encryptedDataDetail, String accountId) {
     if (temporaryEncryption) {
       secretManager.deleteSecret(accountId, encryptedDataDetail.getEncryptedData().getUuid(), new HashMap<>(), false);
     }

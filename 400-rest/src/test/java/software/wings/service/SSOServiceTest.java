@@ -7,6 +7,7 @@
 
 package software.wings.service;
 
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RUSHABH;
 import static io.harness.rule.OwnerRule.UJJAWAL;
@@ -22,6 +23,9 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -53,6 +57,7 @@ import software.wings.helpers.ext.ldap.LdapConstants;
 import software.wings.helpers.ext.ldap.LdapResponse;
 import software.wings.security.authentication.SSOConfig;
 import software.wings.security.saml.SamlClientService;
+import software.wings.service.impl.SSOServiceImpl;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.SSOService;
 import software.wings.service.intfc.SSOSettingService;
@@ -208,6 +213,29 @@ public class SSOServiceTest extends WingsBaseTest {
         .thenReturn(LdapTestResponse.builder().status(Status.SUCCESS).build());
     LdapTestResponse response = ssoService.validateLdapConnectionSettings(ldapSettings, "testAccount");
     assertThat(response.getStatus()).isEqualTo(Status.SUCCESS);
+    verify(SECRET_MANAGER, times(1)).deleteSecret(anyString(), any(), any(), anyBoolean());
+  }
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void validateLdapConnectionSettingsWithSecret() {
+    when(DELEGATE_PROXY_FACTORY.getV2(any(), any())).thenReturn(LDAP_DELEGATE_SERVICE);
+    when(LDAP_DELEGATE_SERVICE.validateLdapConnectionSettings(any(), any()))
+        .thenReturn(LdapTestResponse.builder().status(Status.SUCCESS).build());
+    LdapConnectionSettings connectionSettings = new LdapConnectionSettings();
+    connectionSettings.setBindDN("testBindDN");
+    connectionSettings.setEncryptedBindSecret("secretuuID");
+    LdapUserSettings userSettings = new LdapUserSettings();
+    userSettings.setBaseDN("testBaseDN");
+    List<LdapUserSettings> userSettingsList = new ArrayList<>();
+    userSettingsList.add(userSettings);
+    LdapGroupSettings groupSettings = new LdapGroupSettings();
+    groupSettings.setBaseDN("testBaseDN");
+    LdapSettings ldapSettings2 = new LdapSettings(
+        "testSettings", ACCOUNT_ID, connectionSettings, userSettingsList, Arrays.asList(groupSettings));
+    LdapTestResponse response = ssoService.validateLdapConnectionSettings(ldapSettings2, "testAccount");
+    assertThat(response.getStatus()).isEqualTo(Status.SUCCESS);
+    verify(SECRET_MANAGER, times(0)).deleteSecret(anyString(), any(), any(), anyBoolean());
   }
 
   @Test
