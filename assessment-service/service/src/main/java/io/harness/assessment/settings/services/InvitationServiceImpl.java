@@ -20,6 +20,8 @@ import io.harness.assessment.settings.repositories.UserInvitationRepository;
 import io.harness.assessment.settings.repositories.UserRepository;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,6 +51,7 @@ public class InvitationServiceImpl implements InvitationService {
     // add code to reject generic emails TODO
     String encoded;
     // check for repeat emails and reject those TODO
+    List<String> validEmailsSent = new ArrayList<>();
     for (String userEmail : assessmentInviteDTO.getEmails()) {
       try {
         boolean checkValidEmail = checkValidEmail(userEmail);
@@ -76,6 +79,7 @@ public class InvitationServiceImpl implements InvitationService {
                                               .invitedBy(invitedBy)
                                               .build();
           userInvitationRepository.save(userInvitation);
+          validEmailsSent.add(userEmail);
         } else {
           log.info("Invalid email : " + userEmail);
         }
@@ -83,6 +87,7 @@ public class InvitationServiceImpl implements InvitationService {
         log.error("Cannot invite : {} for assessment {}", userEmail, assessmentId);
       }
     }
+    assessmentInviteDTO.setEmails(validEmailsSent);
     // call sending invite.
     return assessmentInviteDTO;
   }

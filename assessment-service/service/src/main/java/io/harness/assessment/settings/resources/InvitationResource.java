@@ -14,6 +14,7 @@ import io.harness.eraro.ResponseMessage;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import java.util.List;
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -54,7 +55,12 @@ public class InvitationResource {
   public Response
   sendAssessmentInvite(@Valid AssessmentInviteDTO body) {
     try {
-      return Response.status(Response.Status.OK).entity(invitationService.sendAssessmentInvite(body)).build();
+      AssessmentInviteDTO assessmentInviteDTO = invitationService.sendAssessmentInvite(body);
+      if (assessmentInviteDTO.getEmails().size() > 0) {
+        return Response.status(Response.Status.OK).entity(assessmentInviteDTO).build();
+      } else {
+        return Response.status(Response.Status.BAD_REQUEST).entity(List.of("All emails are Invalid.")).build();
+      }
     } catch (Exception e) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
