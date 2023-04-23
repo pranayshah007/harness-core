@@ -49,6 +49,7 @@ import static io.harness.delegate.message.MessengerType.DELEGATE;
 import static io.harness.delegate.message.MessengerType.WATCHER;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_CONNECTED;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_DISCONNECTED;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_USAGE_ABOVE_THRESHOLD;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.MEMORY_USAGE_ABOVE_THRESHOLD;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_CURRENTLY_EXECUTING;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_IN_QUEUE;
@@ -753,6 +754,13 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
     log.info("Process info CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
         currentRSSMB, maxProcessRSSThresholdMB, currentPodRSSMB, maxPodRSSThresholdMB);
+
+    if (getCPULoadAverage() > 90) {
+      log.warn("CPU Average load is above 90%");
+      rejectRequest.compareAndSet(false, true);
+      metricRegistry.recordGaugeInc(DELEGATE_USAGE_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME});
+      return;
+    }
 
     if (rejectRequest.compareAndSet(true, false)) {
       log.info(
@@ -1914,6 +1922,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     memoryUsage(builder, "non-heap-", memoryMXBean.getNonHeapMemoryUsage());
 
     return builder.build();
+  }
+
+  public double getCPULoadAverage() {
+    double loadAvg = ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage();
+    int cores = ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors();
+    return (loadAvg / cores) * 100;
   }
 
   private void logCurrentTasks() {
