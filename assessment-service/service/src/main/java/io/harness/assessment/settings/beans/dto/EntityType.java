@@ -7,4 +7,4 @@
 
 package io.harness.assessment.settings.beans.dto;
 
-public enum EntityType { ASSESSMENT, QUESTION, OPTION, SECTION, BENCHMARK, RECOMMENDATION }
+public enum EntityType { ASSESSMENT, QUESTION, OPTION, SECTION, BENCHMARK, RECOMMENDATION, INVITE }

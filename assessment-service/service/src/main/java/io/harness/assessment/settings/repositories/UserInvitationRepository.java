@@ -19,5 +19,7 @@ import org.springframework.data.repository.CrudRepository;
 @OwnedBy(HarnessTeam.SEI)
 public interface UserInvitationRepository extends CrudRepository<UserInvitation, String> {
   Optional<UserInvitation> findOneByGeneratedCode(String code);
+
+  Optional<UserInvitation> findOneByAssessmentIdAndUserId(String assessmentId, String userId);
   Optional<UserInvitation> findOneByUserId(String userId);
 }

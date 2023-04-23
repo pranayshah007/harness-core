@@ -10,6 +10,8 @@ package io.harness.assessment.settings.services;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.assessment.settings.beans.dto.AssessmentInviteDTO;
+import io.harness.assessment.settings.beans.dto.EntityType;
+import io.harness.assessment.settings.beans.dto.upload.AssessmentError;
 import io.harness.assessment.settings.beans.entities.Assessment;
 import io.harness.assessment.settings.beans.entities.Organization;
 import io.harness.assessment.settings.beans.entities.User;
@@ -20,6 +22,9 @@ import io.harness.assessment.settings.repositories.UserInvitationRepository;
 import io.harness.assessment.settings.repositories.UserRepository;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,6 +54,8 @@ public class InvitationServiceImpl implements InvitationService {
     // add code to reject generic emails TODO
     String encoded;
     // check for repeat emails and reject those TODO
+    List<String> validEmailsSent = new ArrayList<>();
+    List<AssessmentError> errors = new ArrayList<>();
     for (String userEmail : assessmentInviteDTO.getEmails()) {
       try {
         boolean checkValidEmail = checkValidEmail(userEmail);
@@ -61,7 +68,10 @@ public class InvitationServiceImpl implements InvitationService {
                 Organization.builder().id(organizationId).organizationName(organizationId).build());
           }
           encoded = TokenGenerationUtil.generateInviteFromEmail(userEmail, assessmentId);
-          String invitedBy = assessmentInviteDTO.getInvitedBy().orElse("Self");
+          String invitedBy = "Self";
+          if (StringUtils.isNotEmpty(assessmentInviteDTO.getInvitedBy())) {
+            invitedBy = assessmentInviteDTO.getInvitedBy();
+          }
           // check user is not already there TODO
           // tie to correct org.
           Optional<User> optionalUser = userRepository.findOneByUserId(userEmail);
@@ -76,13 +86,28 @@ public class InvitationServiceImpl implements InvitationService {
                                               .invitedBy(invitedBy)
                                               .build();
           userInvitationRepository.save(userInvitation);
+          validEmailsSent.add(userEmail);
         } else {
+          errors.add(AssessmentError.builder()
+                         .entityType(EntityType.INVITE)
+                         .entityId(assessmentInviteDTO.getAssessmentId())
+                         .errorMessages(Collections.singletonList("The email ID is invalid : " + userEmail))
+                         .build());
           log.info("Invalid email : " + userEmail);
         }
       } catch (Exception e) {
-        log.error("Cannot invite : {} for assessment {}", userEmail, assessmentId);
+        log.error("Cannot invite : {} for assessment {}", userEmail, assessmentId, e);
+        errors.add(AssessmentError.builder()
+                       .entityType(EntityType.INVITE)
+                       .entityId(assessmentInviteDTO.getAssessmentId())
+                       .errorMessages(Collections.singletonList("Cannot send invite for ID : " + userEmail))
+                       .build());
       }
     }
+    if (errors.size() > 0) {
+      assessmentInviteDTO.setErrors(errors);
+    }
+    assessmentInviteDTO.setEmails(validEmailsSent);
     // call sending invite.
     return assessmentInviteDTO;
   }

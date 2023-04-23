@@ -7,10 +7,10 @@
 
 package io.harness.assessment.settings.beans.dto;
 
+import io.harness.assessment.settings.beans.dto.upload.AssessmentError;
 import io.harness.data.validator.EntityName;
 
 import java.util.List;
-import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.Data;
@@ -19,5 +19,6 @@ import lombok.Data;
 public class AssessmentInviteDTO {
   @Size(min = 1, max = 3) @NotNull List<String> emails;
   @NotNull @EntityName String assessmentId;
-  Optional<String> invitedBy;
+  String invitedBy;
+  List<AssessmentError> errors;
 }

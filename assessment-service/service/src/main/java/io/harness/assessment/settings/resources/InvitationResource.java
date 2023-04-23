@@ -54,7 +54,12 @@ public class InvitationResource {
   public Response
   sendAssessmentInvite(@Valid AssessmentInviteDTO body) {
     try {
-      return Response.status(Response.Status.OK).entity(invitationService.sendAssessmentInvite(body)).build();
+      AssessmentInviteDTO assessmentInviteDTO = invitationService.sendAssessmentInvite(body);
+      if (assessmentInviteDTO.getErrors() == null) {
+        return Response.status(Response.Status.OK).entity(assessmentInviteDTO).build();
+      } else {
+        return Response.status(Response.Status.BAD_REQUEST).entity(assessmentInviteDTO).build();
+      }
     } catch (Exception e) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
