@@ -73,14 +73,14 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -130,7 +130,6 @@ import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.clienttools.ClientTool;
 import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.k8s.K8sTestHelper;
-import io.harness.delegate.k8s.kustomize.KustomizeTaskHelper;
 import io.harness.delegate.k8s.openshift.OpenShiftDelegateService;
 import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
@@ -138,6 +137,8 @@ import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.client.K8sApiClient;
 import io.harness.delegate.task.k8s.client.K8sCliClient;
+import io.harness.delegate.task.k8s.k8sbase.K8sReleaseHandlerFactory;
+import io.harness.delegate.task.k8s.k8sbase.KustomizeTaskHelper;
 import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.encryption.SecretRefData;
 import io.harness.errorhandling.NGErrorHelper;
@@ -153,7 +154,6 @@ import io.harness.exception.UrlNotProvidedException;
 import io.harness.exception.UrlNotReachableException;
 import io.harness.filesystem.FileIo;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
-import io.harness.helpers.k8s.releasehistory.K8sReleaseHandlerFactory;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.ProcessResponse;
@@ -2595,8 +2595,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
         ImmutableMap.of(HarnessLabels.releaseName, "release", HarnessLabels.track, "canary");
     doReturn(emptyList())
         .when(spyK8sTaskHelperBase)
-        .getPodDetailsWithLabels(
-            any(KubernetesConfig.class), anyString(), anyString(), anyMapOf(String.class, String.class), anyLong());
+        .getPodDetailsWithLabels(any(KubernetesConfig.class), anyString(), anyString(), anyMap(), anyLong());
     spyK8sTaskHelperBase.getPodDetailsWithTrack(config, "default", "release", "canary", DEFAULT_STEADY_STATE_TIMEOUT);
 
     verify(spyK8sTaskHelperBase, times(1))
@@ -2613,8 +2612,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
         ImmutableMap.of(HarnessLabels.releaseName, "release", HarnessLabels.color, "blue");
     doReturn(emptyList())
         .when(spyK8sTaskHelperBase)
-        .getPodDetailsWithLabels(
-            any(KubernetesConfig.class), anyString(), anyString(), anyMapOf(String.class, String.class), anyLong());
+        .getPodDetailsWithLabels(any(KubernetesConfig.class), anyString(), anyString(), anyMap(), anyLong());
     spyK8sTaskHelperBase.getPodDetailsWithColor(config, "default", "release", "blue", DEFAULT_STEADY_STATE_TIMEOUT);
 
     verify(spyK8sTaskHelperBase, times(1))
@@ -2631,8 +2629,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     Map<String, String> expectedLabels = ImmutableMap.of(HELM_RELEASE_LABEL, "release");
     doReturn(existingPods)
         .when(spyK8sTaskHelperBase)
-        .getPodDetailsWithLabels(
-            any(KubernetesConfig.class), anyString(), anyString(), anyMapOf(String.class, String.class), anyLong());
+        .getPodDetailsWithLabels(any(KubernetesConfig.class), anyString(), anyString(), anyMap(), anyLong());
     List<ContainerInfo> result =
         spyK8sTaskHelperBase.getContainerInfos(config, "release", "default", DEFAULT_STEADY_STATE_TIMEOUT);
 
@@ -2888,7 +2885,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn("").when(spyHelperBase).writeValuesToFile(any(), any());
 
     final List<FileData> manifestFiles = spyHelperBase.renderTemplateForHelm("helm", "./chart", new ArrayList<>(),
-        "release", "namespace", executionLogCallback, HelmVersion.V3, 9000, commandFlag, "");
+        "release", "namespace", executionLogCallback, HelmVersion.V3, 9000, commandFlag);
 
     verify(spyHelperBase, times(1)).executeShellCommand(eq("./chart"), anyString(), any(), anyLong());
     assertThat(manifestFiles.size()).isEqualTo(1);
@@ -3073,7 +3070,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isTrue();
     verify(helmTaskHelperBase, times(1)).initHelm("manifest", HelmVersion.V3, 9000L);
     verify(helmTaskHelperBase, times(1))
-        .printHelmChartInfoInExecutionLogs(manifestDelegateConfig, executionLogCallback);
+        .printHelmChartInfoWithVersionInExecutionLogs("manifest", manifestDelegateConfig, executionLogCallback);
     verify(helmTaskHelperBase, times(1)).downloadChartFilesFromHttpRepo(manifestDelegateConfig, "manifest", 9000L);
   }
 
@@ -3149,7 +3146,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isTrue();
     verify(helmTaskHelperBase, times(1)).initHelm("manifest", HelmVersion.V2, 9000L);
     verify(helmTaskHelperBase, times(1))
-        .printHelmChartInfoInExecutionLogs(manifestDelegateConfig, executionLogCallback);
+        .printHelmChartInfoWithVersionInExecutionLogs("manifest", manifestDelegateConfig, executionLogCallback);
     verify(helmTaskHelperBase, times(1)).downloadChartFilesUsingChartMuseum(manifestDelegateConfig, "manifest", 9000L);
   }
 
@@ -3161,7 +3158,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                         .helmVersion(HelmVersion.V3)
                                         .storeDelegateConfig(GitStoreDelegateConfig.builder().build())
                                         .helmCommandFlag(TEST_HELM_COMMAND)
-                                        .subChartName("")
+                                        .subChartPath("")
                                         .build(),
         "manifest", "manifest");
   }
@@ -3175,7 +3172,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                         .storeDelegateConfig(HttpHelmStoreDelegateConfig.builder().build())
                                         .helmCommandFlag(TEST_HELM_COMMAND)
                                         .chartName("chart-name")
-                                        .subChartName("")
+                                        .subChartPath("")
                                         .build(),
         "manifest", "manifest/chart-name");
 
@@ -3184,7 +3181,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                            .storeDelegateConfig(HttpHelmStoreDelegateConfig.builder().build())
                                            .helmCommandFlag(HELM_DEPENDENCY_UPDATE)
                                            .chartName("chart-name")
-                                           .subChartName("first-child")
+                                           .subChartPath("charts/first-child")
                                            .build(),
         "manifest", "manifest/chart-name/charts/first-child");
   }
@@ -3199,7 +3196,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(renderedFiles)
         .when(spyHelper)
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND, "");
+            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND);
 
     List<FileData> result = spyHelper.renderTemplate(K8sDelegateTaskParams.builder().helmPath(helmPath).build(),
         manifestDelegateConfig, manifestDirectory, valuesList, "release", "namespace", executionLogCallback, 10);
@@ -3207,7 +3204,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isEqualTo(renderedFiles);
     verify(spyHelper, times(1))
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND, "");
+            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND);
   }
 
   private void testRenderTemplateWithHelmSubChart(ManifestDelegateConfig manifestDelegateConfig,
@@ -3220,7 +3217,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(renderedFiles)
         .when(spyHelper)
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE, "first-child");
+            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE);
 
     List<FileData> result = spyHelper.renderTemplate(K8sDelegateTaskParams.builder().helmPath(helmPath).build(),
         manifestDelegateConfig, manifestDirectory, valuesList, "release", "namespace", executionLogCallback, 10);
@@ -3228,7 +3225,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isEqualTo(renderedFiles);
     verify(spyHelper, times(1))
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE, "first-child");
+            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE);
   }
 
   @Test

@@ -98,8 +98,8 @@ public class K8sCanaryDeleteRequestHandler extends K8sRequestHandler {
     logCallback.saveExecutionLog("Initializing...\n");
 
     client = Kubectl.client(delegateParams.getKubectlPath(), delegateParams.getKubeconfigPath());
-    kubernetesConfig =
-        containerDeploymentDelegateBaseHelper.createKubernetesConfig(request.getK8sInfraDelegateConfig(), logCallback);
+    kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+        request.getK8sInfraDelegateConfig(), delegateParams.getWorkingDirectory(), logCallback);
 
     if (isEmpty(request.getCanaryWorkloads())) {
       resourceIdsToDelete = getCanaryResourceIdsFromReleaseHistory(request.getReleaseName(), logCallback);

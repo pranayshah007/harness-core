@@ -53,6 +53,7 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.AccountOrgProjectHelper;
 import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.api.UserGroupService;
+import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.dto.GatewayAccountRequestDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.dto.UsersCountDTO;
@@ -727,6 +728,17 @@ public class NgUserServiceImpl implements NgUserService {
     }
   }
 
+  @Override
+  public void updateNGUserToCGWithSource(String userId, Scope scope, UserSource userSource) {
+    String accountIdentifier = scope.getAccountIdentifier();
+    try {
+      if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW)) {
+        CGRestUtils.getResponse(userClient.updateNGUserToCGWithSource(userId, accountIdentifier, userSource));
+      }
+    } catch (Exception e) {
+      log.error("Couldn't update user Account level data for user {} in account {}", userId, accountIdentifier, e);
+    }
+  }
   @Override
   public Optional<UserInfo> getUserById(String userId) {
     return CGRestUtils.getResponse(userClient.getUserById(userId));

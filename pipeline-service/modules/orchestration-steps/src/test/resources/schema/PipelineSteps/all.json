@@ -398,6 +398,9 @@
             }
           ]
         },
+        "harnessImageConnectorRef": {
+          "type": "string"
+        },
         "initTimeout": {
           "type": "string"
         },
@@ -1185,6 +1188,12 @@
           ],
           "properties": {
             "assertion": {
+              "type": "string"
+            },
+            "certificate": {
+              "type": "string"
+            },
+            "certificateKey": {
               "type": "string"
             },
             "delegateSelectors": {

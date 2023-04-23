@@ -39,4 +39,5 @@ public class NGTriggerConfigV2 implements NGTriggerInterface {
   List<String> inputSetRefs;
   @Builder.Default Boolean enabled = Boolean.TRUE;
   String encryptedWebhookSecretIdentifier;
+  List<String> stagesToExecute;
 }

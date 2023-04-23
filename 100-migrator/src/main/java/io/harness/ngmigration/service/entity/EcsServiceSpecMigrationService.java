@@ -35,6 +35,7 @@ import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.SecretRefUtils;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.Service;
@@ -51,6 +52,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,6 +62,7 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class EcsServiceSpecMigrationService extends NgMigrationService {
+  @Inject private SecretRefUtils secretRefUtils;
   @Inject ServiceResourceService serviceResourceService;
 
   @Override
@@ -82,7 +85,10 @@ public class EcsServiceSpecMigrationService extends NgMigrationService {
                                     .id(serviceSpecification.getUuid())
                                     .type(NGMigrationEntityType.ECS_SERVICE_SPEC)
                                     .build();
-    return DiscoveryNode.builder().entityNode(cgEntityNode).build();
+    Set<CgEntityId> children = new HashSet<>();
+    children.addAll(secretRefUtils.getSecretRefFromExpressions(serviceSpecification.getAccountId(),
+        MigratorExpressionUtils.extractAll(serviceSpecification.getServiceSpecJson())));
+    return DiscoveryNode.builder().entityNode(cgEntityNode).children(children).build();
   }
 
   @Override
@@ -91,9 +97,9 @@ public class EcsServiceSpecMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
-    return migrateFile(auth, ngClient, inputDTO, yamlFile);
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+    return migrateFile(ngClient, inputDTO, yamlFile);
   }
 
   @Override
@@ -141,10 +147,14 @@ public class EcsServiceSpecMigrationService extends NgMigrationService {
                   .fileUsage(fileUsage)
                   .name(name)
                   .content(new String(content))
+                  .filePath("")
+                  .rootIdentifier("Root")
+                  .depth(Integer.MAX_VALUE)
                   .orgIdentifier(orgIdentifier)
                   .projectIdentifier(projectIdentifier)
                   .build())
         .ngEntityDetail(NgEntityDetail.builder()
+                            .entityType(NGMigrationEntityType.FILE_STORE)
                             .identifier(identifier)
                             .orgIdentifier(orgIdentifier)
                             .projectIdentifier(projectIdentifier)

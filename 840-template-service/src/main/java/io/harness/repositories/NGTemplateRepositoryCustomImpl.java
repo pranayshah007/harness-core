@@ -280,6 +280,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
             .repoName(savedEntity.getRepo())
             .entityType(EntityType.TEMPLATE)
             .loadFromCache(loadFromCache)
+            .getOnlyFileContent(TemplateUtils.isExecutionFlow())
             .build(),
         Collections.emptyMap());
   }
@@ -461,6 +462,13 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
       String accountIdentifier, String orgIdentifier, String projectIdentifier, Criteria criteria, Update update) {
     criteria = gitAwarePersistence.makeCriteriaGitAware(
         accountIdentifier, orgIdentifier, projectIdentifier, TemplateEntity.class, criteria);
+    return mongoTemplate.findAndModify(
+        query(criteria), update, FindAndModifyOptions.options().returnNew(true), TemplateEntity.class);
+  }
+
+  @Override
+  public TemplateEntity updateV2(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, Criteria criteria, Update update) {
     return mongoTemplate.findAndModify(
         query(criteria), update, FindAndModifyOptions.options().returnNew(true), TemplateEntity.class);
   }

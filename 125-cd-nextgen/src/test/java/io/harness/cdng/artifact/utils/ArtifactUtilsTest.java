@@ -9,6 +9,7 @@ package io.harness.cdng.artifact.utils;
 
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.PRAGYESH;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.vivekveman;
 
@@ -31,6 +32,9 @@ import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleCloudSourceArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleCloudSourceFetchType;
+import io.harness.cdng.artifact.bean.yaml.GoogleCloudStorageArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
@@ -857,5 +861,190 @@ public class ArtifactUtilsTest extends CategoryTest {
         + "version: version \n"
         + "versionRegex: versionRegex \n"
         + "connectorRef: AMI\n");
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testGCStorage() {
+    // GCStorage Artifacts Primary Artifact
+    GoogleCloudStorageArtifactConfig primaryArtifact =
+        GoogleCloudStorageArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value("GCS").build())
+            .bucket(ParameterField.<String>builder().value("bucket").build())
+            .project(ParameterField.<String>builder().value("project").build())
+            .artifactPath(ParameterField.<String>builder().value("path").build())
+            .build();
+
+    // GCStorage side car Artifact
+    GoogleCloudStorageArtifactConfig sidecarArtifact =
+        GoogleCloudStorageArtifactConfig.builder().isPrimaryArtifact(false).identifier("ARTIFACT13").build();
+
+    // List of artifacts
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(
+                PrimaryArtifact.builder().sourceType(primaryArtifact.getSourceType()).spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+
+    // artifactList
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+
+    String log = ArtifactUtils.getLogInfo(
+        artifactListConfig.getPrimary().getSpec(), artifactListConfig.getPrimary().getSourceType());
+
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+
+    // Comparing the generated the log
+    assertThat(log).isEqualTo("\n"
+        + "type: GoogleCloudStorage \n"
+        + "connectorRef: GCS \n"
+        + "project: project \n"
+        + "bucket: bucket \n"
+        + "artifactPath: path");
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testGCSourceWithBranch() {
+    // GCSource Artifacts Primary Artifact
+    GoogleCloudSourceArtifactConfig primaryArtifact =
+        GoogleCloudSourceArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value("GCS").build())
+            .repository(ParameterField.<String>builder().value("repo").build())
+            .project(ParameterField.<String>builder().value("project").build())
+            .sourceDirectory(ParameterField.<String>builder().value("path").build())
+            .fetchType(GoogleCloudSourceFetchType.BRANCH)
+            .branch(ParameterField.<String>builder().value("branch").build())
+            .build();
+
+    // GCSource side car Artifact
+    GoogleCloudSourceArtifactConfig sidecarArtifact =
+        GoogleCloudSourceArtifactConfig.builder().isPrimaryArtifact(false).identifier("ARTIFACT14").build();
+
+    // List of artifacts
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(
+                PrimaryArtifact.builder().sourceType(primaryArtifact.getSourceType()).spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+
+    // artifactList
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+
+    String log = ArtifactUtils.getLogInfo(
+        artifactListConfig.getPrimary().getSpec(), artifactListConfig.getPrimary().getSourceType());
+
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+
+    // Comparing the generated the log
+    assertThat(log).isEqualTo("\n"
+        + "type: GoogleCloudSource \n"
+        + "connectorRef: GCS \n"
+        + "project: project \n"
+        + "repository: repo \n"
+        + "branch: branch \n"
+        + "sourceDirectory: path");
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testGCSourceWithCommitId() {
+    // GCSource Artifacts Primary Artifact
+    GoogleCloudSourceArtifactConfig primaryArtifact =
+        GoogleCloudSourceArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value("GCS").build())
+            .repository(ParameterField.<String>builder().value("repo").build())
+            .project(ParameterField.<String>builder().value("project").build())
+            .sourceDirectory(ParameterField.<String>builder().value("path").build())
+            .fetchType(GoogleCloudSourceFetchType.COMMIT)
+            .commitId(ParameterField.<String>builder().value("commitId").build())
+            .build();
+
+    // GCSource side car Artifact
+    GoogleCloudSourceArtifactConfig sidecarArtifact =
+        GoogleCloudSourceArtifactConfig.builder().isPrimaryArtifact(false).identifier("ARTIFACT15").build();
+
+    // List of artifacts
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(
+                PrimaryArtifact.builder().sourceType(primaryArtifact.getSourceType()).spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+
+    // artifactList
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+
+    String log = ArtifactUtils.getLogInfo(
+        artifactListConfig.getPrimary().getSpec(), artifactListConfig.getPrimary().getSourceType());
+
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+
+    // Comparing the generated the log
+    assertThat(log).isEqualTo("\n"
+        + "type: GoogleCloudSource \n"
+        + "connectorRef: GCS \n"
+        + "project: project \n"
+        + "repository: repo \n"
+        + "commitId: commitId \n"
+        + "sourceDirectory: path");
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testGCSourceWithTag() {
+    // GCSource Artifacts Primary Artifact
+    GoogleCloudSourceArtifactConfig primaryArtifact =
+        GoogleCloudSourceArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value("GCS").build())
+            .repository(ParameterField.<String>builder().value("repo").build())
+            .project(ParameterField.<String>builder().value("project").build())
+            .sourceDirectory(ParameterField.<String>builder().value("path").build())
+            .fetchType(GoogleCloudSourceFetchType.TAG)
+            .tag(ParameterField.<String>builder().value("tag").build())
+            .build();
+
+    // GCSource side car Artifact
+    GoogleCloudSourceArtifactConfig sidecarArtifact =
+        GoogleCloudSourceArtifactConfig.builder().isPrimaryArtifact(false).identifier("ARTIFACT16").build();
+
+    // List of artifacts
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(
+                PrimaryArtifact.builder().sourceType(primaryArtifact.getSourceType()).spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+
+    // artifactList
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+
+    String log = ArtifactUtils.getLogInfo(
+        artifactListConfig.getPrimary().getSpec(), artifactListConfig.getPrimary().getSourceType());
+
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+
+    // Comparing the generated the log
+    assertThat(log).isEqualTo("\n"
+        + "type: GoogleCloudSource \n"
+        + "connectorRef: GCS \n"
+        + "project: project \n"
+        + "repository: repo \n"
+        + "tag: tag \n"
+        + "sourceDirectory: path");
   }
 }

@@ -13,6 +13,7 @@ import io.harness.encryption.Scope;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.NotExpression;
 import io.harness.ngmigration.beans.InputDefaults;
+import io.harness.ngmigration.beans.MigExpressionOverrides;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.utils.CaseFormat;
@@ -45,33 +46,43 @@ public class MigratorExpressionUtils {
   private static final int MAX_DEPTH = 8;
 
   public static Object render(MigrationContext context, Object object, Map<String, Object> customExpressions) {
-    Map<CgEntityId, CgEntityNode> cgEntities = context.getEntities();
-    Map<CgEntityId, NGYamlFile> migratedEntities = context.getMigratedEntities();
-    // Generate the secret map
-    Map<String, String> secretRefMap = new HashMap<>();
-    if (EmptyPredicate.isNotEmpty(cgEntities) && EmptyPredicate.isNotEmpty(migratedEntities)) {
-      Set<CgEntityId> secretIds = migratedEntities.keySet()
-                                      .stream()
-                                      .filter(cgEntityId -> NGMigrationEntityType.SECRET.equals(cgEntityId.getType()))
-                                      .filter(cgEntities::containsKey)
-                                      .collect(Collectors.toSet());
-      for (CgEntityId secretId : secretIds) {
-        EncryptedData encryptedData = (EncryptedData) cgEntities.get(secretId).getEntity();
-        NGYamlFile ngYamlFile = migratedEntities.get(secretId);
-        if (StringUtils.isNotBlank(encryptedData.getName())) {
-          secretRefMap.put(
-              encryptedData.getName(), MigratorUtility.getIdentifierWithScope(ngYamlFile.getNgEntityDetail()));
+    return render(context, object, MigExpressionOverrides.builder().customExpressions(customExpressions).build());
+  }
+
+  public static Object render(MigrationContext context, Object object, MigExpressionOverrides overrides) {
+    try {
+      Map<CgEntityId, CgEntityNode> cgEntities = context.getEntities();
+      Map<CgEntityId, NGYamlFile> migratedEntities = context.getMigratedEntities();
+      // Generate the secret map
+      Map<String, String> secretRefMap = new HashMap<>();
+      if (EmptyPredicate.isNotEmpty(cgEntities) && EmptyPredicate.isNotEmpty(migratedEntities)) {
+        Set<CgEntityId> secretIds = migratedEntities.keySet()
+                                        .stream()
+                                        .filter(cgEntityId -> NGMigrationEntityType.SECRET.equals(cgEntityId.getType()))
+                                        .filter(cgEntities::containsKey)
+                                        .collect(Collectors.toSet());
+        for (CgEntityId secretId : secretIds) {
+          EncryptedData encryptedData = (EncryptedData) cgEntities.get(secretId).getEntity();
+          NGYamlFile ngYamlFile = migratedEntities.get(secretId);
+          if (StringUtils.isNotBlank(encryptedData.getName())) {
+            secretRefMap.put(
+                encryptedData.getName(), MigratorUtility.getIdentifierWithScope(ngYamlFile.getNgEntityDetail()));
+          }
         }
       }
-    }
 
-    Map<String, Object> ctx = prepareContextMap(context, secretRefMap, customExpressions);
-    return ExpressionEvaluatorUtils.updateExpressions(object, new MigratorResolveFunctor(ctx));
+      Map<String, Object> ctx = prepareContextMap(context, secretRefMap, overrides);
+      return ExpressionEvaluatorUtils.updateExpressions(object, new MigratorResolveFunctor(ctx));
+    } catch (Exception e) {
+      log.error("There was an error rendering the expressions", e);
+      return object;
+    }
   }
 
   @NotNull
   static Map<String, Object> prepareContextMap(
-      MigrationContext migrationContext, Map<String, String> secretRefMap, Map<String, Object> customExpressions) {
+      MigrationContext migrationContext, Map<String, String> secretRefMap, MigExpressionOverrides overrides) {
+    boolean asPipelineVariables = overrides != null && overrides.isWorkflowVarsAsPipeline();
     CaseFormat identifierCaseFormat = getCaseFormat(migrationContext);
     Map<String, Object> context = new HashMap<>();
 
@@ -143,9 +154,11 @@ public class MigratorExpressionUtils {
     context.put("app.description", "<+project.description>");
     context.put("pipeline.name", "<+pipeline.name>");
     context.put("workflow.name", "<+stage.name>");
+    context.put("workflow.releaseNo", "<+pipeline.sequenceId>");
 
     // Variables
-    context.put("workflow.variables", new WorkflowVariablesMigratorFunctor());
+    context.put("workflow.variables",
+        asPipelineVariables ? new PipelineVariablesMigratorFunctor() : new WorkflowVariablesMigratorFunctor());
     context.put("pipeline.variables", new PipelineVariablesMigratorFunctor());
     context.put("serviceVariable", new ServiceVariablesMigratorFunctor());
     context.put("serviceVariables", new ServiceVariablesMigratorFunctor());
@@ -168,8 +181,8 @@ public class MigratorExpressionUtils {
     context.put("httpMethod", "<+httpMethod>");
     context.put("httpUrl", "<+httpUrl>");
 
-    if (EmptyPredicate.isNotEmpty(customExpressions)) {
-      context.putAll(customExpressions);
+    if (overrides != null && EmptyPredicate.isNotEmpty(overrides.getCustomExpressions())) {
+      context.putAll(overrides.getCustomExpressions());
     }
 
     return context;
@@ -188,7 +201,7 @@ public class MigratorExpressionUtils {
   }
 
   private static Set<String> extractAll(String source, Pattern compiled) {
-    if (source == null) {
+    if (StringUtils.isBlank(source)) {
       return Collections.emptySet();
     }
     Set<String> matches = new HashSet<>();

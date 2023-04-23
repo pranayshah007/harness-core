@@ -45,6 +45,7 @@ java_library(
         "//960-api-services/src/main/java/io/harness/aws/util:module",
         "//960-api-services/src/main/java/io/harness/aws/v2:module",
         "//960-api-services/src/main/java/io/harness/aws/v2/ecs:module",
+        "//960-api-services/src/main/java/io/harness/aws/v2/eks:module",
         "//960-api-services/src/main/java/io/harness/aws/v2/lambda:module",
         "//960-api-services/src/main/java/io/harness/awscli:module",
         "//960-api-services/src/main/java/io/harness/azure:module",
@@ -60,6 +61,7 @@ java_library(
         "//960-api-services/src/main/java/io/harness/azure/model/image:module",
         "//960-api-services/src/main/java/io/harness/azure/model/management:module",
         "//960-api-services/src/main/java/io/harness/azure/utility:module",
+        "//960-api-services/src/main/java/io/harness/azurecli:module",
         "//960-api-services/src/main/java/io/harness/chartmuseum:module",
         "//960-api-services/src/main/java/io/harness/cistatus/service:module",
         "//960-api-services/src/main/java/io/harness/cistatus/service/azurerepo:module",
@@ -250,6 +252,7 @@ java_library(
         "@maven//:org_powermock_powermock_core",
         "@maven//:org_powermock_powermock_module_junit4",
         "@maven//:org_zeroturnaround_zt_exec",
+        "@maven//:uk_org_webcompere_system_stubs_core",
     ],
 )
 

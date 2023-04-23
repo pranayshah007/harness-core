@@ -57,12 +57,14 @@ public class YAMLFieldNameConstants {
   public final String ENVIRONMENT = "environment";
   public final String PROVISIONER = "provisioner";
   public final String CONNECTOR_REF = "connectorRef";
+  public final String CREDENTIALS_REF = "credentialsRef";
   public final String CONNECTOR_REFS = "connectorRefs";
   public final String FILES = "files";
   public final String SECRET_FILES = "secretFiles";
   public final String SECRET = "secret";
   public final String CODEBASE_CONNECTOR_REF = "ciCodebase.connectorRef";
   public final String USE_ROLLBACK_STRATEGY = "useRollbackStrategy";
+  public final String USE_PIPELINE_ROLLBACK_STRATEGY = "usePipelineRollbackStrategy";
   public final String FAILED_CHILDREN_OUTPUT = "failedChildrenOutput";
   public final String COMMAND = "Command";
 
@@ -107,4 +109,9 @@ public class YAMLFieldNameConstants {
   public final String PATCHES_PATHS = "patchesPaths";
 
   public final String SERVICE_CONFIG = "serviceConfig";
+  // todo(abhinav): make this step group once battle tested
+  public final String STEP_GROUP_V2 = "stepGroupv2";
+  public final String STEP_GROUP_CHILD_NODE_ID = "stepsChildNodeId";
+
+  public final String COMBINED_ROLLBACK_STATUS = "combinedRollbackStatus";
 }

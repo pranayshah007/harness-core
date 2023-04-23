@@ -6,11 +6,16 @@
  */
 package io.harness.credit.services;
 
-import io.harness.annotations.dev.HarnessTeam;
-import io.harness.annotations.dev.OwnedBy;
+import static io.harness.annotations.dev.HarnessTeam.GTM;
 
-@OwnedBy(HarnessTeam.PLG)
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.credit.beans.credits.CreditDTO;
+
+import java.util.List;
+
+@OwnedBy(GTM)
 public interface CreditService {
-  // todo: change the return type to creditDTO and signature to CreditRequest in the future
-  void purchaseCredits(String accountIdentifier);
+  List<CreditDTO> getCredits(String accountIdentifier);
+
+  CreditDTO purchaseCredit(String accountIdentifier, CreditDTO creditDTO);
 }

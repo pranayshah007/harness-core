@@ -16,7 +16,7 @@ import static software.wings.service.impl.PreDeploymentCheckerTestHelper.getWork
 import static software.wings.service.impl.WorkflowPreDeploymentValidator.getWorkflowRestrictedFeatureErrorMsg;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
@@ -73,7 +73,7 @@ public class PreDeploymentCheckerTest extends WingsBaseTest {
     String accountId = "some-account-id";
     rateLimitChecker.check(accountId);
 
-    verifyZeroInteractions(limitCheckerFactory);
+    verifyNoInteractions(limitCheckerFactory);
   }
 
   @Before

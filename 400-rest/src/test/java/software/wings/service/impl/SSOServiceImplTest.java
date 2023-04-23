@@ -22,11 +22,10 @@ import static software.wings.beans.loginSettings.LoginSettingsConstants.AUTHENTI
 
 import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyListOf;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -387,8 +386,7 @@ public class SSOServiceImplTest extends WingsBaseTest {
     when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(encryptedDataDetails);
     when(secretManager.encryptedDataDetails(any(), any(), any(), any())).thenReturn(Optional.of(encryptedDataDetail));
     ldapSettings.getConnectionSettings().setEncryptedBindPassword("EncryptedBindPassword");
-    when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
-        .thenReturn(null);
+    when(encryptionService.decrypt(any(EncryptableSetting.class), anyList(), eq(false))).thenReturn(null);
     ssoSettingService.createLdapSettings(ldapSettings);
 
     LdapSettingsWithEncryptedDataDetail resultDetails =
@@ -425,8 +423,7 @@ public class SSOServiceImplTest extends WingsBaseTest {
     when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(encryptedDataDetails);
     when(secretManager.encryptedDataDetails(any(), any(), any(), any())).thenReturn(Optional.of(encryptedDataDetail));
     ldapSettings.getConnectionSettings().setEncryptedBindSecret("EncryptedBindSecret");
-    when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
-        .thenReturn(null);
+    when(encryptionService.decrypt(any(EncryptableSetting.class), anyList(), eq(false))).thenReturn(null);
     ssoSettingService.createLdapSettings(ldapSettings);
 
     LdapSettingsWithEncryptedDataDetail resultDetails =

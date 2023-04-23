@@ -8,6 +8,7 @@
 package io.harness.ccm.views.dto;
 
 import io.harness.ccm.views.helper.RuleCloudProviderType;
+import io.harness.ccm.views.helper.RuleExecutionType;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -28,4 +29,6 @@ public class GovernanceJobEnqueueDTO {
   String targetRegion;
   Boolean isDryRun;
   Boolean isOOTB;
+  RuleExecutionType executionType;
+  String identifier;
 }

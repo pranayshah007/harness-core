@@ -24,7 +24,7 @@ import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.persistence.PersistentEntity;
-import io.harness.utils.FullyQualifiedIdentifierHelper;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
@@ -106,7 +106,6 @@ public class Environment implements PersistentEntity, ScopeAware {
   }
 
   public String fetchRef() {
-    return FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
-        accountId, orgIdentifier, projectIdentifier, identifier);
+    return IdentifierRefHelper.getRefFromIdentifierOrRef(accountId, orgIdentifier, projectIdentifier, identifier);
   }
 }

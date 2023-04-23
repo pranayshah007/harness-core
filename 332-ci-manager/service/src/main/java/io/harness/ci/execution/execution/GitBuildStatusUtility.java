@@ -231,10 +231,7 @@ public class GitBuildStatusUtility {
 
     GitSCMType gitSCMType = retrieveSCMType(gitConnector);
 
-    String stageSetupId = AmbianceUtils.getStageSetupIdAmbiance(ambiance);
-    String stageExecutionId = ambiance.getStageExecutionId();
-    String detailsUrl = getBuildDetailsUrl(ngAccess, ambiance.getMetadata().getPipelineIdentifier(),
-        ambiance.getMetadata().getExecutionUuid(), stageSetupId, stageExecutionId);
+    String detailsUrl = getBuildDetailsUrl(ambiance);
 
     return CIBuildStatusPushParameters.builder()
         .detailsUrl(detailsUrl)
@@ -412,9 +409,13 @@ public class GitBuildStatusUtility {
     return connectorUtils.getConnectorDetails(ngAccess, connectorRef);
   }
 
-  private String getBuildDetailsUrl(
-      NGAccess ngAccess, String pipelineId, String executionId, String stageSetupId, String stageExecutionId) {
+  public String getBuildDetailsUrl(Ambiance ambiance) {
+    String stageSetupId = AmbianceUtils.getStageSetupIdAmbiance(ambiance);
+    String stageExecutionId = ambiance.getStageExecutionId();
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     String baseUrl = getNgBaseUrl(getVanityUrl(ngAccess.getAccountIdentifier()), ngBaseUrl);
+    String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
+    String executionId = ambiance.getMetadata().getExecutionUuid();
     return pipelineUtils.getBuildDetailsUrl(ngAccess, pipelineId, executionId, baseUrl, stageSetupId, stageExecutionId);
   }
 

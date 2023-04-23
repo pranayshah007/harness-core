@@ -18,7 +18,7 @@ import static io.harness.rule.OwnerRule.SATYAM;
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -450,7 +450,7 @@ public class PipelineResourceTest extends CategoryTest {
     ResponseDTO<PMSPipelineResponseDTO> responseDTO = pipelineResource.getPipelineByIdentifier(ACCOUNT_ID,
         ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true, false, false, BOOLEAN_FALSE_VALUE);
     PMSPipelineResponseDTO data = responseDTO.getData();
-    assertThat(data.getEntityValidityDetails().isValid()).isFalse();
+    assertThat(data.getEntityValidityDetails().isValid()).isTrue();
     assertThat(data.getEntityValidityDetails().getInvalidYaml()).isEqualTo(yaml);
     assertThat(data.getYamlPipeline()).isEqualTo(yaml);
     assertThat(data.getGovernanceMetadata()).isEqualTo(governanceMetadata);

@@ -156,7 +156,10 @@ public class WinRmConfigValidationDelegateTask extends AbstractDelegateRunnableT
       return WinRmConfigValidationTaskResponse.builder().connectionSuccessful(true).build();
     } catch (Exception e) {
       log.info("Exception in WinRmSession Validation", e);
-      return WinRmConfigValidationTaskResponse.builder().connectionSuccessful(false).build();
+      return WinRmConfigValidationTaskResponse.builder()
+          .connectionSuccessful(false)
+          .errorMessage(e.getMessage())
+          .build();
     }
   }
 }

@@ -20,6 +20,7 @@ import io.harness.beans.PageResponse;
 import io.harness.event.model.EventType;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.common.beans.Generation;
+import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.dto.UserInviteDTO;
 import io.harness.ng.core.invites.dto.InviteOperationResponse;
 import io.harness.ng.core.switchaccount.RestrictedSwitchAccountInfo;
@@ -94,7 +95,7 @@ public interface UserService extends OwnedByAccount {
   /**
    * Used for NG signup to create a new user and login from an NG user object
    */
-  User createNewUserAndSignIn(User user, String accountId);
+  User createNewUserAndSignIn(User user, String accountId, Generation generation);
 
   /**
    * Used for NG signup to create a new oauth user and login from an NG user object
@@ -191,6 +192,14 @@ public interface UserService extends OwnedByAccount {
    * @param userId    the user id
    */
   void delete(@NotEmpty String accountId, @NotEmpty String userId);
+
+  /**
+   *
+   * @param accountId
+   * @param userId
+   * @param generation
+   */
+  boolean delete(@NotEmpty String accountId, @NotEmpty String userId, @NotNull Generation generation);
 
   /**
    * Deletes the user from both CG and NG.
@@ -402,6 +411,8 @@ public interface UserService extends OwnedByAccount {
 
   boolean checkIfUserLimitHasReached(String accountId, String email);
 
+  void completeNGInviteWithAccountLevelData(UserInviteDTO userInvite, boolean shouldSendTwoFactorAuthResetEmail);
+
   /**
    * Complete NG invite and create user
    *
@@ -461,7 +472,7 @@ public interface UserService extends OwnedByAccount {
    */
   User completeTrialSignupAndSignIn(String userInviteId);
 
-  User completeTrialSignupAndSignIn(UserInvite userInvite);
+  User completeTrialSignupAndSignIn(UserInvite userInvite, boolean shouldCreateSampleApp);
 
   User completePaidSignupAndSignIn(UserInvite userInvite);
 
@@ -635,6 +646,8 @@ public interface UserService extends OwnedByAccount {
 
   boolean canEnableOrDisable(User user);
 
+  User createUserWithAccountLevelData(User user, String accountId, UserSource userSource, Generation generation);
+
   User createUser(User user, String accountId);
 
   String saveUserInvite(UserInvite userInvite);
@@ -658,6 +671,8 @@ public interface UserService extends OwnedByAccount {
 
   void addUserToAccount(String userId, String accountId);
 
+  void addUserToAccount(String userId, String accountId, UserSource userSource);
+
   void setUserEmailVerified(String userId);
 
   List<Account> getUserAccounts(String userId, int pageIndex, int pageSize, String searchTerm);
@@ -673,4 +688,8 @@ public interface UserService extends OwnedByAccount {
       String userId, int pageIndex, int pageSize, String searchTerm);
 
   boolean ifUserHasAccessToSupportAccount(String userId, String accountId);
+
+  void removeAllUserGroupsFromUser(User user, String accountId);
+
+  void updateUserAccountLevelDataForThisGen(String accountId, User user, Generation generation, UserSource userSource);
 }

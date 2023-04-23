@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.infra;
 
+import static io.harness.ngmigration.service.infra.InfraDefMapperUtils.getExpression;
+
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -24,6 +26,7 @@ import io.harness.pms.yaml.ParameterField;
 import software.wings.api.CloudProviderType;
 import software.wings.api.DeploymentType;
 import software.wings.infra.AwsLambdaInfrastructure;
+import software.wings.infra.AwsLambdaInfrastructure.AwsLambdaInfrastructureKeys;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgEntityId;
 
@@ -58,7 +61,8 @@ public class AwsLambdaInfraDefMapper implements InfraDefMapper {
 
       return io.harness.cdng.infra.yaml.AwsLambdaInfrastructure.builder()
           .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connectorDetail)))
-          .region(ParameterField.createValueField(infrastructure.getRegion()))
+          .region(getExpression(infrastructure.getExpressions(), AwsLambdaInfrastructureKeys.region,
+              infrastructure.getRegion(), infrastructureDefinition.getProvisionerId()))
           .build();
     }
     throw new InvalidRequestException("Unsupported Infra for AWS Lambda deployment");

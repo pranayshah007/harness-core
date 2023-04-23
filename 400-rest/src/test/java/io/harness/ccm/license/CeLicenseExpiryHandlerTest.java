@@ -13,7 +13,7 @@ import static io.harness.rule.OwnerRule.HANTANG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -76,6 +76,6 @@ public class CeLicenseExpiryHandlerTest extends CategoryTest {
     account = Account.Builder.anAccount().withCloudCostEnabled(Boolean.TRUE).withCeLicenseInfo(ceLicenseInfo).build();
 
     ceLicenseExpiryHandler.handle(account);
-    verifyZeroInteractions(accountService);
+    verifyNoInteractions(accountService);
   }
 }

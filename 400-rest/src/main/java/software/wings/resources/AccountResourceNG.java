@@ -15,6 +15,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.mappers.AccountMapper;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
+import io.harness.ng.core.user.SessionTimeoutSettings;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -36,6 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.ws.rs.Consumes;
@@ -173,6 +175,20 @@ public class AccountResourceNG {
   @Path("two-factor-enabled")
   public RestResponse<Boolean> getTwoFactorAuthAdminEnforceInfo(@QueryParam("accountId") @NotEmpty String accountId) {
     return new RestResponse(twoFactorAuthenticationManager.getTwoFactorAuthAdminEnforceInfo(accountId));
+  }
+
+  @GET
+  @Path("session-timeout-account-level")
+  public RestResponse<Integer> getSessionTimeoutAtAccountLevel(@QueryParam("accountId") @NotEmpty String accountId) {
+    return new RestResponse(accountService.getSessionTimeoutInMinutes(accountId));
+  }
+
+  @PUT
+  @Path("session-timeout-account-level")
+  public RestResponse<Boolean> setSessionTimeoutAtAccountLevel(@QueryParam("accountId") @NotEmpty String accountId,
+      @Valid @NotNull SessionTimeoutSettings sessionTimeoutSettings) {
+    accountService.setSessionTimeoutInMinutes(accountId, sessionTimeoutSettings);
+    return new RestResponse(Boolean.TRUE);
   }
 
   @GET

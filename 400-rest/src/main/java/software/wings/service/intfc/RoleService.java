@@ -17,8 +17,7 @@ import io.harness.beans.PageResponse;
 import software.wings.beans.Role;
 import software.wings.service.intfc.ownership.OwnedByAccount;
 
-import java.util.List;
-
+import dev.morphia.query.Query;
 /**
  * Created by anubhaw on 3/28/16.
  */
@@ -76,7 +75,7 @@ public interface RoleService extends OwnedByAccount {
    *
    * @return the account roles
    */
-  List<Role> getAccountRoles(String accountId);
+  Query<Role> getAccountRolesQuery(String accountId);
 
   /**
    * Gets app admin role.

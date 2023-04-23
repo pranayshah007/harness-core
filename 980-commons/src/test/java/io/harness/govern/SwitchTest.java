@@ -9,35 +9,39 @@ package io.harness.govern;
 
 import static io.harness.rule.OwnerRule.GEORGE;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.matches;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.MockableTestMixin;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SwitchTest extends CategoryTest implements MockableTestMixin {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
   public void unhandled() throws IllegalAccessException {
-    Logger mockLogger = mock(Logger.class);
-    setStaticFieldValue(Switch.class, "log", mockLogger);
-
+    Logger logger = (Logger) LoggerFactory.getLogger(Switch.class);
+    ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+    listAppender.start();
+    logger.addAppender(listAppender);
     int a = 5;
     Switch.unhandled(a);
 
-    verify(mockLogger, times(1))
-        .error(matches("Unhandled switch value \\{\\}: \\{\\}\n\\{\\}"), matches("java.lang.Integer"), anyInt(),
-            any(Exception.class));
+    assertThat(listAppender.list).hasSize(1);
+    String expectedMessage = String.format("Unhandled switch value %s: %s\n"
+            + "{}",
+        "java.lang.Integer", 5);
+    assertThat(listAppender.list.get(0).getFormattedMessage()).isEqualTo(expectedMessage);
+    assertThat(listAppender.list.get(0).getThrowableProxy()).isNotNull();
+    assertThat(listAppender.list.get(0).getThrowableProxy().getClassName())
+        .isEqualTo(Exception.class.getCanonicalName());
   }
 }

@@ -106,7 +106,7 @@ public class K8sTaskNG extends AbstractDelegateRunnableTask {
         waitForDirectoryToBeAccessibleOutOfProcess(workingDirectory, 10);
 
         KubernetesConfig kubernetesConfig = containerDeploymentDelegateBaseHelper.decryptAndGetKubernetesConfig(
-            k8sDeployRequest.getK8sInfraDelegateConfig());
+            k8sDeployRequest.getK8sInfraDelegateConfig(), workingDirectory);
         containerDeploymentDelegateBaseHelper.persistKubernetesConfig(kubernetesConfig, workingDirectory);
 
         createDirectoryIfDoesNotExist(Paths.get(workingDirectory, MANIFEST_FILES_DIR).toString());

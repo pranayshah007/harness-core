@@ -42,7 +42,7 @@ public class DatadogConnectorImpl implements BaseConnector {
       SettingAttribute settingAttribute, Set<CgEntityId> childEntities, Map<CgEntityId, NGYamlFile> migratedEntities) {
     DatadogConfig datadogConfig = (DatadogConfig) settingAttribute.getValue();
     return DatadogConnectorDTO.builder()
-        .url(datadogConfig.getUrl())
+        .url(datadogConfig.getUrl().replace("/v1/", "/").replace("/v1", "/"))
         .apiKeyRef(MigratorUtility.getSecretRef(migratedEntities, datadogConfig.getEncryptedApiKey()))
         .applicationKeyRef(MigratorUtility.getSecretRef(migratedEntities, datadogConfig.getEncryptedApplicationKey()))
         .build();

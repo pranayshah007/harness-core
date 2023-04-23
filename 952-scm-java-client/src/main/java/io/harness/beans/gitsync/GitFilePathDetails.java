@@ -20,4 +20,5 @@ public class GitFilePathDetails {
   private String filePath;
   private String branch;
   private String ref;
+  private boolean getOnlyFileContent;
 }

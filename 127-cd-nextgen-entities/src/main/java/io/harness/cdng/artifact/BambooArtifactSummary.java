@@ -25,6 +25,7 @@ import lombok.Data;
 public class BambooArtifactSummary implements ArtifactSummary {
   String planKey;
   String build;
+  String tag;
 
   @Override
   public String getDisplayName() {

@@ -7,74 +7,62 @@
 
 package io.harness.cdng.gitops.syncstep;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
+import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SYNC_SWEEPING_OUTPUT;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.logging.CommandExecutionStatus.FAILURE;
 
 import static java.lang.String.format;
 
 import io.harness.beans.FeatureName;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.delegate.beans.ErrorNotifyResponseData;
+import io.harness.eraro.Level;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.gitops.models.Application;
-import io.harness.gitops.models.ApplicationResource;
-import io.harness.gitops.models.ApplicationResource.SyncPolicy;
-import io.harness.gitops.models.ApplicationSyncRequest;
-import io.harness.gitops.remote.GitopsResourceClient;
-import io.harness.logging.CommandExecutionStatus;
-import io.harness.logging.LogCallback;
-import io.harness.logstreaming.LogStreamingStepClientFactory;
-import io.harness.logstreaming.NGLogCallback;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.steps.io.PassThroughData;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.steps.StepUtils;
-import io.harness.steps.executable.SyncExecutableWithRbac;
-import io.harness.utils.RetryUtils;
+import io.harness.steps.executable.AsyncExecutableWithRbac;
+import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
-import java.io.IOException;
-import java.time.Duration;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
+import com.google.inject.Injector;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import lombok.extern.slf4j.Slf4j;
-import net.jodah.failsafe.Failsafe;
-import net.jodah.failsafe.RetryPolicy;
-import retrofit2.Response;
 
 @Slf4j
-public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
-  private static final int NETWORK_CALL_RETRY_SLEEP_DURATION_MILLIS = 10;
-  private static final int NETWORK_CALL_MAX_RETRY_ATTEMPTS = 3;
-  private static final String APPLICATION_REFRESH_TYPE = "normal";
-  private static final String FAILED_TO_REFRESH_APPLICATION_WITH_ERR =
-      "Failed to refresh application, name: %s, agent id %s. Error is %s";
-  private static final String FAILED_TO_GET_APPLICATION_WITH_ERR =
-      "Failed to get application, name: %s, agent id %s. Error is %s";
-  private static final String FAILED_TO_SYNC_APPLICATION_WITH_ERR =
-      "Failed to sync application, name: %s, agent id %s. Error is %s";
-  private static final String FAILED_TO_REFRESH_APPLICATION = "Failed to refresh application";
-  private static final String FAILED_TO_SYNC_APPLICATION = "Failed to sync application";
-  private static final String FAILED_TO_GET_APPLICATION = "Failed to get application";
+public class SyncStep implements AsyncExecutableWithRbac<StepElementParameters> {
+  private static final String LOG_SUFFIX = "Execute";
+
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.GITOPS_SYNC.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
-  @Inject private GitopsResourceClient gitopsResourceClient;
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
+  @Inject private Injector injector;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -82,186 +70,77 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+    // check if rbac is there for GitOps apps
+  }
 
   @Override
-  public StepResponse executeSyncAfterRbac(Ambiance ambiance, StepElementParameters stepParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData) {
+  public AsyncExecutableResponse executeAsyncAfterRbac(
+      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     log.info("Starting execution for Sync step [{}]", stepParameters);
 
     String accountId = AmbianceUtils.getAccountId(ambiance);
     if (!cdFeatureFlagHelper.isEnabled(accountId, FeatureName.GITOPS_SYNC_STEP)) {
-      throw new InvalidRequestException("Sync operation not supported.", USER);
+      throw new InvalidRequestException("Feature Flag GITOPS_SYNC_STEP is not enabled.", USER);
     }
+    String taskId = getTaskId(stepParameters);
 
-    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
-    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    SyncRunnable runnable = new SyncRunnable(taskId, ambiance, stepParameters);
+    injector.injectMembers(runnable);
 
-    final StepResponseBuilder stepResponseBuilder = StepResponse.builder();
-    CommandExecutionStatus status = FAILURE;
-    SyncStepParameters syncStepParameters = (SyncStepParameters) stepParameters.getSpec();
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+    executor.execute(runnable);
 
-    final LogCallback logger = new NGLogCallback(logStreamingStepClientFactory, ambiance, null, true);
-
-    // get application names and their agent ids
-    List<Application> applicationsToBeSynced =
-        SyncStepHelper.getApplicationsToBeSynced(syncStepParameters.getApplicationsList());
-
-    long currentTimeInMs = getCurrentTime();
-    Set<Application> applicationsToBeManuallySynced = new HashSet<>();
-    Set<Application> applicationsToBeAutoSynced = new HashSet<>();
-
-    log.info("Refreshing applications {}", applicationsToBeSynced);
-    // call refresh and get sync policy from  the app
-    // group manual and auto sync apps separately
-    refreshAllApplications(applicationsToBeSynced, accountId, orgId, projectId, applicationsToBeManuallySynced,
-        applicationsToBeAutoSynced);
-
-    // sync policy - manual - call sync
-    if (!applicationsToBeManuallySynced.isEmpty()) {
-      syncAllApplications(applicationsToBeManuallySynced, accountId, orgId, projectId, syncStepParameters);
-    }
-
-    // start polling for all apps
-    // ignore applications which have errormessage set
-    // TODO
-    // even if sync fails for one application, the whole step fails
-    return stepResponseBuilder.status(Status.SUCCEEDED).build();
+    return AsyncExecutableResponse.newBuilder()
+        .addCallbackIds(taskId)
+        .addAllLogKeys(StepUtils.generateLogKeys(ambiance, List.of(LOG_SUFFIX)))
+        .build();
   }
 
-  private void syncAllApplications(Set<Application> applicationsToBeSynced, String accountId, String orgId,
-      String projectId, SyncStepParameters syncStepParameters) {
-    for (Application application : applicationsToBeSynced) {
-      ApplicationSyncRequest syncRequest = getSyncRequest(syncStepParameters, application, accountId, orgId, projectId);
-      if (syncRequest == null) {
-        continue;
-      }
-      String agentId = application.getAgentIdentifier();
-      String applicationName = application.getName();
-      try {
-        final Response<ApplicationResource> response =
-            Failsafe.with(getRetryPolicy("Retrying to sync application...", FAILED_TO_SYNC_APPLICATION))
-                .get(()
-                         -> gitopsResourceClient
-                                .syncApplication(agentId, applicationName, accountId, orgId, projectId, syncRequest)
-                                .execute());
-        if (!response.isSuccessful() || response.body() == null) {
-          throw new InvalidRequestException(format(FAILED_TO_SYNC_APPLICATION_WITH_ERR, applicationName, agentId,
-              response.errorBody() != null ? response.errorBody().string() : ""));
-        }
-      } catch (Exception e) {
-        log.error(format(FAILED_TO_SYNC_APPLICATION_WITH_ERR, applicationName, agentId, e));
-        throw new InvalidRequestException(FAILED_TO_SYNC_APPLICATION);
-      }
-    }
-  }
-
-  private ApplicationSyncRequest getSyncRequest(SyncStepParameters syncStepParameters, Application application,
-      String accountId, String orgId, String projectId) {
-    // get application
-    ApplicationResource latestApplicationState = getApplication(application, accountId, orgId, projectId);
-
-    // if "stale" is true => application is read-only => cannot sync
-    if (SyncStepHelper.isStaleApplication(latestApplicationState)) {
-      application.setSyncErrorMessage("Application is read-only and cannot be synced.");
-      return null;
-    }
-
-    // get resources
-    List<ApplicationResource.Resource> resources = getResources(latestApplicationState);
-
-    // if resources is null => no resources are present => cannot sync
-    if (isEmpty(resources)) {
-      application.setSyncErrorMessage("At least one resource should be available to sync.");
-      return null;
-    }
-
-    String targetRevision = getTargetRevision(latestApplicationState);
-
-    return SyncStepHelper.getSyncRequest(application, targetRevision, syncStepParameters);
-  }
-
-  private String getTargetRevision(ApplicationResource latestApplicationState) {
-    return latestApplicationState.getApp().getSpec().getSource().getTargetRevision();
-  }
-
-  private List<ApplicationResource.Resource> getResources(ApplicationResource latestApplicationState) {
-    return latestApplicationState.getApp().getStatus().getResources();
-  }
-
-  private ApplicationResource getApplication(
-      Application application, String accountId, String orgId, String projectId) {
-    String agentId = application.getAgentIdentifier();
-    String applicationName = application.getName();
-    try {
-      final Response<ApplicationResource> response =
-          Failsafe.with(getRetryPolicy("Retrying to get application...", FAILED_TO_GET_APPLICATION))
-              .get(()
-                       -> gitopsResourceClient.getApplication(agentId, applicationName, accountId, orgId, projectId)
-                              .execute());
-      if (!response.isSuccessful() || response.body() == null) {
-        throw new InvalidRequestException(format(FAILED_TO_GET_APPLICATION_WITH_ERR, applicationName, agentId,
-            response.errorBody() != null ? response.errorBody().string() : ""));
-      }
-      return response.body();
-    } catch (Exception e) {
-      log.error(format(FAILED_TO_GET_APPLICATION_WITH_ERR, applicationName, agentId, e));
-      throw new InvalidRequestException(FAILED_TO_GET_APPLICATION);
-    }
-  }
-
-  private long getCurrentTime() {
-    return new Date().getTime();
-  }
-
-  private void refreshAllApplications(List<Application> applicationsToBeSynced, String accountId, String orgId,
-      String projectId, Set<Application> applicationsToBeManuallySynced, Set<Application> applicationsToBeAutoSynced) {
-    for (Application application : applicationsToBeSynced) {
-      String agentId = application.getAgentIdentifier();
-      String applicationName = application.getName();
-
-      try {
-        // TODO(meena) Optimize this to return the trimmed application resource object from GitOps service
-        final Response<ApplicationResource> response =
-            Failsafe.with(getRetryPolicy("Retrying to refresh applications...", FAILED_TO_REFRESH_APPLICATION))
-                .get(()
-                         -> gitopsResourceClient
-                                .refreshApplication(
-                                    agentId, applicationName, accountId, orgId, projectId, APPLICATION_REFRESH_TYPE)
-                                .execute());
-        if (!response.isSuccessful() || response.body() == null) {
-          throw new InvalidRequestException(format(FAILED_TO_REFRESH_APPLICATION_WITH_ERR, applicationName, agentId,
-              response.errorBody() != null ? response.errorBody().string() : ""));
-        }
-        setSyncPolicy(response.body().getApp().getSpec().getSyncPolicy(), application, applicationsToBeManuallySynced,
-            applicationsToBeAutoSynced);
-      } catch (Exception e) {
-        log.error(format(FAILED_TO_REFRESH_APPLICATION_WITH_ERR, applicationName, agentId, e));
-        throw new InvalidRequestException(FAILED_TO_REFRESH_APPLICATION);
-      }
-    }
-  }
-
-  private void setSyncPolicy(SyncPolicy syncPolicy, Application application,
-      Set<Application> applicationsToBeManuallySynced, Set<Application> applicationsToBeAutoSynced) {
-    if (isAutoSyncEnabled(syncPolicy)) {
-      applicationsToBeAutoSynced.add(application);
-    } else {
-      applicationsToBeManuallySynced.add(application);
-    }
-  }
-
-  private boolean isAutoSyncEnabled(SyncPolicy syncPolicy) {
-    return syncPolicy.getAutomated() != null;
+  private String getTaskId(StepElementParameters stepParameters) {
+    return "GitOpsSync" + stepParameters.getUuid();
   }
 
   @Override
-  public List<String> getLogKeys(Ambiance ambiance) {
-    return StepUtils.generateLogKeys(ambiance, null);
+  public void handleAbort(
+      Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {}
+
+  @Override
+  public StepResponse handleAsyncResponse(
+      Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
+    log.info("Handling GitOps Sync step response");
+    ResponseData responseData = responseDataMap.get(getTaskId(stepParameters));
+    if (responseData instanceof ErrorNotifyResponseData) {
+      throw new WingsException(((ErrorNotifyResponseData) responseData).getErrorMessage());
+    }
+    return handleResponse(ambiance, (SyncResponse) responseData).build();
   }
 
-  private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
-    return RetryUtils.getRetryPolicy(failedAttemptMessage, failureMessage, Collections.singletonList(IOException.class),
-        Duration.ofMillis(NETWORK_CALL_RETRY_SLEEP_DURATION_MILLIS), NETWORK_CALL_MAX_RETRY_ATTEMPTS, log);
+  private StepResponseBuilder handleResponse(Ambiance ambiance, SyncResponse syncResponse) {
+    StepResponseBuilder stepResponseBuilder = StepResponse.builder();
+
+    Set<Application> applicationsFailedToSync = syncResponse.getApplicationsFailedToSync();
+    Set<Application> syncStillRunningForApplications = syncResponse.getSyncStillRunningForApplications();
+    Set<Application> applicationsSucceededOnArgoSync = syncResponse.getApplicationsSucceededOnArgoSync();
+    if (isNotEmpty(applicationsFailedToSync) || isNotEmpty(syncStillRunningForApplications)) {
+      FailureData failureMessage =
+          FailureData.newBuilder()
+              .addFailureTypes(FailureType.APPLICATION_FAILURE)
+              .setLevel(Level.ERROR.name())
+              .setCode(GENERAL_ERROR.name())
+              .setMessage(format(
+                  "Sync is successful for application(s) %s, failed for application(s) %s and is still running for application(s) %s",
+                  applicationsSucceededOnArgoSync, applicationsFailedToSync, syncStillRunningForApplications))
+              .build();
+      return stepResponseBuilder.status(Status.FAILED)
+          .failureInfo(FailureInfo.newBuilder().addFailureData(failureMessage).build());
+    }
+
+    SyncStepOutcome outcome = SyncStepOutcome.builder().applications(applicationsSucceededOnArgoSync).build();
+    executionSweepingOutputResolver.consume(
+        ambiance, GITOPS_SYNC_SWEEPING_OUTPUT, outcome, StepOutcomeGroup.STAGE.name());
+
+    return stepResponseBuilder.status(Status.SUCCEEDED)
+        .stepOutcome(StepResponse.StepOutcome.builder().name(GITOPS_SWEEPING_OUTPUT).outcome(outcome).build());
   }
 }

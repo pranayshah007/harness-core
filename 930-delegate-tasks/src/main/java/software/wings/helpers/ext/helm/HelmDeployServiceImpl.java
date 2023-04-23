@@ -88,9 +88,9 @@ import software.wings.delegatetasks.helm.HarnessHelmDeployConfig;
 import software.wings.delegatetasks.helm.HelmCommandHelper;
 import software.wings.delegatetasks.helm.HelmDeployChartSpec;
 import software.wings.delegatetasks.helm.HelmTaskHelper;
+import software.wings.delegatetasks.validation.capabilities.HelmCommandRequest;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
-import software.wings.helpers.ext.helm.request.HelmCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmInstallCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmReleaseHistoryCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest;
@@ -340,11 +340,10 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       throws Exception {
     String workingDirPath = Paths.get(commandRequest.getWorkingDir()).normalize().toAbsolutePath().toString();
 
-    List<FileData> manifestFiles =
-        k8sTaskHelperBase.renderTemplateForHelm(helmClient.getHelmPath(commandRequest.getHelmVersion()), workingDirPath,
-            variableOverridesYamlFiles, commandRequest.getReleaseName(),
-            commandRequest.getContainerServiceParams().getNamespace(), executionLogCallback,
-            commandRequest.getHelmVersion(), timeoutInMillis, commandRequest.getHelmCommandFlag(), "");
+    List<FileData> manifestFiles = k8sTaskHelperBase.renderTemplateForHelm(
+        helmClient.getHelmPath(commandRequest.getHelmVersion()), workingDirPath, variableOverridesYamlFiles,
+        commandRequest.getReleaseName(), commandRequest.getContainerServiceParams().getNamespace(),
+        executionLogCallback, commandRequest.getHelmVersion(), timeoutInMillis, commandRequest.getHelmCommandFlag());
 
     List<KubernetesResource> resources = k8sTaskHelperBase.readManifests(manifestFiles, executionLogCallback);
     k8sTaskHelperBase.setNamespaceToKubernetesResourcesIfRequired(

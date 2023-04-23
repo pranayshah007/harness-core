@@ -21,11 +21,14 @@ import static software.amazon.awssdk.core.retry.conditions.RetryCondition.defaul
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.AwsSdkClientBackoffStrategyOverride;
+import io.harness.aws.AwsSdkClientBackoffStrategyOverrideType;
+import io.harness.aws.AwsSdkClientEqualJitterBackoffStrategy;
+import io.harness.aws.AwsSdkClientFixedDelayBackoffStrategy;
+import io.harness.aws.AwsSdkClientFullJitterBackoffStrategy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
-
-import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
 
 import com.google.inject.Singleton;
 import java.time.Duration;
@@ -42,7 +45,9 @@ import software.amazon.awssdk.core.SdkClient;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.retry.RetryPolicy;
+import software.amazon.awssdk.core.retry.backoff.BackoffStrategy;
 import software.amazon.awssdk.core.retry.backoff.EqualJitterBackoffStrategy;
+import software.amazon.awssdk.core.retry.backoff.FixedDelayBackoffStrategy;
 import software.amazon.awssdk.core.retry.backoff.FullJitterBackoffStrategy;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.applicationautoscaling.model.ApplicationAutoScalingException;
@@ -105,24 +110,17 @@ public abstract class AwsClientHelper {
     throw new InvalidRequestException(awsServiceException.getMessage(), awsServiceException, USER);
   }
 
-  public ClientOverrideConfiguration getClientOverrideConfiguration(AwsInternalConfig awsConfig) {
-    AmazonClientSDKDefaultBackoffStrategy defaultBackoffStrategy = awsConfig.getAmazonClientSDKDefaultBackoffStrategy();
+  public ClientOverrideConfiguration getClientOverrideFromBackoffOverride(AwsInternalConfig awsConfig) {
+    AwsSdkClientBackoffStrategyOverride awsSdkClientBackoffStrategyOverride =
+        awsConfig.getAwsSdkClientBackoffStrategyOverride();
     RetryPolicy retryPolicy;
-    if (defaultBackoffStrategy != null) {
-      retryPolicy =
-          RetryPolicy.builder()
-              .retryCondition(defaultRetryCondition())
-              .numRetries(defaultBackoffStrategy.getMaxErrorRetry())
-              .backoffStrategy(FullJitterBackoffStrategy.builder()
-                                   .baseDelay(Duration.ofMillis(defaultBackoffStrategy.getBaseDelayInMs()))
-                                   .maxBackoffTime(Duration.ofMillis(defaultBackoffStrategy.getMaxBackoffInMs()))
-                                   .build())
-              .throttlingBackoffStrategy(
-                  EqualJitterBackoffStrategy.builder()
-                      .baseDelay(Duration.ofMillis(defaultBackoffStrategy.getThrottledBaseDelayInMs()))
-                      .maxBackoffTime(Duration.ofMillis(defaultBackoffStrategy.getMaxBackoffInMs()))
-                      .build())
-              .build();
+    if (awsSdkClientBackoffStrategyOverride != null) {
+      retryPolicy = RetryPolicy.builder()
+                        .retryCondition(defaultRetryCondition())
+                        .numRetries(awsSdkClientBackoffStrategyOverride.getRetryCount())
+                        .backoffStrategy(getBackoffStrategy(awsConfig))
+                        .throttlingBackoffStrategy(getBackoffStrategy(awsConfig))
+                        .build();
     } else {
       retryPolicy = RetryPolicy.builder()
                         .retryCondition(defaultRetryCondition())
@@ -132,8 +130,35 @@ public abstract class AwsClientHelper {
                         .build();
     }
     return ClientOverrideConfiguration.builder().retryPolicy(retryPolicy).build();
+  }
 
-    // todo: good review needed
+  private BackoffStrategy getBackoffStrategy(AwsInternalConfig awsInternalConfig) {
+    AwsSdkClientBackoffStrategyOverride awsSdkClientBackoffStrategyOverride =
+        awsInternalConfig.getAwsSdkClientBackoffStrategyOverride();
+    if (awsSdkClientBackoffStrategyOverride.getAwsBackoffStrategyOverrideType()
+        == AwsSdkClientBackoffStrategyOverrideType.FIXED_DELAY_BACKOFF_STRATEGY) {
+      AwsSdkClientFixedDelayBackoffStrategy awsSdkClientFixedDelayBackoffStrategy =
+          (AwsSdkClientFixedDelayBackoffStrategy) awsSdkClientBackoffStrategyOverride;
+      return FixedDelayBackoffStrategy.create(
+          Duration.ofMillis(awsSdkClientFixedDelayBackoffStrategy.getFixedBackoff()));
+    } else if (awsSdkClientBackoffStrategyOverride.getAwsBackoffStrategyOverrideType()
+        == AwsSdkClientBackoffStrategyOverrideType.EQUAL_JITTER_BACKOFF_STRATEGY) {
+      AwsSdkClientEqualJitterBackoffStrategy awsSdkClientEqualJitterBackoffStrategy =
+          (AwsSdkClientEqualJitterBackoffStrategy) awsSdkClientBackoffStrategyOverride;
+      return EqualJitterBackoffStrategy.builder()
+          .baseDelay(Duration.ofMillis(awsSdkClientEqualJitterBackoffStrategy.getBaseDelay()))
+          .maxBackoffTime(Duration.ofMillis(awsSdkClientEqualJitterBackoffStrategy.getMaxBackoffTime()))
+          .build();
+    } else if (awsSdkClientBackoffStrategyOverride.getAwsBackoffStrategyOverrideType()
+        == AwsSdkClientBackoffStrategyOverrideType.FULL_JITTER_BACKOFF_STRATEGY) {
+      AwsSdkClientFullJitterBackoffStrategy awsSdkClientFullJitterBackoffStrategy =
+          (AwsSdkClientFullJitterBackoffStrategy) awsSdkClientBackoffStrategyOverride;
+      return FullJitterBackoffStrategy.builder()
+          .baseDelay(Duration.ofMillis(awsSdkClientFullJitterBackoffStrategy.getBaseDelay()))
+          .maxBackoffTime(Duration.ofMillis(awsSdkClientFullJitterBackoffStrategy.getMaxBackoffTime()))
+          .build();
+    }
+    throw new InvalidRequestException("Invalid AWS backoff Strategy");
   }
 
   private AwsCredentialsProvider getIamRoleAwsCredentialsProvider() {

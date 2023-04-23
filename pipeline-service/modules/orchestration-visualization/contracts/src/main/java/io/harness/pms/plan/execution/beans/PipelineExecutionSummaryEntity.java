@@ -34,6 +34,7 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 import io.harness.pms.contracts.execution.ExecutionErrorInfo;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.execution.ExecutionStatus;
@@ -141,6 +142,9 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
   Long endTs;
 
   Boolean notifyOnlyMe;
+
+  ExecutionMode executionMode; // this is used to filter out rollback mode executions from executions list API
+  RollbackExecutionInfo rollbackExecutionInfo;
 
   // TTL index
   @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
@@ -296,9 +300,15 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
         + "value";
     public String isChildPipeline = PlanExecutionSummaryKeys.parentStageInfo + "."
         + "hasParentPipeline";
+    public String rollbackModeExecutionId = PlanExecutionSummaryKeys.rollbackExecutionInfo + "."
+        + "rollbackModeExecutionId";
   }
 
   public boolean isStagesExecutionAllowed() {
     return allowStagesExecution != null && allowStagesExecution;
+  }
+
+  public String getRollbackModeExecutionId() {
+    return rollbackExecutionInfo != null ? rollbackExecutionInfo.getRollbackModeExecutionId() : null;
   }
 }

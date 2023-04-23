@@ -52,7 +52,7 @@ public class GcpValidationTaskHandler implements ConnectorValidationHandler {
       GcpConnectorDTO gcpConnectorDTO = gcpValidationParams.getGcpConnectorDTO();
       GcpConnectorCredentialDTO gcpConnectorCredentialDTO = gcpConnectorDTO.getCredential();
       return validateInternal(gcpConnectorCredentialDTO.getGcpCredentialType(), gcpConnectorCredentialDTO.getConfig(),
-          gcpValidationParams.getEncryptionDetails(), false);
+          gcpValidationParams.getEncryptionDetails(), gcpConnectorDTO.getExecuteOnDelegate());
     } catch (Exception e) {
       throw exceptionManager.processException(e, MANAGER, log);
     }

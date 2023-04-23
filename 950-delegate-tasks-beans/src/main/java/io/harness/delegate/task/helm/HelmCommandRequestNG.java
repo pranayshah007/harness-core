@@ -33,6 +33,7 @@ import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.AzureK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
+import io.harness.delegate.task.k8s.EksK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
@@ -44,6 +45,8 @@ import io.harness.helm.HelmCommandType;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
+
+import software.wings.beans.ServiceHookDelegateConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,6 +78,8 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
   private String commandName;
   private boolean useLatestKubectlVersion;
   private String gcpKeyPath;
+  private String releaseHistoryPrefix;
+  @Expression(ALLOW_SECRETS) List<ServiceHookDelegateConfig> serviceHooks;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
@@ -86,7 +91,8 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
 
     if (k8sInfraDelegateConfig instanceof DirectK8sInfraDelegateConfig) {
       capabilities.addAll(K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(
-          ((DirectK8sInfraDelegateConfig) k8sInfraDelegateConfig).getKubernetesClusterConfigDTO(), maskingEvaluator));
+          ((DirectK8sInfraDelegateConfig) k8sInfraDelegateConfig).getKubernetesClusterConfigDTO(), maskingEvaluator,
+          k8sInfraDelegateConfig.useSocketCapability()));
     }
 
     if (k8sInfraDelegateConfig instanceof GcpK8sInfraDelegateConfig) {
@@ -97,6 +103,11 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
     if (k8sInfraDelegateConfig instanceof AzureK8sInfraDelegateConfig) {
       capabilities.addAll(AzureCapabilityHelper.fetchRequiredExecutionCapabilities(
           ((AzureK8sInfraDelegateConfig) k8sInfraDelegateConfig).getAzureConnectorDTO(), maskingEvaluator));
+    }
+
+    if (k8sInfraDelegateConfig instanceof EksK8sInfraDelegateConfig) {
+      capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
+          ((EksK8sInfraDelegateConfig) k8sInfraDelegateConfig).getAwsConnectorDTO(), maskingEvaluator));
     }
 
     if (manifestDelegateConfig != null) {

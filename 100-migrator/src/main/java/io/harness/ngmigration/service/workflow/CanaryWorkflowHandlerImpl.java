@@ -19,7 +19,6 @@ import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.utils.CaseFormat;
 
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.PhaseStep;
@@ -59,7 +58,7 @@ public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
   }
 
   @Override
-  public JsonNode getTemplateSpec(MigrationContext migrationContext, Workflow workflow, CaseFormat caseFormat) {
+  public JsonNode getTemplateSpec(MigrationContext migrationContext, Workflow workflow) {
     OrchestrationWorkflowType workflowType = workflow.getOrchestration().getOrchestrationWorkflowType();
     WorkflowMigrationContext context = WorkflowMigrationContext.newInstance(migrationContext, workflow);
     if (ROLLING_WORKFLOW_TYPES.contains(workflowType)) {

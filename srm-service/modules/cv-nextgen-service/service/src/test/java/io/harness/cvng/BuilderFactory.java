@@ -9,6 +9,7 @@ package io.harness.cvng;
 
 import static io.harness.cvng.beans.TimeSeriesThresholdActionType.IGNORE;
 import static io.harness.cvng.core.utils.DateTimeUtils.roundDownToMinBoundary;
+import static io.harness.cvng.downtime.utils.DateTimeUtils.dtf;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -211,7 +212,7 @@ import io.harness.cvng.notification.channelDetails.CVNGNotificationChannel;
 import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationDTO;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
-import io.harness.cvng.servicelevelobjective.beans.SLIExecutionType;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
@@ -228,14 +229,11 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO.Se
 import io.harness.cvng.servicelevelobjective.beans.UserJourneyDTO;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
-import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec.RatioSLIMetricSpecBuilder;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMetricSpec;
-import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMetricSpec.ThresholdSLIMetricSpecBuilder;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RequestBasedServiceLevelIndicatorSpec;
-import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RequestBasedServiceLevelIndicatorSpec.RequestBasedServiceLevelIndicatorSpecBuilder;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator;
@@ -244,11 +242,8 @@ import io.harness.cvng.servicelevelobjective.entities.RequestServiceLevelIndicat
 import io.harness.cvng.servicelevelobjective.entities.RequestServiceLevelIndicator.RequestServiceLevelIndicatorBuilder;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHealthIndicatorBuilder;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.RollingSLOTarget;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveBuilder;
-import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator;
-import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator.ThresholdServiceLevelIndicatorBuilder;
 import io.harness.cvng.verificationjob.entities.AutoVerificationJob;
 import io.harness.cvng.verificationjob.entities.AutoVerificationJob.AutoVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
@@ -276,6 +271,7 @@ import com.google.common.collect.Sets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -285,6 +281,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
@@ -524,7 +521,7 @@ public class BuilderFactory {
         .metricPack(
             MetricPack.builder()
                 .identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
-                .metrics(Collections.singleton(
+                .metrics(Set.of(
                     MetricPack.MetricDefinition.builder()
                         .identifier("identifier")
                         .type(TimeSeriesMetricType.OTHER)
@@ -540,11 +537,31 @@ public class BuilderFactory {
                                                       .criteria(TimeSeriesThresholdCriteria.builder().build())
                                                       .action(IGNORE)
                                                       .build()))
+                        .build(),
+                    MetricPack.MetricDefinition.builder()
+                        .identifier("zero metric identifier")
+                        .type(TimeSeriesMetricType.OTHER)
+                        .name("zero metric")
+                        .thresholds(Arrays.asList(TimeSeriesThreshold.builder()
+                                                      .uuid("thresholdId")
+                                                      .metricPackIdentifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
+                                                      .metricType(TimeSeriesMetricType.OTHER)
+                                                      .metricGroupName("*")
+                                                      .metricType(TimeSeriesMetricType.OTHER)
+                                                      .metricIdentifier("zero metric identifier")
+                                                      .deviationType(DeviationType.HIGHER_IS_RISKY)
+                                                      .criteria(TimeSeriesThresholdCriteria.builder().build())
+                                                      .action(IGNORE)
+                                                      .build()))
                         .build()))
                 .dataCollectionDsl("dsl")
                 .build())
         .metricInfos(
-            Arrays.asList(AppDynamicsCVConfig.MetricInfo.builder().identifier("identifier").metricName("name").build()))
+            Arrays.asList(AppDynamicsCVConfig.MetricInfo.builder().identifier("identifier").metricName("name").build(),
+                AppDynamicsCVConfig.MetricInfo.builder()
+                    .identifier("zero metric identifier")
+                    .metricName("zero metric")
+                    .build()))
         .applicationName(generateUuid())
         .tierName("tier-name")
         .connectorIdentifier("AppDynamics Connector")
@@ -1070,6 +1087,29 @@ public class BuilderFactory {
         .eventEndTime(clock.instant().toEpochMilli());
   }
 
+  public InternalChangeActivityBuilder getInternalChangeActivity_CEBuilder() {
+    return InternalChangeActivity.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceParams().getMonitoredServiceIdentifier())
+        .eventTime(clock.instant())
+        .changeSourceIdentifier("changeSourceID")
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .type(ActivityType.CHAOS_EXPERIMENT)
+        .activityType(ActivityType.CHAOS_EXPERIMENT)
+        .updatedBy("user")
+        .internalChangeEvent(
+            InternalChangeEvent.builder()
+                .changeEventDetailsLink(
+                    DeepLink.builder().action(DeepLink.Action.FETCH_DIFF_DATA).url("changeEventDetails").build())
+                .internalLinkToEntity(
+                    DeepLink.builder().action(DeepLink.Action.REDIRECT_URL).url("internalUrl").build())
+                .eventDescriptions(Arrays.asList("eventDesc1", "eventDesc2"))
+                .build())
+        .eventEndTime(clock.instant().toEpochMilli());
+  }
+
   public CustomChangeActivityBuilder getCustomChangeActivity(ChangeSourceType customChangeSourceType) {
     return CustomChangeActivity.builder()
         .accountId(context.getAccountId())
@@ -1312,9 +1352,6 @@ public class BuilderFactory {
         .type(changeSourceType);
   }
 
-  public ChangeSourceDTOBuilder getChangeSourceDTOBuilder_Deserialize(ChangeSourceType changeSourceType) {
-    return getChangeSourceDTOBuilder(changeSourceType);
-  }
   public ServiceLevelObjectiveV2DTOBuilder getSimpleServiceLevelObjectiveV2DTOBuilder() {
     return ServiceLevelObjectiveV2DTO.builder()
         .type(ServiceLevelObjectiveType.SIMPLE)
@@ -1336,6 +1373,38 @@ public class BuilderFactory {
                        .build())
         .spec(SimpleServiceLevelObjectiveSpec.builder()
                   .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTOBuilder()))
+                  .healthSourceRef("healthSourceIdentifier")
+                  .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
+                  .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
+                  .build())
+        .notificationRuleRefs(Collections.emptyList())
+        .userJourneyRefs(Collections.singletonList("userJourney"));
+  }
+
+  public ServiceLevelObjectiveV2DTOBuilder getSimpleRequestServiceLevelObjectiveV2DTOBuilder() {
+    return ServiceLevelObjectiveV2DTO.builder()
+        .type(ServiceLevelObjectiveType.SIMPLE)
+        .projectIdentifier(context.getProjectIdentifier())
+        .orgIdentifier(context.getOrgIdentifier())
+        .identifier("sloIdentifier_request")
+        .name("sloName_request")
+        .tags(new HashMap<String, String>() {
+          {
+            put("tag1", "value1");
+            put("tag2", "");
+          }
+        })
+        .description("slo description")
+        .sloTarget(SLOTargetDTO.builder()
+                       .type(SLOTargetType.ROLLING)
+                       .sloTargetPercentage(80.0)
+                       .spec(RollingSLOTargetSpec.builder().periodLength("30d").build())
+                       .build())
+        .spec(SimpleServiceLevelObjectiveSpec.builder()
+                  .serviceLevelIndicators(Collections.singletonList(getRequestServiceLevelIndicatorDTOBuilder()
+                                                                        .name(generateUuid())
+                                                                        .identifier(generateUuid())
+                                                                        .build()))
                   .healthSourceRef("healthSourceIdentifier")
                   .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
                   .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
@@ -1392,7 +1461,7 @@ public class BuilderFactory {
         .name("sloName")
         .tags(Collections.singletonList(NGTag.builder().key("key").value("value").build()))
         .desc("slo description")
-        .sloTarget(RollingSLOTarget.builder().periodLengthDays(30).build())
+        .target(io.harness.cvng.servicelevelobjective.entities.RollingSLOTarget.builder().periodLengthDays(30).build())
         .sloTargetPercentage(80.0)
         .serviceLevelIndicators(Collections.singletonList("sloIdentifier_metric1"))
         .healthSourceIdentifier("healthSourceIdentifier")
@@ -1416,9 +1485,9 @@ public class BuilderFactory {
 
   public ServiceLevelIndicatorDTO getServiceLevelIndicatorDTOBuilder() {
     return ServiceLevelIndicatorDTO.builder()
-        .sliMissingDataType(SLIMissingDataType.GOOD)
-        .type(SLIExecutionType.WINDOW)
+        .type(SLIEvaluationType.WINDOW)
         .spec(WindowBasedServiceLevelIndicatorSpec.builder()
+                  .sliMissingDataType(SLIMissingDataType.GOOD)
                   .type(SLIMetricType.RATIO)
                   .spec(RatioSLIMetricSpec.builder()
                             .thresholdType(ThresholdType.GREATER_THAN)
@@ -1433,6 +1502,7 @@ public class BuilderFactory {
 
   public RatioServiceLevelIndicatorBuilder ratioServiceLevelIndicatorBuilder() {
     return RatioServiceLevelIndicator.builder()
+        .uuid("ratio_sli")
         .sliMissingDataType(SLIMissingDataType.GOOD)
         .accountId(context.getAccountId())
         .orgIdentifier(context.getOrgIdentifier())
@@ -1440,20 +1510,8 @@ public class BuilderFactory {
         .metric1("metric1")
         .metric2("metric2")
         .healthSourceIdentifier("healthSourceIdentifier")
-        .monitoredServiceIdentifier("monitoredServiceIdentifier");
-  }
-
-  public ThresholdServiceLevelIndicatorBuilder thresholdServiceLevelIndicatorBuilder() {
-    return ThresholdServiceLevelIndicator.builder()
-        .sliMissingDataType(SLIMissingDataType.GOOD)
-        .accountId(context.getAccountId())
-        .orgIdentifier(context.getOrgIdentifier())
-        .projectIdentifier(context.getProjectIdentifier())
-        .metric1("metric1")
-        .thresholdValue(80.0)
-        .thresholdType(ThresholdType.GREATER_THAN)
-        .healthSourceIdentifier("healthSourceIdentifier")
-        .monitoredServiceIdentifier("monitoredServiceIdentifier");
+        .monitoredServiceIdentifier("monitoredServiceIdentifier")
+        .version(0);
   }
 
   public RequestServiceLevelIndicatorBuilder requestServiceLevelIndicatorBuilder() {
@@ -1471,10 +1529,10 @@ public class BuilderFactory {
 
   public ServiceLevelIndicatorDTOBuilder getThresholdServiceLevelIndicatorDTOBuilder() {
     return ServiceLevelIndicatorDTO.builder()
-        .type(SLIExecutionType.WINDOW)
+        .type(SLIEvaluationType.WINDOW)
         .healthSourceRef("healthSourceIdentifier")
-        .sliMissingDataType(SLIMissingDataType.GOOD)
         .spec(WindowBasedServiceLevelIndicatorSpec.builder()
+                  .sliMissingDataType(SLIMissingDataType.GOOD)
                   .type(SLIMetricType.THRESHOLD)
                   .spec(ThresholdSLIMetricSpec.builder()
                             .metric1("Calls per Minute")
@@ -1486,10 +1544,10 @@ public class BuilderFactory {
 
   public ServiceLevelIndicatorDTOBuilder getRatioServiceLevelIndicatorDTOBuilder() {
     return ServiceLevelIndicatorDTO.builder()
-        .type(SLIExecutionType.WINDOW)
+        .type(SLIEvaluationType.WINDOW)
         .healthSourceRef("healthSourceIdentifier")
-        .sliMissingDataType(SLIMissingDataType.GOOD)
         .spec(WindowBasedServiceLevelIndicatorSpec.builder()
+                  .sliMissingDataType(SLIMissingDataType.GOOD)
                   .type(SLIMetricType.RATIO)
                   .spec(RatioSLIMetricSpec.builder()
                             .metric1("Errors per Minute")
@@ -1505,35 +1563,12 @@ public class BuilderFactory {
     return ServiceLevelIndicatorDTO.builder()
         .name("name")
         .identifier("identifier")
-        .type(SLIExecutionType.REQUEST)
+        .type(SLIEvaluationType.REQUEST)
         .spec(RequestBasedServiceLevelIndicatorSpec.builder()
                   .metric1("Errors per Minute")
                   .metric2("Calls per Minute")
                   .eventType(RatioSLIMetricEventType.GOOD)
                   .build());
-  }
-
-  public ThresholdSLIMetricSpecBuilder getThresholdSLIMetricSpecBuilder() {
-    return ThresholdSLIMetricSpec.builder()
-        .metric1("metric1")
-        .thresholdType(ThresholdType.GREATER_THAN_EQUAL_TO)
-        .thresholdValue(100.0);
-  }
-
-  public RatioSLIMetricSpecBuilder getRatioSLIMetricSpecBuilder() {
-    return RatioSLIMetricSpec.builder()
-        .thresholdType(ThresholdType.GREATER_THAN)
-        .thresholdValue(20.0)
-        .eventType(RatioSLIMetricEventType.GOOD)
-        .metric1("metric1")
-        .metric2("metric2");
-  }
-
-  public RequestBasedServiceLevelIndicatorSpecBuilder getRequestBasedServiceLevelIndicatorSpecBuilder() {
-    return RequestBasedServiceLevelIndicatorSpec.builder()
-        .eventType(RatioSLIMetricEventType.GOOD)
-        .metric1("metric1")
-        .metric2("metric2");
   }
 
   private VerificationJob getVerificationJob(List<CVConfig> cvConfigs) {
@@ -1850,6 +1885,7 @@ public class BuilderFactory {
 
   public DowntimeDTO getOnetimeDurationBasedDowntimeDTO() {
     long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    LocalDateTime startDateTime = LocalDateTime.now(CVNGTestConstants.FIXED_TIME_FOR_TESTS);
     return DowntimeDTO.builder()
         .identifier("downtimeOneTimeDuration")
         .name("downtime OneTime Duration")
@@ -1869,6 +1905,7 @@ public class BuilderFactory {
                   .type(DowntimeType.ONE_TIME)
                   .spec(OnetimeDowntimeSpec.builder()
                             .startTime(startTime)
+                            .startDateTime(dtf.format(startDateTime))
                             .timezone("UTC")
                             .type(OnetimeDowntimeType.DURATION)
                             .spec(OnetimeDowntimeSpec.OnetimeDurationBasedSpec.builder()
@@ -1884,7 +1921,9 @@ public class BuilderFactory {
 
   public DowntimeDTO getOnetimeEndTimeBasedDowntimeDTO() {
     long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    LocalDateTime startDateTime = LocalDateTime.now(CVNGTestConstants.FIXED_TIME_FOR_TESTS);
     long endTime = startTime + Duration.ofMinutes(30).toSeconds();
+    LocalDateTime endDateTime = startDateTime.plusMinutes(30);
     return DowntimeDTO.builder()
         .identifier("downtimeOneTimeEndTime")
         .name("downtime OneTime EndTime")
@@ -1904,9 +1943,13 @@ public class BuilderFactory {
                   .type(DowntimeType.ONE_TIME)
                   .spec(OnetimeDowntimeSpec.builder()
                             .startTime(startTime)
+                            .startDateTime(dtf.format(startDateTime))
                             .timezone("UTC")
                             .type(OnetimeDowntimeType.END_TIME)
-                            .spec(OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec.builder().endTime(endTime).build())
+                            .spec(OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec.builder()
+                                      .endTime(endTime)
+                                      .endDateTime(dtf.format(endDateTime))
+                                      .build())
                             .build())
                   .build())
         .build();
@@ -1914,7 +1957,9 @@ public class BuilderFactory {
 
   public DowntimeDTO getRecurringDowntimeDTO() {
     long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    LocalDateTime startDateTime = LocalDateTime.now(CVNGTestConstants.FIXED_TIME_FOR_TESTS);
     long endTime = startTime + Duration.ofDays(365).toSeconds();
+    LocalDateTime endDateTime = startDateTime.plusDays(365);
     return DowntimeDTO.builder()
         .identifier("downtimeRecurring")
         .name("downtime Recurring")
@@ -1934,12 +1979,14 @@ public class BuilderFactory {
                   .type(DowntimeType.RECURRING)
                   .spec(RecurringDowntimeSpec.builder()
                             .startTime(startTime)
+                            .startDateTime(dtf.format(startDateTime))
                             .timezone("UTC")
                             .downtimeDuration(DowntimeDuration.builder()
                                                   .durationValue(30)
                                                   .durationType(DowntimeDurationType.MINUTES)
                                                   .build())
                             .recurrenceEndTime(endTime)
+                            .recurrenceEndDateTime(dtf.format(endDateTime))
                             .downtimeRecurrence(DowntimeRecurrence.builder()
                                                     .recurrenceValue(1)
                                                     .recurrenceType(DowntimeRecurrenceType.WEEK)

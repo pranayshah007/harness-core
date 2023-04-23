@@ -14,9 +14,9 @@ import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -35,13 +35,18 @@ import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.contracts.plan.TriggerType;
+import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.instrumentaion.PipelineTelemetryHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.plan.execution.beans.ExecArgs;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.RunStageRequestDTO;
+import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
@@ -68,6 +73,8 @@ public class PipelineExecutorTest extends CategoryTest {
   @Mock PlanExecutionService planExecutionService;
   @Mock RollbackModeExecutionHelper rollbackModeExecutionHelper;
   @Mock PlanExecutionMetadataService planExecutionMetadataService;
+
+  @Mock PMSExecutionService pmsExecutionService;
 
   String accountId = "accountId";
   String orgId = "orgId";
@@ -289,6 +296,7 @@ public class PipelineExecutorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testStartPostExecutionRollback() {
     MockedStatic<UUIDGenerator> mockSettings = Mockito.mockStatic(UUIDGenerator.class);
+    List<String> stageNodeExecutionIds = Collections.singletonList("stageNodeExecutionId");
     when(UUIDGenerator.generateUuid()).thenReturn("planId");
     doReturn(executionTriggerInfo).when(executionHelper).buildTriggerInfo(null);
     ExecutionMetadata originalExecutionMetadata =
@@ -300,8 +308,8 @@ public class PipelineExecutorTest extends CategoryTest {
         .get(originalExecutionId);
     doReturn(metadata)
         .when(rollbackModeExecutionHelper)
-        .transformExecutionMetadata(
-            originalExecutionMetadata, "planId", executionTriggerInfo, accountId, orgId, projectId);
+        .transformExecutionMetadata(originalExecutionMetadata, "planId", executionTriggerInfo, accountId, orgId,
+            projectId, ExecutionMode.POST_EXECUTION_ROLLBACK, null, stageNodeExecutionIds);
     PlanExecutionMetadata originalPlanExecutionMetadata =
         PlanExecutionMetadata.builder().planExecutionId(originalExecutionId).build();
     doReturn(Optional.of(originalPlanExecutionMetadata))
@@ -309,13 +317,90 @@ public class PipelineExecutorTest extends CategoryTest {
         .findByPlanExecutionId(originalExecutionId);
     doReturn(planExecutionMetadata)
         .when(rollbackModeExecutionHelper)
-        .transformPlanExecutionMetadata(originalPlanExecutionMetadata, "planId");
+        .transformPlanExecutionMetadata(
+            originalPlanExecutionMetadata, "planId", ExecutionMode.POST_EXECUTION_ROLLBACK, stageNodeExecutionIds);
     doReturn(planExecution)
         .when(executionHelper)
         .startExecution(
             accountId, orgId, projectId, metadata, planExecutionMetadata, false, null, originalExecutionId, null);
-    assertThat(pipelineExecutor.startPostExecutionRollback(accountId, orgId, projectId, originalExecutionId))
+    assertThat(pipelineExecutor.startPostExecutionRollback(
+                   accountId, orgId, projectId, originalExecutionId, stageNodeExecutionIds))
         .isEqualTo(planExecution);
     mockSettings.close();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testStartPipelineRollback() {
+    MockedStatic<UUIDGenerator> mockSettings = Mockito.mockStatic(UUIDGenerator.class);
+    when(UUIDGenerator.generateUuid()).thenReturn("planId");
+    doReturn(executionTriggerInfo).when(executionHelper).buildTriggerInfo(null);
+    ExecutionMetadata originalExecutionMetadata =
+        ExecutionMetadata.newBuilder()
+            .setTriggerInfo(ExecutionTriggerInfo.newBuilder().setTriggerType(TriggerType.WEBHOOK).build())
+            .build();
+    doReturn(PlanExecution.builder().metadata(originalExecutionMetadata).build())
+        .when(planExecutionService)
+        .get(originalExecutionId);
+    doReturn(metadata)
+        .when(rollbackModeExecutionHelper)
+        .transformExecutionMetadata(originalExecutionMetadata, "planId", executionTriggerInfo, accountId, orgId,
+            projectId, ExecutionMode.PIPELINE_ROLLBACK, null, null);
+    PlanExecutionMetadata originalPlanExecutionMetadata =
+        PlanExecutionMetadata.builder().planExecutionId(originalExecutionId).build();
+    doReturn(Optional.of(originalPlanExecutionMetadata))
+        .when(planExecutionMetadataService)
+        .findByPlanExecutionId(originalExecutionId);
+    doReturn(planExecutionMetadata)
+        .when(rollbackModeExecutionHelper)
+        .transformPlanExecutionMetadata(originalPlanExecutionMetadata, "planId", ExecutionMode.PIPELINE_ROLLBACK, null);
+    doReturn(planExecution)
+        .when(executionHelper)
+        .startExecution(
+            accountId, orgId, projectId, metadata, planExecutionMetadata, false, null, originalExecutionId, null);
+    assertThat(pipelineExecutor.startPipelineRollback(accountId, orgId, projectId, originalExecutionId, null))
+        .isEqualTo(planExecution);
+    mockSettings.close();
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testSetTriggerInfo() {
+    ExecutionTriggerInfo triggerInfo = ExecutionTriggerInfo.newBuilder().build();
+    String jsonPayload = "jsonPayload";
+    String accountId = "acc";
+    String projectId = "pro";
+    String orgId = "org";
+    String pipelineId = "pipelineId";
+    String planExecutionId = "planId";
+    TriggerPayload triggerPayload = TriggerPayload.newBuilder().build();
+    PipelineStageInfo info = PipelineStageInfo.newBuilder()
+                                 .setExecutionId(planExecutionId)
+                                 .setProjectId(projectId)
+                                 .setOrgId(orgId)
+                                 .setIdentifier(pipelineId)
+                                 .build();
+
+    doReturn(Optional.of(PlanExecutionMetadata.builder().triggerJsonPayload(jsonPayload).build()))
+        .when(planExecutionMetadataService)
+        .findByPlanExecutionId(planExecutionId);
+
+    doReturn(PipelineExecutionSummaryEntity.builder()
+                 .executionTriggerInfo(ExecutionTriggerInfo.newBuilder().build())
+                 .build())
+        .when(pmsExecutionService)
+        .getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecutionId);
+
+    ExecArgs execArgs = ExecArgs.builder()
+                            .metadata(ExecutionMetadata.newBuilder().build())
+                            .planExecutionMetadata(PlanExecutionMetadata.builder().build())
+                            .build();
+    pipelineExecutor.setTriggerInfo(info, execArgs, accountId);
+
+    assertThat(execArgs.getMetadata().getTriggerInfo()).isEqualTo(triggerInfo);
+    assertThat(execArgs.getPlanExecutionMetadata().getTriggerJsonPayload()).isEqualTo(jsonPayload);
+    assertThat(execArgs.getPlanExecutionMetadata().getTriggerPayload()).isEqualTo(triggerPayload);
   }
 }

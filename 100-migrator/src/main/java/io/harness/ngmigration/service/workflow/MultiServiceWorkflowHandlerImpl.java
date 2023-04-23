@@ -10,7 +10,6 @@ package io.harness.ngmigration.service.workflow;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.plancreator.stages.StageElementWrapperConfig;
 
 import software.wings.beans.CanaryOrchestrationWorkflow;
@@ -44,12 +43,13 @@ public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
 
   @Override
   public List<StageElementWrapperConfig> asStages(MigrationContext migrationContext, Workflow workflow) {
-    return getStagesForMultiServiceWorkflow(
-        migrationContext, WorkflowMigrationContext.newInstance(migrationContext, workflow));
+    WorkflowMigrationContext wfContext = WorkflowMigrationContext.newInstance(migrationContext, workflow);
+    wfContext.setWorkflowVarsAsPipeline(true);
+    return getStagesForMultiServiceWorkflow(migrationContext, wfContext);
   }
 
   @Override
-  public JsonNode getTemplateSpec(MigrationContext migrationContext, Workflow workflow, CaseFormat caseFormat) {
+  public JsonNode getTemplateSpec(MigrationContext migrationContext, Workflow workflow) {
     return buildMultiStagePipelineTemplate(
         migrationContext, WorkflowMigrationContext.newInstance(migrationContext, workflow));
   }

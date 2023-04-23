@@ -12,6 +12,7 @@ import static io.harness.cdng.visitor.YamlTypes.PATH_CONNECTOR;
 import io.harness.beans.FileReference;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.common.ParameterFieldHelper;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.exception.InvalidRequestException;
@@ -73,7 +74,7 @@ public class HarnessStoreVisitorHelper implements EntityReferenceExtractor {
         ? ParameterFieldHelper.getParameterFieldListValue(valuesFiles, false)
         : Collections.emptyList();
     Set<EntityDetailProtoDTO> result = new HashSet<>(files.size());
-    files.forEach(scopedFilePath -> {
+    files.stream().filter(EmptyPredicate::isNotEmpty).forEach(scopedFilePath -> {
       FileReference fileReference =
           FileReference.of(scopedFilePath, accountIdentifier, orgIdentifier, projectIdentifier);
       Optional<FileDTO> fileDTO = fileStoreService.getByPath(fileReference.getAccountIdentifier(),

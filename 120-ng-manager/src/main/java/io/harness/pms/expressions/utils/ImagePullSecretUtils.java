@@ -102,13 +102,13 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import dev.morphia.annotations.Transient;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 @Slf4j
@@ -117,12 +117,35 @@ public class ImagePullSecretUtils {
   @Inject private EcrImagePullSecretHelper ecrImagePullSecretHelper;
   @Inject private AzureHelperService azureHelperService;
   @Inject @Named(NextGenModule.CONNECTOR_DECORATOR_SERVICE) private ConnectorService connectorService;
-  @Transient
-  private static final String DOCKER_REGISTRY_CREDENTIAL_TEMPLATE =
-      "{\"%s\":{\"username\":\"%s\",\"password\":\"%s\"}}";
   private static final String ACR_DUMMY_DOCKER_USERNAME = "00000000-0000-0000-0000-000000000000";
 
   public String getImagePullSecret(ArtifactOutcome artifactOutcome, Ambiance ambiance) {
+    ImageDetails imageDetails = getImageDetails(artifactOutcome, ambiance);
+    if (isNotEmpty(imageDetails.getRegistryUrl()) && isNotBlank(imageDetails.getUsername())
+        && isNotBlank(imageDetails.getPassword())) {
+      return getArtifactRegistryCredentials(imageDetails);
+    } else if (isNotEmpty(imageDetails.getRegistryUrl()) && isNotBlank(imageDetails.getUsernameRef())
+        && isNotBlank(imageDetails.getPassword())) {
+      return getArtifactRegistryCredentialsFromUsernameRef(imageDetails);
+    }
+    return "";
+  }
+
+  public String getDockerConfigJson(ArtifactOutcome artifactOutcome, Ambiance ambiance) {
+    ImageDetails imageDetails = getImageDetails(artifactOutcome, ambiance);
+    if (StringUtils.isNoneBlank(
+            imageDetails.getRegistryUrl(), imageDetails.getUsername(), imageDetails.getPassword())) {
+      return "${dockerConfigJsonSecretFunc.create(\"" + imageDetails.getRegistryUrl() + "\", \""
+          + imageDetails.getUsername() + "\", " + imageDetails.getPassword() + ")}";
+    } else if (StringUtils.isNoneBlank(
+                   imageDetails.getRegistryUrl(), imageDetails.getUsernameRef(), imageDetails.getPassword())) {
+      return "${dockerConfigJsonSecretFunc.create(\"" + imageDetails.getRegistryUrl() + "\", "
+          + imageDetails.getUsernameRef() + ", " + imageDetails.getPassword() + ")}";
+    }
+    return "";
+  }
+
+  private ImageDetails getImageDetails(ArtifactOutcome artifactOutcome, Ambiance ambiance) {
     ImageDetailsBuilder imageDetailsBuilder = ImageDetails.builder();
     switch (artifactOutcome.getArtifactType()) {
       case ArtifactSourceConstants.DOCKER_REGISTRY_NAME:
@@ -166,15 +189,7 @@ public class ImagePullSecretUtils {
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactOutcome.getArtifactType()));
     }
-    ImageDetails imageDetails = imageDetailsBuilder.build();
-    if (isNotEmpty(imageDetails.getRegistryUrl()) && isNotBlank(imageDetails.getUsername())
-        && isNotBlank(imageDetails.getPassword())) {
-      return getArtifactRegistryCredentials(imageDetails);
-    } else if (isNotEmpty(imageDetails.getRegistryUrl()) && isNotBlank(imageDetails.getUsernameRef())
-        && isNotBlank(imageDetails.getPassword())) {
-      return getArtifactRegistryCredentialsFromUsernameRef(imageDetails);
-    }
-    return "";
+    return imageDetailsBuilder.build();
   }
 
   private void getImageDetailsForAMI(
@@ -358,6 +373,7 @@ public class ImagePullSecretUtils {
       imageDetailsBuilder.password(getPasswordExpression(config.getSecretKeyRef().toSecretRefStringValue(), ambiance));
     }
   }
+
   private void getImageDetailsFromGar(
       GarArtifactOutcome garArtifactOutcome, ImageDetailsBuilder imageDetailsBuilder, Ambiance ambiance) {
     String connectorRef = garArtifactOutcome.getConnectorRef();

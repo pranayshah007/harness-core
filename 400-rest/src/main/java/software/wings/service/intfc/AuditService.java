@@ -65,7 +65,7 @@ public interface AuditService extends EntityCrudOperationObserver {
   // ---- Following 3 methods are for AuditRecord collection.
   AuditRecord fetchMostRecentAuditRecord(String id);
 
-  List<AuditRecord> fetchEntityAuditRecordsOlderThanGivenTime(String auditHeaderId, long timestamp);
+  List<AuditRecord> fetchLimitedEntityAuditRecordsOlderThanGivenTime(String auditHeaderId, long timestamp, int limit);
 
   boolean deleteTempAuditRecords(List<String> ids);
   // ----

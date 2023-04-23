@@ -42,6 +42,31 @@ public class PlanCreationBlobResponseUtils {
     mergeContext(builder, other.getContextMap());
     mergeLayoutNodeInfo(builder, other);
     addYamlUpdates(builder, other);
+    mergePreservedNodesInRollbackMode(builder, other);
+    mergeServiceAffinityMap(builder, other);
+  }
+
+  /**
+   * builder: the object into which the new nodes to be preserved in rollback mode will be added
+   * other: the object from which the new nodes to be preserved in rollback mode will be added
+   */
+  public void mergePreservedNodesInRollbackMode(
+      PlanCreationBlobResponse.Builder builder, PlanCreationBlobResponse other) {
+    if (EmptyPredicate.isEmpty(other.getPreservedNodesInRollbackModeList())) {
+      return;
+    }
+    builder.addAllPreservedNodesInRollbackMode(other.getPreservedNodesInRollbackModeList());
+  }
+
+  /**
+   * builder: the object into which the serviceAffinityMap to be retained
+   * other: the object from which the serviceAffinity of dependencies are present
+   */
+  public void mergeServiceAffinityMap(PlanCreationBlobResponse.Builder builder, PlanCreationBlobResponse other) {
+    if (EmptyPredicate.isEmpty(other.getServiceAffinityMap())) {
+      return;
+    }
+    builder.putAllServiceAffinity(other.getServiceAffinityMap());
   }
 
   public PlanCreationBlobResponse addYamlUpdates(

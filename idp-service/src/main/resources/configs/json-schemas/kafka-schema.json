@@ -1,0 +1,78 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1679771337.json",
+  "title": "Root",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kafka"
+  ],
+  "properties": {
+    "kafka": {
+      "$id": "#root/kafka",
+      "title": "Kafka",
+      "type": "object",
+      "required": [
+        "clientId",
+        "clusters"
+      ],
+      "properties": {
+        "clientId": {
+          "$id": "#root/kafka/clientId",
+          "title": "Clientid",
+          "type": "string",
+          "default": "",
+          "pattern": "^.*$"
+        },
+        "clusters": {
+          "$id": "#root/kafka/clusters",
+          "title": "Clusters",
+          "type": "array",
+          "default": [],
+          "items":{
+            "$id": "#root/kafka/clusters/items",
+            "title": "Items",
+            "type": "object",
+            "required": [
+              "name",
+              "dashboardUrl",
+              "brokers"
+            ],
+            "properties": {
+              "name": {
+                "$id": "#root/kafka/clusters/items/name",
+                "title": "Name",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "dashboardUrl": {
+                "$id": "#root/kafka/clusters/items/dashboardUrl",
+                "title": "Dashboardurl",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "brokers": {
+                "$id": "#root/kafka/clusters/items/brokers",
+                "title": "Brokers",
+                "type": "array",
+                "default": [],
+                "items":{
+                  "$id": "#root/kafka/clusters/items/brokers/items",
+                  "title": "Items",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                }
+              }
+            }
+          }
+
+        }
+      }
+    }
+
+  }
+}

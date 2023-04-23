@@ -8,6 +8,8 @@
 package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.manifest.ManifestStoreType.GIT;
+import static io.harness.cdng.manifest.ManifestStoreType.GITHUB;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -19,16 +21,19 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.configfile.ConfigFileOutcome;
+import io.harness.cdng.configfile.ConfigGitFile;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.common.ParameterFieldHelper;
+import io.harness.delegate.beans.storeconfig.GitFetchedStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.FileDelegateConfig;
 import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.encryption.SecretRefHelper;
+import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
@@ -44,10 +49,14 @@ import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Singleton
 @OwnedBy(CDP)
@@ -78,19 +87,31 @@ public class SshWinRmConfigFileHelper {
   }
 
   public FileDelegateConfig getFileDelegateConfig(
-      Map<String, ConfigFileOutcome> configFilesOutcome, Ambiance ambiance) {
+      Map<String, ConfigFileOutcome> configFilesOutcome, Ambiance ambiance, boolean shouldRenderConfigFiles) {
     List<StoreDelegateConfig> stores = new ArrayList<>(configFilesOutcome.size());
     for (ConfigFileOutcome configFileOutcome : configFilesOutcome.values()) {
       StoreConfig storeConfig = configFileOutcome.getStore();
-      if (storeConfig != null && HARNESS_STORE_TYPE.equals(storeConfig.getKind())) {
-        stores.add(buildHarnessStoreDelegateConfig(ambiance, (HarnessStore) storeConfig));
+      if (storeConfig != null) {
+        switch (storeConfig.getKind()) {
+          case HARNESS_STORE_TYPE:
+            stores.add(buildHarnessStoreDelegateConfig(ambiance, (HarnessStore) storeConfig, shouldRenderConfigFiles));
+            break;
+          case GITHUB:
+          case GIT:
+            stores.add(buildGitFetchedStoreDelegateConfig(ambiance, configFileOutcome));
+            break;
+          default:
+            throw new UnsupportedOperationException(
+                format("Ssh/WinRm deployment does not support this storeConfig kind `%s`", storeConfig.getKind()));
+        }
       }
     }
 
     return FileDelegateConfig.builder().stores(stores).build();
   }
 
-  private HarnessStoreDelegateConfig buildHarnessStoreDelegateConfig(Ambiance ambiance, HarnessStore harnessStore) {
+  private HarnessStoreDelegateConfig buildHarnessStoreDelegateConfig(
+      Ambiance ambiance, HarnessStore harnessStore, boolean shouldRenderConfigFiles) {
     harnessStore = (HarnessStore) cdExpressionResolver.updateExpressions(ambiance, harnessStore);
     List<String> files = ParameterFieldHelper.getParameterFieldValue(harnessStore.getFiles());
     List<String> secretFiles = ParameterFieldHelper.getParameterFieldValue(harnessStore.getSecretFiles());
@@ -116,7 +137,61 @@ public class SshWinRmConfigFileHelper {
       });
     }
 
+    if (shouldRenderConfigFiles) {
+      renderConfigFilesParameters(ambiance, configFileParameters);
+    }
+
     return HarnessStoreDelegateConfig.builder().configFiles(configFileParameters).build();
+  }
+
+  private GitFetchedStoreDelegateConfig buildGitFetchedStoreDelegateConfig(
+      Ambiance ambiance, ConfigFileOutcome configFileOutcome) {
+    List<ConfigGitFile> files = configFileOutcome.getGitFiles();
+
+    List<ConfigFileParameters> configFileParameters = Collections.emptyList();
+
+    if (isNotEmpty(files)) {
+      configFileParameters = files.stream()
+                                 .map(file
+                                     -> ConfigFileParameters.builder()
+                                            .fileName(getFilename(file.getFilePath()))
+                                            .fileContent(file.getFileContent())
+                                            .build())
+                                 .collect(Collectors.toList());
+    }
+
+    renderConfigFilesParameters(ambiance, configFileParameters);
+
+    return GitFetchedStoreDelegateConfig.builder().configFiles(configFileParameters).build();
+  }
+
+  private String getFilename(String filePath) {
+    Path path = Paths.get(filePath);
+    return path.getFileName().toString();
+  }
+
+  private List<ConfigFileParameters> renderConfigFilesParameters(
+      Ambiance ambiance, List<ConfigFileParameters> configFileParameters) {
+    for (ConfigFileParameters configFileParameter : configFileParameters) {
+      if (configFileParameter.isEncrypted()) {
+        // At this point we don't have secret content as it will be retrieved on delegate side, hence skipping rendering
+        // for secret files. Generally we don't want to touch secret as it is not safe and might raise security
+        // concerns.
+        continue;
+      }
+
+      String renderedContent;
+      try {
+        renderedContent = cdExpressionResolver.renderExpression(ambiance, configFileParameter.getFileContent(), false);
+      } catch (GeneralException generalException) {
+        throw new InvalidRequestException(format("Failed to render config file %s, reason: %s",
+            configFileParameter.getFileName(), generalException.getMessage()));
+      }
+
+      configFileParameter.setFileContent(renderedContent);
+    }
+
+    return configFileParameters;
   }
 
   private List<ConfigFileParameters> fetchConfigFileFromFileStore(FileReference fileReference) {

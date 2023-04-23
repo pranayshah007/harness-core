@@ -142,7 +142,6 @@ import org.apache.commons.lang3.tuple.Pair;
 public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   private static final Set<StoreDelegateConfigType> HELM_SUPPORTED_STORE_TYPES =
       ImmutableSet.of(GIT, HTTP_HELM, S3_HELM, GCS_HELM, OCI_HELM, CUSTOM_REMOTE, HARNESS);
-  private static final String SUB_CHARTS_FOLDER = "charts";
   @Inject private HelmClient helmClient;
   @Inject private HelmTaskHelperBase helmTaskHelperBase;
   @Inject private ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
@@ -205,7 +204,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       prevVersion = getPrevReleaseVersion(helmCliResponse);
 
       kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-          commandRequest.getK8sInfraDelegateConfig(), logCallback);
+          commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
 
       prepareRepoAndCharts(commandRequest, commandRequest.getTimeoutInMillis(), logCallback);
 
@@ -466,8 +465,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         ? IK8sRelease.Status.Succeeded
         : IK8sRelease.Status.Failed;
     releaseHistory.setReleaseStatus(releaseStatus);
-    k8sTaskHelperBase.saveReleaseHistory(
-        kubernetesConfig, commandRequest.getReleaseName(), releaseHistory.getAsYaml(), true);
+    String releaseHistoryName = getOverridenReleaseHistoryName(commandRequest);
+    k8sTaskHelperBase.saveReleaseHistory(kubernetesConfig, releaseHistoryName, releaseHistory.getAsYaml(), true);
   }
 
   private ReleaseHistory createNewRelease(HelmCommandRequestNG commandRequest, List<KubernetesResourceId> workloads,
@@ -483,8 +482,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
   private ReleaseHistory fetchReleaseHistory(HelmCommandRequestNG commandRequest, KubernetesConfig kubernetesConfig)
       throws IOException {
-    String releaseHistoryData =
-        k8sTaskHelperBase.getReleaseHistoryFromSecret(kubernetesConfig, commandRequest.getReleaseName());
+    String releaseHistoryName = getOverridenReleaseHistoryName(commandRequest);
+    String releaseHistoryData = k8sTaskHelperBase.getReleaseHistoryFromSecret(kubernetesConfig, releaseHistoryName);
     if (StringUtils.isEmpty(releaseHistoryData)) {
       return ReleaseHistory.createNew();
     }
@@ -522,7 +521,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   public HelmCommandResponseNG rollback(HelmRollbackCommandRequestNG commandRequest) throws Exception {
     LogCallback logCallback = commandRequest.getLogCallback();
     kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        commandRequest.getK8sInfraDelegateConfig(), logCallback);
+        commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
     try {
       logCallback = markDoneAndStartNew(commandRequest, logCallback, Rollback);
       HelmInstallCmdResponseNG commandResponse = HelmCommandResponseMapper.getHelmInstCmdRespNG(
@@ -791,9 +790,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       HelmChartManifestDelegateConfig helmChartManifest =
           (HelmChartManifestDelegateConfig) commandRequest.getManifestDelegateConfig();
-      if (isNotEmpty(helmChartManifest.getSubChartName())) {
-        manifestFilesDirectory =
-            Paths.get(manifestFilesDirectory, SUB_CHARTS_FOLDER, helmChartManifest.getSubChartName()).toString();
+      if (isNotEmpty(helmChartManifest.getSubChartPath())) {
+        manifestFilesDirectory = Paths.get(manifestFilesDirectory, helmChartManifest.getSubChartPath()).toString();
       }
       commandRequest.setWorkingDir(manifestFilesDirectory);
 
@@ -817,11 +815,10 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       downloadFilesFromChartRepo(
           commandRequestNG.getManifestDelegateConfig(), workingDir, commandRequestNG.getLogCallback(), timeoutInMillis);
     }
-    if (isNotEmpty(helmChartManifestDelegateConfig.getSubChartName())) {
-      String finalWorkingDir = Paths
-                                   .get(getChartDirectory(workingDir, chartName), SUB_CHARTS_FOLDER,
-                                       helmChartManifestDelegateConfig.getSubChartName())
-                                   .toString();
+    if (isNotEmpty(helmChartManifestDelegateConfig.getSubChartPath())) {
+      String finalWorkingDir =
+          Paths.get(getChartDirectory(workingDir, chartName), helmChartManifestDelegateConfig.getSubChartPath())
+              .toString();
       commandRequestNG.setWorkingDir(finalWorkingDir);
     } else {
       commandRequestNG.setWorkingDir(getChartDirectory(workingDir, chartName));
@@ -865,8 +862,6 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       HelmChartManifestDelegateConfig helmChartManifestConfig =
           (HelmChartManifestDelegateConfig) manifestDelegateConfig;
       logCallback.saveExecutionLog(color(format("%nFetching files from helm chart repo"), White, Bold));
-      helmTaskHelperBase.printHelmChartInfoInExecutionLogs(helmChartManifestConfig, logCallback);
-
       helmTaskHelperBase.initHelm(destinationDirectory, helmChartManifestConfig.getHelmVersion(), timeoutInMillis);
 
       if (HTTP_HELM == manifestDelegateConfig.getStoreDelegateConfig().getType()) {
@@ -880,6 +875,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
             helmChartManifestConfig, destinationDirectory, timeoutInMillis);
       }
 
+      helmTaskHelperBase.printHelmChartInfoWithVersionInExecutionLogs(
+          destinationDirectory, helmChartManifestConfig, logCallback);
       logCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
       logCallback.saveExecutionLog(getManifestFileNamesInLogFormat(destinationDirectory));
     } catch (HelmClientException e) {
@@ -1093,8 +1090,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
           Paths.get(commandRequest.getWorkingDir(), CHARTS_YAML_KEY).toString());
     }
 
-    if (isNotEmpty(helmChartManifestDelegateConfig.getSubChartName()) && helmChartInfo != null) {
-      helmChartInfo.setSubChartName(helmChartManifestDelegateConfig.getSubChartName());
+    if (isNotEmpty(helmChartManifestDelegateConfig.getSubChartPath()) && helmChartInfo != null) {
+      helmChartInfo.setSubChartPath(helmChartManifestDelegateConfig.getSubChartPath());
       String parentChartName = helmTaskHelperBase.getChartName(helmChartManifestDelegateConfig);
       helmChartInfo.setName(parentChartName);
     }
@@ -1185,5 +1182,13 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       }
     }
     return Optional.empty();
+  }
+
+  private String getOverridenReleaseHistoryName(HelmCommandRequestNG commandRequestNG) {
+    if (isNotEmpty(commandRequestNG.getReleaseHistoryPrefix())) {
+      return commandRequestNG.getReleaseHistoryPrefix() + commandRequestNG.getReleaseName();
+    }
+
+    return commandRequestNG.getReleaseName();
   }
 }

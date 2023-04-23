@@ -39,13 +39,13 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -64,7 +64,6 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FileData;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.k8s.beans.K8sHandlerConfig;
-import io.harness.delegate.k8s.kustomize.KustomizeTaskHelper;
 import io.harness.delegate.k8s.openshift.OpenShiftDelegateService;
 import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
@@ -72,6 +71,7 @@ import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.k8sbase.KustomizeTaskHelper;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
 import io.harness.exception.HelmClientException;
@@ -718,7 +718,7 @@ public class K8sTaskHelperTest extends CategoryTest {
         K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).helmPath("helm").build();
     doReturn(Arrays.asList(FileData.builder().filePath("test").fileContent("manifest").build()))
         .when(mockK8sTaskHelperBase)
-        .renderTemplateForHelm(any(), any(), anyList(), any(), any(), any(), any(), anyLong(), any(), eq(""));
+        .renderTemplateForHelm(any(), any(), anyList(), any(), any(), any(), any(), anyLong(), any());
 
     final List<FileData> manifestFiles = helper.renderTemplate(k8sDelegateTaskParams,
         K8sDelegateManifestConfig.builder().manifestStoreTypes(HelmSourceRepo).build(), ".", valuesFiles, "release",
@@ -727,7 +727,7 @@ public class K8sTaskHelperTest extends CategoryTest {
     assertThat(manifestFiles.size()).isEqualTo(1);
     verify(mockK8sTaskHelperBase, times(1))
         .renderTemplateForHelm(eq("helm"), eq("."), eq(valuesFiles), eq("release"), eq("namespace"),
-            eq(executionLogCallback), eq(HelmVersion.V3), anyLong(), any(), eq(""));
+            eq(executionLogCallback), eq(HelmVersion.V3), anyLong(), any());
   }
 
   @Test
@@ -784,8 +784,8 @@ public class K8sTaskHelperTest extends CategoryTest {
         ".", new ArrayList<>(), "release", "namespace", executionLogCallback, K8sApplyTaskParameters.builder().build());
 
     verify(mockK8sTaskHelperBase, times(1))
-        .renderTemplateForHelm(eq("helm"), eq("./chart"), anyList(), any(), any(), eq(executionLogCallback), any(),
-            anyLong(), any(), eq(""));
+        .renderTemplateForHelm(
+            eq("helm"), eq("./chart"), anyList(), any(), any(), eq(executionLogCallback), any(), anyLong(), any());
   }
 
   /**
@@ -807,8 +807,8 @@ public class K8sTaskHelperTest extends CategoryTest {
         ".", new ArrayList<>(), "release", "namespace", executionLogCallback, K8sApplyTaskParameters.builder().build());
 
     verify(mockK8sTaskHelperBase, times(1))
-        .renderTemplateForHelm(eq("helm"), eq("./nginx"), anyList(), any(), any(), eq(executionLogCallback), any(),
-            anyLong(), any(), eq(""));
+        .renderTemplateForHelm(
+            eq("helm"), eq("./nginx"), anyList(), any(), any(), eq(executionLogCallback), any(), anyLong(), any());
   }
 
   @Test

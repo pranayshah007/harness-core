@@ -186,7 +186,8 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     ExecutionElementConfig executionElementConfig = ExecutionElementConfig.builder().steps(steps).build();
     IntegrationStageConfig integrationStageConfig =
         IntegrationStageConfigImpl.builder().execution(executionElementConfig).build();
-    List<String> identifiers = IntegrationStageStepParametersPMS.getStepIdentifiers(integrationStageConfig);
+    List<String> identifiers =
+        IntegrationStageStepParametersPMS.getStepIdentifiers(integrationStageConfig.getExecution().getSteps());
     assertThat(identifiers).isNotEmpty();
     assertThat(identifiers.get(0)).isEqualTo("step-2");
     assertThat(identifiers.get(1)).isEqualTo("step_g_run2");
@@ -328,11 +329,9 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
                            .build());
 
     ExecutionElementConfig executionElementConfig = ExecutionElementConfig.builder().steps(wrapperConfigs).build();
-    IntegrationStageConfig integrationStageConfig =
-        IntegrationStageConfigImpl.builder().execution(executionElementConfig).build();
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, List<ConnectorConversionInfo>> stepConnectorRefs =
-        k8InitializeStepUtils.getStepConnectorRefs(integrationStageConfig, ambiance);
+        k8InitializeStepUtils.getStepConnectorRefs(executionElementConfig, ambiance);
     assertThat(stepConnectorRefs.size()).isEqualTo(2);
     assertThat(stepConnectorRefs.containsKey("step-docker")).isTrue();
     assertThat(stepConnectorRefs.containsKey("step-group1_step-docker")).isTrue();

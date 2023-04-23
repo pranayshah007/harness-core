@@ -8,6 +8,7 @@
 package io.harness.pms.triggers.scheduled;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.IRREGULAR_SKIP_MISSED;
 
 import static java.time.Duration.ofMinutes;
@@ -18,6 +19,8 @@ import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.execution.PlanExecution;
 import io.harness.iterator.PersistenceIteratorFactory;
+import io.harness.logging.AutoLogContext;
+import io.harness.logging.NgTriggerAutoLogContext;
 import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
@@ -55,6 +58,7 @@ public class ScheduledTriggerHandler implements Handler<NGTriggerEntity> {
   @Inject private TriggerExecutionHelper ngTriggerExecutionHelper;
   @Inject private TriggerEventHistoryRepository triggerEventHistoryRepository;
   @Inject private NGTriggerElementMapper ngTriggerElementMapper;
+  @Inject private TriggerExecutionHelper triggerExecutionHelper;
 
   public void registerIterators(IteratorConfig iteratorConfig) {
     persistenceIteratorFactory.createLoopIteratorWithDedicatedThreadPool(
@@ -89,38 +93,53 @@ public class ScheduledTriggerHandler implements Handler<NGTriggerEntity> {
 
   @Override
   public void handle(NGTriggerEntity entity) {
-    try {
-      SecurityContextBuilder.setContext(
-          new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
-      SourcePrincipalContextBuilder.setSourcePrincipal(
-          new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
+    try (NgTriggerAutoLogContext ignore0 = new NgTriggerAutoLogContext("webhookId", entity.getWebhookId(),
+             entity.getIdentifier(), entity.getTargetIdentifier(), entity.getProjectIdentifier(),
+             entity.getOrgIdentifier(), entity.getAccountId(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
+      String runtimeInputYaml = null;
+      try {
+        SecurityContextBuilder.setContext(
+            new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
+        SourcePrincipalContextBuilder.setSourcePrincipal(
+            new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
 
-      PlanExecution response = ngTriggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequest(
-          TriggerDetails.builder()
-              .ngTriggerEntity(entity)
-              .ngTriggerConfigV2(ngTriggerElementMapper.toTriggerConfigV2(entity))
-              .build(),
-          TriggerPayload.newBuilder().setType(Type.SCHEDULED).build(),
-          TriggerWebhookEvent.builder()
-              .accountId(entity.getAccountId())
-              .orgIdentifier(entity.getOrgIdentifier())
-              .projectIdentifier(entity.getProjectIdentifier())
-              .triggerIdentifier(entity.getIdentifier())
-              .uuid("Cron_" + UUIDGenerator.generateUuid())
-              .build(),
-          null);
-      triggerEventHistoryRepository.save(toHistoryRecord(
-          entity, "TARGET_EXECUTION_REQUESTED", "Pipeline execution was requested successfully", false, response));
-      log.info("Execution started for cron trigger: " + entity + " with response " + response);
-    } catch (Exception e) {
-      triggerEventHistoryRepository.save(
-          toHistoryRecord(entity, "EXCEPTION_WHILE_PROCESSING", e.getMessage(), true, null));
-      log.error("Exception while triggering cron. Please check", e);
+        TriggerDetails triggerDetails = TriggerDetails.builder()
+                                            .ngTriggerEntity(entity)
+                                            .ngTriggerConfigV2(ngTriggerElementMapper.toTriggerConfigV2(entity))
+                                            .build();
+        TriggerWebhookEvent triggerWebhookEvent = TriggerWebhookEvent.builder()
+                                                      .accountId(entity.getAccountId())
+                                                      .orgIdentifier(entity.getOrgIdentifier())
+                                                      .projectIdentifier(entity.getProjectIdentifier())
+                                                      .triggerIdentifier(entity.getIdentifier())
+                                                      .uuid("Cron_" + UUIDGenerator.generateUuid())
+                                                      .build();
+
+        if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
+            && isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
+          runtimeInputYaml = triggerDetails.getNgTriggerConfigV2().getInputYaml();
+        } else {
+          SecurityContextBuilder.setContext(
+              new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
+          SourcePrincipalContextBuilder.setSourcePrincipal(
+              new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
+          runtimeInputYaml = triggerExecutionHelper.fetchInputSetYAML(triggerDetails, null);
+        }
+
+        PlanExecution response = ngTriggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequest(triggerDetails,
+            TriggerPayload.newBuilder().setType(Type.SCHEDULED).build(), triggerWebhookEvent, null, runtimeInputYaml);
+        triggerEventHistoryRepository.save(toHistoryRecord(entity, "TARGET_EXECUTION_REQUESTED",
+            "Pipeline execution was requested successfully", false, response, runtimeInputYaml));
+        log.info("Execution started for cron trigger: " + entity + " with response " + response);
+      } catch (Exception e) {
+        triggerEventHistoryRepository.save(
+            toHistoryRecord(entity, "EXCEPTION_WHILE_PROCESSING", e.getMessage(), true, null, runtimeInputYaml));
+        log.error("Exception while triggering cron. Please check", e);
+      }
     }
   }
-
   private TriggerEventHistory toHistoryRecord(NGTriggerEntity entity, String finalStatus, String message,
-      boolean exceptionOccurred, PlanExecution planExecution) {
+      boolean exceptionOccurred, PlanExecution planExecution, String runtimeInputYaml) {
     TriggerEventHistoryBuilder triggerEventHistoryBuilder = TriggerEventHistory.builder()
                                                                 .accountId(entity.getAccountId())
                                                                 .orgIdentifier(entity.getOrgIdentifier())
@@ -134,6 +153,7 @@ public class ScheduledTriggerHandler implements Handler<NGTriggerEntity> {
 
     if (planExecution != null) {
       triggerEventHistoryBuilder.targetExecutionSummary(TargetExecutionSummary.builder()
+                                                            .runtimeInput(runtimeInputYaml)
                                                             .planExecutionId(planExecution.getUuid())
                                                             .startTs(planExecution.getStartTs())
                                                             .triggerId(entity.getIdentifier())

@@ -38,6 +38,8 @@ public class BuildEnvironmentConstants {
   public static final String DRONE_COMMIT_LINK = "DRONE_COMMIT_LINK";
   public static final String DRONE_COMMIT_MESSAGE = "DRONE_COMMIT_MESSAGE";
   public static final String DRONE_COMMIT_AUTHOR = "DRONE_COMMIT_AUTHOR";
+  public static final String DRONE_BUILD_LINK = "DRONE_BUILD_LINK";
+  public static final String DRONE_PULL_REQUEST_TITLE = "DRONE_PULL_REQUEST_TITLE";
   public static final String DRONE_COMMIT_AUTHOR_EMAIL = "DRONE_COMMIT_AUTHOR_EMAIL";
   public static final String DRONE_COMMIT_AUTHOR_AVATAR = "DRONE_COMMIT_AUTHOR_AVATAR";
   public static final String DRONE_COMMIT_AUTHOR_NAME = "DRONE_COMMIT_AUTHOR_NAME";

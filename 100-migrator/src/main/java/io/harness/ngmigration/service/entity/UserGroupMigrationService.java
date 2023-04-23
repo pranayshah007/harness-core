@@ -88,12 +88,14 @@ public class UserGroupMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     UserGroupDTO userGroupDTO = ((UserGroupYamlDTO) yamlFile.getYaml()).getUserGroupDTO();
     try {
       Response<ResponseDTO<UserGroupDTO>> resp =
-          ngClient.createUserGroup(auth, userGroupDTO.getAccountIdentifier(), userGroupDTO).execute();
+          ngClient
+              .createUserGroup(inputDTO.getDestinationAuthToken(), userGroupDTO.getAccountIdentifier(), userGroupDTO)
+              .execute();
       if (resp.code() >= 200 && resp.code() < 300) {
         return MigrationImportSummaryDTO.builder().success(true).errors(Collections.emptyList()).build();
       }
@@ -134,13 +136,14 @@ public class UserGroupMigrationService extends NgMigrationService {
                                                      .build())
                                    .build();
 
-    NGYamlFile ngYamlFile = NGYamlFile.builder()
-                                .filename(String.format("usergroup/%s.yaml", userGroup.getName()))
-                                .yaml(yamlDTO)
-                                .type(USER_GROUP)
-                                .ngEntityDetail(NgEntityDetail.builder().identifier(identifier).build())
-                                .cgBasicInfo(userGroup.getCgBasicInfo())
-                                .build();
+    NGYamlFile ngYamlFile =
+        NGYamlFile.builder()
+            .filename(String.format("usergroup/%s.yaml", userGroup.getName()))
+            .yaml(yamlDTO)
+            .type(USER_GROUP)
+            .ngEntityDetail(NgEntityDetail.builder().entityType(USER_GROUP).identifier(identifier).build())
+            .cgBasicInfo(userGroup.getCgBasicInfo())
+            .build();
     migrationContext.getMigratedEntities().putIfAbsent(entityId, ngYamlFile);
     return YamlGenerationDetails.builder().yamlFileList(Collections.singletonList(ngYamlFile)).build();
   }

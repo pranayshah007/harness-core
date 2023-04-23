@@ -62,6 +62,8 @@ public class NexusArtifactOutcome implements ArtifactOutcome {
   /** Artifact Metadata. */
   Map<String, String> metadata;
 
+  Map<String, String> label;
+
   @Override
   public ArtifactSummary getArtifactSummary() {
     return NexusArtifactSummary.builder().artifactPath(getArtifactPath()).tag(getTag()).build();

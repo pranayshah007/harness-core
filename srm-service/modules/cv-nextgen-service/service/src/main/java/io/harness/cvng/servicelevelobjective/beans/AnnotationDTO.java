@@ -35,7 +35,11 @@ public class AnnotationDTO implements YamlDTO {
   @ApiModelProperty(required = true) @EntityIdentifier(allowBlank = true) String orgIdentifier;
   @ApiModelProperty(required = true) @EntityIdentifier(allowBlank = true) String projectIdentifier;
   @ApiModelProperty(required = true) @NotNull @EntityIdentifier String sloIdentifier;
-  @NotNull @Size(min = 1, max = 1000) String message;
+  @NotNull
+  @Size(min = 1, max = 1000,
+      message =
+          "Maximum character limit for messages is 1000 characters. Your message exceeds this limit. Please modify it and try again.")
+  String message;
   @ApiModelProperty(required = true) @NotNull long startTime;
   @ApiModelProperty(required = true) @NotNull long endTime;
 }

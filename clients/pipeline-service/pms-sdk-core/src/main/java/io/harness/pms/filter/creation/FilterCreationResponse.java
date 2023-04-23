@@ -20,7 +20,9 @@ import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.sdk.core.pipeline.creators.CreatorResponse;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Data;
@@ -36,6 +38,9 @@ public class FilterCreationResponse implements CreatorResponse {
   @Default Dependencies dependencies = Dependencies.newBuilder().build();
   @Default Dependencies resolvedDependencies = Dependencies.newBuilder().build();
   YamlUpdates yamlUpdates;
+
+  // Dependencies uuids to serviceAffinity map
+  Map<String, String> serviceAffinityMap;
 
   public Dependencies getDependencies() {
     return dependencies;
@@ -69,6 +74,18 @@ public class FilterCreationResponse implements CreatorResponse {
     resolvedDependencies = resolvedDependencies.toBuilder().putDependencies(nodeId, yamlPath).build();
     if (dependencies != null) {
       dependencies = dependencies.toBuilder().removeDependencies(nodeId).build();
+    }
+  }
+
+  @Override
+  public void addServiceAffinityToResponse(String dependencyKey, String serviceAffinity) {
+    if (serviceAffinityMap == null) {
+      serviceAffinityMap = new HashMap<>();
+    } else if (!(serviceAffinityMap instanceof HashMap)) {
+      serviceAffinityMap = new HashMap<>(serviceAffinityMap);
+    }
+    if (EmptyPredicate.isNotEmpty(serviceAffinity)) {
+      serviceAffinityMap.put(dependencyKey, serviceAffinity);
     }
   }
 

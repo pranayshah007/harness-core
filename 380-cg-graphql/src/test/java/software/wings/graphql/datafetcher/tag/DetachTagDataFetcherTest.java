@@ -10,7 +10,7 @@ package software.wings.graphql.datafetcher.tag;
 import static io.harness.rule.OwnerRule.HINGER;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;

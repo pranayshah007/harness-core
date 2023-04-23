@@ -322,6 +322,7 @@ public interface AzureConstants {
   // Azure REST client settings
   int REST_CLIENT_CONNECT_TIMEOUT_SECONDS = 15;
   int REST_CLIENT_READ_TIMEOUT_SECONDS = 30;
+  int REST_CLIENT_READ_TIMEOUT_EXTENDED_SECONDS = 150;
   int REST_CLIENT_WRITE_TIMEOUT_SECONDS = 30;
   int REST_CLIENT_IDLE_TIMEOUT_SECONDS = 60;
   int REST_CONNECTION_POOL_SIZE = 10;
@@ -379,6 +380,7 @@ public interface AzureConstants {
   String TOKEN_EXT_EXPIRES_IN = "ext_expires_in";
   String SUBSCRIPTION = "subscription";
   String RESOURCE_GROUP = "resourceGroup";
+  String FORMAT = "format";
   String AKS_CLUSTER_NAME = "aksClusterName";
   String KUBECFG_AUTH_PROVIDER = "auth-provider";
   String KUBECFG_CLIENT_KEY_DATA = "client-key-data";
@@ -389,6 +391,19 @@ public interface AzureConstants {
   String KUBECFG_CLIENT_ID = "client-id";
   String KUBECFG_CONFIG_MODE = "config-mode";
   String KUBECFG_TENANT_ID = "tenant-id";
+  String KUBECFG_ARGS_SERVER_ID = "--server-id";
+  String KUBECFG_ARGS_CLIENT_ID = "--client-id";
+  String KUBECFG_ARGS_TENANT_ID = "--tenant-id";
+  String KUBECFG_ARGS_ENV = "--environment";
+  String KUBECFG_ARGS_CLIENT_SECRET = "--client-secret";
+  String KUBECFG_ARGS_LOGIN = "--login";
+  String KUBECFG_ARGS_MSI = "msi";
+  String KUBECFG_ARGS_SPN = "spn";
+  String KUBECFG_ARGS_AZURE_CLI = "azurecli";
+  String KUBECFG_ARGS_GET_TOKEN = "get-token";
+  String AZURE_CLI_CMD = "az";
+  String AZURE_CONFIG_DIR = "AZURE_CONFIG_DIR";
+  String AZURE_LOGIN_CONFIG_DIR_PATH = ".azure";
   String ACR_DEFAULT_DOCKER_USERNAME = "00000000-0000-0000-0000-000000000000";
   String AZURE_ARM_ROLLBACK_PATTERN = "rollback_";
   String ERROR_CODE_LOCATION_NOT_FOUND = "LocationNotAvailableForDeployment";
@@ -396,4 +411,18 @@ public interface AzureConstants {
   String ERROR_INVALID_MANAGEMENT_GROUP_ID = "Invalid credentials for Management Group ID";
   String ERROR_INVALID_TENANT_CREDENTIALS = "Invalid credentials at Tenant Level";
   String AUTHORIZATION_ERROR = "does not have authorization";
+  String AZURE_AUTH_PLUGIN_INSTALL_HINT = "kubelogin is required to authenticate to the current cluster.\n"
+      + "It can be installed on the delegate by creating an immutable delegate and updating the following commands in INIT_SCRIPT\n"
+      + "https://github.com/Azure/kubelogin/releases\n"
+      + "\n"
+      + "// Download kubelogin\n"
+      + "curl https://github.com/Azure/kubelogin/releases/download/v0.0.27/kubelogin-linux-amd64.zip -L -o kubelogin.zip\n"
+      + "unzip kubelogin.zip\n"
+      + "chmod 755 /opt/harness-delegate/bin/linux_amd64/kubelogin\n"
+      + "\n"
+      + "// Add the binary to PATH\n"
+      + "mv ./bin/linux_amd64/kubelogin /usr/local/bin\n"
+      + "\n"
+      + "// Verify the binary\n"
+      + "kubelogin --version";
 }

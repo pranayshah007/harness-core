@@ -13,6 +13,7 @@ import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64ToByteArray;
 import static io.harness.k8s.KubernetesConvention.CompressedReleaseHistoryFlag;
 import static io.harness.k8s.KubernetesConvention.ReleaseHistoryKeyName;
+import static io.harness.k8s.model.KubernetesClusterAuthType.EXEC_OAUTH;
 import static io.harness.k8s.model.KubernetesClusterAuthType.GCP_OAUTH;
 import static io.harness.k8s.model.KubernetesClusterAuthType.OIDC;
 import static io.harness.k8s.model.KubernetesClusterAuthType.USER_PASSWORD;
@@ -23,22 +24,22 @@ import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.BOGDAN;
 import static io.harness.rule.OwnerRule.BRETT;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Fail.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -54,8 +55,12 @@ import io.harness.container.ContainerInfo;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.model.GcpAccessTokenSupplier;
+import io.harness.k8s.model.KubernetesAzureConfig;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.OidcGrantType;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
+import io.harness.k8s.model.kubeconfig.Exec;
+import io.harness.k8s.model.kubeconfig.InteractiveMode;
 import io.harness.k8s.oidc.OidcTokenRetriever;
 import io.harness.rule.Owner;
 
@@ -992,9 +997,8 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
     List<V1Pod> result = kubernetesContainerService.getRunningPodsWithLabels(KUBERNETES_CONFIG, "default", labels);
     ArgumentCaptor<List<Pair>> queryParamsCaptor = ArgumentCaptor.forClass((Class) List.class);
     verify(k8sApiClient, times(1))
-        .buildCall(anyString(), eq("GET"), queryParamsCaptor.capture(), anyListOf(Pair.class), any(),
-            anyMapOf(String.class, String.class), anyMapOf(String.class, String.class),
-            anyMapOf(String.class, Object.class), any(String[].class), any());
+        .buildCall(anyString(), eq("GET"), queryParamsCaptor.capture(), anyList(), any(), anyMap(), anyMap(), anyMap(),
+            any(String[].class), any());
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getMetadata().getName()).isEqualTo("pod-1");
     Optional<Pair> labelSelector =
@@ -1604,6 +1608,130 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
     } catch (InvalidRequestException e) {
     }
     verify(k8sApiClient, times(3)).execute(k8sApiCall, TypeToken.get(V1ConfigMap.class).getType());
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetConfigFileForAzureExecFormat() {
+    String expected = "apiVersion: v1\n"
+        + "clusters:\n"
+        + "- cluster:\n"
+        + "    server: masterUrl\n"
+        + "    \n"
+        + "    certificate-authority-data: caCert\n"
+        + "  name: CLUSTER_NAME\n"
+        + "contexts:\n"
+        + "- context:\n"
+        + "    cluster: CLUSTER_NAME\n"
+        + "    user: CLUSTER_USER\n"
+        + "    namespace: namespace\n"
+        + "  name: CURRENT_CONTEXT\n"
+        + "current-context: CURRENT_CONTEXT\n"
+        + "kind: Config\n"
+        + "preferences: {}\n"
+        + "users:\n"
+        + "- name: CLUSTER_USER\n"
+        + "  user:\n"
+        + "    exec:\n"
+        + "      apiVersion: client.authentication.k8s.io/v1beta1\n"
+        + "      args:\n"
+        + "      - args1\n"
+        + "      - args2\n"
+        + "      command: command\n"
+        + "      env: null\n"
+        + "      interactiveMode: Never\n"
+        + "      provideClusterInfo: false\n"
+        + "      installHint: hint";
+
+    KubernetesAzureConfig kubernetesAzureConfig = KubernetesAzureConfig.builder()
+                                                      .clusterName("CLUSTER_NAME")
+                                                      .currentContext("CURRENT_CONTEXT")
+                                                      .clusterUser("CLUSTER_USER")
+                                                      .environment("ENVIRONMENT")
+                                                      .tenantId("TENANT_ID")
+                                                      .apiServerId("APISERVER_ID")
+                                                      .clientId("CLIENT_ID")
+                                                      .aadIdToken("TOKEN")
+                                                      .build();
+
+    Exec exec = Exec.builder()
+                    .apiVersion("client.authentication.k8s.io/v1beta1")
+                    .command("command")
+                    .args(asList("args1", "args2"))
+                    .env(null)
+                    .provideClusterInfo(false)
+                    .installHint("hint")
+                    .interactiveMode(InteractiveMode.NEVER)
+                    .build();
+
+    KubernetesConfig kubeConfig = KubernetesConfig.builder()
+                                      .authType(EXEC_OAUTH)
+                                      .namespace("namespace")
+                                      .masterUrl("masterUrl")
+                                      .caCert("caCert".toCharArray())
+                                      .clientKey("CLIENT_KEY".toCharArray())
+                                      .azureConfig(kubernetesAzureConfig)
+                                      .exec(exec)
+                                      .build();
+    String configFileContent = kubernetesContainerService.getConfigFileContent(kubeConfig);
+    assertThat(expected).isEqualTo(configFileContent);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetConfigFileForGcpExecFormat() {
+    String expected = "apiVersion: v1\n"
+        + "clusters:\n"
+        + "- cluster:\n"
+        + "    server: masterUrl\n"
+        + "    \n"
+        + "    certificate-authority-data: caCert\n"
+        + "  name: CLUSTER_NAME\n"
+        + "contexts:\n"
+        + "- context:\n"
+        + "    cluster: CLUSTER_NAME\n"
+        + "    user: HARNESS_USER\n"
+        + "    namespace: namespace\n"
+        + "  name: CURRENT_CONTEXT\n"
+        + "current-context: CURRENT_CONTEXT\n"
+        + "kind: Config\n"
+        + "preferences: {}\n"
+        + "users:\n"
+        + "- name: HARNESS_USER\n"
+        + "  user:\n"
+        + "    exec:\n"
+        + "      apiVersion: client.authentication.k8s.io/v1beta1\n"
+        + "      args: null\n"
+        + "      command: command\n"
+        + "      env:\n"
+        + "      - name: name\n"
+        + "        value: value\n"
+        + "      interactiveMode: Never\n"
+        + "      provideClusterInfo: false\n"
+        + "      installHint: hint";
+
+    Exec exec = Exec.builder()
+                    .apiVersion("client.authentication.k8s.io/v1beta1")
+                    .command("command")
+                    .args(null)
+                    .env(singletonList(EnvVariable.builder().name("name").value("value").build()))
+                    .provideClusterInfo(false)
+                    .installHint("hint")
+                    .interactiveMode(InteractiveMode.NEVER)
+                    .build();
+
+    KubernetesConfig kubeConfig = KubernetesConfig.builder()
+                                      .authType(EXEC_OAUTH)
+                                      .namespace("namespace")
+                                      .masterUrl("masterUrl")
+                                      .caCert("caCert".toCharArray())
+                                      .clientKey("CLIENT_KEY".toCharArray())
+                                      .exec(exec)
+                                      .build();
+    String configFileContent = kubernetesContainerService.getConfigFileContent(kubeConfig);
+    assertThat(expected).isEqualTo(configFileContent);
   }
 
   private static final String EXPECTED_KUBECONFIG = "apiVersion: v1\n"

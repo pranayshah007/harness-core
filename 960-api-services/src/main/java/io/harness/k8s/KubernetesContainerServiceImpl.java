@@ -82,6 +82,7 @@ import io.harness.exception.UrlNotReachableException;
 import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
+import io.harness.k8s.apiclient.K8sApiClientHelper;
 import io.harness.k8s.apiclient.KubernetesApiCall;
 import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.kubectl.Kubectl;
@@ -244,6 +245,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   @Inject private K8sResourceValidatorImpl k8sResourceValidator;
   @Inject private OidcTokenRetriever oidcTokenRetriever;
   @Inject private K8sGlobalConfigService k8sGlobalConfigService;
+  @Inject private K8sApiClientHelper k8sApiClientHelper;
 
   private final Retry retry = buildRetryAndRegisterListeners();
 
@@ -2159,6 +2161,10 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
 
     if (KubernetesClusterAuthType.AZURE_OAUTH == config.getAuthType()) {
       return generateKubeConfigStringForAzure(config);
+    }
+
+    if (KubernetesClusterAuthType.EXEC_OAUTH == config.getAuthType()) {
+      return k8sApiClientHelper.generateExecFormatKubeconfig(config);
     }
 
     String insecureSkipTlsVerify = isEmpty(config.getCaCert()) ? "insecure-skip-tls-verify: true" : "";

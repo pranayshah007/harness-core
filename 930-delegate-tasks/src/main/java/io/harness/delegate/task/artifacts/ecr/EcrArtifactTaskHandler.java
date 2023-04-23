@@ -34,7 +34,6 @@ import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -62,7 +61,7 @@ public class EcrArtifactTaskHandler extends DelegateArtifactTaskHandler<EcrArtif
     List<EcrArtifactDelegateResponse> ecrArtifactDelegateResponseList =
         builds.stream()
             .sorted(new BuildDetailsInternalComparatorDateDescending()) // Sort by latest timestamp.
-            .map(build -> EcrRequestResponseMapper.toEcrResponse(build, attributesRequest, null))
+            .map(build -> EcrRequestResponseMapper.toEcrResponse(build, attributesRequest))
             .collect(Collectors.toList());
     return getSuccessTaskExecutionResponse(ecrArtifactDelegateResponseList);
   }
@@ -111,7 +110,6 @@ public class EcrArtifactTaskHandler extends DelegateArtifactTaskHandler<EcrArtif
   @Override
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(EcrArtifactDelegateRequest attributesRequest) {
     BuildDetailsInternal lastSuccessfulBuild;
-    List<Map<String, String>> labels;
     AwsInternalConfig awsInternalConfig = getAwsInternalConfig(attributesRequest);
     String ecrimageUrl = awsEcrApiHelperServiceDelegate.getEcrImageUrl(
         awsInternalConfig, attributesRequest.getRegion(), attributesRequest.getImagePath());
@@ -122,16 +120,8 @@ public class EcrArtifactTaskHandler extends DelegateArtifactTaskHandler<EcrArtif
       lastSuccessfulBuild = ecrService.verifyBuildNumber(awsInternalConfig, ecrimageUrl, attributesRequest.getRegion(),
           attributesRequest.getImagePath(), attributesRequest.getTag());
     }
-    labels = ecrService.getLabels(awsInternalConfig, attributesRequest.getImagePath(), attributesRequest.getRegion(),
-        Collections.singletonList(lastSuccessfulBuild.getNumber()));
-    EcrArtifactDelegateResponse ecrArtifactDelegateResponse;
-    if (EmptyPredicate.isNotEmpty(labels)) {
-      ecrArtifactDelegateResponse =
-          EcrRequestResponseMapper.toEcrResponse(lastSuccessfulBuild, attributesRequest, labels.get(0));
-    } else {
-      ecrArtifactDelegateResponse =
-          EcrRequestResponseMapper.toEcrResponse(lastSuccessfulBuild, attributesRequest, null);
-    }
+    EcrArtifactDelegateResponse ecrArtifactDelegateResponse =
+        EcrRequestResponseMapper.toEcrResponse(lastSuccessfulBuild, attributesRequest);
     return getSuccessTaskExecutionResponse(Collections.singletonList(ecrArtifactDelegateResponse));
   }
 
@@ -169,5 +159,9 @@ public class EcrArtifactTaskHandler extends DelegateArtifactTaskHandler<EcrArtif
     AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO);
     awsInternalConfig.setDefaultRegion(attributesRequest.getRegion());
     return awsInternalConfig;
+  }
+
+  boolean isRegex(EcrArtifactDelegateRequest artifactDelegateRequest) {
+    return EmptyPredicate.isNotEmpty(artifactDelegateRequest.getTagRegex());
   }
 }

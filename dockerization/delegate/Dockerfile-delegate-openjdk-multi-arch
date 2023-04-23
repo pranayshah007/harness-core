@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 FROM ubuntu:20.04
 
 RUN apt-get update && \
@@ -5,12 +10,10 @@ RUN apt-get update && \
     locale-gen en_US.UTF-8 && \
     export LANG=en_US.UTF-8 && \
     apt-get clean
-
-RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-
-COPY apt-source-list /etc/apt/sources.list.d/kubernetes.list
-
-RUN apt-get update && apt-get install -y kubectl
+ARG TARGETARCH
+RUN curl -LO https://dl.k8s.io/release/v1.25.8/bin/linux/$TARGETARCH/kubectl
+RUN chmod +x kubectl
+RUN mv kubectl /usr/bin/kubectl
 
 COPY scripts /opt/harness-delegate/
 

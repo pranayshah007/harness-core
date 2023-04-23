@@ -287,7 +287,7 @@ public class BambooServiceImpl implements BambooService {
   public List<BuildDetails> getBuilds(BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails,
       String planKey, List<String> artifactPaths, int maxNumberOfBuilds) {
     try {
-      return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(20), () -> {
+      return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(60), () -> {
         List<BuildDetails> buildDetailsList = new ArrayList<>();
         Call<JsonNode> request =
             getBambooClient(bambooConfig, encryptionDetails)
@@ -597,6 +597,29 @@ public class BambooServiceImpl implements BambooService {
       }
     }
     return null;
+  }
+
+  @Override
+  public Pair<String, InputStream> downloadArtifacts(BambooConfig bambooConfig,
+      List<EncryptedDataDetail> encryptionDetails, List<String> artifactPaths, String planKey, String buildNumber) {
+    List<ArtifactFileMetadata> artifactFileMetadata = new ArrayList<>();
+    // for backward compatibility, get all artifact paths
+    if (isNotEmpty(artifactPaths)) {
+      for (String artifactPathRegex : artifactPaths) {
+        artifactFileMetadata.addAll(
+            getArtifactFileMetadata(bambooConfig, encryptionDetails, planKey, buildNumber, artifactPathRegex));
+      }
+    }
+
+    Pair<String, InputStream> inputStreamPair = null;
+    // use artifact file metadata from artifact stream attributes and download
+    if (isNotEmpty(artifactFileMetadata)) {
+      for (ArtifactFileMetadata fileMetadata : artifactFileMetadata) {
+        String link = fileMetadata.getUrl();
+        inputStreamPair = downloadArtifact(bambooConfig, encryptionDetails, fileMetadata.getFileName(), link);
+      }
+    }
+    return inputStreamPair;
   }
 
   private void downloadAnArtifact(BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails,

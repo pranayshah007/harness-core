@@ -20,6 +20,7 @@ import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
 import io.harness.ccm.governance.GovernanceRuleClient;
 import io.harness.ccm.governance.RuleDTO;
+import io.harness.ccm.governance.RuleListDTO;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
@@ -91,8 +92,9 @@ public class CcmGovernanceRuleResourceImpl implements Resource {
       return Collections.emptyList();
     }
 
-    List<RuleDTO> governanceRules =
+    RuleListDTO governanceRuleList =
         NGRestUtils.getResponse(governanceRuleClient.listRule(scope.getAccountIdentifier()));
+    List<RuleDTO> governanceRules = governanceRuleList.getRules();
     Set<Object> validResourceIds = governanceRules.stream().map(e -> e.getUuid()).collect(Collectors.toSet());
 
     return resourceIds.stream().map(validResourceIds::contains).collect(toList());

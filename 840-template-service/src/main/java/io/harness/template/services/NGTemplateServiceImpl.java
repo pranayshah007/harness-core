@@ -17,10 +17,13 @@ import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.gitaware.helper.TemplateMoveConfigOperationType.INLINE_TO_REMOTE;
 import static io.harness.gitaware.helper.TemplateMoveConfigOperationType.getMoveConfigType;
 import static io.harness.remote.client.NGRestUtils.getResponse;
+import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
 import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
+import static io.harness.template.beans.PermissionTypes.TEMPLATE_VIEW_PERMISSION;
 
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.EntityType;
@@ -35,9 +38,11 @@ import io.harness.encryption.Scope;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
+import io.harness.eraro.ErrorMessageConstants;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.TemplateReferenceProtoDTO;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
@@ -45,6 +50,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
+import io.harness.exception.ngexception.TemplateAlreadyExistsException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
@@ -59,6 +65,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
+import io.harness.gitx.GitXSettingsHelper;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
@@ -84,6 +91,7 @@ import io.harness.template.beans.PermissionTypes;
 import io.harness.template.beans.TemplateImportRequestDTO;
 import io.harness.template.beans.TemplateListRepoResponse;
 import io.harness.template.beans.TemplateMoveConfigResponse;
+import io.harness.template.beans.UpdateGitDetailsParams;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
@@ -146,6 +154,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Inject private GitAwareEntityHelper gitAwareEntityHelper;
   @Inject private AccountClient accountClient;
   @Inject NGSettingsClient settingsClient;
+  @Inject GitXSettingsHelper gitXSettingsHelper;
+  @Inject private TemplateRbacHelper templateRbacHelper;
+
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Template [%s] of versionLabel [%s] under Project[%s], Organization [%s] already exists";
 
@@ -162,6 +173,10 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     NGTemplateServiceHelper.validatePresenceOfRequiredFields(
         templateEntity.getAccountId(), templateEntity.getIdentifier(), templateEntity.getVersionLabel());
     assureThatTheProjectAndOrgExists(
+        templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
+    gitXSettingsHelper.enforceGitExperienceIfApplicable(
+        templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
+    gitXSettingsHelper.setConnectorRefForRemoteEntity(
         templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
 
     if (TemplateRefHelper.hasTemplateRef(templateEntity.getYaml())) {
@@ -181,7 +196,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     if (isNewTemplate
         && validateIsNewTemplateIdentifier(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
             templateEntity.getProjectIdentifier(), templateEntity.getIdentifier())) {
-      throw new InvalidRequestException(String.format(
+      throw new TemplateAlreadyExistsException(String.format(
           "The template with identifier %s already exists in account %s, org %s, project %s, if you want to create a new version %s of this template then use save as new version option from the given template or if you want to create a new Template then use a different identifier.",
           templateEntity.getIdentifier(), templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
           templateEntity.getProjectIdentifier(), templateEntity.getVersionLabel()));
@@ -484,9 +499,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     TemplateEntity templateToDelete = null;
     TemplateEntity stableTemplate = null;
     if (forceDelete && !isForceDeleteEnabled(accountId)) {
-      throw new InvalidRequestException(
-          format("Parameter forcedDelete cannot be true. Force Delete is not enabled for account [%s]", accountId),
-          USER);
+      throw new InvalidRequestException(ErrorMessageConstants.FORCE_DELETE_SETTING_NOT_ENABLED, USER);
     }
     for (TemplateEntity templateEntity : templateEntities) {
       if (deleteVersionLabel.equals(templateEntity.getVersionLabel())) {
@@ -536,12 +549,14 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     return deleteMultipleTemplatesHelper(accountId, orgIdentifier, projectIdentifier, templateToDeleteList, null,
         comments, canDeleteStableTemplate, stableTemplate, forceDelete);
   }
+
   private boolean isForceDeleteEnabled(String accountIdentifier) {
     boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
     boolean isForceDeleteEnabledBySettings =
         isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
     return isForceDeleteFFEnabled && isForceDeleteEnabledBySettings;
   }
+
   @VisibleForTesting
   protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
     return parseBoolean(NGRestUtils
@@ -706,8 +721,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       pageable = PageUtils.getPageRequest(pageParamsDTO.getPage(), pageParamsDTO.getSize(), pageParamsDTO.getSort());
     }
 
-    return templateServiceHelper.listTemplate(accountIdentifier, orgIdentifier, projectIdentifier, criteria, pageable,
-        filterParamsDTO.isGetDistinctFromBranches());
+    return getRBACFilteredTemplates(
+        accountIdentifier, orgIdentifier, projectIdentifier, criteria, pageable, filterParamsDTO);
   }
 
   @Override
@@ -1379,6 +1394,31 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     }
   }
 
+  @Override
+  public void updateGitDetails(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, String versionLabel, UpdateGitDetailsParams updateGitDetailsParams) {
+    Criteria templateCriteria = Criteria.where(TemplateEntityKeys.accountId)
+                                    .is(accountIdentifier)
+                                    .and(TemplateEntityKeys.orgIdentifier)
+                                    .is(orgIdentifier)
+                                    .and(TemplateEntityKeys.projectIdentifier)
+                                    .is(projectIdentifier)
+                                    .and(TemplateEntityKeys.identifier)
+                                    .is(templateIdentifier)
+                                    .and(TemplateEntityKeys.versionLabel)
+                                    .is(versionLabel)
+                                    .and(TemplateEntityKeys.storeType)
+                                    .is(StoreType.REMOTE);
+
+    Update update = templateServiceHelper.getGitDetailsUpdate(updateGitDetailsParams);
+    TemplateEntity templateEntity =
+        templateRepository.updateV2(accountIdentifier, orgIdentifier, projectIdentifier, templateCriteria, update);
+    if (templateEntity == null) {
+      throw new EntityNotFoundException(String.format(
+          "Template not found for template identifier [%s] and version label [%s]", templateIdentifier, versionLabel));
+    }
+  }
+
   @VisibleForTesting
   protected TemplateEntity moveTemplateEntity(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, String versionLabel, TemplateMoveConfigOperationDTO moveConfigOperationDTO,
@@ -1468,5 +1508,41 @@ public class NGTemplateServiceImpl implements NGTemplateService {
             .storeType(StoreType.REMOTE)
             .repoName(moveConfigDTO.getRepoName())
             .build());
+  }
+  private boolean hasViewPermissionForAll(String accountId, String orgIdentifier, String projectIdentifier) {
+    return accessControlClient.hasAccess(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+        Resource.of("TEMPLATE", null), TEMPLATE_VIEW_PERMISSION);
+  }
+  private Page<TemplateEntity> getRBACFilteredTemplates(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, Criteria criteria, Pageable pageable, FilterParamsDTO filterParamsDTO) {
+    Page<TemplateEntity> templateEntities;
+    if (hasViewPermissionForAll(accountIdentifier, orgIdentifier, projectIdentifier)) {
+      templateEntities = templateServiceHelper.listTemplate(accountIdentifier, orgIdentifier, projectIdentifier,
+          criteria, pageable, filterParamsDTO.isGetDistinctFromBranches());
+
+    } else {
+      Page<TemplateEntity> templateEntityPage = templateServiceHelper.listTemplate(accountIdentifier, orgIdentifier,
+          projectIdentifier, criteria, Pageable.unpaged(), filterParamsDTO.isGetDistinctFromBranches());
+      if (templateEntityPage == null) {
+        return Page.empty();
+      }
+      List<TemplateEntity> templateEntityList = templateEntityPage.getContent();
+      templateEntityList = templateRbacHelper.getPermittedTemplateList(templateEntityList);
+      if (isEmpty(templateEntityList)) {
+        return Page.empty();
+      }
+      populateInFilter(criteria, TemplateEntityKeys.identifier,
+          templateEntityList.stream().map(TemplateEntity::getIdentifier).collect(toList()));
+
+      templateEntities = templateServiceHelper.listTemplate(accountIdentifier, orgIdentifier, projectIdentifier,
+          criteria, Pageable.unpaged(), filterParamsDTO.isGetDistinctFromBranches());
+    }
+    return templateEntities;
+  }
+
+  private void applyGitXSettingsIfApplicable(String accountIdentifier, String orgIdentifier, String projIdentifier) {
+    gitXSettingsHelper.enforceGitExperienceIfApplicable(accountIdentifier, orgIdentifier, projIdentifier);
+    gitXSettingsHelper.setConnectorRefForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
+    gitXSettingsHelper.setDefaultStoreTypeForEntities(accountIdentifier, orgIdentifier, projIdentifier);
   }
 }

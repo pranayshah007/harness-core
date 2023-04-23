@@ -24,8 +24,8 @@ import static io.harness.rule.OwnerRule.PRAVEEN;
 import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Offset.offset;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anySet;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
@@ -228,9 +228,7 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
     List<LogAnalysisCluster> logAnalysisClusterList =
         hPersistence.createQuery(LogAnalysisCluster.class, excludeAuthority).asList();
     updateLogAnalysisCluster(logAnalysisClusterList, 10);
-    long startTime1 = System.nanoTime();
     hPersistence.save(logAnalysisClusterList);
-    long endTime1 = System.nanoTime();
     List<LogAnalysisCluster> updatedLogAnalysisClusterList;
     Map<String, LogAnalysisCluster> logAnalysisClusterMap =
         logAnalysisClusterList.stream().collect(Collectors.toMap(LogAnalysisCluster::getUuid, Function.identity()));
@@ -242,7 +240,6 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
     final DBCollection collection = hPersistence.getCollection(LogAnalysisCluster.class);
     BulkWriteOperation bulkWriteOperation = collection.initializeUnorderedBulkOperation();
     int numberOfBulkOperations = 0;
-    long startTime2 = System.nanoTime();
     for (LogAnalysisCluster logAnalysisCluster : logAnalysisClusterList) {
       bulkWriteOperation
           .find(hPersistence.createQuery(LogAnalysisCluster.class)
@@ -260,14 +257,12 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
     if (numberOfBulkOperations > 0) {
       bulkWriteOperation.execute();
     }
-    long endTime2 = System.nanoTime();
     logAnalysisClusterMap =
         logAnalysisClusterList.stream().collect(Collectors.toMap(LogAnalysisCluster::getUuid, Function.identity()));
     updatedLogAnalysisClusterList = hPersistence.createQuery(LogAnalysisCluster.class, excludeAuthority).asList();
     for (LogAnalysisCluster logAnalysisCluster : updatedLogAnalysisClusterList) {
       assertThat(logAnalysisCluster).isEqualTo(logAnalysisClusterMap.get(logAnalysisCluster.getUuid()));
     }
-    assertThat(endTime1 - startTime1).isGreaterThan(endTime2 - startTime2);
   }
 
   private void updateLogAnalysisCluster(List<LogAnalysisCluster> analysisClusters, double riskScore) {

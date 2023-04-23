@@ -17,7 +17,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 
 public interface PreferenceService {
   Preference save(String accountId, String userId, Preference preference);
-  PageResponse<Preference> list(PageRequest<Preference> pageRequest, @NotEmpty String userId);
+  PageResponse<Preference> list(
+      PageRequest<Preference> pageRequest, @NotEmpty String accountId, @NotEmpty String userId);
   Preference get(String accountId, String userId, String preferenceId);
   Preference getPreferenceByName(String accountId, String userId, String name);
   Preference update(String accountId, String userId, String preferenceId, Preference preference);

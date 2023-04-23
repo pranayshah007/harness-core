@@ -43,6 +43,7 @@ import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.client.ManagerGrpcClientModule;
 import io.harness.grpc.server.Connector;
 import io.harness.grpc.server.GrpcServerConfig;
+import io.harness.hsqs.client.model.QueueServiceClientConfig;
 import io.harness.logstreaming.LogStreamingServiceConfig;
 import io.harness.module.DelegateServiceModule;
 import io.harness.mongo.MongoConfig;
@@ -290,8 +291,8 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
       AdvancedDatastore datastore(Morphia morphia) {
         AdvancedDatastore datastore = (AdvancedDatastore) morphia.createDatastore(mongoClient, dbName);
         MongoConfig mongoConfig = MongoConfig.builder().build();
-        datastore.setQueryFactory(
-            new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis()));
+        datastore.setQueryFactory(new QueryFactory(mongoConfig.getTraceMode(),
+            mongoConfig.getMaxOperationTimeInMillis(), mongoConfig.getMaxDocumentsToBeFetched()));
         return datastore;
       }
 
@@ -343,6 +344,13 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
       @Singleton
       public RLocalCachedMap<String, List<Delegate>> getDelegatesFromGroupCache(
           DelegateRedissonCacheManager cacheManager) {
+        return mock(RLocalCachedMap.class);
+      }
+
+      @Provides
+      @Named("aborted_task_list")
+      @Singleton
+      public RLocalCachedMap<String, Set<String>> getAbortedTaskListCache(DelegateRedissonCacheManager cacheManager) {
         return mock(RLocalCachedMap.class);
       }
 
@@ -503,14 +511,18 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
                                               .url("dummy_url")
                                               .certValidationRequired(false)
                                               .build());
-    configuration.setQueueServiceConfig(DelegateQueueServiceConfig.builder()
-                                            .queueServiceConfig(ServiceHttpClientConfig.builder()
-                                                                    .baseUrl("http://localhost:9091/")
-                                                                    .readTimeOutSeconds(15)
-                                                                    .connectTimeOutSeconds(15)
-                                                                    .build())
-                                            .topic("delegate-service")
-                                            .build());
+    configuration.setQueueServiceConfig(
+        DelegateQueueServiceConfig.builder()
+            .topic("delegate-service")
+            .enableQueueAndDequeue(false)
+            .queueServiceClientConfig(QueueServiceClientConfig.builder()
+                                          .httpClientConfig(ServiceHttpClientConfig.builder()
+                                                                .baseUrl("http://localhost:9091/")
+                                                                .readTimeOutSeconds(15)
+                                                                .connectTimeOutSeconds(15)
+                                                                .build())
+                                          .build())
+            .build());
     return configuration;
   }
 

@@ -50,6 +50,7 @@ import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 @Api("artifacts")
@@ -206,6 +207,8 @@ public class ArtifactoryArtifactResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @QueryParam("fqnPath") String fqnPath,
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    // If UI is not passing repository type as param,then we are assuming repositoryType as any
+
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
@@ -217,8 +220,11 @@ public class ArtifactoryArtifactResource {
             artifactoryRegistryArtifactConfig.getConnectorRef().fetchFinalValue().toString();
       }
 
-      if (isEmpty(repositoryType)) {
-        repositoryType = artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString();
+      if (isEmpty(repositoryType) || "any".equals(repositoryType)) {
+        if (!StringUtils.isBlank(
+                artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString())) {
+          repositoryType = artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString();
+        }
       }
     }
     if (artifactoryConnectorIdentifier != null && NGExpressionUtils.isRuntimeField(artifactoryConnectorIdentifier)) {
@@ -244,6 +250,8 @@ public class ArtifactoryArtifactResource {
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @QueryParam("fqnPath") String fqnPath, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
       @NotNull String runtimeInputYaml, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    // If UI is not passing repository type as param,then we are assuming repositoryType as any
+
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
@@ -255,8 +263,11 @@ public class ArtifactoryArtifactResource {
             artifactoryRegistryArtifactConfig.getConnectorRef().fetchFinalValue().toString();
       }
 
-      if (isEmpty(repositoryType)) {
-        repositoryType = artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString();
+      if (isEmpty(repositoryType) || "any".equals(repositoryType)) {
+        if (!StringUtils.isBlank(
+                artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString())) {
+          repositoryType = artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString();
+        }
       }
     }
 

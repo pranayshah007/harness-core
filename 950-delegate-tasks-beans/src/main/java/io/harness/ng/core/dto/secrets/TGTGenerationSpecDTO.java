@@ -7,10 +7,13 @@
 
 package io.harness.ng.core.dto.secrets;
 
+import io.harness.beans.DecryptableEntity;
 import io.harness.ng.core.models.TGTGenerationSpec;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.List;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXTERNAL_PROPERTY, property = "tgtGenerationMethod",
     visible = true)
@@ -19,5 +22,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
   , @JsonSubTypes.Type(value = TGTPasswordSpecDTO.class, name = "Password")
 })
 public abstract class TGTGenerationSpecDTO {
+  @JsonIgnore public abstract List<DecryptableEntity> getDecryptableEntities();
   public abstract TGTGenerationSpec toEntity();
 }

@@ -10,6 +10,7 @@ package io.harness.pms.sdk.core;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
+import io.harness.manage.ManagedExecutorService;
 import io.harness.pms.sdk.PmsSdkModuleUtils;
 import io.harness.pms.sdk.core.exception.InvalidYamlExceptionHandler;
 import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
@@ -94,8 +95,9 @@ public class PmsSdkCoreModule extends AbstractModule {
   @Singleton
   @Named(PmsSdkModuleUtils.PLAN_CREATOR_SERVICE_EXECUTOR)
   public Executor planCreatorInternalExecutorService() {
-    return ThreadPool.create(config.getPlanCreatorServicePoolConfig(),
-        new ThreadFactoryBuilder().setNameFormat("PlanCreatorInternalExecutorService-%d").build());
+    // ManagedExecutorService is used to pass parent thread context to children
+    return new ManagedExecutorService(ThreadPool.create(config.getPlanCreatorServicePoolConfig(),
+        new ThreadFactoryBuilder().setNameFormat("PlanCreatorInternalExecutorService-%d").build()));
   }
 
   @Provides

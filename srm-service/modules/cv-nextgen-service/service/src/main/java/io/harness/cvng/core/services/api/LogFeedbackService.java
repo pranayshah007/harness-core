@@ -20,7 +20,7 @@ public interface LogFeedbackService {
 
   boolean delete(ProjectPathParams projectParams, String feedbackId);
 
-  LogFeedback get(ProjectPathParams projectParams, String feedbackId);
+  LogFeedback get(String feedbackId);
 
   List<LogFeedbackHistory> history(ProjectPathParams projectParams, String feedbackId);
 

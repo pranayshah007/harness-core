@@ -97,6 +97,7 @@ public class GoogleFunctionInstanceSyncPerpetualTaskExecutor implements Perpetua
             googleFunctionDeploymentRelease.getGoogleFunctionsInfraConfig().toByteArray()))
         .function(googleFunctionDeploymentRelease.getFunction())
         .region(googleFunctionDeploymentRelease.getRegion())
+        .environmentType(googleFunctionDeploymentRelease.getEnvironmentType())
         .build();
   }
 

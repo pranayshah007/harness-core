@@ -7,12 +7,18 @@
 
 package io.harness.plancreator.steps.pluginstep;
 
+import static io.harness.pms.yaml.YAMLFieldNameConstants.PARALLEL;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
+
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.advisers.rollback.RollbackStrategy;
+import io.harness.plancreator.steps.InitContainerStepPlanCreater;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
+import io.harness.plancreator.steps.internal.PmsStepPlanCreatorUtils;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -33,16 +39,19 @@ import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
+import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.common.steps.stepgroup.StepGroupStep;
 import io.harness.steps.common.steps.stepgroup.StepGroupStepParameters;
 import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 import io.harness.utils.PlanCreatorUtilsCommon;
 import io.harness.utils.TimeoutUtils;
+import io.harness.when.utils.RunInfoUtils;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -77,9 +86,10 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
         ((ContainerStepSpec) stepElementParameters.getSpec()).setIdentifier(config.getIdentifier());
       }
     }
-    PlanNode initPlanNode =
-        InitContainerStepPlanCreater.createPlanForField(initStepNodeId, stepParameters, advisorParametersInitStep);
-    PlanNode stepPlanNode = createPlanForStep(stepNodeId, stepParameters);
+    PlanNode initPlanNode = InitContainerStepPlanCreater.createPlanForField(
+        initStepNodeId, stepParameters, advisorParametersInitStep, StepSpecTypeConstants.INIT_CONTAINER_STEP);
+    PlanNode stepPlanNode = createPlanForStep(stepNodeId, stepParameters,
+        PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), false));
 
     planCreationResponseMap.put(
         initPlanNode.getUuid(), PlanCreationResponse.builder().node(initPlanNode.getUuid(), initPlanNode).build());
@@ -119,7 +129,9 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                 .build())
-        .adviserObtainments(getAdviserObtainmentFromMetaData(ctx.getCurrentField()))
+        .adviserObtainments(getAdviserObtainmentFromMetaData(
+            ctx.getCurrentField(), StrategyUtils.isWrappedUnderStrategy(ctx.getCurrentField())))
+        .whenCondition(RunInfoUtils.getRunConditionForStep(config.getWhen()))
         .timeoutObtainment(
             SdkTimeoutObtainment.builder()
                 .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
@@ -144,23 +156,31 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
     return stepElement.getStepSpecType().getStepParameters();
   }
 
-  public abstract PlanNode createPlanForStep(String stepNodeId, StepParameters stepParameters);
+  public abstract PlanNode createPlanForStep(
+      String stepNodeId, StepParameters stepParameters, List<AdviserObtainment> adviserObtainments);
 
   private void addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx, String uuid,
       String name, String identifier, LinkedHashMap<String, PlanCreationResponse> responseMap) {
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, uuid, name, identifier, responseMap,
-        new HashMap<>(), getAdviserObtainmentFromMetaData(ctx.getCurrentField()));
+        new HashMap<>(), getAdviserObtainmentFromMetaData(ctx.getCurrentField(), false), false);
   }
 
-  private List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField currentField) {
+  private List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField currentField, boolean checkForStrategy) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
+    if (checkForStrategy) {
+      return adviserObtainments;
+    }
+
     addNextStepAdviser(currentField, adviserObtainments);
     return adviserObtainments;
   }
 
   private void addNextStepAdviser(YamlField currentField, List<AdviserObtainment> adviserObtainments) {
+    if (currentField.checkIfParentIsParallel(STEPS)) {
+      return;
+    }
     YamlField siblingField = currentField.getNode().nextSiblingFromParentArray(
-        currentField.getName(), Collections.singletonList(YAMLFieldNameConstants.STEP));
+        currentField.getName(), Arrays.asList(YAMLFieldNameConstants.STEP, PARALLEL, STEP_GROUP));
     if (siblingField != null && siblingField.getNode().getUuid() != null) {
       adviserObtainments.add(
           AdviserObtainment.newBuilder()

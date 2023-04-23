@@ -77,6 +77,6 @@ public class ContainerInfraYamlSpec {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.infrastrucutre.OSType")
   private ParameterField<OSType> os;
-  @ApiModelProperty(dataType = STRING_CLASSPATH, hidden = true) private ParameterField<String> harnessImageConnectorRef;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> harnessImageConnectorRef;
   @NotNull @Valid private ContainerResource resources;
 }

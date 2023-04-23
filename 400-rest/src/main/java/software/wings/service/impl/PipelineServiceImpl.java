@@ -429,7 +429,11 @@ public class PipelineServiceImpl implements PipelineService {
 
   @Override
   public Pipeline getPipeline(String appId, String pipelineId) {
-    return wingsPersistence.getWithAppId(Pipeline.class, appId, pipelineId);
+    Pipeline pipeline = wingsPersistence.getWithAppId(Pipeline.class, appId, pipelineId);
+    if (pipeline != null) {
+      pipeline.setTagLinks(harnessTagService.getTagLinksWithEntityId(pipeline.getAccountId(), pipelineId));
+    }
+    return pipeline;
   }
 
   private void ensurePipelineSafeToDelete(Pipeline pipeline) {
@@ -579,6 +583,7 @@ public class PipelineServiceImpl implements PipelineService {
 
   /**
    * Read Pipeline with Services. It filters out the services that does not need artifact
+   *
    * @param appId        the app id
    * @param pipelineId   the pipeline id
    * @param withServices the with services
@@ -606,8 +611,9 @@ public class PipelineServiceImpl implements PipelineService {
 
   /**
    * Read Pipeline with Services. It filters out the services that does not need artifact
-   * @param appId        the app id
-   * @param pipelineId   the pipeline id
+   *
+   * @param appId      the app id
+   * @param pipelineId the pipeline id
    * @return
    */
   @Override

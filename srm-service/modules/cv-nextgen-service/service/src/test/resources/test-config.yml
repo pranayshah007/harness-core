@@ -64,6 +64,11 @@ ngManagerClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+ticketServiceRestClientConfig:
+  baseUrl: http://localhost:4444/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
 enforcementClientConfiguration:
   enforcementCheckEnabled: true
 

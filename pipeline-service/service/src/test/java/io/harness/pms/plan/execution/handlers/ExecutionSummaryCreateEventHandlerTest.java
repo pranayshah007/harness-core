@@ -11,8 +11,8 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ALEXEI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -33,6 +33,7 @@ import io.harness.notification.PipelineEventType;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.GraphLayoutInfo;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.execution.ExecutionStatus;
@@ -100,10 +101,13 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
             .executionInputConfigured(true)
             .allowStagesExecution(true)
             .build();
-    PlanExecution planExecution =
-        PlanExecution.builder()
-            .metadata(ExecutionMetadata.newBuilder().setRunSequence(1).setPipelineIdentifier("pipelineId").build())
-            .build();
+    PlanExecution planExecution = PlanExecution.builder()
+                                      .metadata(ExecutionMetadata.newBuilder()
+                                                    .setRunSequence(1)
+                                                    .setPipelineIdentifier("pipelineId")
+                                                    .setExecutionMode(ExecutionMode.NORMAL)
+                                                    .build())
+                                      .build();
 
     PipelineEntity pipelineEntity = PipelineEntity.builder()
                                         .uuid(generateUuid())
@@ -171,6 +175,8 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
         .isEqualTo(planExecutionMetadata.getExecutionInputConfigured());
     assertThat(capturedEntity.getStoreType()).isNull();
     assertThat(capturedEntity.getConnectorRef()).isNull();
+    assertThat(capturedEntity.getExecutionMode()).isEqualTo(ExecutionMode.NORMAL);
+    assertThat(capturedEntity.getRollbackModeExecutionId()).isNull();
 
     verify(notificationHelper, times(1)).sendNotification(ambiance, PipelineEventType.PIPELINE_START, null, null);
   }

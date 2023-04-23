@@ -22,10 +22,10 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.IDP)
 public class OnboardingModuleConfig {
+  String descriptionForEntitySelected;
+  String descriptionForSampleEntity;
   String tmpPathForCatalogInfoYamlStore;
   String catalogInfoLocationDefaultPath;
-  String backstageLocationEntityAllHarnessEntitiesName;
-  String backstageLocationEntityAllHarnessEntitiesDesc;
   List<String> sampleEntities;
-  Map<String, String> harnessCiCdAnnotation;
+  Map<String, String> harnessCiCdAnnotations;
 }

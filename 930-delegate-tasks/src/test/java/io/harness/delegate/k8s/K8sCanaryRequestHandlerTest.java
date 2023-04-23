@@ -14,18 +14,18 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -121,7 +121,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(k8sInfraDelegateConfig, logCallback);
+        .createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, logCallback);
     doReturn(logCallback)
         .when(k8sTaskHelperBase)
         .getLogCallback(eq(iLogStreamingTaskClient), anyString(), anyBoolean(), any());
@@ -135,8 +135,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
             manifestDelegateConfig, invalidManifestFileDirectory, logCallback, timeoutIntervalInMillis, accountId);
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .applyManifests(any(Kubectl.class), anyListOf(KubernetesResource.class), any(K8sDelegateTaskParams.class),
-            eq(logCallback), anyBoolean(), eq(null));
+        .applyManifests(
+            any(Kubectl.class), anyList(), any(K8sDelegateTaskParams.class), eq(logCallback), anyBoolean(), eq(null));
     doReturn(releaseHandler).when(k8sTaskHelperBase).getReleaseHandler(anyBoolean());
     doReturn(releaseHistory).when(releaseHandler).getReleaseHistory(any(), any());
     doReturn(release).when(releaseHandler).createRelease(any(), anyInt());
@@ -218,7 +218,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
             .useLatestKustomizeVersion(true)
             .accountId(accountId)
             .build();
-    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest).get(0)).isEqualTo("patch1");
+    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest, emptyMap()).get(0))
+        .isEqualTo("patch1");
 
     canaryDeployRequest = K8sCanaryDeployRequest.builder()
                               .releaseName(releaseName)
@@ -227,7 +228,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
                               .valuesYamlList(valuesYamlList)
                               .accountId(accountId)
                               .build();
-    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest).get(0)).isEqualTo("value1");
+    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest, emptyMap()).get(0))
+        .isEqualTo("value1");
 
     canaryDeployRequest = K8sCanaryDeployRequest.builder()
                               .releaseName(releaseName)
@@ -236,7 +238,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
                               .useLatestKustomizeVersion(true)
                               .accountId(accountId)
                               .build();
-    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest).get(0)).isEqualTo("param1");
+    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest, emptyMap()).get(0))
+        .isEqualTo("param1");
   }
 
   @Test
@@ -417,7 +420,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
             .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().build())
             .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
             .build();
-    final K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
+    final K8sDelegateTaskParams delegateTaskParams =
+        K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
 
     when(k8sTaskHelperBase.renderTemplate(delegateTaskParams, manifestDelegateConfig, manifestFileDirectory,
              emptyList(), releaseName, namespace, logCallback, timeoutIntervalInMin))

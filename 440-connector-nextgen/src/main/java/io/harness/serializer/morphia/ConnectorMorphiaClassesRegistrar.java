@@ -20,6 +20,9 @@ import io.harness.connector.entities.embedded.awscodecommitconnector.AwsCodeComm
 import io.harness.connector.entities.embedded.awscodecommitconnector.AwsCodeCommitSecretKeyAccessKey;
 import io.harness.connector.entities.embedded.awsconnector.AwsAccessKeyCredential;
 import io.harness.connector.entities.embedded.awsconnector.AwsConfig;
+import io.harness.connector.entities.embedded.awsconnector.AwsEqualJitterBackoffStrategy;
+import io.harness.connector.entities.embedded.awsconnector.AwsFixedDelayBackoffStrategy;
+import io.harness.connector.entities.embedded.awsconnector.AwsFullJitterBackoffStrategy;
 import io.harness.connector.entities.embedded.awsconnector.AwsIamCredential;
 import io.harness.connector.entities.embedded.awskmsconnector.AwsKmsConnector;
 import io.harness.connector.entities.embedded.awskmsconnector.AwsKmsIamCredential;
@@ -245,5 +248,11 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     h.put("connector.entities.embedded.jira.JiraUserNamePasswordAuthentication",
         JiraUserNamePasswordAuthentication.class);
     h.put("connector.entities.embedded.jira.JiraPATAuthentication", JiraPATAuthentication.class);
+    h.put("io.harness.connector.entities.embedded.awsconnecto.AwsEqualJitterBackoffStrategy",
+        AwsEqualJitterBackoffStrategy.class);
+    h.put("io.harness.connector.entities.embedded.awsconnector.AwsFixedDelayBackoffStrategy",
+        AwsFixedDelayBackoffStrategy.class);
+    h.put("io.harness.connector.entities.embedded.awsconnector.AwsFullJitterBackoffStrategy",
+        AwsFullJitterBackoffStrategy.class);
   }
 }

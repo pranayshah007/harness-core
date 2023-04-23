@@ -37,8 +37,11 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -79,11 +82,10 @@ public class AwsLambdaPrepareRollbackTaskHandler {
         awsLambdaTaskHelper.parseYamlAsObject(awsLambdaPrepareRollbackRequest.getAwsLambdaDeployManifestContent(),
             CreateFunctionRequest.serializableBuilderClass());
 
-    CreateFunctionRequest createFunctionRequest = (CreateFunctionRequest) createFunctionRequestBuilder.build();
+    CreateFunctionRequest createFunctionRequest = createFunctionRequestBuilder.build();
 
     String functionName = createFunctionRequest.functionName();
-    GetFunctionRequest getFunctionRequest =
-        (GetFunctionRequest) GetFunctionRequest.builder().functionName(functionName).build();
+    GetFunctionRequest getFunctionRequest = GetFunctionRequest.builder().functionName(functionName).build();
 
     AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig =
         (AwsLambdaFunctionsInfraConfig) awsLambdaPrepareRollbackRequest.getAwsLambdaInfraConfig();
@@ -106,15 +108,27 @@ public class AwsLambdaPrepareRollbackTaskHandler {
             LogLevel.INFO);
 
         // Fetch FunctionConfiguration for latest published version of function
-        FunctionConfiguration fetchLatestFuncConfig =
-            getLatestFunctionConfiguration(functionName, awsLambdaFunctionsInfraConfig);
+        Optional<FunctionConfiguration> fetchLatestFuncConfigOptional =
+            getLatestFunctionConfiguration(functionName, awsLambdaFunctionsInfraConfig, executionLogCallback);
+
+        // No function configuration exists, this can be treated as a first deployment.
+        if (!fetchLatestFuncConfigOptional.isPresent()) {
+          executionLogCallback.saveExecutionLog(color("Skipping Prepare Rollback Step.", Green, LogWeight.Bold),
+              LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+          return AwsLambdaPrepareRollbackResponse.builder()
+              .functionName(functionName)
+              .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+              .build();
+        }
+
+        FunctionConfiguration fetchLatestFuncConfig = fetchLatestFuncConfigOptional.get();
 
         // Print the functionConfiguration Information
         printFunctionConfigurationDetails(fetchLatestFuncConfig, executionLogCallback);
 
         // Fetch Code location for the identified functionConfiguration
         GetFunctionRequest getFunctionRequestForLatestFuncVersion =
-            (GetFunctionRequest) GetFunctionRequest.builder().functionName(fetchLatestFuncConfig.functionArn()).build();
+            GetFunctionRequest.builder().functionName(fetchLatestFuncConfig.functionArn()).build();
 
         Optional<GetFunctionResponse> fetchLatestFunctionResponseForLatestFuncVersion = awsLambdaClient.getFunction(
             awsLambdaTaskHelper.getAwsInternalConfig(
@@ -169,24 +183,39 @@ public class AwsLambdaPrepareRollbackTaskHandler {
     }
   }
 
-  private FunctionConfiguration getLatestFunctionConfiguration(
-      String functionName, AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig) {
-    ListVersionsByFunctionRequest listVersionByFunction =
-        (ListVersionsByFunctionRequest) ListVersionsByFunctionRequest.builder().functionName(functionName).build();
+  protected Optional<FunctionConfiguration> getLatestFunctionConfiguration(
+      String functionName, AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, LogCallback logCallback) {
+    ListVersionsByFunctionRequest.Builder listVersionsByFunctionBuilder =
+        ListVersionsByFunctionRequest.builder().functionName(functionName);
 
-    ListVersionsByFunctionResponse listVersionsByFunctionResponse = awsLambdaClient.listVersionsByFunction(
-        awsLambdaTaskHelper.getAwsInternalConfig(
-            awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(), awsLambdaFunctionsInfraConfig.getRegion()),
-        listVersionByFunction);
+    ListVersionsByFunctionResponse listVersionsByFunctionResponse = null;
+    List<FunctionConfiguration> versionsList = new ArrayList<>();
+
+    do {
+      if (listVersionsByFunctionResponse != null) {
+        listVersionsByFunctionBuilder.marker(listVersionsByFunctionResponse.nextMarker());
+      }
+      listVersionsByFunctionResponse = awsLambdaClient.listVersionsByFunction(
+          awsLambdaTaskHelper.getAwsInternalConfig(
+              awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(), awsLambdaFunctionsInfraConfig.getRegion()),
+          listVersionsByFunctionBuilder.build());
+      versionsList.addAll(listVersionsByFunctionResponse.versions());
+    } while (listVersionsByFunctionResponse.nextMarker() != null);
+
+    // We remove $LATEST since it is the unpublished version
+    List<FunctionConfiguration> listActualFunctionVersions =
+        versionsList.stream().filter(v -> !v.version().contains(LATEST)).collect(Collectors.toList());
+
+    if (listActualFunctionVersions.isEmpty()) {
+      String msg = format("No published version found for the existing function: %s", functionName);
+      logCallback.saveExecutionLog(color(msg, LogColor.Red, LogWeight.Bold));
+      return Optional.empty();
+    }
 
     // Sort/Filter and get the latest published version
-    // We remove $LATEST since it is the unpublished version
-    return listVersionsByFunctionResponse.versions()
-        .stream()
-        .filter(v -> !v.version().contains(LATEST))
+    return listActualFunctionVersions.stream()
         .sorted(Comparator.comparing(FunctionConfiguration::version).reversed())
-        .findFirst()
-        .get();
+        .findFirst();
   }
 
   private FunctionConfiguration.Builder getFunctionConfigurationBuilder(FunctionConfiguration fetchLatestFuncConfig) {

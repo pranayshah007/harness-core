@@ -17,29 +17,30 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.outcome.GitlabHttpCredentialsOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.common.Constants;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
 import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
+import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
+import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
-import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import org.apache.commons.math3.util.Pair;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.IDP)
 public class GitlabConnectorProcessor extends ConnectorProcessor {
   @Override
-  public String getInfraConnectorType(String accountIdentifier, String connectorIdentifier) {
-    ConnectorInfoDTO connectorInfoDTO = getConnectorInfo(accountIdentifier, connectorIdentifier);
+  public String getInfraConnectorType(ConnectorInfoDTO connectorInfoDTO) {
     GitlabConnectorDTO config = (GitlabConnectorDTO) connectorInfoDTO.getConnectorConfig();
     return config.getExecuteOnDelegate() ? CATALOG_INFRA_CONNECTOR_TYPE_PROXY : CATALOG_INFRA_CONNECTOR_TYPE_DIRECT;
   }
 
   @Override
-  public Pair<ConnectorInfoDTO, List<EnvironmentSecret>> getConnectorAndSecretsInfo(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
-    ConnectorInfoDTO connectorInfoDTO = getConnectorInfo(accountIdentifier, connectorIdentifier);
+  public Map<String, BackstageEnvVariable> getConnectorAndSecretsInfo(
+      String accountIdentifier, ConnectorInfoDTO connectorInfoDTO) {
+    String connectorIdentifier = connectorInfoDTO.getIdentifier();
     if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.GITLAB_CONNECTOR_TYPE)) {
       throw new InvalidRequestException(
           String.format("Connector with id - [%s] is not gitlab connector for accountId: [%s]", connectorIdentifier,
@@ -62,26 +63,31 @@ public class GitlabConnectorProcessor extends ConnectorProcessor {
           "Secret identifier not found for connector: [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
     }
 
-    List<EnvironmentSecret> resultList = new ArrayList<>();
+    Map<String, BackstageEnvVariable> secrets = new HashMap<>();
 
-    resultList.add(GitIntegrationUtils.getEnvironmentSecret(ngSecretService, accountIdentifier, orgIdentifier,
-        projectIdentifier, tokenSecretIdentifier, connectorIdentifier, GitIntegrationConstants.GITLAB_TOKEN));
-    return new Pair<>(connectorInfoDTO, resultList);
+    secrets.put(Constants.GITLAB_TOKEN,
+        GitIntegrationUtils.getBackstageEnvSecretVariable(tokenSecretIdentifier, Constants.GITLAB_TOKEN));
+    return secrets;
   }
 
   @Override
   public void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
-      String locationParentPath, String remoteFolder, List<String> filesToPush) {
-    Pair<ConnectorInfoDTO, List<EnvironmentSecret>> connectorSecretsInfo = getConnectorAndSecretsInfo(
-        accountIdentifier, null, null, catalogConnectorInfo.getSourceConnector().getIdentifier());
-    String gitlabConnectorSecret = connectorSecretsInfo.getSecond().get(0).getDecryptedValue();
+      String locationParentPath, List<String> filesToPush) {
+    ConnectorInfoDTO connectorInfoDTO =
+        getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier());
+    Map<String, BackstageEnvVariable> connectorSecretsInfo =
+        getConnectorAndSecretsInfo(accountIdentifier, connectorInfoDTO);
+    BackstageEnvSecretVariable envSecretVariable =
+        (BackstageEnvSecretVariable) connectorSecretsInfo.get(Constants.GITLAB_TOKEN);
+    String gitlabConnectorSecret = GitIntegrationUtils.decryptSecret(ngSecretService, accountIdentifier, null, null,
+        envSecretVariable.getHarnessSecretIdentifier(), catalogConnectorInfo.getConnector().getIdentifier());
 
-    GitlabConnectorDTO config = (GitlabConnectorDTO) connectorSecretsInfo.getFirst().getConnectorConfig();
+    GitlabConnectorDTO config = (GitlabConnectorDTO) connectorInfoDTO.getConnectorConfig();
     GitlabHttpCredentialsOutcomeDTO outcome =
         (GitlabHttpCredentialsOutcomeDTO) config.getAuthentication().getCredentials().toOutcome();
     GitlabUsernameTokenDTO spec = (GitlabUsernameTokenDTO) outcome.getSpec();
 
-    performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, remoteFolder, filesToPush,
+    performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, filesToPush,
         spec.getUsername(), gitlabConnectorSecret);
   }
 }

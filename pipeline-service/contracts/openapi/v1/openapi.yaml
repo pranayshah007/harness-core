@@ -1,20 +1,22 @@
 openapi: 3.0.0
 x-stoplight:
-  id: uo2r4f4vt18on
+  id: 2hxrtfd4bq62u
 info:
   title: Harness NextGen Software Delivery Platform API Reference
-  version: '1'
+  version: '1.0'
   description: This is the Open Api Spec 3 for the Pipeline Service. This is under active development. Beware of the breaking change with respect to the generated code stub.
   contact:
     email: contact@harness.io
 servers:
-  - url: 'https://api.harness.io'
+  - url: 'https://app.harness.io'
     description: Harness host URL.
 tags:
   - name: Pipelines
     description: This contains APIs for performing CRUD operations on Pipelines.
+    x-displayName: 'Pipelines [Beta]'
   - name: Input Sets
     description: This contains APIs for Input Sets.
+    x-displayName: 'Input Sets [Beta]'
 paths:
   '/v1/orgs/{org}/projects/{project}/pipelines':
     parameters:
@@ -501,7 +503,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       requestBody:
         $ref: '#/components/requestBodies/InputSetMoveConfigRequestBody'
       responses:
@@ -509,7 +511,44 @@ paths:
           $ref: '#/components/responses/InputSetMoveConfigResponseBody'
       tags:
         - Input Sets
-      x-internal: true
+      x-internal: false
+  '/v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/import':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+      - $ref: '#/components/parameters/PipelineParam'
+    post:
+      summary: Get Pipeline YAML from Git Repository
+      operationId: importPipelineFromGit
+      responses:
+        '200':
+          $ref: '#/components/responses/PipelineSaveResponseBody'
+      description: Fetches Pipeline YAML from Git Repository and saves a record for it in Harness
+      tags:
+        - Pipelines
+      requestBody:
+        $ref: '#/components/requestBodies/PipelineImportRequestBody'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+  '/v1/orgs/{org}/projects/{project}/input-sets/{input-set}/import':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+      - $ref: '#/components/parameters/InputSetParam'
+    post:
+      summary: Get Input Set YAML from Git Repository
+      operationId: importInputSetFromGit
+      responses:
+        '200':
+          $ref: '#/components/responses/InputSetImportResponseBody'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/PipelineInputSetParam'
+      requestBody:
+        $ref: '#/components/requestBodies/InputSetImportRequestBody'
+      description: Fetches InputSet YAML from Git Repository and saves a record for it in Harness
+      tags:
+        - Input Sets
 components:
   schemas:
     GitDetails:
@@ -681,6 +720,7 @@ components:
       type: object
       x-stoplight:
         id: 6c15cb29289e9
+      x-internal: true
       properties:
         status:
           type: string
@@ -696,7 +736,8 @@ components:
           type: integer
           format: int64
           description: End time of the Evaluation
-      x-internal: true
+        template_validation_response:
+          $ref: '#/components/schemas/TemplateValidationResponseBody'
     PipelineValidationUUIDResponseBody:
       title: Pipeline Validation UUID Response Body
       description: Contains the UUID of the Pipeline Validation Event that's started
@@ -1874,7 +1915,7 @@ components:
       x-stoplight:
         id: ed578c29cb9dc
       type: object
-      description: 'Request body for moving a pipeline configuration'
+      description: Request body for moving a pipeline configuration
       properties:
         git_details:
           $ref: '#/components/schemas/GitMoveDetails'
@@ -1887,7 +1928,7 @@ components:
       x-stoplight:
         id: e4ec161edc199
       type: object
-      description: 'Response body for configuration to move a pipeline'
+      description: Response body for configuration to move a pipeline
       properties:
         pipeline_identifier:
           type: string
@@ -1914,7 +1955,7 @@ components:
       properties:
         branch_name:
           type: string
-          description: Name of the branch. When moving an inline pipeline or a remote pipeline, this branch is where the remote entity is created or fetched.
+          description: 'Name of the branch. When moving an inline pipeline or a remote pipeline, this branch is where the remote entity is created or fetched.'
         file_path:
           type: string
           description: File path of the entity in the repository.
@@ -1935,7 +1976,7 @@ components:
       x-stoplight:
         id: gf4xlhs210icv
       type: object
-      description: 'Request body for moving an input set configuration.'
+      description: Request body for moving an input set configuration.
       properties:
         git_details:
           $ref: '#/components/schemas/GitMoveDetails'
@@ -1953,7 +1994,202 @@ components:
       properties:
         input_set_identifier:
           type: string
-      description: 'Response body for moving an input set configuration.'
+      description: Response body for moving an input set configuration.
+    TemplateValidationResponseBody:
+      title: TemplateValidationResponseBody
+      x-stoplight:
+        id: fulzeg8b945v8
+      type: object
+      description: Has Template Resolution Response.
+      properties:
+        valid_yaml:
+          type: boolean
+        exception_message:
+          type: string
+    GitImportInfo:
+      title: Import Git Information
+      x-stoplight:
+        id: 097qn1j0i7ttn
+      type: object
+      properties:
+        connector_ref:
+          type: string
+        repo_name:
+          type: string
+        branch_name:
+          type: string
+        file_path:
+          type: string
+        is_force_import:
+          type: boolean
+      description: Parameters related to importing an entity for Git.
+    PipelineImportRequestDTO:
+      title: Pipeline Import Request DTO
+      x-stoplight:
+        id: nit4pgla9pl9x
+      type: object
+      description: Information of Pipeline import request DTO
+      properties:
+        pipeline_name:
+          type: string
+        pipeline_description:
+          type: string
+    PolicyMetadata:
+      title: Policy Metadata
+      x-stoplight:
+        id: a26knhi8usi9p
+      type: object
+      description: Information about the policy metadata
+      properties:
+        policy_identifier:
+          type: string
+        policy_name:
+          type: string
+        severity:
+          type: string
+        deny_messages:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+        identifier:
+          type: string
+        account_identifier:
+          type: string
+        org_identifier:
+          type: string
+        project_identifier:
+          type: string
+        created:
+          type: integer
+          format: int64
+        updated:
+          type: integer
+          format: int64
+        error:
+          type: string
+    PolicySetMetadata:
+      title: Policy Set Metadata
+      x-stoplight:
+        id: grf62f1x6zjg6
+      type: object
+      properties:
+        policy_set_identifier:
+          type: string
+        deny:
+          type: boolean
+        policy_metadata:
+          type: array
+          items:
+            $ref: '#/components/schemas/PolicyMetadata'
+        policy_set:
+          type: string
+        status:
+          type: string
+        identifier:
+          type: string
+        created:
+          type: integer
+          format: int64
+        account_identifier:
+          type: string
+        org_identifier:
+          type: string
+        project_identifier:
+          type: string
+      description: Information about the policy set metadata
+    GovernanceMetadata:
+      title: Governance Metadata
+      x-stoplight:
+        id: 8ka8rh6zlypnv
+      type: object
+      description: Information about the governance metadata
+      properties:
+        identifier:
+          type: string
+        deny:
+          type: boolean
+        policy_set_metadata:
+          type: array
+          items:
+            $ref: '#/components/schemas/PolicySetMetadata'
+        message:
+          type: string
+        time_stamp:
+          type: integer
+        status:
+          type: string
+        account_identifier:
+          type: string
+        org_identifier:
+          type: string
+        project_identifier:
+          type: string
+        entity:
+          type: string
+        type:
+          type: string
+        action:
+          type: string
+        created:
+          type: integer
+          format: int64
+    PipelineSaveResponseBody:
+      title: Pipeline Save Response Body
+      x-stoplight:
+        id: fccc7af5dc4b0
+      type: object
+      properties:
+        identifier:
+          type: string
+        governance_metadata:
+          type: array
+          items:
+            $ref: '#/components/schemas/GovernanceMetadata'
+      description: Response body for pipeline save.
+    PipelineImportRequestBody:
+      title: PipelineImportRequestBody
+      x-stoplight:
+        id: 14d0fsdrgeyh0
+      type: object
+      description: Pipeline import request body
+      properties:
+        git_import_info:
+          $ref: '#/components/schemas/GitImportInfo'
+        pipeline_import_request:
+          $ref: '#/components/schemas/PipelineImportRequestDTO'
+    InputSetImportRequestDTO:
+      title: InputSet Import Request DTO
+      x-stoplight:
+        id: f89uniiyzwrc3
+      type: object
+      description: Information of InputSet import request DTO
+      properties:
+        input_set_name:
+          type: string
+        input_set_description:
+          type: string
+    InputSetImportRequestBody:
+      title: InputSet Import Request Body
+      x-stoplight:
+        id: m2fw6smd096g1
+      type: object
+      description: InputSet import request body
+      properties:
+        git_import_info:
+          $ref: '#/components/schemas/GitImportInfo'
+        input_set_import_request:
+          $ref: '#/components/schemas/InputSetImportRequestDTO'
+    InputSetImportResponseBody:
+      title: InputSet Import Response Body
+      x-stoplight:
+        id: 8yb2a8hs1jk4o
+      type: object
+      properties:
+        input_set_identifier:
+          type: string
+      description: Response body for Input Set import.
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2546,6 +2782,18 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/InputSetMoveConfigResponseBody'
+    PipelineSaveResponseBody:
+      description: Response body for pipeline save.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PipelineSaveResponseBody'
+    InputSetImportResponseBody:
+      description: Response body for input set import.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InputSetImportResponseBody'
   requestBodies:
     PipelineCreateRequestBody:
       content:
@@ -3056,3 +3304,15 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/InputSetMoveConfigRequestBody'
+    PipelineImportRequestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PipelineImportRequestBody'
+      description: Pipeline import request body
+    InputSetImportRequestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InputSetImportRequestBody'
+      description: Input Set import request body

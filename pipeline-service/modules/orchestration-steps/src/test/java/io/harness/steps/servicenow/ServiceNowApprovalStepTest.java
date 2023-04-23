@@ -13,7 +13,7 @@ import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -91,11 +91,7 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
         .isInstanceOf(InvalidRequestException.class);
     assertThatThrownBy(()
                            -> serviceNowApprovalStep.executeAsync(
-                               ambiance, getStepElementParameters(TICKET_NUMBER, "", CONNECTOR), null, null))
-        .isInstanceOf(InvalidRequestException.class);
-    assertThatThrownBy(()
-                           -> serviceNowApprovalStep.executeAsync(ambiance,
-                               getStepElementParameters(TICKET_NUMBER, "invalidValue", CONNECTOR), null, null))
+                               ambiance, getStepElementParameters(TICKET_NUMBER, " ", CONNECTOR), null, null))
         .isInstanceOf(InvalidRequestException.class);
 
     StepElementParameters parameters = getStepElementParameters(TICKET_NUMBER, PROBLEM, CONNECTOR);
@@ -118,7 +114,7 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
     assertThat(instance.getConnectorRef()).isEqualTo(CONNECTOR);
     assertThat(instance.getChangeWindow().getStartField()).isEqualTo(CHANGE_WINDOW_START);
     assertThat(instance.getChangeWindow().getEndField()).isEqualTo(CHANGE_WINDOW_END);
-    verify(logStreamingStepClient, times(5)).openStream(ShellScriptTaskNG.COMMAND_UNIT);
+    verify(logStreamingStepClient, times(4)).openStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   @Test

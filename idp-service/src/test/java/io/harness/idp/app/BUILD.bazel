@@ -17,8 +17,11 @@ java_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "//:lombok",
+        "//960-persistence:supporter-test",
         "//990-commons-test:module",
         "//idp-service/src/main/java/io/harness/idp/app:module",
+        "//idp-service/src/main/java/io/harness/idp/envvariable:module",
     ],
 )
 

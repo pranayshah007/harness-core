@@ -88,7 +88,7 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
   private static final int BATCH_SIZE = 20;
   private static final int MAX_UTILIZATION_WEIGHT = 1;
   private static final int RECOMMENDATION_FOR_DAYS = 7;
-  private static final Set<Integer> requiredPercentiles = ImmutableSet.of(50, 80, 90, 95, 99);
+  private static final Set<Integer> requiredPercentiles = ImmutableSet.of(50, 80, 90, 95, 99, 100);
   private static final String PERCENTILE_KEY = "p%d";
   public static final Duration RECOMMENDATION_TTL = Duration.ofDays(30);
 

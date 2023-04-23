@@ -5,19 +5,41 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 package io.harness.idp.configmanager.service;
-
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.configmanager.ConfigType;
+import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
+import io.harness.idp.configmanager.beans.entity.MergedAppConfigEntity;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.AppConfigRequest;
+import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 
+import java.util.List;
 import java.util.Map;
 
+@OwnedBy(HarnessTeam.IDP)
 public interface ConfigManagerService {
   Map<String, Boolean> getAllPluginIdsMap(String accountIdentifier);
   public AppConfig getPluginConfig(String accountIdentifier, String pluginId);
 
-  public AppConfig savePluginConfig(AppConfigRequest appConfigRequest, String accountIdentifier);
+  AppConfig saveConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType) throws Exception;
 
-  public AppConfig updatePluginConfig(AppConfigRequest appConfigRequest, String accountIdentifier);
+  AppConfig saveOrUpdateConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType)
+      throws Exception;
 
-  public AppConfig togglePlugin(String accountIdentifier, String pluginName, Boolean isEnabled);
+  AppConfig updateConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType)
+      throws Exception;
+
+  AppConfig toggleConfigForAccount(String accountIdentifier, String configId, Boolean isEnabled, ConfigType configType);
+
+  MergedAppConfigEntity mergeAndSaveAppConfig(String accountIdentifier) throws Exception;
+
+  MergedPluginConfigs mergeEnabledPluginConfigsForAccount(String accountIdentifier) throws Exception;
+
+  List<AppConfigEntity> deleteDisabledPluginsConfigsDisabledMoreThanAWeekAgo();
+  String mergeAllAppConfigsForAccount(String account) throws Exception;
+
+  void updateConfigMap(String accountIdentifier, String appConfigYamlData, String configName);
+
+  void validateSchemaForPlugin(String config, String configId) throws Exception;
 }

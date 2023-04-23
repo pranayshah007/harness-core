@@ -23,6 +23,7 @@ import software.wings.security.UserThreadLocal;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.PreferenceService;
+import software.wings.service.intfc.UserGroupService;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -51,6 +52,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class PreferenceResource {
   private PreferenceService prefService;
 
+  @Inject private UserGroupService userGroupService;
+
   @Inject
   public PreferenceResource(PreferenceService prefService) {
     this.prefService = prefService;
@@ -69,7 +72,7 @@ public class PreferenceResource {
   public RestResponse<PageResponse<Preference>> listPreferences(
       @QueryParam("accountId") @NotEmpty String accountId, @BeanParam PageRequest<Preference> pageRequest) {
     User user = UserThreadLocal.get();
-    return new RestResponse<>(prefService.list(pageRequest, user.getUuid()));
+    return new RestResponse<>(prefService.list(pageRequest, accountId, user.getUuid()));
   }
 
   @GET

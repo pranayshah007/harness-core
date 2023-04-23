@@ -15,8 +15,9 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.utils.DateTimeUtils;
-import io.harness.cvng.downtime.beans.DowntimeInstanceDetails;
+import io.harness.cvng.downtime.beans.DowntimeStatusDetails;
 import io.harness.cvng.downtime.beans.EntityType;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 import io.harness.cvng.downtime.services.api.DowntimeService;
@@ -24,6 +25,7 @@ import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLOConsumptionBreakdown;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
@@ -37,13 +39,14 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
 import io.harness.cvng.servicelevelobjective.beans.UnavailabilityInstancesResponse;
 import io.harness.cvng.servicelevelobjective.beans.UserJourneyDTO;
-import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventDetailsResponse;
-import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventsResponse;
-import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventsType;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
+import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
@@ -53,17 +56,20 @@ import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
+import io.harness.cvng.servicelevelobjective.services.api.SecondaryEventDetailsService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.services.api.UserJourneyService;
-import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2.SLOV2Transformer;
 import io.harness.ng.beans.PageResponse;
 import io.harness.utils.PageUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -76,6 +82,8 @@ import java.util.stream.Collectors;
 
 public class SLODashboardServiceImpl implements SLODashboardService {
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
+
+  @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject private MonitoredServiceService monitoredServiceService;
   @Inject private GraphDataService graphDataService;
   @Inject private SLOHealthIndicatorService sloHealthIndicatorService;
@@ -88,13 +96,16 @@ public class SLODashboardServiceImpl implements SLODashboardService {
   @Inject private DowntimeService downtimeService;
   @Inject private EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
 
-  @Inject private Map<ServiceLevelObjectiveType, SLOV2Transformer> serviceLevelObjectiveTypeSLOV2TransformerMap;
+  @Inject private Map<SecondaryEventsType, SecondaryEventDetailsService> secondaryEventsTypeToDetailsMapBinder;
 
   @Override
   public PageResponse<SLOHealthListView> getSloHealthListView(
       ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams) {
     PageResponse<AbstractServiceLevelObjective> sloPageResponse =
         serviceLevelObjectiveV2Service.getSLOForListView(projectParams, filter, pageParams);
+
+    Map<AbstractServiceLevelObjective, SLIEvaluationType> serviceLevelObjectiveSLIEvaluationTypeMap =
+        serviceLevelObjectiveV2Service.getEvaluationType(projectParams, sloPageResponse.getContent());
 
     Set<String> monitoredServiceIdentifiers =
         sloPageResponse.getContent()
@@ -143,6 +154,10 @@ public class SLODashboardServiceImpl implements SLODashboardService {
 
     List<UserJourney> userJourneyList = userJourneyService.get(projectParams);
 
+    Map<String, EntityUnavailabilityStatusesDTO> monitoredServiceIdentifierToUnavailabilityStatusesDTOMap =
+        downtimeService.getMonitoredServicesAssociatedUnavailabilityInstanceMap(
+            projectParams, monitoredServiceIdentifiers);
+
     Map<String, MonitoredServiceDTO> scopedMonitoredServiceIdentifierToDTOMap =
         monitoredServicesFromScopedIdentifiers.stream()
             .map(MonitoredServiceResponse::getMonitoredServiceDTO)
@@ -163,7 +178,9 @@ public class SLODashboardServiceImpl implements SLODashboardService {
             .stream()
             .map(sloResponse
                 -> getSLOListView(projectParams, sloResponse, scopedMonitoredServiceIdentifierToDTOMap,
-                    scopedSloIdentifierToHealthIndicatorMap, userJourneyIdentifierToNameMap))
+                    scopedSloIdentifierToHealthIndicatorMap, userJourneyIdentifierToNameMap,
+                    serviceLevelObjectiveSLIEvaluationTypeMap,
+                    monitoredServiceIdentifierToUnavailabilityStatusesDTOMap))
             .collect(Collectors.toList());
 
     return PageResponse.<SLOHealthListView>builder()
@@ -268,6 +285,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         .projectParams(simpleSLOProjectParams)
         .projectName(projectName)
         .orgName(orgName)
+        .failedState(sloHealthIndicatorService.getFailedState(simpleSLOProjectParams, serviceLevelObjective))
         .build();
   }
 
@@ -350,8 +368,8 @@ public class SLODashboardServiceImpl implements SLODashboardService {
               .build();
       List<MonitoredServiceDetail> monitoredServiceDetails = Collections.singletonList(monitoredServiceDetail);
 
-      return getSloDashboardWidgetBuilder(slo, timePeriod, sloGraphData, serviceLevelObjective, totalErrorBudgetMinutes,
-          currentLocalDate, monitoredServiceDetails)
+      return getSloDashboardWidgetBuilder(
+          slo, timePeriod, sloGraphData, serviceLevelObjective, currentLocalDate, monitoredServiceDetails)
           .monitoredServiceIdentifier(simpleServiceLevelObjectiveSpec.getMonitoredServiceRef())
           .monitoredServiceName(monitoredService.getName())
           .environmentIdentifier(monitoredService.getEnvironmentRef())
@@ -407,16 +425,15 @@ public class SLODashboardServiceImpl implements SLODashboardService {
                          .build())
               .collect(Collectors.toList());
 
-      return getSloDashboardWidgetBuilder(slo, timePeriod, sloGraphData, serviceLevelObjective, totalErrorBudgetMinutes,
-          currentLocalDate, monitoredServiceDetails)
+      return getSloDashboardWidgetBuilder(
+          slo, timePeriod, sloGraphData, serviceLevelObjective, currentLocalDate, monitoredServiceDetails)
           .build();
     }
   }
 
   private SLODashboardWidgetBuilder getSloDashboardWidgetBuilder(ServiceLevelObjectiveV2DTO slo, TimePeriod timePeriod,
       SLODashboardWidget.SLOGraphData sloGraphData, AbstractServiceLevelObjective serviceLevelObjective,
-      int totalErrorBudgetMinutes, LocalDateTime currentLocalDate,
-      List<MonitoredServiceDetail> monitoredServiceDetails) {
+      LocalDateTime currentLocalDate, List<MonitoredServiceDetail> monitoredServiceDetails) {
     return SLODashboardWidget.withGraphData(sloGraphData)
         .sloIdentifier(slo.getIdentifier())
         .title(slo.getName())
@@ -427,11 +444,11 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         .monitoredServiceDetails(monitoredServiceDetails)
         .sloTargetPercentage(serviceLevelObjective.getSloTargetPercentage())
         .tags(slo.getTags())
-        .totalErrorBudget(totalErrorBudgetMinutes)
         .timeRemainingDays(timePeriod.getRemainingDays(currentLocalDate))
         .burnRate(SLODashboardWidget.BurnRate.builder()
                       .currentRatePercentage(sloGraphData.dailyBurnRate(serviceLevelObjective.getZoneOffset()))
                       .build())
+        .evaluationType(sloGraphData.getEvaluationType())
         .sloType(slo.getType());
   }
 
@@ -462,43 +479,11 @@ public class SLODashboardServiceImpl implements SLODashboardService {
       ProjectParams projectParams, long startTime, long endTime, String identifier) {
     ServiceLevelObjectiveV2Response sloResponse = serviceLevelObjectiveV2Service.get(projectParams, identifier);
     ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO = sloResponse.getServiceLevelObjectiveV2DTO();
-    List<String> sliIds;
-    Set<String> monitoredServiceIdentifiers;
-    if (serviceLevelObjectiveV2DTO.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
-      sliIds = Collections.singletonList(serviceLevelObjectiveV2DTO.getIdentifier());
-      monitoredServiceIdentifiers = Collections.singleton(
-          ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec()).getMonitoredServiceRef());
-    } else {
-      List<String> sloIdentifiers = serviceLevelObjectiveV2Service.getReferencedSimpleSLOs(projectParams,
-          (CompositeServiceLevelObjective) serviceLevelObjectiveTypeSLOV2TransformerMap
-              .get(ServiceLevelObjectiveType.COMPOSITE)
-              .getSLOV2(projectParams, serviceLevelObjectiveV2DTO, true));
-      List<AbstractServiceLevelObjective> serviceLevelObjectiveList =
-          serviceLevelObjectiveV2Service.get(projectParams, sloIdentifiers);
-      sliIds = serviceLevelObjectiveList.stream()
-                   .filter(slo -> slo.getType().equals(ServiceLevelObjectiveType.SIMPLE))
-                   .map(slo -> ((SimpleServiceLevelObjective) slo).getServiceLevelIndicators().get(0))
-                   .collect(Collectors.toList());
-      monitoredServiceIdentifiers =
-          serviceLevelObjectiveV2Service.getReferencedMonitoredServices(serviceLevelObjectiveList);
+    if (serviceLevelObjectiveV2DTO.getType().equals(ServiceLevelObjectiveType.COMPOSITE)) {
+      return new ArrayList<>();
     }
-    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
-        entityUnavailabilityStatusesService.getAllInstances(projectParams, startTime / 1000, endTime / 1000);
-
-    // Adding downtime Instances
-    List<EntityUnavailabilityStatusesDTO> failureInstances =
-        entityUnavailabilityStatusesDTOS.stream()
-            .filter(statusesDTO -> statusesDTO.getEntityType().equals(EntityType.MAINTENANCE_WINDOW))
-            .collect(Collectors.toList());
-    failureInstances = downtimeService.filterDowntimeInstancesOnMonitoredServices(
-        projectParams, failureInstances, monitoredServiceIdentifiers);
-
-    // Adding Data collection failure Instances
-    failureInstances.addAll(
-        entityUnavailabilityStatusesDTOS.stream()
-            .filter(statusesDTO
-                -> statusesDTO.getEntityType().equals(EntityType.SLO) && sliIds.contains(statusesDTO.getEntityId()))
-            .collect(Collectors.toList()));
+    List<EntityUnavailabilityStatuses> failureInstances =
+        getFailureInstances(projectParams, serviceLevelObjectiveV2DTO, startTime, endTime);
 
     return failureInstances.stream()
         .map(instance
@@ -506,7 +491,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
                    .orgIdentifier(instance.getOrgIdentifier())
                    .projectIdentifier(instance.getProjectIdentifier())
                    .entityType(instance.getEntityType())
-                   .entityIdentifier(instance.getEntityId())
+                   .entityIdentifier(instance.getEntityIdentifier())
                    .status(instance.getStatus())
                    .startTime(instance.getStartTime())
                    .endTime(instance.getEndTime())
@@ -519,20 +504,59 @@ public class SLODashboardServiceImpl implements SLODashboardService {
       ProjectParams projectParams, long startTime, long endTime, String identifier) {
     ServiceLevelObjectiveV2Response sloResponse = serviceLevelObjectiveV2Service.get(projectParams, identifier);
     ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO = sloResponse.getServiceLevelObjectiveV2DTO();
-    Set<String> monitoredServiceIdentifiers;
+
+    // Adding annotation threads
+    List<SecondaryEventsResponse> secondaryEvents = annotationService.getAllInstancesGrouped(projectParams,
+        TimeUnit.MILLISECONDS.toSeconds(startTime), TimeUnit.MILLISECONDS.toSeconds(endTime), identifier);
+
+    // Adding Entity Unavailability Status instances
     if (serviceLevelObjectiveV2DTO.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
-      monitoredServiceIdentifiers = Collections.singleton(
-          ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec()).getMonitoredServiceRef());
-    } else {
-      List<String> sloIdentifiers = serviceLevelObjectiveV2Service.getReferencedSimpleSLOs(projectParams,
-          (CompositeServiceLevelObjective) serviceLevelObjectiveTypeSLOV2TransformerMap
-              .get(ServiceLevelObjectiveType.COMPOSITE)
-              .getSLOV2(projectParams, serviceLevelObjectiveV2DTO, true));
-      List<AbstractServiceLevelObjective> serviceLevelObjectiveList =
-          serviceLevelObjectiveV2Service.get(projectParams, sloIdentifiers);
-      monitoredServiceIdentifiers =
-          serviceLevelObjectiveV2Service.getReferencedMonitoredServices(serviceLevelObjectiveList);
+      List<EntityUnavailabilityStatuses> failureInstances =
+          getFailureInstances(projectParams, serviceLevelObjectiveV2DTO, startTime, endTime);
+      secondaryEvents.addAll(failureInstances.stream()
+                                 .map(instance
+                                     -> SecondaryEventsResponse.builder()
+                                            .type(instance.getEntityType().getSecondaryEventTypeFromEntityType())
+                                            .identifiers(Collections.singletonList(instance.getUuid()))
+                                            .startTime(instance.getStartTime())
+                                            .endTime(instance.getEndTime())
+                                            .build())
+                                 .collect(Collectors.toList()));
     }
+
+    // Adding error budget reset instances
+    if (serviceLevelObjectiveV2DTO.getSloTarget().getSpec().isErrorBudgetResetEnabled()) {
+      List<SLOErrorBudgetReset> sloErrorBudgetResets =
+          sloErrorBudgetResetService.getErrorBudgetResetEntities(projectParams, identifier, startTime, endTime);
+      secondaryEvents.addAll(sloErrorBudgetResets.stream()
+                                 .map(errorBudgetReset
+                                     -> SecondaryEventsResponse.builder()
+                                            .type(SecondaryEventsType.ERROR_BUDGET_RESET)
+                                            .identifiers(Collections.singletonList(errorBudgetReset.getUuid()))
+                                            .startTime(TimeUnit.MILLISECONDS.toSeconds(errorBudgetReset.getCreatedAt()))
+                                            .endTime(TimeUnit.MILLISECONDS.toSeconds(errorBudgetReset.getCreatedAt()))
+                                            .build())
+                                 .collect(Collectors.toList()));
+    }
+
+    return secondaryEvents.stream()
+        .sorted(Comparator.comparing(SecondaryEventsResponse::getStartTime))
+        .collect(Collectors.toList());
+  }
+
+  private List<EntityUnavailabilityStatuses> getFailureInstances(ProjectParams projectParams,
+      ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, long startTime, long endTime) {
+    String sliIdentifier = ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec())
+                               .getServiceLevelIndicators()
+                               .get(0)
+                               .getIdentifier();
+    String monitoredServiceIdentifier =
+        ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec()).getMonitoredServiceRef();
+    List<String> sliIds =
+        serviceLevelIndicatorService.getEntities(projectParams, Collections.singletonList(sliIdentifier))
+            .stream()
+            .map(serviceLevelIndicator -> serviceLevelIndicator.getUuid())
+            .collect(Collectors.toList());
     List<EntityUnavailabilityStatuses> entityUnavailabilityInstances =
         entityUnavailabilityStatusesService.getAllUnavailabilityInstances(
             projectParams, TimeUnit.MILLISECONDS.toSeconds(startTime), TimeUnit.MILLISECONDS.toSeconds(endTime));
@@ -542,43 +566,41 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         entityUnavailabilityInstances.stream()
             .filter(instance -> instance.getEntityType().equals(EntityType.MAINTENANCE_WINDOW))
             .collect(Collectors.toList());
-    failureInstances =
-        downtimeService.filterDowntimeInstancesOnMSs(projectParams, failureInstances, monitoredServiceIdentifiers);
+    failureInstances = downtimeService.filterDowntimeInstancesOnMSs(
+        projectParams, failureInstances, Collections.singleton(monitoredServiceIdentifier));
 
-    List<SecondaryEventsResponse> secondaryEvents =
-        failureInstances.stream()
-            .map(instance
-                -> SecondaryEventsResponse.builder()
-                       .type(SecondaryEventsType.DOWNTIME)
-                       .identifiers(Collections.singletonList(instance.getUuid()))
-                       .startTime(instance.getStartTime())
-                       .endTime(instance.getEndTime())
-                       .build())
+    // Adding Data collection failure Instances
+    List<EntityUnavailabilityStatuses> dcEntityUnavailabilityStatuses =
+        entityUnavailabilityInstances.stream()
+            .filter(statusesDTO
+                -> statusesDTO.getEntityType().equals(EntityType.SLO)
+                    && sliIds.contains(statusesDTO.getEntityIdentifier())
+                    && (statusesDTO.getStatus().equals(EntityUnavailabilityStatus.DATA_COLLECTION_FAILED)
+                        || statusesDTO.getStatus().equals(EntityUnavailabilityStatus.DATA_RECOLLECTION_PASSED)))
+            .sorted(Comparator.comparing(entry -> entry.getStartTime()))
             .collect(Collectors.toList());
 
-    secondaryEvents.addAll(annotationService.getAllInstancesGrouped(projectParams,
-        TimeUnit.MILLISECONDS.toSeconds(startTime), TimeUnit.MILLISECONDS.toSeconds(endTime), identifier));
-
-    return secondaryEvents.stream()
-        .sorted(Comparator.comparing(SecondaryEventsResponse::getStartTime))
-        .collect(Collectors.toList());
+    if (!dcEntityUnavailabilityStatuses.isEmpty()) {
+      EntityUnavailabilityStatuses currentDCInstance = null;
+      for (EntityUnavailabilityStatuses entityUnavailabilityStatus : dcEntityUnavailabilityStatuses) {
+        if (currentDCInstance != null
+            && currentDCInstance.getEndTime() - entityUnavailabilityStatus.getStartTime()
+                <= Duration.ofMinutes(1).toMillis()) {
+          currentDCInstance.setEndTime(entityUnavailabilityStatus.getEndTime());
+        } else {
+          if (currentDCInstance != null) {
+            failureInstances.add(currentDCInstance);
+          }
+          currentDCInstance = entityUnavailabilityStatus;
+        }
+      }
+      failureInstances.add(currentDCInstance);
+    }
+    return failureInstances;
   }
 
   public SecondaryEventDetailsResponse getSecondaryEventDetails(SecondaryEventsType eventType, List<String> uuids) {
-    switch (eventType) {
-      case ANNOTATION:
-        return annotationService.getThreadDetails(uuids);
-      case DOWNTIME:
-        EntityUnavailabilityStatuses instance = entityUnavailabilityStatusesService.getInstanceById(uuids.get(0));
-        return SecondaryEventDetailsResponse.builder()
-            .type(SecondaryEventsType.DOWNTIME)
-            .startTime(instance.getStartTime())
-            .endTime(instance.getEndTime())
-            .details(DowntimeInstanceDetails.builder().build())
-            .build();
-      default:
-        return SecondaryEventDetailsResponse.builder().build();
-    }
+    return secondaryEventsTypeToDetailsMapBinder.get(eventType).getInstanceByUuids(uuids, eventType);
   }
 
   private MSDropdownResponse getMSDropdownResponse(MonitoredServiceDTO monitoredServiceDTO) {
@@ -593,7 +615,9 @@ public class SLODashboardServiceImpl implements SLODashboardService {
   private SLOHealthListView getSLOListView(ProjectParams projectParams, AbstractServiceLevelObjective slo,
       Map<String, MonitoredServiceDTO> scopedMonitoredServiceIdentifierToDTOMap,
       Map<String, SLOHealthIndicator> scopedSloIdentifierToHealthIndicatorMap,
-      Map<String, String> userJourneyIdentifierToNameMap) {
+      Map<String, String> userJourneyIdentifierToNameMap,
+      Map<AbstractServiceLevelObjective, SLIEvaluationType> serviceLevelObjectiveSLIEvaluationTypeMap,
+      Map<String, EntityUnavailabilityStatusesDTO> monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap) {
     LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), slo.getZoneOffset());
     List<SLOErrorBudgetResetDTO> errorBudgetResetDTOS =
         sloErrorBudgetResetService.getErrorBudgetResets(projectParams, slo.getIdentifier());
@@ -621,7 +645,8 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           getProjectName(projectParams.getAccountIdentifier(), slo.getOrgIdentifier(), slo.getProjectIdentifier());
       String orgName = getOrgName(projectParams.getAccountIdentifier(), slo.getOrgIdentifier());
       return SLOHealthListView
-          .getSLOHealthListViewBuilder(slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator)
+          .getSLOHealthListViewBuilder(
+              slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator, serviceLevelObjectiveSLIEvaluationTypeMap)
           .monitoredServiceIdentifier(monitoredService.getIdentifier())
           .monitoredServiceName(monitoredService.getName())
           .environmentIdentifier(monitoredService.getEnvironmentRef())
@@ -641,10 +666,25 @@ public class SLODashboardServiceImpl implements SLODashboardService {
               getHealthSourceName(monitoredService, simpleServiceLevelObjective.getHealthSourceIdentifier()))
           .sliType(simpleServiceLevelObjective.getServiceLevelIndicatorType())
           .sliIdentifier(simpleServiceLevelObjective.getServiceLevelIndicators().get(0))
+          .downtimeStatusDetails(
+              monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap.containsKey(monitoredService.getIdentifier())
+                  ? DowntimeStatusDetails
+                        .getDowntimeStatusDetailsInstanceBuilder(
+                            monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap
+                                .get(monitoredService.getIdentifier())
+                                .getStartTime(),
+                            monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap
+                                .get(monitoredService.getIdentifier())
+                                .getEndTime(),
+                            clock)
+                        .build()
+                  : null)
           .build();
     }
 
-    return SLOHealthListView.getSLOHealthListViewBuilder(slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator)
+    return SLOHealthListView
+        .getSLOHealthListViewBuilder(
+            slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator, serviceLevelObjectiveSLIEvaluationTypeMap)
         .build();
   }
 

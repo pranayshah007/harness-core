@@ -23,6 +23,7 @@ import static io.harness.logging.LogLevel.INFO;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.lang.String.format;
 
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -258,7 +259,9 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
 
     // combine both variable types
     List<String> allVariablesToCollect =
-        Stream.concat(envVariablesToCollect.stream(), secretVariablesToCollect.stream()).collect(Collectors.toList());
+        Stream.concat(envVariablesToCollect.stream(), secretVariablesToCollect.stream())
+            .filter(EmptyPredicate::isNotEmpty)
+            .collect(Collectors.toList());
 
     if (!allVariablesToCollect.isEmpty()) {
       envVariablesFilename = "harness-" + this.config.getExecutionId() + ".out";

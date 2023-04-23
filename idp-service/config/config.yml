@@ -43,6 +43,21 @@ eventsFramework:
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
 
+redisLockConfig:
+  sentinel: false
+  masterName: "test"
+  redisUrl: "redis://localhost:6379"
+  sentinelUrls:
+    - "redis://redis1:26379"
+    - "redis://redis2:26379"
+    - "redis://redis3:26379"
+  envNamespace: ""
+  readMode: MASTER
+  nettyThreads: 16
+  useScriptCache: true
+  userName: ""
+  password: ""
+
 logging:
   level: INFO
   loggers:
@@ -59,6 +74,8 @@ logging:
       target: STDOUT
       stackdriverLogEnabled: false
 
+distributedLockImplementation: MONGO
+
 logStreamingServiceConfig:
   baseUrl: http://localhost:8079
   serviceToken: token
@@ -74,7 +91,7 @@ managerClientConfig:
   readTimeOutSeconds: 15
 
 backstageHttpClientConfig:
-  baseUrl: http://localhost:7007/api/
+  baseUrl: https://localhost:7007
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
@@ -85,19 +102,26 @@ idpServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7
 jwtAuthSecret: dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq
 jwtIdentityServiceSecret: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU
 
+managerTarget: localhost:9880
+managerAuthority: localhost
+
 onboardingModuleConfig:
+  descriptionForEntitySelected: This is an example of how the corresponding service definition YAML files will be created.
+  descriptionForSampleEntity: Since you either do not have any Harness services or have not selected in the previous step, we will create your first software component to introduce you to Developer Portal features.
   tmpPathForCatalogInfoYamlStore: /tmp
   catalogInfoLocationDefaultPath: /.harness-idp-entities
-  backstageLocationEntityAllHarnessEntitiesName: "all-harness-entities"
-  backstageLocationEntityAllHarnessEntitiesDesc: "Collection of all harness entities - organizations, projects, services and sample entities"
   sampleEntities:
     - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/one.yaml
     - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/two.yaml
     - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/three.yaml
     - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/four.yaml
     - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/five.yaml
-  harnessCiCdAnnotation:
+  harnessCiCdAnnotations:
     projectUrl: https://localhost:8181/ng/account/accountIdentifier/home/orgs/orgIdentifier/projects/projectIdentifier/details
+
+gitManagerGrpcClientConfig:
+  target: localhost:13001
+  authority: localhost
 
 accessControlClient:
   enableAccessControl: false
@@ -110,6 +134,13 @@ accessControlClient:
 backstageSaToken: ""
 backstageSaCaCrt: ""
 backstageMasterUrl: ""
+backstagePodLabel: ""
 
 provisionModuleConfig:
   triggerPipelineUrl: ""
+
+env: ""
+prEnvDefaultBackstageNamespace: ""
+
+backstageAppBaseUrl: https://localhost:3000
+backstagePostgresHost: ""

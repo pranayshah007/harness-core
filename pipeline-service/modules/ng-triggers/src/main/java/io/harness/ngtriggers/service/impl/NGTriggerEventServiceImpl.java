@@ -36,7 +36,27 @@ public class NGTriggerEventServiceImpl implements NGTriggerEventsService {
   private TriggerEventHistoryRepository triggerEventHistoryRepository;
 
   @Override
-  public Criteria formCriteria(String accountId, String orgId, String projectId, String targetIdentifier,
+  public Criteria formEventCriteria(String accountId, String eventCorrelationId, List<ExecutionStatus> statusList) {
+    Criteria criteria = new Criteria();
+    if (EmptyPredicate.isNotEmpty(accountId)) {
+      criteria.and(TriggerEventHistoryKeys.accountId).is(accountId);
+    }
+
+    if (EmptyPredicate.isNotEmpty(eventCorrelationId)) {
+      criteria.and(TriggerEventHistoryKeys.eventCorrelationId).is(eventCorrelationId);
+    }
+
+    if (EmptyPredicate.isNotEmpty(statusList)) {
+      criteria.and(TriggerEventHistoryKeys.finalStatus).in(statusList);
+    }
+
+    Criteria searchCriteria = new Criteria();
+    criteria.andOperator(searchCriteria);
+    return criteria;
+  }
+
+  @Override
+  public Criteria formTriggerEventCriteria(String accountId, String orgId, String projectId, String targetIdentifier,
       String identifier, String searchTerm, List<ExecutionStatus> statusList) {
     Criteria criteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(accountId)) {

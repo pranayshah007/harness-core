@@ -9,6 +9,7 @@ package io.harness.idp.configmanager.repositories;
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 
 import java.util.List;
@@ -18,6 +19,13 @@ import org.springframework.data.repository.CrudRepository;
 @HarnessRepo
 @OwnedBy(HarnessTeam.IDP)
 public interface AppConfigRepository extends CrudRepository<AppConfigEntity, String>, AppConfigRepositoryCustom {
-  List<AppConfigEntity> findAllByAccountIdentifier(String accountIdentifier);
-  Optional<AppConfigEntity> findByAccountIdentifierAndPluginId(String accountIdentifier, String pluginName);
+  List<AppConfigEntity> findAllByAccountIdentifierAndConfigType(String accountIdentifier, ConfigType configType);
+  Optional<AppConfigEntity> findByAccountIdentifierAndConfigIdAndConfigType(
+      String accountIdentifier, String configId, ConfigType configType);
+  List<AppConfigEntity> findAllByAccountIdentifierAndEnabled(String accountIdentifier, Boolean enabled);
+
+  List<AppConfigEntity> findAllByAccountIdentifierAndConfigTypeAndEnabled(
+      String accountIdentifier, ConfigType configType, Boolean enabled);
+
+  AppConfigEntity findByAccountIdentifierAndConfigId(String accountIdentifier, String configId);
 }

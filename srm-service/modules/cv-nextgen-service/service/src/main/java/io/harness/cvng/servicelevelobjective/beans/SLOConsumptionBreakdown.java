@@ -25,9 +25,11 @@ public class SLOConsumptionBreakdown {
   @NotNull double weightagePercentage;
   @NotNull double sloTargetPercentage;
   @NotNull double sliStatusPercentage;
-  @NotNull int errorBudgetBurned;
+  @NotNull long errorBudgetBurned;
   @NotNull int contributedErrorBudgetBurned;
   @NotNull ProjectParams projectParams;
   String orgName;
   String projectName;
+
+  boolean failedState;
 }

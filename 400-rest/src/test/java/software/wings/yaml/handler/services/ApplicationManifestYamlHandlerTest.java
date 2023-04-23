@@ -25,7 +25,7 @@ import static software.wings.utils.WingsTestConstants.SERVICE_NAME;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
@@ -228,7 +228,7 @@ public class ApplicationManifestYamlHandlerTest extends YamlHandlerTestBase {
                                             .withValue(GitConfig.builder().build())
                                             .build();
     when(settingsService.get(CONNECTOR_ID)).thenReturn(settingAttribute);
-    when(settingsService.getByName(ACCOUNT_ID, APP_ID, CONNECTOR_NAME)).thenReturn(settingAttribute);
+    when(settingsService.getConnectorByName(ACCOUNT_ID, APP_ID, CONNECTOR_NAME)).thenReturn(settingAttribute);
 
     when(featureFlagService.isEnabled(FeatureName.CUSTOM_MANIFEST, ACCOUNT_ID)).thenReturn(true);
   }

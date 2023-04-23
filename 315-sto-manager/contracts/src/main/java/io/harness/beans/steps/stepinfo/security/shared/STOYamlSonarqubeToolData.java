@@ -28,6 +28,8 @@ public class STOYamlSonarqubeToolData {
 
   @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> exclude;
 
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "project_key") protected ParameterField<String> projectKey;
+
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = "io.harness.beans.steps.stepinfo.security.shared.STOYamlJavaParameters")
   protected STOYamlJavaParameters java;

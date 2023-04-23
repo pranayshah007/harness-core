@@ -7,8 +7,10 @@
 
 package io.harness.pms.plan.execution.service;
 
+import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
@@ -57,6 +59,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -299,7 +302,7 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
     // Since returned pipelineExecutionSummary.layoutNode had the strategy node with type parallelism. So maxConcurrency
     // will not be present in update.
     assertEquals(update.toString(),
-        "{ \"$set\" : { \"layoutNodeMap.setupId.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.setupId.endTs\" : 1000, \"layoutNodeMap.stageSetupId.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.stageSetupId.moduleInfo.stepParameters\" : null, \"layoutNodeMap.nodeExecutionId3.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.nodeExecutionId3.endTs\" : 1000, \"layoutNodeMap.strategyNodeId.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.strategyNodeId.moduleInfo.stepParameters\" : null, \"layoutNodeMap.nodeExecutionId2.nodeType\" : \"STAGE\", \"layoutNodeMap.nodeExecutionId2.nodeGroup\" : \"stage\", \"layoutNodeMap.nodeExecutionId2.edgeLayoutList\" : { \"$java\" : EdgeLayoutListDTO(currentNodeChildren=[], nextIds=null) }, \"layoutNodeMap.nodeExecutionId2.skipInfo\" : { \"$java\" :  }, \"layoutNodeMap.nodeExecutionId2.nodeUuid\" : \"stageSetupId\", \"layoutNodeMap.nodeExecutionId2.executionInputConfigured\" : null, \"layoutNodeMap.nodeExecutionId3.nodeType\" : \"STAGE\", \"layoutNodeMap.nodeExecutionId3.nodeGroup\" : \"stage\", \"layoutNodeMap.nodeExecutionId3.edgeLayoutList\" : { \"$java\" : EdgeLayoutListDTO(currentNodeChildren=[], nextIds=null) }, \"layoutNodeMap.nodeExecutionId3.skipInfo\" : { \"$java\" :  }, \"layoutNodeMap.nodeExecutionId3.nodeUuid\" : \"stageSetupId\", \"layoutNodeMap.nodeExecutionId3.executionInputConfigured\" : null }, \"$addToSet\" : { \"layoutNodeMap.strategyNodeId.edgeLayoutList.currentNodeChildren\" : { \"$java\" : { \"$each\" : [ \"nodeExecutionId2\", \"nodeExecutionId3\" ] } } } }");
+        "{ \"$set\" : { \"layoutNodeMap.setupId.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.setupId.endTs\" : 1000, \"layoutNodeMap.stageSetupId.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.stageSetupId.moduleInfo.stepParameters\" : null, \"layoutNodeMap.stageSetupId.startTs\" : null, \"layoutNodeMap.stageSetupId.endTs\" : 1000, \"layoutNodeMap.nodeExecutionId3.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.nodeExecutionId3.endTs\" : 1000, \"layoutNodeMap.strategyNodeId.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.strategyNodeId.moduleInfo.stepParameters\" : null, \"layoutNodeMap.strategyNodeId.startTs\" : null, \"layoutNodeMap.strategyNodeId.endTs\" : 1000, \"layoutNodeMap.nodeExecutionId2.nodeType\" : \"STAGE\", \"layoutNodeMap.nodeExecutionId2.nodeGroup\" : \"stage\", \"layoutNodeMap.nodeExecutionId2.edgeLayoutList\" : { \"$java\" : EdgeLayoutListDTO(currentNodeChildren=[], nextIds=null) }, \"layoutNodeMap.nodeExecutionId2.skipInfo\" : { \"$java\" :  }, \"layoutNodeMap.nodeExecutionId2.nodeUuid\" : \"stageSetupId\", \"layoutNodeMap.nodeExecutionId2.executionInputConfigured\" : null, \"layoutNodeMap.nodeExecutionId3.nodeType\" : \"STAGE\", \"layoutNodeMap.nodeExecutionId3.nodeGroup\" : \"stage\", \"layoutNodeMap.nodeExecutionId3.edgeLayoutList\" : { \"$java\" : EdgeLayoutListDTO(currentNodeChildren=[], nextIds=null) }, \"layoutNodeMap.nodeExecutionId3.skipInfo\" : { \"$java\" :  }, \"layoutNodeMap.nodeExecutionId3.nodeUuid\" : \"stageSetupId\", \"layoutNodeMap.nodeExecutionId3.executionInputConfigured\" : null }, \"$addToSet\" : { \"layoutNodeMap.strategyNodeId.edgeLayoutList.currentNodeChildren\" : { \"$java\" : { \"$each\" : [ \"nodeExecutionId2\", \"nodeExecutionId3\" ] } } } }");
 
     doReturn(Optional.of(
                  PipelineExecutionSummaryEntity.builder()
@@ -329,7 +332,7 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
     // Since returned pipelineExecutionSummary.layoutNode had the strategy node with type Matrix. So maxConcurrency will
     // be present in update.
     assertEquals(update.toString(),
-        "{ \"$set\" : { \"layoutNodeMap.setupId.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.setupId.endTs\" : 1000, \"layoutNodeMap.stageSetupId.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.stageSetupId.moduleInfo.stepParameters\" : null, \"layoutNodeMap.nodeExecutionId3.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.nodeExecutionId3.endTs\" : 1000, \"layoutNodeMap.strategyNodeId.moduleInfo.maxConcurrency.value\" : 3, \"layoutNodeMap.strategyNodeId.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.strategyNodeId.moduleInfo.stepParameters\" : null, \"layoutNodeMap.nodeExecutionId2.nodeType\" : \"STAGE\", \"layoutNodeMap.nodeExecutionId2.nodeGroup\" : \"stage\", \"layoutNodeMap.nodeExecutionId2.edgeLayoutList\" : { \"$java\" : EdgeLayoutListDTO(currentNodeChildren=[], nextIds=null) }, \"layoutNodeMap.nodeExecutionId2.skipInfo\" : { \"$java\" :  }, \"layoutNodeMap.nodeExecutionId2.nodeUuid\" : \"stageSetupId\", \"layoutNodeMap.nodeExecutionId2.executionInputConfigured\" : null, \"layoutNodeMap.nodeExecutionId3.nodeType\" : \"STAGE\", \"layoutNodeMap.nodeExecutionId3.nodeGroup\" : \"stage\", \"layoutNodeMap.nodeExecutionId3.edgeLayoutList\" : { \"$java\" : EdgeLayoutListDTO(currentNodeChildren=[], nextIds=null) }, \"layoutNodeMap.nodeExecutionId3.skipInfo\" : { \"$java\" :  }, \"layoutNodeMap.nodeExecutionId3.nodeUuid\" : \"stageSetupId\", \"layoutNodeMap.nodeExecutionId3.executionInputConfigured\" : null }, \"$addToSet\" : { \"layoutNodeMap.strategyNodeId.edgeLayoutList.currentNodeChildren\" : { \"$java\" : { \"$each\" : [ \"nodeExecutionId2\", \"nodeExecutionId3\" ] } } } }");
+        "{ \"$set\" : { \"layoutNodeMap.setupId.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.setupId.endTs\" : 1000, \"layoutNodeMap.stageSetupId.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.stageSetupId.moduleInfo.stepParameters\" : null, \"layoutNodeMap.stageSetupId.startTs\" : null, \"layoutNodeMap.stageSetupId.endTs\" : 1000, \"layoutNodeMap.nodeExecutionId3.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.nodeExecutionId3.endTs\" : 1000, \"layoutNodeMap.strategyNodeId.moduleInfo.maxConcurrency.value\" : 3, \"layoutNodeMap.strategyNodeId.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.strategyNodeId.moduleInfo.stepParameters\" : null, \"layoutNodeMap.strategyNodeId.startTs\" : null, \"layoutNodeMap.strategyNodeId.endTs\" : 1000, \"layoutNodeMap.nodeExecutionId2.nodeType\" : \"STAGE\", \"layoutNodeMap.nodeExecutionId2.nodeGroup\" : \"stage\", \"layoutNodeMap.nodeExecutionId2.edgeLayoutList\" : { \"$java\" : EdgeLayoutListDTO(currentNodeChildren=[], nextIds=null) }, \"layoutNodeMap.nodeExecutionId2.skipInfo\" : { \"$java\" :  }, \"layoutNodeMap.nodeExecutionId2.nodeUuid\" : \"stageSetupId\", \"layoutNodeMap.nodeExecutionId2.executionInputConfigured\" : null, \"layoutNodeMap.nodeExecutionId3.nodeType\" : \"STAGE\", \"layoutNodeMap.nodeExecutionId3.nodeGroup\" : \"stage\", \"layoutNodeMap.nodeExecutionId3.edgeLayoutList\" : { \"$java\" : EdgeLayoutListDTO(currentNodeChildren=[], nextIds=null) }, \"layoutNodeMap.nodeExecutionId3.skipInfo\" : { \"$java\" :  }, \"layoutNodeMap.nodeExecutionId3.nodeUuid\" : \"stageSetupId\", \"layoutNodeMap.nodeExecutionId3.executionInputConfigured\" : null }, \"$addToSet\" : { \"layoutNodeMap.strategyNodeId.edgeLayoutList.currentNodeChildren\" : { \"$java\" : { \"$each\" : [ \"nodeExecutionId2\", \"nodeExecutionId3\" ] } } } }");
   }
 
   @Test
@@ -357,5 +360,35 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
             planExecutionId, Sets.newHashSet(PlanExecutionSummaryKeys.accountId));
 
     assertThat(pipelineExecutionSummaryWithProjections).isNull();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testHandleNodeExecutionUpdateFromGraphUpdateForPRBStage() {
+    Ambiance basicAmbiance =
+        Ambiance.newBuilder().addLevels(Level.newBuilder().setNodeType(NodeType.PLAN_NODE.name()).build()).build();
+    StepType prbStepType =
+        StepType.newBuilder().setStepCategory(StepCategory.STAGE).setType("PIPELINE_ROLLBACK_STAGE").build();
+    String prevStageId = "prevStageId";
+    String prevStageNodeId = "prevStageNodeId";
+    String nodeId = "nodeId";
+    NodeExecution currentNodeExecution = NodeExecution.builder()
+                                             .ambiance(basicAmbiance)
+                                             .stepType(prbStepType)
+                                             .previousId(prevStageId)
+                                             .nodeId(nodeId)
+                                             .status(RUNNING)
+                                             .build();
+    NodeExecution prevNodeExecution = NodeExecution.builder().nodeId(prevStageNodeId).build();
+    doReturn(prevNodeExecution).when(nodeExecutionService).get(prevStageId);
+    Update update = new Update();
+    pmsExecutionSummaryService.handleNodeExecutionUpdateFromGraphUpdate(null, currentNodeExecution, update);
+    Document updateObject = update.getUpdateObject();
+    assertThat(updateObject).hasSize(1);
+    Document setObjects = (Document) updateObject.get("$set");
+    String expectedKey = "layoutNodeMap.prevStageNodeId.edgeLayoutList.nextIds";
+    assertThat(setObjects).containsKey(expectedKey);
+    assertThat(setObjects.get(expectedKey)).isEqualTo(Collections.singletonList("nodeId"));
   }
 }

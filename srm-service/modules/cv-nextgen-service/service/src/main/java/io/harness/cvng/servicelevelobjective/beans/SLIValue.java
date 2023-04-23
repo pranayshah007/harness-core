@@ -7,20 +7,28 @@
 
 package io.harness.cvng.servicelevelobjective.beans;
 
+import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
+
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
 public class SLIValue {
-  int goodCount;
-  int badCount;
-  int total;
+  long goodCount;
+  long badCount;
+  long total;
   public double sliPercentage() {
     if (total <= 0) {
       return 100.0;
     } else {
       return (goodCount * 100.0) / total;
     }
+  }
+
+  public static SLIValue getRunningCountDifference(SLIRecord currentSLIRecord, SLIRecord prevSLIRecord) {
+    long goodCount = currentSLIRecord.getRunningGoodCount() - prevSLIRecord.getRunningGoodCount();
+    long badCount = currentSLIRecord.getRunningBadCount() - prevSLIRecord.getRunningBadCount();
+    return SLIValue.builder().goodCount(goodCount).badCount(badCount).total(goodCount + badCount).build();
   }
 }

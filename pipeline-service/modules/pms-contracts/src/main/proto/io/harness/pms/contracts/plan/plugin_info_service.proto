@@ -1,0 +1,82 @@
+// Copyright 2021 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.pms.contracts.plan;
+
+option java_multiple_files = true;
+
+import "io/harness/pms/contracts/plan/plan_creation_service.proto";
+import "io/harness/pms/contracts/ambiance/ambiance.proto";
+import "google/protobuf/wrappers.proto";
+
+service PluginInfoProviderService {
+  rpc getPluginInfos(PluginCreationRequest) returns (PluginCreationResponse);
+}
+
+message PluginCreationRequest {
+  string type = 1;
+  string stepJsonNode = 2;
+  io.harness.pms.contracts.ambiance.Ambiance ambiance = 3;
+  string accountId = 4;
+  string osType = 5;
+  PortDetails usedPortDetails = 6;
+}
+
+message PluginCreationResponse {
+  oneof response {
+    PluginDetails pluginDetails = 1;
+    io.harness.pms.contracts.plan.ErrorResponse error = 2;
+  }
+
+  // add secret details in step too.
+}
+
+message PluginDetails {
+  PluginContainerResources resource = 1;
+  ImageDetails imageDetails = 2;
+  map<string, string> envVariables = 3;
+  bool privileged = 4;
+  int32 runAsUser = 5;
+  PortDetails totalPortUsedDetails = 6;
+  repeated int32 portUsed = 7;
+  repeated SecretVariable secretVariable = 8;
+}
+
+message PluginContainerResources {
+  int32 cpu = 1;
+  int32 memory = 2;
+}
+
+message ImageDetails {
+  ConnectorDetails connectorDetails = 1;
+  ImageInformation imageInformation = 2;
+}
+message ImageInformation {
+  google.protobuf.StringValue imageName = 1;
+  google.protobuf.StringValue imagePullPolicy = 2;
+  google.protobuf.StringValue imageTag = 3;
+  google.protobuf.StringValue sourceName = 4;
+  google.protobuf.StringValue registryUrl = 5;
+  google.protobuf.StringValue username = 6;
+  google.protobuf.StringValue usernameRef = 7;
+  google.protobuf.StringValue password = 8;
+  google.protobuf.StringValue domainName = 9;
+}
+
+message ConnectorDetails {
+  string connectorRef = 1;
+}
+
+message PortDetails {
+  repeated int32 usedPorts = 1;
+}
+
+message SecretVariable {
+  // get value as toSecretRefStringValue
+  string name = 1;
+  string value = 2;
+}

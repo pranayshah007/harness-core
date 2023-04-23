@@ -9,7 +9,7 @@ package software.wings.scheduler.audit;
 
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -56,6 +56,6 @@ public class EntityAuditRecordHandlerTest extends WingsBaseTest {
     when(auditService.fetchMostRecentAuditRecord(anyString())).thenReturn(null);
     entityAuditRecordHandler.handle(entity);
     verify(auditService, atMost(1))
-        .fetchEntityAuditRecordsOlderThanGivenTime(entity.getAuditHeaderId(), entity.getCreatedAt());
+        .fetchLimitedEntityAuditRecordsOlderThanGivenTime(entity.getAuditHeaderId(), entity.getCreatedAt(), 1);
   }
 }

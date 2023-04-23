@@ -15,11 +15,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -48,6 +50,8 @@ import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -90,7 +94,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 
 @OwnedBy(HarnessTeam.CDC)
 @RunWith(JUnitParamsRunner.class)
@@ -153,7 +160,8 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   @Parameters(method = "getDeploymentStageConfig")
-  public void testCreatePlanForChildrenNodes_0(DeploymentStageNode node) {
+  @PrepareForTest(YamlUtils.class)
+  public void testCreatePlanForChildrenNodes_0(DeploymentStageNode node) throws IOException {
     node.setFailureStrategies(
         ParameterField.createValueField(List.of(FailureStrategyConfig.builder()
                                                     .onFailure(OnFailureConfig.builder()
@@ -168,17 +176,21 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                                       PlanCreationContextValue.newBuilder().setAccountIdentifier("accountId").build()))
                                   .currentField(new YamlField(new YamlNode("spec", jsonNode)))
                                   .build();
+    MockedStatic<YamlUtils> mockSettings = Mockito.mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
+    when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(new YamlNode("spec", jsonNode));
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap =
         deploymentStagePMSPlanCreator.createPlanForChildrenNodes(ctx, node);
+    mockSettings.close();
 
-    assertThat(planCreationResponseMap).hasSize(10);
+    assertThat(planCreationResponseMap).hasSize(11);
     assertThat(planCreationResponseMap.values()
                    .stream()
                    .map(PlanCreationResponse::getPlanNode)
                    .filter(Objects::nonNull)
                    .map(PlanNode::getIdentifier)
                    .collect(Collectors.toSet()))
-        .containsExactlyInAnyOrder("provisioner", "service", "infrastructure", "artifacts", "manifests", "configFiles");
+        .containsExactlyInAnyOrder(
+            "provisioner", "service", "infrastructure", "artifacts", "manifests", "configFiles", "hooks");
   }
 
   @Test
@@ -188,13 +200,18 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
     List<FreezeSummaryResponseDTO> freezeSummaryResponseDTOList = Lists.newArrayList(createGlobalFreezeResponse());
     doReturn(freezeSummaryResponseDTOList)
         .when(freezeEvaluateService)
-        .getActiveFreezeEntities(anyString(), anyString(), anyString());
+        .getActiveFreezeEntities(anyString(), anyString(), anyString(), anyString());
     PlanCreationContext ctx = PlanCreationContext.builder()
                                   .globalContext(Map.of("metadata",
                                       PlanCreationContextValue.newBuilder()
                                           .setAccountIdentifier("accountId")
                                           .setOrgIdentifier("orgId")
                                           .setProjectIdentifier("projId")
+                                          .setMetadata(ExecutionMetadata.newBuilder().setPrincipalInfo(
+                                              ExecutionPrincipalInfo.newBuilder()
+                                                  .setPrincipal("prinicipal")
+                                                  .setPrincipalType(io.harness.pms.contracts.plan.PrincipalType.USER)
+                                                  .build()))
                                           .build()))
                                   .build();
     when(accessControlClient.hasAccess(any(ResourceScope.class), any(Resource.class), anyString())).thenReturn(false);
@@ -202,7 +219,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
         .isInstanceOf(NGFreezeException.class)
         .matches(ex -> ex.getMessage().equals("Execution can't be performed because project is frozen"));
 
-    verify(freezeEvaluateService, times(1)).getActiveFreezeEntities(anyString(), anyString(), anyString());
+    verify(freezeEvaluateService, times(1)).getActiveFreezeEntities(anyString(), anyString(), anyString(), anyString());
   }
 
   @Test
@@ -213,19 +230,26 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
     List<FreezeSummaryResponseDTO> freezeSummaryResponseDTOList = Lists.newArrayList(createGlobalFreezeResponse());
     doReturn(freezeSummaryResponseDTOList)
         .when(freezeEvaluateService)
-        .getActiveFreezeEntities(anyString(), anyString(), anyString());
+        .getActiveFreezeEntities(anyString(), anyString(), anyString(), anyString());
     PlanCreationContext ctx = PlanCreationContext.builder()
                                   .globalContext(Map.of("metadata",
                                       PlanCreationContextValue.newBuilder()
                                           .setAccountIdentifier("accountId")
                                           .setOrgIdentifier("orgId")
                                           .setProjectIdentifier("projId")
+                                          .setMetadata(ExecutionMetadata.newBuilder().setPrincipalInfo(
+                                              ExecutionPrincipalInfo.newBuilder()
+                                                  .setPrincipal("prinicipal")
+                                                  .setPrincipalType(io.harness.pms.contracts.plan.PrincipalType.USER)
+                                                  .build()))
                                           .build()))
                                   .build();
-    when(accessControlClient.hasAccess(any(ResourceScope.class), any(Resource.class), anyString())).thenReturn(true);
+    when(
+        accessControlClient.hasAccess(any(Principal.class), any(ResourceScope.class), any(Resource.class), anyString()))
+        .thenReturn(true);
     deploymentStagePMSPlanCreator.failIfProjectIsFrozen(ctx);
 
-    verify(freezeEvaluateService, times(0)).getActiveFreezeEntities(anyString(), anyString(), anyString());
+    verify(freezeEvaluateService, times(0)).getActiveFreezeEntities(anyString(), anyString(), anyString(), anyString());
   }
 
   private FreezeSummaryResponseDTO createGlobalFreezeResponse() {

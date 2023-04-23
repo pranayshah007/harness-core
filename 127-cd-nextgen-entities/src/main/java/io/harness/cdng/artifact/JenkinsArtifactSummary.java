@@ -25,6 +25,7 @@ import lombok.Data;
 public class JenkinsArtifactSummary implements ArtifactSummary {
   String jobName;
   String build;
+  String tag;
 
   @Override
   public String getDisplayName() {

@@ -57,7 +57,6 @@ import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.trigger.ArtifactSelection;
 import software.wings.beans.trigger.ArtifactSelection.ArtifactSelectionKeys;
-import software.wings.beans.trigger.ArtifactTriggerCondition;
 import software.wings.beans.trigger.ArtifactTriggerCondition.ArtifactTriggerConditionKeys;
 import software.wings.beans.trigger.ManifestTriggerCondition.ManifestTriggerConditionKeys;
 import software.wings.beans.trigger.PipelineTriggerCondition;
@@ -219,12 +218,12 @@ public class TriggerServiceHelper {
       return getNewArtifactTriggers(artifactStreamId);
     }
 
-    return getTriggersByApp(appId)
-        .stream()
-        .filter(tr
-            -> tr.getCondition().getConditionType() == NEW_ARTIFACT
-                && ((ArtifactTriggerCondition) tr.getCondition()).getArtifactStreamId().equals(artifactStreamId))
-        .collect(toList());
+    return wingsPersistence.createQuery(Trigger.class)
+        .disableValidation()
+        .filter(TriggerKeys.appId, appId)
+        .filter(TriggerKeys.condition + "." + TriggerConditionKeys.conditionType, NEW_ARTIFACT)
+        .filter(TriggerKeys.condition + "." + ArtifactTriggerConditionKeys.artifactStreamId, artifactStreamId)
+        .asList();
   }
 
   public List<Trigger> getNewManifestConditionTriggers(String appManifestId) {

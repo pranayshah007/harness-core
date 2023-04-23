@@ -60,7 +60,8 @@ public class WinRmShellScriptTaskParametersNG implements TaskParameters, Executi
     if (script.contains(K8sConstants.HARNESS_KUBE_CONFIG_PATH) && k8sInfraDelegateConfig != null) {
       if (k8sInfraDelegateConfig instanceof DirectK8sInfraDelegateConfig) {
         capabilities.addAll(K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(
-            ((DirectK8sInfraDelegateConfig) k8sInfraDelegateConfig).getKubernetesClusterConfigDTO(), maskingEvaluator));
+            ((DirectK8sInfraDelegateConfig) k8sInfraDelegateConfig).getKubernetesClusterConfigDTO(), maskingEvaluator,
+            k8sInfraDelegateConfig.useSocketCapability()));
       }
     }
     if (scriptType == ScriptType.POWERSHELL && executeOnDelegate) {

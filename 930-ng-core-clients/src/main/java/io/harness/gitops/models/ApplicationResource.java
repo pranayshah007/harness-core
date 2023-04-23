@@ -7,8 +7,11 @@
 
 package io.harness.gitops.models;
 
+import io.harness.data.structure.HarnessStringUtils;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.time.Instant;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -18,6 +21,7 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ApplicationResource {
   @JsonProperty("agentIdentifier") public String agentIdentifier;
+  @JsonProperty("clusterIdentifier") public String clusterIdentifier;
   @JsonProperty("name") public String name;
   @JsonProperty("stale") public Boolean stale;
   @JsonProperty("app") public App app;
@@ -38,6 +42,7 @@ public class ApplicationResource {
     @JsonProperty("name") public String name;
     @JsonProperty("namespace") public String namespace;
     @JsonProperty("ownerReferences") public List<OwnerReference> ownerReferences;
+    @JsonProperty("labels") public Label labels;
 
     @Data
     @Builder
@@ -145,5 +150,64 @@ public class ApplicationResource {
     @JsonProperty("resources") public List<Resource> resources;
     @JsonProperty("revision") public String revision;
     @JsonProperty("source") public Source source;
+  }
+
+  @Data
+  @Builder
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public static class Label {
+    @JsonProperty("harness.io/serviceRef") public String serviceRef;
+    @JsonProperty("harness.io/envRef") public String envRef;
+    @JsonProperty("harness.io/buildRef") public String buildRef;
+  }
+
+  public String getSyncOperationPhase() {
+    if (getApp().getStatus().getOperationState() == null) {
+      return "";
+    }
+    return getApp().getStatus().getOperationState().getPhase();
+  }
+
+  public ApplicationResource.SyncPolicy getSyncPolicy() {
+    return getApp().getSpec().getSyncPolicy();
+  }
+
+  public Instant getLastSyncStartedAt() {
+    if (getApp().getStatus().getOperationState() == null
+        || getApp().getStatus().getOperationState().getStartedAt() == null) {
+      return null;
+    }
+    return Instant.parse(getApp().getStatus().getOperationState().getStartedAt());
+  }
+
+  public String getHealthStatus() {
+    return getApp().getStatus().getHealth().getStatus();
+  }
+
+  public String getSyncMessage() {
+    if (getApp().getStatus().getOperationState() == null) {
+      return "";
+    }
+    return getApp().getStatus().getOperationState().getMessage();
+  }
+
+  public String getTargetRevision() {
+    return getApp().getSpec().getSource().getTargetRevision();
+  }
+
+  public List<ApplicationResource.Resource> getResources() {
+    return getApp().getStatus().getResources();
+  }
+
+  public String getEnvironmentRef() {
+    return getLabels() == null ? "" : HarnessStringUtils.emptyIfNull(getLabels().getEnvRef());
+  }
+
+  public String getServiceRef() {
+    return getLabels() == null ? "" : HarnessStringUtils.emptyIfNull(getLabels().getServiceRef());
+  }
+
+  public Label getLabels() {
+    return getApp().getMetadata().getLabels();
   }
 }

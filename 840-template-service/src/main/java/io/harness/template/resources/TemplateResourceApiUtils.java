@@ -37,7 +37,10 @@ import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.template.v1.model.GitCreateDetails;
 import io.harness.spec.server.template.v1.model.GitFindDetails;
+import io.harness.spec.server.template.v1.model.GitImportDetails;
 import io.harness.spec.server.template.v1.model.GitUpdateDetails;
+import io.harness.spec.server.template.v1.model.TemplateImportRequestDTO;
+import io.harness.spec.server.template.v1.model.TemplateImportResponseBody;
 import io.harness.spec.server.template.v1.model.TemplateMetadataSummaryResponse;
 import io.harness.spec.server.template.v1.model.TemplateUpdateStableResponse;
 import io.harness.template.TemplateFilterPropertiesDTO;
@@ -148,6 +151,35 @@ public class TemplateResourceApiUtils {
         .entity(templateResourceApiMapper.toTemplateResponse(templateResponseDTO))
         .tag(createdTemplate.getVersion().toString())
         .build();
+  }
+
+  public Response importTemplate(@AccountIdentifier String account, @OrgIdentifier String org,
+      @ProjectIdentifier String project, @ResourceIdentifier String templateIdentifier,
+      GitImportDetails gitImportDetails, TemplateImportRequestDTO templateImportRequest) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(account, org, project), Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
+
+    io.harness.template.beans.TemplateImportRequestDTO templateImportRequestDTO =
+        io.harness.template.beans.TemplateImportRequestDTO.builder()
+            .templateVersion(templateImportRequest.getTemplateVersion())
+            .templateDescription(templateImportRequest.getTemplateVersion())
+            .templateName(templateImportRequest.getTemplateName())
+            .build();
+    GitAwareContextHelper.populateGitDetails(GitEntityInfo.builder()
+                                                 .branch(gitImportDetails.getBranchName())
+                                                 .connectorRef(gitImportDetails.getConnectorRef())
+                                                 .filePath(gitImportDetails.getFilePath())
+                                                 .repoName(gitImportDetails.getRepoName())
+                                                 .build());
+    log.info(String.format("Importing Template with name %s with version %s in project %s, org %s, account %s",
+        templateImportRequestDTO.getTemplateName(), templateImportRequestDTO.getTemplateVersion(), project, org,
+        account));
+    TemplateEntity importedTemplate = templateService.importTemplateFromRemote(account, org, project,
+        templateIdentifier, templateImportRequestDTO, Boolean.TRUE.equals(gitImportDetails.isIsForceImport()));
+    TemplateImportResponseBody responseBody = new TemplateImportResponseBody();
+    responseBody.setTemplateIdentifier(importedTemplate.getIdentifier());
+    responseBody.setTemplateVersion(importedTemplate.getVersionLabel());
+    return Response.ok().entity(responseBody).build();
   }
 
   public Response updateTemplate(@AccountIdentifier String account, @OrgIdentifier String org,

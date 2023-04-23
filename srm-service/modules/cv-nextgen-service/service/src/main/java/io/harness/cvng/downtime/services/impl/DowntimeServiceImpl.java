@@ -21,7 +21,6 @@ import io.harness.cvng.downtime.beans.DowntimeListView;
 import io.harness.cvng.downtime.beans.DowntimeResponse;
 import io.harness.cvng.downtime.beans.DowntimeSpec;
 import io.harness.cvng.downtime.beans.DowntimeSpecDTO;
-import io.harness.cvng.downtime.beans.DowntimeStatus;
 import io.harness.cvng.downtime.beans.DowntimeStatusDetails;
 import io.harness.cvng.downtime.beans.DowntimeType;
 import io.harness.cvng.downtime.beans.EntitiesRule;
@@ -40,6 +39,7 @@ import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.downtime.transformer.DowntimeSpecDetailsTransformer;
+import io.harness.cvng.downtime.utils.DateTimeUtils;
 import io.harness.cvng.downtime.utils.DowntimeUtils;
 import io.harness.cvng.events.downtime.DowntimeCreateEvent;
 import io.harness.cvng.events.downtime.DowntimeDeleteEvent;
@@ -66,6 +66,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -176,6 +177,34 @@ public class DowntimeServiceImpl implements DowntimeService {
   }
 
   @Override
+  public Map<String, EntityUnavailabilityStatusesDTO> getMonitoredServicesAssociatedUnavailabilityInstanceMap(
+      ProjectParams projectParams, Set<String> msIdentifiers) {
+    List<Downtime> downtimes = get(projectParams);
+    List<Downtime> filteredDowntimes = filterDowntimesOnMonitoredServices(downtimes, msIdentifiers);
+    List<String> downtimeIdentifiers =
+        filteredDowntimes.stream().map(Downtime::getIdentifier).collect(Collectors.toList());
+    List<EntityUnavailabilityStatusesDTO> activeOrFirstUpcomingInstances =
+        entityUnavailabilityStatusesService.getActiveOrFirstUpcomingInstance(projectParams, downtimeIdentifiers);
+
+    Map<String, EntityUnavailabilityStatusesDTO> monitoredServiceIdentifierToUnavailabilityStatusesDTOMap =
+        new HashMap<>();
+    activeOrFirstUpcomingInstances.forEach(instance -> {
+      EntitiesRule entitiesRule = instance.getEntitiesRule();
+      if (entitiesRule.getType().equals(RuleType.ALL)) {
+        msIdentifiers.forEach(identifier
+            -> addToMonitoredServiceIdentifierToUnavailabilityStatusesDTOMap(
+                identifier, monitoredServiceIdentifierToUnavailabilityStatusesDTOMap, instance));
+      } else {
+        List<EntityDetails> entityDetails = ((EntityIdentifiersRule) entitiesRule).getEntityIdentifiers();
+        entityDetails.forEach(detail
+            -> addToMonitoredServiceIdentifierToUnavailabilityStatusesDTOMap(
+                detail.getEntityRef(), monitoredServiceIdentifierToUnavailabilityStatusesDTOMap, instance));
+      }
+    });
+    return monitoredServiceIdentifierToUnavailabilityStatusesDTOMap;
+  }
+
+  @Override
   public DowntimeResponse update(ProjectParams projectParams, String identifier, DowntimeDTO downtimeDTO) {
     validateUpdate(projectParams, identifier, downtimeDTO);
     Optional<Downtime> downtimeOptional = getOptionalDowntime(projectParams, identifier);
@@ -185,8 +214,6 @@ public class DowntimeServiceImpl implements DowntimeService {
           identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
           projectParams.getProjectIdentifier()));
     }
-    DowntimeDTO existingDowntimeDTO = getDowntimeDTOFromDowntime(downtimeOptional.get());
-    validateNotAllowedFieldsChanges(existingDowntimeDTO, downtimeDTO);
     return update(projectParams, identifier, downtimeOptional.get(), downtimeDTO);
   }
 
@@ -261,6 +288,15 @@ public class DowntimeServiceImpl implements DowntimeService {
     }
     Downtime downtime = downtimeOptional.get();
     DowntimeDTO downtimeDTO = getDowntimeDTOFromDowntime(downtime);
+    List<EntityUnavailabilityStatusesDTO> pastOrActiveInstances =
+        entityUnavailabilityStatusesService.getPastAndActiveDowntimeInstances(
+            projectParams, Collections.singletonList(identifier));
+    if (!pastOrActiveInstances.isEmpty()) {
+      throw new InvalidRequestException(String.format(
+          "Downtime with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s can't be deleted, as it has a a past/current instance of downtime, where deleting it can impact SLO adversely.",
+          identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+          projectParams.getProjectIdentifier()));
+    }
     entityUnavailabilityStatusesService.deleteFutureDowntimeInstances(projectParams, identifier);
     entityUnavailabilityStatusesService.updateAndSaveRunningInstance(projectParams, identifier);
     outboxService.save(DowntimeDeleteEvent.builder()
@@ -451,8 +487,15 @@ public class DowntimeServiceImpl implements DowntimeService {
                    .category(identifierToDowntimeMap.get(instance.getEntityId()).getCategory())
                    .identifier(instance.getEntityId())
                    .startTime(instance.getStartTime())
+                   .startDateTime(DateTimeUtils.getDateStringFromEpoch(
+                       instance.getStartTime(), identifierToDowntimeMap.get(instance.getEntityId()).getTimezone()))
                    .endTime(instance.getEndTime())
+                   .endDateTime(DateTimeUtils.getDateStringFromEpoch(
+                       instance.getEndTime(), identifierToDowntimeMap.get(instance.getEntityId()).getTimezone()))
                    .spec(getDowntimeSpecDTO(identifierToDowntimeMap.get(instance.getEntityId()).getType(),
+                       identifierToDowntimeMap.get(instance.getEntityId()).getDowntimeDetails(),
+                       identifierToDowntimeMap.get(instance.getEntityId()).getTimezone()))
+                   .downtimeDetails(getDowntimeSpecDTO(identifierToDowntimeMap.get(instance.getEntityId()).getType(),
                        identifierToDowntimeMap.get(instance.getEntityId()).getDowntimeDetails(),
                        identifierToDowntimeMap.get(instance.getEntityId()).getTimezone()))
                    .duration(
@@ -461,6 +504,9 @@ public class DowntimeServiceImpl implements DowntimeService {
                            ? ((EntityIdentifiersRule) instance.getEntitiesRule())
                                  .getEntityIdentifiers()
                                  .stream()
+                                 .filter(entityDetails
+                                     -> monitoredServiceIdentifierAffectedEntityMap.containsKey(
+                                         entityDetails.getEntityRef()))
                                  .map(entityDetails
                                      -> monitoredServiceIdentifierAffectedEntityMap.get(entityDetails.getEntityRef()))
                                  .collect(Collectors.toList())
@@ -532,6 +578,7 @@ public class DowntimeServiceImpl implements DowntimeService {
                                         .order(Sort.descending(DowntimeKeys.lastUpdatedAt));
     return downtimeQuery.asList();
   }
+
   private List<Downtime> filterDowntimesOnMonitoredService(
       List<Downtime> downtimes, String monitoredServiceIdentifier) {
     return filterDowntimesOnMonitoredServices(downtimes, Collections.singleton(monitoredServiceIdentifier));
@@ -561,8 +608,8 @@ public class DowntimeServiceImpl implements DowntimeService {
   }
   private DowntimeSpecDTO getDowntimeSpecDTO(
       DowntimeType downtimeType, DowntimeDetails downtimeDetails, String timeZone) {
-    DowntimeSpec downtimeSpec = downtimeTransformerMap.get(downtimeType).getDowntimeSpec(downtimeDetails);
-    downtimeSpec.setStartTime(downtimeDetails.getStartTime());
+    DowntimeSpec downtimeSpec = downtimeTransformerMap.get(downtimeType).getDowntimeSpec(downtimeDetails, timeZone);
+    downtimeSpec.setStartDateTime(DateTimeUtils.getDateStringFromEpoch(downtimeDetails.getStartTime(), timeZone));
     downtimeSpec.setTimezone(timeZone);
     return DowntimeSpecDTO.builder().type(downtimeType).spec(downtimeSpec).build();
   }
@@ -609,8 +656,15 @@ public class DowntimeServiceImpl implements DowntimeService {
   private List<DowntimeListView> getDowntimeListViewFromDowntime(
       ProjectParams projectParams, List<Downtime> downtimes, Map<String, AffectedEntity> identifierAffectedEntityMap) {
     List<String> downtimeIdentifiers = downtimes.stream().map(Downtime::getIdentifier).collect(Collectors.toList());
+    List<EntityUnavailabilityStatusesDTO> pastOrActiveInstances =
+        entityUnavailabilityStatusesService.getPastAndActiveDowntimeInstances(projectParams, downtimeIdentifiers);
     List<EntityUnavailabilityStatusesDTO> activeOrFirstUpcomingInstance =
         entityUnavailabilityStatusesService.getActiveOrFirstUpcomingInstance(projectParams, downtimeIdentifiers);
+    Map<String, Integer> downtimeIdentifierToPastAndActiveInstancesCountMap = new HashMap<>();
+    for (EntityUnavailabilityStatusesDTO dto : pastOrActiveInstances) {
+      downtimeIdentifierToPastAndActiveInstancesCountMap.merge(dto.getEntityId(), 1, Integer::sum);
+    }
+
     Map<String, EntityUnavailabilityStatusesDTO> downtimeIdentifierToInstancesDTOMap =
         activeOrFirstUpcomingInstance.stream().collect(
             Collectors.toMap(EntityUnavailabilityStatusesDTO::getEntityId, statusesDTO -> statusesDTO));
@@ -623,22 +677,22 @@ public class DowntimeServiceImpl implements DowntimeService {
                    .enabled(downtime.isEnabled())
                    .identifier(downtime.getIdentifier())
                    .downtimeStatusDetails(downtimeIdentifierToInstancesDTOMap.containsKey(downtime.getIdentifier())
-                           ? DowntimeStatusDetails.builder()
-                                 .startTime(
-                                     downtimeIdentifierToInstancesDTOMap.get(downtime.getIdentifier()).getStartTime())
-                                 .endTime(
-                                     downtimeIdentifierToInstancesDTOMap.get(downtime.getIdentifier()).getEndTime())
-                                 .status(
-                                     downtimeIdentifierToInstancesDTOMap.get(downtime.getIdentifier()).getStartTime()
-                                             > clock.millis() / 1000
-                                         ? DowntimeStatus.SCHEDULED
-                                         : DowntimeStatus.ACTIVE)
+                           ? DowntimeStatusDetails
+                                 .getDowntimeStatusDetailsInstanceBuilder(
+                                     downtimeIdentifierToInstancesDTOMap.get(downtime.getIdentifier()).getStartTime(),
+                                     downtimeIdentifierToInstancesDTOMap.get(downtime.getIdentifier()).getEndTime(),
+                                     clock)
+                                 .endDateTime(DateTimeUtils.getDateStringFromEpoch(
+                                     downtimeIdentifierToInstancesDTOMap.get(downtime.getIdentifier()).getEndTime(),
+                                     downtime.getTimezone()))
                                  .build()
                            : null)
                    .affectedEntities(downtime.getEntitiesRule().getType().equals(RuleType.IDENTFIERS)
                            ? ((EntityIdentifiersRule) downtime.getEntitiesRule())
                                  .getEntityIdentifiers()
                                  .stream()
+                                 .filter(entityDetails
+                                     -> identifierAffectedEntityMap.containsKey(entityDetails.getEntityRef()))
                                  .map(entityDetails -> identifierAffectedEntityMap.get(entityDetails.getEntityRef()))
                                  .collect(Collectors.toList())
                            : Collections.singletonList(downtime.getEntitiesRule().getAffectedEntity().get()))
@@ -651,6 +705,8 @@ public class DowntimeServiceImpl implements DowntimeService {
                    .duration(downtimeTransformerMap.get(downtime.getType())
                                  .getDowntimeDuration(downtime.getDowntimeDetails()))
                    .spec(getDowntimeSpecDTO(downtime.getType(), downtime.getDowntimeDetails(), downtime.getTimezone()))
+                   .pastOrActiveInstancesCount(
+                       downtimeIdentifierToPastAndActiveInstancesCountMap.getOrDefault(downtime.getIdentifier(), 0))
                    .build())
         .collect(Collectors.toList());
   }
@@ -734,19 +790,32 @@ public class DowntimeServiceImpl implements DowntimeService {
     Duration allowedDuration = Duration.ofDays(MAX_DURATION_IN_DAYS);
     if (downtimeSpecDTO.getType().equals(DowntimeType.RECURRING)) {
       RecurringDowntimeSpec recurringDowntimeSpec = (RecurringDowntimeSpec) downtimeSpecDTO.getSpec();
-      endInstant = Instant.ofEpochSecond(recurringDowntimeSpec.getRecurrenceEndTime());
+      Optional<String> recurrenceEndDateTime = Optional.ofNullable(recurringDowntimeSpec.getRecurrenceEndDateTime());
+      endInstant = recurrenceEndDateTime.isPresent()
+          ? Instant.ofEpochSecond(DateTimeUtils.getEpochValueFromDateString(
+              recurrenceEndDateTime.get(), recurringDowntimeSpec.getTimezone()))
+          : Instant.ofEpochSecond(recurringDowntimeSpec.getRecurrenceEndTime());
     } else {
       OnetimeDowntimeSpec onetimeDowntimeSpec = (OnetimeDowntimeSpec) downtimeSpecDTO.getSpec();
       if (onetimeDowntimeSpec.getSpec().getType().equals(OnetimeDowntimeType.END_TIME)) {
         OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec onetimeEndTimeBasedSpec =
             (OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec) onetimeDowntimeSpec.getSpec();
-        endInstant = Instant.ofEpochSecond(onetimeEndTimeBasedSpec.getEndTime());
+        Optional<String> endDateTime = Optional.ofNullable(onetimeEndTimeBasedSpec.getEndDateTime());
+        endInstant = endDateTime.isPresent() ? Instant.ofEpochSecond(DateTimeUtils.getEpochValueFromDateString(
+                         endDateTime.get(), onetimeDowntimeSpec.getTimezone()))
+                                             : Instant.ofEpochSecond(onetimeEndTimeBasedSpec.getEndTime());
       } else if (onetimeDowntimeSpec.getSpec().getType().equals(OnetimeDowntimeType.DURATION)) {
         OnetimeDowntimeSpec.OnetimeDurationBasedSpec onetimeDurationBasedSpec =
             (OnetimeDowntimeSpec.OnetimeDurationBasedSpec) onetimeDowntimeSpec.getSpec();
-        endInstant = Instant.ofEpochSecond(
-            downtimeTransformerMap.get(DowntimeType.ONE_TIME)
-                .getEndTime(onetimeDowntimeSpec.getStartTime(), onetimeDurationBasedSpec.getDowntimeDuration()));
+        Optional<String> startDateTime = Optional.ofNullable(onetimeDowntimeSpec.getStartDateTime());
+        endInstant = startDateTime.isPresent()
+            ? Instant.ofEpochSecond(downtimeTransformerMap.get(DowntimeType.ONE_TIME)
+                                        .getEndTime(DateTimeUtils.getEpochValueFromDateString(
+                                                        startDateTime.get(), onetimeDowntimeSpec.getTimezone()),
+                                            onetimeDurationBasedSpec.getDowntimeDuration()))
+            : Instant.ofEpochSecond(
+                downtimeTransformerMap.get(DowntimeType.ONE_TIME)
+                    .getEndTime(onetimeDowntimeSpec.getStartTime(), onetimeDurationBasedSpec.getDowntimeDuration()));
       }
     }
     if (endInstant != null && now.plus(allowedDuration).isBefore(endInstant)) {
@@ -761,6 +830,20 @@ public class DowntimeServiceImpl implements DowntimeService {
         .serviceRef(monitoredServiceDetail.getServiceIdentifier())
         .environmentRef(monitoredServiceDetail.getEnvironmentIdentifier())
         .build();
+  }
+
+  private void addToMonitoredServiceIdentifierToUnavailabilityStatusesDTOMap(String msIdentifier,
+      Map<String, EntityUnavailabilityStatusesDTO> monitoredServiceIdentifierToUnavailabilityStatusesDTOMap,
+      EntityUnavailabilityStatusesDTO instance) {
+    if (monitoredServiceIdentifierToUnavailabilityStatusesDTOMap.containsKey(msIdentifier)) {
+      EntityUnavailabilityStatusesDTO status =
+          monitoredServiceIdentifierToUnavailabilityStatusesDTOMap.get(msIdentifier);
+      if (status.getStartTime() > instance.getStartTime()) {
+        monitoredServiceIdentifierToUnavailabilityStatusesDTOMap.put(msIdentifier, instance);
+      }
+    } else {
+      monitoredServiceIdentifierToUnavailabilityStatusesDTOMap.put(msIdentifier, instance);
+    }
   }
 
   @Value

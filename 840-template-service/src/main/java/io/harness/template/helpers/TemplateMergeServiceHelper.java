@@ -45,7 +45,6 @@ import io.harness.pms.merger.helpers.YamlSubMapExtractor;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.serializer.JsonUtils;
 import io.harness.template.beans.GetTemplateEntityRequest;
 import io.harness.template.beans.TemplateUniqueIdentifier;
@@ -128,7 +127,6 @@ public class TemplateMergeServiceHelper {
   public TemplateEntity getLinkedTemplateEntityHelper(String accountId, String orgId, String projectId,
       String identifier, String versionLabel, Map<String, TemplateEntity> templateCacheMap, String versionMarker,
       boolean loadFromCache) {
-    log.info("Principal in getLinkedTemplateEntityHelper is {}", SourcePrincipalContextBuilder.getSourcePrincipal());
     IdentifierRef templateIdentifierRef = TemplateUtils.getIdentifierRef(accountId, orgId, projectId, identifier);
     String templateUniqueIdentifier = generateUniqueTemplateIdentifier(templateIdentifierRef.getAccountIdentifier(),
         templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
@@ -213,7 +211,7 @@ public class TemplateMergeServiceHelper {
         log.error("Template yaml provided does not have spec in it.");
         throw new NGTemplateException("Template yaml provided does not have spec in it.");
       }
-      String templateInputsYamlWithSpec = RuntimeInputFormHelper.createTemplateFromYaml(templateSpec);
+      String templateInputsYamlWithSpec = RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(templateSpec);
       if (isEmpty(templateInputsYamlWithSpec)) {
         return templateInputsYamlWithSpec;
       }
@@ -497,8 +495,6 @@ public class TemplateMergeServiceHelper {
   public MergeTemplateInputsInObject mergeTemplateInputsInObjectAlongWithOpaPolicy(String accountId, String orgId,
       String projectId, YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth,
       boolean loadFromCache, boolean appendInputSetValidator) {
-    log.info("Principal in mergeTemplateInputsInObjectAlongWithOpaPolicy is {}",
-        SourcePrincipalContextBuilder.getSourcePrincipal());
     Map<String, Object> resMap = new LinkedHashMap<>();
     Map<String, Object> resMapWithTemplateRef = new LinkedHashMap<>();
     for (YamlField childYamlField : yamlNode.fields()) {

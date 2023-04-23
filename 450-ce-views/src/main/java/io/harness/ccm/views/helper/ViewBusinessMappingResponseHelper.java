@@ -7,13 +7,13 @@
 
 package io.harness.ccm.views.helper;
 
-import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
-import io.harness.ccm.views.businessMapping.entities.CostTarget;
-import io.harness.ccm.views.businessMapping.entities.SharedCost;
-import io.harness.ccm.views.businessMapping.entities.SharedCostSplit;
-import io.harness.ccm.views.businessMapping.entities.SharingStrategy;
-import io.harness.ccm.views.businessMapping.entities.UnallocatedCostStrategy;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessmapping.entities.CostTarget;
+import io.harness.ccm.views.businessmapping.entities.SharedCost;
+import io.harness.ccm.views.businessmapping.entities.SharedCostSplit;
+import io.harness.ccm.views.businessmapping.entities.SharingStrategy;
+import io.harness.ccm.views.businessmapping.entities.UnallocatedCostStrategy;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.entities.EntitySharedCostDetails;
 import io.harness.ccm.views.graphql.QLCEViewEntityStatsDataPoint;
 import io.harness.ccm.views.graphql.QLCEViewEntityStatsDataPoint.QLCEViewEntityStatsDataPointBuilder;
@@ -90,16 +90,10 @@ public class ViewBusinessMappingResponseHelper {
 
     if (!sharedCostBusinessMappings.isEmpty()) {
       updatedDataPoints = addSharedCostsFromFilters(updatedDataPoints, sharedCosts);
+      updatedDataPoints.sort(
+          (dataPoints1,
+              dataPoints2) -> Double.compare(dataPoints2.getCost().doubleValue(), dataPoints1.getCost().doubleValue()));
     }
-
-    updatedDataPoints =
-        updatedDataPoints.stream()
-            .filter(dataPoint
-                -> Objects.nonNull(dataPoint.getCost()) && Double.compare(dataPoint.getCost().doubleValue(), 0.0D) > 0)
-            .collect(Collectors.toList());
-    updatedDataPoints.sort(
-        (dataPoints1,
-            dataPoints2) -> Double.compare(dataPoints2.getCost().doubleValue(), dataPoints1.getCost().doubleValue()));
 
     return QLCEViewGridData.builder().data(updatedDataPoints).fields(response.getFields()).build();
   }
@@ -305,31 +299,5 @@ public class ViewBusinessMappingResponseHelper {
     }
     Double currentValue = sharedCostFromGroupBy.get(sharedCostName).get(timeStamp);
     sharedCostFromGroupBy.get(sharedCostName).put(timeStamp, currentValue + sharedCostValue);
-  }
-
-  public List<QLCEViewEntityStatsDataPoint> subtractDuplicateSharedCostFromUnattributed(
-      final List<QLCEViewEntityStatsDataPoint> entityStatsDataPoints, final double totalSharedCostsInUnattributed,
-      final BusinessMapping businessMapping) {
-    final List<QLCEViewEntityStatsDataPoint> modifiedEntityStatsDataPoints = new ArrayList<>();
-    for (final QLCEViewEntityStatsDataPoint entityStatsDataPoint : entityStatsDataPoints) {
-      if (Objects.nonNull(businessMapping.getUnallocatedCost())
-          && entityStatsDataPoint.getName().equals(businessMapping.getUnallocatedCost().getLabel())) {
-        final Number finalCost = entityStatsDataPoint.getCost().doubleValue() - totalSharedCostsInUnattributed;
-        modifiedEntityStatsDataPoints.add(QLCEViewEntityStatsDataPoint.builder()
-                                              .name(entityStatsDataPoint.getName())
-                                              .id(entityStatsDataPoint.getId())
-                                              .pricingSource(entityStatsDataPoint.getPricingSource())
-                                              .cost(Math.max(finalCost.doubleValue(), 0.0D))
-                                              .costTrend(entityStatsDataPoint.getCostTrend())
-                                              .isClusterPerspective(entityStatsDataPoint.isClusterPerspective())
-                                              .clusterData(entityStatsDataPoint.getClusterData())
-                                              .instanceDetails(entityStatsDataPoint.getInstanceDetails())
-                                              .storageDetails(entityStatsDataPoint.getStorageDetails())
-                                              .build());
-      } else {
-        modifiedEntityStatsDataPoints.add(entityStatsDataPoint);
-      }
-    }
-    return modifiedEntityStatsDataPoints;
   }
 }

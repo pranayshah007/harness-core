@@ -38,9 +38,11 @@ import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.entities.changeSource.ChangeSource;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.ChangeEventService;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.transformer.changeEvent.ChangeEventEntityAndDTOTransformer;
+import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution;
 import io.harness.cvng.utils.ScopedInformation;
 import io.harness.ng.beans.PageRequest;
@@ -52,6 +54,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.mongodb.AggregationOptions;
+import com.mongodb.ReadPreference;
+import dev.morphia.aggregation.AggregationPipeline;
 import dev.morphia.annotations.Id;
 import dev.morphia.query.Criteria;
 import dev.morphia.query.Query;
@@ -82,6 +86,7 @@ public class ChangeEventServiceImpl implements ChangeEventService {
   @Inject ActivityService activityService;
   @Inject HPersistence hPersistence;
   @Inject MonitoredServiceService monitoredServiceService;
+  @Inject FeatureFlagService featureFlagService;
 
   @Override
   public Boolean register(ChangeEventDTO changeEventDTO) {
@@ -205,6 +210,11 @@ public class ChangeEventServiceImpl implements ChangeEventService {
           timeRangeDetail.incrementCount(timelineObject.count);
           milliSecondFromStartDetailMap.put(timelineObject.id.index, timeRangeDetail);
         });
+    if (!featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureFlagNames.SRM_INTERNAL_CHANGE_SOURCE_CE)) {
+      categoryMilliSecondFromStartDetailMap.remove(ChangeCategory.CHAOS_EXPERIMENT);
+    }
+
     ChangeTimelineBuilder changeTimelineBuilder = ChangeTimeline.builder();
     categoryMilliSecondFromStartDetailMap.forEach(
         (key, value) -> changeTimelineBuilder.categoryTimeline(key, new ArrayList<>(value.values())));
@@ -238,27 +248,31 @@ public class ChangeEventServiceImpl implements ChangeEventService {
     return getTimeline(monitoredServiceParams, List.of(monitoredServiceIdentifier), searchText, null, changeSourceTypes,
         trendStartTime, trendEndTime, CVNextGenConstants.CVNG_TIMELINE_BUCKET_COUNT, false);
   }
+
   private Iterator<TimelineObject> getTimelineObject(ProjectParams projectParams,
       List<String> monitoredServiceIdentifiers, String searchText, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, Instant startTime, Instant endTime, Integer pointCount,
       boolean isMonitoredServiceIdentifierScoped) {
     Duration timeRangeDuration = Duration.between(startTime, endTime).dividedBy(pointCount);
-    return hPersistence.getDatastore(Activity.class)
-        .createAggregation(Activity.class)
-        .match(createQuery(startTime, endTime, projectParams, monitoredServiceIdentifiers, searchText, changeCategories,
-            changeSourceTypes, isMonitoredServiceIdentifierScoped))
-        .group(id(grouping("type", "type"),
-                   grouping("index",
-                       accumulator("$floor",
-                           accumulator("$divide",
-                               Arrays.asList(accumulator("$subtract",
-                                                 Arrays.asList("$eventTime", new Date(startTime.toEpochMilli()))),
-                                   timeRangeDuration.toMillis()))))),
-            grouping("count", accumulator("$sum", 1)))
-        .aggregate(TimelineObject.class,
-            AggregationOptions.builder()
-                .maxTime(hPersistence.getMaxTimeMs(Activity.class), TimeUnit.MILLISECONDS)
-                .build());
+    AggregationPipeline aggregationPipeline =
+        hPersistence.getDatastore(Activity.class)
+            .createAggregation(Activity.class)
+            .match(createQuery(startTime, endTime, projectParams, monitoredServiceIdentifiers, searchText,
+                changeCategories, changeSourceTypes, isMonitoredServiceIdentifierScoped))
+            .group(id(grouping("type", "type"),
+                       grouping("index",
+                           accumulator("$floor",
+                               accumulator("$divide",
+                                   Arrays.asList(accumulator("$subtract",
+                                                     Arrays.asList("$eventTime", new Date(startTime.toEpochMilli()))),
+                                       timeRangeDuration.toMillis()))))),
+                grouping("count", accumulator("$sum", 1)));
+    int limit = hPersistence.getMaxDocumentLimit(Activity.class);
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
+    return aggregationPipeline.aggregate(TimelineObject.class,
+        AggregationOptions.builder().maxTime(hPersistence.getMaxTimeMs(Activity.class), TimeUnit.MILLISECONDS).build());
   }
   @VisibleForTesting
   Iterator<TimelineObject> getTimelineObject(ProjectParams projectParams, List<String> serviceIdentifiers,
@@ -308,6 +322,11 @@ public class ChangeEventServiceImpl implements ChangeEventService {
           countSoFar = countSoFar + timelineObject.count;
           changeCategoryToIndexToCount.get(changeCategory).put(timelineObject.id.index, countSoFar);
         });
+    if (!featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureFlagNames.SRM_INTERNAL_CHANGE_SOURCE_CE)) {
+      changeCategoryToIndexToCount.remove(ChangeCategory.CHAOS_EXPERIMENT);
+    }
+
     long currentTotalCount =
         changeCategoryToIndexToCount.values().stream().map(c -> c.getOrDefault(1, 0)).mapToLong(num -> num).sum();
     long previousTotalCount =
@@ -398,6 +417,7 @@ public class ChangeEventServiceImpl implements ChangeEventService {
         query, projectParams, monitoredServiceIdentifiers, isMonitoredServiceIdentifierScoped);
     query.and(criteria.toArray(new Criteria[criteria.size()]));
     query.and(criteriasForAppAndInfraEvents);
+    query.useReadPreference(ReadPreference.secondaryPreferred());
     return query;
   }
 

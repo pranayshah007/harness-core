@@ -18,11 +18,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.DelegateTestBase;
@@ -87,7 +87,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 @OwnedBy(HarnessTeam.CE)
@@ -210,7 +210,7 @@ public class K8SWatchTaskExecutorTest extends DelegateTestBase {
     PerpetualTaskResponse perpetualTaskResponse = k8SWatchTaskExecutor.runOnce(perpetualTaskId, params, heartBeatTime);
     assertThat(perpetualTaskResponse.getResponseCode()).isEqualTo(200);
 
-    verifyZeroInteractions(k8sConnectorHelper);
+    verifyNoInteractions(k8sConnectorHelper);
   }
 
   @Test
@@ -229,7 +229,7 @@ public class K8SWatchTaskExecutorTest extends DelegateTestBase {
     PerpetualTaskResponse perpetualTaskResponse = k8SWatchTaskExecutor.runOnce(perpetualTaskId, params, heartBeatTime);
     assertThat(perpetualTaskResponse.getResponseCode()).isEqualTo(200);
 
-    verifyZeroInteractions(containerDeploymentDelegateHelper);
+    verifyNoInteractions(containerDeploymentDelegateHelper);
   }
 
   private K8sWatchTaskParams getK8sWatchTaskParamsNG() {

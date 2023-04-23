@@ -18,7 +18,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.ngtriggers.expressions.NGTriggerExpressionEvaluatorProvider;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
+import io.harness.pms.pipeline.ResolveInputYamlType;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -43,13 +45,21 @@ public class YamlExpressionResolveHelper {
   @Inject private PmsEngineExpressionService pmsEngineExpressionService;
   @Inject private NodeExecutionService nodeExecutionService;
 
-  public String resolveExpressionsInYaml(String yamlString, String planExecutionId) {
+  @Inject private NGTriggerExpressionEvaluatorProvider ngTriggerExpressionEvaluatorProvider;
+
+  public String resolveExpressionsInYaml(
+      String yamlString, String planExecutionId, ResolveInputYamlType resolveInputYamlType) {
     Optional<NodeExecution> nodeExecution = nodeExecutionService.getPipelineNodeExecutionWithProjections(
         planExecutionId, NodeProjectionUtils.withAmbianceAndStatus);
 
     if (nodeExecution.isPresent()) {
-      EngineExpressionEvaluator engineExpressionEvaluator =
-          pmsEngineExpressionService.prepareExpressionEvaluator(nodeExecution.get().getAmbiance());
+      EngineExpressionEvaluator engineExpressionEvaluator;
+      if (resolveInputYamlType.equals(ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS)) {
+        engineExpressionEvaluator = ngTriggerExpressionEvaluatorProvider.get(nodeExecution.get().getAmbiance());
+      } else {
+        engineExpressionEvaluator =
+            pmsEngineExpressionService.prepareExpressionEvaluator(nodeExecution.get().getAmbiance());
+      }
       try {
         YamlField yamlField = YamlUtils.readTree(YamlUtils.injectUuid(yamlString));
         YamlField pipelineYamlField = yamlField.getNode().getField("pipeline");

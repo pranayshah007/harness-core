@@ -39,6 +39,8 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import software.wings.beans.ServiceHookDelegateConfig;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,6 +58,7 @@ public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDem
   String getReleaseName();
   boolean isUseLatestKustomizeVersion();
   boolean isUseNewKubectlVersion();
+  List<ServiceHookDelegateConfig> getServiceHooks();
 
   @Override
   default List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
@@ -80,6 +83,11 @@ public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDem
     if (k8sInfraDelegateConfig instanceof AzureK8sInfraDelegateConfig) {
       capabilities.addAll(AzureCapabilityHelper.fetchRequiredExecutionCapabilities(
           ((AzureK8sInfraDelegateConfig) k8sInfraDelegateConfig).getAzureConnectorDTO(), maskingEvaluator));
+    }
+
+    if (k8sInfraDelegateConfig instanceof EksK8sInfraDelegateConfig) {
+      capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
+          ((EksK8sInfraDelegateConfig) k8sInfraDelegateConfig).getAwsConnectorDTO(), maskingEvaluator));
     }
 
     if (getManifestDelegateConfig() != null) {

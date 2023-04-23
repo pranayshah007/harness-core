@@ -7,7 +7,7 @@
 
 package io.harness.auditevent.streaming.services.impl;
 
-import static io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys.status;
+import static io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys;
 import static io.harness.spec.server.audit.v1.model.StreamingDestinationStatus.ACTIVE;
 import static io.harness.spec.server.audit.v1.model.StreamingDestinationStatus.INACTIVE;
 
@@ -51,22 +51,21 @@ public class StreamingDestinationServiceImpl implements StreamingDestinationServ
 
   @Override
   public List<String> distinctAccounts() {
-    Criteria criteria = Criteria.where(status).is(ACTIVE);
+    Criteria criteria = Criteria.where(StreamingDestinationKeys.status).is(ACTIVE);
     return streamingDestinationRepository.findDistinctAccounts(criteria);
   }
 
   private Criteria getCriteriaForStreamingDestinationList(
       String accountIdentifier, StreamingDestinationFilterProperties filterProperties) {
-    Criteria criteria =
-        Criteria.where(StreamingDestination.StreamingDestinationKeys.accountIdentifier).is(accountIdentifier);
+    Criteria criteria = Criteria.where(StreamingDestinationKeys.accountIdentifier).is(accountIdentifier);
     if (null != filterProperties.getStatus()) {
-      criteria.and(status).is(filterProperties.getStatus());
+      criteria.and(StreamingDestinationKeys.status).is(filterProperties.getStatus());
     }
     if (StringUtils.isNotEmpty(filterProperties.getSearchTerm())) {
       criteria.orOperator(
-          Criteria.where(StreamingDestination.StreamingDestinationKeys.name)
+          Criteria.where(StreamingDestinationKeys.name)
               .regex(filterProperties.getSearchTerm(), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
-          Criteria.where(StreamingDestination.StreamingDestinationKeys.identifier)
+          Criteria.where(StreamingDestinationKeys.identifier)
               .regex(filterProperties.getSearchTerm(), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
     }
     return criteria;

@@ -25,12 +25,15 @@ import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceYamlV2;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ngmigration.beans.MigExpressionOverrides;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
+import io.harness.ngmigration.service.servicev2.ServiceV2Factory;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.service.step.StepMapperFactory;
 import io.harness.ngmigration.utils.CaseFormat;
@@ -62,6 +65,7 @@ import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.StringNGVariable;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
+import software.wings.api.DeploymentType;
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.FailureStrategy;
 import software.wings.beans.GraphNode;
@@ -89,6 +93,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.NotImplementedException;
@@ -130,7 +135,7 @@ public abstract class WorkflowHandler {
         steps.stream()
             .map(step
                 -> stepMapperFactory.getStepMapper(step.getType())
-                       .getReferencedEntities(workflow.getAccountId(), step, stepIdToServiceIdMap))
+                       .getReferencedEntities(workflow.getAccountId(), workflow, step, stepIdToServiceIdMap))
             .filter(EmptyPredicate::isNotEmpty)
             .flatMap(Collection::stream)
             .collect(Collectors.toList()));
@@ -189,11 +194,13 @@ public abstract class WorkflowHandler {
     return JsonPipelineUtils.asTree(whenCondition);
   }
 
-  public List<NGVariable> getVariables(Workflow workflow) {
+  public List<NGVariable> getVariables(MigrationContext context, Workflow workflow) {
     List<Variable> variables = workflow.getOrchestrationWorkflow().getUserVariables();
     if (EmptyPredicate.isEmpty(variables)) {
       return new ArrayList<>();
     }
+    MigratorExpressionUtils.render(
+        context, workflow, MigExpressionOverrides.builder().customExpressions(new HashMap<>()).build());
     return variables.stream()
         .filter(variable -> variable.getType() != VariableType.ENTITY)
         .map(variable
@@ -207,7 +214,7 @@ public abstract class WorkflowHandler {
         .collect(Collectors.toList());
   }
 
-  static ParameterField<String> getVariable(Variable variable) {
+  public static ParameterField<String> getVariable(Variable variable) {
     if (variable.isFixed()) {
       return ParameterField.createValueField(variable.getValue());
     }
@@ -217,19 +224,14 @@ public abstract class WorkflowHandler {
       validator = new InputSetValidator(InputSetValidatorType.ALLOWED_VALUES, variable.getAllowedValues());
     }
 
-    if (StringUtils.isBlank(variable.getValue())) {
-      return ParameterField.createExpressionField(true, INPUT_EXPRESSION, validator, true);
-    }
-
-    return ParameterField.createFieldWithDefaultValue(
-        true, false, INPUT_EXPRESSION, variable.getValue(), validator, true);
+    return ParameterField.createExpressionField(true, INPUT_EXPRESSION, validator, true);
   }
 
   public List<StageElementWrapperConfig> asStages(MigrationContext migrationContext, Workflow workflow) {
     throw new NotImplementedException("Getting stages is only supported for multi service workflows right now");
   }
 
-  public abstract JsonNode getTemplateSpec(MigrationContext migrationContext, Workflow workflow, CaseFormat caseFormat);
+  public abstract JsonNode getTemplateSpec(MigrationContext migrationContext, Workflow workflow);
 
   List<WorkflowPhase> getPhases(Workflow workflow) {
     CanaryOrchestrationWorkflow orchestrationWorkflow =
@@ -392,7 +394,11 @@ public abstract class WorkflowHandler {
       return Collections.emptyList();
     }
     MigratorExpressionUtils.render(migrationContext, phaseStep,
-        MigratorUtility.getExpressions(phase, context.getStepExpressionFunctors(), context.getIdentifierCaseFormat()));
+        MigExpressionOverrides.builder()
+            .workflowVarsAsPipeline(context.isWorkflowVarsAsPipeline())
+            .customExpressions(MigratorUtility.getExpressions(
+                phase, context.getStepExpressionFunctors(), context.getIdentifierCaseFormat()))
+            .build());
     List<StepSkipStrategy> cgSkipConditions = phaseStep.getStepSkipStrategies();
     Map<String, String> skipStrategies = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(cgSkipConditions)
@@ -428,14 +434,23 @@ public abstract class WorkflowHandler {
     Map<String, Object> expressions =
         MigratorUtility.getExpressions(phase, context.getStepExpressionFunctors(), context.getIdentifierCaseFormat());
     if (StringUtils.isNotBlank(skipCondition)) {
-      skipCondition = (String) MigratorExpressionUtils.render(migrationContext, skipCondition, expressions);
+      skipCondition = (String) MigratorExpressionUtils.render(migrationContext, skipCondition,
+          MigExpressionOverrides.builder()
+              .workflowVarsAsPipeline(context.isWorkflowVarsAsPipeline())
+              .customExpressions(expressions)
+              .build());
     }
-    MigratorExpressionUtils.render(migrationContext, step, expressions);
+    MigratorExpressionUtils.render(migrationContext, step,
+        MigExpressionOverrides.builder()
+            .workflowVarsAsPipeline(context.isWorkflowVarsAsPipeline())
+            .customExpressions(expressions)
+            .build());
     List<StepExpressionFunctor> expressionFunctors = stepMapper.getExpressionFunctor(context, phase, phaseStep, step);
     if (isNotEmpty(expressionFunctors)) {
       context.getStepExpressionFunctors().addAll(expressionFunctors);
     }
-    TemplateStepNode templateStepNode = stepMapper.getTemplateSpec(migrationContext, context, phase, step);
+    TemplateStepNode templateStepNode =
+        stepMapper.getTemplateSpec(migrationContext, context, phase, phaseStep, step, skipCondition);
     if (templateStepNode != null) {
       return JsonPipelineUtils.asTree(templateStepNode);
     }
@@ -463,20 +478,7 @@ public abstract class WorkflowHandler {
     if (EmptyPredicate.isEmpty(phaseStep.getFailureStrategies())) {
       return;
     }
-    List<FailureStrategy> cgFailureStrategies =
-        phaseStep.getFailureStrategies()
-            .stream()
-            .filter(failureStrategy -> EmptyPredicate.isNotEmpty(failureStrategy.getSpecificSteps()))
-            .filter(failureStrategy -> failureStrategy.getSpecificSteps().contains(step.getName()))
-            .collect(Collectors.toList());
-    if (EmptyPredicate.isEmpty(cgFailureStrategies)) {
-      return;
-    }
-
-    List<FailureStrategyConfig> failureStrategyConfigs = cgFailureStrategies.stream()
-                                                             .map(FailureStrategyHelper::toFailureStrategyConfig)
-                                                             .filter(Objects::nonNull)
-                                                             .collect(Collectors.toList());
+    List<FailureStrategyConfig> failureStrategyConfigs = getFailureStrategies(phaseStep, step);
 
     if (EmptyPredicate.isEmpty(failureStrategyConfigs)) {
       return;
@@ -487,6 +489,23 @@ public abstract class WorkflowHandler {
     if (stepNode instanceof CdAbstractStepNode) {
       ((CdAbstractStepNode) stepNode).setFailureStrategies(ParameterField.createValueField(failureStrategyConfigs));
     }
+  }
+
+  public static List<FailureStrategyConfig> getFailureStrategies(PhaseStep phaseStep, GraphNode step) {
+    List<FailureStrategy> cgFailureStrategies =
+        phaseStep.getFailureStrategies()
+            .stream()
+            .filter(failureStrategy -> EmptyPredicate.isNotEmpty(failureStrategy.getSpecificSteps()))
+            .filter(failureStrategy -> failureStrategy.getSpecificSteps().contains(step.getName()))
+            .collect(Collectors.toList());
+    if (EmptyPredicate.isEmpty(cgFailureStrategies)) {
+      return new ArrayList<>();
+    }
+
+    return cgFailureStrategies.stream()
+        .map(FailureStrategyHelper::toFailureStrategyConfig)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
   }
 
   private Map<String, Object> getExpressions(
@@ -520,6 +539,13 @@ public abstract class WorkflowHandler {
 
   ServiceDefinitionType inferServiceDefinitionType(WorkflowMigrationContext context, List<GraphNode> steps) {
     OrchestrationWorkflowType workflowType = context.getWorkflow().getOrchestration().getOrchestrationWorkflowType();
+    DeploymentType deploymentType = getDeploymentTypeFromPhase(context.getWorkflow());
+    if (deploymentType != null) {
+      ServiceDefinitionType serviceDefinitionType = ServiceV2Factory.mapDeploymentTypeToServiceDefType(deploymentType);
+      if (serviceDefinitionType != null) {
+        return serviceDefinitionType;
+      }
+    }
     ServiceDefinitionType defaultType = workflowType.equals(OrchestrationWorkflowType.BASIC)
         ? ServiceDefinitionType.SSH
         : ServiceDefinitionType.KUBERNETES;
@@ -531,6 +557,17 @@ public abstract class WorkflowHandler {
         .filter(Objects::nonNull)
         .findFirst()
         .orElse(defaultType);
+  }
+
+  private DeploymentType getDeploymentTypeFromPhase(Workflow workflow) {
+    CanaryOrchestrationWorkflow orchestrationWorkflow =
+        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+    if (orchestrationWorkflow == null) {
+      return null;
+    }
+    Optional<WorkflowPhase> firstPhase =
+        CollectionUtils.emptyIfNull(orchestrationWorkflow.getWorkflowPhases()).stream().findFirst();
+    return firstPhase.map(WorkflowPhase::getDeploymentType).orElse(null);
   }
 
   ParameterField<Map<String, Object>> getRuntimeInput() {
@@ -599,11 +636,10 @@ public abstract class WorkflowHandler {
       return getDefaultFailureStrategy();
     }
 
-    List<FailureStrategyConfig> failureStrategyConfigs =
-        failureStrategies.stream()
-            .map(failureStrategy -> FailureStrategyHelper.toFailureStrategyConfig(failureStrategy))
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+    List<FailureStrategyConfig> failureStrategyConfigs = failureStrategies.stream()
+                                                             .map(FailureStrategyHelper::toFailureStrategyConfig)
+                                                             .filter(Objects::nonNull)
+                                                             .collect(Collectors.toList());
 
     if (EmptyPredicate.isEmpty(failureStrategyConfigs)) {
       return getDefaultFailureStrategy();
@@ -638,7 +674,7 @@ public abstract class WorkflowHandler {
                                            .put("type", "Deployment")
                                            .put("spec", getDeploymentStageConfig(context, steps, rollbackSteps))
                                            .put("failureStrategies", getDefaultFailureStrategy(context))
-                                           .put("variables", getVariables(context.getWorkflow()))
+                                           .put("variables", getVariables(migrationContext, context.getWorkflow()))
                                            .put("when", getSkipCondition())
                                            .build();
     return JsonPipelineUtils.asTree(templateSpec);
@@ -684,7 +720,7 @@ public abstract class WorkflowHandler {
                                            .put("type", "Custom")
                                            .put("spec", customStageConfig)
                                            .put("failureStrategies", getDefaultFailureStrategy(context))
-                                           .put("variables", getVariables(workflow))
+                                           .put("variables", getVariables(migrationContext, workflow))
                                            .put("when", getSkipCondition())
                                            .build();
     return JsonPipelineUtils.asTree(templateSpec);
@@ -702,7 +738,7 @@ public abstract class WorkflowHandler {
             .execution(ExecutionElementConfig.builder().steps(Collections.singletonList(wrapper)).build())
             .build();
     CustomStageNode customStageNode = new CustomStageNode();
-    customStageNode.setName(phase.getName());
+    customStageNode.setName(MigratorUtility.generateName(phase.getName()));
     customStageNode.setIdentifier(
         MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()));
     customStageNode.setCustomStageConfig(customStageConfig);
@@ -719,7 +755,7 @@ public abstract class WorkflowHandler {
       return null;
     }
     DeploymentStageNode stageNode = new DeploymentStageNode();
-    stageNode.setName(phase.getName());
+    stageNode.setName(MigratorUtility.generateName(phase.getName()));
     stageNode.setIdentifier(MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()));
     stageNode.setDeploymentStageConfig(stageConfig);
     stageNode.setFailureStrategies(getDefaultFailureStrategy(context));
@@ -806,7 +842,7 @@ public abstract class WorkflowHandler {
             .put("type", "Deployment")
             .put("spec", getDeploymentStageConfig(context, stepGroupWrappers, rollbackStepGroupWrappers))
             .put("failureStrategies", getDefaultFailureStrategy(context))
-            .put("variables", getVariables(context.getWorkflow()))
+            .put("variables", getVariables(migrationContext, context.getWorkflow()))
             .put("when", getSkipCondition())
             .build();
     return JsonPipelineUtils.asTree(templateSpec);
@@ -880,8 +916,10 @@ public abstract class WorkflowHandler {
 
   JsonNode buildMultiStagePipelineTemplate(MigrationContext migrationContext, WorkflowMigrationContext context) {
     List<StageElementWrapperConfig> stages = getStagesForMultiServiceWorkflow(migrationContext, context);
-    PipelineInfoConfig pipelineInfoConfig =
-        PipelineInfoConfig.builder().stages(stages).variables(getVariables(context.getWorkflow())).build();
+    PipelineInfoConfig pipelineInfoConfig = PipelineInfoConfig.builder()
+                                                .stages(stages)
+                                                .variables(getVariables(migrationContext, context.getWorkflow()))
+                                                .build();
     return JsonPipelineUtils.asTree(pipelineInfoConfig);
   }
 }

@@ -7,6 +7,7 @@
 
 package io.harness.aws.beans;
 
+import io.harness.aws.AwsSdkClientBackoffStrategyOverride;
 import io.harness.encryption.Encrypted;
 
 import software.wings.annotation.EncryptableSetting;
@@ -36,6 +37,7 @@ public class AwsInternalConfig implements EncryptableSetting {
   private boolean assumeCrossAccountRole;
   private boolean useIRSA;
   private AmazonClientSDKDefaultBackoffStrategy amazonClientSDKDefaultBackoffStrategy;
+  private AwsSdkClientBackoffStrategyOverride awsSdkClientBackoffStrategyOverride;
 
   @Override
   public SettingVariableTypes getSettingType() {

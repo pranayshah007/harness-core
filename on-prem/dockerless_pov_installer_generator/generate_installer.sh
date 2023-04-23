@@ -107,7 +107,7 @@ function setupDelegateJars() {
 
     done
 
-    for version in v0.2 v0.3 v0.4; do
+    for version in v0.4.2; do
 
       echo "Copying go-template  ${version} binaries for ${platform}"
 
@@ -177,7 +177,7 @@ function setupDelegateJars() {
 
     done
 
-    for version in v1.0 v1.1; do
+    for version in v1.0 v1.1 v1.2; do
 
       echo "Copying terraform-config-inspect v${version} binaries for ${platform}"
 

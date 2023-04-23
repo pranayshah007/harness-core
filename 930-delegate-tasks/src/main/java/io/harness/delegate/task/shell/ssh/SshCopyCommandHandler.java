@@ -13,6 +13,9 @@ import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIF
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.INVALID_STORE_DELEGATE_CONFIG_TYPE_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.INVALID_STORE_DELEGATE_CONFIG_TYPE_FAILED;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.INVALID_STORE_DELEGATE_CONFIG_TYPE_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_HINT;
@@ -27,6 +30,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.storeconfig.GitFetchedStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
@@ -41,6 +45,7 @@ import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.WingsException;
 import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
@@ -50,7 +55,6 @@ import io.harness.ssh.FileSourceType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -154,8 +158,14 @@ public class SshCopyCommandHandler implements CommandHandler {
           }
           String fileData = new String(secretConfigFile.getEncryptedConfigFile().getDecryptedValue());
           configFile.setFileContent(fileData);
-          configFile.setFileSize(fileData.getBytes(StandardCharsets.UTF_8).length);
         }
+
+        // Since file content might change after secret manager functor will be applied,
+        // there is no way to handle this on manager side and we need to recalculate file
+        // size before sending over the wire.
+        // This is applicable mostly in use cases when config file has a reference to secret variable in its content.
+        configFile.calculateFileSize();
+
         result = executor.copyConfigFiles(context.getEvaluatedDestinationPath(), configFile);
         if (result == CommandExecutionStatus.FAILURE) {
           log.error("Failed to copy config file: " + configFile.getFileName());
@@ -176,12 +186,31 @@ public class SshCopyCommandHandler implements CommandHandler {
 
     List<ConfigFileParameters> configFiles = new ArrayList<>();
     for (StoreDelegateConfig storeDelegateConfig : sshCommandTaskParameters.getFileDelegateConfig().getStores()) {
-      if (StoreDelegateConfigType.HARNESS.equals(storeDelegateConfig.getType())) {
-        HarnessStoreDelegateConfig harnessStoreDelegateConfig = (HarnessStoreDelegateConfig) storeDelegateConfig;
-        configFiles.addAll(harnessStoreDelegateConfig.getConfigFiles());
+      if (storeDelegateConfig.getType() == null) {
+        throw generateExceptionForInvalidStoreDelegateConfig(null);
+      }
+
+      switch (storeDelegateConfig.getType()) {
+        case HARNESS:
+          HarnessStoreDelegateConfig harnessStoreDelegateConfig = (HarnessStoreDelegateConfig) storeDelegateConfig;
+          configFiles.addAll(harnessStoreDelegateConfig.getConfigFiles());
+          break;
+        case GIT_FETCHED:
+          GitFetchedStoreDelegateConfig fetchedStoreDelegateConfig =
+              (GitFetchedStoreDelegateConfig) storeDelegateConfig;
+          configFiles.addAll(fetchedStoreDelegateConfig.getConfigFiles());
+          break;
+        default:
+          throw generateExceptionForInvalidStoreDelegateConfig(storeDelegateConfig.getType());
       }
     }
 
     return configFiles;
+  }
+
+  private WingsException generateExceptionForInvalidStoreDelegateConfig(StoreDelegateConfigType type) {
+    return NestedExceptionUtils.hintWithExplanationException(INVALID_STORE_DELEGATE_CONFIG_TYPE_HINT,
+        format(INVALID_STORE_DELEGATE_CONFIG_TYPE_EXPLANATION, type),
+        new SshCommandExecutionException(INVALID_STORE_DELEGATE_CONFIG_TYPE_FAILED));
   }
 }

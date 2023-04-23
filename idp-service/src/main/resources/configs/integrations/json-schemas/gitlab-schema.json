@@ -1,0 +1,56 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1679651897.json",
+  "title": "Root",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "integrations"
+  ],
+  "properties": {
+    "integrations": {
+      "$id": "#root/integrations",
+      "title": "Integrations",
+      "type": "object",
+      "required": [
+        "gitlab"
+      ],
+      "properties": {
+        "gitlab": {
+          "$id": "#root/integrations/gitlab",
+          "title": "Gitlab",
+          "type": "array",
+          "default": [],
+          "items":{
+            "$id": "#root/integrations/gitlab/items",
+            "title": "Items",
+            "type": "object",
+            "required": [
+              "host",
+              "token"
+            ],
+            "properties": {
+              "host": {
+                "$id": "#root/integrations/gitlab/items/host",
+                "title": "Host",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "token": {
+                "$id": "#root/integrations/gitlab/items/token",
+                "title": "Token",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              }
+            }
+          }
+
+        }
+      }
+    }
+
+  }
+}

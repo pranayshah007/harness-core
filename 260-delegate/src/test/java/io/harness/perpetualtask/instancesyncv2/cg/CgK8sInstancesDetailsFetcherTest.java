@@ -46,7 +46,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 @OwnedBy(CDP)
@@ -126,14 +126,11 @@ public class CgK8sInstancesDetailsFetcherTest {
     byte[] bytes = {70};
     doReturn(bytes).when(kryoSerializer).asBytes(any());
 
-    List<V1Pod> k8sPodList = Collections.singletonList(new V1Pod()
-                                                           .status(new V1PodStatusBuilder().withPodIP("podIP").build())
-                                                           .metadata(new V1ObjectMetaBuilder()
-                                                                         .withName("nginxPod")
-                                                                         .withNamespace("namespace")
-                                                                         .withUid("podId")
-                                                                         .build()
-                                                                         .clusterName("cluster")));
+    List<V1Pod> k8sPodList = Collections.singletonList(
+        new V1Pod()
+            .status(new V1PodStatusBuilder().withPodIP("podIP").build())
+            .metadata(
+                new V1ObjectMetaBuilder().withName("nginxPod").withNamespace("namespace").withUid("podId").build()));
 
     doReturn(k8sPodList)
         .when(kubernetesContainerService)

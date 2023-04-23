@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -47,6 +47,7 @@ import lombok.experimental.SuperBuilder;
           @JsonSubTypes.Type(value = STOModuleLicenseDTO.class, name = "STO"),
           @JsonSubTypes.Type(value = ChaosModuleLicenseDTO.class, name = "CHAOS"),
           @JsonSubTypes.Type(value = IACMModuleLicenseDTO.class, name = "IACM"),
+          @JsonSubTypes.Type(value = CETModuleLicenseDTO.class, name = "CET"),
     })
 @Schema(name = "ModuleLicense", description = "This contains details of the Module License defined in Harness")
 public abstract class ModuleLicenseDTO {

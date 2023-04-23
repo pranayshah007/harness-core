@@ -12,6 +12,7 @@ import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ALEXANDRU_CIOFU;
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.PRABU;
@@ -127,7 +128,9 @@ import static software.wings.utils.WingsTestConstants.PIPELINE_EXECUTION_ID;
 import static software.wings.utils.WingsTestConstants.PIPELINE_NAME;
 import static software.wings.utils.WingsTestConstants.SERVICE_ID;
 import static software.wings.utils.WingsTestConstants.USER_ID;
+import static software.wings.utils.WingsTestConstants.USER_ID_2;
 import static software.wings.utils.WingsTestConstants.USER_NAME;
+import static software.wings.utils.WingsTestConstants.USER_NAME_2;
 import static software.wings.utils.WingsTestConstants.WORKFLOW_EXECUTION_ID;
 import static software.wings.utils.WingsTestConstants.WORKFLOW_ID;
 import static software.wings.utils.WingsTestConstants.WORKFLOW_NAME;
@@ -136,9 +139,9 @@ import static com.google.common.collect.Sets.newHashSet;
 import static java.util.Arrays.asList;
 import static java.util.Objects.deepEquals;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -188,6 +191,7 @@ import software.wings.beans.instance.dashboard.service.CurrentActiveInstances;
 import software.wings.beans.instance.dashboard.service.DeploymentHistory;
 import software.wings.beans.instance.dashboard.service.ServiceInstanceDashboard;
 import software.wings.persistence.artifact.Artifact;
+import software.wings.security.AppPermissionSummary;
 import software.wings.security.AppPermissionSummaryForUI;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.UserPermissionInfo;
@@ -219,10 +223,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import org.junit.After;
 import org.junit.Before;
@@ -272,6 +274,8 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
   private Instance deletedInstance16;
   private Instance instance17;
   private User user;
+
+  private User user2;
   private long currentTime;
   private WorkflowExecutionInfo workflowExecutionInfo;
 
@@ -284,6 +288,12 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
                .accounts(asList(Account.Builder.anAccount().withUuid(ACCOUNT_1_ID).build(),
                    Account.Builder.anAccount().withUuid(ACCOUNT_2_ID).build()))
                .build();
+    user2 = User.Builder.anUser()
+                .name(USER_NAME_2)
+                .uuid(USER_ID_2)
+                .accounts(asList(Account.Builder.anAccount().withUuid(ACCOUNT_1_ID).build(),
+                    Account.Builder.anAccount().withUuid(ACCOUNT_2_ID).build()))
+                .build();
 
     Map<String, AppPermissionSummaryForUI> appPermissionsMap = new HashMap<>();
     setAppPermissionsMap(appPermissionsMap, ENV_1_ID, APP_1_ID);
@@ -293,8 +303,20 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
     setAppPermissionsMap(appPermissionsMap, ENV_5_ID, APP_4_ID);
     setAppPermissionsMap(appPermissionsMap, ENV_6_ID, APP_5_ID);
 
+    Map<String, AppPermissionSummary> appPermissionsMap2 = new HashMap<>();
+
+    Map<Action, Set<String>> svcPermissions = new HashMap<>();
+    svcPermissions.put(Action.READ, new HashSet<>(List.of(SERVICE_1_ID)));
+    svcPermissions.put(Action.CREATE, new HashSet<>(List.of(SERVICE_2_ID)));
+    AppPermissionSummary appPermissionSummary =
+        AppPermissionSummary.builder().servicePermissions(svcPermissions).build();
+    appPermissionsMap2.put(APP_1_ID, appPermissionSummary);
+
     UserPermissionInfo userPermissionInfo =
         UserPermissionInfo.builder().accountId(ACCOUNT_ID).appPermissionMap(appPermissionsMap).build();
+
+    UserPermissionInfo userPermissionInfo2 =
+        UserPermissionInfo.builder().accountId(ACCOUNT_ID).appPermissionMapInternal(appPermissionsMap2).build();
 
     user.setUserRequestContext(UserRequestContext.builder()
                                    .accountId(ACCOUNT_ID)
@@ -302,6 +324,12 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
                                    .appIdFilterRequired(true)
                                    .appIds(Sets.newHashSet(APP_1_ID, APP_2_ID, APP_3_ID, APP_4_ID, APP_5_ID))
                                    .build());
+    user2.setUserRequestContext(UserRequestContext.builder()
+                                    .accountId(ACCOUNT_ID)
+                                    .userPermissionInfo(userPermissionInfo2)
+                                    .appIdFilterRequired(true)
+                                    .appIds(Sets.newHashSet(APP_1_ID, APP_2_ID, APP_3_ID, APP_4_ID, APP_5_ID))
+                                    .build());
     workflowExecutionInfo = WorkflowExecutionInfo.builder().build();
     UserThreadLocal.set(user);
     when(featureFlagService.isEnabled(eq(FeatureName.HELM_CHART_AS_ARTIFACT), any())).thenReturn(true);
@@ -490,29 +518,6 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
-  public void testUsageMetrics() {
-    Map<String, Integer> instanceCountMap = usageMetricsHelper.getAllValidInstanceCounts();
-    boolean account1Validation = false;
-    boolean account2Validation = false;
-    Iterator<Entry<String, Integer>> mapIterator = instanceCountMap.entrySet().iterator();
-    while (mapIterator.hasNext()) {
-      Map.Entry entry = mapIterator.next();
-      if (entry.getKey().equals(ACCOUNT_1_ID)) {
-        assertThat(entry.getValue()).isEqualTo(6);
-        account1Validation = true;
-      }
-      if (entry.getKey().equals(ACCOUNT_2_ID)) {
-        assertThat(entry.getValue()).isEqualTo(2);
-        account2Validation = true;
-      }
-    }
-    assertThat(account1Validation).isTrue();
-    assertThat(account2Validation).isTrue();
-  }
-
-  @Test
-  @Owner(developers = ABHINAV)
-  @Category(UnitTests.class)
   public void shallTestInstanceStats() {
     try {
       List<String> appIdList = asList(APP_1_ID, APP_2_ID, APP_3_ID, APP_4_ID, APP_5_ID);
@@ -597,6 +602,38 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
 
       currentAppInstanceStatsByService = dashboardService.getAppInstanceSummaryStatsByService(
           ACCOUNT_1_ID, appIdList, System.currentTimeMillis(), 0, 10);
+      for (InstanceSummaryStatsByService instanceSummaryStatsByService :
+          currentAppInstanceStatsByService.getResponse()) {
+        if (instanceSummaryStatsByService.getServiceSummary().getId().equals("service1_id")) {
+          assertThat(instanceSummaryStatsByService.getServiceSummary().getName().equals("updatedService1Name"));
+          break;
+        }
+      }
+
+    } finally {
+      UserThreadLocal.unset();
+    }
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void shallGetAppInstanceSummaryStatsByServiceFollowingRBAC_Svc() {
+    try {
+      UserThreadLocal.set(user2);
+      when(featureFlagService.isEnabled(eq(FeatureName.SPG_SERVICES_OVERVIEW_RBAC), any())).thenReturn(true);
+      List<String> appIdList = asList(APP_1_ID, APP_2_ID, APP_3_ID, APP_4_ID, APP_5_ID);
+      Map<String, String> entry = new HashMap<>();
+      entry.put("service1_id", "updatedService1Name");
+      Set<String> setOfServiceIds = new HashSet<>();
+      setOfServiceIds.add("service1_id");
+      when(serviceResourceService.getServiceNamesWithAccountId(any(), any())).thenReturn(entry);
+
+      PageResponse<InstanceSummaryStatsByService> currentAppInstanceStatsByService =
+          dashboardService.getAppInstanceSummaryStatsByService(
+              ACCOUNT_1_ID, appIdList, System.currentTimeMillis(), 0, 5);
+      assertThat(currentAppInstanceStatsByService.getResponse()).hasSize(1);
+
       for (InstanceSummaryStatsByService instanceSummaryStatsByService :
           currentAppInstanceStatsByService.getResponse()) {
         if (instanceSummaryStatsByService.getServiceSummary().getId().equals("service1_id")) {

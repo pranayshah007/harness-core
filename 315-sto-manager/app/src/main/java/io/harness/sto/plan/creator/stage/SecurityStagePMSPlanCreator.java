@@ -82,6 +82,7 @@ public class SecurityStagePMSPlanCreator extends AbstractStagePlanCreator<Securi
   @Inject private CIIntegrationStageModifier ciIntegrationStageModifier;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private CIStagePlanCreationUtils ciStagePlanCreationUtils;
 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
@@ -156,7 +157,7 @@ public class SecurityStagePMSPlanCreator extends AbstractStagePlanCreator<Securi
     stageNode.setName(StrategyUtils.getIdentifierWithExpression(ctx, stageNode.getName()));
 
     StageElementParametersBuilder stageParameters =
-        CIStagePlanCreationUtils.getStageParameters(getIntegrationStageNode(stageNode));
+        ciStagePlanCreationUtils.getStageParameters(getIntegrationStageNode(stageNode));
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));

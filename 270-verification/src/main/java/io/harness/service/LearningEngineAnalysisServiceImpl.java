@@ -316,7 +316,7 @@ public class LearningEngineAnalysisServiceImpl implements LearningEngineService 
             .filter(LearningEngineAnalysisTaskKeys.executionStatus, ExecutionStatus.RUNNING)
             .field(LearningEngineAnalysisTaskKeys.retry)
             .greaterThanOrEq(LearningEngineAnalysisTask.RETRIES);
-    return !query.asList().isEmpty();
+    return query.count() > 0;
   }
 
   @Override

@@ -23,8 +23,9 @@ public class ELKCapabilityHelper extends ConnectorCapabilityBaseHelper {
       ConnectorConfigDTO connectorConfigDTO, ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     ELKConnectorDTO elkConnectorDTO = (ELKConnectorDTO) connectorConfigDTO;
+    // Checking capability for basic http call as if mTLS is enabled, the connection to actual elk server will hang up
     capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-        elkConnectorDTO.getUrl(), maskingEvaluator));
+        "https://www.elastic.co/", maskingEvaluator));
     populateDelegateSelectorCapability(capabilityList, elkConnectorDTO.getDelegateSelectors());
     return capabilityList;
   }

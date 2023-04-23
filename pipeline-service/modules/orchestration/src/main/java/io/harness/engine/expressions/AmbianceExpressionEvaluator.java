@@ -10,6 +10,7 @@ package io.harness.engine.expressions;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.plan.PlanService;
@@ -22,6 +23,7 @@ import io.harness.engine.expressions.functors.NodeExecutionEntityType;
 import io.harness.engine.expressions.functors.NodeExecutionQualifiedFunctor;
 import io.harness.engine.expressions.functors.OutcomeFunctor;
 import io.harness.engine.expressions.functors.SecretFunctor;
+import io.harness.engine.expressions.functors.SecretFunctorWithRbac;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.exception.EngineExpressionEvaluationException;
@@ -31,6 +33,7 @@ import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.EngineJexlContext;
 import io.harness.expression.ExpressionEvaluatorUtils;
+import io.harness.expression.JsonFunctor;
 import io.harness.expression.RegexFunctor;
 import io.harness.expression.ResolveObjectResponse;
 import io.harness.expression.VariableResolverTracker;
@@ -40,6 +43,7 @@ import io.harness.expression.functors.NGJsonFunctor;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.ProcessorResult;
+import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterDocumentField;
 import io.harness.pms.yaml.ParameterDocumentFieldMapper;
@@ -49,6 +53,7 @@ import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,21 +91,29 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
   @Inject private PlanExpansionService planExpansionService;
 
   @Inject private PmsFeatureFlagService pmsFeatureFlagService;
+  @Inject private PipelineRbacHelper pipelineRbacHelper;
 
   protected final Ambiance ambiance;
   private final Set<NodeExecutionEntityType> entityTypes;
   private final boolean refObjectSpecific;
   private final Map<String, String> groupAliases;
   private NodeExecutionsCache nodeExecutionsCache;
+  private final String SECRETS = "secrets";
+
+  private boolean contextMapProvided = false;
 
   @Builder
   public AmbianceExpressionEvaluator(VariableResolverTracker variableResolverTracker, Ambiance ambiance,
-      Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific) {
+      Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific, Map<String, String> contextMap) {
     super(variableResolverTracker);
     this.ambiance = ambiance;
     this.entityTypes = entityTypes == null ? NodeExecutionEntityType.allEntities() : entityTypes;
     this.refObjectSpecific = refObjectSpecific;
     this.groupAliases = new HashMap<>();
+    if (EmptyPredicate.isNotEmpty(contextMap)) {
+      contextMapProvided = true;
+      contextMap.forEach(this::addToContext);
+    }
   }
 
   /**
@@ -112,9 +125,19 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
     if (!refObjectSpecific) {
       // Add basic functors.
       addToContext("regex", new RegexFunctor());
-      addToContext("json", new NGJsonFunctor());
+      // Todo(Archit): revisit NGJsonFunctor(PIE-9772)
+      if (contextMapProvided) {
+        addToContext("json", new JsonFunctor());
+      } else {
+        addToContext("json", new NGJsonFunctor());
+      }
       addToContext("xml", new XmlFunctor());
-      addToContext("secrets", new SecretFunctor(ambiance.getExpressionFunctorToken()));
+      if (pmsFeatureFlagService.isEnabled(
+              AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_USE_SECRET_FUNCTOR_WITH_RBAC)) {
+        addToContext(SECRETS, new SecretFunctorWithRbac(ambiance, pipelineRbacHelper));
+      } else {
+        addToContext(SECRETS, new SecretFunctor(ambiance.getExpressionFunctorToken()));
+      }
     }
 
     if (entityTypes.contains(NodeExecutionEntityType.OUTCOME)) {
@@ -247,11 +270,15 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
   protected Object evaluatePrefixCombinations(
       String expressionBlock, EngineJexlContext ctx, int depth, ExpressionMode expressionMode) {
     try {
-      if (pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_ENGINE_V2)) {
+      // Currently we use RefObjectSpecific only when the call is from PmsOutcomeServiceImpl or
+      // PmsSweepingOutputServiceImpl. We will use new functor if RefObjectSpecific is used because we need recast
+      // additions in our map.
+      if (!refObjectSpecific
+          && pmsFeatureFlagService.isEnabled(
+              AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_ENGINE_V2)) {
         String normalizedExpression = applyStaticAliases(expressionBlock);
         // Apply all the prefixes and return first one that evaluates successfully.
-        List<String> finalExpressions =
-            ExpandedJsonFunctorUtils.getExpressions(ambiance, groupAliases, normalizedExpression);
+        List<String> finalExpressions = fetchExpressionsV2(normalizedExpression);
         Object obj = ExpandedJsonFunctor.builder()
                          .planExpansionService(planExpansionService)
                          .ambiance(ambiance)
@@ -273,5 +300,20 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
           String.format("Could not resolve via V2 expression engine: %s. Falling back to V1", expressionBlock), ex);
     }
     return super.evaluatePrefixCombinations(expressionBlock, ctx, depth, expressionMode);
+  }
+
+  private List<String> fetchExpressionsV2(String normalizedExpression) {
+    if (hasExpressions(normalizedExpression)) {
+      return Collections.singletonList(normalizedExpression);
+    }
+    ImmutableList.Builder<String> listBuilder = ImmutableList.builder();
+    if (entityTypes.contains(NodeExecutionEntityType.OUTCOME)) {
+      listBuilder.add(String.format("outcome.%s", normalizedExpression));
+    }
+    if (entityTypes.contains(NodeExecutionEntityType.SWEEPING_OUTPUT)) {
+      listBuilder.add(String.format("output.%s", normalizedExpression));
+    }
+    listBuilder.addAll(ExpandedJsonFunctorUtils.getExpressions(ambiance, groupAliases, normalizedExpression));
+    return listBuilder.build();
   }
 }

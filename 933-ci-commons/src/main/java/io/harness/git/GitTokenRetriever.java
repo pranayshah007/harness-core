@@ -36,12 +36,15 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.delegate.task.ci.GitSCMType;
+import io.harness.encryption.FieldWithPlainTextOrSecretValueHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.secrets.SecretDecryptor;
+import io.harness.security.encryption.EncryptedDataDetail;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -85,8 +88,10 @@ public class GitTokenRetriever {
       GithubAppSpecDTO githubAppSpecDTO = (GithubAppSpecDTO) decryptableEntity;
       GithubAppConfig githubAppConfig =
           GithubAppConfig.builder()
-              .installationId(githubAppSpecDTO.getInstallationId())
-              .appId(githubAppSpecDTO.getApplicationId())
+              .installationId(FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
+                  githubAppSpecDTO.getInstallationId(), githubAppSpecDTO.getInstallationIdRef()))
+              .appId(FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
+                  githubAppSpecDTO.getApplicationId(), githubAppSpecDTO.getInstallationIdRef()))
               .privateKey(new String(githubAppSpecDTO.getPrivateKeyRef().getDecryptedValue()))
               .githubUrl(getGitApiURL(gitConfigDTO.getUrl()))
               .build();
@@ -122,6 +127,14 @@ public class GitTokenRetriever {
       throw new CIStageExecutionException(
           format("Unsupported access type %s for gitlab status", gitConfigDTO.getApiAccess().getType()));
     }
+  }
+
+  public String retrieveBitbucketUsernameFromAPIAccess(
+      BitbucketUsernameTokenApiAccessDTO bitbucketUsernameTokenApiAccessDTO,
+      List<EncryptedDataDetail> encryptedDataDetails) {
+    DecryptableEntity decryptableEntity =
+        secretDecryptor.decrypt(bitbucketUsernameTokenApiAccessDTO, encryptedDataDetails);
+    return new String(((BitbucketUsernameTokenApiAccessDTO) decryptableEntity).getUsernameRef().getDecryptedValue());
   }
 
   private String retrieveBitbucketAuthToken(ConnectorDetails gitConnector) {

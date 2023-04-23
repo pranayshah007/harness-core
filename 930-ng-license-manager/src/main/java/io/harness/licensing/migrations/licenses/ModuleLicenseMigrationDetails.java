@@ -7,7 +7,7 @@
 
 package io.harness.licensing.migrations.licenses;
 
-import static io.harness.annotations.dev.HarnessTeam.PLG;
+import static io.harness.annotations.dev.HarnessTeam.GTM;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.migration.MigrationDetails;
@@ -18,7 +18,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 
-@OwnedBy(PLG)
+@OwnedBy(GTM)
 public class ModuleLicenseMigrationDetails implements MigrationDetails {
   @Override
   public MigrationType getMigrationTypeName() {

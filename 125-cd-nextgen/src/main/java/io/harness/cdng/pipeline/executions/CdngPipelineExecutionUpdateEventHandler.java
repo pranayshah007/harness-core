@@ -18,10 +18,13 @@ import static io.harness.pms.contracts.execution.Status.EXPIRED;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
+import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.instance.InstanceDeploymentInfoStatus;
 import io.harness.cdng.instance.service.InstanceDeploymentInfoService;
+import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -38,12 +41,15 @@ import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.StageStatus;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
@@ -52,25 +58,37 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEventHandler {
-  private static final Set<String> k8sSteps =
-      Sets.newHashSet(StepSpecTypeConstants.GITOPS_CREATE_PR, StepSpecTypeConstants.GITOPS_MERGE_PR,
-          StepSpecTypeConstants.GITOPS_SYNC, StepSpecTypeConstants.K8S_ROLLING_DEPLOY,
-          StepSpecTypeConstants.K8S_ROLLING_ROLLBACK, StepSpecTypeConstants.K8S_BLUE_GREEN_DEPLOY,
-          StepSpecTypeConstants.K8S_APPLY, StepSpecTypeConstants.K8S_SCALE, StepSpecTypeConstants.K8S_BG_SWAP_SERVICES,
-          StepSpecTypeConstants.K8S_CANARY_DELETE, StepSpecTypeConstants.K8S_CANARY_DEPLOY,
-          StepSpecTypeConstants.K8S_DELETE, StepSpecTypeConstants.HELM_DEPLOY, StepSpecTypeConstants.HELM_ROLLBACK,
-          StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO, StepSpecTypeConstants.K8S_DRY_RUN_MANIFEST);
+  private static final Set<String> STEPS_TO_UPDATE_LOG_STREAMS = Sets.newHashSet(StepSpecTypeConstants.GITOPS_CREATE_PR,
+      StepSpecTypeConstants.GITOPS_MERGE_PR, StepSpecTypeConstants.GITOPS_SYNC,
+      StepSpecTypeConstants.K8S_ROLLING_DEPLOY, StepSpecTypeConstants.K8S_ROLLING_ROLLBACK,
+      StepSpecTypeConstants.K8S_BLUE_GREEN_DEPLOY, StepSpecTypeConstants.K8S_APPLY, StepSpecTypeConstants.K8S_SCALE,
+      StepSpecTypeConstants.K8S_BG_SWAP_SERVICES, StepSpecTypeConstants.K8S_CANARY_DELETE,
+      StepSpecTypeConstants.K8S_CANARY_DEPLOY, StepSpecTypeConstants.K8S_DELETE, StepSpecTypeConstants.HELM_DEPLOY,
+      StepSpecTypeConstants.HELM_ROLLBACK, StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO,
+      StepSpecTypeConstants.K8S_DRY_RUN_MANIFEST, StepSpecTypeConstants.COMMAND,
+      StepSpecTypeConstants.ASG_ROLLING_DEPLOY, StepSpecTypeConstants.ASG_ROLLING_ROLLBACK,
+      StepSpecTypeConstants.ASG_CANARY_DEPLOY, StepSpecTypeConstants.ASG_CANARY_DELETE,
+      StepSpecTypeConstants.ASG_BLUE_GREEN_DEPLOY, StepSpecTypeConstants.ASG_BLUE_GREEN_ROLLBACK,
+      StepSpecTypeConstants.ASG_BLUE_GREEN_SWAP_SERVICE, StepSpecTypeConstants.ELASTIGROUP_SETUP,
+      StepSpecTypeConstants.ELASTIGROUP_DEPLOY, StepSpecTypeConstants.ELASTIGROUP_ROLLBACK,
+      StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP, StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE);
 
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepHelper stepHelper;
   @Inject private AccountService accountService;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
   @Inject private InstanceDeploymentInfoService instanceDeploymentInfoService;
+  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Override
   public void handleEvent(OrchestrationEvent event) {
     if (isDeploymentStageStep(event.getAmbiance())) {
       processDeploymentStageEvent(event);
+    } else if (isRollbackStepNode(event.getAmbiance())) {
+      if (ngFeatureFlagHelperService.isEnabled(
+              AmbianceUtils.getAccountId(event.getAmbiance()), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
+        processRollbackStepEvent(event);
+      }
     }
 
     try {
@@ -79,7 +97,7 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
         stepHelper.sendRollbackTelemetryEvent(event.getAmbiance(), event.getStatus(), accountName);
       }
 
-      if (updateK8sLogStreams(event)) {
+      if (updateLogStreams(event)) {
         List<String> logKeys = StepUtils.generateLogKeys(event.getAmbiance(), Collections.emptyList());
         if (EmptyPredicate.isNotEmpty(logKeys)) {
           String prefix = logKeys.get(0);
@@ -93,17 +111,45 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
     }
   }
 
+  private void processRollbackStepEvent(OrchestrationEvent event) {
+    Ambiance ambiance = event.getAmbiance();
+    String stageExecutionId = ambiance.getStageExecutionId();
+    String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
+    String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+    Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
+    try {
+      long startTs = AmbianceUtils.getCurrentLevelStartTs(event.getAmbiance());
+      long endTs = event.getEndTs();
+      long rollbackDuration = endTs - startTs;
+
+      Map<String, Object> updates = new HashMap<>();
+      updates.put(StageExecutionInfoKeys.rollbackDuration, rollbackDuration);
+      stageExecutionInfoService.update(scope, stageExecutionId, updates);
+    } catch (Exception ex) {
+      log.error(
+          String.format(
+              "Unable to update stage execution summary, accountIdentifier: %s, orgIdentifier: %s, projectIdentifier: %s, "
+                  + "stageExecutionId: %s",
+              accountIdentifier, orgIdentifier, projectIdentifier, stageExecutionId),
+          ex);
+    }
+  }
+
   private void processDeploymentStageEvent(@NotNull OrchestrationEvent event) {
     Status status = event.getStatus();
     Ambiance ambiance = event.getAmbiance();
+    String stageExecutionId = ambiance.getStageExecutionId();
+    StageStatus stageStatus = status.equals(Status.SUCCEEDED) ? StageStatus.SUCCEEDED : StageStatus.FAILED;
+    String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
+    String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+    Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
+    String failureToUpdateStageExecutionSummary = String.format(
+        "Unable to update stage execution summary, accountIdentifier: %s, orgIdentifier: %s, projectIdentifier: %s, "
+            + "stageExecutionId: %s, stageStatus: %s",
+        accountIdentifier, orgIdentifier, projectIdentifier, stageExecutionId, stageStatus);
     if (StatusUtils.isFinalStatus(status)) {
-      String stageExecutionId = ambiance.getStageExecutionId();
-      StageStatus stageStatus = status.equals(Status.SUCCEEDED) ? StageStatus.SUCCEEDED : StageStatus.FAILED;
-      String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
-      String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
-      String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
-      Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
-
       try {
         stageExecutionInfoService.updateStatus(scope, stageExecutionId, stageStatus);
       } catch (Exception ex) {
@@ -127,6 +173,18 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
             ex);
       }
 
+      if (ngFeatureFlagHelperService.isEnabled(
+              AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
+        try {
+          Map<String, Object> updates = new HashMap<>();
+          updates.put(StageExecutionInfoKeys.status, status);
+          updates.put(StageExecutionInfoKeys.endts, event.getEndTs());
+          stageExecutionInfoService.update(scope, stageExecutionId, updates);
+        } catch (Exception ex) {
+          log.error(failureToUpdateStageExecutionSummary, ex);
+        }
+      }
+
       InstanceDeploymentInfoStatus instanceDeploymentInfoStatus = status.equals(Status.SUCCEEDED)
           ? InstanceDeploymentInfoStatus.SUCCEEDED
           : InstanceDeploymentInfoStatus.FAILED;
@@ -148,6 +206,10 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
     Level currentLevel = AmbianceUtils.obtainCurrentLevel(ambiance);
     return currentLevel != null
         && currentLevel.getStepType().getType().equals(ExecutionNodeType.DEPLOYMENT_STAGE_STEP.getName());
+  }
+
+  private boolean isRollbackStepNode(Ambiance ambiance) {
+    return Objects.equals(AmbianceUtils.getCurrentStepType(ambiance), RollbackOptionalChildChainStep.STEP_TYPE);
   }
 
   private boolean isK8sOrTerraformRollback(Ambiance ambiance) {
@@ -214,9 +276,9 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
     return level != null && level.getStepType() != null && stepSpecType.equals(level.getStepType().getType());
   }
 
-  private boolean updateK8sLogStreams(OrchestrationEvent event) {
+  private boolean updateLogStreams(OrchestrationEvent event) {
     return StatusUtils.isFinalStatus(event.getStatus())
-        && k8sSteps.contains(
+        && STEPS_TO_UPDATE_LOG_STREAMS.contains(
             Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(event.getAmbiance())).getStepType().getType());
   }
 }

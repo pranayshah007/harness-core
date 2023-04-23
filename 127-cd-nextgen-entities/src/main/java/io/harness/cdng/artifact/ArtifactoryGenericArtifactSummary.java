@@ -26,6 +26,7 @@ import lombok.Data;
 public class ArtifactoryGenericArtifactSummary implements ArtifactSummary {
   String artifactPath;
   String artifactDirectory;
+  String tag;
 
   @Override
   public String getDisplayName() {

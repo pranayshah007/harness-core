@@ -136,4 +136,19 @@ public class LogSanitizerTest extends CategoryTest {
     String result = logSanitizer.sanitizeLog("", message);
     assertThat(result).isEqualTo(sanitizedMessage);
   }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testGenericSanitize_Null_Empty_Message() {
+    LogSanitizer logSanitizer = new GenericLogSanitizer(null);
+    // empty message
+    String message = "";
+    String result = logSanitizer.sanitizeLog("", message);
+    assertThat(result).isEqualTo("");
+
+    // null message
+    result = logSanitizer.sanitizeLog("", null);
+    assertThat(result).isNull();
+  }
 }

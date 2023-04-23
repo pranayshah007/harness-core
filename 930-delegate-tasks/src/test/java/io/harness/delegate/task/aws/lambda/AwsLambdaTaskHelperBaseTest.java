@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
@@ -24,6 +25,8 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.exception.AwsLambdaException;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.exception.HintException;
 import io.harness.logging.LogCallback;
@@ -36,18 +39,18 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.google.common.collect.ImmutableSet;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import software.amazon.awssdk.core.SdkBytes;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(AwsLambdaTaskHelperBase.class)
+@RunWith(MockitoJUnitRunner.class)
 @OwnedBy(CDP)
 public class AwsLambdaTaskHelperBaseTest extends CategoryTest {
   @InjectMocks AwsLambdaTaskHelperBase awsLambdaTaskHelperBase;
@@ -57,6 +60,10 @@ public class AwsLambdaTaskHelperBaseTest extends CategoryTest {
   @Mock private AwsApiHelperService awsApiHelperService;
 
   @Mock private SecretDecryptionService secretDecryptionService;
+
+  @Mock private AwsLambdaInfraConfigHelper awsLambdaInfraConfigHelper;
+
+  @Mock private AwsLambdaTaskHelper awsLambdaTaskHelper;
 
   @Mock private LogCallback logCallback;
 
@@ -128,5 +135,25 @@ public class AwsLambdaTaskHelperBaseTest extends CategoryTest {
     assertThatThrownBy(
         () -> awsLambdaTaskHelperBase.downloadArtifactFromS3BucketAndPrepareSdkBytes(s3ArtifactConfig, logCallback))
         .isInstanceOf(HintException.class);
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testGetAwsLambdaServerInstanceInfo() throws AwsLambdaException {
+    AwsLambdaDeploymentReleaseData awsLambdaDeploymentReleaseData =
+        AwsLambdaDeploymentReleaseData.builder()
+            .awsLambdaInfraConfig(
+                AwsLambdaFunctionsInfraConfig.builder().region("us-east-1").infraStructureKey("key1").build())
+            .build();
+
+    AwsLambdaFunctionWithActiveVersions activeVersions =
+        AwsLambdaFunctionWithActiveVersions.builder().versions(Arrays.asList("v1", "v2")).build();
+
+    doNothing().when(awsLambdaInfraConfigHelper).decryptInfraConfig(any());
+    doReturn(activeVersions).when(awsLambdaTaskHelper).getAwsLambdaFunctionWithActiveVersions(any(), any());
+    List<ServerInstanceInfo> awsLambdaServerInstanceInfo =
+        awsLambdaTaskHelperBase.getAwsLambdaServerInstanceInfo(awsLambdaDeploymentReleaseData);
+    assertThat(awsLambdaServerInstanceInfo.size()).isEqualTo(2);
   }
 }

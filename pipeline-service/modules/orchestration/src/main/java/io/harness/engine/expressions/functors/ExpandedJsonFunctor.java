@@ -14,9 +14,8 @@ import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.execution.utils.AmbianceUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,32 +30,23 @@ public class ExpandedJsonFunctor {
   transient Map<String, String> groupAliases;
 
   public Object asJson(List<String> expressions) {
-    List<String> finalExpressions = new ArrayList<>();
     if (EmptyPredicate.isEmpty(expressions)) {
       return null;
     }
-    for (String expression : expressions) {
-      List<String> expressionKeys = Arrays.asList(expression.split("\\."));
-      if (expressionKeys.size() < 2 || EmptyPredicate.isEmpty(expressionKeys)) {
-        return null;
-      }
-      if (expressionKeys.get(0).equals("expandedJson")) {
-        List<String> response = new ArrayList<>();
-        for (int i = 1; i < expressionKeys.size(); i++) {
-          response.add(expressionKeys.get(i));
-        }
-        expression = String.join(".", response);
-        finalExpressions.add(expression);
-      }
-    }
-    Map<String, Object> response = planExpansionService.resolveExpressions(ambiance, finalExpressions);
+    Map<String, Object> response = planExpansionService.resolveExpressions(ambiance, expressions);
     if (response == null) {
       return null;
     }
     List<Level> levelsWithStrategyMetadata =
         ambiance.getLevelsList().stream().filter(Level::hasStrategyMetadata).collect(Collectors.toList());
     if (EmptyPredicate.isNotEmpty(levelsWithStrategyMetadata)) {
-      response.put("strategy", StrategyUtils.fetchStrategyObjectMap(levelsWithStrategyMetadata));
+      response.put("strategy",
+          StrategyUtils.fetchStrategyObjectMap(
+              levelsWithStrategyMetadata, ambiance.getMetadata().getUseMatrixFieldName()));
+    } else {
+      response.put("strategy",
+          StrategyUtils.fetchStrategyObjectMap(
+              AmbianceUtils.obtainCurrentLevel(ambiance), ambiance.getMetadata().getUseMatrixFieldName()));
     }
     return response;
   }

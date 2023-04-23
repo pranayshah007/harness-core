@@ -46,7 +46,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(PL)
 @RunWith(MockitoJUnitRunner.class)
@@ -95,7 +95,7 @@ public class TerraformTelemetryFilterTest {
 
     filter.filter(containerRequestContext);
 
-    Mockito.verifyZeroInteractions(telemetryReporter);
+    Mockito.verifyNoInteractions(telemetryReporter);
   }
 
   @Test
@@ -106,7 +106,7 @@ public class TerraformTelemetryFilterTest {
 
     filter.filter(containerRequestContext);
 
-    Mockito.verifyZeroInteractions(telemetryReporter);
+    Mockito.verifyNoInteractions(telemetryReporter);
   }
 
   @Test

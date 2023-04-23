@@ -7,9 +7,10 @@
 
 package software.wings.beans.accountdetails.events;
 
+import static io.harness.annotations.dev.HarnessTeam.GTM;
+
 import static software.wings.beans.accountdetails.AccountDetailsConstants.DEFAULT_EXPERIENCE_UPDATED;
 
-import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -17,7 +18,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-@OwnedBy(HarnessTeam.PLG)
+@OwnedBy(GTM)
 @Getter
 @SuperBuilder
 @NoArgsConstructor

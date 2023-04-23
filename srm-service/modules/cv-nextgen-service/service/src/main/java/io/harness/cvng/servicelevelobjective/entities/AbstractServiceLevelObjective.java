@@ -74,7 +74,8 @@ public abstract class AbstractServiceLevelObjective
   @NotNull @Singular @Size(max = 128) List<NGTag> tags;
   List<String> userJourneyIdentifiers;
   List<NotificationRuleRef> notificationRuleRefs;
-  @NotNull ServiceLevelObjective.SLOTarget sloTarget;
+  SLOTarget target;
+
   private boolean enabled;
   private long lastUpdatedAt;
   private long createdAt;
@@ -84,6 +85,7 @@ public abstract class AbstractServiceLevelObjective
   @FdIndex private long nextVerificationIteration;
   @FdIndex private long createNextTaskIteration;
   @FdIndex private long recordMetricIteration;
+  @FdIndex private long sloHistoryTimescaleIteration;
   @NotNull ServiceLevelObjectiveType type;
 
   public static List<MongoIndex> mongoIndexes() {
@@ -111,11 +113,11 @@ public abstract class AbstractServiceLevelObjective
   }
 
   public TimePeriod getCurrentTimeRange(LocalDateTime currentDateTime) {
-    return sloTarget.getCurrentTimeRange(currentDateTime);
+    return target.getCurrentTimeRange(currentDateTime);
   }
 
   public List<SLODashboardDetail.TimeRangeFilter> getTimeRangeFilters() {
-    return sloTarget.getTimeRangeFilters();
+    return target.getTimeRangeFilters();
   }
 
   public int getTotalErrorBudgetMinutes(LocalDateTime currentDateTime) {
@@ -150,6 +152,9 @@ public abstract class AbstractServiceLevelObjective
     if (ServiceLevelObjectiveV2Keys.recordMetricIteration.equals(fieldName)) {
       return this.recordMetricIteration;
     }
+    if (ServiceLevelObjectiveV2Keys.sloHistoryTimescaleIteration.equals(fieldName)) {
+      return this.sloHistoryTimescaleIteration;
+    }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
@@ -169,6 +174,10 @@ public abstract class AbstractServiceLevelObjective
     }
     if (ServiceLevelObjectiveV2Keys.recordMetricIteration.equals(fieldName)) {
       this.recordMetricIteration = nextIteration;
+      return;
+    }
+    if (ServiceLevelObjectiveV2Keys.sloHistoryTimescaleIteration.equals(fieldName)) {
+      this.sloHistoryTimescaleIteration = nextIteration;
       return;
     }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);

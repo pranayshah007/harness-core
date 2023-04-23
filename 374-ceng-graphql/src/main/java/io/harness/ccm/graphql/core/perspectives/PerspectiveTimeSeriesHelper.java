@@ -30,13 +30,13 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_AGGREGATED_MEMORY
 import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_AGGREGATED_MEMORY_UTILIZATION_VALUE;
 
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
-import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
-import io.harness.ccm.views.businessMapping.entities.CostTarget;
-import io.harness.ccm.views.businessMapping.entities.SharedCost;
-import io.harness.ccm.views.businessMapping.entities.SharedCostParameters;
-import io.harness.ccm.views.businessMapping.entities.SharedCostSplit;
-import io.harness.ccm.views.businessMapping.entities.UnallocatedCostStrategy;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessmapping.entities.CostTarget;
+import io.harness.ccm.views.businessmapping.entities.SharedCost;
+import io.harness.ccm.views.businessmapping.entities.SharedCostParameters;
+import io.harness.ccm.views.businessmapping.entities.SharedCostSplit;
+import io.harness.ccm.views.businessmapping.entities.UnallocatedCostStrategy;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.dto.DataPoint;
 import io.harness.ccm.views.dto.DataPoint.DataPointBuilder;
 import io.harness.ccm.views.dto.PerspectiveTimeSeriesData;
@@ -143,7 +143,6 @@ public class PerspectiveTimeSeriesHelper {
       String id = DEFAULT_STRING_VALUE;
       String stringValue = DEFAULT_GRID_ENTRY_NAME;
       String type = DEFAULT_STRING_VALUE;
-      double sharedCostInUnattributed = 0.0D;
       for (Field field : fields) {
         switch (field.getType().getStandardType()) {
           case TIMESTAMP:
@@ -207,7 +206,6 @@ public class PerspectiveTimeSeriesHelper {
                 if (sharedCostBucketNames.contains(field.getName())) {
                   updateSharedCostMap(
                       sharedCostFromGroupBy, getNumericValue(row, field), field.getName(), startTimeTruncatedTimestamp);
-                  sharedCostInUnattributed = getNumericValue(row, field);
                 }
                 break;
             }
@@ -244,11 +242,6 @@ public class PerspectiveTimeSeriesHelper {
           costPerEntity.put(stringValue, costPerEntity.get(stringValue) + value);
           entityReference.put(stringValue, getReference(id, stringValue, type));
           totalCost += value;
-        }
-        if (businessMapping != null && businessMapping.getUnallocatedCost() != null
-            && businessMapping.getUnallocatedCost().getLabel().equals(stringValue)) {
-          value -= sharedCostInUnattributed;
-          value = Math.max(value, 0.0D);
         }
         addDataPointToMap(id, stringValue, type, value, costDataPointsMap, startTimeTruncatedTimestamp);
         addDataPointToMap(id, "LIMIT", "UTILIZATION", cpuLimit, cpuLimitDataPointsMap, startTimeTruncatedTimestamp);
@@ -444,9 +437,7 @@ public class PerspectiveTimeSeriesHelper {
       }
     });
 
-    return updatedDataPoints.stream()
-        .filter(dataPoint -> dataPoint.getValue().doubleValue() > 0.0D)
-        .collect(Collectors.toList());
+    return updatedDataPoints;
   }
 
   private List<DataPoint> addSharedCostsToDataPoint(

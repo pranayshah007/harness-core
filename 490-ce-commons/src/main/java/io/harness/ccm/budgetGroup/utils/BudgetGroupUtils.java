@@ -20,12 +20,10 @@ import io.harness.ccm.budget.BudgetMonthlyBreakdown;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.BudgetSummary;
 import io.harness.ccm.budget.ValueDataPoint;
-import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.budgetGroup.BudgetGroupChildEntityDTO;
 import io.harness.ccm.budgetGroup.CascadeType;
-import io.harness.ccm.budgetGroup.dao.BudgetGroupDao;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.budget.BudgetCostData;
 import io.harness.exception.InvalidRequestException;
@@ -34,22 +32,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.Stack;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Slf4j
 public class BudgetGroupUtils {
-  @Autowired private static BudgetDao budgetDao;
-  @Autowired private static BudgetGroupDao budgetGroupDao;
-
   public static final String BUDGET_GROUP_NAME_EXISTS_EXCEPTION =
       "Error in creating budget group. Budget group with given name already exists";
   public static final String INVALID_CHILD_ENTITY_ID_EXCEPTION =
@@ -87,6 +79,12 @@ public class BudgetGroupUtils {
   public static final String NO_CHILD_ENTITY_PRESENT_EXCEPTION =
       "Error in performing operation. Budget group must have atleast one child budget/budget group";
   public static final String INVALID_PARENT_EXCEPTION = "Error in creating budget group. Invalid parent Id specified";
+  public static final String INVALID_INDIVIDUAL_PROPORTION =
+      "Error in performing operation. Individual Proportion for budget group children should be in valid range";
+  public static final String INVALID_TOTAL_PROPORTION =
+      "Error in performing operation. Total Proportion for budget group children should be 100";
+  public static final String INVALID_BUDGET_DETAILS_EXCEPTION =
+      "Error in updating budget group. The budget group period/ start period should be same as it's parent budget group";
 
   public static void validateBudgetGroup(BudgetGroup budgetGroup, List<BudgetGroup> existingBudgetGroups) {
     populateDefaultBudgetGroupBreakdown(budgetGroup);
@@ -579,140 +577,6 @@ public class BudgetGroupUtils {
     }
   }
 
-  public static void updateBudgetGroupAmount(BudgetGroup budgetGroup, String accountId) {
-    try {
-      Double[] budgetGroupAmountMonthly = new Double[12];
-
-      double budgetGroupAmount = 0.0;
-
-      Arrays.fill(budgetGroupAmountMonthly, 0.0);
-
-      // budgetGroupStack is used to traverse through all the children of budgetGroup
-      Stack<BudgetGroup> budgetGroupStack = new Stack<>();
-
-      // budgetGroupUuid & budgetUuid is used to avoid any circular link that might exist
-      Set<String> budgetGroupUuid = new HashSet<>();
-      Set<String> budgetUuid = new HashSet<>();
-
-      budgetGroupStack.add(budgetGroup);
-      budgetGroupUuid.add(budgetGroup.getUuid());
-
-      while (!budgetGroupStack.isEmpty()) {
-        BudgetGroup budgetGroupTemp = budgetGroupStack.peek();
-        budgetGroupStack.pop();
-
-        // Here we explore all children of the given budgetGroup
-        for (BudgetGroupChildEntityDTO childEntityDTO : budgetGroupTemp.getChildEntities()) {
-          // If child entity is a budgetGroup & not yet explored we add it to stack and mark it as visited
-          if (childEntityDTO.isBudgetGroup() && !budgetGroupUuid.contains(childEntityDTO.getId())) {
-            budgetGroupStack.add(budgetGroupDao.get(childEntityDTO.getId(), accountId));
-            budgetGroupUuid.add(childEntityDTO.getId());
-          }
-
-          // If child entity id a budget & not yet explored then we add the amount to budgetGroup Amount
-          // And also mark it as visited
-          if (!childEntityDTO.isBudgetGroup() && !budgetUuid.contains(childEntityDTO.getId())) {
-            budgetUuid.add(childEntityDTO.getId());
-            Budget childBudget = budgetDao.get(childEntityDTO.getId(), accountId);
-            budgetGroupAmount += childBudget.getBudgetAmount();
-            if (childBudget.getPeriod() == BudgetPeriod.YEARLY && childBudget.getBudgetMonthlyBreakdown() != null
-                && childBudget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
-              Double[] budgetAmountMonthly = BudgetUtils.getYearlyMonthWiseValues(
-                  childBudget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount());
-              for (int month = 0; month < MONTHS; month++) {
-                budgetGroupAmountMonthly[month] += budgetAmountMonthly[month];
-              }
-            }
-          }
-        }
-      }
-
-      budgetGroup.setBudgetGroupAmount(budgetGroupAmount);
-      if (budgetGroup.getPeriod() == BudgetPeriod.YEARLY && budgetGroup.getBudgetGroupMonthlyBreakdown() != null
-          && budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
-        budgetGroup.getBudgetGroupMonthlyBreakdown().setBudgetMonthlyAmount(
-            BudgetUtils.getYearlyMonthWiseKeyValuePairs(budgetGroup.getStartTime(), budgetGroupAmountMonthly));
-      }
-    } catch (Exception e) {
-      log.error("Exception while calculating updated budget group amount for budget group : {}. Exception: {}",
-          budgetGroup.getUuid(), e);
-    }
-  }
-
-  public static void updateBudgetGroupCosts(BudgetGroup budgetGroup, String accountId) {
-    try {
-      Double[] budgetGroupActualCostMonthly = new Double[12];
-      Double[] budgetGroupForecastCostMonthly = new Double[12];
-      Double[] budgetGroupLastPeriodCostMonthly = new Double[12];
-
-      double budgetGroupActualCost = 0.0;
-      double budgetGroupForecastCost = 0.0;
-      double budgetGroupLastPeriodCost = 0.0;
-
-      Arrays.fill(budgetGroupActualCostMonthly, 0.0);
-      Arrays.fill(budgetGroupForecastCostMonthly, 0.0);
-      Arrays.fill(budgetGroupLastPeriodCostMonthly, 0.0);
-
-      // budgetGroupStack is used to traverse through all the children of budgetGroup
-      Stack<BudgetGroup> budgetGroupStack = new Stack<>();
-
-      // budgetGroupUuid & budgetUuid is used to avoid any circular link that might exist
-      Set<String> budgetGroupUuid = new HashSet<>();
-      Set<String> budgetUuid = new HashSet<>();
-
-      budgetGroupStack.add(budgetGroup);
-      budgetGroupUuid.add(budgetGroup.getUuid());
-
-      while (!budgetGroupStack.isEmpty()) {
-        BudgetGroup budgetGroupTemp = budgetGroupStack.peek();
-        budgetGroupStack.pop();
-
-        // Here we explore all children of the given budgetGroup
-        for (BudgetGroupChildEntityDTO childEntityDTO : budgetGroupTemp.getChildEntities()) {
-          // If child entity is a budgetGroup & not yet explored we add it to stack and mark it as visited
-          if (childEntityDTO.isBudgetGroup() && !budgetGroupUuid.contains(childEntityDTO.getId())) {
-            budgetGroupStack.add(budgetGroupDao.get(childEntityDTO.getId(), accountId));
-            budgetGroupUuid.add(childEntityDTO.getId());
-          }
-
-          // If child entity id a budget & not yet explored then we add the amount to budgetGroup Amount
-          // And also mark it as visited
-          if (!childEntityDTO.isBudgetGroup() && !budgetUuid.contains(childEntityDTO.getId())) {
-            budgetUuid.add(childEntityDTO.getId());
-            Budget childBudget = budgetDao.get(childEntityDTO.getId(), accountId);
-            budgetGroupActualCost += childBudget.getActualCost();
-            budgetGroupForecastCost += childBudget.getForecastCost();
-            budgetGroupLastPeriodCost += childBudget.getLastMonthCost();
-            if (childBudget.getPeriod() == BudgetPeriod.YEARLY && childBudget.getBudgetMonthlyBreakdown() != null
-                && childBudget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
-              Double[] budgetActualCostMonthly = childBudget.getBudgetMonthlyBreakdown().getActualMonthlyCost();
-              Double[] budgetForecastCostMonthly = childBudget.getBudgetMonthlyBreakdown().getForecastMonthlyCost();
-              Double[] budgetLastPeriodCostMonthly = childBudget.getBudgetMonthlyBreakdown().getYearlyLastPeriodCost();
-              for (int month = 0; month < MONTHS; month++) {
-                budgetGroupActualCostMonthly[month] += budgetActualCostMonthly[month];
-                budgetGroupForecastCostMonthly[month] += budgetForecastCostMonthly[month];
-                budgetGroupLastPeriodCostMonthly[month] += budgetLastPeriodCostMonthly[month];
-              }
-            }
-          }
-        }
-      }
-
-      budgetGroup.setActualCost(budgetGroupActualCost);
-      budgetGroup.setForecastCost(budgetGroupForecastCost);
-      budgetGroup.setLastMonthCost(budgetGroupLastPeriodCost);
-      if (budgetGroup.getPeriod() == BudgetPeriod.YEARLY && budgetGroup.getBudgetGroupMonthlyBreakdown() != null
-          && budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
-        budgetGroup.getBudgetGroupMonthlyBreakdown().setActualMonthlyCost(budgetGroupActualCostMonthly);
-        budgetGroup.getBudgetGroupMonthlyBreakdown().setForecastMonthlyCost(budgetGroupForecastCostMonthly);
-        budgetGroup.getBudgetGroupMonthlyBreakdown().setYearlyLastPeriodCost(budgetGroupLastPeriodCostMonthly);
-      }
-    } catch (Exception e) {
-      log.error("Exception while calculating updated budget group costs for budget group : {}. Exception: {}",
-          budgetGroup.getUuid(), e);
-    }
-  }
-
   public static HashMap<Long, BudgetCostData> adjustBudgetGroupHistory(BudgetGroup budgetGroup) {
     HashMap<Long, BudgetCostData> budgetGroupHistory = budgetGroup.getBudgetGroupHistory();
     int maxAllowedSize;
@@ -757,5 +621,18 @@ public class BudgetGroupUtils {
 
   public static Double getSumGivenTimeAndValueList(List<ValueDataPoint> valueDataPoints) {
     return valueDataPoints.stream().map(valueDataPoint -> valueDataPoint.getValue()).reduce(0.0D, (a, b) -> a + b);
+  }
+
+  public static List<ValueDataPoint> updateBudgetGroupMonthlyAmount(
+      List<ValueDataPoint> budgetGroupMonthlyAmount, Double[] budgetAmountMonthlyDiff) {
+    List<ValueDataPoint> updatedBudgetGroupMonthlyAmount = new ArrayList<>();
+    for (int month = 0; month < MONTHS; month++) {
+      updatedBudgetGroupMonthlyAmount.add(
+          ValueDataPoint.builder()
+              .time(budgetGroupMonthlyAmount.get(month).getTime())
+              .value(budgetGroupMonthlyAmount.get(month).getValue() + budgetAmountMonthlyDiff[month])
+              .build());
+    }
+    return updatedBudgetGroupMonthlyAmount;
   }
 }

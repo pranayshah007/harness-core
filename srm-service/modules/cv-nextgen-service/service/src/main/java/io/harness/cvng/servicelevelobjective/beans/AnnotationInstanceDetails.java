@@ -7,8 +7,8 @@
 
 package io.harness.cvng.servicelevelobjective.beans;
 
-import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventDetails;
-import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventsType;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetails;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
 
 import java.util.List;
 import lombok.Builder;

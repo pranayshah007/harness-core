@@ -27,11 +27,14 @@ import lombok.experimental.SuperBuilder;
 public class SLIDataCollectionTask extends DataCollectionTask {
   public static final Duration SLI_MAX_DATA_COLLECTION_DURATION = DATA_COLLECTION_TIME_RANGE_FOR_SLI;
 
-  @VisibleForTesting public static int MAX_RETRY_COUNT = 10;
+  public static final Duration SLI_MAX_DATA_RETRY_DURATION = Duration.ofHours(28);
+
+  @VisibleForTesting public static final int MAX_RETRY_COUNT = 10;
 
   private static final List<Duration> RETRY_WAIT_DURATIONS =
-      Lists.newArrayList(Duration.ofSeconds(5), Duration.ofSeconds(10), Duration.ofSeconds(60), Duration.ofMinutes(5),
-          Duration.ofMinutes(15), Duration.ofHours(1), Duration.ofHours(3));
+      Lists.newArrayList(Duration.ofSeconds(5), Duration.ofSeconds(5), Duration.ofSeconds(15), Duration.ofSeconds(15),
+          Duration.ofSeconds(60), Duration.ofSeconds(60), Duration.ofMinutes(5), Duration.ofMinutes(5),
+          Duration.ofMinutes(20), Duration.ofMinutes(20), Duration.ofMinutes(30));
   @Override
   public boolean shouldCreateNextTask() {
     return true;
@@ -50,7 +53,7 @@ public class SLIDataCollectionTask extends DataCollectionTask {
 
   @Override
   public boolean eligibleForRetry(Instant currentTime) {
-    return getStartTime().isAfter(getDataCollectionPastTimeCutoff(currentTime)) && getRetryCount() <= MAX_RETRY_COUNT;
+    return getStartTime().isAfter(getDataCollectionPastRetryTime(currentTime)) && getRetryCount() < MAX_RETRY_COUNT;
   }
 
   @Override
@@ -60,5 +63,9 @@ public class SLIDataCollectionTask extends DataCollectionTask {
 
   public Instant getDataCollectionPastTimeCutoff(Instant currentTime) {
     return DateTimeUtils.roundDownTo5MinBoundary(currentTime).minus(SLI_MAX_DATA_COLLECTION_DURATION);
+  }
+
+  public Instant getDataCollectionPastRetryTime(Instant currentTime) {
+    return DateTimeUtils.roundDownTo5MinBoundary(currentTime).minus(SLI_MAX_DATA_RETRY_DURATION);
   }
 }

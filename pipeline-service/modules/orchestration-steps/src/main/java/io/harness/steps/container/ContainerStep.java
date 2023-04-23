@@ -31,6 +31,7 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
@@ -42,7 +43,6 @@ import io.harness.steps.StepUtils;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerRunStepHelper;
 import io.harness.steps.container.execution.ContainerStepCleanupHelper;
-import io.harness.steps.container.execution.ContainerStepExecutionResponseHelper;
 import io.harness.steps.container.execution.ContainerStepRbacHelper;
 import io.harness.steps.executable.TaskChainExecutableWithRbac;
 import io.harness.steps.plugin.ContainerStepInfo;
@@ -140,7 +140,7 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     containerStepCleanupHelper.sendCleanupRequest(ambiance);
     ResponseData responseData = responseDataSupplier.get();
-    executionResponseHelper.finalizeStepResponse(ambiance, stepParameters, responseData);
+    executionResponseHelper.finalizeStepResponse(ambiance, stepParameters, responseData, null);
     return StepResponse.builder().status(Status.SUCCEEDED).build();
   }
 

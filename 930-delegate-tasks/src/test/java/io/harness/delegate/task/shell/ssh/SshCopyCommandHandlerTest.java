@@ -15,8 +15,8 @@ import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -27,6 +27,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.storeconfig.GitFetchedStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
 import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.shell.FileBasedProcessScriptExecutorNG;
@@ -68,7 +69,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(CDP)
 @RunWith(MockitoJUnitRunner.class)
@@ -221,6 +222,14 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
     doReturn(fileBasedProcessScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
     when(fileBasedProcessScriptExecutorNG.copyConfigFiles(any(), any())).thenReturn(CommandExecutionStatus.SUCCESS);
 
+    when(secretDecryptionService.decrypt(any(), any()))
+        .thenReturn(SecretConfigFile.builder()
+                        .encryptedConfigFile(SecretRefData.builder()
+                                                 .identifier("secret-ref")
+                                                 .decryptedValue("This is a secret".toCharArray())
+                                                 .build())
+                        .build());
+
     CommandExecutionStatus status =
         sshCopyCommandHandler
             .handle(getParameters(true, null, getEmptyFileDelegateConfig()), copyConfigCommandUnit,
@@ -230,6 +239,32 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
     ArgumentCaptor<ConfigFileParameters> configFileArgumentCaptor = ArgumentCaptor.forClass(ConfigFileParameters.class);
     verify(fileBasedProcessScriptExecutorNG, times(1)).copyConfigFiles(eq("/test"), configFileArgumentCaptor.capture());
     assertEmptyConfigFile(configFileArgumentCaptor.getValue());
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testShouldRecalculateConfigFileWithSshFileExecutorOnDelegate() {
+    doReturn(fileBasedProcessScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
+    when(fileBasedProcessScriptExecutorNG.copyConfigFiles(any(), any())).thenReturn(CommandExecutionStatus.SUCCESS);
+
+    when(secretDecryptionService.decrypt(any(), any()))
+        .thenReturn(SecretConfigFile.builder()
+                        .encryptedConfigFile(SecretRefData.builder()
+                                                 .identifier("secret-ref")
+                                                 .decryptedValue("This is a secret".toCharArray())
+                                                 .build())
+                        .build());
+
+    CommandExecutionStatus status =
+        sshCopyCommandHandler
+            .handle(getParameters(true, null, getFileDelegateConfigWithoutSize()), copyConfigCommandUnit,
+                logStreamingTaskClient, commandUnitsProgress, taskContext)
+            .getStatus();
+    assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
+    ArgumentCaptor<ConfigFileParameters> configFileArgumentCaptor = ArgumentCaptor.forClass(ConfigFileParameters.class);
+    verify(fileBasedProcessScriptExecutorNG, times(2)).copyConfigFiles(eq("/test"), configFileArgumentCaptor.capture());
+    assertConfigFile(configFileArgumentCaptor.getValue());
   }
 
   @Test
@@ -296,6 +331,56 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
         .isInstanceOf(HintException.class);
   }
 
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testShouldCopyConfigFileWithSshFileExecutorFromGit() {
+    doReturn(fileBasedSshScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
+    when(fileBasedSshScriptExecutorNG.copyConfigFiles(any(), any())).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(secretDecryptionService.decrypt(any(), any()))
+        .thenReturn(SecretConfigFile.builder()
+                        .encryptedConfigFile(SecretRefData.builder()
+                                                 .identifier("secret-ref")
+                                                 .decryptedValue("This is a secret".toCharArray())
+                                                 .build())
+                        .build());
+
+    CommandExecutionStatus status =
+        sshCopyCommandHandler
+            .handle(getParameters(false, null, getFileDelegateConfigFromGit()), copyConfigCommandUnit,
+                logStreamingTaskClient, commandUnitsProgress, taskContext)
+            .getStatus();
+    assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
+    ArgumentCaptor<ConfigFileParameters> configFileArgumentCaptor = ArgumentCaptor.forClass(ConfigFileParameters.class);
+    verify(fileBasedSshScriptExecutorNG, times(2)).copyConfigFiles(eq("/test"), configFileArgumentCaptor.capture());
+    assertConfigFile(configFileArgumentCaptor.getValue());
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testShouldCopyConfigFileWithSshFileExecutorFromGitOnDelegate() {
+    doReturn(fileBasedSshScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
+    when(fileBasedSshScriptExecutorNG.copyConfigFiles(any(), any())).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(secretDecryptionService.decrypt(any(), any()))
+        .thenReturn(SecretConfigFile.builder()
+                        .encryptedConfigFile(SecretRefData.builder()
+                                                 .identifier("secret-ref")
+                                                 .decryptedValue("This is a secret".toCharArray())
+                                                 .build())
+                        .build());
+
+    CommandExecutionStatus status =
+        sshCopyCommandHandler
+            .handle(getParameters(true, null, getFileDelegateConfigFromGit()), copyConfigCommandUnit,
+                logStreamingTaskClient, commandUnitsProgress, taskContext)
+            .getStatus();
+    assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
+    ArgumentCaptor<ConfigFileParameters> configFileArgumentCaptor = ArgumentCaptor.forClass(ConfigFileParameters.class);
+    verify(fileBasedSshScriptExecutorNG, times(2)).copyConfigFiles(eq("/test"), configFileArgumentCaptor.capture());
+    assertConfigFile(configFileArgumentCaptor.getValue());
+  }
+
   private CommandTaskParameters getParameters(boolean onDelegate, boolean withArtifact) {
     SshWinRmArtifactDelegateConfig artifactDelegateConfig =
         withArtifact ? ArtifactoryArtifactDelegateConfig.builder().build() : null;
@@ -323,6 +408,47 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
     return FileDelegateConfig.builder()
         .stores(Arrays.asList(
             HarnessStoreDelegateConfig.builder()
+                .configFiles(Arrays.asList(ConfigFileParameters.builder()
+                                               .fileContent("hello world")
+                                               .fileName("test.txt")
+                                               .fileSize(11L)
+                                               .build(),
+                    ConfigFileParameters.builder()
+                        .fileName("secret-ref")
+                        .isEncrypted(true)
+                        .encryptionDataDetails(Arrays.asList(encryptedDataDetail))
+                        .secretConfigFile(
+                            SecretConfigFile.builder()
+                                .encryptedConfigFile(SecretRefData.builder().identifier("secret-ref").build())
+                                .build())
+                        .build()))
+                .build()))
+        .build();
+  }
+
+  private FileDelegateConfig getFileDelegateConfigWithoutSize() {
+    return FileDelegateConfig.builder()
+        .stores(Arrays.asList(
+            HarnessStoreDelegateConfig.builder()
+                .configFiles(Arrays.asList(
+                    ConfigFileParameters.builder().fileContent("hello world").fileName("test.txt").fileSize(0L).build(),
+                    ConfigFileParameters.builder()
+                        .fileName("secret-ref")
+                        .isEncrypted(true)
+                        .encryptionDataDetails(Arrays.asList(encryptedDataDetail))
+                        .secretConfigFile(
+                            SecretConfigFile.builder()
+                                .encryptedConfigFile(SecretRefData.builder().identifier("secret-ref").build())
+                                .build())
+                        .build()))
+                .build()))
+        .build();
+  }
+
+  private FileDelegateConfig getFileDelegateConfigFromGit() {
+    return FileDelegateConfig.builder()
+        .stores(Arrays.asList(
+            GitFetchedStoreDelegateConfig.builder()
                 .configFiles(Arrays.asList(ConfigFileParameters.builder()
                                                .fileContent("hello world")
                                                .fileName("test.txt")

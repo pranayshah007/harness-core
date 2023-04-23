@@ -47,9 +47,9 @@ import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anySet;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -622,7 +622,8 @@ public class PcfInstanceHandlerTest extends WingsBaseTest {
 
     assertThatThrownBy(() -> pcfInstanceHandler.syncInstances("appId", "infraMappingId", ITERATOR))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Failed to instance sync for PCF Application Name: TestApp");
+        .hasMessage(
+            "Application not found for PCF application Name: [TestApp] with InfraMappingId: [infraMappingId], Failed to perform instance sync for this PCF Application with Exception: [PcfAppNotFoundException: App not found]");
   }
 
   @Test

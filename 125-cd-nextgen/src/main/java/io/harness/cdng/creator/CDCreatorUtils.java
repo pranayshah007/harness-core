@@ -64,6 +64,7 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.AWS_SAM_DEPLOY, StepSpecTypeConstants.AWS_SAM_ROLLBACK,
         StepSpecTypeConstants.BAMBOO_BUILD, StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK,
         StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK, StepSpecTypeConstants.GITOPS_SYNC,
-        StepSpecTypeConstants.TAS_ROUTE_MAPPING);
+        StepSpecTypeConstants.TAS_ROUTE_MAPPING, StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY,
+        StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK);
   }
 }

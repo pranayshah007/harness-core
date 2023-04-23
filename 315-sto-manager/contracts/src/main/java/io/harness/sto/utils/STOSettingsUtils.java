@@ -14,13 +14,20 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.security.AquaTrivyStepInfo;
+import io.harness.beans.steps.stepinfo.security.AwsEcrStepInfo;
+import io.harness.beans.steps.stepinfo.security.AwsSecurityHubStepInfo;
 import io.harness.beans.steps.stepinfo.security.BlackDuckStepInfo;
 import io.harness.beans.steps.stepinfo.security.BurpStepInfo;
 import io.harness.beans.steps.stepinfo.security.CheckmarxStepInfo;
 import io.harness.beans.steps.stepinfo.security.FortifyOnDemandStepInfo;
+import io.harness.beans.steps.stepinfo.security.FossaStepInfo;
 import io.harness.beans.steps.stepinfo.security.GrypeStepInfo;
 import io.harness.beans.steps.stepinfo.security.MendStepInfo;
+import io.harness.beans.steps.stepinfo.security.MetasploitStepInfo;
+import io.harness.beans.steps.stepinfo.security.NiktoStepInfo;
+import io.harness.beans.steps.stepinfo.security.NmapStepInfo;
 import io.harness.beans.steps.stepinfo.security.PrismaCloudStepInfo;
+import io.harness.beans.steps.stepinfo.security.ProwlerStepInfo;
 import io.harness.beans.steps.stepinfo.security.SnykStepInfo;
 import io.harness.beans.steps.stepinfo.security.SonarqubeStepInfo;
 import io.harness.beans.steps.stepinfo.security.VeracodeStepInfo;
@@ -66,6 +73,10 @@ import lombok.extern.slf4j.Slf4j;
 public final class STOSettingsUtils {
   public static final String SECURITY_ENV_PREFIX = "SECURITY_";
   public static final String PRODUCT_PROJECT_VERSION = "product_project_version";
+
+  public static final String AWS_ACCOUNT = "aws_account";
+  public static final String CONFIGURATION_TYPE = "configuration_type";
+  public static final String PRODUCT_PROJECT_KEY = "product_project_key";
   public static final String PRODUCT_PROJECT_NAME = "product_project_name";
   public static final String PRODUCT_PROJECT_TOKEN = "product_project_token";
   public static final String PRODUCT_PRODUCT_NAME = "product_product_name";
@@ -74,13 +85,12 @@ public final class STOSettingsUtils {
   public static final String PRODUCT_EXCLUDE = "product_exclude";
   public static final String PRODUCT_INCLUDE = "product_include";
   public static final String TOOL_PROJECT_NAME = "tool.project_name";
+  public static final String TOOL_PROJECT_KEY = "tool.project_key";
   public static final String TOOL_PROJECT_TOKEN = "tool.project_token";
   public static final String TOOL_PRODUCT_NAME = "tool.product_name";
   public static final String TOOL_PRODUCT_TOKEN = "tool.product_token";
   public static final String TOOL_EXCLUDE = "tool.exclude";
   public static final String TOOL_INCLUDE = "tool.include";
-  public static final Integer ZAP_DEFAULT_PORT = 8080;
-  public static final Integer DEFAULT_INSTANCE_PORT = 80;
 
   private STOSettingsUtils() {
     throw new IllegalStateException("Utility class");
@@ -143,7 +153,8 @@ public final class STOSettingsUtils {
     return SECURITY_ENV_PREFIX + value.toUpperCase(Locale.ROOT);
   }
 
-  private static Map<String, String> processSTOAuthFields(STOYamlAuth authData, String stepType, String identifier) {
+  private static Map<String, String> processSTOAuthFields(
+      STOYamlAuth authData, STOYamlTarget target, String stepType, String identifier) {
     Map<String, String> map = new HashMap<>();
 
     if (authData != null) {
@@ -154,15 +165,23 @@ public final class STOSettingsUtils {
 
       Boolean authSsl = resolveBooleanParameter(authData.getSsl(), Boolean.TRUE);
 
+      String authFieldPrefix = "product";
+
+      if (target != null && target.getType() == STOYamlTargetType.CONFIGURATION) {
+        authFieldPrefix = "configuration";
+      }
+
       map.put(getSTOKey("bypass_ssl_check"), String.valueOf(!authSsl));
       map.put(getSTOKey("product_domain"),
           resolveStringParameter("auth.domain", stepType, identifier, authData.getDomain(), false));
       map.put(getSTOKey("product_api_version"),
           resolveStringParameter("auth.version", stepType, identifier, authData.getVersion(), false));
-      map.put(getSTOKey("product_access_id"),
+      map.put(getSTOKey(authFieldPrefix + "_access_id"),
           resolveStringParameter("auth.accessId", stepType, identifier, authData.getAccessId(), false));
-      map.put(getSTOKey("product_access_token"),
+      map.put(getSTOKey(authFieldPrefix + "_access_token"),
           resolveStringParameter("auth.accessToken", stepType, identifier, authData.getAccessToken(), false));
+      map.put(getSTOKey(authFieldPrefix + "_region"),
+          resolveStringParameter("auth.region", stepType, identifier, authData.getRegion(), false));
     }
 
     return map;
@@ -244,7 +263,6 @@ public final class STOSettingsUtils {
           map.put(getSTOKey("repository_branch"), targetVariant);
           break;
         case CONFIGURATION:
-          map.put(getSTOKey("configuration_type"), targetName);
           map.put(getSTOKey("configuration_environment"), targetVariant);
           break;
         default:
@@ -305,7 +323,7 @@ public final class STOSettingsUtils {
       BlackDuckStepInfo stepInfo, String stepType, String identifier) {
     Map<String, String> map = new HashMap<>();
 
-    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepType, identifier));
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
     map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
 
     STOYamlBlackduckToolData toolData = stepInfo.getTool();
@@ -323,6 +341,7 @@ public final class STOSettingsUtils {
   private static Map<String, String> processSTOBurpFields(BurpStepInfo stepInfo, String stepType, String identifier) {
     Map<String, String> map = new HashMap<>();
 
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
     map.putAll(processSTOInstanceFields(stepInfo.getInstance(), stepType, identifier));
 
     return map;
@@ -332,7 +351,7 @@ public final class STOSettingsUtils {
       CheckmarxStepInfo stepInfo, String stepType, String identifier) {
     Map<String, String> map = new HashMap<>();
 
-    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepType, identifier));
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
     map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
 
     STOYamlCheckmarxToolData toolData = stepInfo.getTool();
@@ -351,7 +370,7 @@ public final class STOSettingsUtils {
       FortifyOnDemandStepInfo stepInfo, String stepType, String identifier) {
     Map<String, String> map = new HashMap<>();
 
-    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepType, identifier));
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
     map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
 
     STOYamlFODToolData toolData = stepInfo.getTool();
@@ -389,7 +408,7 @@ public final class STOSettingsUtils {
       PrismaCloudStepInfo stepInfo, String stepType, String identifier) {
     Map<String, String> map = new HashMap<>();
 
-    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepType, identifier));
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
     map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
 
     return map;
@@ -399,11 +418,13 @@ public final class STOSettingsUtils {
       SonarqubeStepInfo stepInfo, String stepType, String identifier) {
     Map<String, String> map = new HashMap<>();
 
-    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepType, identifier));
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
 
     STOYamlSonarqubeToolData toolData = stepInfo.getTool();
 
     if (toolData != null) {
+      map.put(getSTOKey(PRODUCT_PROJECT_KEY),
+          resolveStringParameter(TOOL_PROJECT_KEY, stepType, identifier, toolData.getProjectKey(), false));
       map.put(getSTOKey(PRODUCT_EXCLUDE),
           resolveStringParameter(TOOL_EXCLUDE, stepType, identifier, toolData.getExclude(), false));
       map.put(getSTOKey(PRODUCT_INCLUDE),
@@ -425,8 +446,16 @@ public final class STOSettingsUtils {
   private static Map<String, String> processSTOSnykFields(SnykStepInfo stepInfo, String stepType, String identifier) {
     Map<String, String> map = new HashMap<>();
 
-    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepType, identifier));
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
     map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOFossaFields(FossaStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
 
     return map;
   }
@@ -451,7 +480,7 @@ public final class STOSettingsUtils {
   private static Map<String, String> processSTOMendFields(MendStepInfo stepInfo, String stepType, String identifier) {
     Map<String, String> map = new HashMap<>();
 
-    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepType, identifier));
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
 
     STOYamlMendToolData toolData = stepInfo.getTool();
 
@@ -464,7 +493,6 @@ public final class STOSettingsUtils {
           resolveStringParameter(TOOL_PRODUCT_NAME, stepType, identifier, toolData.getProductName(), false));
       map.put(getSTOKey(PRODUCT_PRODUCT_TOKEN),
           resolveStringParameter(TOOL_PRODUCT_TOKEN, stepType, identifier, toolData.getProductToken(), false));
-
       map.put(getSTOKey(PRODUCT_EXCLUDE),
           resolveStringParameter(TOOL_EXCLUDE, stepType, identifier, toolData.getExclude(), false));
       map.put(getSTOKey(PRODUCT_INCLUDE),
@@ -478,7 +506,7 @@ public final class STOSettingsUtils {
       VeracodeStepInfo stepInfo, String stepType, String identifier) {
     Map<String, String> map = new HashMap<>();
 
-    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepType, identifier));
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
 
     STOYamlVeracodeToolData toolData = stepInfo.getTool();
 
@@ -488,6 +516,60 @@ public final class STOSettingsUtils {
       map.put(getSTOKey(PRODUCT_PROJECT_NAME),
           resolveStringParameter(TOOL_PROJECT_NAME, stepType, identifier, toolData.getProjectName(), false));
     }
+
+    return map;
+  }
+  private static Map<String, String> processSTOAwsEcrFields(
+      AwsEcrStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOAwsSecurityHubFields(
+      AwsSecurityHubStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.put(getSTOKey(CONFIGURATION_TYPE), AWS_ACCOUNT);
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
+
+    return map;
+  }
+
+  private static Map<String, String> processSTONmapFields(NmapStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOInstanceFields(stepInfo.getInstance(), stepType, identifier));
+
+    return map;
+  }
+
+  private static Map<String, String> processSTONiktoFields(NiktoStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOInstanceFields(stepInfo.getInstance(), stepType, identifier));
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOMetasploitFields(
+      MetasploitStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOInstanceFields(stepInfo.getInstance(), stepType, identifier));
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOProwlerFields(
+      ProwlerStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.put(getSTOKey(CONFIGURATION_TYPE), AWS_ACCOUNT);
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
 
     return map;
   }
@@ -545,6 +627,12 @@ public final class STOSettingsUtils {
     map.putAll(processSTOIngestionFields(stepInfo.getIngestion(), stepType, identifier));
 
     switch (stepInfo.getSTOStepType()) {
+      case AWS_ECR:
+        map.putAll(processSTOAwsEcrFields((AwsEcrStepInfo) stepInfo, stepType, identifier));
+        break;
+      case AWS_SECURITY_HUB:
+        map.putAll(processSTOAwsSecurityHubFields((AwsSecurityHubStepInfo) stepInfo, stepType, identifier));
+        break;
       case AQUA_TRIVY:
         map.putAll(processSTOAquaTrivyFields((AquaTrivyStepInfo) stepInfo, stepType, identifier));
         break;
@@ -563,11 +651,26 @@ public final class STOSettingsUtils {
       case FORTIFY_ON_DEMAND:
         map.putAll(processSTOFODFields((FortifyOnDemandStepInfo) stepInfo, stepType, identifier));
         break;
+      case FOSSA:
+        map.putAll(processSTOFossaFields((FossaStepInfo) stepInfo, stepType, identifier));
+        break;
       case MEND:
         map.putAll(processSTOMendFields((MendStepInfo) stepInfo, stepType, identifier));
         break;
+      case NMAP:
+        map.putAll(processSTONmapFields((NmapStepInfo) stepInfo, stepType, identifier));
+        break;
+      case NIKTO:
+        map.putAll(processSTONiktoFields((NiktoStepInfo) stepInfo, stepType, identifier));
+        break;
+      case METASPLOIT:
+        map.putAll(processSTOMetasploitFields((MetasploitStepInfo) stepInfo, stepType, identifier));
+        break;
       case PRISMA_CLOUD:
         map.putAll(processSTOPrismaCloudFields((PrismaCloudStepInfo) stepInfo, stepType, identifier));
+        break;
+      case PROWLER:
+        map.putAll(processSTOProwlerFields((ProwlerStepInfo) stepInfo, stepType, identifier));
         break;
       case SONARQUBE:
         map.putAll(processSTOSonarqubeFields((SonarqubeStepInfo) stepInfo, stepType, identifier));

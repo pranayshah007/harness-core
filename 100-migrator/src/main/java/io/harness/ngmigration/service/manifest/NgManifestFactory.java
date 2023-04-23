@@ -115,6 +115,18 @@ public class NgManifestFactory {
           default:
             throw new InvalidRequestException(String.format(ERROR_STRING, storeType, appManifestKind));
         }
+      case PCF_OVERRIDE:
+        switch (storeType) {
+          case Local:
+            return tanzuManifestLocalStoreService;
+          case Remote:
+            return tanzuManifestRemoteStoreService;
+          case CUSTOM:
+            // We have added the CUSTOM override but it is not yet supported in NG. Just for future ref.
+            return tanzuManifestCustomStoreService;
+          default:
+            throw new InvalidRequestException(String.format(ERROR_STRING, storeType, appManifestKind));
+        }
       default:
         throw new InvalidRequestException(
             String.format("%s appManifestKind is currently not supported", appManifestKind));

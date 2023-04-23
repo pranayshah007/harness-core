@@ -7,20 +7,21 @@
 
 package io.harness.ccm.views.helper;
 
-import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_INSTANCE_TYPE_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_SERVICE_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_USAGE_TYPE_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.AZURE_METER_CATEGORY;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.AZURE_RESOURCE_GROUP;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.AZURE_SUBSCRIPTION_GUID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.CLUSTER_NAME_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.GCP_PRODUCT_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.GCP_PROJECT_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.GCP_SKU_DESCRIPTION_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.NAMESPACE_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.REGION_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.AWS_ACCOUNT_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.AWS_INSTANCE_TYPE_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.AWS_SERVICE_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.AWS_USAGE_TYPE_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.AZURE_METER_CATEGORY;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.AZURE_RESOURCE_GROUP;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.AZURE_SUBSCRIPTION_GUID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.CLUSTER_NAME_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.GCP_PRODUCT_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.GCP_PROJECT_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.GCP_SKU_DESCRIPTION_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.NAMESPACE_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.REGION_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.WORKLOAD_NAME_FIELD_ID;
+import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING;
 
 import io.harness.ccm.commons.entities.CCMField;
 import io.harness.ccm.commons.entities.CCMFilter;
@@ -29,6 +30,9 @@ import io.harness.ccm.commons.entities.CCMNumberFilter;
 import io.harness.ccm.commons.entities.CCMOperator;
 import io.harness.ccm.commons.entities.CCMStringFilter;
 import io.harness.ccm.commons.entities.CCMTimeFilter;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessmapping.entities.CostTarget;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.dto.PerspectiveQueryDTO;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewCondition;
@@ -49,16 +53,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class PerspectiveToAnomalyQueryHelper {
   @Inject ViewsQueryBuilder viewsQueryBuilder;
+  @Inject BusinessMappingService businessMappingService;
+  @Inject BusinessMappingDataSourceHelper businessMappingDataSourceHelper;
 
   public List<CCMGroupBy> convertGroupBy(@NonNull List<QLCEViewGroupBy> groupByList) {
     List<CCMGroupBy> convertedGroupByList = new ArrayList<>();
     groupByList.forEach(groupBy -> {
       if (groupBy.getEntityGroupBy() != null) {
-        switch (groupBy.getEntityGroupBy().getFieldId()) {
+        switch (groupBy.getEntityGroupBy().getFieldId().toLowerCase()) {
           case CLUSTER_NAME_FIELD_ID:
             convertedGroupByList.add(CCMGroupBy.builder().groupByField(CCMField.CLUSTER_NAME).build());
             break;
@@ -114,7 +123,7 @@ public class PerspectiveToAnomalyQueryHelper {
 
     filters.forEach(filter -> {
       if (filter.getIdFilter() != null) {
-        switch (filter.getIdFilter().getField().getFieldId()) {
+        switch (filter.getIdFilter().getField().getFieldId().toLowerCase()) {
           case CLUSTER_NAME_FIELD_ID:
             stringFilters.add(buildStringFilter(
                 CCMField.CLUSTER_NAME, filter.getIdFilter().getValues(), filter.getIdFilter().getOperator()));
@@ -174,6 +183,19 @@ public class PerspectiveToAnomalyQueryHelper {
                 CCMField.REGION, filter.getIdFilter().getValues(), filter.getIdFilter().getOperator()));
             break;
           default:
+            if (filter.getIdFilter().getField().getIdentifier() == BUSINESS_MAPPING) {
+              List<ViewRule> businessMappingRules = new ArrayList<>();
+              BusinessMapping businessMapping =
+                  businessMappingService.get(filter.getIdFilter().getField().getFieldId());
+              List<CostTarget> costTargets = businessMapping.getCostTargets();
+              if (costTargets != null) {
+                businessMappingRules.addAll(
+                    businessMappingDataSourceHelper.getBusinessMappingRules(businessMapping, filter.getIdFilter()));
+              }
+              List<CCMFilter> businessMappingConvertedFilters = getConvertedRulesForPerspective(businessMappingRules);
+              businessMappingConvertedFilters.forEach(businessMappingConvertedFilter
+                  -> stringFilters.addAll(businessMappingConvertedFilter.getStringFilters()));
+            }
         }
       } else if (filter.getTimeFilter() != null) {
         timeFilters.add(CCMTimeFilter.builder()
@@ -205,18 +227,59 @@ public class PerspectiveToAnomalyQueryHelper {
         .build();
   }
 
+  public CCMFilter convertBusinessMappingGroupByToFilters(List<QLCEViewGroupBy> businessMappingGroupBy) {
+    List<CCMStringFilter> stringFilters = new ArrayList<>();
+    businessMappingGroupBy.forEach(groupBy -> {
+      List<ViewRule> businessMappingRules = new ArrayList<>();
+      BusinessMapping businessMapping = businessMappingService.get(groupBy.getEntityGroupBy().getFieldId());
+      List<CostTarget> costTargets = businessMapping.getCostTargets();
+      if (costTargets != null) {
+        costTargets.forEach(costTarget -> businessMappingRules.addAll(costTarget.getRules()));
+      }
+      businessMappingRules.addAll(businessMappingDataSourceHelper.getSharedCostTargetRules(businessMapping));
+      List<CCMFilter> businessMappingConvertedFilters = getConvertedRulesForPerspective(businessMappingRules);
+      businessMappingConvertedFilters.forEach(
+          businessMappingConvertedFilter -> stringFilters.addAll(businessMappingConvertedFilter.getStringFilters()));
+    });
+
+    return CCMFilter.builder()
+        .stringFilters(stringFilters)
+        .timeFilters(Collections.emptyList())
+        .numericFilters(Collections.emptyList())
+        .build();
+  }
+
   public CCMFilter getConvertedFiltersForPerspective(CEView view, PerspectiveQueryDTO perspectiveQuery) {
     if (perspectiveQuery == null) {
       return null;
     }
-    List<CCMGroupBy> convertedGroupBy =
+    List<CCMGroupBy> convertedGroupBy = new ArrayList<>();
+    List<QLCEViewGroupBy> businessMappingGroupBy = new ArrayList<>();
+    if (perspectiveQuery.getGroupBy() != null) {
+      businessMappingGroupBy.addAll(perspectiveQuery.getGroupBy()
+                                        .stream()
+                                        .filter(groupBy
+                                            -> groupBy.getEntityGroupBy() != null
+                                                && groupBy.getEntityGroupBy().getIdentifier() == BUSINESS_MAPPING)
+                                        .collect(Collectors.toList()));
+    }
+
+    convertedGroupBy =
         convertGroupBy(perspectiveQuery.getGroupBy() != null ? perspectiveQuery.getGroupBy() : Collections.emptyList());
     if (convertedGroupBy.isEmpty()) {
-      convertedGroupBy = convertGroupBy(getPerspectiveDefaultGroupBy(view));
+      List<QLCEViewGroupBy> defaultGroupBys = getPerspectiveDefaultGroupBy(view);
+      businessMappingGroupBy.addAll(defaultGroupBys.stream()
+                                        .filter(groupBy
+                                            -> groupBy.getEntityGroupBy() != null
+                                                && groupBy.getEntityGroupBy().getIdentifier() == BUSINESS_MAPPING)
+                                        .collect(Collectors.toList()));
+      convertedGroupBy = convertGroupBy(defaultGroupBys);
     }
     List<CCMFilter> allFilters = new ArrayList<>();
     // Filters from group by
     allFilters.add(covertGroupByToFilter(convertedGroupBy));
+    // Filters from Cost categories group by
+    allFilters.add(convertBusinessMappingGroupByToFilters(businessMappingGroupBy));
     // Filters from perspective query
     allFilters.add(convertFilters(
         perspectiveQuery.getFilters() != null ? perspectiveQuery.getFilters() : Collections.emptyList()));
@@ -225,9 +288,11 @@ public class PerspectiveToAnomalyQueryHelper {
   }
 
   public List<CCMFilter> getConvertedRulesForPerspective(CEView view) {
-    List<CCMFilter> convertedRuleFilters = new ArrayList<>();
-    List<ViewRule> viewRules = view.getViewRules();
+    return getConvertedRulesForPerspective(view.getViewRules());
+  }
 
+  public List<CCMFilter> getConvertedRulesForPerspective(List<ViewRule> viewRules) {
+    List<CCMFilter> convertedRuleFilters = new ArrayList<>();
     if (viewRules != null) {
       for (ViewRule rule : viewRules) {
         List<QLCEViewFilterWrapper> ruleFilters = new ArrayList<>();
@@ -236,9 +301,11 @@ public class PerspectiveToAnomalyQueryHelper {
                               .idFilter(viewsQueryBuilder.mapConditionToFilter((ViewIdCondition) condition))
                               .build());
         }
+        log.info("ruleFilters: {}", ruleFilters);
         convertedRuleFilters.add(convertFilters(ruleFilters));
       }
     }
+    log.info("convertedRuleFilters: {}", convertedRuleFilters);
 
     return convertedRuleFilters;
   }

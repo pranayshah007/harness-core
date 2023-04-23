@@ -7,6 +7,7 @@
 
 package io.harness.cvng.downtime.beans;
 
+import java.time.Clock;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,8 +19,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class DowntimeStatusDetails {
   DowntimeStatus status;
-
   long startTime;
-
   long endTime;
+  String endDateTime;
+
+  public static DowntimeStatusDetailsBuilder getDowntimeStatusDetailsInstanceBuilder(
+      long startTime, long endTime, Clock clock) {
+    return DowntimeStatusDetails.builder().startTime(startTime).endTime(endTime).status(
+        startTime > clock.millis() / 1000 ? DowntimeStatus.SCHEDULED : DowntimeStatus.ACTIVE);
+  }
 }

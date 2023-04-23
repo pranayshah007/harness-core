@@ -16,6 +16,7 @@ import static io.harness.pms.contracts.execution.failure.FailureType.DELEGATE_RE
 import static io.harness.pms.contracts.execution.failure.FailureType.SKIPPING_FAILURE;
 import static io.harness.pms.contracts.execution.failure.FailureType.TIMEOUT_FAILURE;
 import static io.harness.pms.contracts.execution.failure.FailureType.UNKNOWN_FAILURE;
+import static io.harness.pms.contracts.execution.failure.FailureType.USER_MARKED_FAILURE;
 import static io.harness.pms.contracts.execution.failure.FailureType.VERIFICATION_FAILURE;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -36,7 +37,8 @@ public enum NGFailureType {
   ALL_ERRORS(NGFailureTypeConstants.ALL_ERRORS,
       EnumSet.of(APPLICATION_FAILURE, SKIPPING_FAILURE, UNKNOWN_FAILURE, AUTHENTICATION_FAILURE, AUTHORIZATION_FAILURE,
           CONNECTIVITY_FAILURE, VERIFICATION_FAILURE, TIMEOUT_FAILURE, DELEGATE_PROVISIONING_FAILURE,
-          FailureType.POLICY_EVALUATION_FAILURE, FailureType.APPROVAL_REJECTION, DELEGATE_RESTART)),
+          FailureType.POLICY_EVALUATION_FAILURE, FailureType.APPROVAL_REJECTION, DELEGATE_RESTART,
+          USER_MARKED_FAILURE)),
   @JsonProperty(NGFailureTypeConstants.AUTHENTICATION_ERROR)
   AUTHENTICATION_ERROR(NGFailureTypeConstants.AUTHENTICATION_ERROR, EnumSet.of(AUTHENTICATION_FAILURE)),
   @JsonProperty(NGFailureTypeConstants.CONNECTIVITY_ERROR)
@@ -58,7 +60,9 @@ public enum NGFailureType {
   @JsonProperty(NGFailureTypeConstants.APPROVAL_REJECTION)
   APPROVAL_REJECTION(NGFailureTypeConstants.APPROVAL_REJECTION, EnumSet.of(FailureType.APPROVAL_REJECTION)),
   @JsonProperty(NGFailureTypeConstants.DELEGATE_RESTART_ERROR)
-  DELEGATE_RESTART_ERROR(NGFailureTypeConstants.DELEGATE_RESTART_ERROR, EnumSet.of(DELEGATE_RESTART));
+  DELEGATE_RESTART_ERROR(NGFailureTypeConstants.DELEGATE_RESTART_ERROR, EnumSet.of(DELEGATE_RESTART)),
+  @JsonProperty(NGFailureTypeConstants.USER_MARKED_FAILURE_ERROR)
+  USER_MARKED_AS_FAILURE(NGFailureTypeConstants.USER_MARKED_FAILURE_ERROR, EnumSet.of(USER_MARKED_FAILURE));
 
   private final String yamlName;
   private final EnumSet<FailureType> failureType;

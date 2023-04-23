@@ -49,7 +49,7 @@ public class ElastigroupServiceV2Mapper implements ServiceV2Mapper {
       elastigroupServiceSpecBuilder.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
     }
     if (isNotEmpty(manifests)) {
-      elastigroupServiceSpecBuilder.manifests(manifests);
+      elastigroupServiceSpecBuilder.manifests(changeIdentifier(manifests, "ecs_group_"));
     }
     elastigroupServiceSpecBuilder.variables(
         MigratorUtility.getServiceVariables(migrationContext, service.getServiceVariables()));

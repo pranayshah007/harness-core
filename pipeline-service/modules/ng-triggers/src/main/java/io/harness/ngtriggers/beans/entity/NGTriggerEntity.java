@@ -123,6 +123,7 @@ public class NGTriggerEntity implements PersistentEntity, PersistentNGCronIterab
   String pollInterval;
   String webhookId;
   String encryptedWebhookSecretIdentifier;
+  List<String> stagesToExecute;
   @FdIndex private List<Long> nextIterations; // List of activation times for cron triggers
   @Builder.Default Long ymlVersion = Long.valueOf(3);
 

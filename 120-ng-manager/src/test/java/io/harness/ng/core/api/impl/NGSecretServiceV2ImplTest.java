@@ -17,7 +17,7 @@ import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -37,6 +37,7 @@ import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.HintException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.ng.core.api.NGSecretActivityService;
 import io.harness.ng.core.dto.secrets.SSHCredentialType;
@@ -72,6 +73,7 @@ import io.harness.secretmanagerclient.WinRmAuthScheme;
 import io.harness.secretmanagerclient.services.SshKeySpecDTOHelper;
 import io.harness.secretmanagerclient.services.WinRmCredentialsSpecDTOHelper;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -97,6 +99,8 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
   private TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   private TransactionTemplate transactionTemplate;
   private AccessControlClient accessControlClient;
+  private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private ExceptionManager exceptionManager;
 
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
@@ -128,12 +132,13 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
     transactionTemplate = mock(TransactionTemplate.class);
     taskSetupAbstractionHelper = new TaskSetupAbstractionHelper();
     accessControlClient = mock(AccessControlClient.class);
+    ngFeatureFlagHelperService = mock(NGFeatureFlagHelperService.class);
     SshKeySpecDTOHelper sshKeySpecDTOHelper = mock(SshKeySpecDTOHelper.class);
     WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper = mock(WinRmCredentialsSpecDTOHelper.class);
 
     secretServiceV2 = new NGSecretServiceV2Impl(secretRepository, delegateGrpcClientWrapper, sshKeySpecDTOHelper,
         ngSecretActivityService, outboxService, transactionTemplate, taskSetupAbstractionHelper,
-        winRmCredentialsSpecDTOHelper, accessControlClient);
+        winRmCredentialsSpecDTOHelper, accessControlClient, ngFeatureFlagHelperService, exceptionManager);
     secretServiceV2Spy = spy(secretServiceV2);
     secretForceDeleteEventArgumentCaptor = ArgumentCaptor.forClass(SecretForceDeleteEvent.class);
     secretDeleteEventArgumentCaptor = ArgumentCaptor.forClass(SecretDeleteEvent.class);
@@ -486,7 +491,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
     Secret secret3 =
         Secret.builder().name("name3").type(SecretType.SecretText).identifier("id3").createdAt((long) 3).build();
     Page<Secret> paginatedResult = secretServiceV2.getPaginatedResult(Arrays.asList(secret1, secret2, secret3), 1, 2);
-    assertThat(paginatedResult.getNumberOfElements()).isEqualTo(1);
-    assertThat(paginatedResult.getContent()).isEqualTo(Arrays.asList(secret1));
+    assertThat(paginatedResult.getContent().size()).isEqualTo(1);
+    assertThat(paginatedResult.getContent()).isEqualTo(Arrays.asList(secret3));
   }
 }

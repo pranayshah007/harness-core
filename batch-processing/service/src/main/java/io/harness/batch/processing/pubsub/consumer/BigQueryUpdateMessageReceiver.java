@@ -19,9 +19,9 @@ import io.harness.batch.processing.BatchProcessingException;
 import io.harness.batch.processing.pricing.gcp.bigquery.BigQueryHelperService;
 import io.harness.batch.processing.pubsub.message.BigQueryUpdateMessage;
 import io.harness.ccm.commons.utils.BigQueryHelper;
-import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
-import io.harness.ccm.views.businessMapping.entities.BusinessMappingHistory;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingHistoryService;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessmapping.entities.BusinessMappingHistory;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingHistoryService;
 import io.harness.ccm.views.graphql.ViewsQueryBuilder;
 
 import com.google.cloud.pubsub.v1.AckReplyConsumer;
@@ -37,6 +37,7 @@ import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -52,13 +53,16 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
   private final BigQueryHelperService bigQueryHelperService;
   private final BusinessMappingHistoryService businessMappingHistoryService;
   private final ViewsQueryBuilder viewsQueryBuilder;
+  private final Set<String> accountsInCluster;
 
   public BigQueryUpdateMessageReceiver(BigQueryHelper bigQueryHelper, BigQueryHelperService bigQueryHelperService,
-      BusinessMappingHistoryService businessMappingHistoryService, ViewsQueryBuilder viewsQueryBuilder) {
+      BusinessMappingHistoryService businessMappingHistoryService, ViewsQueryBuilder viewsQueryBuilder,
+      Set<String> accountsInCluster) {
     this.bigQueryHelper = bigQueryHelper;
     this.bigQueryHelperService = bigQueryHelperService;
     this.businessMappingHistoryService = businessMappingHistoryService;
     this.viewsQueryBuilder = viewsQueryBuilder;
+    this.accountsInCluster = accountsInCluster;
   }
 
   @Override
@@ -100,6 +104,11 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
   private boolean processCostCategoryUpdateMessage(BigQueryUpdateMessage.Message message) {
     if (!validateBigQueryUpdateMessage(message)) {
       log.error("Please check for empty or null values in message");
+      return true;
+    }
+    if (!accountsInCluster.contains(message.getAccountId())) {
+      log.info("Account doesn't belong to current cluster, skipping message");
+      return true;
     }
     String tableName = bigQueryHelper.getCloudProviderTableName(message.getAccountId(), UNIFIED_TABLE);
     Instant startTime;

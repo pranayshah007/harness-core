@@ -232,6 +232,15 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(198, "BAMBOO_BUILD");
     entityTypeOrdinalMapping.put(199, "CD_SSCA_ORCHESTRATION");
     entityTypeOrdinalMapping.put(200, "TAS_ROUTE_MAPPING");
+    entityTypeOrdinalMapping.put(201, "AWS_SECURITY_HUB");
+    entityTypeOrdinalMapping.put(202, "CUSTOM_INGEST");
+    entityTypeOrdinalMapping.put(203, "BACKSTAGE_ENVIRONMENT_VARIABLE");
+    entityTypeOrdinalMapping.put(204, "FOSSA");
+    entityTypeOrdinalMapping.put(205, "CODEQL");
+    entityTypeOrdinalMapping.put(206, "GIT_LEAKS");
+    entityTypeOrdinalMapping.put(207, "GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY");
+    entityTypeOrdinalMapping.put(208, "GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK");
+
     entityTypeConstantMapping =
         entityTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
   }
