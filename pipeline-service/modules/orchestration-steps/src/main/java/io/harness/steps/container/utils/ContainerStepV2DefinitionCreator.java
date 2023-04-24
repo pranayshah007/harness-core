@@ -22,7 +22,6 @@ import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.pms.contracts.plan.PluginDetails;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.plugin.ImageDetailsUtils;
 import io.harness.pms.sdk.core.plugin.SecretNgVariableUtils;
 import io.harness.pms.yaml.ParameterField;
@@ -30,7 +29,6 @@ import io.harness.steps.plugin.InitContainerV2StepInfo;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.yaml.core.variables.SecretNGVariable;
 
-import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

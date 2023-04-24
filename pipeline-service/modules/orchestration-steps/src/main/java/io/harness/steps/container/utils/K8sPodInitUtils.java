@@ -91,7 +91,6 @@ import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.steps.plugin.InitContainerV2StepInfo;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
-import io.harness.steps.plugin.infrastructure.volumes.ContainerVolume;
 import io.harness.steps.plugin.infrastructure.volumes.EmptyDirYaml;
 import io.harness.steps.plugin.infrastructure.volumes.HostPathYaml;
 import io.harness.steps.plugin.infrastructure.volumes.PersistentVolumeClaimYaml;

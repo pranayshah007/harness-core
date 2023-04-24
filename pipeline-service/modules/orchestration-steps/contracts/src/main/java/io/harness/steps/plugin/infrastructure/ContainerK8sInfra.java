@@ -13,6 +13,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
 import io.harness.pms.yaml.YamlNode;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -46,7 +47,7 @@ public class ContainerK8sInfra implements ContainerStepInfra {
   public Infrastructure toCIInfra() {
     return K8sDirectInfraYaml.builder()
         .type(Infrastructure.Type.KUBERNETES_DIRECT)
-        .spec(K8sDirectInfraYaml.K8sDirectInfraYamlSpec.builder()
+        .spec(K8sDirectInfraYamlSpec.builder()
                   .annotations(spec.getAnnotations())
                   .containerSecurityContext(spec.getContainerSecurityContext())
                   .labels(spec.getLabels())

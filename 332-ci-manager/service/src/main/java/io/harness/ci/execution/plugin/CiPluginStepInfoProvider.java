@@ -7,12 +7,10 @@
 
 package io.harness.ci.plugin;
 
-import static io.harness.beans.steps.CIStepInfoType.GIT_CLONE;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.PORT_STARTING_RANGE;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
-import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.integrationstage.K8InitializeStepUtils;
@@ -30,12 +28,10 @@ import io.harness.pms.sdk.core.plugin.ImageDetailsUtils;
 import io.harness.pms.sdk.core.plugin.PluginInfoProvider;
 import io.harness.pms.sdk.core.plugin.SecretNgVariableUtils;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.utils.TimeoutUtils;
 
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
