@@ -118,7 +118,6 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
   private DelegateService delegateService;
   private DelegateTaskServiceClassic delegateTaskServiceClassic;
   @Inject private DelegateAsyncService delegateAsyncService;
-  @Inject private KryoSerializer kryoSerializer;
 
   @Inject @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer;
   private DelegateSyncService delegateSyncService;
@@ -141,7 +140,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
     DelegateServiceGrpc.DelegateServiceBlockingStub delegateServiceBlockingStub =
         DelegateServiceGrpc.newBlockingStub(channel);
     delegateServiceGrpcClient = new DelegateServiceGrpcClient(delegateServiceBlockingStub, delegateAsyncService,
-        kryoSerializer, referenceFalseKryoSerializer, delegateSyncService, () -> false);
+        referenceFalseKryoSerializer, delegateSyncService, () -> false);
     delegateServiceAgentClient = mock(DelegateServiceAgentClient.class);
     delegateSyncService = mock(DelegateSyncService.class);
 
@@ -151,9 +150,9 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
     delegateTaskServiceClassic = mock(DelegateTaskServiceClassic.class);
     delegateTaskService = mock(DelegateTaskService.class);
     delegateTaskMigrationHelper = mock(DelegateTaskMigrationHelper.class);
-    delegateServiceGrpcImpl = new DelegateServiceGrpcImpl(delegateCallbackRegistry, perpetualTaskService,
-        delegateService, delegateTaskService, kryoSerializer, referenceFalseKryoSerializer, delegateTaskServiceClassic,
-        delegateTaskMigrationHelper);
+    delegateServiceGrpcImpl =
+        new DelegateServiceGrpcImpl(delegateCallbackRegistry, perpetualTaskService, delegateService,
+            delegateTaskService, referenceFalseKryoSerializer, delegateTaskServiceClassic, delegateTaskMigrationHelper);
 
     server =
         InProcessServerBuilder.forName(serverName).directExecutor().addService(delegateServiceGrpcImpl).build().start();
@@ -164,7 +163,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
   @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void testSubmitTask() {
-    ByteString kryoParams = ByteString.copyFrom(kryoSerializer.asDeflatedBytes(ScriptType.BASH));
+    ByteString kryoParams = ByteString.copyFrom(referenceFalseKryoSerializer.asDeflatedBytes(ScriptType.BASH));
     when(delegateTaskMigrationHelper.generateDelegateTaskUUID()).thenReturn(generateUuid());
 
     Map<String, String> setupAbstractions = new HashMap<>();
@@ -377,7 +376,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
     DelegateCallbackToken token = delegateServiceGrpcClient.registerCallback(delegateCallback);
 
     ProgressData testData = DelegateStringProgressData.builder().data("Example").build();
-    byte[] testDataBytes = kryoSerializer.asDeflatedBytes(testData);
+    byte[] testDataBytes = referenceFalseKryoSerializer.asDeflatedBytes(testData);
     assertThat(delegateServiceAgentClient.sendTaskProgressUpdate(AccountId.newBuilder().setId(accountId).build(),
                    TaskId.newBuilder().setId(taskId).build(), token, testDataBytes))
         .isEqualTo(true);
@@ -469,13 +468,14 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
 
     PerpetualTaskClientContextDetails contextDetails =
         PerpetualTaskClientContextDetails.newBuilder()
-            .setExecutionBundle(PerpetualTaskExecutionBundle.newBuilder()
-                                    .addCapabilities(Capability.newBuilder()
-                                                         .setKryoCapability(ByteString.copyFrom(
-                                                             kryoSerializer.asDeflatedBytes(selectorCapability)))
-                                                         .build())
-                                    .putSetupAbstractions("ng", "true")
-                                    .build())
+            .setExecutionBundle(
+                PerpetualTaskExecutionBundle.newBuilder()
+                    .addCapabilities(Capability.newBuilder()
+                                         .setKryoCapability(ByteString.copyFrom(
+                                             referenceFalseKryoSerializer.asDeflatedBytes(selectorCapability)))
+                                         .build())
+                    .putSetupAbstractions("ng", "true")
+                    .build())
             .build();
 
     when(perpetualTaskService.createTask(eq(type), eq(accountId), any(PerpetualTaskClientContext.class), eq(schedule),

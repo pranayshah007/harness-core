@@ -97,8 +97,6 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
   private DelegateCallbackRegistry delegateCallbackRegistry;
   private PerpetualTaskService perpetualTaskService;
   private DelegateService delegateService;
-  private KryoSerializer kryoSerializer;
-
   private KryoSerializer referenceFalseKryoSerializer;
   private DelegateTaskService delegateTaskService;
   private DelegateTaskServiceClassic delegateTaskServiceClassic;
@@ -108,13 +106,12 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
   @Inject
   public DelegateServiceGrpcImpl(DelegateCallbackRegistry delegateCallbackRegistry,
       PerpetualTaskService perpetualTaskService, DelegateService delegateService,
-      DelegateTaskService delegateTaskService, KryoSerializer kryoSerializer,
+      DelegateTaskService delegateTaskService,
       @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer,
       DelegateTaskServiceClassic delegateTaskServiceClassic, DelegateTaskMigrationHelper delegateTaskMigrationHelper) {
     this.delegateCallbackRegistry = delegateCallbackRegistry;
     this.perpetualTaskService = perpetualTaskService;
     this.delegateService = delegateService;
-    this.kryoSerializer = kryoSerializer;
     this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
     this.delegateTaskService = delegateTaskService;
     this.delegateTaskServiceClassic = delegateTaskServiceClassic;
@@ -222,33 +219,6 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
       }
       responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
     }
-  }
-
-  private TaskData createTaskData(TaskDetails taskDetails) {
-    Object[] parameters = null;
-    byte[] data;
-    SerializationFormat serializationFormat;
-    if (taskDetails.getParametersCase().equals(TaskDetails.ParametersCase.KRYO_PARAMETERS)) {
-      serializationFormat = SerializationFormat.KRYO;
-      data = taskDetails.getKryoParameters().toByteArray();
-      parameters = new Object[] {kryoSerializer.asInflatedObject(data)};
-    } else if (taskDetails.getParametersCase().equals(TaskDetails.ParametersCase.JSON_PARAMETERS)) {
-      serializationFormat = SerializationFormat.JSON;
-      data = taskDetails.getJsonParameters().toStringUtf8().getBytes(StandardCharsets.UTF_8);
-    } else {
-      throw new InvalidRequestException("Invalid task response type.");
-    }
-
-    return TaskData.builder()
-        .parked(taskDetails.getParked())
-        .async(taskDetails.getMode() == TaskMode.ASYNC)
-        .taskType(taskDetails.getType().getType())
-        .parameters(parameters)
-        .data(data)
-        .timeout(Durations.toMillis(taskDetails.getExecutionTimeout()))
-        .expressionFunctorToken((int) taskDetails.getExpressionFunctorToken())
-        .serializationFormat(serializationFormat)
-        .build();
   }
 
   private TaskDataV2 createTaskDataV2(TaskDetails taskDetails) {

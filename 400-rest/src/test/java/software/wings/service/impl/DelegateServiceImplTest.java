@@ -209,7 +209,6 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Mock private SettingsService settingsService;
 
   @InjectMocks @Spy private DelegateTaskServiceClassicImpl spydelegateTaskServiceClassic;
-  @Inject private KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private VersionInfoManager versionInfoManager;
   @Mock private Subject<DelegateTaskRetryObserver> retryObserverSubject;
@@ -505,6 +504,12 @@ public class DelegateServiceImplTest extends WingsBaseTest {
                   .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
                   .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
                   .build())
+        .taskDataV2(TaskDataV2.builder()
+                        .async(false)
+                        .taskType(TaskType.HTTP.name())
+                        .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
+                        .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                        .build())
         .tags(new ArrayList<>())
         .build();
   }
@@ -1743,12 +1748,13 @@ public class DelegateServiceImplTest extends WingsBaseTest {
             .executeOnHarnessHostedDelegates(true)
             .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
             .version(VERSION)
-            .data(TaskData.builder()
-                      .async(false)
-                      .taskType(TaskType.HTTP.name())
-                      .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
-                      .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
-                      .build())
+            .taskDataV2(
+                TaskDataV2.builder()
+                    .async(false)
+                    .taskType(TaskType.HTTP.name())
+                    .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
+                    .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                    .build())
             .tags(new ArrayList<>())
             .build();
     Account globalAccount = testUtils.createAccount();

@@ -90,7 +90,6 @@ import org.apache.commons.lang3.NotImplementedException;
 public class DelegateServiceGrpcClient {
   private final DelegateServiceBlockingStub delegateServiceBlockingStub;
   private final DelegateAsyncService delegateAsyncService;
-  private final KryoSerializer kryoSerializer;
 
   private final KryoSerializer referenceFalseKryoSerializer;
   private final DelegateSyncService delegateSyncService;
@@ -99,13 +98,12 @@ public class DelegateServiceGrpcClient {
 
   @Inject
   public DelegateServiceGrpcClient(DelegateServiceBlockingStub delegateServiceBlockingStub,
-      DelegateAsyncService delegateAsyncService, KryoSerializer kryoSerializer,
+      DelegateAsyncService delegateAsyncService,
       @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer,
       DelegateSyncService delegateSyncService,
       @Named("driver-installed-in-ng-service") BooleanSupplier isDriverInstalledInNgService) {
     this.delegateServiceBlockingStub = delegateServiceBlockingStub;
     this.delegateAsyncService = delegateAsyncService;
-    this.kryoSerializer = kryoSerializer;
     this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
     this.delegateSyncService = delegateSyncService;
     this.isDriverInstalledInNgService = isDriverInstalledInNgService.getAsBoolean();
