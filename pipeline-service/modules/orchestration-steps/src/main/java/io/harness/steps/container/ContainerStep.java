@@ -38,7 +38,6 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerRunStepHelper;
@@ -73,7 +72,7 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
   private final ContainerStepRbacHelper containerStepRbacHelper;
   private final ContainerStepExecutionResponseHelper executionResponseHelper;
 
-  public static final StepType STEP_TYPE = StepSpecTypeConstants.CONTAINER_STEP_TYPE;
+  public static final StepType STEP_TYPE = ContainerStepSpecTypeConstants.CONTAINER_STEP_TYPE;
 
   public TaskData getTaskData(StepElementParameters stepNode, CIInitializeTaskParams buildSetupTaskParams) {
     long timeout = Timeout.fromString((String) stepNode.getTimeout().fetchFinalValue()).getTimeoutInMillis();

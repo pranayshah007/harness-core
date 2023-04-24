@@ -15,7 +15,6 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.plugin.InitContainerV2StepInfo;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.steps.plugin.infrastructure.K8sDirectInfra;
@@ -45,6 +44,6 @@ public class K8sStepGroupHandler implements StepGroupInfraHandler {
     ByteString advisorParametersInitStep = ByteString.copyFrom(
         kryoSerializer.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(nextNodeId).build()));
     return InitContainerStepPlanCreater.createPlanForField(
-        initNodeId, initContainerV2StepInfo, advisorParametersInitStep, StepSpecTypeConstants.INIT_CONTAINER_STEP_V2);
+        initNodeId, initContainerV2StepInfo, advisorParametersInitStep, "InitializeContainer");
   }
 }

@@ -52,6 +52,8 @@ public class PlanNode {
   @Singular List<FacilitatorObtainment> facilitatorObtainments;
   @Singular List<SdkTimeoutObtainment> timeoutObtainments;
 
+  private String serviceName;
+
   // Skip
   String skipCondition;
   String whenCondition;

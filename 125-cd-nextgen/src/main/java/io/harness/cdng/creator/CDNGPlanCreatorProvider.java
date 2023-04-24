@@ -391,7 +391,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new SideCarArtifactPlanCreator());
     planCreators.add(new ManifestsPlanCreator());
     planCreators.add(new IndividualManifestPlanCreator());
-    planCreators.add(new CDStepsPlanCreator());
     planCreators.add(new StepGroupPMSPlanCreatorV2());
     planCreators.add(new ServerlessAwsLambdaDeployStepPlanCreator());
     planCreators.add(new ServerlessAwsLambdaRollbackStepPlanCreator());
@@ -423,6 +422,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new AzureCreateBPResourceStepPlanCreator());
 
     planCreators.add(new AzureARMRollbackResourceStepPlanCreator());
+    planCreators.add(new StepGroupPMSPlanCreatorV2());
+
     planCreators.add(new ShellScriptProvisionStepPlanCreator());
 
     // CHaos

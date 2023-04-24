@@ -7,6 +7,7 @@
 
 package io.harness.plancreator.steps;
 
+import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
@@ -38,6 +39,7 @@ public class InitContainerStepPlanCreater {
         .stepType(StepType.newBuilder().setType(stepType).setStepCategory(StepCategory.STEP).build())
         .group(StepOutcomeGroup.STEP.name())
         .stepParameters(stepElementParameters)
+        .serviceName(ModuleType.PMS.name().toLowerCase())
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.TASK).build())

@@ -14,6 +14,7 @@ import static io.harness.pms.sdk.core.steps.io.PipelineViewObject.DEFAULT;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdvisorObtainmentList;
 import io.harness.pms.contracts.plan.ExecutionMode;
@@ -61,7 +62,7 @@ public class PlanNodeProtoMapper {
             .setSkipExpressionChain(node.isSkipExpressionChain())
             .setExpressionMode(node.getExpressionMode())
             .setSkipType(node.getSkipGraphType())
-            .setServiceName(serviceName)
+            .setServiceName(EmptyPredicate.isEmpty(node.getServiceName()) ? serviceName : node.getServiceName())
             .addAllTimeoutObtainments(toTimeoutObtainments(node.getTimeoutObtainments()))
             .setSkipUnresolvedExpressionsCheck(node.isSkipUnresolvedExpressionsCheck());
     if (node.getWhenCondition() != null) {
