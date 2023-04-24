@@ -34,7 +34,7 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
 
   final Store dmsStore = Store.builder().name(DMS).build();
   final Store harnessStore = Store.builder().name(HARNESS).build();
-  private static final String ON_PREM_MIGRATION = "onPremMigration";
+  private static final String ON_PREM_MIGRATION_DONE = "onPremMigrationDone";
 
   private static final String DEPLOY_MODE = System.getenv(DeployMode.DEPLOY_MODE);
 
@@ -60,7 +60,7 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
     startTime = System.currentTimeMillis();
 
     // Check if we already did the migration
-    if (persistence.isMigrationEnabled(ON_PREM_MIGRATION)) {
+    if (persistence.isMigrationEnabled(ON_PREM_MIGRATION_DONE)) {
       return;
     }
 
@@ -106,7 +106,7 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
 
   private void finishMigration() {
     // Migration is done, set on_prem flag as true.
-    DelegateMigrationFlag onPremMigrationFlag = new DelegateMigrationFlag(ON_PREM_MIGRATION, true);
+    DelegateMigrationFlag onPremMigrationFlag = new DelegateMigrationFlag(ON_PREM_MIGRATION_DONE, true);
     persistence.save(onPremMigrationFlag);
     log.info("time taken to finish migration {}", System.currentTimeMillis() - startTime);
   }
@@ -126,21 +126,31 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
         persistence.getCollection(dmsStore, collection).initializeUnorderedBulkOperation();
 
     Query<PersistentEntity> query = persistence.createQueryForCollection(collection);
+    long documentCountBeforeMigration = query.count();
     int insertDocCount = 0;
 
     try (HIterator<PersistentEntity> records = new HIterator<>(query.fetch())) {
       for (PersistentEntity record : records) {
         insertDocCount++;
         bulkWriteOperation.insert(morphia.toDBObject(record));
+        if (insertDocCount % 1000 == 0) {
+          try {
+            bulkWriteOperation.execute();
+          } catch (Exception ex) {
+            log.warn("Exception occured while copying data", ex);
+          }
+        }
       }
     }
-    try {
-      bulkWriteOperation.execute();
-    } catch (Exception ex) {
-      // This will have many duplicate key exception during bulkwrite.execute by different pods but it's expected.
-      log.warn("Exception occured while copying data", ex);
+    if (insertDocCount % 1000 != 0) {
+      try {
+        bulkWriteOperation.execute();
+      } catch (Exception ex) {
+        // This will have many duplicate key exception during bulkwrite.execute by different pods but it's expected.
+        log.warn("Exception occured while copying data", ex);
+      }
     }
-    return verifyWriteOperation(insertDocCount, collection);
+    return verifyWriteOperation(documentCountBeforeMigration, collection);
   }
 
   private boolean postToggleCorrectness(Class<?> cls) {
@@ -157,7 +167,7 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
     persistence.save(flag);
   }
 
-  private boolean verifyWriteOperation(int insertCount, String collection) {
+  private boolean verifyWriteOperation(long insertCount, String collection) {
     // Check if entire data is written
     // dont check based on bulkWriteResult because now copy is running on multiple machines, so this value will vary.
 
