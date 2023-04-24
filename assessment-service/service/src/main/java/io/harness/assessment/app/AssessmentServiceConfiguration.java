@@ -50,6 +50,8 @@ public class AssessmentServiceConfiguration extends Configuration {
   @JsonProperty("listOfErrorCodesForOffsetReset") private List<Integer> listOfErrorCodesForOffsetReset;
   //@JsonProperty("notificationClient") private NotificationClientConfiguration notificationClientConfiguration;
   @JsonProperty("smtp") @ConfigSecret private SmtpConfig smtpConfig;
+  @JsonProperty("baseUrl") String baseUrl;
+
   public AssessmentServiceConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();
     defaultServerFactory.setJerseyRootPath("/assessments/api/");

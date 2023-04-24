@@ -30,6 +30,7 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -57,6 +58,7 @@ public class InvitationServiceImpl implements InvitationService {
   private OrganizationRepository organizationRepository;
   private AssessmentRepository assessmentRepository;
   private SmtpConfig smtpConfig;
+  @Inject @Named("baseUrl") private String baseUrl;
 
   private UserInvitationRepository userInvitationRepository;
 
@@ -96,10 +98,10 @@ public class InvitationServiceImpl implements InvitationService {
                                             .invitedBy(invitedBy)
                                             .build();
         userInvitationRepository.save(userInvitation);
-
-        String emailBody = Resources.toString(InvitationServiceImpl.class.getResource(EMAIL_TEMPLATE), Charsets.UTF_8);
-        emailBody = emailBody.replace("${name!}", assessmentInviteDTO.getEmails().get(0))
-                        .replace("${surveyLink!}", userInvitation.getGeneratedCode());
+        String surveyLink = baseUrl + "assessment/" + userInvitation.getGeneratedCode();
+        String emailBody = Resources.toString(getClass().getClassLoader().getResource(EMAIL_TEMPLATE), Charsets.UTF_8);
+        emailBody =
+            emailBody.replace("${name!}", assessmentInviteDTO.getEmails().get(0)).replace("${surveyLink!}", surveyLink);
 
         send(assessmentInviteDTO.getEmails(), new ArrayList<>(), "Invitation for Harness DevOps Efficiency Survey",
             emailBody, smtpConfig);
@@ -143,7 +145,7 @@ public class InvitationServiceImpl implements InvitationService {
       } catch (AddressException | EmailException e) {
         log.error(ExceptionUtils.getMessage(e), e);
       }
-      email.setFrom(smtpConfig.getFromAddress(), "HARNESS_NAME");
+      email.setFrom(smtpConfig.getFromAddress(), "Harness Inc");
       for (String emailId : emailIds) {
         email.addTo(emailId);
       }
