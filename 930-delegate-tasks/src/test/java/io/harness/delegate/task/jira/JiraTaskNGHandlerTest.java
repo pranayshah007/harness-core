@@ -1085,16 +1085,15 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
                                                     .ignoreComment(false)
                                                     .build();
 
-    JiraClient jiraClient = Mockito.mock(JiraClient.class);
-    PowerMockito.whenNew(JiraClient.class).withAnyArguments().thenReturn(jiraClient);
-
-    when(jiraClient.getIssueCreateMetadata("Invalid-Project-Key", "Bug", null, false, false, false, false))
-        .thenThrow(new JiraClientException("invalid project key"));
-
-    when(jiraClient.createIssue("Invalid-Project-Key", "Bug", fields, true, false, false))
-        .thenThrow(new HintException("dummy hint"));
-
-    assertThatThrownBy(() -> jiraTaskNGHandler.createIssue(jiraTaskNGParameters)).isInstanceOf(HintException.class);
+    try (MockedConstruction<JiraClient> ignored = mockConstruction(JiraClient.class, (mock, context) -> {
+      when(mock.getIssueCreateMetadata("Invalid-Project-Key", "Bug", null, false, false, false, false))
+          .thenThrow(new JiraClientException("invalid project key"));
+      when(mock.createIssue("Invalid-Project-Key", "Bug", fields, true, false, false))
+          .thenThrow(new HintException("dummy hint"));
+    })) {
+      assertThatExceptionOfType(HintException.class)
+          .isThrownBy(() -> jiraTaskNGHandler.createIssue(jiraTaskNGParameters));
+    }
   }
 
   @Test
@@ -1180,17 +1179,19 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
                                                     .ignoreComment(false)
                                                     .build();
 
-    JiraClient jiraClient = Mockito.mock(JiraClient.class);
-
-    PowerMockito.whenNew(JiraClient.class).withAnyArguments().thenReturn(jiraClient);
-    when(jiraClient.getIssueUpdateMetadata("TJI-37792-invalid")).thenThrow(new JiraClientException("dummy"));
-
-    when(jiraClient.updateIssue(
-             jiraTaskNGParameters.getIssueKey(), jiraTaskNGParameters.getTransitionToStatus(), null, fields))
-        .thenThrow(new JiraClientException("invalid issue key"));
-
     assertThatThrownBy(() -> jiraTaskNGHandler.updateIssue(jiraTaskNGParameters))
         .isInstanceOf(JiraClientException.class);
+
+    try (MockedConstruction<JiraClient> ignored = mockConstruction(JiraClient.class, (mock, context) -> {
+      when(mock.getIssueUpdateMetadata("TJI-37792-invalid")).thenThrow(new JiraClientException("dummy"));
+
+      when(mock.updateIssue(
+               jiraTaskNGParameters.getIssueKey(), jiraTaskNGParameters.getTransitionToStatus(), null, fields))
+          .thenThrow(new JiraClientException("invalid issue key"));
+    })) {
+      assertThatThrownBy(() -> jiraTaskNGHandler.updateIssue(jiraTaskNGParameters))
+          .isInstanceOf(JiraClientException.class);
+    }
   }
 
   @Test
