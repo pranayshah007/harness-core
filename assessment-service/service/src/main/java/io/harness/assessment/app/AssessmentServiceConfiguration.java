@@ -33,6 +33,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import javax.ws.rs.Path;
+
+import io.harness.notification.SmtpConfig;
+import io.harness.secret.ConfigSecret;
 import lombok.Data;
 import lombok.Setter;
 import org.reflections.Reflections;
@@ -46,6 +49,11 @@ public class AssessmentServiceConfiguration extends Configuration {
   //  @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
   //  @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
   @JsonProperty("listOfErrorCodesForOffsetReset") private List<Integer> listOfErrorCodesForOffsetReset;
+
+  //@JsonProperty("notificationClient") private NotificationClientConfiguration notificationClientConfiguration;
+  @JsonProperty("smtp") @ConfigSecret private SmtpConfig smtpConfig;
+  @JsonProperty("baseUrl") String baseUrl;
+
 
   public AssessmentServiceConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();

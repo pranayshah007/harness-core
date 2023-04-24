@@ -7,6 +7,8 @@
 
 package io.harness.assessment.settings.services;
 
+import com.google.common.collect.ImmutableList;
+import io.dropwizard.util.Resources;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.assessment.settings.beans.dto.AssessmentInviteDTO;
@@ -22,24 +24,48 @@ import io.harness.assessment.settings.repositories.UserInvitationRepository;
 import io.harness.assessment.settings.repositories.UserRepository;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
 import javax.ws.rs.BadRequestException;
+
+import io.harness.delegate.beans.NotificationProcessingResponse;
+import io.harness.exception.ExceptionUtils;
+import io.harness.notification.SmtpConfig;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.Charsets;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.mail.DefaultAuthenticator;
+import org.apache.commons.mail.Email;
+import org.apache.commons.mail.EmailException;
+import org.apache.commons.mail.HtmlEmail;
+
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static org.apache.commons.lang.StringUtils.stripToNull;
 
 @OwnedBy(HarnessTeam.SEI)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class InvitationServiceImpl implements InvitationService {
+  private static final String EMAIL_TEMPLATE = "templates/email_invite.txt";
   private UserRepository userRepository;
   private OrganizationRepository organizationRepository;
   private AssessmentRepository assessmentRepository;
+  private SmtpConfig smtpConfig;
+  @Inject @Named("baseUrl") private String baseUrl;
+
+
   private UserInvitationRepository userInvitationRepository;
 
   @Override
@@ -87,6 +113,13 @@ public class InvitationServiceImpl implements InvitationService {
                                               .build();
           userInvitationRepository.save(userInvitation);
           validEmailsSent.add(userEmail);
+          String surveyLink = baseUrl + "assessment/" + userInvitation.getGeneratedCode();
+          String emailBody = Resources.toString(getClass().getClassLoader().getResource(EMAIL_TEMPLATE), Charsets.UTF_8);
+          emailBody =
+                  emailBody.replace("${name!}", assessmentInviteDTO.getEmails().get(0)).replace("${surveyLink!}", surveyLink);
+
+          send(assessmentInviteDTO.getEmails(), new ArrayList<>(), "Invitation for Harness DevOps Efficiency Survey",
+                  emailBody, smtpConfig);
         } else {
           errors.add(AssessmentError.builder()
                          .entityType(EntityType.INVITE)
@@ -95,6 +128,21 @@ public class InvitationServiceImpl implements InvitationService {
                          .build());
           log.info("Invalid email : " + userEmail);
         }
+
+      } catch (NoSuchAlgorithmException e) {
+        log.error("Cannot invite : {} for assessment {}", userEmail, assessmentId, e);
+        errors.add(AssessmentError.builder()
+                .entityType(EntityType.INVITE)
+                .entityId(assessmentInviteDTO.getAssessmentId())
+                .errorMessages(Collections.singletonList("Cannot send invite for ID : " + userEmail))
+                .build());
+      } catch (IOException e) {
+        log.error("Cannot invite : {} for assessment {}", userEmail, assessmentId, e);
+        errors.add(AssessmentError.builder()
+                .entityType(EntityType.INVITE)
+                .entityId(assessmentInviteDTO.getAssessmentId())
+                .errorMessages(Collections.singletonList("Cannot send invite for ID : " + userEmail))
+                .build());
       } catch (Exception e) {
         log.error("Cannot invite : {} for assessment {}", userEmail, assessmentId, e);
         errors.add(AssessmentError.builder()
@@ -102,6 +150,7 @@ public class InvitationServiceImpl implements InvitationService {
                        .entityId(assessmentInviteDTO.getAssessmentId())
                        .errorMessages(Collections.singletonList("Cannot send invite for ID : " + userEmail))
                        .build());
+
       }
     }
     if (errors.size() > 0) {
@@ -112,6 +161,7 @@ public class InvitationServiceImpl implements InvitationService {
     return assessmentInviteDTO;
   }
 
+
   private static boolean isBusinessEmail(String userEmail) {
     Pattern REGEX_FILTER = Pattern.compile(
         "/^([\\w-\\.]+@(?!gmail.com)(?!yahoo.com)(?!hotmail.com)(?!yahoo.co.in)(?!aol.com)(?!abc.com)(?!xyz.com)(?!pqr.com)(?!rediffmail.com)(?!live.com)(?!outlook.com)(?!me.com)(?!msn.com)(?!ymail.com)([\\w-]+\\.)+[\\w-]{2,4})?$/");
@@ -121,9 +171,56 @@ public class InvitationServiceImpl implements InvitationService {
 
   private static boolean checkValidEmail(String userEmail) {
     String regex =
-        "^[\\w!#$%&amp;'*+/=?`{|}~^-]+(?:\\.[\\w!#$%&amp;'*+/=?`{|}~^-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,6}$";
+            "^[\\w!#$%&amp;'*+/=?`{|}~^-]+(?:\\.[\\w!#$%&amp;'*+/=?`{|}~^-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,6}$";
     Pattern pattern = Pattern.compile(regex);
     Matcher matcher = pattern.matcher(userEmail);
     return matcher.matches();
   }
+
+  private NotificationProcessingResponse send(
+          List<String> emailIds, List<String> ccEmailIds, String subject, String body, SmtpConfig smtpConfig) {
+    try {
+      if (Objects.isNull(stripToNull(body))) {
+        log.error("No email body available. Aborting notification request {}", emailIds.toString());
+        return NotificationProcessingResponse.trivialResponseWithNoRetries;
+      }
+
+      Email email = new HtmlEmail();
+      email.setHostName(smtpConfig.getHost());
+      email.setSmtpPort(smtpConfig.getPort());
+
+      if (!isEmpty(smtpConfig.getPassword())) {
+        email.setAuthenticator(
+                new DefaultAuthenticator(smtpConfig.getUsername(), new String(smtpConfig.getPassword())));
+      }
+      email.setSSLOnConnect(smtpConfig.isUseSSL());
+      email.setStartTLSEnabled(smtpConfig.isStartTLS());
+      if (smtpConfig.isUseSSL()) {
+        email.setSslSmtpPort(Integer.toString(smtpConfig.getPort()));
+      }
+
+      try {
+        email.setReplyTo(ImmutableList.of(new InternetAddress(smtpConfig.getFromAddress())));
+      } catch (AddressException | EmailException e) {
+        log.error(ExceptionUtils.getMessage(e), e);
+      }
+      email.setFrom(smtpConfig.getFromAddress(), "Harness Inc");
+      for (String emailId : emailIds) {
+        email.addTo(emailId);
+      }
+      for (String ccEmailId : ccEmailIds) {
+        email.addCc(ccEmailId);
+      }
+
+      email.setSubject(subject);
+      ((HtmlEmail) email).setHtmlMsg(body);
+      email.send();
+    } catch (EmailException e) {
+      log.error("Failed to send email. Check SMTP configuration. notificationId: {}\n{}", emailIds.toString(),
+              ExceptionUtils.getMessage(e));
+      return NotificationProcessingResponse.nonSent(emailIds.size() + ccEmailIds.size());
+    }
+    return NotificationProcessingResponse.allSent(emailIds.size() + ccEmailIds.size());
+  }
+
 }

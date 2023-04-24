@@ -23,6 +23,7 @@ import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.notification.SmtpConfig;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
@@ -39,6 +40,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
 import java.util.List;
 import java.util.Map;
@@ -140,12 +142,19 @@ public class AssessmentServiceModule extends AbstractModule {
                 .setPriority(Thread.MIN_PRIORITY)
                 .build()));
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
+    bind(String.class).annotatedWith(Names.named("baseUrl")).toInstance(appConfig.getBaseUrl());
   }
 
   @Provides
   @Singleton
   public MongoConfig mongoConfig() {
     return appConfig.getMongoConfig();
+  }
+
+  @Provides
+  @Singleton
+  public SmtpConfig smtpConfig() {
+    return appConfig.getSmtpConfig();
   }
 
   private void registerRequiredBindings() {
