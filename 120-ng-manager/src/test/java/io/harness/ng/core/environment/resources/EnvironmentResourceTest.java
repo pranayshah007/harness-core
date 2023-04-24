@@ -20,6 +20,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.common.beans.NGTag;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.dto.EnvironmentRequestDTO;
@@ -121,11 +122,12 @@ public class EnvironmentResourceTest extends CategoryTest {
         .get("ACCOUNT_ID", environmentRequestDTO.getOrgIdentifier(), environmentRequestDTO.getProjectIdentifier(),
             environmentRequestDTO.getIdentifier(), false);
 
-    EnvironmentResponseDTO envResponse =
-        environmentResource.get("IDENTIFIER", "ACCOUNT_ID", "ORG_ID", "PROJECT_ID", false).getData();
+    ResponseDTO<EnvironmentResponseDTO> environmentResponseDTOResponseDTO =
+        environmentResource.get("IDENTIFIER", "ACCOUNT_ID", "ORG_ID", "PROJECT_ID", false);
 
-    assertThat(envResponse).isNotNull();
-    assertThat(envResponse).isEqualTo(environmentResponseDTO);
+    assertThat(environmentResponseDTOResponseDTO.getData()).isNotNull();
+    assertThat(environmentResponseDTOResponseDTO.getData()).isEqualTo(environmentResponseDTO);
+    assertThat(environmentResponseDTOResponseDTO.getEntityTag()).isNull();
   }
 
   @Test

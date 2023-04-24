@@ -225,7 +225,8 @@ public class OnboardingServiceImpl implements OnboardingService {
         writeEntityAsYamlInFile(Collections.singletonList(backstageCatalogEntityInitial.getFirst()),
             backstageCatalogEntityInitial.getSecond().getFirst());
     connectorProcessor.performPushOperation(accountIdentifier, catalogConnectorInfo,
-        onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore(), initialFileToPush);
+        onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore(), initialFileToPush,
+        onboardingModuleConfig.isUseGitServiceGrpcForSingleEntityPush());
 
     io.harness.security.dto.UserPrincipal userPrincipalFromContext =
         (io.harness.security.dto.UserPrincipal) SourcePrincipalContextBuilder.getSourcePrincipal();
@@ -260,14 +261,14 @@ public class OnboardingServiceImpl implements OnboardingService {
       filesToPush.remove(initialFileToPush.get(0));
 
       connectorProcessor.performPushOperation(accountIdentifier, catalogConnectorInfo,
-          onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore(), filesToPush);
+          onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore(), filesToPush, false);
 
       registerLocationInBackstage(accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, locationTargets);
       onboardingModuleConfig.getSampleEntities().forEach(sampleEntity
           -> registerLocationInBackstage(
               accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, Collections.singletonList(sampleEntity)));
 
-      createCatalogInfraConnectorInBackstageK8S(accountIdentifier, catalogConnectorInfo);
+      createCatalogInfraConnectorInBackstageK8S(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType);
 
       log.info("Finished operation of yaml generation, pushing to source, registering in backstage, "
           + "creating connector secret in K8S for all entities");
@@ -308,7 +309,8 @@ public class OnboardingServiceImpl implements OnboardingService {
         ConnectorType.fromString(catalogConnectorEntity.getConnectorProviderType()));
     connectorProcessor.performPushOperation(harnessAccount, catalogConnectorInfo,
         onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore(),
-        Collections.singletonList(catalogInfoLocationFilePath));
+        Collections.singletonList(catalogInfoLocationFilePath),
+        onboardingModuleConfig.isUseGitServiceGrpcForSingleEntityPush());
 
     registerLocationInBackstage(
         harnessAccount, BACKSTAGE_LOCATION_URL_TYPE, Collections.singletonList(entityTargetFilePath));
@@ -443,7 +445,8 @@ public class OnboardingServiceImpl implements OnboardingService {
     sampleEntityFileToPush.add(sampleEntityYamlFilePath);
 
     connectorProcessor.performPushOperation(accountIdentifier, catalogConnectorInfo,
-        onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore(), sampleEntityFileToPush);
+        onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore(), sampleEntityFileToPush,
+        onboardingModuleConfig.isUseGitServiceGrpcForSingleEntityPush());
 
     List<String> locationTargets = new ArrayList<>();
     locationTargets.add(catalogConnectorInfo.getRepo() + SLASH_DELIMITER + SOURCE_FORMAT + SLASH_DELIMITER
@@ -451,7 +454,7 @@ public class OnboardingServiceImpl implements OnboardingService {
         + SAMPLE_ENTITY_NAME + SLASH_DELIMITER + SAMPLE_ENTITY_NAME.toLowerCase() + YAML_FILE_EXTENSION);
     registerLocationInBackstage(accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, locationTargets);
 
-    createCatalogInfraConnectorInBackstageK8S(accountIdentifier, catalogConnectorInfo);
+    createCatalogInfraConnectorInBackstageK8S(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType);
 
     saveCatalogConnector(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType);
     saveStatusInfo(accountIdentifier, StatusType.ONBOARDING.name(), StatusInfo.CurrentStatusEnum.COMPLETED,
@@ -717,11 +720,16 @@ public class OnboardingServiceImpl implements OnboardingService {
   }
 
   private void createCatalogInfraConnectorInBackstageK8S(
-      String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo) {
+      String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo, String catalogInfraConnectorType) {
     try {
-      gitIntegrationService.createConnectorInBackstage(accountIdentifier,
-          catalogConnectorInfo.getConnector().getIdentifier(),
-          String.valueOf(catalogConnectorInfo.getConnector().getType()));
+      String type = String.valueOf(catalogConnectorInfo.getConnector().getType());
+      ConnectorProcessor connectorProcessor =
+          connectorProcessorFactory.getConnectorProcessor(ConnectorType.fromString(type));
+      ConnectorInfoDTO connectorInfoDTO =
+          connectorProcessor.getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier());
+      gitIntegrationService.createConnectorInBackstage(accountIdentifier, connectorInfoDTO,
+          CatalogInfraConnectorType.valueOf(catalogInfraConnectorType),
+          catalogConnectorInfo.getConnector().getIdentifier());
     } catch (Exception e) {
       log.error("Unable to create infra connector secrets in backstage k8s, ex = {}", e.getMessage(), e);
     }

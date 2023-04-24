@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
+import static io.harness.rule.OwnerRule.RAJENDRA_BAVISKAR;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static java.util.Arrays.asList;
@@ -580,5 +581,77 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
         .isEqualTo(
             "TRIGGER_ERROR_LOG: Exception while evaluating Trigger: acc:org:proj:null:null, Filter: GitWebhookTriggerRepoFilter, Skipping this one.");
     assertThat(log.getLevel()).isEqualTo(Level.ERROR);
+  }
+
+  @Test
+  @Owner(developers = RAJENDRA_BAVISKAR)
+  @Category(UnitTests.class)
+  public void testSanitizeUrl() {
+    // GitLab
+    String sanitizedUrlGitLab1 = filter.sanitizeUrl("ssh://gitlab.com/username/repo");
+    assertThat(sanitizedUrlGitLab1).isEqualTo("git@gitlab.com:username/repo");
+
+    String sanitizedUrlGitLab2 = filter.sanitizeUrl("ssh://git@gitlab.com/username/repo");
+    assertThat(sanitizedUrlGitLab2).isEqualTo("git@gitlab.com:username/repo");
+
+    String sanitizedUrlGitLab3 = filter.sanitizeUrl("git@gitlab.com:username");
+    assertThat(sanitizedUrlGitLab3).isEqualTo("git@gitlab.com:username");
+
+    String sanitizedUrlGitLab4 = filter.sanitizeUrl("http://gitlab.com/username/repo");
+    assertThat(sanitizedUrlGitLab4).isEqualTo("https://gitlab.com/username/repo");
+
+    String sanitizedUrlGitLab5 = filter.sanitizeUrl("http://www.gitlab.com/username/repo");
+    assertThat(sanitizedUrlGitLab5).isEqualTo("https://gitlab.com/username/repo");
+
+    // Github
+    String sanitizedUrlGithub1 = filter.sanitizeUrl("ssh://github.com/username/repo");
+    assertThat(sanitizedUrlGithub1).isEqualTo("git@github.com:username/repo");
+
+    String sanitizedUrlGithub2 = filter.sanitizeUrl("ssh://git@github.com/username/repo");
+    assertThat(sanitizedUrlGithub2).isEqualTo("git@github.com:username/repo");
+
+    String sanitizedUrlGithub3 = filter.sanitizeUrl("git@github.com:username");
+    assertThat(sanitizedUrlGithub3).isEqualTo("git@github.com:username");
+
+    String sanitizedUrlGithub4 = filter.sanitizeUrl("http://github.com/username/repo");
+    assertThat(sanitizedUrlGithub4).isEqualTo("https://github.com/username/repo");
+
+    String sanitizedUrlGithub5 = filter.sanitizeUrl("http://www.github.com/username/repo");
+    assertThat(sanitizedUrlGithub5).isEqualTo("https://github.com/username/repo");
+
+    // Bitbucket
+    String sanitizedUrlBitbucket1 = filter.sanitizeUrl("ssh://bitbucket.org/username/repo");
+    assertThat(sanitizedUrlBitbucket1).isEqualTo("git@bitbucket.org:username/repo");
+
+    String sanitizedUrlBitbucket2 = filter.sanitizeUrl("ssh://bitbucket.org/username/repo");
+    assertThat(sanitizedUrlBitbucket2).isEqualTo("git@bitbucket.org:username/repo");
+
+    String sanitizedUrlBitbucket3 = filter.sanitizeUrl("git@bitbucket.org:username");
+    assertThat(sanitizedUrlBitbucket3).isEqualTo("git@bitbucket.org:username");
+
+    String sanitizedUrlBitbucket4 = filter.sanitizeUrl("http://bitbucket.org/username/repo");
+    assertThat(sanitizedUrlBitbucket4).isEqualTo("https://bitbucket.org/username/repo");
+
+    String sanitizedUrlBitbucket6 = filter.sanitizeUrl("ssh://git@bitbucket.dev.harness.io:7999/username/");
+    assertThat(sanitizedUrlBitbucket6).isEqualTo("git@bitbucket.dev.harness.io:7999/username");
+
+    String sanitizedUrlBitbucket5 = filter.sanitizeUrl("http://www.bitbucket.org/username/repo");
+    assertThat(sanitizedUrlBitbucket5).isEqualTo("https://bitbucket.org/username/repo");
+
+    // Azure
+    String sanitizedUrlAzure1 = filter.sanitizeUrl("ssh://dev.azure.com/username/repo");
+    assertThat(sanitizedUrlAzure1).isEqualTo("git@dev.azure.com:username/repo");
+
+    String sanitizedUrlAzure2 = filter.sanitizeUrl("ssh://dev.azure.com/username/repo");
+    assertThat(sanitizedUrlAzure2).isEqualTo("git@dev.azure.com:username/repo");
+
+    String sanitizedUrlAzure3 = filter.sanitizeUrl("git@dev.azure.com:username");
+    assertThat(sanitizedUrlAzure3).isEqualTo("git@dev.azure.com:username");
+
+    String sanitizedUrlAzure4 = filter.sanitizeUrl("http://dev.azure.com/username/repo");
+    assertThat(sanitizedUrlAzure4).isEqualTo("https://dev.azure.com/username/repo");
+
+    String sanitizedUrlAzure5 = filter.sanitizeUrl("http://www.dev.azure.com/username/repo");
+    assertThat(sanitizedUrlAzure5).isEqualTo("https://dev.azure.com/username/repo");
   }
 }

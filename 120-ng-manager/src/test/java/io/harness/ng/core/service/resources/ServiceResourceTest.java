@@ -48,6 +48,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.ng.core.common.beans.NGTag;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
@@ -135,11 +136,12 @@ public class ServiceResourceTest extends CategoryTest {
         .get("ACCOUNT_ID", serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier(),
             serviceRequestDTO.getIdentifier(), false);
 
-    ServiceResponseDTO serviceResponse =
-        serviceResource.get("IDENTIFIER", "ACCOUNT_ID", "ORG_ID", "PROJECT_ID", false).getData();
+    ResponseDTO<ServiceResponseDTO> serviceResponseDTOResponseDTO =
+        serviceResource.get("IDENTIFIER", "ACCOUNT_ID", "ORG_ID", "PROJECT_ID", false);
 
-    assertThat(serviceResponse).isNotNull();
-    assertThat(serviceResponse).isEqualTo(serviceResponseDTO);
+    assertThat(serviceResponseDTOResponseDTO.getData()).isNotNull();
+    assertThat(serviceResponseDTOResponseDTO.getData()).isEqualTo(serviceResponseDTO);
+    assertThat(serviceResponseDTOResponseDTO.getEntityTag()).isNull();
   }
 
   @Test

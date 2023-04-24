@@ -87,7 +87,6 @@ public class GovernanceRecommendationService {
   public void generateRecommendationForAccount(String accountId) {
     // fetch connector information for all the account with governance enabled
     List<ConnectorResponseDTO> nextGenConnectorResponses = listV2(accountId);
-
     if (!nextGenConnectorResponses.isEmpty()) {
       Set<Rule> ruleList = new HashSet<>();
       ruleList.addAll(ruleDAO.forRecommendation());
@@ -107,37 +106,35 @@ public class GovernanceRecommendationService {
                                            .build());
       }
 
-      // get top accounts
-      List<QLCEViewEntityStatsDataPoint> accountNames = getAccountNames(accountId, awsIdentifiers);
-
       // get top regions
       List<String> regions = new ArrayList<>();
-
+      List<QLCEViewEntityStatsDataPoint> accountNames = getAccountNames(accountId, awsIdentifiers);
       // filter out final list of rolearn,externalId etc based on top accounts
       List<RecommendatioAdhocDTO> recommendatioAdhocDTOListFinal = new ArrayList<>();
       if (!accountNames.isEmpty()) {
         List<String> awsIdentifiersFinal = new ArrayList<>();
         for (QLCEViewEntityStatsDataPoint accountData : accountNames) {
-          recommendatioAdhocDTOListFinal.add((RecommendatioAdhocDTO) recommendationAdhocDTOList.stream().filter(
-              e -> e.getTargetAccountId().matches(accountData.getId())));
+          recommendatioAdhocDTOListFinal.add(recommendationAdhocDTOList.stream()
+                                                 .filter(e -> e.getTargetAccountId().matches(accountData.getId()))
+                                                 .findFirst()
+                                                 .get());
           awsIdentifiersFinal.add(accountData.getName());
         }
-        log.info("final connectors: {}\n\n\n awsIdentifiers{} ", recommendatioAdhocDTOListFinal, awsIdentifiersFinal);
+        log.info("Account {} connectors: {}\n\n\n awsIdentifiers{} ", accountId, recommendatioAdhocDTOListFinal,
+            awsIdentifiersFinal);
         List<QLCEViewEntityStatsDataPoint> regionsFromPerspective = getTopRegions(accountId, awsIdentifiersFinal);
         regions = regionsFromPerspective.stream().map(QLCEViewEntityStatsDataPoint::getId).collect(Collectors.toList());
-      }
-
-      else {
+      } else {
+        log.info("Failed to get account and regions from perspective {} ", accountId);
         // If top accounts came as empty due to data unavailability take default regions and any 5 connector with
-        // GOVERNANCE enabled
-        log.info("Accounts from perspective came empty");
         regions.addAll(Arrays.asList("us-east-1", "us-east-2", "us-west-2", "ap-southeast-1", "eu-west-1"));
         recommendatioAdhocDTOListFinal.addAll(
             recommendationAdhocDTOList.subList(0, Math.min(recommendationAdhocDTOList.size(), 5)));
       }
-
       // enqueue call
       enqueueRecommendationForAccount(recommendatioAdhocDTOListFinal, ruleList, regions, accountId);
+    } else {
+      log.info("No connector found for {}", accountId);
     }
   }
 

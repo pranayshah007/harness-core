@@ -72,7 +72,7 @@ public class AzureRepoConnectorProcessor extends ConnectorProcessor {
 
   @Override
   public void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
-      String locationParentPath, List<String> filesToPush) {
+      String locationParentPath, List<String> filesToPush, boolean throughGrpc) {
     ConnectorInfoDTO connectorInfoDTO =
         getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier());
     Map<String, BackstageEnvVariable> connectorSecretsInfo =
@@ -88,6 +88,6 @@ public class AzureRepoConnectorProcessor extends ConnectorProcessor {
     AzureRepoUsernameTokenDTO spec = (AzureRepoUsernameTokenDTO) outcome.getSpec();
 
     performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, filesToPush,
-        spec.getUsername(), azureRepoConnectorSecret);
+        spec.getUsername(), azureRepoConnectorSecret, throughGrpc);
   }
 }

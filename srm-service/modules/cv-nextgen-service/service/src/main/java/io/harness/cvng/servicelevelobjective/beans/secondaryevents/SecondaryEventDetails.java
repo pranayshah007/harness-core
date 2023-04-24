@@ -5,13 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cvng.servicelevelobjective.beans.secondaryEvents;
+package io.harness.cvng.servicelevelobjective.beans.secondaryevents;
 
 import static io.harness.cvng.CVConstants.SECONDARY_EVENTS_TYPE;
 
 import io.harness.cvng.downtime.beans.DataCollectionFailureInstanceDetails;
 import io.harness.cvng.downtime.beans.DowntimeInstanceDetails;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationInstanceDetails;
+import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetInstanceDetails;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -28,6 +29,7 @@ import lombok.experimental.SuperBuilder;
 @JsonSubTypes({
   @JsonSubTypes.Type(value = DowntimeInstanceDetails.class, name = "Downtime")
   , @JsonSubTypes.Type(value = AnnotationInstanceDetails.class, name = "Annotation"),
+      @JsonSubTypes.Type(value = SLOErrorBudgetResetInstanceDetails.class, name = "ErrorBudgetReset"),
       @JsonSubTypes.Type(value = DataCollectionFailureInstanceDetails.class, name = "DataCollectionFailure"),
 })
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = SECONDARY_EVENTS_TYPE, include = JsonTypeInfo.As.EXTERNAL_PROPERTY)

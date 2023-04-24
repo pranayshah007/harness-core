@@ -671,6 +671,8 @@ public interface UserService extends OwnedByAccount {
 
   void addUserToAccount(String userId, String accountId);
 
+  void addUserToAccount(String userId, String accountId, UserSource userSource);
+
   void setUserEmailVerified(String userId);
 
   List<Account> getUserAccounts(String userId, int pageIndex, int pageSize, String searchTerm);
@@ -688,4 +690,6 @@ public interface UserService extends OwnedByAccount {
   boolean ifUserHasAccessToSupportAccount(String userId, String accountId);
 
   void removeAllUserGroupsFromUser(User user, String accountId);
+
+  void updateUserAccountLevelDataForThisGen(String accountId, User user, Generation generation, UserSource userSource);
 }

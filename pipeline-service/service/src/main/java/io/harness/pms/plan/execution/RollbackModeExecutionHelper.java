@@ -302,6 +302,10 @@ public class RollbackModeExecutionHelper {
       List<AdviserObtainment> adviserObtainments = planNode.getAdvisorObtainmentsForExecutionMode().get(executionMode);
       if (EmptyPredicate.isNotEmpty(adviserObtainments)) {
         IdentityPlanNode updatedNode = (IdentityPlanNode) planNodeIDToUpdatedPlanNodes.get(planNode.getUuid());
+        if (updatedNode == null) {
+          // this means that the stage had failed before the node could start in the previous execution
+          continue;
+        }
         planNodeIDToUpdatedPlanNodes.put(
             planNode.getUuid(), updatedNode.withAdviserObtainments(adviserObtainments).withUseAdviserObtainments(true));
       }

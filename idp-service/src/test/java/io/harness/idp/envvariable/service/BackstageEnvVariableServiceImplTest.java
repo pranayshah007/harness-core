@@ -106,6 +106,36 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
+  public void testFindByIdAndAccountIdentifierNotPresent() {
+    Optional<BackstageEnvVariable> envVariableOpt =
+        backstageEnvVariableService.findByIdAndAccountIdentifier(TEST_IDENTIFIER, TEST_ACCOUNT_IDENTIFIER);
+    assertTrue(envVariableOpt.isEmpty());
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testFindByEnvNameAndAccountIdentifier() {
+    BackstageEnvSecretVariableEntity envVariableEntity = BackstageEnvSecretVariableEntity.builder().build();
+    when(backstageEnvVariableRepository.findByEnvNameAndAccountIdentifier(TEST_ENV_NAME, TEST_ACCOUNT_IDENTIFIER))
+        .thenReturn(Optional.of(envVariableEntity));
+    Optional<BackstageEnvVariable> envVariableOpt =
+        backstageEnvVariableService.findByEnvNameAndAccountIdentifier(TEST_ENV_NAME, TEST_ACCOUNT_IDENTIFIER);
+    assertTrue(envVariableOpt.isPresent());
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testFindByEnvNameAndAccountIdentifierNotPresent() {
+    Optional<BackstageEnvVariable> envVariableOpt =
+        backstageEnvVariableService.findByEnvNameAndAccountIdentifier(TEST_ENV_NAME, TEST_ACCOUNT_IDENTIFIER);
+    assertTrue(envVariableOpt.isEmpty());
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
   public void testCreate() {
     checkUserAuth();
     mockAccountNamespaceMapping();
@@ -328,6 +358,24 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
     envVariable1.envName(TEST_ENV_NAME);
     envVariable1.setValue(TEST_DECRYPTED_VALUE);
     envVariable1.type(BackstageEnvVariable.TypeEnum.CONFIG);
+    backstageEnvVariableService.sync(Collections.singletonList(envVariable1), TEST_ACCOUNT_IDENTIFIER);
+    verify(k8sClient).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyMap(), eq(false));
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testFindAndSync() {
+    checkUserAuth();
+    mockAccountNamespaceMapping();
+    BackstageEnvConfigVariable envVariable1 = new BackstageEnvConfigVariable();
+    envVariable1.envName(TEST_ENV_NAME);
+    envVariable1.setValue(TEST_DECRYPTED_VALUE);
+    envVariable1.type(BackstageEnvVariable.TypeEnum.CONFIG);
+    BackstageEnvVariableEntity envVariableEntity1 =
+        mapBinder.get(BackstageEnvVariableType.CONFIG).fromDto(envVariable1, TEST_ACCOUNT_IDENTIFIER);
+    when(backstageEnvVariableRepository.findByAccountIdentifier(TEST_ACCOUNT_IDENTIFIER))
+        .thenReturn(Collections.singletonList(envVariableEntity1));
     backstageEnvVariableService.sync(Collections.singletonList(envVariable1), TEST_ACCOUNT_IDENTIFIER);
     verify(k8sClient).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyMap(), eq(false));
   }

@@ -426,6 +426,9 @@ io.harness.plancreator.strategy.ExpressionAxisConfig
 io.harness.cdng.service.beans.ServiceUseFromStageV2
 io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride
 io.harness.cdng.execution.ExecutionInfoKeyOutput
+io.harness.cdng.execution.ExecutionSummaryDetails
+io.harness.cdng.execution.ServiceExecutionSummaryDetails
+io.harness.cdng.execution.ServiceExecutionSummaryDetails$ArtifactsSummary
 io.harness.cdng.gitpolling.bean.yaml.GitHubPollingConfig
 io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration
 io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration

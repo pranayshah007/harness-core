@@ -5,12 +5,17 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cvng.servicelevelobjective.beans.secondaryEvents;
+package io.harness.cvng.servicelevelobjective.beans.secondaryevents;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
+import lombok.Builder;
+import lombok.Value;
 
-public enum SecondaryEventsType {
-  @JsonProperty("Downtime") DOWNTIME,
-  @JsonProperty("DataCollectionFailure") DATA_COLLECTION_FAILURE,
-  @JsonProperty("Annotation") ANNOTATION
+@Value
+@Builder
+public class SecondaryEventsResponse {
+  SecondaryEventsType type;
+  List<String> identifiers;
+  Long startTime;
+  Long endTime;
 }

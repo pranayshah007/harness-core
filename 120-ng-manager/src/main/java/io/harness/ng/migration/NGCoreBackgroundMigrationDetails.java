@@ -41,8 +41,8 @@ public class NGCoreBackgroundMigrationDetails implements MigrationDetails {
   public List<Pair<Integer, Class<? extends NGMigration>>> getMigrations() {
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
         .add(Pair.of(1, AddDeploymentTypeToInfrastructureEntityMigration.class))
-        .add(Pair.of(2, PopulateYamlFieldInNGEnvironmentMigration.class))
-        .add(Pair.of(3, PopulateYamlFieldInNGServiceEntityMigration.class))
+        .add(Pair.of(2, NoopMigration.class))
+        .add(Pair.of(3, NoopMigration.class))
         .add(Pair.of(4, CopyTemplatesPermissionRoleUpdate.class))
         .add(Pair.of(5, PopulateYamlAuthFieldInNGServiceNowConnectorMigration.class))
         .add(Pair.of(6, NGWebhookMendateSettingsCategoryUpdateMigration.class))
@@ -51,6 +51,8 @@ public class NGCoreBackgroundMigrationDetails implements MigrationDetails {
         .add(Pair.of(9, NoopMigration.class))
         .add(Pair.of(10, UserMetadataTwoFactorAuthenticationMigration.class))
         .add(Pair.of(11, UpdateEnvironmentRefValueInServiceOverrideNGMigration.class))
+        .add(Pair.of(12, PopulateYamlFieldInNGEnvironmentMigration.class))
+        .add(Pair.of(13, PopulateYamlFieldInNGServiceEntityMigration.class))
         .build();
   }
 }
