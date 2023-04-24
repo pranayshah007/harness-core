@@ -120,14 +120,14 @@ public class TriggerEventExecutionHelper {
   @Inject @Named("TriggerAuthenticationExecutorService") ExecutorService triggerAuthenticationExecutor;
 
   public WebhookEventProcessingResult handleTriggerWebhookEvent(TriggerMappingRequestData mappingRequestData) {
-    try (NgTriggerAutoLogContext ignore0 =
-             new NgTriggerAutoLogContext("eventId", mappingRequestData.getWebhookDTO().getEventId(),
-                 mappingRequestData.getTriggerWebhookEvent().getTriggerIdentifier(),
-                 mappingRequestData.getTriggerWebhookEvent().getPipelineIdentifier(),
-                 mappingRequestData.getTriggerWebhookEvent().getProjectIdentifier(),
-                 mappingRequestData.getTriggerWebhookEvent().getOrgIdentifier(),
-                 mappingRequestData.getTriggerWebhookEvent().getAccountId(),
-                 AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
+    try (NgTriggerAutoLogContext ignore0 = new NgTriggerAutoLogContext("eventId",
+             mappingRequestData.getWebhookDTO() == null ? null : mappingRequestData.getWebhookDTO().getEventId(),
+             mappingRequestData.getTriggerWebhookEvent().getTriggerIdentifier(),
+             mappingRequestData.getTriggerWebhookEvent().getPipelineIdentifier(),
+             mappingRequestData.getTriggerWebhookEvent().getProjectIdentifier(),
+             mappingRequestData.getTriggerWebhookEvent().getOrgIdentifier(),
+             mappingRequestData.getTriggerWebhookEvent().getAccountId(),
+             AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
       WebhookEventMappingResponse webhookEventMappingResponse =
           webhookEventMapperHelper.mapWebhookEventToTriggers(mappingRequestData);
 
