@@ -10,6 +10,7 @@ package io.harness.clients;
 import static io.harness.annotations.dev.HarnessTeam.IDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.spec.server.idp.v1.model.LayoutIngestRequest;
 import io.harness.spec.server.idp.v1.model.LayoutRequest;
 
 import javax.validation.constraints.NotEmpty;
@@ -17,7 +18,6 @@ import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.HTTP;
-import retrofit2.http.Header;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
 
@@ -45,6 +45,9 @@ public interface BackstageResourceClient {
 
   @HTTP(method = "DELETE", path = LAYOUT_API, hasBody = true)
   Call<Object> deleteLayout(@Body LayoutRequest body, @Path("accountIdentifier") String accountIdentifier);
+
+  @POST(LAYOUT_API + "/ingest")
+  Call<Object> ingestLayout(@Body LayoutIngestRequest body, @Path("accountIdentifier") String accountIdentifier);
 
   @GET(HARNESS_REFRESH_API + "/refresh")
   Call<Object> providerRefresh(@Path("accountIdentifier") String accountIdentifier);

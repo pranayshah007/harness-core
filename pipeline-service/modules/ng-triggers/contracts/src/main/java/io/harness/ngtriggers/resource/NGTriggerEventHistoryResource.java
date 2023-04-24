@@ -71,8 +71,8 @@ import org.springframework.data.domain.Page;
 public interface NGTriggerEventHistoryResource {
   @GET
   @Path("{triggerIdentifier}")
-  @ApiOperation(value = "Get Trigger event history", nickname = "triggerEventHistory")
-  @Operation(operationId = "triggerEventHistory", summary = "Get event history for a trigger",
+  @ApiOperation(value = "Get Trigger event history", nickname = "triggerEventHistoryNew")
+  @Operation(operationId = "triggerEventHistoryNew", summary = "Get event history for a trigger",
       description = "Get event history for a trigger",
       responses =
       {
@@ -97,9 +97,9 @@ public interface NGTriggerEventHistoryResource {
 
   @GET
   @Path("/eventCorrelation/{eventCorrelationId}")
-  @ApiOperation(value = "Get Trigger event history", nickname = "triggerEventHistory")
-  @Operation(operationId = "triggerEventHistory", summary = "Get event history for a trigger",
-      description = "Get event history for a trigger",
+  @ApiOperation(value = "Get Trigger history event correlation", nickname = "triggerHistoryEventCorrelation")
+  @Operation(operationId = "triggerHistoryEventCorrelation", summary = "Get Trigger history event correlation",
+      description = "Get Trigger history event correlation",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.

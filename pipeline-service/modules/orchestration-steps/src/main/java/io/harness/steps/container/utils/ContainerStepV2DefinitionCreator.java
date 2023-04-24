@@ -41,12 +41,18 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ContainerStepV2DefinitionCreator {
-  public List<ContainerDefinitionInfo> getContainerDefinitionInfo(InitContainerV2StepInfo initContainerV2StepInfo) {
+  public List<ContainerDefinitionInfo> getContainerDefinitionInfo(
+      InitContainerV2StepInfo initContainerV2StepInfo, String stepGroupIdentifier) {
     ParameterField<OSType> os = ((ContainerK8sInfra) initContainerV2StepInfo.getInfrastructure()).getSpec().getOs();
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
 
     initContainerV2StepInfo.getPluginsData().forEach((stepInfo, value) -> {
       PluginDetails pluginDetails = value.getPluginDetails();
+      // Todo(Sahil): Currently with ci it is not working. A small change is required inorder to find the port in CI.
+      //      String stepIdentifier = stepInfo.getStepIdentifier();
+      //      if (Strings.isNotBlank(stepGroupIdentifier)) {
+      //        stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
+      //      }
       String identifier = getKubernetesStandardPodName(stepInfo.getStepIdentifier());
       String containerName = String.format("%s%s", STEP_PREFIX, identifier).toLowerCase();
       Map<String, String> envMap = new HashMap<>(pluginDetails.getEnvVariablesMap());

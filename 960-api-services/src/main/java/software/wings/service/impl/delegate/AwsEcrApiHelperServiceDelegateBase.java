@@ -14,7 +14,6 @@ import static io.harness.eraro.ErrorCode.AWS_SERVICE_NOT_FOUND;
 import static io.harness.exception.WingsException.USER;
 
 import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
-import static software.wings.service.impl.aws.model.AwsConstants.DEFAULT_BACKOFF_MAX_ERROR_RETRIES;
 
 import static org.apache.commons.lang3.StringUtils.defaultString;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -24,8 +23,8 @@ import io.harness.aws.util.AwsCallTracker;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 
-import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
 import software.wings.beans.AwsCrossAccountAttributes;
+import software.wings.service.impl.AwsApiHelperService;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -37,8 +36,6 @@ import com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper;
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.amazonaws.auth.WebIdentityTokenCredentialsProvider;
 import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.retry.PredefinedBackoffStrategies;
-import com.amazonaws.retry.PredefinedRetryPolicies;
 import com.amazonaws.retry.RetryPolicy;
 import com.amazonaws.services.autoscaling.model.AmazonAutoScalingException;
 import com.amazonaws.services.cloudformation.model.AmazonCloudFormationException;
@@ -54,11 +51,11 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder
 import com.google.inject.Inject;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 public class AwsEcrApiHelperServiceDelegateBase {
   @Inject protected AwsCallTracker tracker;
+  @Inject private AwsApiHelperService awsApiHelperService;
   public void attachCredentialsAndBackoffPolicy(AwsClientBuilder builder, AwsInternalConfig awsConfig) {
     AWSCredentialsProvider credentialsProvider;
 
@@ -93,21 +90,9 @@ public class AwsEcrApiHelperServiceDelegateBase {
 
     builder.withCredentials(credentialsProvider);
     ClientConfiguration clientConfiguration = new ClientConfiguration();
-    RetryPolicy retryPolicy = getRetryPolicy(awsConfig);
+    RetryPolicy retryPolicy = awsApiHelperService.getRetryPolicy(awsConfig);
     clientConfiguration.setRetryPolicy(retryPolicy);
     builder.withClientConfiguration(clientConfiguration);
-  }
-
-  @NotNull
-  private RetryPolicy getRetryPolicy(AwsInternalConfig awsConfig) {
-    AmazonClientSDKDefaultBackoffStrategy defaultBackoffStrategy = awsConfig.getAmazonClientSDKDefaultBackoffStrategy();
-    return defaultBackoffStrategy != null
-        ? new RetryPolicy(new PredefinedRetryPolicies.SDKDefaultRetryCondition(),
-            new PredefinedBackoffStrategies.SDKDefaultBackoffStrategy(defaultBackoffStrategy.getBaseDelayInMs(),
-                defaultBackoffStrategy.getThrottledBaseDelayInMs(), defaultBackoffStrategy.getMaxBackoffInMs()),
-            defaultBackoffStrategy.getMaxErrorRetry(), false)
-        : new RetryPolicy(new PredefinedRetryPolicies.SDKDefaultRetryCondition(),
-            new PredefinedBackoffStrategies.SDKDefaultBackoffStrategy(), DEFAULT_BACKOFF_MAX_ERROR_RETRIES, false);
   }
 
   public void handleAmazonClientException(AmazonClientException amazonClientException) {

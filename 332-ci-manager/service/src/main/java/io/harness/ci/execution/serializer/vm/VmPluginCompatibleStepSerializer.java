@@ -47,12 +47,14 @@ public class VmPluginCompatibleStepSerializer {
       StageInfraDetails stageInfraDetails, String identifier, ParameterField<Timeout> parameterFieldTimeout,
       String stepName) {
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, pluginCompatibleStep.getDefaultTimeout());
-    Map<String, String> envVars = pluginSettingUtils.getPluginCompatibleEnvVariables(
-        pluginCompatibleStep, identifier, timeout, ambiance, Type.VM, true);
     if (CIStepInfoUtils.canRunVmStepOnHost(pluginCompatibleStep.getNonYamlInfo().getStepInfoType(), stageInfraDetails,
             AmbianceUtils.getAccountId(ambiance), ciExecutionConfigService, featureFlagService)) {
+      Map<String, String> envVars = pluginSettingUtils.getPluginCompatibleEnvVariables(
+          pluginCompatibleStep, identifier, timeout, ambiance, Type.VM, true, false);
       return getHostedStep(ambiance, pluginCompatibleStep, envVars, timeout);
     }
+    Map<String, String> envVars = pluginSettingUtils.getPluginCompatibleEnvVariables(
+        pluginCompatibleStep, identifier, timeout, ambiance, Type.VM, true, true);
     return getContainerizedStep(ambiance, pluginCompatibleStep, stageInfraDetails, envVars, timeout);
   }
 

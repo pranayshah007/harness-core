@@ -34,6 +34,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("emptyDirYaml")
 @OwnedBy(CI)
 @RecasterAlias("io.harness.steps.plugin.infrastructure.volumes.EmptyDirYaml")
+@Deprecated
 public class EmptyDirYaml implements ContainerVolume {
   @Builder.Default @NotNull private ContainerVolume.Type type = Type.EMPTY_DIR;
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> mountPath;

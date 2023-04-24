@@ -12,7 +12,7 @@ import static io.harness.event.handler.impl.Constants.EMAIL_ID;
 import static io.harness.event.model.EventType.USER_INVITE_ACCEPTED_FOR_TRIAL_ACCOUNT;
 import static io.harness.rule.OwnerRule.VIKAS;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;

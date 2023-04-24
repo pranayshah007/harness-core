@@ -714,6 +714,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         "<+pipeline.currentStatus> == \"FAILED\" || <+pipeline.currentStatus> == \"ERRORED\" || <+pipeline.currentStatus> == \"EXPIRED\"");
     aliases.put(OrchestrationConstants.PIPELINE_SUCCESS,
         "<+pipeline.currentStatus> == \"SUCCEEDED\" || <+pipeline.currentStatus> == \"IGNORE_FAILED\"");
+    aliases.put(OrchestrationConstants.ROLLBACK_MODE_EXECUTION,
+        "(<+ambiance.metadata.executionMode> == \"POST_EXECUTION_ROLLBACK\") || (<+ambiance.metadata.executionMode> == \"PIPELINE_ROLLBACK\")");
     aliases.put(OrchestrationConstants.ALWAYS, "true");
     aliases.put(StrategyConstants.MATRIX, "strategy.matrix");
     aliases.put(StrategyConstants.REPEAT, "strategy.repeat");

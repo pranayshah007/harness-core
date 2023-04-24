@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.scim;
+
 import static io.harness.NGConstants.CREATED;
 import static io.harness.NGConstants.LAST_MODIFIED;
 import static io.harness.NGConstants.LOCATION;
@@ -23,7 +24,7 @@ import static io.harness.rule.OwnerRule.YUVRAJ;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

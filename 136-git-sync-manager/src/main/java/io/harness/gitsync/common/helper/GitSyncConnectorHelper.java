@@ -38,6 +38,7 @@ import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.gitsync.common.dtos.AzureRepoSCMDTO;
 import io.harness.gitsync.common.dtos.GithubSCMDTO;
 import io.harness.gitsync.common.dtos.GitlabSCMDTO;
+import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
 import io.harness.gitsync.common.dtos.UserSourceCodeManagerDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GitAccessDTO;
 import io.harness.gitsync.common.service.YamlGitConfigService;
@@ -152,7 +153,7 @@ public class GitSyncConnectorHelper {
     }
   }
 
-  public void getDecryptedGitAccessDTO(GitAccessDTO gitAccessDTO) {
+  public void decryptGitAccessDTO(GitAccessDTO gitAccessDTO) {
     decryptGitApiAccessHelper.decryptGitAccessDTO(gitAccessDTO);
   }
 
@@ -384,5 +385,9 @@ public class GitSyncConnectorHelper {
     } catch (Exception ex) {
       log.error("Invalid type of connector: {}", connectorDTO.getConnectorType(), ex);
     }
+  }
+
+  public Optional<UserDetailsResponseDTO> getUserDetails(String accountIdentifier, ScmConnector connectorDTO) {
+    return userSourceCodeManagerHelper.getUserDetails(accountIdentifier, connectorDTO);
   }
 }

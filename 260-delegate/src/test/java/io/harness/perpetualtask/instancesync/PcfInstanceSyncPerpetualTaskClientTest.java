@@ -15,10 +15,10 @@ import static software.wings.service.InstanceSyncConstants.HARNESS_APPLICATION_I
 import static software.wings.service.InstanceSyncConstants.INFRASTRUCTURE_MAPPING_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;

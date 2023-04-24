@@ -20,12 +20,12 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -45,7 +45,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.JiraClientException;
 import io.harness.jira.JiraAction;
 import io.harness.jira.JiraCustomFieldValue;
-import io.harness.jira.JiraField;
 import io.harness.jira.JiraFieldNG;
 import io.harness.jira.JiraFieldSchemaNG;
 import io.harness.jira.JiraFieldTypeNG;
@@ -96,7 +95,6 @@ import org.apache.http.HttpStatus;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
@@ -104,14 +102,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({FluentCreate.class, FluentUpdate.class, FluentTransition.class, JSONArray.class, JSONObject.class,
-    JiraField.class})
-@PowerMockIgnore({"javax.net.ssl.*", "javax.security.auth.x500.X500Principal"})
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class JiraTaskTest extends CategoryTest {
   private static final String BASE_URL = "http://jira.com";

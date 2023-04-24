@@ -31,6 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("hostPathYaml")
 @OwnedBy(CI)
 @RecasterAlias("io.harness.steps.plugin.infrastructure.volumes.HostPathYaml")
+@Deprecated
 public class HostPathYaml implements ContainerVolume {
   @Builder.Default @NotNull private ContainerVolume.Type type = Type.HOST_PATH;
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> mountPath;

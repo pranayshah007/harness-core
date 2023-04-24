@@ -219,9 +219,7 @@ public class EnvironmentResourceV2 {
           NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted) {
     Optional<Environment> environment =
         environmentService.get(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, deleted);
-    String version = "0";
     if (environment.isPresent()) {
-      version = environment.get().getVersion().toString();
       if (EmptyPredicate.isEmpty(environment.get().getYaml())) {
         NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment.get());
         environment.get().setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
@@ -234,7 +232,7 @@ public class EnvironmentResourceV2 {
     checkForAccessOrThrow(getEnvironmentAttributesMap(environment.get().getType().toString()),
         ResourceScope.of(accountId, orgIdentifier, projectIdentifier), environmentIdentifier,
         ENVIRONMENT_VIEW_PERMISSION);
-    return ResponseDTO.newResponse(version, environment.map(EnvironmentMapper::toResponseWrapper).orElse(null));
+    return ResponseDTO.newResponse(environment.map(EnvironmentMapper::toResponseWrapper).orElse(null));
   }
 
   @POST
@@ -265,12 +263,15 @@ public class EnvironmentResourceV2 {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(environmentEntity.getOrgIdentifier(),
         environmentEntity.getProjectIdentifier(), environmentEntity.getAccountId());
     Environment createdEnvironment = environmentService.create(environmentEntity);
-    return ResponseDTO.newResponse(
-        createdEnvironment.getVersion().toString(), EnvironmentMapper.toResponseWrapper(createdEnvironment));
+    return ResponseDTO.newResponse(EnvironmentMapper.toResponseWrapper(createdEnvironment));
   }
 
   private boolean checkFeatureFlagForEnvOrgAccountLevel(String accountId) {
     return featureFlagHelperService.isEnabled(accountId, FeatureName.CDS_OrgAccountLevelServiceEnvEnvGroup);
+  }
+
+  private boolean checkFeatureFlagForOverridesV2(String accountId) {
+    return featureFlagHelperService.isEnabled(accountId, FeatureName.CDS_SERVICE_OVERRIDES_2_0);
   }
 
   @DELETE
@@ -341,8 +342,7 @@ public class EnvironmentResourceV2 {
     }
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     Environment updatedEnvironment = environmentService.update(requestEnvironment);
-    return ResponseDTO.newResponse(
-        updatedEnvironment.getVersion().toString(), EnvironmentMapper.toResponseWrapper(updatedEnvironment));
+    return ResponseDTO.newResponse(EnvironmentMapper.toResponseWrapper(updatedEnvironment));
   }
 
   @PUT
@@ -379,8 +379,7 @@ public class EnvironmentResourceV2 {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(requestEnvironment.getOrgIdentifier(),
         requestEnvironment.getProjectIdentifier(), requestEnvironment.getAccountId());
     Environment upsertEnvironment = environmentService.upsert(requestEnvironment, UpsertOptions.DEFAULT);
-    return ResponseDTO.newResponse(
-        upsertEnvironment.getVersion().toString(), EnvironmentMapper.toResponseWrapper(upsertEnvironment));
+    return ResponseDTO.newResponse(EnvironmentMapper.toResponseWrapper(upsertEnvironment));
   }
 
   @GET
@@ -718,8 +717,9 @@ public class EnvironmentResourceV2 {
     throwExceptionForNoRequestDTO(serviceOverrideRequestDTO);
     validateServiceOverrideScope(serviceOverrideRequestDTO, accountId);
 
+    boolean isOverridesV2 = checkFeatureFlagForOverridesV2(accountId);
     NGServiceOverridesEntity serviceOverridesEntity =
-        ServiceOverridesMapper.toServiceOverridesEntity(accountId, serviceOverrideRequestDTO);
+        ServiceOverridesMapper.toServiceOverridesEntity(accountId, serviceOverrideRequestDTO, isOverridesV2);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(serviceOverridesEntity.getOrgIdentifier(),
         serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getAccountId());
     environmentValidationHelper.checkThatEnvExists(serviceOverridesEntity.getAccountId(),

@@ -400,7 +400,6 @@ public class IdpModule extends AbstractModule {
   public ServiceHttpClientConfig ngManagerServiceHttpClientConfig() {
     return this.appConfig.getNgManagerServiceHttpClientConfig();
   }
-
   @Provides
   @Singleton
   @Named("ngManagerServiceSecret")
@@ -427,6 +426,18 @@ public class IdpModule extends AbstractModule {
   Supplier<DelegateCallbackToken> getDelegateCallbackTokenSupplier(
       DelegateServiceGrpcClient delegateServiceGrpcClient) {
     return Suppliers.memoize(() -> getDelegateCallbackToken(delegateServiceGrpcClient));
+  }
+  @Provides
+  @Singleton
+  @Named("backstageAppBaseUrl")
+  public String appBaseUrl() {
+    return this.appConfig.getBackstageAppBaseUrl();
+  }
+  @Provides
+  @Singleton
+  @Named("backstagePostgresHost")
+  public String postgresHost() {
+    return this.appConfig.getBackstagePostgresHost();
   }
 
   private DelegateCallbackToken getDelegateCallbackToken(DelegateServiceGrpcClient delegateServiceClient) {

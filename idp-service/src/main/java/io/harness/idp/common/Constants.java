@@ -29,4 +29,5 @@ public class Constants {
   public static final String AZURE_REPO_TOKEN = "HARNESS_AZURE_REPO_TOKEN";
   public static final String BACKEND_SECRET = "BACKEND_SECRET";
   public static final String IDP_BACKEND_SECRET = "IDP_BACKEND_SECRET";
+  public static final String PROXY_ENV_NAME = "HOST_PROXY_MAP";
 }

@@ -14,8 +14,8 @@ import static io.harness.template.helpers.TemplateReferenceTestHelper.PROJECT_ID
 import static io.harness.template.helpers.TemplateReferenceTestHelper.generateIdentifierRefWithUnknownScope;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -104,7 +104,7 @@ public class TemplateSetupUsageHelperTest extends TemplateServiceTestBase {
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testPublishSetupUsageEvent_EmptyReferredEntities() throws IOException {
-    templateSetupUsageHelper.publishSetupUsageEvent(templateEntity, new ArrayList<>());
+    templateSetupUsageHelper.publishSetupUsageEvent(templateEntity, new ArrayList<>(), new HashMap<>());
     assertDeleteExistingSetupUsagesIsCalled();
   }
 
@@ -152,7 +152,7 @@ public class TemplateSetupUsageHelperTest extends TemplateServiceTestBase {
                                                                   .setDeleteOldReferredByRecords(true)
                                                                   .build();
 
-    templateSetupUsageHelper.publishSetupUsageEvent(templateEntity, referredEntities);
+    templateSetupUsageHelper.publishSetupUsageEvent(templateEntity, referredEntities, new HashMap<>());
 
     verify(eventProducer)
         .send(Message.newBuilder()

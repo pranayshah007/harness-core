@@ -9,6 +9,7 @@ package io.harness.cvng.servicelevelobjective.services.api;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
+import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset;
 
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,11 @@ import java.util.Set;
 
 public interface SLOErrorBudgetResetService {
   SLOErrorBudgetResetDTO resetErrorBudget(ProjectParams projectParams, SLOErrorBudgetResetDTO sloErrorBudgetResetDTO);
+
+  SLOErrorBudgetReset getErrorBudgetResetByUuid(String uuid);
+
+  List<SLOErrorBudgetReset> getErrorBudgetResetEntities(
+      ProjectParams projectParams, String sloIdentifier, long startTime, long endTime);
 
   List<SLOErrorBudgetResetDTO> getErrorBudgetResets(ProjectParams projectParams, String sloIdentifier);
 

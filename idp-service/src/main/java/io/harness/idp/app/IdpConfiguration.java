@@ -80,6 +80,8 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("env") private String env;
   @JsonProperty("prEnvDefaultBackstageNamespace") private String prEnvDefaultBackstageNamespace;
   @JsonProperty(PROVISION_MODULE_CONFIG) private ProvisionModuleConfig provisionModuleConfig;
+  @JsonProperty("backstageAppBaseUrl") private String backstageAppBaseUrl;
+  @JsonProperty("backstagePostgresHost") private String backstagePostgresHost;
   private String managerTarget;
   private String managerAuthority;
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();

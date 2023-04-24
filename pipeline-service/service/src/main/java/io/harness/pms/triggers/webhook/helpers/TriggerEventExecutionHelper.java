@@ -36,6 +36,8 @@ import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskResponse;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.execution.PlanExecution;
+import io.harness.logging.AutoLogContext;
+import io.harness.logging.NgTriggerAutoLogContext;
 import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
@@ -118,69 +120,80 @@ public class TriggerEventExecutionHelper {
   @Inject @Named("TriggerAuthenticationExecutorService") ExecutorService triggerAuthenticationExecutor;
 
   public WebhookEventProcessingResult handleTriggerWebhookEvent(TriggerMappingRequestData mappingRequestData) {
-    WebhookEventMappingResponse webhookEventMappingResponse =
-        webhookEventMapperHelper.mapWebhookEventToTriggers(mappingRequestData);
+    try (NgTriggerAutoLogContext ignore0 =
+             new NgTriggerAutoLogContext("eventId", mappingRequestData.getWebhookDTO().getEventId(),
+                 mappingRequestData.getTriggerWebhookEvent().getTriggerIdentifier(),
+                 mappingRequestData.getTriggerWebhookEvent().getPipelineIdentifier(),
+                 mappingRequestData.getTriggerWebhookEvent().getProjectIdentifier(),
+                 mappingRequestData.getTriggerWebhookEvent().getOrgIdentifier(),
+                 mappingRequestData.getTriggerWebhookEvent().getAccountId(),
+                 AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
+      WebhookEventMappingResponse webhookEventMappingResponse =
+          webhookEventMapperHelper.mapWebhookEventToTriggers(mappingRequestData);
 
-    TriggerWebhookEvent triggerWebhookEvent = mappingRequestData.getTriggerWebhookEvent();
-    WebhookEventProcessingResultBuilder resultBuilder = WebhookEventProcessingResult.builder();
-    List<TriggerEventResponse> eventResponses = new ArrayList<>();
-    if (!webhookEventMappingResponse.isFailedToFindTrigger()) {
-      if (pmsFeatureFlagService.isEnabled(
-              triggerWebhookEvent.getAccountId(), FeatureName.CDS_NG_TRIGGER_AUTHENTICATION_WITH_DELEGATE_SELECTOR)) {
-        authenticateTriggersWithDelegateSelectors(triggerWebhookEvent, webhookEventMappingResponse);
-      } else {
-        authenticateTriggers(triggerWebhookEvent, webhookEventMappingResponse);
-      }
-      log.info("Preparing for pipeline execution request");
-      resultBuilder.mappedToTriggers(true);
-      if (isNotEmpty(webhookEventMappingResponse.getTriggers())) {
-        for (TriggerDetails triggerDetails : webhookEventMappingResponse.getTriggers()) {
-          if (triggerDetails.getNgTriggerEntity() == null) {
-            log.error("Trigger Entity is empty, This should not happen, please check");
-            continue;
-          }
-          if (triggerDetails.getAuthenticated() != null && !triggerDetails.getAuthenticated()) {
-            eventResponses.add(generateEventHistoryForAuthenticationError(
-                triggerWebhookEvent, triggerDetails, triggerDetails.getNgTriggerEntity()));
-            continue;
-          }
-          long yamlVersion = triggerDetails.getNgTriggerEntity().getYmlVersion() == null
-              ? 3
-              : triggerDetails.getNgTriggerEntity().getYmlVersion();
-          NGTriggerEntity triggerEntity = triggerDetails.getNgTriggerEntity();
-          Criteria criteria = Criteria.where(NGTriggerEntityKeys.accountId)
-                                  .is(triggerEntity.getAccountId())
-                                  .and(NGTriggerEntityKeys.orgIdentifier)
-                                  .is(triggerEntity.getOrgIdentifier())
-                                  .and(NGTriggerEntityKeys.projectIdentifier)
-                                  .is(triggerEntity.getProjectIdentifier())
-                                  .and(NGTriggerEntityKeys.targetIdentifier)
-                                  .is(triggerEntity.getTargetIdentifier())
-                                  .and(NGTriggerEntityKeys.identifier)
-                                  .is(triggerEntity.getIdentifier())
-                                  .and(NGTriggerEntityKeys.deleted)
-                                  .is(false);
-          if (triggerEntity.getVersion() != null) {
-            criteria.and(NGTriggerEntityKeys.version).is(triggerEntity.getVersion());
-          }
-          try {
-            TriggerHelper.stampWebhookRegistrationInfo(triggerEntity,
-                WebhookAutoRegistrationStatus.builder().registrationResult(WebhookRegistrationStatus.SUCCESS).build());
-          } catch (Exception ex) {
-            log.error("Webhook registration status update failed", ex);
-          }
-          ngTriggerRepository.updateValidationStatus(criteria, triggerEntity);
-          eventResponses.add(triggerPipelineExecution(triggerWebhookEvent, triggerDetails,
-              getTriggerPayloadForWebhookTrigger(webhookEventMappingResponse, triggerWebhookEvent, yamlVersion),
-              triggerWebhookEvent.getPayload()));
+      TriggerWebhookEvent triggerWebhookEvent = mappingRequestData.getTriggerWebhookEvent();
+      WebhookEventProcessingResultBuilder resultBuilder = WebhookEventProcessingResult.builder();
+      List<TriggerEventResponse> eventResponses = new ArrayList<>();
+      if (!webhookEventMappingResponse.isFailedToFindTrigger()) {
+        if (pmsFeatureFlagService.isEnabled(
+                triggerWebhookEvent.getAccountId(), FeatureName.CDS_NG_TRIGGER_AUTHENTICATION_WITH_DELEGATE_SELECTOR)) {
+          authenticateTriggersWithDelegateSelectors(triggerWebhookEvent, webhookEventMappingResponse);
+        } else {
+          authenticateTriggers(triggerWebhookEvent, webhookEventMappingResponse);
         }
+        log.info("Preparing for pipeline execution request");
+        resultBuilder.mappedToTriggers(true);
+        if (isNotEmpty(webhookEventMappingResponse.getTriggers())) {
+          for (TriggerDetails triggerDetails : webhookEventMappingResponse.getTriggers()) {
+            if (triggerDetails.getNgTriggerEntity() == null) {
+              log.error("Trigger Entity is empty, This should not happen, please check");
+              continue;
+            }
+            if (triggerDetails.getAuthenticated() != null && !triggerDetails.getAuthenticated()) {
+              eventResponses.add(generateEventHistoryForAuthenticationError(
+                  triggerWebhookEvent, triggerDetails, triggerDetails.getNgTriggerEntity()));
+              continue;
+            }
+            long yamlVersion = triggerDetails.getNgTriggerEntity().getYmlVersion() == null
+                ? 3
+                : triggerDetails.getNgTriggerEntity().getYmlVersion();
+            NGTriggerEntity triggerEntity = triggerDetails.getNgTriggerEntity();
+            Criteria criteria = Criteria.where(NGTriggerEntityKeys.accountId)
+                                    .is(triggerEntity.getAccountId())
+                                    .and(NGTriggerEntityKeys.orgIdentifier)
+                                    .is(triggerEntity.getOrgIdentifier())
+                                    .and(NGTriggerEntityKeys.projectIdentifier)
+                                    .is(triggerEntity.getProjectIdentifier())
+                                    .and(NGTriggerEntityKeys.targetIdentifier)
+                                    .is(triggerEntity.getTargetIdentifier())
+                                    .and(NGTriggerEntityKeys.identifier)
+                                    .is(triggerEntity.getIdentifier())
+                                    .and(NGTriggerEntityKeys.deleted)
+                                    .is(false);
+            if (triggerEntity.getVersion() != null) {
+              criteria.and(NGTriggerEntityKeys.version).is(triggerEntity.getVersion());
+            }
+            try {
+              TriggerHelper.stampWebhookRegistrationInfo(triggerEntity,
+                  WebhookAutoRegistrationStatus.builder()
+                      .registrationResult(WebhookRegistrationStatus.SUCCESS)
+                      .build());
+            } catch (Exception ex) {
+              log.error("Webhook registration status update failed", ex);
+            }
+            ngTriggerRepository.updateValidationStatus(criteria, triggerEntity);
+            eventResponses.add(triggerPipelineExecution(triggerWebhookEvent, triggerDetails,
+                getTriggerPayloadForWebhookTrigger(webhookEventMappingResponse, triggerWebhookEvent, yamlVersion),
+                triggerWebhookEvent.getPayload()));
+          }
+        }
+      } else {
+        resultBuilder.mappedToTriggers(false);
+        eventResponses.add(webhookEventMappingResponse.getWebhookEventResponse());
       }
-    } else {
-      resultBuilder.mappedToTriggers(false);
-      eventResponses.add(webhookEventMappingResponse.getWebhookEventResponse());
-    }
 
-    return resultBuilder.responses(eventResponses).build();
+      return resultBuilder.responses(eventResponses).build();
+    }
   }
 
   @VisibleForTesting

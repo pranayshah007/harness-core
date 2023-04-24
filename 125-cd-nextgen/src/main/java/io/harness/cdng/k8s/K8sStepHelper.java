@@ -104,6 +104,7 @@ import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.ServiceHookDelegateConfig;
 import software.wings.beans.TaskType;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -169,6 +170,12 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
 
   public TaskChainResponse queueK8sTask(StepElementParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,
       Ambiance ambiance, K8sExecutionPassThroughData executionPassThroughData) {
+    List<ServiceHookDelegateConfig> serviceHooks = k8sDeployRequest.getServiceHooks();
+    if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_K8S_SERVICE_HOOKS_NG)
+        && isNotEmpty(serviceHooks)) {
+      return queueK8sTask(
+          stepElementParameters, k8sDeployRequest, ambiance, executionPassThroughData, TaskType.K8S_COMMAND_TASK_NG_V2);
+    }
     return queueK8sTask(
         stepElementParameters, k8sDeployRequest, ambiance, executionPassThroughData, TaskType.K8S_COMMAND_TASK_NG);
   }

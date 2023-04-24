@@ -21,9 +21,11 @@ import static software.wings.beans.TaskType.SCM_PATH_FILTER_EVALUATION_TASK;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -97,6 +99,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -104,13 +107,11 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(PIPELINE)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ConditionEvaluator.class})
+@RunWith(MockitoJUnitRunner.class)
 public class TriggerFilePathConditionFilterTest extends CategoryTest {
   @Mock private TaskExecutionUtils taskExecutionUtils;
   @Mock private NGTriggerElementMapper ngTriggerElementMapper;
@@ -124,6 +125,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
   @Mock private SCMFilePathEvaluatorOnManager scmFilePathEvaluatorOnManager;
   @InjectMocks private SCMFilePathEvaluatorFactory scmFilePathEvaluatorFactory;
   private static List<NGTriggerEntity> triggerEntities;
+  private MockedStatic<ConditionEvaluator> aStatic;
 
   String pushPayload = "{\"commits\": [\n"
       + "  {\n"
@@ -185,11 +187,17 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     initMocks(this);
+    aStatic = mockStatic(ConditionEvaluator.class, CALLS_REAL_METHODS);
     on(filter).set("scmFilePathEvaluatorFactory", scmFilePathEvaluatorFactory);
     on(scmFilePathEvaluatorOnManager).set("secretDecryptor", secretDecryptor);
     on(scmFilePathEvaluatorOnDelegate).set("taskExecutionUtils", taskExecutionUtils);
     on(scmFilePathEvaluatorOnDelegate).set("kryoSerializer", kryoSerializer);
     on(scmFilePathEvaluatorOnDelegate).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
+  }
+
+  @After
+  public void cleanup() {
+    aStatic.close();
   }
 
   @Test
@@ -424,7 +432,6 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
     when(scmFilePathEvaluatorOnManager.getChangedFileset(any(), any(), any()))
         .thenReturn(new HashSet<>(Collections.singletonList("file")));
 
-    PowerMockito.mockStatic(ConditionEvaluator.class);
     when(ConditionEvaluator.evaluate(any(), any(), any())).thenReturn(true);
     assertThat(filter.initiateSCMTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition)).isTrue();
   }
@@ -679,7 +686,6 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
     when(scmFilePathEvaluatorOnManager.getChangedFileset(any(), any(), any()))
         .thenReturn(new HashSet<>(Collections.singletonList("file")));
 
-    PowerMockito.mockStatic(ConditionEvaluator.class);
     when(ConditionEvaluator.evaluate(any(), any(), any())).thenReturn(true);
     assertThat(filter.initiateSCMTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition)).isTrue();
   }
@@ -739,7 +745,6 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
     when(scmFilePathEvaluatorOnManager.getChangedFileset(any(), any(), any()))
         .thenReturn(new HashSet<>(Collections.singletonList("file")));
 
-    PowerMockito.mockStatic(ConditionEvaluator.class);
     when(ConditionEvaluator.evaluate(any(), any(), any())).thenReturn(true);
     assertThat(filter.initiateSCMTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition)).isTrue();
   }

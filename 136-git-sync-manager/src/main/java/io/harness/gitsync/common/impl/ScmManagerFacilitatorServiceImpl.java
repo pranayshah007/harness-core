@@ -362,7 +362,8 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
     gitSyncConnectorHelper.setUserGitCredsInConnectorIfPresent(scope.getAccountIdentifier(), scmConnector);
     final ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnectorForNewGitX(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
-    GitFileDetails gitFileDetails = getGitFileDetails(createGitFileRequestDTO);
+    GitFileDetails gitFileDetails = getGitFileDetails(
+        createGitFileRequestDTO, gitSyncConnectorHelper.getUserDetails(scope.getAccountIdentifier(), scmConnector));
     return scmClient.createFile(decryptedConnector, gitFileDetails, createGitFileRequestDTO.isUseGitClient());
   }
 
@@ -373,7 +374,8 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
     gitSyncConnectorHelper.setUserGitCredsInConnectorIfPresent(scope.getAccountIdentifier(), scmConnector);
     final ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnectorForNewGitX(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
-    GitFileDetails gitFileDetails = getGitFileDetails(updateGitFileRequestDTO);
+    GitFileDetails gitFileDetails = getGitFileDetails(
+        updateGitFileRequestDTO, gitSyncConnectorHelper.getUserDetails(scope.getAccountIdentifier(), scmConnector));
     return scmClient.updateFile(decryptedConnector, gitFileDetails, updateGitFileRequestDTO.isUseGitClient());
   }
 
@@ -404,7 +406,7 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
 
   @Override
   public UserDetailsResponseDTO getUserDetails(UserDetailsRequestDTO userDetailsRequestDTO) {
-    gitSyncConnectorHelper.getDecryptedGitAccessDTO(userDetailsRequestDTO.getGitAccessDTO());
+    gitSyncConnectorHelper.decryptGitAccessDTO(userDetailsRequestDTO.getGitAccessDTO());
     return scmClient.getUserDetails(userDetailsRequestDTO);
   }
 

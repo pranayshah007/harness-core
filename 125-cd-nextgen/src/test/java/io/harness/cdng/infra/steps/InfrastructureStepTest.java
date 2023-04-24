@@ -27,9 +27,9 @@ import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -40,6 +40,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
@@ -47,6 +48,7 @@ import io.harness.cdng.elastigroup.ElastigroupConfiguration;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.infra.InfrastructureOutcomeProvider;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.GoogleFunctionsInfraMapping;
@@ -126,6 +128,7 @@ import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.common.collect.Lists;
 import com.google.inject.name.Named;
@@ -137,19 +140,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.junit.Rule;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(CDP)
+@RunWith(MockitoJUnitRunner.class)
 public class InfrastructureStepTest extends CategoryTest {
-  @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock EnvironmentService environmentService;
   @InjectMocks private InfrastructureStep infrastructureStep;
 
@@ -164,8 +168,22 @@ public class InfrastructureStepTest extends CategoryTest {
   @Mock InfrastructureOutcomeProvider infrastructureOutcomeProvider;
   @Mock InfrastructureValidator infrastructureValidator;
   @Mock InstanceOutcomeHelper instanceOutcomeHelper;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Mock private StageExecutionInfoService stageExecutionInfoService;
+  private AutoCloseable mocks;
 
   private final String ACCOUNT_ID = "accountId";
+
+  @Before
+  public void setUp() throws Exception {
+    this.mocks = MockitoAnnotations.openMocks(this);
+    doNothing()
+        .when(infrastructureStepHelper)
+        .saveInfraExecutionDataToStageInfo(any(Ambiance.class), any(StepResponse.class));
+    when(ngFeatureFlagHelperService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(true);
+    when(stageExecutionInfoService.findStageExecutionInfo(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(null);
+  }
 
   @Test
   @Owner(developers = ACHYUTH)
@@ -259,8 +277,7 @@ public class InfrastructureStepTest extends CategoryTest {
     when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(pdcSshInfraDelegateConfig);
     doNothing()
         .when(stageExecutionHelper)
-        .saveStageExecutionInfoAndPublishExecutionInfoKey(
-            eq(ambiance), any(ExecutionInfoKey.class), eq(InfrastructureKind.PDC));
+        .saveStageExecutionInfo(eq(ambiance), any(ExecutionInfoKey.class), eq(InfrastructureKind.PDC));
     when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(
             PdcInfrastructureOutcome.builder()
@@ -875,10 +892,10 @@ public class InfrastructureStepTest extends CategoryTest {
                                            .region(ParameterField.createValueField("region"))
                                            .build();
     Ambiance ambiance = Mockito.mock(Ambiance.class);
-    doThrow(InvalidRequestException.class).when(infrastructureStepHelper).validateExpression(any());
+    doThrow(InvalidRequestException.class).when(infrastructureStepHelper).validateExpression(any(), any());
     assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
         .isInstanceOf(InvalidRequestException.class);
-    doNothing().when(infrastructureStepHelper).validateExpression(any());
+    doNothing().when(infrastructureStepHelper).validateExpression(any(), any());
     assertThatCode(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
         .doesNotThrowAnyException();
   }

@@ -60,7 +60,7 @@ public class OnpremSignupHandler implements SignupHandler {
           mapUserInviteToUser(userInvite, defaultAccount.get()), defaultAccount.get().getUuid(), CG);
     } else {
       userService.saveUserInvite(userInvite);
-      userService.completeTrialSignupAndSignIn(userInvite);
+      userService.completeTrialSignupAndSignIn(userInvite, true);
     }
     accountService.updateFeatureFlagsForOnPremAccount();
     return true;

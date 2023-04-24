@@ -12,14 +12,17 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
 import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.helpers.NgExpressionHelper;
@@ -27,6 +30,7 @@ import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceYaml;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
+import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.freeze.beans.FreezeEntityType;
 import io.harness.freeze.notifications.NotificationHelper;
@@ -75,6 +79,7 @@ public class ServiceStepTest extends CategoryTest {
   @Mock private NgExpressionHelper ngExpressionHelper;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
   @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Mock private ServiceStepsHelper serviceStepsHelper;
   private AutoCloseable mocks;
   @InjectMocks private ServiceStep step = new ServiceStep();
 
@@ -87,6 +92,11 @@ public class ServiceStepTest extends CategoryTest {
     doReturn(OptionalSweepingOutput.builder().found(false).build())
         .when(sweepingOutputService)
         .resolveOptional(any(Ambiance.class), any());
+
+    doNothing()
+        .when(serviceStepsHelper)
+        .saveServiceExecutionDataToStageInfo(any(Ambiance.class), any(StepResponse.class));
+    when(ngFeatureFlagHelperService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(true);
 
     doReturn(AccessCheckResponseDTO.builder().accessControlList(List.of()).build())
         .when(accessControlClient)

@@ -12,6 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 
+import software.wings.beans.ServiceHookDelegateConfig;
+
 import java.util.Collections;
 import java.util.List;
 import lombok.Builder;
@@ -55,5 +57,10 @@ public class K8sCanaryDeleteRequest implements K8sDeployRequest {
   @Override
   public List<String> getOpenshiftParamList() {
     return Collections.emptyList();
+  }
+
+  @Override
+  public List<ServiceHookDelegateConfig> getServiceHooks() {
+    return null;
   }
 }

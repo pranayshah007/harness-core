@@ -7,12 +7,13 @@
 
 package io.harness.cvng.statemachine.services.impl;
 
+import static io.harness.cvng.downtime.utils.DateTimeUtils.dtf;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.when;
 
@@ -64,6 +65,7 @@ import io.harness.rule.Owner;
 import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -281,9 +283,10 @@ public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
     FieldUtils.writeField(downtimeTransformerMap.get(DowntimeType.ONE_TIME), "clock", clock, true);
     FieldUtils.writeField(downtimeTransformerMap.get(DowntimeType.RECURRING), "clock", clock, true);
     DowntimeDTO downtimeDTO = builderFactory.getOnetimeEndTimeBasedDowntimeDTO();
-    downtimeDTO.getSpec().getSpec().setStartTime(startTime.minus(10, ChronoUnit.MINUTES).getEpochSecond());
+    downtimeDTO.getSpec().getSpec().setStartDateTime(
+        dtf.format(startTime.minus(10, ChronoUnit.MINUTES).atZone(ZoneId.of("UTC")).toLocalDateTime()));
     ((OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec) ((OnetimeDowntimeSpec) downtimeDTO.getSpec().getSpec()).getSpec())
-        .setEndTime(endTime.plus(10, ChronoUnit.MINUTES).getEpochSecond());
+        .setEndDateTime(dtf.format(endTime.plus(10, ChronoUnit.MINUTES).atZone(ZoneId.of("UTC")).toLocalDateTime()));
     downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
     clock = CVNGTestConstants.FIXED_TIME_FOR_TESTS;
     FieldUtils.writeField(sliDataUnavailabilityInstancesHandlerService, "downtimeService", downtimeService, true);
@@ -317,9 +320,10 @@ public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
   public void testExecuteWithNoImpactBecauseOfDowntimeDisabled() throws IllegalAccessException {
     DowntimeDTO downtimeDTO = builderFactory.getOnetimeEndTimeBasedDowntimeDTO();
     downtimeDTO.setEnabled(false);
-    downtimeDTO.getSpec().getSpec().setStartTime(startTime.minus(10, ChronoUnit.MINUTES).getEpochSecond());
+    downtimeDTO.getSpec().getSpec().setStartDateTime(
+        dtf.format(startTime.minus(10, ChronoUnit.MINUTES).atZone(ZoneId.of("UTC")).toLocalDateTime()));
     ((OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec) ((OnetimeDowntimeSpec) downtimeDTO.getSpec().getSpec()).getSpec())
-        .setEndTime(endTime.plus(10, ChronoUnit.MINUTES).getEpochSecond());
+        .setEndDateTime(dtf.format(endTime.plus(10, ChronoUnit.MINUTES).atZone(ZoneId.of("UTC")).toLocalDateTime()));
     downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
     FieldUtils.writeField(sliDataUnavailabilityInstancesHandlerService, "downtimeService", downtimeService, true);
     FieldUtils.writeField(sliDataUnavailabilityInstancesHandlerService, "entityUnavailabilityStatusesService",
@@ -356,9 +360,10 @@ public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
     FieldUtils.writeField(downtimeTransformerMap.get(DowntimeType.RECURRING), "clock", clock, true);
     DowntimeDTO downtimeDTO = builderFactory.getOnetimeEndTimeBasedDowntimeDTO();
     downtimeDTO.setEntitiesRule(AllEntitiesRule.builder().build());
-    downtimeDTO.getSpec().getSpec().setStartTime(startTime.minus(10, ChronoUnit.MINUTES).getEpochSecond());
+    downtimeDTO.getSpec().getSpec().setStartDateTime(
+        dtf.format(startTime.minus(10, ChronoUnit.MINUTES).atZone(ZoneId.of("UTC")).toLocalDateTime()));
     ((OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec) ((OnetimeDowntimeSpec) downtimeDTO.getSpec().getSpec()).getSpec())
-        .setEndTime(endTime.plus(10, ChronoUnit.MINUTES).getEpochSecond());
+        .setEndDateTime(dtf.format(endTime.plus(10, ChronoUnit.MINUTES).atZone(ZoneId.of("UTC")).toLocalDateTime()));
     downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
     clock = CVNGTestConstants.FIXED_TIME_FOR_TESTS;
     FieldUtils.writeField(sliDataUnavailabilityInstancesHandlerService, "downtimeService", downtimeService, true);

@@ -22,5 +22,7 @@ exports:
       name: EntityPagerDutyCard
       addByDefault: true
       layoutSchemaSpecs:
-        gridProps:
-          md: 6
+        component: EntityPagerDutyCard
+        specs:
+          gridProps:
+            md: 6

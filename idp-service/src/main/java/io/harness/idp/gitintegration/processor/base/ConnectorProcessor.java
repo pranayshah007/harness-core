@@ -20,7 +20,11 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.git.GitClientV2Impl;
 import io.harness.git.UsernamePasswordAuthRequest;
+import io.harness.git.model.ChangeType;
+import io.harness.git.model.CommitAndPushRequest;
 import io.harness.git.model.GitBaseRequest;
+import io.harness.git.model.GitFileChange;
+import io.harness.git.model.GitRepositoryType;
 import io.harness.gitsync.CreateFileRequest;
 import io.harness.gitsync.CreateFileResponse;
 import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc;
@@ -33,20 +37,22 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.Principal;
 import io.harness.security.SourcePrincipalContextBuilder;
+import io.harness.security.dto.UserPrincipal;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.math3.util.Pair;
 import org.eclipse.jgit.lib.Ref;
 
 @Slf4j
@@ -57,9 +63,9 @@ public abstract class ConnectorProcessor {
   @Inject public GitClientV2Impl gitClientV2;
   @Inject public HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub harnessToGitPushInfoService;
 
-  public abstract String getInfraConnectorType(String accountIdentifier, String connectorIdentifier);
+  public abstract String getInfraConnectorType(ConnectorInfoDTO connectorInfoDTO);
 
-  protected ConnectorInfoDTO getConnectorInfo(String accountIdentifier, String connectorIdentifier) {
+  public ConnectorInfoDTO getConnectorInfo(String accountIdentifier, String connectorIdentifier) {
     Optional<ConnectorDTO> connectorDTO =
         NGRestUtils.getResponse(connectorResourceClient.get(connectorIdentifier, accountIdentifier, null, null));
     if (connectorDTO.isEmpty()) {
@@ -69,20 +75,33 @@ public abstract class ConnectorProcessor {
     return connectorDTO.get().getConnectorInfo();
   }
 
-  public abstract Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> getConnectorAndSecretsInfo(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier);
+  public abstract Map<String, BackstageEnvVariable> getConnectorAndSecretsInfo(
+      String accountIdentifier, ConnectorInfoDTO connectorInfoDTO);
 
   public abstract void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
-      String locationParentPath, List<String> filesToPush);
+      String locationParentPath, List<String> filesToPush, boolean throughGrpc);
 
   protected void performPushOperationInternal(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
-      String locationParentPath, List<String> filesToPush, String username, String password) {
+      String locationParentPath, List<String> filesToPush, String username, String password, boolean throughGrpc) {
+    UserPrincipal userPrincipalFromContext = (UserPrincipal) SourcePrincipalContextBuilder.getSourcePrincipal();
+    if (throughGrpc) {
+      performPushGitServiceGrpc(accountIdentifier, catalogConnectorInfo, locationParentPath, filesToPush, username,
+          password, userPrincipalFromContext);
+    } else {
+      performPushJGit(accountIdentifier, catalogConnectorInfo, locationParentPath, filesToPush, username, password,
+          userPrincipalFromContext);
+    }
+  }
+
+  private void performPushGitServiceGrpc(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
+      String locationParentPath, List<String> filesToPush, String username, String password,
+      UserPrincipal userPrincipalFromContext) {
     GitBaseRequest gitBaseRequest =
         GitBaseRequest.builder()
             .repoUrl(catalogConnectorInfo.getRepo())
             .authRequest(
                 UsernamePasswordAuthRequest.builder().username(username).password(password.toCharArray()).build())
-            .connectorId(catalogConnectorInfo.getInfraConnector().getIdentifier())
+            .connectorId(catalogConnectorInfo.getConnector().getIdentifier())
             .accountId(accountIdentifier)
             .build();
     Map<String, Ref> remoteList = gitClientV2.listRemote(gitBaseRequest);
@@ -96,8 +115,6 @@ public abstract class ConnectorProcessor {
       baseBranchName = remoteList.get("HEAD").getTarget().getName();
     }
 
-    io.harness.security.dto.UserPrincipal userPrincipalFromContext =
-        (io.harness.security.dto.UserPrincipal) SourcePrincipalContextBuilder.getSourcePrincipal();
     Scope scope = Scope.of(accountIdentifier, null, null);
     String repoName =
         Objects.equals(catalogConnectorInfo.getRepo().substring(catalogConnectorInfo.getRepo().length() - 1), "/")
@@ -117,7 +134,7 @@ public abstract class ConnectorProcessor {
                 .setRepoName(repoName)
                 .setBranchName(catalogConnectorInfo.getBranch())
                 .setFilePath(filePathInRepo)
-                .setConnectorRef(ACCOUNT_SCOPED + catalogConnectorInfo.getInfraConnector().getIdentifier())
+                .setConnectorRef(ACCOUNT_SCOPED + catalogConnectorInfo.getConnector().getIdentifier())
                 .setFileContent(Files.readString(Path.of(fileToPush)))
                 .setIsCommitToNewBranch(commitToNewBranch)
                 .setBaseBranchName(baseBranchName)
@@ -141,5 +158,45 @@ public abstract class ConnectorProcessor {
       log.error("Exception while pushing files to source in IDP catalog onboarding flow, ex = {}", ex.getMessage(), ex);
       throw new UnexpectedException("Error response while pushing files to source in IDP catalog onboarding flow");
     }
+  }
+
+  private void performPushJGit(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
+      String locationParentPath, List<String> filesToPush, String username, String password,
+      UserPrincipal userPrincipalFromContext) {
+    List<GitFileChange> gitFileChanges = new ArrayList<>();
+    filesToPush.forEach((String fileToPush) -> {
+      GitFileChange gitFileChange;
+      try {
+        gitFileChange = GitFileChange.builder()
+                            .filePath(fileToPush.replace(locationParentPath, ""))
+                            .fileContent(Files.readString(Path.of(fileToPush)))
+                            .changeType(ChangeType.ADD)
+                            .accountId(accountIdentifier)
+                            .build();
+      } catch (IOException e) {
+        log.error("Error while doing git add on files. Exception = {}", e.getMessage(), e);
+        throw new UnexpectedException("Error in preparing git files for commit.");
+      }
+      gitFileChanges.add(gitFileChange);
+    });
+    log.info("Prepared git files for push");
+    CommitAndPushRequest commitAndPushRequest =
+        CommitAndPushRequest.builder()
+            .repoUrl(catalogConnectorInfo.getRepo())
+            .branch(catalogConnectorInfo.getBranch())
+            .unsureOrNonExistentBranch(true)
+            .cloneDepth(1)
+            .connectorId(catalogConnectorInfo.getConnector().getIdentifier())
+            .accountId(accountIdentifier)
+            .authRequest(
+                UsernamePasswordAuthRequest.builder().username(username).password(password.toCharArray()).build())
+            .repoType(GitRepositoryType.YAML)
+            .gitFileChanges(gitFileChanges)
+            .authorName(username)
+            .authorEmail(userPrincipalFromContext.getEmail())
+            .commitMessage(HARNESS_ENTITIES_IMPORT_COMMIT_MESSAGE)
+            .build();
+    gitClientV2.commitAndPush(commitAndPushRequest);
+    log.info("Git commit and push done for files");
   }
 }

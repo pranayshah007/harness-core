@@ -12,15 +12,18 @@ import static io.harness.artifact.ArtifactUtilities.getArtifactoryRegistryUrl;
 import static io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceServiceImpl.getConnector;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.pms.rbac.NGResourceType.SERVICE;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_CREATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_VIEW_PERMISSION;
+import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static software.wings.beans.Service.ServiceKeys;
 
 import static java.lang.Long.parseLong;
 import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
@@ -190,7 +193,7 @@ public class ServiceResourceV2 {
   private ServiceEntityYamlSchemaHelper serviceSchemaHelper;
   private ScopeAccessHelper scopeAccessHelper;
   @Inject private DeploymentMetadataServiceHelper deploymentMetadataServiceHelper;
-
+  private ServiceRbacHelper serviceRbacHelper;
   private final NGFeatureFlagHelperService featureFlagService;
   public static final String SERVICE_PARAM_MESSAGE = "Service Identifier for the entity";
   public static final String SERVICE_YAML_METADATA_INPUT_PARAM_MESSAGE =
@@ -222,9 +225,7 @@ public class ServiceResourceV2 {
           NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted) {
     Optional<ServiceEntity> serviceEntity =
         serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, deleted);
-    String version = "0";
     if (serviceEntity.isPresent()) {
-      version = serviceEntity.get().getVersion().toString();
       if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {
         NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity.get());
         serviceEntity.get().setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
@@ -238,11 +239,10 @@ public class ServiceResourceV2 {
       ServiceEntity service =
           updateArtifactoryRegistryUrlIfEmpty(serviceEntity.get(), accountId, orgIdentifier, projectIdentifier);
       Optional<ServiceEntity> serviceResponse = Optional.ofNullable(service);
-      return ResponseDTO.newResponse(
-          version, serviceResponse.map(ServiceElementMapper::toResponseWrapper).orElse(null));
+      return ResponseDTO.newResponse(serviceResponse.map(ServiceElementMapper::toResponseWrapper).orElse(null));
     }
 
-    return ResponseDTO.newResponse(version, serviceEntity.map(ServiceElementMapper::toResponseWrapper).orElse(null));
+    return ResponseDTO.newResponse(serviceEntity.map(ServiceElementMapper::toResponseWrapper).orElse(null));
   }
 
   @POST
@@ -273,8 +273,7 @@ public class ServiceResourceV2 {
         serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId());
     ServiceEntity createdService = serviceEntityService.create(serviceEntity);
 
-    return ResponseDTO.newResponse(
-        createdService.getVersion().toString(), ServiceElementMapper.toResponseWrapper(createdService));
+    return ResponseDTO.newResponse(ServiceElementMapper.toResponseWrapper(createdService));
   }
 
   @POST
@@ -362,8 +361,7 @@ public class ServiceResourceV2 {
     }
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     ServiceEntity updatedService = serviceEntityService.update(requestService);
-    return ResponseDTO.newResponse(
-        updatedService.getVersion().toString(), ServiceElementMapper.toResponseWrapper(updatedService));
+    return ResponseDTO.newResponse(ServiceElementMapper.toResponseWrapper(updatedService));
   }
 
   @PUT
@@ -392,8 +390,7 @@ public class ServiceResourceV2 {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         requestService.getOrgIdentifier(), requestService.getProjectIdentifier(), requestService.getAccountId());
     ServiceEntity upsertService = serviceEntityService.upsert(requestService, UpsertOptions.DEFAULT);
-    return ResponseDTO.newResponse(
-        upsertService.getVersion().toString(), ServiceElementMapper.toResponseWrapper(upsertService));
+    return ResponseDTO.newResponse(ServiceElementMapper.toResponseWrapper(upsertService));
   }
 
   @GET
@@ -431,9 +428,6 @@ public class ServiceResourceV2 {
           "includeAllServicesAccessibleAtScope") @DefaultValue("false") boolean includeAllServicesAccessibleAtScope,
       @Parameter(description = "Specify true if services' version info need to be included", hidden = true) @QueryParam(
           "includeVersionInfo") @DefaultValue("false") boolean includeVersionInfo) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
-        Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
-
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false,
         searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope);
     Pageable pageRequest;
@@ -446,18 +440,21 @@ public class ServiceResourceV2 {
     } else {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
-    Page<ServiceEntity> serviceEntities = serviceEntityService.list(criteria, pageRequest);
+    Page<ServiceEntity> serviceEntities =
+        getRBACFilteredServices(accountId, orgIdentifier, projectIdentifier, criteria, pageRequest);
+
     if (ServiceDefinitionType.CUSTOM_DEPLOYMENT == type && !isEmpty(deploymentTemplateIdentifier)
         && !isEmpty(versionLabel)) {
       serviceEntities = customDeploymentYamlHelper.getFilteredServiceEntities(
           page, size, sort, deploymentTemplateIdentifier, versionLabel, serviceEntities);
     }
+
     serviceEntities.forEach(serviceEntity -> {
       if (EmptyPredicate.isEmpty(serviceEntity.getYaml())) {
-        NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
-        serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
+        serviceEntity.setYaml(serviceEntity.fetchNonEmptyYaml());
       }
     });
+
     return ResponseDTO.newResponse(getNGPageResponse(
         serviceEntities.map(entity -> ServiceElementMapper.toResponseWrapper(entity, includeVersionInfo))));
   }
@@ -1106,5 +1103,34 @@ public class ServiceResourceV2 {
   public ResponseDTO<Set<KustomizeCommandFlagType>>
   getKustomizeCommandFlags() {
     return ResponseDTO.newResponse(new HashSet<>(Arrays.asList(KustomizeCommandFlagType.values())));
+  }
+  boolean hasViewPermissionForAllServices(String accountId, String orgIdentifier, String projectIdentifier) {
+    return accessControlClient.hasAccess(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+        Resource.of(SERVICE, null), SERVICE_VIEW_PERMISSION);
+  }
+  private Page<ServiceEntity> getRBACFilteredServices(
+      String accountId, String orgIdentifier, String projectIdentifier, Criteria criteria, Pageable pageRequest) {
+    Page<ServiceEntity> serviceEntities;
+    if (hasViewPermissionForAllServices(accountId, orgIdentifier, projectIdentifier)) {
+      serviceEntities = serviceEntityService.list(criteria, pageRequest);
+
+    } else {
+      Page<ServiceEntity> serviceEntityPage = serviceEntityService.list(criteria, Pageable.unpaged());
+
+      if (serviceEntityPage == null) {
+        return Page.empty();
+      }
+
+      List<ServiceEntity> serviceList = serviceRbacHelper.getPermittedServiceList(serviceEntityPage.getContent());
+
+      if (isEmpty(serviceList)) {
+        return Page.empty();
+      }
+      populateInFilter(criteria, ServiceEntityKeys.identifier,
+          serviceList.stream().map(ServiceEntity::getIdentifier).collect(toList()));
+
+      serviceEntities = serviceEntityService.list(criteria, pageRequest);
+    }
+    return serviceEntities;
   }
 }

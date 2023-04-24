@@ -69,7 +69,7 @@ public class DelegateStackdriverLogServiceTest {
     Logging logging = mock(Logging.class);
     Page<LogEntry> page = mock(Page.class);
     when(page.iterateAll()).thenReturn(getMockedLogEntries());
-    when(logging.listLogEntries(any())).thenReturn(page);
+    when(logging.listLogEntries(any(Logging.EntryListOption[].class))).thenReturn(page);
 
     try (MockedStatic<StackdriverLoggerFactory> logger = Mockito.mockStatic(StackdriverLoggerFactory.class)) {
       logger.when(() -> StackdriverLoggerFactory.get(tokenBean)).thenReturn(logging);

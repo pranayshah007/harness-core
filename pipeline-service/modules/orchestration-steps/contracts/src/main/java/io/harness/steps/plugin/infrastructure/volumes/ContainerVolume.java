@@ -19,6 +19,7 @@ import org.springframework.data.annotation.TypeAlias;
   , @JsonSubTypes.Type(value = PersistentVolumeClaimYaml.class, name = "PersistentVolumeClaim"),
       @JsonSubTypes.Type(value = HostPathYaml.class, name = "HostPath")
 })
+@Deprecated
 public interface ContainerVolume {
   @TypeAlias("volume_type")
   enum Type {

@@ -7,11 +7,12 @@
 
 package io.harness.gitaware.helper;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.gitaware.dto.FetchRemoteEntityRequest;
@@ -57,6 +58,9 @@ public class GitAwareEntityHelper {
     // if branch is empty, then git sdk will figure out the default branch for the repo by itself
     String branch =
         isNullOrDefault(gitContextRequestParams.getBranchName()) ? "" : gitContextRequestParams.getBranchName();
+
+    GitAwareContextHelper.setIsDefaultBranchInGitEntityInfoWithParameter(branch);
+
     String filePath = gitContextRequestParams.getFilePath();
     if (isNullOrDefault(filePath)) {
       throw new InvalidRequestException("No file path provided.");
@@ -286,7 +290,7 @@ public class GitAwareEntityHelper {
   }
 
   private boolean isNullOrDefault(String val) {
-    return EmptyPredicate.isEmpty(val) || val.equals(DEFAULT);
+    return isEmpty(val) || val.equals(DEFAULT);
   }
 
   public String getRepoUrl(String accountIdentifier, String orgIdentifier, String projectIdentifier) {

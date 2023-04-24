@@ -19,7 +19,6 @@ import static io.harness.ng.core.common.beans.UserSource.MANUAL;
 import static io.harness.ng.core.common.beans.UserSource.SCIM;
 
 import io.harness.beans.PageRequest;
-import io.harness.ff.FeatureFlagService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.ng.core.common.beans.Generation;
@@ -65,7 +64,6 @@ public class UserAccountLevelDataMigrationJob implements Managed {
 
   private static final String LOCK_NAME = "USER_ACCOUNT_LEVEL_DATA_LOCK";
   private final String DEBUG_MESSAGE = "UserAccountLevelDataMigrationJob: ";
-  @Inject private FeatureFlagService featureFlagService;
   @Inject AccountService accountService;
   @Inject UserServiceHelper userServiceHelper;
   @Inject private SSOSettingService ssoSettingService;
@@ -211,7 +209,7 @@ public class UserAccountLevelDataMigrationJob implements Managed {
       try {
         totalUserCount = userService.getTotalUserCount(accountId, true);
       } catch (Exception exception) {
-        log.error(DEBUG_MESSAGE + "Skipping Account! Call to get total count of Users for account {} failed.",
+        log.error(DEBUG_MESSAGE + "NG: Skipping Account! Call to get total count of Users for account {} failed.",
             accountId, exception);
       }
       Integer pageSize = 500;
@@ -227,8 +225,8 @@ public class UserAccountLevelDataMigrationJob implements Managed {
                           .filter(user -> !isAlreadyProcessedForThisGenAndUserSource(accountId, user, NG, SCIM))
                           .collect(Collectors.toList());
           if (isEmpty(scimUsers)) {
-            log.info(
-                DEBUG_MESSAGE + "No SCIM managed users to process for accountId {} for offset {}", accountId, offset);
+            log.info(DEBUG_MESSAGE + "NG: No SCIM managed users to process for accountId {} for offset {}", accountId,
+                offset);
           } else {
             for (User scimUser : scimUsers) {
               updateIfNGUserForUserSource(accountId, scimUser, SCIM);
@@ -240,8 +238,8 @@ public class UserAccountLevelDataMigrationJob implements Managed {
                              .filter(user -> !isAlreadyProcessedForThisGenAndUserSource(accountId, user, NG, MANUAL))
                              .collect(Collectors.toList());
           if (isEmpty(nonScimUsers)) {
-            log.info(DEBUG_MESSAGE + "No NOn-SCIM managed users to process for accountId {} for offset {}", accountId,
-                offset);
+            log.info(DEBUG_MESSAGE + "NG: No NOn-SCIM managed users to process for accountId {} for offset {}",
+                accountId, offset);
           } else {
             for (User nonScimUser : nonScimUsers) {
               updateIfNGUserForUserSource(accountId, nonScimUser, MANUAL);

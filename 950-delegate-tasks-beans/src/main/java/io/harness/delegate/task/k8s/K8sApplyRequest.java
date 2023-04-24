@@ -15,6 +15,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.expression.Expression;
 
+import software.wings.beans.ServiceHookDelegateConfig;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +47,7 @@ public class K8sApplyRequest implements K8sDeployRequest {
   boolean useNewKubectlVersion;
   boolean useK8sApiForSteadyStateCheck;
   @Expression(ALLOW_SECRETS) Map<String, String> k8sCommandFlags;
+  @Expression(ALLOW_SECRETS) List<ServiceHookDelegateConfig> serviceHooks;
   @Override
   public List<String> getOpenshiftParamList() {
     return Collections.emptyList();

@@ -665,6 +665,8 @@ public enum FeatureName {
   CHAOS_SRM_EVENT(
       "Enables chaos events to be displayed as change source events in SRM monitored services.", HarnessTeam.CHAOS),
   PIE_DEPRECATE_PAUSE_INTERRUPT_NG("Deprecate Pause and Resume interrupts in NG", HarnessTeam.PIPELINE),
+  CDS_NG_TRIGGER_SELECTIVE_STAGE_EXECUTION(
+      "Allows triggers to execute selective stages for the underlying pipeline in NG", HarnessTeam.SPG),
   PLG_ENABLE_CROSS_GENERATION_ACCESS("Enables cross generation access", GTM),
   CDS_SERVICE_OVERRIDES_2_0("Revamped experience service and environment overrides in NG", HarnessTeam.CDC),
   CDS_USE_OLD_SERVICE_V1("Feature flag to use service v1. NG_SVC_ENV_REDESIGN will be deprecated", HarnessTeam.CDC),
@@ -675,8 +677,6 @@ public enum FeatureName {
       "Replace HTTP capability check for Kubernetes connector with Socket Capability", HarnessTeam.CDP),
   NG_CDS_NATIVE_EKS_SUPPORT("Enable native EKS support for K8s/Native Helm Infrastructures", HarnessTeam.CDP),
   CDS_RANCHER_SUPPORT_NG("Enable Rancher support in NG.", HarnessTeam.CDP),
-  PL_SELECT_SPECIFIC_SERVICE_ACCOUNT_IN_RESOURCE_GROUP(
-      "Allow selection of specific service accounts in Resource group", HarnessTeam.PL),
   SPG_SERVICES_OVERVIEW_RBAC(
       "Applies RBAC on services overview page, only displays services which the user has access to read",
       HarnessTeam.SPG),
@@ -731,7 +731,12 @@ public enum FeatureName {
       "Enables Migration to create user account level data map for this account", HarnessTeam.PL),
   CDS_BG_STAGE_SCALE_DOWN_STEP_NG(
       "Enables Blue Green Scale Down Stage Scale Down Step. This will help bring down the stage environment in Blue Green Deployment. Epic: https://harness.atlassian.net/browse/CDS-55822",
-      HarnessTeam.CDP);
+      HarnessTeam.CDP),
+  CDS_K8S_SERVICE_HOOKS_NG("Enables Service hooks support for K8s/Native Helm Services", HarnessTeam.CDP),
+  CIE_USE_DOCKER_BUILDX("Enable docker build and push step to use buildx", HarnessTeam.CI),
+  CDS_STAGE_EXECUTION_DATA_SYNC(
+      "This flag controls if you want CD Stage execution data saved in cd service and eventually synced to timescale",
+      HarnessTeam.CDC);
 
   @Deprecated
   FeatureName() {

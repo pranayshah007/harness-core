@@ -24,6 +24,7 @@ import io.harness.template.beans.PageParamsDTO;
 import io.harness.template.beans.TemplateImportRequestDTO;
 import io.harness.template.beans.TemplateListRepoResponse;
 import io.harness.template.beans.TemplateMoveConfigResponse;
+import io.harness.template.beans.UpdateGitDetailsParams;
 import io.harness.template.entity.TemplateEntity;
 
 import java.util.Optional;
@@ -107,4 +108,7 @@ public interface NGTemplateService {
 
   TemplateMoveConfigResponse moveTemplateStoreTypeConfig(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, TemplateMoveConfigRequestDTO templateMoveConfigRequestDTO);
+
+  void updateGitDetails(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, String versionLabel, UpdateGitDetailsParams updateGitDetailsParams);
 }

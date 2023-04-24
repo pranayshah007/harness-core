@@ -14,6 +14,7 @@ import static io.harness.NGConstants.ORGANIZATION_VIEWER_ROLE;
 import static io.harness.NGConstants.PROJECT_VIEWER_ROLE;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
+import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.ALL_RESOURCES_INCLUDING_CHILD_SCOPES_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 import static io.harness.beans.FeatureName.ACCOUNT_BASIC_ROLE_ONLY;
@@ -38,6 +39,7 @@ import io.harness.remote.client.CGRestUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
 import com.google.inject.Inject;
@@ -100,7 +102,8 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
     log.info(DEBUG_MESSAGE + " completed...");
   }
 
-  private void execute() {
+  @VisibleForTesting
+  protected void execute() {
     List<AccountDTO> accountDTOS = new ArrayList<>();
     try {
       accountDTOS = CGRestUtils.getResponse(accountClient.getAllAccounts());
@@ -254,9 +257,10 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
                               .and(RoleAssignmentDBOKeys.scopeIdentifier)
                               .in(scopeIdentifiers)
                               .and(RoleAssignmentDBOKeys.resourceGroupIdentifier)
-                              .is(DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER)
+                              .in(DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER,
+                                  ALL_RESOURCES_INCLUDING_CHILD_SCOPES_RESOURCE_GROUP_IDENTIFIER)
                               .and(RoleAssignmentDBOKeys.roleIdentifier)
-                              .in(NGConstants.ACCOUNT_VIEWER_ROLE)
+                              .is(NGConstants.ACCOUNT_VIEWER_ROLE)
                               .and(RoleAssignmentDBOKeys.principalScopeLevel)
                               .is(HarnessScopeLevel.ACCOUNT.getName())
                               .and(RoleAssignmentDBOKeys.scopeLevel)

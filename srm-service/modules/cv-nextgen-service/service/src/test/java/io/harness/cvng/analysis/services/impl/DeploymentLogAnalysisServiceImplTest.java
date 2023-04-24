@@ -17,6 +17,7 @@ import static io.harness.cvng.beans.DataSourceType.SPLUNK;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.BGROVES;
+import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 import static io.harness.rule.OwnerRule.KAPIL;
@@ -1210,6 +1211,47 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
         logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent().get(2);
     assertThat(content3.getFeedback()).isNotNull();
     assertThat(content3.getFeedbackApplied()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetRadarChartAnalysisResult_withoutFeedback() {
+    String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(
+        accountId, cvConfigId, verificationJobInstanceId, APP_DYNAMICS);
+    DeploymentLogAnalysis deploymentLogAnalysis = createDeploymentLogAnalysis(verificationTaskId);
+    List<ClusterSummary> testClusterSummaries = deploymentLogAnalysis.getResultSummary().getTestClusterSummaries();
+    testClusterSummaries.set(0, testClusterSummaries.get(0).toBuilder().feedback(null).feedbackApplied(null).build());
+    testClusterSummaries.set(1, testClusterSummaries.get(1).toBuilder().feedback(null).feedbackApplied(null).build());
+    testClusterSummaries.set(2, testClusterSummaries.get(2).toBuilder().feedback(null).feedbackApplied(null).build());
+    deploymentLogAnalysis.setResultSummary(
+        deploymentLogAnalysis.getResultSummary().toBuilder().testClusterSummaries(testClusterSummaries).build());
+    deploymentLogAnalysisService.save(deploymentLogAnalysis);
+    LogAnalysisRadarChartListWithCountDTO logAnalysisRadarChartListWithCountDTO =
+        deploymentLogAnalysisService.getRadarChartLogAnalysisResult(accountId, verificationJobInstanceId,
+            DeploymentLogAnalysisFilter.builder().build(), PageParams.builder().page(0).size(20).build());
+
+    assertThat(logAnalysisRadarChartListWithCountDTO.getTotalClusters()).isEqualTo(3);
+    assertThat(logAnalysisRadarChartListWithCountDTO.getEventCounts().size()).isEqualTo(4);
+    assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getTotalPages()).isEqualTo(1);
+    assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getTotalItems()).isEqualTo(3);
+    assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getPageItemCount()).isEqualTo(3);
+    assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getPageSize()).isEqualTo(20);
+    assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent().size()).isEqualTo(3);
+
+    LogAnalysisRadarChartListDTO content1 =
+        logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent().get(0);
+    assertThat(content1.getFeedback()).isNull();
+    assertThat(content1.getFeedbackApplied()).isNull();
+
+    LogAnalysisRadarChartListDTO content2 =
+        logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent().get(1);
+    assertThat(content2.getFeedback()).isNull();
+    assertThat(content2.getFeedbackApplied()).isNull();
+    LogAnalysisRadarChartListDTO content3 =
+        logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent().get(2);
+    assertThat(content3.getFeedback()).isNull();
+    assertThat(content3.getFeedbackApplied()).isNull();
   }
 
   @Test

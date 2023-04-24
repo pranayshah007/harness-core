@@ -454,6 +454,7 @@ public class AwsClientImpl implements AwsClient {
   @Override
   public S3Objects getIterableS3ObjectSummaries(
       AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix) {
+    s3Prefix = s3Prefix.replaceFirst("^//", "/");
     try {
       return S3Objects.withPrefix(getAmazonS3Client(credentialsProvider), s3BucketName, s3Prefix);
     } catch (Exception e) {

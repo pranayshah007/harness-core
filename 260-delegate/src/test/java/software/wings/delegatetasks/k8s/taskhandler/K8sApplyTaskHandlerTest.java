@@ -24,11 +24,11 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.EMPTY_LIST;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -260,8 +260,8 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
     doReturn(false).when(handler).init(nullable(K8sApplyTaskParameters.class), nullable(K8sDelegateTaskParams.class),
         nullable(ExecutionLogCallback.class));
 
-    final K8sTaskExecutionResponse response =
-        handler.executeTaskInternal(K8sApplyTaskParameters.builder().build(), K8sDelegateTaskParams.builder().build());
+    final K8sTaskExecutionResponse response = handler.executeTaskInternal(K8sApplyTaskParameters.builder().build(),
+        K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
 
     verify(handler, times(1))
         .init(any(K8sApplyTaskParameters.class), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class));
@@ -289,8 +289,9 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
     doReturn(true).when(handler).init(nullable(K8sApplyTaskParameters.class), nullable(K8sDelegateTaskParams.class),
         nullable(ExecutionLogCallback.class));
 
-    final K8sTaskExecutionResponse response = handler.executeTaskInternal(
-        K8sApplyTaskParameters.builder().exportManifests(true).build(), K8sDelegateTaskParams.builder().build());
+    final K8sTaskExecutionResponse response =
+        handler.executeTaskInternal(K8sApplyTaskParameters.builder().exportManifests(true).build(),
+            K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
 
     verify(handler, times(1))
         .init(any(K8sApplyTaskParameters.class), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class));
@@ -324,13 +325,15 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
         .steadyStateCheck(anyBoolean(), any(), any(), anyLong(), any(), any());
     doNothing().when(mockedK8sApplyBaseHandler).wrapUp(any(), any(), any());
 
+    // Since Java 16 Path.get() start throwing NullPointerException if its first argument is null. Please make sure to
+    // add not null check for the corresponding field in K8sDelegateTaskParams
     final K8sTaskExecutionResponse response =
         handler.executeTaskInternal(K8sApplyTaskParameters.builder()
                                         .k8sClusterConfig(K8sClusterConfig.builder().namespace("default").build())
                                         .inheritManifests(true)
                                         .kubernetesResources(kubernetesResources)
                                         .build(),
-            K8sDelegateTaskParams.builder().build());
+            K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
 
     verify(handler, times(0))
         .init(any(K8sApplyTaskParameters.class), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class));
@@ -365,7 +368,7 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
                                         .inheritManifests(true)
                                         .kubernetesResources(kubernetesResources)
                                         .build(),
-            K8sDelegateTaskParams.builder().build());
+            K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
 
     verify(k8sTaskHelper, times(1)).restore(any(), any(), any(), any(), any());
 

@@ -66,6 +66,17 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
   }
 
   @Override
+  public Optional<BackstageEnvVariable> findByEnvNameAndAccountIdentifier(String envName, String accountIdentifier) {
+    Optional<BackstageEnvVariableEntity> envVariableEntityOpt =
+        backstageEnvVariableRepository.findByEnvNameAndAccountIdentifier(envName, accountIdentifier);
+    if (envVariableEntityOpt.isEmpty()) {
+      return Optional.empty();
+    }
+    BackstageEnvVariableMapper envVariableMapper = getEnvVariableMapper((envVariableEntityOpt.get().getType()));
+    return Optional.of(envVariableMapper.toDto(envVariableEntityOpt.get()));
+  }
+
+  @Override
   public BackstageEnvVariable create(BackstageEnvVariable envVariable, String accountIdentifier) {
     envVariable = removeAccountFromIdentifierForBackstageEnvVariable(envVariable);
     sync(Collections.singletonList(envVariable), accountIdentifier);
@@ -164,6 +175,12 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
   }
 
   @Override
+  public void findAndSync(String accountIdentifier) {
+    List<BackstageEnvVariable> variables = findByAccountIdentifier(accountIdentifier);
+    sync(variables, accountIdentifier);
+  }
+
+  @Override
   public void deleteMulti(List<String> secretIdentifiers, String accountIdentifier) {
     Iterable<BackstageEnvVariableEntity> envVariableEntities =
         backstageEnvVariableRepository.findAllById(secretIdentifiers);
@@ -203,7 +220,6 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     }
   }
 
-  @Override
   public void sync(List<BackstageEnvVariable> envVariables, String accountIdentifier) {
     if (envVariables.isEmpty()) {
       return;

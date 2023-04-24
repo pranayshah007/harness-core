@@ -12,6 +12,7 @@ import static io.harness.NGConstants.DEFAULT_PROJECT_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_PROJECT_NAME;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.ng.core.common.beans.UserSource.MANUAL;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.getDefaultResourceGroupIdentifierForAdmins;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.getManagedAdminRole;
 
@@ -308,6 +309,7 @@ public class NGAccountSetupService {
               .projectIdentifier(scope.getProjectIdentifier())
               .build(),
           emptyList(), emptyList(), UserMembershipUpdateSource.SYSTEM);
+      ngUserService.updateNGUserToCGWithSource(userId, scope, MANUAL);
     } catch (DuplicateKeyException | DuplicateFieldException duplicateException) {
       // ignore
     }
