@@ -9,6 +9,7 @@ package io.harness.service.intfc;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DelegateHeartbeatParams;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateProfile;
@@ -22,6 +23,11 @@ import javax.validation.constraints.NotNull;
 @OwnedBy(HarnessTeam.DEL)
 public interface DelegateCache {
   Delegate get(String accountId, String delegateId, boolean forceRefresh);
+
+  Delegate get(String accountId, String delegateId);
+
+  void refreshDelegate(
+      String accountId, String delegateId, long lastHeartbeatTimestamp, DelegateHeartbeatParams params);
 
   DelegateGroup getDelegateGroup(String accountId, String delegateGroupId);
 

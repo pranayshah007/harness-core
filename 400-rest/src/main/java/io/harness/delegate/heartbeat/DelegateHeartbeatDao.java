@@ -19,6 +19,7 @@ import io.harness.service.intfc.DelegateCache;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import dev.morphia.query.UpdateOperations;
 import java.util.Date;
 import javax.validation.constraints.NotNull;
@@ -30,10 +31,15 @@ import lombok.extern.slf4j.Slf4j;
 public class DelegateHeartbeatDao {
   @Inject private HPersistence persistence;
   @Inject private DelegateCache delegateCache;
+  @Inject @Named("enableRedisForDelegateService") private boolean enableRedisForDelegateService;
 
   public void updateDelegateWithHeartbeatAndConnectionInfo(@NotNull final String accountId,
       @NotNull final String delegateId, @NotNull final long lastHeartbeatTimestamp, @NotNull final Date validUntil,
       @NotNull final @NotNull DelegateHeartbeatParams params) {
+    if (enableRedisForDelegateService) {
+      delegateCache.refreshDelegate(accountId, delegateId, lastHeartbeatTimestamp, params);
+      return;
+    }
     final UpdateOperations<Delegate> updateOperations = persistence.createUpdateOperations(Delegate.class);
     setUnset(updateOperations, DelegateKeys.lastHeartBeat, lastHeartbeatTimestamp);
     setUnset(updateOperations, DelegateKeys.validUntil, validUntil);

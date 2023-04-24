@@ -20,9 +20,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.persistence.HPersistence;
+import io.harness.service.intfc.DelegateCache;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
@@ -37,6 +39,9 @@ import org.jooq.tools.StringUtils;
 @OwnedBy(DEL)
 public class DelegateDao {
   @Inject private HPersistence persistence;
+  @Inject private DelegateCache delegateCache;
+  @Inject @Named("enableRedisForDelegateService") private boolean enableRedisForDelegateService;
+
   public static final Duration EXPIRY_TIME = ofMinutes(1);
 
   public void delegateDisconnected(String accountId, String delegateId) {
@@ -50,6 +55,10 @@ public class DelegateDao {
   }
 
   public boolean checkDelegateConnected(String accountId, String delegateId, String version) {
+    if (enableRedisForDelegateService) {
+      Delegate delegate = delegateCache.get(accountId, delegateId);
+      return delegate.getLastHeartBeat() > (currentTimeMillis() - EXPIRY_TIME.toMillis());
+    }
     Query<Delegate> query = persistence.createQuery(Delegate.class)
                                 .filter(DelegateKeys.accountId, accountId)
                                 .filter(DelegateKeys.uuid, delegateId)
@@ -77,6 +86,11 @@ public class DelegateDao {
   }
 
   public boolean checkDelegateLiveness(String accountId, String delegateId) {
+    if (enableRedisForDelegateService) {
+      Delegate delegate = delegateCache.get(accountId, delegateId);
+      return delegate.getLastHeartBeat() > (currentTimeMillis() - EXPIRY_TIME.toMillis());
+    }
+
     Query<Delegate> query = persistence.createQuery(Delegate.class)
                                 .filter(DelegateKeys.accountId, accountId)
                                 .filter(DelegateKeys.uuid, delegateId)
