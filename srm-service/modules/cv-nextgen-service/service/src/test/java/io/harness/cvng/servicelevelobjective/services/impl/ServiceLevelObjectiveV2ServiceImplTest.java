@@ -2592,7 +2592,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
-  public void testSendNotification_compositeSLO() throws IllegalAccessException, IOException {
+  public void testSendNotification_compositeSLO() throws IllegalAccessException {
     NotificationRuleDTO notificationRuleDTO =
         builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
     NotificationRuleResponse notificationRuleResponseOne =
@@ -2628,6 +2628,86 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
 
     serviceLevelObjectiveV2Service.handleNotification(serviceLevelObjective);
     verify(notificationClient, times(1)).sendNotificationAsync(any());
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testNotification_requestCompositeSLO_errorBudgetRemaining() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    NotificationRuleResponse notificationRuleResponseOne =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setName("rule2");
+    notificationRuleDTO.setIdentifier("rule2");
+    notificationRuleDTO.setConditions(
+        Arrays.asList(NotificationRuleCondition.builder()
+                          .type(NotificationRuleConditionType.ERROR_BUDGET_REMAINING_MINUTES)
+                          .spec(ErrorBudgetRemainingMinutesConditionSpec.builder().threshold(9000.0).build())
+                          .build()));
+    NotificationRuleResponse notificationRuleResponseTwo =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    simpleServiceLevelObjectiveDTO1 = builderFactory.getSimpleRequestServiceLevelObjectiveV2DTOBuilder()
+                                          .identifier("requestSimpleSLOIdentifier")
+                                          .build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec1 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO1.getSpec();
+    simpleServiceLevelObjectiveSpec1.setMonitoredServiceRef(monitoredServiceDTO.getIdentifier());
+    simpleServiceLevelObjectiveSpec1.setHealthSourceRef(generateUuid());
+    simpleServiceLevelObjectiveDTO1.setSpec(simpleServiceLevelObjectiveSpec1);
+    serviceLevelObjectiveV2Service.create(projectParams, simpleServiceLevelObjectiveDTO1);
+    simpleServiceLevelObjective1 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        projectParams, simpleServiceLevelObjectiveDTO1.getIdentifier());
+
+    simpleServiceLevelObjectiveDTO2 = builderFactory.getSimpleRequestServiceLevelObjectiveV2DTOBuilder()
+                                          .identifier("requestSimpleSLOIdentifier2")
+                                          .build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec2 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO2.getSpec();
+    simpleServiceLevelObjectiveSpec2.setMonitoredServiceRef(monitoredServiceDTO.getIdentifier());
+    simpleServiceLevelObjectiveSpec2.setHealthSourceRef(generateUuid());
+    simpleServiceLevelObjectiveDTO2.setSpec(simpleServiceLevelObjectiveSpec2);
+    serviceLevelObjectiveV2Service.create(projectParams, simpleServiceLevelObjectiveDTO2);
+    simpleServiceLevelObjective2 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        projectParams, simpleServiceLevelObjectiveDTO2.getIdentifier());
+
+    compositeSLODTO = builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+                          .identifier("requestCompositeSLO")
+                          .name("requestCompositeSLO")
+                          .spec(CompositeServiceLevelObjectiveSpec.builder()
+                                    .evaluationType(SLIEvaluationType.REQUEST)
+                                    .serviceLevelObjectivesDetails(Arrays.asList(
+                                        ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                                            .weightagePercentage(75.0)
+                                            .accountId(simpleServiceLevelObjective1.getAccountId())
+                                            .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                                            .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                                            .build(),
+                                        ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(simpleServiceLevelObjective2.getIdentifier())
+                                            .weightagePercentage(25.0)
+                                            .accountId(simpleServiceLevelObjective2.getAccountId())
+                                            .orgIdentifier(simpleServiceLevelObjective2.getOrgIdentifier())
+                                            .projectIdentifier(simpleServiceLevelObjective2.getProjectIdentifier())
+                                            .build()))
+                                    .build())
+                          .build();
+
+    compositeSLODTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponseOne.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build(),
+            NotificationRuleRefDTO.builder()
+                .notificationRuleRef(notificationRuleResponseTwo.getNotificationRule().getIdentifier())
+                .enabled(true)
+                .build()));
+    createMonitoredService();
+    assertThatThrownBy(() -> serviceLevelObjectiveV2Service.create(projectParams, compositeSLODTO))
+        .hasMessage(
+            "Invalid notification with identifier: rule2. Request based composite SLOs can't have notifications for condition [Error Budget Remaining].");
   }
 
   @Test

@@ -449,6 +449,8 @@ public class SLODashboardServiceImpl implements SLODashboardService {
                       .currentRatePercentage(sloGraphData.dailyBurnRate(serviceLevelObjective.getZoneOffset()))
                       .build())
         .evaluationType(sloGraphData.getEvaluationType())
+        .isTotalErrorBudgetApplicable(!(serviceLevelObjective.getType() == ServiceLevelObjectiveType.COMPOSITE
+            && sloGraphData.getEvaluationType() == SLIEvaluationType.REQUEST))
         .sloType(slo.getType());
   }
 

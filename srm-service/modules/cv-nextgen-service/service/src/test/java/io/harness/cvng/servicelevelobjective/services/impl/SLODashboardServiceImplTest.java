@@ -187,6 +187,8 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getMonitoredServiceDetails().size()).isEqualTo(1);
     assertThat(sloDashboardWidget.getMonitoredServiceDetails().get(0).getMonitoredServiceIdentifier())
         .isEqualTo(monitoredServiceIdentifier);
+    assertThat(sloDashboardWidget.getEvaluationType()).isEqualTo(SLIEvaluationType.WINDOW);
+    assertThat(sloDashboardWidget.isTotalErrorBudgetApplicable()).isEqualTo(true);
     assertThat(sloDashboardWidget.getTags()).isEqualTo(serviceLevelObjective.getTags());
     assertThat(sloDashboardWidget.getType()).isEqualTo(simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType());
     assertThat(sloDashboardWidget.getSloTargetType()).isEqualTo(serviceLevelObjective.getSloTarget().getType());
@@ -321,6 +323,8 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getMonitoredServiceDetails().size()).isEqualTo(1);
     assertThat(sloDashboardWidget.getMonitoredServiceDetails().get(0).getMonitoredServiceIdentifier())
         .isEqualTo(monitoredServiceIdentifier);
+    assertThat(sloDashboardWidget.getEvaluationType()).isEqualTo(SLIEvaluationType.WINDOW);
+    assertThat(sloDashboardWidget.isTotalErrorBudgetApplicable()).isEqualTo(true);
     assertThat(sloDashboardWidget.getTags()).isEqualTo(serviceLevelObjective.getTags());
     assertThat(sloDashboardWidget.getType()).isEqualTo(simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType());
     assertThat(sloDashboardWidget.getSloTargetType()).isEqualTo(serviceLevelObjective.getSloTarget().getType());
@@ -383,6 +387,8 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getMonitoredServiceDetails().size()).isEqualTo(1);
     assertThat(sloDashboardWidget.getMonitoredServiceDetails().get(0).getMonitoredServiceIdentifier())
         .isEqualTo(monitoredServiceIdentifier);
+    assertThat(sloDashboardWidget.getEvaluationType()).isEqualTo(SLIEvaluationType.REQUEST);
+    assertThat(sloDashboardWidget.isTotalErrorBudgetApplicable()).isEqualTo(true);
     assertThat(sloDashboardWidget.getTags()).isEqualTo(serviceLevelObjective.getTags());
     assertThat(sloDashboardWidget.getType()).isEqualTo(simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType());
     assertThat(sloDashboardWidget.getSloTargetType()).isEqualTo(serviceLevelObjective.getSloTarget().getType());
@@ -490,6 +496,8 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(monitoredServiceDTO.getIdentifier());
     assertThat(sloDashboardWidget.getMonitoredServiceDetails().get(1).getMonitoredServiceIdentifier())
         .isEqualTo(monitoredServiceDTO2.getIdentifier());
+    assertThat(sloDashboardWidget.getEvaluationType()).isEqualTo(SLIEvaluationType.WINDOW);
+    assertThat(sloDashboardWidget.isTotalErrorBudgetApplicable()).isEqualTo(true);
     assertThat(sloDashboardWidget.getSloTargetType()).isEqualTo(compositeServiceLevelObjective.getTarget().getType());
     assertThat(sloDashboardWidget.getSloTargetType()).isEqualTo(compositeServiceLevelObjective.getTarget().getType());
     assertThat(sloDashboardWidget.getCurrentPeriodLengthDays()).isEqualTo(30);
@@ -621,6 +629,8 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(monitoredServiceDTO.getIdentifier());
     assertThat(sloDashboardWidget.getMonitoredServiceDetails().get(1).getMonitoredServiceIdentifier())
         .isEqualTo(monitoredServiceDTO2.getIdentifier());
+    assertThat(sloDashboardWidget.getEvaluationType()).isEqualTo(SLIEvaluationType.REQUEST);
+    assertThat(sloDashboardWidget.isTotalErrorBudgetApplicable()).isEqualTo(false);
     assertThat(sloDashboardWidget.getSloTargetType()).isEqualTo(compositeServiceLevelObjective.getTarget().getType());
     assertThat(sloDashboardWidget.getSloTargetType()).isEqualTo(compositeServiceLevelObjective.getTarget().getType());
     assertThat(sloDashboardWidget.getCurrentPeriodLengthDays()).isEqualTo(30);
@@ -710,6 +720,8 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getTags()).isEqualTo(serviceLevelObjectiveV2DTO.getTags());
     assertThat(sloDashboardWidget.getSloTargetType()).isEqualTo(compositeServiceLevelObjective.getTarget().getType());
     assertThat(sloDashboardWidget.getSloTargetType()).isEqualTo(compositeServiceLevelObjective.getTarget().getType());
+    assertThat(sloDashboardWidget.getEvaluationType()).isEqualTo(SLIEvaluationType.WINDOW);
+    assertThat(sloDashboardWidget.isTotalErrorBudgetApplicable()).isEqualTo(true);
     List<MonitoredServiceDetail> monitoredServiceDetails = sloDashboardWidget.getMonitoredServiceDetails();
     assertThat(monitoredServiceDetails.size()).isEqualTo(2);
     MonitoredServiceDetail monitoredServiceDetail = monitoredServiceDetails.get(0);

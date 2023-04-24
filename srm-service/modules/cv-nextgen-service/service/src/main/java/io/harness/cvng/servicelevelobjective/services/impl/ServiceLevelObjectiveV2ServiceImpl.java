@@ -1171,6 +1171,32 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       throw new InvalidRequestException(String.format("An SLO can't be referenced more than once"));
     }
     notificationRuleService.validateNotification(serviceLevelObjectiveDTO.getNotificationRuleRefs(), projectParams);
+    if (compositeServiceLevelObjectiveSpec.getEvaluationType() == SLIEvaluationType.REQUEST) {
+      List<NotificationRule> notificationRuleList = notificationRuleService.getEntities(projectParams,
+          serviceLevelObjectiveDTO.getNotificationRuleRefs()
+              .stream()
+              .map(NotificationRuleRefDTO::getNotificationRuleRef)
+              .collect(Collectors.toList()));
+      notificationRuleList = notificationRuleList.stream()
+                                 .filter(notificationRule
+                                     -> ((SLONotificationRule) notificationRule)
+                                            .getConditions()
+                                            .stream()
+                                            .filter(sloNotificationRuleCondition
+                                                -> sloNotificationRuleCondition.getType()
+                                                    == NotificationRuleConditionType.ERROR_BUDGET_REMAINING_MINUTES)
+                                            .findAny()
+                                            .isPresent())
+                                 .collect(Collectors.toList());
+      if (!notificationRuleList.isEmpty()) {
+        throw new InvalidArgumentsException(String.format(
+            "Invalid notification with identifier: %s. Request based composite SLOs can't have notifications for condition [Error Budget Remaining].",
+            String.join(",",
+                notificationRuleList.stream()
+                    .map(notificationRule -> notificationRule.getIdentifier())
+                    .collect(Collectors.toList()))));
+      }
+    }
   }
 
   private void checkIfValidSLOPresent(ServiceLevelObjectiveDetailsDTO serviceLevelObjectiveDetailsDTO,
