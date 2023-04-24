@@ -22,6 +22,7 @@ import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.common.beans.Generation;
 import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.dto.UserInviteDTO;
+import io.harness.ng.core.dto.UserPreferenceDataDTO;
 import io.harness.ng.core.invites.dto.InviteOperationResponse;
 import io.harness.ng.core.switchaccount.RestrictedSwitchAccountInfo;
 import io.harness.ng.core.user.PasswordChangeDTO;
@@ -617,6 +618,10 @@ public interface UserService extends OwnedByAccount {
   void sendPasswordExpirationMail(String email);
 
   @ValidationGroups(Update.class) User updateUserProfile(@NotNull User user);
+
+  // TODO:SHASHANK: what is @ValidationGroups?
+  User updateUserAccountLevelPreference(
+      @NotNull User user, @NotEmpty String accountId, @NotNull UserPreferenceDataDTO userPreferenceDataDTO);
 
   @ValidationGroups(Update.class)
   User addEventToUserMarketoCampaigns(@NotNull String userId, @NotNull EventType eventType);

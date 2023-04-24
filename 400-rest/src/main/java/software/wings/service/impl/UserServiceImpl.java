@@ -122,6 +122,7 @@ import io.harness.ng.core.account.OauthProviderType;
 import io.harness.ng.core.common.beans.Generation;
 import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.dto.UserInviteDTO;
+import io.harness.ng.core.dto.UserPreferenceDataDTO;
 import io.harness.ng.core.invites.dto.InviteDTO;
 import io.harness.ng.core.invites.dto.InviteOperationResponse;
 import io.harness.ng.core.switchaccount.LdapIdentificationInfo;
@@ -292,6 +293,7 @@ import java.util.stream.IntStream;
 import javax.cache.Cache;
 import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.Duration;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.executable.ValidateOnExecution;
 import javax.ws.rs.core.UriInfo;
@@ -2803,6 +2805,16 @@ public class UserServiceImpl implements UserService {
     return updateUser(user.getUuid(), updateOperations);
   }
 
+  @Override
+  public User updateUserAccountLevelPreference(
+      @NotNull User user, @NotEmpty String accountId, @NotNull UserPreferenceDataDTO userPreferenceDataDTO) {
+    UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
+        && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
+      updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
+    }
+    return updateUser(user.getUuid(), updateOperations);
+  }
   @Override
   public User addEventToUserMarketoCampaigns(String userId, EventType eventType) {
     User user = this.getUserFromCacheOrDB(userId);
