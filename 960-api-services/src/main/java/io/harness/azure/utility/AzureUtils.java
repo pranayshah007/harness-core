@@ -59,6 +59,7 @@ import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Authenticator;
 import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpHost;
 import org.slf4j.Logger;
@@ -335,8 +336,11 @@ public class AzureUtils {
   }
 
   public OkHttpClient getOkHtttpClientWithProxy(String url) {
+    HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor(message -> log.info(message));
+    interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
     OkHttpClient.Builder okHttpClientBuilder =
         getOkHttpClientBuilder()
+            .addInterceptor(interceptor)
             .connectTimeout(AzureConstants.REST_CLIENT_CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .readTimeout(AzureConstants.REST_CLIENT_READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
