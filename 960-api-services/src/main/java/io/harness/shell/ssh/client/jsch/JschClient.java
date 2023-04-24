@@ -556,7 +556,7 @@ public class JschClient extends SshClient {
         session = fetchSSHSession(config, getLogCallback());
       } catch (InterruptedException ie) {
         log.error("exception while fetching ssh session", ie);
-        throw new JschClientException("Interrupted while getting SSH Session");
+        Thread.currentThread().interrupt();
       } catch (JSchException jse) {
         if (retryCount == 6) {
           return fetchSSHSession(config, getLogCallback());
