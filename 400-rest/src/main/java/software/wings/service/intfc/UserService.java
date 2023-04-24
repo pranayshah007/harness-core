@@ -619,7 +619,7 @@ public interface UserService extends OwnedByAccount {
 
   @ValidationGroups(Update.class) User updateUserProfile(@NotNull User user);
 
-  // TODO:SHASHANK: what is @ValidationGroups?
+  @ValidationGroups(Update.class)
   User updateUserAccountLevelPreference(
       @NotNull User user, @NotEmpty String accountId, @NotNull UserPreferenceDataDTO userPreferenceDataDTO);
 
