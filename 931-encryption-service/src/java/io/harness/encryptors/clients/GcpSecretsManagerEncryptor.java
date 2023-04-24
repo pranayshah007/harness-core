@@ -27,6 +27,7 @@ import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 
+import org.apache.commons.lang3.BooleanUtils;
 import software.wings.beans.GcpSecretsManagerConfig;
 
 import com.google.api.gax.core.FixedCredentialsProvider;
@@ -307,7 +308,7 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
         .setMaxAttempts(MAX_RETRY_ATTEMPTS)
         .setTotalTimeout(Duration.ofSeconds(TOTAL_TIMEOUT_IN_SECONDS))
         .build();
-    if (!gcpSecretsManagerConfig.isAssumeCredentialsOnDelegate()) {
+    if (BooleanUtils.isFalse(gcpSecretsManagerConfig.getAssumeCredentialsOnDelegate())) {
       FixedCredentialsProvider credentialsProvider =
           FixedCredentialsProvider.create(getGoogleCredentials(gcpSecretsManagerConfig));
       settingsBuilder.setCredentialsProvider(credentialsProvider);
@@ -318,7 +319,7 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
 
   @VisibleForTesting
   public GoogleCredentials getGoogleCredentials(GcpSecretsManagerConfig gcpSecretsManagerConfig) {
-    if (gcpSecretsManagerConfig.isAssumeCredentialsOnDelegate()) {
+    if (BooleanUtils.isTrue(gcpSecretsManagerConfig.getAssumeCredentialsOnDelegate())) {
       return GoogleCredentials.newBuilder().build();
     }
     if (gcpSecretsManagerConfig.getCredentials() == null) {

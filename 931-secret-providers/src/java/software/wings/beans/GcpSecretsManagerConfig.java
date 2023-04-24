@@ -67,7 +67,7 @@ public class GcpSecretsManagerConfig extends SecretManagerConfig {
   private char[] credentials;
 
   @Attributes(title = "Assume Credentials On Delegate")
-  private boolean assumeCredentialsOnDelegate;
+  private Boolean assumeCredentialsOnDelegate;
 
   @Attributes(title = "delegateSelectors") private Set<String> delegateSelectors;
 
