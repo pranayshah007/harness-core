@@ -150,7 +150,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
     return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
         .filter(SLIRecordKeys.sliId, sliId)
         .order(Sort.descending(SLIRecordKeys.timestamp))
-        .asList(new FindOptions().limit(count));
+        .asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()).limit(count));
   }
 
   @Override
@@ -316,7 +316,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         .field(SLIRecordKeys.timestamp)
         .lessThan(startTimeStamp)
         .order(Sort.descending(SLIRecordKeys.timestamp))
-        .get();
+        .get(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
   }
   @Override
   public SLIRecord getFirstSLIRecord(String sliId, Instant timestampInclusive) {
@@ -325,7 +325,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         .field(SLIRecordKeys.timestamp)
         .greaterThanOrEq(timestampInclusive)
         .order(Sort.ascending(SLIRecordKeys.timestamp))
-        .get();
+        .get(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
   }
 
   @Override
