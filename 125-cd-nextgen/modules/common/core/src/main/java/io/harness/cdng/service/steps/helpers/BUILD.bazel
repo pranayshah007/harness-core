@@ -15,6 +15,7 @@ java_library(
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/execution/service:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/steps/constants:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/rbac:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/utils/featureflaghelper:module",
         "//127-cd-nextgen-entities:module",
         "//878-ng-common-utilities:module",
         "//884-pms-commons:module",

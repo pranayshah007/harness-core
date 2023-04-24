@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ng.core.service.resources;
+package io.harness.cdng.service.steps.helpers;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -38,7 +38,7 @@ public class ServiceEntityYamlSchemaHelper {
   private NGFeatureFlagHelperService featureFlagHelperService;
   private YamlSchemaValidator yamlSchemaValidator;
 
-  void validateSchema(String accountId, String yaml) {
+  public void validateSchema(String accountId, String yaml) {
     if (featureFlagHelperService.isEnabled(accountId, FeatureName.NG_SVC_ENV_REDESIGN)
         && !featureFlagHelperService.isEnabled(accountId, FeatureName.DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION)
         && isNotEmpty(yaml)) {

@@ -41,9 +41,11 @@ import io.harness.cdng.helpers.NgExpressionHelper;
 import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
+import io.harness.cdng.service.steps.helpers.ServiceEntityYamlSchemaHelper;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.eraro.Level;
@@ -82,6 +84,8 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.expression.EngineExpressionService;
+import io.harness.pms.merger.YamlConfig;
+import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -108,6 +112,8 @@ import io.harness.yaml.utils.NGVariablesUtils;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -117,6 +123,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -149,9 +156,11 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject private ServiceCustomSweepingOutputHelper serviceCustomSweepingOutputHelper;
+  @Inject private ServiceEntityYamlSchemaHelper serviceEntityYamlSchemaHelper;
 
   private static final Pattern serviceVariablePattern = Pattern.compile(SERVICE_VARIABLES_PATTERN_REGEX);
   private static final Pattern envVariablePattern = Pattern.compile(ENV_VARIABLES_PATTERN_REGEX);
+  private static final String UNABLE_TO_READ_YAML = "Unable to read yaml for service [Name: %s, Identifier: %s]";
 
   @Override
   public Class<ServiceStepV3Parameters> getStepParametersClass() {
@@ -676,8 +685,9 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
   private ServicePartResponse executeServicePart(
       Ambiance ambiance, ServiceStepV3Parameters stepParameters, Map<FreezeEntityType, List<String>> entityMap) {
+    String accountId = AmbianceUtils.getAccountId(ambiance);
     final Optional<ServiceEntity> serviceOpt =
-        serviceEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+        serviceEntityService.get(accountId, AmbianceUtils.getOrgIdentifier(ambiance),
             AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getServiceRef().getValue(), false);
 
     if (serviceOpt.isEmpty()) {
@@ -700,13 +710,20 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       mergedServiceYaml = serviceEntity.getYaml();
     }
 
+    try {
+      mergedServiceYaml = removeRuntimeInputsFromMergedYaml(mergedServiceYaml);
+      serviceEntityYamlSchemaHelper.validateSchema(accountId, mergedServiceYaml);
+    } catch (IOException e) {
+      throw new InvalidRequestException(
+          format(UNABLE_TO_READ_YAML, serviceEntity.getName(), serviceEntity.getIdentifier()), e);
+    }
+
     final NGServiceConfig ngServiceConfig;
     try {
       ngServiceConfig = YamlUtils.read(mergedServiceYaml, NGServiceConfig.class);
     } catch (IOException e) {
-      throw new InvalidRequestException(format("Unable to read yaml for service [Name: %s, Identifier: %s]",
-                                            serviceEntity.getName(), serviceEntity.getIdentifier()),
-          e);
+      throw new InvalidRequestException(
+          format(UNABLE_TO_READ_YAML, serviceEntity.getName(), serviceEntity.getIdentifier()), e);
     }
 
     sweepingOutputService.consume(ambiance, ServiceStepV3Constants.SERVICE_SWEEPING_OUTPUT,
@@ -739,6 +756,27 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     sweepingOutputService.consume(ambiance, OutcomeExpressionConstants.SERVICE, outcome, StepCategory.STAGE.name());
 
     return ServicePartResponse.builder().ngServiceConfig(ngServiceConfig).build();
+  }
+
+  private String removeRuntimeInputsFromMergedYaml(String mergedYaml) throws IOException {
+    JsonNode mergedYamlNode = YamlUtils.readTree(mergedYaml).getNode().getCurrJsonNode();
+    YamlConfig mergedYamlConfig = new YamlConfig(mergedYaml);
+    Map<FQN, Object> mergedYamlConfigMap = mergedYamlConfig.getFqnToValueMap();
+    Map<FQN, Object> resMap = new LinkedHashMap<>();
+
+    for (FQN key : mergedYamlConfigMap.keySet()) {
+      Object value = mergedYamlConfigMap.get(key);
+      if (!(value instanceof ArrayNode)) {
+        String mergedValue = ((JsonNode) value).asText();
+        if (!NGExpressionUtils.matchesInputSetPattern(mergedValue)) {
+          resMap.put(key, value);
+        }
+      } else {
+        resMap.put(key, value);
+      }
+    }
+
+    return (new YamlConfig(resMap, mergedYamlNode)).getYaml();
   }
 
   private String mergeServiceInputsIntoService(String originalServiceYaml, Map<String, Object> serviceInputs) {

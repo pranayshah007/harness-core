@@ -15,8 +15,8 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//120-ng-manager/src/main/java/io/harness/utils/featureflaghelper:module",
         "//123-ng-core-user:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/utils/featureflaghelper:module",
         "//947-scim-core:module",
         "//956-feature-flag-beans:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/dto:module",
