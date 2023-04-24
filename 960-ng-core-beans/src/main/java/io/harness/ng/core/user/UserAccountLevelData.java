@@ -30,4 +30,5 @@ import lombok.NoArgsConstructor;
 public class UserAccountLevelData {
   private Map<Generation, UserSource> sourceOfProvisioning;
   private Set<Generation> userProvisionedTo;
+  private UserPreferenceData userPreferenceData;
 }

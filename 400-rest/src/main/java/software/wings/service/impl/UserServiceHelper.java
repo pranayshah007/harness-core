@@ -16,8 +16,10 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.common.beans.Generation;
 import io.harness.ng.core.common.beans.UserSource;
+import io.harness.ng.core.dto.UserPreferenceDataDTO;
 import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.UserAccountLevelData;
+import io.harness.ng.core.user.UserPreferenceData;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.usermembership.remote.UserMembershipClient;
 
@@ -181,5 +183,17 @@ public class UserServiceHelper {
 
     userAccountLevelDataMapping.put(accountId, userAccountLevelData);
     user.setUserAccountLevelDataMap(userAccountLevelDataMapping);
+  }
+
+  public UserPreferenceData mapUserPreferenceDTOToData(UserPreferenceDataDTO userPreferenceDataDTO) {
+    return UserPreferenceData.builder().defaultExperience(userPreferenceDataDTO.getDefaultExperience()).build();
+  }
+
+  public void updateUserPreferenceData(
+      String accountId, User user, UserPreferenceData userPreferenceData, UpdateOperations<User> updateOp) {
+    if (validationForUserAccountLevelDataFlow(user, accountId)) {
+      user.getUserAccountLevelDataMap().get(accountId).setUserPreferenceData(userPreferenceData);
+      updateOp.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
+    }
   }
 }

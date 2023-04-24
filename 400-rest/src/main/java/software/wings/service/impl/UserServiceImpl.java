@@ -112,6 +112,7 @@ import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.PasswordChangeDTO;
 import io.harness.ng.core.user.PasswordChangeResponse;
 import io.harness.ng.core.user.UserInfo;
+import io.harness.ng.core.user.UserPreferenceData;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.UuidAware;
@@ -2805,9 +2806,9 @@ public class UserServiceImpl implements UserService {
   public User updateUserAccountLevelPreference(
       User user, String accountId, UserPreferenceDataDTO userPreferenceDataDTO) {
     UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
-    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
-        && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
-      updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
+    UserPreferenceData userPreferenceData = userServiceHelper.mapUserPreferenceDTOToData(userPreferenceDataDTO);
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      userServiceHelper.updateUserPreferenceData(accountId, user, userPreferenceData, updateOperations);
     }
     return updateUser(user.getUuid(), updateOperations);
   }
