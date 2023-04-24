@@ -114,6 +114,7 @@ public class SMPLicenseServiceImpl extends DefaultLicenseServiceImpl {
         moduleLicenseDTO.setId(existingLicense.getId());
         updateModuleLicense(moduleLicenseDTO);
       } else {
+        moduleLicenseDTO.setId(null);
         createModuleLicense(moduleLicenseDTO);
       }
     }
