@@ -26,6 +26,7 @@ import io.harness.idp.envvariable.jobs.BackstageEnvVariablesSyncJob;
 import io.harness.idp.events.consumers.EntityCrudStreamConsumer;
 import io.harness.idp.events.consumers.IdpEventConsumerController;
 import io.harness.idp.migration.IdpMigrationProvider;
+import io.harness.idp.namespace.jobs.DefaultAccountIdToNamespaceMappingForPrEnv;
 import io.harness.idp.user.jobs.UserSyncJob;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.service.api.MetricService;
@@ -152,6 +153,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     environment.lifecycle().manage(injector.getInstance(BackstageEnvVariablesSyncJob.class));
     environment.lifecycle().manage(injector.getInstance(UserSyncJob.class));
     environment.lifecycle().manage(injector.getInstance(ConfigPurgeJob.class));
+    environment.lifecycle().manage(injector.getInstance(DefaultAccountIdToNamespaceMappingForPrEnv.class));
   }
 
   private void registerQueueListeners(Injector injector) {

@@ -28,6 +28,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceFetchType;
 import io.harness.delegate.task.googlefunctionbeans.GcpGoogleFunctionInfraConfig;
 import io.harness.delegate.task.googlefunctionbeans.GoogleCloudSourceArtifactConfig;
 import io.harness.delegate.task.googlefunctionbeans.GoogleCloudStorageArtifactConfig;
@@ -124,6 +125,15 @@ public class GoogleFunctionsEntityHelper {
           .connectorDTO(connectorDTO)
           .encryptedDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
           .identifier(googleCloudSourceArtifactOutcome.getIdentifier())
+          .branch(googleCloudSourceArtifactOutcome.getBranch())
+          .tag(googleCloudSourceArtifactOutcome.getGitTag())
+          .commitId(googleCloudSourceArtifactOutcome.getCommitId())
+          .googleCloudSourceFetchType(
+              GoogleCloudSourceFetchType.BRANCH.getName().equals(googleCloudSourceArtifactOutcome.getFetchType())
+                  ? GoogleCloudSourceFetchType.BRANCH
+                  : GoogleCloudSourceFetchType.TAG.getName().equals(googleCloudSourceArtifactOutcome.getFetchType())
+                  ? GoogleCloudSourceFetchType.TAG
+                  : GoogleCloudSourceFetchType.COMMIT)
           .build();
     } else {
       throw new UnsupportedOperationException(

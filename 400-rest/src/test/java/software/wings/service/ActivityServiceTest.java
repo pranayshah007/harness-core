@@ -40,7 +40,7 @@ import static software.wings.utils.WingsTestConstants.WORKFLOW_ID;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.times;
@@ -420,7 +420,7 @@ public class ActivityServiceTest extends WingsBaseTest {
     activityService.updateStatus(activity.getUuid(), activity.getAppId(), ExecutionStatus.SUCCESS);
 
     activity.setStatus(ExecutionStatus.SUCCESS);
-    verify(serviceInstanceService, times(2)).updateActivity(anyObject());
+    verify(serviceInstanceService, times(2)).updateActivity(any());
   }
 
   @Test

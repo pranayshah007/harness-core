@@ -43,8 +43,9 @@ public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
 
   @Override
   public List<StageElementWrapperConfig> asStages(MigrationContext migrationContext, Workflow workflow) {
-    return getStagesForMultiServiceWorkflow(
-        migrationContext, WorkflowMigrationContext.newInstance(migrationContext, workflow));
+    WorkflowMigrationContext wfContext = WorkflowMigrationContext.newInstance(migrationContext, workflow);
+    wfContext.setWorkflowVarsAsPipeline(true);
+    return getStagesForMultiServiceWorkflow(migrationContext, wfContext);
   }
 
   @Override

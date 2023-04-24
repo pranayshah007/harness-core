@@ -32,11 +32,13 @@ import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
 import io.harness.perpetualtask.instancesyncv2.ResponseBatchConfig;
 import io.harness.serializer.KryoSerializer;
+import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.api.DeploymentEvent;
 import software.wings.api.DeploymentSummary;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.TaskType;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2DeploymentHelper;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2DeploymentHelperFactory;
 import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
@@ -96,6 +98,7 @@ public class CgInstanceSyncServiceV2 {
   private final InstanceSyncPerpetualTaskService instanceSyncPerpetualTaskService;
   private final InstanceService instanceService;
   private final PerpetualTaskService perpetualTaskService;
+  private final DelegateTaskService delegateTaskService;
 
   private static final int INSTANCE_COUNT_LIMIT =
       Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_INSTANCE_COUNT", "100"));
@@ -115,8 +118,16 @@ public class CgInstanceSyncServiceV2 {
 
     String infraMappingId = event.getDeploymentSummaries().iterator().next().getInfraMappingId();
     String appId = event.getDeploymentSummaries().iterator().next().getAppId();
+    String accountId = event.getDeploymentSummaries().iterator().next().getAccountId();
     InfrastructureMapping infrastructureMapping = infrastructureMappingService.get(appId, infraMappingId);
     isSupportedCloudProvider(infrastructureMapping.getComputeProviderType());
+
+    if (taskDetailsService.getForInfraMapping(accountId, infraMappingId) == null
+        && !(delegateTaskService.isTaskTypeSupportedByAllDelegates(
+            accountId, TaskType.INSTANCE_SYNC_V2_CG_SUPPORT.name()))) {
+      throw new UnsupportedOperationException(
+          format("INSTANCE_SYNC_V2_CG_SUPPORT task type is not supported for accountId: [%s]", accountId));
+    }
 
     int retryCount = 0;
     while (retryCount < HANDLE_NEW_DEPLOYMENT_MAX_RETRIES) {

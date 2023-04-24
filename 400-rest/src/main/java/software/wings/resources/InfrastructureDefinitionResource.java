@@ -7,6 +7,8 @@
 
 package software.wings.resources;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import static software.wings.security.PermissionAttribute.Action.READ;
 import static software.wings.security.PermissionAttribute.Action.UPDATE;
 import static software.wings.security.PermissionAttribute.PermissionType.ENV;
@@ -16,7 +18,6 @@ import io.harness.azure.model.VirtualMachineScaleSetData;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.aws.AwsElbListener;
 import io.harness.delegate.task.aws.AwsLoadBalancerDetails;
 import io.harness.delegate.task.azure.appservice.webapp.response.DeploymentSlotData;
@@ -58,7 +59,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @Api("infrastructure-definitions")
@@ -84,9 +84,11 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ)
   public RestResponse<PageResponse<InfrastructureDefinition>> listPost(
-      @Context PageRequest pageRequest, ListInfraDefinitionParams listInfraDefinitionParams) {
-    if (EmptyPredicate.isNotEmpty(listInfraDefinitionParams.getDeploymentTypeFromMetaData())) {
+      @BeanParam PageRequest<InfrastructureDefinition> pageRequest,
+      ListInfraDefinitionParams listInfraDefinitionParams) {
+    if (isNotEmpty(listInfraDefinitionParams.getDeploymentTypeFromMetaData())) {
       pageRequest.addFilter(InfrastructureDefinitionKeys.deploymentType, SearchFilter.Operator.IN,
           listInfraDefinitionParams.getDeploymentTypeFromMetaData().toArray());
     }

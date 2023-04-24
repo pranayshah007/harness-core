@@ -65,6 +65,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
 
@@ -150,11 +151,11 @@ public class StrategyUtils {
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
     YamlField siblingField = yamlField.getNode().nextSiblingFromParentArray(
         yamlField.getName(), Arrays.asList(YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.PARALLEL));
-    EdgeLayoutList edgeLayoutList;
+    EdgeLayoutList edgeLayoutList = EdgeLayoutList.newBuilder().build();
     String planNodeId = yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY).getNode().getUuid();
     if (siblingField == null) {
       edgeLayoutList = EdgeLayoutList.newBuilder().addCurrentNodeChildren(planNodeId).build();
-    } else {
+    } else if (!Objects.equals(siblingField.getUuid(), StrategyUtils.getPipelineRollbackStageId(yamlField))) {
       edgeLayoutList = EdgeLayoutList.newBuilder()
                            .addNextIds(siblingField.getNode().getUuid())
                            .addCurrentNodeChildren(planNodeId)
@@ -295,10 +296,10 @@ public class StrategyUtils {
    * @param level
    * @return
    */
-  public Map<String, Object> fetchStrategyObjectMap(Level level) {
+  public Map<String, Object> fetchStrategyObjectMap(Level level, boolean useMatrixFieldName) {
     Map<String, Object> strategyObjectMap = new HashMap<>();
     if (level.hasStrategyMetadata()) {
-      return fetchStrategyObjectMap(Lists.newArrayList(level));
+      return fetchStrategyObjectMap(Lists.newArrayList(level), useMatrixFieldName);
     }
     strategyObjectMap.put(ITERATION, 0);
     strategyObjectMap.put(ITERATIONS, 1);
@@ -312,7 +313,10 @@ public class StrategyUtils {
    * @param levelsWithStrategyMetadata
    * @return
    */
-  public Map<String, Object> fetchStrategyObjectMap(List<Level> levelsWithStrategyMetadata) {
+
+  // pass flag
+  public Map<String, Object> fetchStrategyObjectMap(
+      List<Level> levelsWithStrategyMetadata, boolean useMatrixFieldName) {
     Map<String, Object> strategyObjectMap = new HashMap<>();
     Map<String, Object> matrixValuesMap = new HashMap<>();
     Map<String, Object> repeatValuesMap = new HashMap<>();
@@ -341,7 +345,7 @@ public class StrategyUtils {
       strategyObjectMap.put(ITERATION, level.getStrategyMetadata().getCurrentIteration());
       strategyObjectMap.put(ITERATIONS, level.getStrategyMetadata().getTotalIterations());
       strategyObjectMap.put(TOTAL_ITERATIONS, level.getStrategyMetadata().getTotalIterations());
-      strategyObjectMap.put("identifierPostFix", AmbianceUtils.getStrategyPostfix(level));
+      strategyObjectMap.put("identifierPostFix", AmbianceUtils.getStrategyPostfix(level, useMatrixFieldName));
     }
     strategyObjectMap.put(MATRIX, matrixValuesMap);
     strategyObjectMap.put(REPEAT, repeatValuesMap);

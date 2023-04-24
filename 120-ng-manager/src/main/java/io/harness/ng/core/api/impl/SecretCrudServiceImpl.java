@@ -178,8 +178,16 @@ public class SecretCrudServiceImpl implements SecretCrudService {
         secretSpec.setValue(encryptedData.getPath());
       }
     }
+    SecretDTOV2 secretDTO = secret.toDTO();
+    if (null != secretDTO && secretDTO.getSpec() instanceof SSHKeySpecDTO) {
+      SSHKeySpecDTO sshKeySpecDTO = (SSHKeySpecDTO) secretDTO.getSpec();
+      sshKeySpecDTO.getAuth().setUseSshClient(
+          featureFlagHelperService.isEnabled(secret.getAccountIdentifier(), FeatureName.CDS_SSH_CLIENT));
+      sshKeySpecDTO.getAuth().setUseSshj(
+          featureFlagHelperService.isEnabled(secret.getAccountIdentifier(), FeatureName.CDS_SSH_SSHJ));
+    }
     return SecretResponseWrapper.builder()
-        .secret(secret.toDTO())
+        .secret(secretDTO)
         .updatedAt(secret.getLastModifiedAt())
         .createdAt(secret.getCreatedAt())
         .draft(secret.isDraft())
@@ -704,6 +712,31 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     SecretFileSpecDTO specDTO = (SecretFileSpecDTO) dto.getSpec();
     NGEncryptedData encryptedData = encryptedDataService.createSecretFile(
         accountIdentifier, dto, new BoundedInputStream(inputStream, fileUploadLimit.getEncryptedFileLimit()));
+
+    if (Optional.ofNullable(encryptedData).isPresent()) {
+      secretEntityReferenceHelper.createSetupUsageForSecretManager(accountIdentifier, dto.getOrgIdentifier(),
+          dto.getProjectIdentifier(), dto.getIdentifier(), dto.getName(), specDTO.getSecretManagerIdentifier());
+      Secret secret = ngSecretService.create(accountIdentifier, dto, false);
+      secretResponseWrapper = getResponseWrapper(secret);
+      secretResponseWrapper.setGovernanceMetadata(governanceMetadata);
+      return secretResponseWrapper;
+    }
+    throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unable to create secret file remotely", USER);
+  }
+
+  @SneakyThrows
+  @Override
+  public SecretResponseWrapper createFile(@NotNull String accountIdentifier, @NotNull SecretDTOV2 dto,
+      @NotNull String encryptionKey, @NotNull String encryptedValue) {
+    SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
+    if (!isOpaPoliciesSatisfied(accountIdentifier, getMaskedDTOForOpa(dto), secretResponseWrapper)) {
+      return secretResponseWrapper;
+    }
+    GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
+
+    SecretFileSpecDTO specDTO = (SecretFileSpecDTO) dto.getSpec();
+    NGEncryptedData encryptedData =
+        encryptedDataService.createSecretFile(accountIdentifier, dto, encryptionKey, encryptedValue);
 
     if (Optional.ofNullable(encryptedData).isPresent()) {
       secretEntityReferenceHelper.createSetupUsageForSecretManager(accountIdentifier, dto.getOrgIdentifier(),

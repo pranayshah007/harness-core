@@ -19,6 +19,8 @@ public class JschExecSession extends SshSession {
   private ChannelExec channel;
   @Override
   public void close() throws Exception {
-    channel.disconnect();
+    if (channel != null && !channel.isClosed()) {
+      channel.disconnect();
+    }
   }
 }

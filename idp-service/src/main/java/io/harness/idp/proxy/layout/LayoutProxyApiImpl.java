@@ -18,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.clients.BackstageResourceClient;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.LayoutProxyApi;
+import io.harness.spec.server.idp.v1.model.LayoutIngestRequest;
 import io.harness.spec.server.idp.v1.model.LayoutRequest;
 
 import com.google.inject.Inject;
@@ -63,6 +64,13 @@ public class LayoutProxyApiImpl implements LayoutProxyApi {
   @Override
   public Response getLayoutHealth(String harnessAccount) {
     Object entity = getGeneralResponse(backstageResourceClient.getHealth(harnessAccount));
+    return Response.ok(entity).build();
+  }
+
+  @Override
+  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
+  public Response layoutIngest(@Valid LayoutIngestRequest body, @AccountIdentifier String harnessAccount) {
+    Object entity = getGeneralResponse(backstageResourceClient.ingestLayout(body, harnessAccount));
     return Response.ok(entity).build();
   }
 }

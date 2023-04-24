@@ -41,11 +41,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
@@ -193,7 +193,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
                                                             .releaseName("releaseName-statusCheck")
                                                             .useDeclarativeRollback(true)
                                                             .build();
-    K8sDelegateTaskParams taskParams = K8sDelegateTaskParams.builder().build();
+    K8sDelegateTaskParams taskParams = K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build();
 
     doReturn(false).when(k8sTaskHelperBase).doStatusCheck(any(), any(), any(), any());
     K8sTaskExecutionResponse response = spyHandler.executeTaskInternal(deployTaskParams, taskParams);
@@ -248,7 +248,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
 
     K8sBlueGreenDeployTaskParameters deployTaskParams =
         K8sBlueGreenDeployTaskParameters.builder().releaseName("releaseName-statusCheck").build();
-    K8sDelegateTaskParams taskParams = K8sDelegateTaskParams.builder().build();
+    K8sDelegateTaskParams taskParams = K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build();
 
     doReturn(false).when(k8sTaskHelperBase).doStatusCheck(any(), any(), any(), any());
     K8sTaskExecutionResponse response = spyHandler.executeTaskInternal(deployTaskParams, taskParams);
@@ -965,7 +965,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
                                                             .releaseName("releaseName-statusCheck")
                                                             .useDeclarativeRollback(true)
                                                             .build();
-    K8sDelegateTaskParams taskParams = K8sDelegateTaskParams.builder().build();
+    K8sDelegateTaskParams taskParams = K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build();
 
     doReturn(false).when(k8sTaskHelperBase).doStatusCheck(any(), any(), any(), any());
     K8sTaskExecutionResponse response = spyHandler.executeTaskInternal(deployTaskParams, taskParams);

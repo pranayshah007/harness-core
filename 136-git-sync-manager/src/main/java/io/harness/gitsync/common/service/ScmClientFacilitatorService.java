@@ -30,6 +30,8 @@ import io.harness.gitsync.common.dtos.GitDiffResultFileListDTO;
 import io.harness.gitsync.common.dtos.GitFileChangeDTO;
 import io.harness.gitsync.common.dtos.GitFileContent;
 import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.webhook.UpsertWebhookRequestDTO;
 import io.harness.product.ci.scm.proto.Commit;
@@ -125,4 +127,6 @@ public interface ScmClientFacilitatorService {
   ListFilesInCommitResponse listFiles(Scope scope, ScmConnector scmConnector, ListFilesInCommitRequest request);
 
   GitFileBatchResponse getFileBatch(GitFileBatchRequest gitFileBatchRequest);
+
+  UserDetailsResponseDTO getUserDetails(UserDetailsRequestDTO userDetailsRequestDTO);
 }

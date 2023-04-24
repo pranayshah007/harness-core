@@ -41,10 +41,9 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.data.MapEntry.entry;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
@@ -53,7 +52,6 @@ import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EmbeddedUser;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.WingsException;
-import io.harness.persistence.HPersistence;
 import io.harness.persistence.HQuery;
 import io.harness.queue.QueuePublisher;
 import io.harness.rule.Owner;
@@ -75,6 +73,7 @@ import software.wings.beans.artifact.GcrArtifactStream;
 import software.wings.beans.artifact.JenkinsArtifactStream;
 import software.wings.beans.artifact.NexusArtifactStream;
 import software.wings.collect.CollectEvent;
+import software.wings.dl.WingsPersistence;
 import software.wings.persistence.artifact.Artifact;
 import software.wings.persistence.artifact.Artifact.ArtifactKeys;
 import software.wings.persistence.artifact.Artifact.Builder;
@@ -115,7 +114,7 @@ import org.mockito.Spy;
 public class ArtifactServiceTest extends WingsBaseTest {
   private static final String GLOBAL_APP_ID = "__GLOBAL_APP_ID__";
   private static final String SETTING_ID = "SETTING_ID";
-  @Inject @Spy private HPersistence persistence;
+  @Inject @Spy private WingsPersistence persistence;
 
   @Mock private FileService fileService;
   @Mock private ArtifactStreamService artifactStreamService;
@@ -162,7 +161,7 @@ public class ArtifactServiceTest extends WingsBaseTest {
   public void setUp() {
     persistence.save(Service.builder().appId(APP_ID).artifactType(ArtifactType.WAR).uuid(SERVICE_ID).build());
     persistence.save(CustomArtifactStream.builder().uuid(ARTIFACT_STREAM_ID).name(ARTIFACT_STREAM_NAME).build());
-    when(appQuery.filter(any(), anyObject())).thenReturn(appQuery);
+    when(appQuery.filter(any(), any())).thenReturn(appQuery);
 
     when(appService.exist(APP_ID)).thenReturn(true);
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(jenkinsArtifactStream);

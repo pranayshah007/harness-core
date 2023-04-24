@@ -32,6 +32,7 @@ import io.harness.cdng.infra.beans.AsgInfrastructureOutcome;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
+import io.harness.cdng.infra.beans.GoogleFunctionsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcomeAbstract;
 import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
@@ -51,6 +52,7 @@ import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
+import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -524,6 +526,31 @@ public class InfrastructureMapperTest extends CategoryTest {
     InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(k8sAwsInfrastructure,
         getEmptyProvisionerExpressionEvaluator(), environment, serviceOutcome, "accountId", "projId", "orgId");
     assertThat(infrastructureOutcome).isEqualTo(k8sAwsInfrastructureOutcome);
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testGoogleFunctionsInfraMapper() {
+    GoogleFunctionsInfrastructure googleFunctionsInfrastructure =
+        GoogleFunctionsInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField("connectorId"))
+            .region(ParameterField.createValueField("region"))
+            .project(ParameterField.createValueField("project"))
+            .build();
+
+    GoogleFunctionsInfrastructureOutcome googleFunctionsInfrastructureOutcome =
+        GoogleFunctionsInfrastructureOutcome.builder()
+            .connectorRef("connectorId")
+            .region("region")
+            .project("project")
+            .environment(environment)
+            .infrastructureKey("9de2869e6ff4a3ec81fa7805b9a6fed5267906fe")
+            .build();
+
+    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(googleFunctionsInfrastructure,
+        getEmptyProvisionerExpressionEvaluator(), environment, serviceOutcome, "accountId", "projId", "orgId");
+    assertThat(infrastructureOutcome).isEqualTo(googleFunctionsInfrastructureOutcome);
   }
 
   @Test

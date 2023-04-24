@@ -15,4 +15,5 @@ import lombok.Data;
 public class OauthAccessTokenDTO {
   String accessToken;
   String refreshToken;
+  UserDetailsDTO userDetailsDTO;
 }

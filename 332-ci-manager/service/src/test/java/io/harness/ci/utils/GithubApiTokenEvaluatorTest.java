@@ -11,7 +11,7 @@ import static io.harness.ci.utils.GithubApiFunctorTestHelper.RESOLVED_EXPRESSION
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -32,7 +32,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(HarnessTeam.CI)
 @RunWith(MockitoJUnitRunner.class)

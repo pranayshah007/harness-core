@@ -118,7 +118,7 @@ paths:
       description: Creates multiple backstage env variables
       x-internal: true
       requestBody:
-        $ref: '#/components/requestBodies/BackstageEnvVariableRequestList'
+        $ref: '#/components/requestBodies/BackstageEnvVariableBatchRequest'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       security:
@@ -136,7 +136,7 @@ paths:
       security:
         - x-api-key: []
       requestBody:
-        $ref: '#/components/requestBodies/BackstageEnvVariableRequestList'
+        $ref: '#/components/requestBodies/BackstageEnvVariableBatchRequest'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       tags:
@@ -327,11 +327,9 @@ paths:
         - $ref: '#/components/parameters/Order'
         - $ref: '#/components/parameters/SearchTerm'
         - schema:
-            type: array
-            items:
-              type: string
+            type: string
           in: query
-          name: projects_to_filter
+          name: project_to_filter
           description: This would be used to filter resources having attributes matching the project filter.
   /v1/onboarding/harness-entities-count:
     get:
@@ -631,6 +629,95 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       x-internal: true
+  /v1/plugin/request:
+    post:
+      summary: Request for a Plugin
+      operationId: post-plugin-request
+      responses:
+        '201':
+          description: Created
+      tags:
+        - PluginInfo
+      description: Request for a Plugin
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/RequestPluginRequest'
+    get:
+      summary: Get all plugin requests for an account
+      operationId: get-plugin-request
+      responses:
+        '200':
+          $ref: '#/components/responses/PluginRequestResponseList'
+      tags:
+        - PluginInfo
+      x-internal: true
+      description: Get all plugin requests for an account
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+  /v1/layout/ingest:
+    post:
+      summary: Ingest plugin layout
+      operationId: layout-ingest
+      responses:
+        '200':
+          description: OK
+      tags:
+        - LayoutProxy
+      description: Ingest plugin layout
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LayoutIngestRequest'
+  /v1/sync-app-config:
+    put:
+      summary: Sync merged app-config for a given account
+      operationId: sync-app-config
+      responses:
+        '204':
+          description: No Content
+      description: API to sync app-config for a given account. This API can be accessed by Support User only.
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - schema:
+            type: boolean
+          in: query
+          name: base_config
+          description: Set true to sync base app-config too
+      tags:
+        - MergedPluginsConfig
+  /v1/onboarding/generate-yaml:
+    post:
+      summary: Generate YAML Definition for entity
+      operationId: onboarding-generate-yaml
+      responses:
+        '200':
+          $ref: '#/components/responses/GenerateYamlResponse'
+      tags:
+        - OnboardingResource
+      x-internal: true
+      description: Generate YAML Definition for entity
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/GenerateYamlRequest'
 components:
   schemas:
     BackstageEnvVariable:
@@ -731,6 +818,19 @@ components:
           $ref: '#/components/schemas/BackstageEnvVariable'
           x-stoplight:
             id: r2xgjoclqancb
+    BackstageEnvVariableBatchRequest:
+      type: object
+      x-stoplight:
+        id: m9tpxiklbpfzk
+      properties:
+        env_variables:
+          x-stoplight:
+            id: r2xgjoclqancb
+          type: array
+          items:
+            $ref: '#/components/schemas/BackstageEnvVariable'
+            x-stoplight:
+              id: i9tsq5o4dan8z
     BackstageEnvVariableResponse:
       x-stoplight:
         id: e8875709fc5b1
@@ -833,30 +933,6 @@ components:
       x-stoplight:
         id: 06dd99ce217ed
       description: Namespace response body
-    ImportHarnessEntitiesRequest:
-      title: ImportHarnessEntitiesRequest
-      x-stoplight:
-        id: amr368rxqugif
-      type: object
-      x-examples: {}
-      description: Details of Harness Entities and Catalog Location info
-      properties:
-        catalog_connector_info:
-          $ref: '#/components/schemas/CatalogConnectorInfo'
-          x-stoplight:
-            id: 2dpge46q45sn2
-        entities:
-          type: array
-          minItems: 0
-          items:
-            $ref: '#/components/schemas/EntitiesForImport'
-        all_import:
-          type: boolean
-          x-stoplight:
-            id: dsm3fnlholwsp
-      required:
-        - catalog_connector_info
-        - entities
     CatalogConnectorInfo:
       title: CatalogConnectorInfo
       x-stoplight:
@@ -864,7 +940,7 @@ components:
       type: object
       description: Details of IDP catalog connector
       properties:
-        source_connector:
+        connector:
           $ref: '#/components/schemas/ConnectorDetails'
           x-stoplight:
             id: 218l3eejs3pvn
@@ -874,16 +950,11 @@ components:
           type: string
         path:
           type: string
-        infra_connector:
-          $ref: '#/components/schemas/ConnectorDetails'
-          x-stoplight:
-            id: y4jr5csvofm3c
       required:
-        - source_connector
+        - connector
         - repo
         - branch
         - path
-        - infra_connector
     HarnessEntitiesCountResponse:
       title: HarnessEntitiesCountResponse
       x-stoplight:
@@ -910,13 +981,20 @@ components:
       title: HarnessEntitiesResponse
       x-stoplight:
         id: 06ugy0j5318dr
-      type: array
+      type: object
       x-examples: {}
       description: Response for harness entities mapping with backstage entities
-      items:
-        $ref: '#/components/schemas/HarnessBackstageEntities'
-        x-stoplight:
-          id: xrciue3ek36e6
+      properties:
+        harness_backstage_entities:
+          x-stoplight:
+            id: xrciue3ek36e6
+          type: array
+          items:
+            $ref: '#/components/schemas/HarnessBackstageEntities'
+            x-stoplight:
+              id: o4ipievo4uguh
+      required:
+        - harness_backstage_entities
     ImportEntitiesResponse:
       title: ImportEntitiesResponse
       x-stoplight:
@@ -980,6 +1058,11 @@ components:
           type: string
         type:
           type: string
+          enum:
+            - Github
+            - Gitlab
+            - Bitbucket
+            - AzureRepo
       required:
         - identifier
         - type
@@ -1081,38 +1164,27 @@ components:
       title: PluginDetailedInfo
       x-stoplight:
         id: ggn3lgk0pl7jx
-      type: object
-      properties:
-        plugin_details:
-          $ref: '#/components/schemas/PluginInfo'
+      allOf:
+        - $ref: '#/components/schemas/PluginDetails'
           x-stoplight:
-            id: zfeuzsbo3e90v
-        config:
-          type: string
-          x-stoplight:
-            id: 4arnqctb1wfyl
-        exports:
-          $ref: '#/components/schemas/Exports'
-          x-stoplight:
-            id: ns1ky9089aalt
-        env_variables:
-          x-stoplight:
-            id: 4tj9fofa4b3hn
-          type: array
-          items:
-            $ref: '#/components/schemas/BackstageEnvSecretVariable'
-            x-stoplight:
-              id: v8fluu5h3dt3n
-        saved:
-          type: boolean
-          x-stoplight:
-            id: b06clr6ww9ku0
-      required:
-        - plugin_details
-        - config
-        - exports
-        - env_variables
-        - saved
+            id: 8r3tc7aptshub
+        - type: object
+          properties:
+            env_variables:
+              x-stoplight:
+                id: 4tj9fofa4b3hn
+              type: array
+              items:
+                $ref: '#/components/schemas/BackstageEnvSecretVariable'
+                x-stoplight:
+                  id: v8fluu5h3dt3n
+            saved:
+              type: boolean
+              x-stoplight:
+                id: b06clr6ww9ku0
+          required:
+            - env_variables
+            - saved
     ManualImportEntityRequest:
       title: ManualImportEntityRequest
       x-stoplight:
@@ -1258,6 +1330,8 @@ components:
           $ref: '#/components/schemas/ConnectorDetails'
           x-stoplight:
             id: ictqwjgoxe2bc
+      required:
+        - connector_details
     Exports:
       title: Exports
       x-stoplight:
@@ -1276,10 +1350,28 @@ components:
           type: integer
           x-stoplight:
             id: ksifiqe7f9p5w
+        default_entity_types:
+          type: array
+          x-stoplight:
+            id: rubpg21bu2st4
+          items:
+            x-stoplight:
+              id: kth23yj667xa3
+            type: string
+        export_details:
+          x-stoplight:
+            id: xszvlkfetqvdo
+          type: array
+          items:
+            $ref: '#/components/schemas/ExportDetails'
+            x-stoplight:
+              id: ypu1bnoyc701c
       required:
         - pages
         - tab_contents
         - cards
+        - default_entity_types
+        - export_details
     MergedPluginConfigs:
       title: MergedPluginConfigs
       x-stoplight:
@@ -1315,6 +1407,223 @@ components:
             id: 4cbw2qu8gjz0n
       required:
         - merged_config
+    RequestPlugin:
+      x-stoplight:
+        id: 9hysqi3bqen2g
+      type: object
+      title: RequestPluginRequest
+      description: Details of the plugin being requested
+      properties:
+        name:
+          type: string
+          x-stoplight:
+            id: 36cfc6be33iuq
+        creator:
+          type: string
+          x-stoplight:
+            id: 1rpevk6nasps4
+        package_link:
+          type: string
+          x-stoplight:
+            id: 06dejnewki48v
+        doc_link:
+          type: string
+          x-stoplight:
+            id: kjp2dblyv5l0j
+      required:
+        - name
+        - creator
+        - package_link
+        - doc_link
+    PluginRequestResponseList:
+      title: PluginRequestResponseList
+      x-stoplight:
+        id: l8pxjbva9kd77
+      type: object
+      properties:
+        plugin_requests:
+          type: array
+          x-stoplight:
+            id: 7p55aiahqzgfc
+          items:
+            $ref: '#/components/schemas/RequestPlugin'
+            x-stoplight:
+              id: djchso9u50p2u
+      required:
+        - plugin_requests
+      description: Returns all plugin requests for an account
+    ExportDetails:
+      title: ExportDetails
+      x-stoplight:
+        id: dg5ogyutt74c2
+      type: object
+      properties:
+        type:
+          type: string
+          x-stoplight:
+            id: aurd52xhuftpn
+        name:
+          type: string
+          x-stoplight:
+            id: sq45ohcxqr9do
+        add_by_default:
+          type: boolean
+          x-stoplight:
+            id: 6tc18j0qbdoes
+        default_route:
+          type: string
+          x-stoplight:
+            id: oyrgvybpm6nik
+        layout_schema_specs:
+          type: object
+          x-stoplight:
+            id: aqq2o3sg33kiz
+      required:
+        - type
+        - name
+    PluginDetails:
+      title: PluginDetails
+      x-stoplight:
+        id: 4rsv9twy48kan
+      type: object
+      properties:
+        plugin_details:
+          $ref: '#/components/schemas/PluginInfo'
+          x-stoplight:
+            id: 78o6cgyocvp5q
+        config:
+          type: string
+          x-stoplight:
+            id: knh0tubwda57c
+        exports:
+          $ref: '#/components/schemas/Exports'
+          x-stoplight:
+            id: d75z7rk3lvcbb
+      required:
+        - plugin_details
+        - config
+        - exports
+    LayoutIngestRequest:
+      title: LayoutIngestRequest
+      x-stoplight:
+        id: e8du2q55p26u5
+      type: object
+      properties:
+        plugin:
+          $ref: '#/components/schemas/PluginDetails'
+          x-stoplight:
+            id: jqr3z1zl2f5vs
+      required:
+        - plugin
+    GenerateYamlRequest:
+      title: GenerateYamlRequest
+      x-stoplight:
+        id: 6afrksdt6yzf8
+      type: object
+      properties:
+        entities:
+          type: array
+          x-stoplight:
+            id: x1bjzeq0xhqe9
+          items:
+            $ref: '#/components/schemas/EntitiesForImport'
+            x-stoplight:
+              id: mn1sipjammn91
+      required:
+        - entities
+      description: Request to generate yaml for any one entity if provided or generate sample entity yaml definition
+    GenerateYamlResponse:
+      title: GenerateYamlResponse
+      x-stoplight:
+        id: lu8lnvc5d1ycn
+      type: object
+      description: Response contianing entity yaml definition and description about the entity
+      properties:
+        yaml_def:
+          type: string
+          x-stoplight:
+            id: b9a1z1ixle6e0
+        description:
+          type: string
+          x-stoplight:
+            id: n4cd9raohifd2
+      required:
+        - yaml_def
+        - description
+    AllEntitiesImport:
+      title: AllEntitiesImport
+      x-stoplight:
+        id: icn79gqklynqb
+      allOf:
+        - $ref: '#/components/schemas/ImportEntitiesBase'
+        - type: object
+          x-stoplight:
+            id: befy5yjyk1mho
+      x-discriminator-value: All
+      description: Import all harness entities
+    SampleEntitiesImport:
+      title: SampleEntitiesImport
+      x-stoplight:
+        id: 0n4jic9y62wnk
+      description: Import sample entities
+      x-discriminator-value: Sample
+      allOf:
+        - $ref: '#/components/schemas/ImportEntitiesBase'
+          x-stoplight:
+            id: ow59y8dd42ark
+        - type: object
+          x-stoplight:
+            id: a3pg2s49ri981
+    IndividualEntitiesImport:
+      title: IndividualEntitiesImport
+      x-stoplight:
+        id: sef7xljum4s1e
+      x-discriminator-value: Individual
+      description: Import selected harness entities
+      allOf:
+        - $ref: '#/components/schemas/ImportEntitiesBase'
+        - type: object
+          x-stoplight:
+            id: r3bpmjiqu80hs
+          properties:
+            entities:
+              x-stoplight:
+                id: wpilxcdq1y8fu
+              type: array
+              items:
+                $ref: '#/components/schemas/EntitiesForImport'
+                x-stoplight:
+                  id: ig9bbn1ayo7ou
+          required:
+            - entities
+    ImportEntitiesBase:
+      title: ImportEntitiesBase
+      x-stoplight:
+        id: wjxl1hwpwycv4
+      type: object
+      description: Abstract base for import entities
+      discriminator:
+        propertyName: type
+        mapping:
+          All: '#/components/schemas/AllEntitiesImport'
+          Individual: '#/components/schemas/IndividualEntitiesImport'
+          Sample: '#/components/schemas/SampleEntitiesImport'
+      properties:
+        type:
+          type: string
+          x-stoplight:
+            id: ivlkqhisxcx6w
+          enum:
+            - All
+            - Individual
+            - Sample
+        catalog_connector_info:
+          $ref: '#/components/schemas/CatalogConnectorInfo'
+          x-stoplight:
+            id: 2g3sd1omi2h4x
+      required:
+        - type
+        - catalog_connector_info
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -1453,35 +1762,15 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/BackstageEnvVariableRequest'
-    BackstageEnvVariableRequestList:
+    BackstageEnvVariableBatchRequest:
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/BackstageEnvVariableRequest'
-          examples:
-            Example 1:
-              value:
-                - env_variable:
-                    identifier: 641c7f1aa18dbf72522d78f0
-                    env_name: PAGERDUTY_TOKEN
-                    created: 1679589047352
-                    updated: 1679589047352
-                    type: Secret
-                    harness_secret_identifier: pdtoken
-                - env_variable:
-                    identifier: 641c7f1aa18dbf72522d78f1
-                    env_name: GITHUB_APP_APPLICATION_ID
-                    created: 1679589047352
-                    updated: 1679589047352
-                    type: Config
-                    value: '1234'
+            $ref: '#/components/schemas/BackstageEnvVariableBatchRequest'
+          examples: {}
         application/yaml:
           schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/BackstageEnvVariableRequest'
+            $ref: '#/components/schemas/BackstageEnvVariableBatchRequest'
     BackstagePermissionsRequest:
       content:
         application/json:
@@ -1501,7 +1790,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ImportHarnessEntitiesRequest'
+            $ref: '#/components/schemas/ImportEntitiesBase'
           examples: {}
       description: Details of Harness Entities and Catalog Location info
     ManualImportEntityRequest:
@@ -1537,11 +1826,33 @@ components:
                   enabled_disabled_at: 0
                   created: 1679589146025
                   updated: 1679589146025
+                  env_variables:
+                    - env_name: SNYK_TOKEN
+                      type: Secret
+                      harness_secret_identifier: snyktoken
+                  config_name: Snyk Security
     ConnectorInfoRequest:
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ConnectorInfoRequest'
+    RequestPluginRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RequestPlugin'
+      description: Details of the plugin being requested
+    LayoutIngestRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LayoutIngestRequest'
+    GenerateYamlRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GenerateYamlRequest'
+      description: Request to generate yaml for any one entity if provided or generate sample entity yaml definition
   responses:
     BackstageEnvVariableResponse:
       description: Example response
@@ -1715,9 +2026,39 @@ components:
       content:
         application/json:
           schema:
+            $ref: '#/components/schemas/HarnessEntitiesCountResponse'
+    PluginRequestResponseList:
+      description: Returns all plugin requests for an account
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PluginRequestResponseList'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
+    GenerateYamlResponse:
+      description: Response contianing entity yaml definition and description about the entity
+      content:
+        application/json:
+          schema:
+            type: object
             properties:
-              id:
-                type: string
+              generated_yaml:
+                $ref: '#/components/schemas/GenerateYamlResponse'
+                x-stoplight:
+                  id: bphw0sqlu2jkj
+            required:
+              - generated_yaml
   securitySchemes:
     x-api-key:
       name: x-api-key

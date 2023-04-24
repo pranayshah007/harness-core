@@ -135,9 +135,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (EmptyPredicate.isEmpty(configFiles)) {
       logCallback.saveExecutionLog(
-          String.format("No config files configured in the service. <+%s> expressions will not work",
-              OutcomeExpressionConstants.CONFIG_FILES),
-          LogLevel.WARN);
+          "No config files configured in the service. configFiles expressions will not work", LogLevel.WARN);
       return StepResponse.builder().status(Status.SKIPPED).build();
     }
     cdExpressionResolver.updateExpressions(ambiance, configFiles);
@@ -171,9 +169,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (EmptyPredicate.isEmpty(configFiles)) {
       logCallback.saveExecutionLog(
-          String.format("No config files configured in the service. <+%s> expressions will not work",
-              OutcomeExpressionConstants.CONFIG_FILES),
-          LogLevel.WARN);
+          "No config files configured in the service. configFiles expressions will not work", LogLevel.WARN);
       return AsyncExecutableResponse.newBuilder().setStatus(Status.SKIPPED).build();
     }
     cdExpressionResolver.updateExpressions(ambiance, configFiles);

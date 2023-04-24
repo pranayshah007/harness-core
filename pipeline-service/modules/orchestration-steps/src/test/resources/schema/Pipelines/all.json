@@ -679,6 +679,9 @@
             }
           ]
         },
+        "harnessImageConnectorRef": {
+          "type": "string"
+        },
         "initTimeout": {
           "type": "string"
         },

@@ -55,7 +55,7 @@ public class ConfigPurgeJob implements Managed {
     log.info("App Config purge job started for disabled plugins....");
     try {
       List<AppConfigEntity> appConfigEntities =
-          configManagerService.deleteDisabledPluginsConfigsThatAreDisableWithinOneWeek();
+          configManagerService.deleteDisabledPluginsConfigsDisabledMoreThanAWeekAgo();
       if (appConfigEntities.isEmpty()) {
         log.info(
             "No config shortlisted for Purging - either all plugins are enabled or they are disabled within one week");

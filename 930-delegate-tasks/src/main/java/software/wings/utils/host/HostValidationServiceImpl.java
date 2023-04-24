@@ -31,7 +31,7 @@ import io.harness.logging.NoopExecutionCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.SshSessionFactory;
-import io.harness.shell.ssh.SshFactory;
+import io.harness.shell.ssh.SshClientManager;
 import io.harness.shell.ssh.exception.SshClientException;
 
 import software.wings.annotation.EncryptableSetting;
@@ -169,7 +169,7 @@ public class HostValidationServiceImpl implements HostValidationService {
                                           .build();
     try {
       if (sshSessionConfig.isUseSshClient()) {
-        SshFactory.getSshClient(sshSessionConfig).testConnection();
+        SshClientManager.test(sshSessionConfig);
       } else {
         Session sshSession = SshSessionFactory.getSSHSession(sshSessionConfig);
         sshSession.disconnect();

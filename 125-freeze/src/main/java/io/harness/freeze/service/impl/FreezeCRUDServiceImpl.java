@@ -519,7 +519,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
       freezeConfig.getFreezeInfoConfig().setStatus(freezeStatus);
       String yaml = NGFreezeDtoMapper.toYaml(freezeConfig);
       NGFreezeDtoMapper.validateFreezeYaml(freezeConfig, freezeConfigEntity.getOrgIdentifier(),
-          freezeConfigEntity.getProjectIdentifier(), freezeConfigEntity.getType());
+          freezeConfigEntity.getProjectIdentifier(), freezeConfigEntity.getType(), freezeConfigEntity.getFreezeScope());
       freezeConfigEntity.setYaml(yaml);
       freezeConfigEntity.setStatus(freezeStatus);
       updateNextIterations(freezeConfigEntity);

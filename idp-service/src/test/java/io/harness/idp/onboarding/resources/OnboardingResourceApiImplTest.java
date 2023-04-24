@@ -19,10 +19,13 @@ import io.harness.category.element.UnitTests;
 import io.harness.idp.onboarding.service.OnboardingService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.rule.Owner;
+import io.harness.spec.server.idp.v1.model.GenerateYamlRequest;
+import io.harness.spec.server.idp.v1.model.GenerateYamlResponse;
 import io.harness.spec.server.idp.v1.model.HarnessBackstageEntities;
 import io.harness.spec.server.idp.v1.model.HarnessEntitiesCountResponse;
+import io.harness.spec.server.idp.v1.model.HarnessEntitiesResponse;
+import io.harness.spec.server.idp.v1.model.ImportEntitiesBase;
 import io.harness.spec.server.idp.v1.model.ImportEntitiesResponse;
-import io.harness.spec.server.idp.v1.model.ImportHarnessEntitiesRequest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +44,10 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(HarnessTeam.IDP)
 public class OnboardingResourceApiImplTest extends CategoryTest {
   static final String ACCOUNT_IDENTIFIER = "123";
+  static final String GENERATE_YAML_DESC =
+      "This is an example of how the corresponding service definition YAML files will be created.";
+  static final String GENERATE_YAML_DEF =
+      "apiVersion: backstage.io/v1alpha1\nkind: Component\nmetadata:\n  name: my-example-service\n  description: |\n    My Example service which has something to do with APIs and database.\n  links:\n    - title: Website\n      url: http://my-internal-website.com\n  annotations:\n    github.com/project-slug: myorg/myrepo\n    backstage.io/techdocs-ref: dir:.\n    lighthouse.com/website-url: https://harness.io\n# labels:\n#   key1: value1\n# tags: \nspec:\n  type: service\n  owner: my-team\n  lifecycle: experimental\n  system: my-project\n#  dependsOn:\n#    - resource:default/my-db\n#  consumesApis:\n#    - user-api\n#  providesApis:\n#    - example-api";
   @InjectMocks private OnboardingResourceApiImpl onboardingResourceApiImpl;
   @Mock private OnboardingService onboardingService;
   AutoCloseable openMocks;
@@ -91,13 +98,30 @@ public class OnboardingResourceApiImplTest extends CategoryTest {
         .thenReturn(harnessBackstageEntitiesPageResponse);
     Response response = onboardingResourceApiImpl.getHarnessEntities(ACCOUNT_IDENTIFIER, 0, 10, null, null, null, null);
     assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
-    List<HarnessBackstageEntities> harnessBackstageEntitiesFromApi =
-        (List<HarnessBackstageEntities>) response.getEntity();
-    assertThat(harnessBackstageEntitiesFromApi).hasSize(1);
-    assertThat(harnessBackstageEntitiesFromApi.get(0).getName()).isEqualTo("entityName");
-    assertThat(harnessBackstageEntitiesFromApi.get(0).getEntityType()).isEqualTo("entityType");
-    assertThat(harnessBackstageEntitiesFromApi.get(0).getIdentifier()).isEqualTo("entityIdentifier");
-    assertThat(harnessBackstageEntitiesFromApi.get(0).getType()).isEqualTo("type");
+    HarnessEntitiesResponse harnessBackstageEntitiesFromApi = (HarnessEntitiesResponse) response.getEntity();
+    List<HarnessBackstageEntities> harnessBackstageEntitiesListFromApi =
+        harnessBackstageEntitiesFromApi.getHarnessBackstageEntities();
+    assertThat(harnessBackstageEntitiesListFromApi).hasSize(1);
+    assertThat(harnessBackstageEntitiesListFromApi.get(0).getName()).isEqualTo("entityName");
+    assertThat(harnessBackstageEntitiesListFromApi.get(0).getEntityType()).isEqualTo("entityType");
+    assertThat(harnessBackstageEntitiesListFromApi.get(0).getIdentifier()).isEqualTo("entityIdentifier");
+    assertThat(harnessBackstageEntitiesListFromApi.get(0).getType()).isEqualTo("type");
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testOnboardingGenerateYaml() {
+    GenerateYamlResponse generateYamlResponse = new GenerateYamlResponse();
+    generateYamlResponse.setDescription(GENERATE_YAML_DESC);
+    generateYamlResponse.setYamlDef(GENERATE_YAML_DEF);
+    when(onboardingService.generateYaml(ACCOUNT_IDENTIFIER, new GenerateYamlRequest()))
+        .thenReturn(generateYamlResponse);
+    Response response = onboardingResourceApiImpl.onboardingGenerateYaml(new GenerateYamlRequest(), ACCOUNT_IDENTIFIER);
+    assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+    GenerateYamlResponse generateYamlResponseFromApi = (GenerateYamlResponse) response.getEntity();
+    assertThat(generateYamlResponseFromApi.getDescription()).isEqualTo(GENERATE_YAML_DESC);
+    assertThat(generateYamlResponseFromApi.getYamlDef()).isEqualTo(GENERATE_YAML_DEF);
   }
 
   @Test
@@ -106,10 +130,9 @@ public class OnboardingResourceApiImplTest extends CategoryTest {
   public void testImportHarnessEntities() {
     ImportEntitiesResponse importEntitiesResponse = new ImportEntitiesResponse();
     importEntitiesResponse.setStatus("SUCCESS");
-    when(onboardingService.importHarnessEntities(ACCOUNT_IDENTIFIER, new ImportHarnessEntitiesRequest()))
+    when(onboardingService.importHarnessEntities(ACCOUNT_IDENTIFIER, new ImportEntitiesBase()))
         .thenReturn(importEntitiesResponse);
-    Response response =
-        onboardingResourceApiImpl.importHarnessEntities(new ImportHarnessEntitiesRequest(), ACCOUNT_IDENTIFIER);
+    Response response = onboardingResourceApiImpl.importHarnessEntities(new ImportEntitiesBase(), ACCOUNT_IDENTIFIER);
     assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
     ImportEntitiesResponse importEntitiesResponseFromApi = (ImportEntitiesResponse) response.getEntity();
     assertThat(importEntitiesResponseFromApi.getStatus()).isEqualTo("SUCCESS");

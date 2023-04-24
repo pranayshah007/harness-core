@@ -10,6 +10,7 @@ package io.harness.ci.serializer.vm;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
 import static io.harness.beans.steps.CIStepInfoType.GIT_CLONE;
+import static io.harness.beans.steps.CIStepInfoType.SAVE_CACHE_GCS;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_ARCHIVE_FORMAT;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BACKEND;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BUCKET;
@@ -134,10 +135,19 @@ public class VmPluginStepSerializer {
       }
 
       String accountID = AmbianceUtils.getAccountId(ambiance);
+      setEnvVariablesForHostedCachingSteps(stageInfraDetails, identifier, envVars);
       if (isGitCloneStep(identifier, pluginStepInfo)
           && CIStepInfoUtils.canRunVmStepOnHost(
               GIT_CLONE, stageInfraDetails, accountID, ciExecutionConfigService, featureFlagService)) {
         String name = ciExecutionConfigService.getContainerlessPluginNameForVM(GIT_CLONE);
+        List<String> entrypoint = Arrays.asList("plugin", "-kind", "harness", "-name", name);
+        return convertContainerlessStep(identifier, entrypoint, envVars, timeout, pluginStepInfo);
+      }
+      if ((identifier.equals(SAVE_CACHE_STEP_ID) || identifier.equals(RESTORE_CACHE_STEP_ID))
+          && CIStepInfoUtils.canRunVmStepOnHost(
+              SAVE_CACHE_GCS, stageInfraDetails, accountID, ciExecutionConfigService, featureFlagService)) {
+        // save and restore have some entry point, use save works for both
+        String name = ciExecutionConfigService.getContainerlessPluginNameForVM(SAVE_CACHE_GCS);
         List<String> entrypoint = Arrays.asList("plugin", "-kind", "harness", "-name", name);
         return convertContainerlessStep(identifier, entrypoint, envVars, timeout, pluginStepInfo);
       }
@@ -157,7 +167,6 @@ public class VmPluginStepSerializer {
   private VmPluginStep convertContainerStep(Ambiance ambiance, String identifier, String image,
       String connectorIdentifier, Map<String, String> envVars, long timeout, StageInfraDetails stageInfraDetails,
       PluginStepInfo pluginStepInfo) {
-    setEnvVariablesForHostedCachingSteps(stageInfraDetails, identifier, envVars);
     VmPluginStepBuilder pluginStepBuilder =
         VmPluginStep.builder().image(image).envVariables(envVars).timeoutSecs(timeout);
 

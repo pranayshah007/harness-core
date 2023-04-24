@@ -36,5 +36,4 @@ public class ExecutionMetaDataResponseDetailsDTO {
   @Schema(description = "Input YAML ") String inputYaml;
   @Schema(description = "Trigger Payload - Payload used for fetching trigger build data .")
   TriggerPayload triggerPayload;
-  @Schema(description = "Resolved YAML ") String resolvedYaml;
 }

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.contracts.execution.Status.ABORTED;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.HarnessStringUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
@@ -66,10 +67,10 @@ public class NextStageAdviser implements Adviser {
     if (adviserParams instanceof NextStepAdviserParameters) {
       // todo: remove all usages of NextStepAdviserParameters from Plan Creators for Next Stage advisor.
       NextStepAdviserParameters nextStepAdviserParameters = (NextStepAdviserParameters) adviserParams;
-      return nextStepAdviserParameters.getNextNodeId();
+      return HarnessStringUtils.emptyIfNull(nextStepAdviserParameters.getNextNodeId());
     } else if (adviserParams instanceof NextStageAdviserParameters) {
       NextStageAdviserParameters nextStageAdviserParameters = (NextStageAdviserParameters) adviserParams;
-      return nextStageAdviserParameters.getNextNodeId();
+      return HarnessStringUtils.emptyIfNull(nextStageAdviserParameters.getNextNodeId());
     }
     throw new InvalidRequestException(
         "Unsupported class type for Adviser Params found in Next Stage Advisor: " + adviserParams.getClass().getName());
@@ -83,7 +84,7 @@ public class NextStageAdviser implements Adviser {
           + adviserParams.getClass().getName());
     }
     NextStageAdviserParameters nextStageAdviserParameters = (NextStageAdviserParameters) adviserParams;
-    return nextStageAdviserParameters.getPipelineRollbackStageId();
+    return HarnessStringUtils.emptyIfNull(nextStageAdviserParameters.getPipelineRollbackStageId());
   }
 
   @Override

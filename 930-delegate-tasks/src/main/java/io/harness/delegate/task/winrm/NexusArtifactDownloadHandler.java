@@ -8,6 +8,11 @@
 package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.AUTHORIZATION;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.DOWNLOAD_ARTIFACT_BY_PROXY_PS;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.DOWNLOAD_ARTIFACT_USING_CREDENTIALS_BY_PROXY_PS;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.OUT_FILE;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.URI;
 import static io.harness.delegate.utils.NexusUtils.getBasicAuthHeader;
 import static io.harness.delegate.utils.NexusUtils.getNexusArtifactDelegateConfig;
 import static io.harness.delegate.utils.NexusUtils.getNexusArtifactFileName;
@@ -83,33 +88,13 @@ public class NexusArtifactDownloadHandler implements ArtifactDownloadHandler {
 
   private String generatePowerShellCommandScript(
       NexusRequest nexusRequest, final String artifactUrl, final String artifactName, final String destinationPath) {
-    StringBuilder command = new StringBuilder(128);
     if (nexusRequest.isHasCredentials()) {
-      String basicAuthHeader = getBasicAuthHeader(nexusRequest);
-      command
-          .append("$Headers = @{\n"
-              + "    Authorization = \"")
-          .append(basicAuthHeader)
-          .append(
-              "\"\n}\n [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n $ProgressPreference = 'SilentlyContinue'\n Invoke-WebRequest -Uri \"")
-          .append(artifactUrl)
-          .append("\" -Headers $Headers -OutFile \"")
-          .append(destinationPath.trim())
-          .append('\\')
-          .append(artifactName)
-          .append('"');
+      return DOWNLOAD_ARTIFACT_USING_CREDENTIALS_BY_PROXY_PS.replace(AUTHORIZATION, getBasicAuthHeader(nexusRequest))
+          .replace(URI, artifactUrl)
+          .replace(OUT_FILE, destinationPath.trim() + "\\" + artifactName);
     } else {
-      command
-          .append(
-              "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n $ProgressPreference = 'SilentlyContinue'\n Invoke-WebRequest -Uri \"")
-          .append(artifactUrl)
-          .append("\" -OutFile \"")
-          .append(destinationPath.trim())
-          .append('\\')
-          .append(artifactName)
-          .append('"');
+      return DOWNLOAD_ARTIFACT_BY_PROXY_PS.replace(URI, artifactUrl)
+          .replace(OUT_FILE, destinationPath.trim() + "\\" + artifactName);
     }
-
-    return command.toString();
   }
 }

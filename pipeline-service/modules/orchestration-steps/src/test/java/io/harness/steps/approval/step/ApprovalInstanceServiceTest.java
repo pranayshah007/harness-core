@@ -17,10 +17,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -66,32 +67,23 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.MockedConstruction;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(CDC)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({NGLogCallback.class, ApprovalInstanceServiceImpl.class})
-@PowerMockIgnore({"javax.net.ssl.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class ApprovalInstanceServiceTest extends CategoryTest {
-  @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private ApprovalInstanceRepository approvalInstanceRepository;
   @Mock private TransactionTemplate transactionTemplate;
   @Mock private WaitNotifyEngine waitNotifyEngine;
@@ -267,24 +259,24 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
 
     instance.setStatus(ApprovalStatus.APPROVED);
     when(approvalInstanceRepository.save(any())).thenReturn(instance);
-    NGLogCallback ngLogCallback = Mockito.mock(NGLogCallback.class);
-    PowerMockito.whenNew(NGLogCallback.class).withAnyArguments().thenReturn(ngLogCallback);
-    // default value taken for approver input variable
-    approvalInstanceServiceImpl.addHarnessApprovalActivityInTransaction(
-        "hello", embeddedUser, harnessApprovalActivityRequestDTO);
-    verify(approvalInstanceRepository, times(1)).save(entity);
-    verify(ngLogCallback).saveExecutionLog(anyString());
-    when(transactionTemplate.execute(any())).thenReturn(harnessApprovalInstance);
-    // set instance to waiting to avoid already complete failure
-    harnessApprovalInstance.setStatus(ApprovalStatus.WAITING);
-    // custom value set for approver input variable
-    approvalInstanceServiceImpl.addHarnessApprovalActivityInTransaction(
-        "hello", embeddedUser, harnessApprovalActivityRequestDTO1);
-    verify(approvalInstanceRepository, times(2)).save(entity);
-    verify(ngLogCallback, times(2)).saveExecutionLog(anyString());
-    assertThat(approvalInstanceServiceImpl.addHarnessApprovalActivity(
-                   "hello", embeddedUser, harnessApprovalActivityRequestDTO))
-        .isEqualTo(harnessApprovalInstance);
+    try (MockedConstruction<NGLogCallback> ngLogCallback = mockConstruction(NGLogCallback.class)) {
+      // default value taken for approver input variable
+      approvalInstanceServiceImpl.addHarnessApprovalActivityInTransaction(
+          "hello", embeddedUser, harnessApprovalActivityRequestDTO);
+      verify(approvalInstanceRepository, times(1)).save(entity);
+      verify(ngLogCallback.constructed().get(0)).saveExecutionLog(anyString());
+      when(transactionTemplate.execute(any())).thenReturn(harnessApprovalInstance);
+      // set instance to waiting to avoid already complete failure
+      harnessApprovalInstance.setStatus(ApprovalStatus.WAITING);
+      // custom value set for approver input variable
+      approvalInstanceServiceImpl.addHarnessApprovalActivityInTransaction(
+          "hello", embeddedUser, harnessApprovalActivityRequestDTO1);
+      verify(approvalInstanceRepository, times(2)).save(entity);
+      verify(ngLogCallback.constructed().get(1), times(1)).saveExecutionLog(anyString());
+      assertThat(approvalInstanceServiceImpl.addHarnessApprovalActivity(
+                     "hello", embeddedUser, harnessApprovalActivityRequestDTO))
+          .isEqualTo(harnessApprovalInstance);
+    }
   }
 
   @Test

@@ -10,7 +10,7 @@ package io.harness.delegate.task.cvng;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.CategoryTest;

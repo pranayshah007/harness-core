@@ -8,6 +8,9 @@
 package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_CCM_CLOUD_ASSET_GOVERNANCE_RULE;
+import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_EXECUTE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_SET_CREATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_SET_DELETE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_SET_UPDATED;
@@ -20,6 +23,7 @@ import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.audittrails.events.RuleSetCreateEvent;
@@ -36,6 +40,7 @@ import io.harness.ccm.views.helper.RuleSetList;
 import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.RuleSetService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -63,7 +68,9 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -167,6 +174,15 @@ public class GovernanceRuleSetResource {
     } else {
       throw new InvalidRequestException("Not authorised to create OOTB rule set. Make a custom rule set instead");
     }
+    Set<String> uniqueRuleIds = new HashSet<>();
+    uniqueRuleIds.addAll(ruleSet.getRulesIdentifier());
+    Set<String> rulesPermitted =
+        rbacHelper.checkRuleIdsGivenPermission(accountId, null, null, uniqueRuleIds, RULE_EXECUTE);
+    if (rulesPermitted.size() != uniqueRuleIds.size()) {
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, RULE_EXECUTE, RESOURCE_CCM_CLOUD_ASSET_GOVERNANCE_RULE),
+          WingsException.USER, null);
+    }
     GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
     if (ruleSet.getRulesIdentifier().size() > governanceConfig.getPoliciesInPack()) {
       throw new InvalidRequestException("Limit of Rules in a set is exceeded ");
@@ -214,6 +230,15 @@ public class GovernanceRuleSetResource {
     GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
     if (ruleSet.getRulesIdentifier().size() > governanceConfig.getPoliciesInPack()) {
       throw new InvalidRequestException("Limit of Rules in a set is exceeded ");
+    }
+    Set<String> uniqueRuleIds = new HashSet<>();
+    uniqueRuleIds.addAll(ruleSet.getRulesIdentifier());
+    Set<String> rulesPermitted =
+        rbacHelper.checkRuleIdsGivenPermission(accountId, null, null, uniqueRuleIds, RULE_EXECUTE);
+    if (rulesPermitted.size() != uniqueRuleIds.size()) {
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, RULE_EXECUTE, RESOURCE_CCM_CLOUD_ASSET_GOVERNANCE_RULE),
+          WingsException.USER, null);
     }
     ruleSetService.update(accountId, ruleSet);
     RuleSet updatedRuleSet = ruleSetService.fetchById(accountId, ruleSet.getUuid(), false);

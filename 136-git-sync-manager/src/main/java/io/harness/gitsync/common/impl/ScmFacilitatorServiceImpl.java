@@ -73,6 +73,8 @@ import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
 import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
 import io.harness.gitsync.common.dtos.UserRepoResponse;
 import io.harness.gitsync.common.helper.GitClientEnabledHelper;
 import io.harness.gitsync.common.helper.GitFilePathHelper;
@@ -728,6 +730,25 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     }
   }
 
+  @Override
+  public UserDetailsResponseDTO getUserDetails(UserDetailsRequestDTO userDetailsRequestDTO) {
+    if (isExecuteOnManager(userDetailsRequestDTO)) {
+      UserDetailsResponseDTO userDetailsResponse = scmOrchestratorService.processScmRequestUsingManager(
+          scmClientFacilitatorService -> scmClientFacilitatorService.getUserDetails(userDetailsRequestDTO));
+      return UserDetailsResponseDTO.builder()
+          .userEmail(userDetailsResponse.getUserEmail())
+          .userName(userDetailsResponse.getUserName())
+          .build();
+    } else {
+      UserDetailsResponseDTO userDetailsResponse = scmOrchestratorService.processScmRequestUsingDelegate(
+          scmClientFacilitatorService -> scmClientFacilitatorService.getUserDetails(userDetailsRequestDTO));
+      return UserDetailsResponseDTO.builder()
+          .userEmail(userDetailsResponse.getUserEmail())
+          .userName(userDetailsResponse.getUserName())
+          .build();
+    }
+  }
+
   private List<GitRepositoryResponseDTO> prepareListRepoResponse(
       ScmConnector scmConnector, GetUserReposResponse response) {
     GitRepositoryDTO gitRepository = scmConnector.getGitRepositoryDetails();
@@ -1137,5 +1158,10 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     }
     gitBackgroundCacheRefreshHelper.submitBatchTask(
         getGitBatchFileFetchRunnableParams(accountIdentifier, requestsToCache));
+  }
+
+  private boolean isExecuteOnManager(UserDetailsRequestDTO userDetailsRequestDTO) {
+    // TODO: return true if the secret manager used for token is harness secret manager
+    return true;
   }
 }

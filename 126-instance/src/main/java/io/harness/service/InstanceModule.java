@@ -36,6 +36,8 @@ import io.harness.service.instancesyncperpetualtask.InstanceSyncPerpetualTaskSer
 import io.harness.service.instancesyncperpetualtask.InstanceSyncPerpetualTaskServiceImpl;
 import io.harness.service.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoService;
 import io.harness.service.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoServiceImpl;
+import io.harness.service.rollback.PostProdRollbackService;
+import io.harness.service.rollback.PostProdRollbackServiceImpl;
 import io.harness.service.stats.statscollector.InstanceStatsCollectorImpl;
 import io.harness.service.stats.statscollector.StatsCollector;
 import io.harness.service.stats.usagemetrics.eventpublisher.UsageMetricsEventPublisher;
@@ -62,6 +64,7 @@ public class InstanceModule extends AbstractModule {
     registerRequiredBindings();
     bind(InstanceDashboardService.class).to(InstanceDashboardServiceImpl.class);
     bind(InstanceService.class).to(InstanceServiceImpl.class);
+    bind(PostProdRollbackService.class).to(PostProdRollbackServiceImpl.class);
     bind(InstanceSyncPerpetualTaskInfoService.class).to(InstanceSyncPerpetualTaskInfoServiceImpl.class);
     bind(InfrastructureMappingService.class).to(InfrastructureMappingServiceImpl.class);
     bind(InstanceSyncHandlerFactoryService.class).to(InstanceSyncHandlerFactoryServiceImpl.class);

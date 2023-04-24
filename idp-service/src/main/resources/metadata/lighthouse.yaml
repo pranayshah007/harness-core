@@ -19,8 +19,10 @@ exports:
       name: EntityLastLighthouseAuditCard
       addByDefault: true
       layoutSchemaSpecs:
-        gridProps:
-          md: 6
+        component: EntityLastLighthouseAuditCard
+        specs:
+          gridProps:
+            md: 6
     - type: TAB_CONTENT
       name: EntityLighthouseContent
       addByDefault: true

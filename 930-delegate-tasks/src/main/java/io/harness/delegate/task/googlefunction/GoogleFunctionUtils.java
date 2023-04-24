@@ -16,7 +16,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(CDP)
 public class GoogleFunctionUtils {
-  public static final String ENVIRONMENT_TYPE_GEN_ONE = "GEN_1";
+  public static final String ENVIRONMENT_TYPE_GEN_ONE = "GenOne";
   public static final String GOOGLE_CLOUD_STORAGE_ARTIFACT_FORMAT = "gs://%s/%s";
   public static final String GOOGLE_CLOUD_SOURCE_ARTIFACT_COMMIT_FORMAT =
       "https://source.developers.google.com/projects/%s/repos/%s/revisions/%s/paths/%s";

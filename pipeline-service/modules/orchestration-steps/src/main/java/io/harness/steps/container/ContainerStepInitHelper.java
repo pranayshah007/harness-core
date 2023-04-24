@@ -62,6 +62,7 @@ import io.harness.steps.container.utils.ConnectorUtils;
 import io.harness.steps.container.utils.ContainerParamsProvider;
 import io.harness.steps.container.utils.ContainerStepImageUtils;
 import io.harness.steps.container.utils.ContainerStepResolverUtils;
+import io.harness.steps.container.utils.ContainerStepV2DefinitionCreator;
 import io.harness.steps.container.utils.K8sPodInitUtils;
 import io.harness.steps.container.utils.PluginUtils;
 import io.harness.steps.container.utils.SecretUtils;
@@ -412,6 +413,8 @@ public class ContainerStepInitHelper {
       case CD_SSCA_ORCHESTRATION:
         return Collections.singletonList(
             createPluginStepContainerDefinition((PluginStep) containerStepInfo, portFinder, accountId, os, ambiance));
+      case INIT_CONTAINER_V2:
+        return ContainerStepV2DefinitionCreator.getContainerDefinitionInfo((InitContainerV2StepInfo) containerStepInfo);
       default:
         throw new ContainerStepExecutionException("Container step initialization not handled");
     }

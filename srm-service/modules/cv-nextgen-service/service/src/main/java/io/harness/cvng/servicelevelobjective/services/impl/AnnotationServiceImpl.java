@@ -14,13 +14,14 @@ import io.harness.cvng.servicelevelobjective.beans.AnnotationDTO;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationInstance;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationInstanceDetails;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationResponse;
-import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventDetailsResponse;
-import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventsResponse;
-import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventsType;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.Annotation;
 import io.harness.cvng.servicelevelobjective.entities.Annotation.AnnotationKeys;
 import io.harness.cvng.servicelevelobjective.services.api.AnnotationService;
+import io.harness.cvng.servicelevelobjective.services.api.SecondaryEventDetailsService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
@@ -36,7 +37,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
-public class AnnotationServiceImpl implements AnnotationService {
+public class AnnotationServiceImpl implements AnnotationService, SecondaryEventDetailsService {
   @Inject private HPersistence hPersistence;
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveService;
 
@@ -120,6 +121,11 @@ public class AnnotationServiceImpl implements AnnotationService {
         .endTime(annotations.get(0).getEndTime())
         .details(AnnotationInstanceDetails.builder().annotations(annotationInstances).build())
         .build();
+  }
+
+  @Override
+  public SecondaryEventDetailsResponse getInstanceByUuids(List<String> uuids, SecondaryEventsType eventType) {
+    return getThreadDetails(uuids);
   }
 
   @Override

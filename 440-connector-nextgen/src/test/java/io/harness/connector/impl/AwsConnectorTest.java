@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.delegate.beans.connector.ConnectorType.AWS;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 
 import io.harness.annotations.dev.OwnedBy;

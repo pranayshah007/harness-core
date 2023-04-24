@@ -9,7 +9,7 @@ package io.harness.cdng;
 
 import static io.harness.rule.OwnerRule.VLICA;
 
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 
 import io.harness.CategoryTest;

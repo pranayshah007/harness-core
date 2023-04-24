@@ -12,10 +12,10 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -89,8 +89,7 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
   @Before
   public void init() {
     MockitoAnnotations.initMocks(this);
-    when(internalReferredEntityExtractor.extractInternalEntities(any(), anyListOf(EntityDetail.class)))
-        .thenReturn(new ArrayList<>());
+    when(internalReferredEntityExtractor.extractInternalEntities(any(), anyList())).thenReturn(new ArrayList<>());
   }
 
   @After

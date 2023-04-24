@@ -99,6 +99,7 @@ public final class EventsFrameworkConstants {
 
   public static final String APPLICATION_TIMESCALE_REDIS_CHANGE_EVENT_CONSUMER =
       "APPLICATION_TIMESCALE_REDIS_CHANGE_EVENT_CONSUMER";
+  public static final String CDNG_ORCHESTRATION_EVENT_CONSUMER = "CDNG_ORCHESTRATION_EVENT_CONSUMER";
 
   public static final String START_PARTIAL_PLAN_CREATOR_EVENT_TOPIC = "pipeline_start_plan";
   public static final int START_PARTIAL_PLAN_CREATOR_BATCH_SIZE = 20;

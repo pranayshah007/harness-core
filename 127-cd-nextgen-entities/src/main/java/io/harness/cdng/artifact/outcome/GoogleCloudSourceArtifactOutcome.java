@@ -53,7 +53,9 @@ public class GoogleCloudSourceArtifactOutcome implements ArtifactOutcome {
   String commitId;
 
   /** Tag */
-  String tag;
+  String gitTag;
+
+  String fetchType;
 
   /** Whether this config corresponds to primary artifact.*/
   boolean primaryArtifact;
@@ -62,7 +64,7 @@ public class GoogleCloudSourceArtifactOutcome implements ArtifactOutcome {
     return GoogleCloudSourceArtifactSummary.builder()
         .repository(repository)
         .sourceDirectory(sourceDirectory)
-        .tag(tag)
+        .tag(gitTag)
         .branch(branch)
         .commitId(commitId)
         .build();

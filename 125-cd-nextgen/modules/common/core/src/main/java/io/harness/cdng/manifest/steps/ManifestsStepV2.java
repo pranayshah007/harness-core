@@ -118,9 +118,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (noManifestsConfigured(finalSvcManifestsMap)) {
       logCallback.saveExecutionLog(
-          String.format("No manifests configured in the service. <+%s> expressions will not work",
-              OutcomeExpressionConstants.MANIFESTS),
-          LogLevel.WARN);
+          "No manifests configured in the service. manifest expressions will not work", LogLevel.WARN);
 
       return StepResponse.builder().status(Status.SKIPPED).build();
     }

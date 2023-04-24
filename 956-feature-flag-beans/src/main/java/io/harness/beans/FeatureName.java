@@ -29,11 +29,13 @@ public enum FeatureName {
   SPG_ALLOW_GET_BUILD_SYNC("Allow get builds sync from gcs", HarnessTeam.SPG),
   SPG_ALLOW_FILTER_BY_PATHS_GCS("Enables filtering by path on database GCS-type stream artifacts.", HarnessTeam.SPG),
   SPG_ENABLE_SHARING_FILTERS("Enables account admin share deployments filter using usergroups", HarnessTeam.SPG),
+  SPG_ENABLE_STATUS_OF_DEPLOYMENTS("Enables a way to see deployments status by env", HarnessTeam.SPG),
   SPG_REMOVE_REDUNDANT_UPDATE_IN_AUDIT("It removes a redudant update on the audit", HarnessTeam.SPG),
   SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE("Enables refresh pipeline when trigger "
           + "continue pipeline execution",
       HarnessTeam.SPG),
   SPG_WFE_PROJECTIONS_DEPLOYMENTS_PAGE("Enable projection on deployments page and executions", HarnessTeam.SPG),
+  SPG_ENABLE_POPULATE_USING_ARTIFACT_VARIABLE("Enable to populate artifact using artifact variables", HarnessTeam.SPG),
   SPG_CHANGE_SECRET_VAULT_PATTERN_ON_YAML("Change the format of secret in yaml when use vault", HarnessTeam.SPG),
   SPG_ALLOW_WFLOW_VARIABLES_TO_CONDITION_SKIP_PIPELINE_STAGE("Enables the use of workflow variables to skip"
           + " pipeline stage",
@@ -385,6 +387,7 @@ public enum FeatureName {
       "Enable the rest of STO Steps Q2 2023 and beyond, NOT READY for use in PRODUCTION", HarnessTeam.STO),
 
   STO_JIRA_INTEGRATION("Enable Jira integration for STO", HarnessTeam.STO),
+  STO_BASELINE_REGEX("Enable selection of baselines by RegEx from Test Targets page", HarnessTeam.STO),
   HOSTED_BUILDS("Used to enabled Hosted builds in paid accounts", HarnessTeam.CI),
   SPOT_ELASTIGROUP_NG("Enables Spot Elastigroup implementation on NG", HarnessTeam.CDP),
   ATTRIBUTE_TYPE_ACL_ENABLED("Enable attribute filter on NG UI for ACL", HarnessTeam.PL),
@@ -634,7 +637,6 @@ public enum FeatureName {
   SPG_STATE_MACHINE_MAPPING_EXCEPTION_IGNORE(
       "To silent ignore org.modelmapper.MappingException inside state machine executor", HarnessTeam.SPG),
   PL_AUDIT_LOG_STREAMING_ENABLED("Enables AuditLogStreaming tab on AuditTrails page in account scope", HarnessTeam.PL),
-  PIE_NG_GITX_CACHING("FF to enable caching on new git experience", HarnessTeam.PIPELINE),
   PL_ADD_ACL_CHECKS_NG_SCIM_API("Enable access control checks on token for NG SCIM API calls", HarnessTeam.PL),
   CDS_QUERY_OPTIMIZATION("Feature flag to optimize CG Queries", HarnessTeam.CDC),
   CI_ENABLE_BARE_METAL("To enable bare metal cloud for infra", HarnessTeam.CI),
@@ -663,6 +665,8 @@ public enum FeatureName {
   CHAOS_SRM_EVENT(
       "Enables chaos events to be displayed as change source events in SRM monitored services.", HarnessTeam.CHAOS),
   PIE_DEPRECATE_PAUSE_INTERRUPT_NG("Deprecate Pause and Resume interrupts in NG", HarnessTeam.PIPELINE),
+  CDS_NG_TRIGGER_SELECTIVE_STAGE_EXECUTION(
+      "Allows triggers to execute selective stages for the underlying pipeline in NG", HarnessTeam.SPG),
   PLG_ENABLE_CROSS_GENERATION_ACCESS("Enables cross generation access", GTM),
   CDS_SERVICE_OVERRIDES_2_0("Revamped experience service and environment overrides in NG", HarnessTeam.CDC),
   CDS_USE_OLD_SERVICE_V1("Feature flag to use service v1. NG_SVC_ENV_REDESIGN will be deprecated", HarnessTeam.CDC),
@@ -673,8 +677,6 @@ public enum FeatureName {
       "Replace HTTP capability check for Kubernetes connector with Socket Capability", HarnessTeam.CDP),
   NG_CDS_NATIVE_EKS_SUPPORT("Enable native EKS support for K8s/Native Helm Infrastructures", HarnessTeam.CDP),
   CDS_RANCHER_SUPPORT_NG("Enable Rancher support in NG.", HarnessTeam.CDP),
-  PL_SELECT_SPECIFIC_SERVICE_ACCOUNT_IN_RESOURCE_GROUP(
-      "Allow selection of specific service accounts in Resource group", HarnessTeam.PL),
   SPG_SERVICES_OVERVIEW_RBAC(
       "Applies RBAC on services overview page, only displays services which the user has access to read",
       HarnessTeam.SPG),
@@ -713,11 +715,28 @@ public enum FeatureName {
   CDS_HTTP_STEP_NG_CERTIFICATE("Allow enforce SSL/TLS certificate in NG HTTP step", HarnessTeam.CDC),
   SRM_ENABLE_JIRA_INTEGRATION("Enable Jira integration in CVNG Verify step UI", HarnessTeam.CV),
   CDS_GIT_CONFIG_FILES("Enable config files from GIT repositories", HarnessTeam.CDP),
+  CDS_NEXUS_GROUPID_ARTIFACTID_DROPDOWN(
+      "FF to enable dropdowns for groupId and artifactId in Nexus Artifact Source", HarnessTeam.CDC),
   NG_EXPRESSIONS_NEW_INPUT_ELEMENT(
       "FF to enable the new input element for the Expressions on UI when UI suggests the probable expressions to the User based on text input so far",
       PIPELINE),
   CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN(
-      "Enable the check if Vault secret manager is read only", HarnessTeam.CDP);
+      "Enable the check if Vault secret manager is read only", HarnessTeam.CDP),
+  CDS_RENAME_HARNESS_RELEASE_HISTORY_RESOURCE_NATIVE_HELM_NG(
+      "Use a prefix for internal harness release history for native helm deployment. Feature Flag will be removed as part of the epic: https://harness.atlassian.net/browse/CDS-46915",
+      HarnessTeam.CDP),
+  PL_USER_ACCOUNT_LEVEL_DATA_FLOW(
+      "Enables the new flow for all User CRUD where User's Account level Data is also considered.", HarnessTeam.PL),
+  PL_USER_ACCOUNT_LEVEL_DATA_MIGRATION(
+      "Enables Migration to create user account level data map for this account", HarnessTeam.PL),
+  CDS_BG_STAGE_SCALE_DOWN_STEP_NG(
+      "Enables Blue Green Scale Down Stage Scale Down Step. This will help bring down the stage environment in Blue Green Deployment. Epic: https://harness.atlassian.net/browse/CDS-55822",
+      HarnessTeam.CDP),
+  CDS_K8S_SERVICE_HOOKS_NG("Enables Service hooks support for K8s/Native Helm Services", HarnessTeam.CDP),
+  CIE_USE_DOCKER_BUILDX("Enable docker build and push step to use buildx", HarnessTeam.CI),
+  CDS_STAGE_EXECUTION_DATA_SYNC(
+      "This flag controls if you want CD Stage execution data saved in cd service and eventually synced to timescale",
+      HarnessTeam.CDC);
 
   @Deprecated
   FeatureName() {

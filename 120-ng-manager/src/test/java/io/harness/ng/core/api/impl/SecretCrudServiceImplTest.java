@@ -23,8 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -322,6 +322,30 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     assertThat(created).isNotNull();
 
     verify(encryptedDataService, atLeastOnce()).createSecretFile(any(), any(), any());
+    verify(ngSecretServiceV2).create(any(), any(), eq(false));
+    verify(secretEntityReferenceHelper).createSetupUsageForSecretManager(any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = PHOENIKX)
+  @Category(UnitTests.class)
+  public void testSecretFileMigration_willCreateSecretInNgSecretsDB() {
+    SecretDTOV2 secretDTOV2 =
+        SecretDTOV2.builder().spec(SecretFileSpecDTO.builder().build()).type(SecretType.SecretFile).build();
+    Secret secret = Secret.builder().build();
+    NGEncryptedData encryptedDataDTO = NGEncryptedData.builder().type(SettingVariableTypes.CONFIG_FILE).build();
+    when(encryptedDataService.createSecretFile(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
+    when(ngSecretServiceV2.create(any(), any(), eq(false))).thenReturn(secret);
+    doNothing()
+        .when(secretEntityReferenceHelper)
+        .createSetupUsageForSecretManager(any(), any(), any(), any(), any(), any());
+    when(opaSecretService.evaluatePoliciesWithEntity(any(), any(), any(), any(), any(), any())).thenReturn(null);
+
+    SecretResponseWrapper created =
+        secretCrudService.createFile(accountIdentifier, secretDTOV2, "encryptionKey", "encryptedValue");
+    assertThat(created).isNotNull();
+
+    verify(encryptedDataService, atLeastOnce()).createSecretFile(any(), any(), any(), any());
     verify(ngSecretServiceV2).create(any(), any(), eq(false));
     verify(secretEntityReferenceHelper).createSetupUsageForSecretManager(any(), any(), any(), any(), any(), any());
   }

@@ -18,7 +18,7 @@ import static software.wings.beans.dto.Log.Builder.aLog;
 
 import static com.google.common.collect.Iterables.getLast;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 

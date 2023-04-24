@@ -73,14 +73,14 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -2595,8 +2595,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
         ImmutableMap.of(HarnessLabels.releaseName, "release", HarnessLabels.track, "canary");
     doReturn(emptyList())
         .when(spyK8sTaskHelperBase)
-        .getPodDetailsWithLabels(
-            any(KubernetesConfig.class), anyString(), anyString(), anyMapOf(String.class, String.class), anyLong());
+        .getPodDetailsWithLabels(any(KubernetesConfig.class), anyString(), anyString(), anyMap(), anyLong());
     spyK8sTaskHelperBase.getPodDetailsWithTrack(config, "default", "release", "canary", DEFAULT_STEADY_STATE_TIMEOUT);
 
     verify(spyK8sTaskHelperBase, times(1))
@@ -2613,8 +2612,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
         ImmutableMap.of(HarnessLabels.releaseName, "release", HarnessLabels.color, "blue");
     doReturn(emptyList())
         .when(spyK8sTaskHelperBase)
-        .getPodDetailsWithLabels(
-            any(KubernetesConfig.class), anyString(), anyString(), anyMapOf(String.class, String.class), anyLong());
+        .getPodDetailsWithLabels(any(KubernetesConfig.class), anyString(), anyString(), anyMap(), anyLong());
     spyK8sTaskHelperBase.getPodDetailsWithColor(config, "default", "release", "blue", DEFAULT_STEADY_STATE_TIMEOUT);
 
     verify(spyK8sTaskHelperBase, times(1))
@@ -2631,8 +2629,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     Map<String, String> expectedLabels = ImmutableMap.of(HELM_RELEASE_LABEL, "release");
     doReturn(existingPods)
         .when(spyK8sTaskHelperBase)
-        .getPodDetailsWithLabels(
-            any(KubernetesConfig.class), anyString(), anyString(), anyMapOf(String.class, String.class), anyLong());
+        .getPodDetailsWithLabels(any(KubernetesConfig.class), anyString(), anyString(), anyMap(), anyLong());
     List<ContainerInfo> result =
         spyK8sTaskHelperBase.getContainerInfos(config, "release", "default", DEFAULT_STEADY_STATE_TIMEOUT);
 
@@ -2888,7 +2885,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn("").when(spyHelperBase).writeValuesToFile(any(), any());
 
     final List<FileData> manifestFiles = spyHelperBase.renderTemplateForHelm("helm", "./chart", new ArrayList<>(),
-        "release", "namespace", executionLogCallback, HelmVersion.V3, 9000, commandFlag, "");
+        "release", "namespace", executionLogCallback, HelmVersion.V3, 9000, commandFlag);
 
     verify(spyHelperBase, times(1)).executeShellCommand(eq("./chart"), anyString(), any(), anyLong());
     assertThat(manifestFiles.size()).isEqualTo(1);
@@ -3199,7 +3196,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(renderedFiles)
         .when(spyHelper)
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND, "");
+            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND);
 
     List<FileData> result = spyHelper.renderTemplate(K8sDelegateTaskParams.builder().helmPath(helmPath).build(),
         manifestDelegateConfig, manifestDirectory, valuesList, "release", "namespace", executionLogCallback, 10);
@@ -3207,7 +3204,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isEqualTo(renderedFiles);
     verify(spyHelper, times(1))
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND, "");
+            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND);
   }
 
   private void testRenderTemplateWithHelmSubChart(ManifestDelegateConfig manifestDelegateConfig,
@@ -3220,7 +3217,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(renderedFiles)
         .when(spyHelper)
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE, "charts/first-child");
+            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE);
 
     List<FileData> result = spyHelper.renderTemplate(K8sDelegateTaskParams.builder().helmPath(helmPath).build(),
         manifestDelegateConfig, manifestDirectory, valuesList, "release", "namespace", executionLogCallback, 10);
@@ -3228,7 +3225,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isEqualTo(renderedFiles);
     verify(spyHelper, times(1))
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE, "charts/first-child");
+            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE);
   }
 
   @Test

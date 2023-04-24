@@ -29,4 +29,9 @@ public class RollingSLOTargetSpec extends SLOTargetSpec {
   public SLOTargetType getType() {
     return SLOTargetType.ROLLING;
   }
+
+  @Override
+  public boolean isErrorBudgetResetEnabled() {
+    return false;
+  }
 }

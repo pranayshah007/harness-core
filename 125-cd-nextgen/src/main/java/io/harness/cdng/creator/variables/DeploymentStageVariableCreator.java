@@ -68,6 +68,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.core.variables.NGVariable;
 
 import com.google.inject.Inject;
@@ -276,8 +277,8 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       }
       outputProperties.addAll(handleManifestProperties(specField, ngServiceConfig));
       outputProperties.addAll(handleArtifactProperties(specField, ngServiceConfig));
-      if (environmentRef != null && !environmentRef.isExpression()) {
-        serviceVariables.addAll(getServiceOverridesVariables(ctx, environmentRef, ngServiceConfig));
+      if (environmentRef != null && !environmentRef.isExpression() && optionalService.isPresent()) {
+        serviceVariables.addAll(getServiceOverridesVariables(ctx, environmentRef, optionalService.get()));
       }
       outputProperties.addAll(handleServiceVariables(specField, serviceVariables, ngServiceConfig));
     } else {
@@ -370,26 +371,25 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
   }
 
   private Set<String> getServiceOverridesVariables(
-      VariableCreationContext ctx, ParameterField<String> environmentRef, NGServiceConfig ngServiceConfig) {
+      VariableCreationContext ctx, ParameterField<String> environmentRef, ServiceEntity serviceEntity) {
     Set<String> variables = new HashSet<>();
     final String accountIdentifier = ctx.get(NGCommonEntityConstants.ACCOUNT_KEY);
     final String orgIdentifier = ctx.get(NGCommonEntityConstants.ORG_KEY);
     final String projectIdentifier = ctx.get(NGCommonEntityConstants.PROJECT_KEY);
 
-    if (ngServiceConfig != null) {
-      Optional<NGServiceOverridesEntity> serviceOverridesEntity =
-          serviceOverrideService.get(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef.getValue(),
-              ngServiceConfig.getNgServiceV2InfoConfig().getIdentifier());
-      if (serviceOverridesEntity.isPresent()) {
-        NGServiceOverrideConfig serviceOverrideConfig =
-            NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig(serviceOverridesEntity.get());
-        List<NGVariable> variableOverrides = serviceOverrideConfig.getServiceOverrideInfoConfig().getVariables();
-        if (EmptyPredicate.isNotEmpty(variableOverrides)) {
-          variables.addAll(variableOverrides.stream()
-                               .map(NGVariable::getName)
-                               .filter(EmptyPredicate::isNotEmpty)
-                               .collect(Collectors.toSet()));
-        }
+    String scopedServiceRef = IdentifierRefHelper.getRefFromIdentifierOrRef(serviceEntity.getAccountId(),
+        serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier());
+    Optional<NGServiceOverridesEntity> serviceOverridesEntity = serviceOverrideService.get(
+        accountIdentifier, orgIdentifier, projectIdentifier, environmentRef.getValue(), scopedServiceRef);
+    if (serviceOverridesEntity.isPresent()) {
+      NGServiceOverrideConfig serviceOverrideConfig =
+          NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig(serviceOverridesEntity.get());
+      List<NGVariable> variableOverrides = serviceOverrideConfig.getServiceOverrideInfoConfig().getVariables();
+      if (EmptyPredicate.isNotEmpty(variableOverrides)) {
+        variables.addAll(variableOverrides.stream()
+                             .map(NGVariable::getName)
+                             .filter(EmptyPredicate::isNotEmpty)
+                             .collect(Collectors.toSet()));
       }
     }
     return variables;

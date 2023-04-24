@@ -44,6 +44,8 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
 
   AbstractServiceLevelObjective getEntity(ProjectParams projectParams, String identifier);
 
+  AbstractServiceLevelObjective getEntity(ServiceLevelObjectivesDetail serviceLevelObjectivesDetail);
+
   boolean delete(ProjectParams projectParams, String identifier);
 
   void setMonitoredServiceSLOsEnableFlag(
@@ -98,6 +100,8 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
 
   Map<AbstractServiceLevelObjective, SLIEvaluationType> getEvaluationType(
       ProjectParams projectParams, List<AbstractServiceLevelObjective> serviceLevelObjectiveList);
+  List<AbstractServiceLevelObjective> getAllReferredSLOs(
+      ProjectParams projectParams, CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec);
 
   String getScopedIdentifier(AbstractServiceLevelObjective abstractServiceLevelObjective);
 

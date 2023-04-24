@@ -285,7 +285,6 @@ Resources:
                   - elasticbeanstalk:Validate*
                   - elasticloadbalancing:Describe*
                   - rds:Describe*
-                  - rds:Download*
                   - rds:List*
                   - autoscaling-plans:Describe*
                   - autoscaling-plans:GetScalingPlanResourceForecastData

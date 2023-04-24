@@ -26,12 +26,13 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.k8s.CIK8ExecuteStepTaskParams;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.expression.ExpressionResolverUtils;
+import io.harness.pms.sdk.core.plugin.ContainerDelegateTaskHelper;
+import io.harness.pms.sdk.core.plugin.ContainerUnitStepUtils;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.product.ci.engine.proto.ExecuteStepRequest;
 import io.harness.product.ci.engine.proto.RunStep;
-import io.harness.product.ci.engine.proto.ShellType;
 import io.harness.product.ci.engine.proto.StepContext;
 import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
@@ -131,36 +132,8 @@ public class ContainerRunStepHelper {
     runStepBuilder.setContext(StepContext.newBuilder().setExecutionTimeoutSecs(timeout).build());
 
     CIShellType shellType = ContainerStepResolverUtils.resolveShellType(runStepInfo.getShell());
-    return getUnitStep(port, callbackId, logKey, identifier, accountId, stepName, runStepBuilder, shellType,
-        delegateCallbackTokenSupplier);
-  }
-
-  private UnitStep getUnitStep(Integer port, String callbackId, String logKey, String identifier, String accountId,
-      String stepName, RunStep.Builder runStepBuilder, CIShellType shellType,
-      Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier) {
-    ShellType protoShellType = ShellType.SH;
-    if (shellType == CIShellType.BASH) {
-      protoShellType = ShellType.BASH;
-    } else if (shellType == CIShellType.PWSH) {
-      protoShellType = ShellType.PWSH;
-    } else if (shellType == CIShellType.POWERSHELL) {
-      protoShellType = ShellType.POWERSHELL;
-    } else if (shellType == CIShellType.PYTHON) {
-      protoShellType = ShellType.PYTHON;
-    }
-
-    runStepBuilder.setShellType(protoShellType);
-
-    return UnitStep.newBuilder()
-        .setAccountId(accountId)
-        .setContainerPort(port)
-        .setId(identifier)
-        .setTaskId(callbackId)
-        .setCallbackToken(delegateCallbackTokenSupplier.get().getToken())
-        .setDisplayName(stepName)
-        .setRun(runStepBuilder.build())
-        .setLogKey(logKey)
-        .build();
+    return ContainerUnitStepUtils.getUnitStep(port, callbackId, logKey, identifier, accountId, stepName, runStepBuilder,
+        shellType, delegateCallbackTokenSupplier);
   }
 
   private Integer getPort(Ambiance ambiance, String stepIdentifier) {

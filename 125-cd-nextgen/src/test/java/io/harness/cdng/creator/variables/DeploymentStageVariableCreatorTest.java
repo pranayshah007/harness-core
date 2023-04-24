@@ -310,6 +310,7 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     ServiceEntity serviceEntity = ServiceEntity.builder()
                                       .name("variableTestSvc")
                                       .identifier("variableTestSvc")
+                                      .accountId(ACCOUNT_ID)
                                       .orgIdentifier(ORG_IDENTIFIER)
                                       .projectIdentifier(PROJ_IDENTIFIER)
                                       .description("sample service")

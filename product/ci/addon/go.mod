@@ -32,6 +32,7 @@ require (
 	github.com/harness/harness-core/product/ci/engine v0.0.0-20220526003445-374c61227e45
 	github.com/hashicorp/go-retryablehttp v0.6.6 // indirect
 	github.com/jirfag/go-printf-func-name v0.0.0-20200119135958-7558a9eaa5af // indirect
+	github.com/joho/godotenv v1.4.0
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mattn/go-ieproxy v0.0.1 // indirect
 	github.com/mattn/go-zglob v0.0.3

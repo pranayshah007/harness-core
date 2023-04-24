@@ -140,6 +140,9 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
         .renderExpression(eq(ambiance), any(), eq(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
     Map<String, Object> variables = new HashMap<>();
     variables.put("config1", ParameterField.builder().value("VALUE1").build());
+    variables.put("configNum", ParameterField.builder().value("3.0").build());
+    variables.put("configFloat", ParameterField.builder().value("3.14").build());
+    variables.put("configNumFail", ParameterField.builder().value("3a.0").build());
     variables.put("config2", ParameterField.builder().expression(true).expressionValue("<+cluster.name>").build());
     variables.put("config3", ParameterField.builder().expression(true).expressionValue("<+env.name>").build());
     variables.put(
@@ -187,6 +190,9 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
     Map<String, String> fileVariables = map.get("FILE_PATH/ENV_GROUP/ENV_NAME/CLUSTER_NAME");
     assertThat(fileVariables).isNotNull();
     assertThat(fileVariables.get("config1")).isEqualTo("VALUE1");
+    assertThat(fileVariables.get("configNum")).isEqualTo("3");
+    assertThat(fileVariables.get("configFloat")).isEqualTo("3.14");
+    assertThat(fileVariables.get("configNumFail")).isEqualTo("3a.0");
     assertThat(fileVariables.get("config2")).isEqualTo("CLUSTER_NAME");
     assertThat(fileVariables.get("config3")).isEqualTo("ENV_NAME");
     assertThat(fileVariables.get("config5")).isEqualTo("ENV_GROUP");

@@ -123,10 +123,12 @@ public class TriggerFilterHelper {
 
   public Update getUpdateOperations(NGTriggerEntity triggerEntity) {
     Update update = new Update();
+    long timeOfUpdate = System.currentTimeMillis();
     update.set(NGTriggerEntityKeys.name, triggerEntity.getName());
     update.set(NGTriggerEntityKeys.identifier, triggerEntity.getIdentifier());
     update.set(NGTriggerEntityKeys.description, triggerEntity.getDescription());
     update.set(NGTriggerEntityKeys.yaml, triggerEntity.getYaml());
+    update.set(NGTriggerEntityKeys.lastModifiedAt, timeOfUpdate);
 
     update.set(NGTriggerEntityKeys.type, triggerEntity.getType());
     update.set(NGTriggerEntityKeys.metadata, triggerEntity.getMetadata());
@@ -143,6 +145,9 @@ public class TriggerFilterHelper {
     if (triggerEntity.getEncryptedWebhookSecretIdentifier() != null) {
       update.set(
           NGTriggerEntityKeys.encryptedWebhookSecretIdentifier, triggerEntity.getEncryptedWebhookSecretIdentifier());
+    }
+    if (triggerEntity.getStagesToExecute() != null) {
+      update.set(NGTriggerEntityKeys.stagesToExecute, triggerEntity.getStagesToExecute());
     }
     if (triggerEntity.getNextIterations() != null) {
       update.set(NGTriggerEntityKeys.nextIterations, triggerEntity.getNextIterations());

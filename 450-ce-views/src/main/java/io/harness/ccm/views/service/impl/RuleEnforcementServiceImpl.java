@@ -78,11 +78,13 @@ public class RuleEnforcementServiceImpl implements RuleEnforcementService {
         && ruleEnforcement.getRuleSetIDs().size() > governanceConfig.getPacksInEnforcement()) {
       throw new InvalidRequestException("Limit of number of Rule Sets in an enforcement is exceeded ");
     }
-    if (ruleEnforcement.getTargetAccounts().size() > governanceConfig.getAccountLimit()) {
+    if (ruleEnforcement.getTargetAccounts() != null
+        && ruleEnforcement.getTargetAccounts().size() > governanceConfig.getAccountLimit()) {
       throw new InvalidRequestException("Limit of number of target accounts allowed per enforcement is exceeded ");
     }
 
-    if (ruleEnforcement.getTargetRegions().size() > governanceConfig.getRegionLimit()) {
+    if (ruleEnforcement.getTargetRegions() != null
+        && ruleEnforcement.getTargetRegions().size() > governanceConfig.getRegionLimit()) {
       throw new InvalidRequestException("Limit of target regions allowed per enforcement is exceeded ");
     }
     if (ruleEnforcement.getRuleIds() != null) {
@@ -173,6 +175,8 @@ public class RuleEnforcementServiceImpl implements RuleEnforcementService {
       executionEnforcementDetails.setDescription(itr.getDescription());
       executionEnforcementDetails.setRegions(itr.getTargetRegions());
       executionEnforcementDetails.setEnforcementName(itr.getName());
+      executionEnforcementDetails.setIsEnabled(itr.getIsEnabled());
+      executionEnforcementDetails.setIsDryRun(itr.getIsDryRun());
       log.info("executionEnforcementDetails: {}", executionEnforcementDetails);
       enforcementIds.put(itr.getUuid(), executionEnforcementDetails);
       executionDetailList.add(enforcementIds);

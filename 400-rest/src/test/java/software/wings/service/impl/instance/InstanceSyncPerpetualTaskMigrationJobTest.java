@@ -10,8 +10,8 @@ package software.wings.service.impl.instance;
 import static io.harness.beans.FeatureName.MOVE_PCF_INSTANCE_SYNC_TO_PERPETUAL_TASK;
 import static io.harness.rule.OwnerRule.ANKIT;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;

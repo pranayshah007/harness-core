@@ -7,6 +7,11 @@
 
 package io.harness.delegate.task.winrm;
 
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.AUTHORIZATION;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.DOWNLOAD_ARTIFACT_BY_PROXY_PS;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.DOWNLOAD_ARTIFACT_USING_CREDENTIALS_BY_PROXY_PS;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.OUT_FILE;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.URI;
 import static io.harness.delegate.utils.ArtifactoryUtils.getArtifactConfigRequest;
 import static io.harness.delegate.utils.ArtifactoryUtils.getArtifactFileName;
 import static io.harness.delegate.utils.ArtifactoryUtils.getArtifactoryUrl;
@@ -74,17 +79,13 @@ public class ArtifactoryArtifactDownloadHandler implements ArtifactDownloadHandl
   private String getPowerShellCommand(String destinationPath, ArtifactoryConfigRequest artifactoryConfigRequest,
       String artifactPath, String artifactFileName) {
     if (artifactoryConfigRequest.isHasCredentials()) {
-      return "$Headers = @{\n"
-          + "    Authorization = \"" + getAuthHeader(artifactoryConfigRequest) + "\"\n"
-          + "}\n [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12"
-          + "\n $ProgressPreference = 'SilentlyContinue'"
-          + "\n Invoke-WebRequest -Uri \"" + getArtifactoryUrl(artifactoryConfigRequest, artifactPath)
-          + "\" -Headers $Headers -OutFile \"" + destinationPath + "\\" + artifactFileName + "\"";
+      return DOWNLOAD_ARTIFACT_USING_CREDENTIALS_BY_PROXY_PS
+          .replace(AUTHORIZATION, getAuthHeader(artifactoryConfigRequest))
+          .replace(URI, getArtifactoryUrl(artifactoryConfigRequest, artifactPath))
+          .replace(OUT_FILE, destinationPath + "\\" + artifactFileName);
     } else {
-      return "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n "
-          + "$ProgressPreference = 'SilentlyContinue'\n"
-          + "Invoke-WebRequest -Uri \"" + getArtifactoryUrl(artifactoryConfigRequest, artifactPath) + "\" -OutFile \""
-          + destinationPath + "\\" + artifactFileName + "\"";
+      return DOWNLOAD_ARTIFACT_BY_PROXY_PS.replace(URI, getArtifactoryUrl(artifactoryConfigRequest, artifactPath))
+          .replace(OUT_FILE, destinationPath + "\\" + artifactFileName);
     }
   }
 }

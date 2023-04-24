@@ -168,13 +168,18 @@ public class PlanCreatorServiceHelper {
     // preservedNodesInRollbackMode list
     checkAndAddNodesToBePreservedInRollbackMode(planForField, initialDependencyDetails.getRollbackModeBehaviour());
 
+    Dependencies dependenciesInPlanForField = planForField.getDependencies();
+    if (dependenciesInPlanForField == null) {
+      return;
+    }
+
     // newDependenciesUuids contains all the uuids which will be registered as dependencies
-    Set<String> newDependenciesUuids = planForField.getDependencies().getDependenciesMap().keySet();
+    Set<String> newDependenciesUuids = dependenciesInPlanForField.getDependenciesMap().keySet();
 
     // this map's keys will be a subset of newDependenciesUuids, because not all dependency uuids will have a Dependency
     // instance attached to them
     Map<String, Dependency> decoratedDependencyMetadataMap =
-        new HashMap<>(planForField.getDependencies().getDependencyMetadataMap());
+        new HashMap<>(dependenciesInPlanForField.getDependencyMetadataMap());
 
     // for every dependency uuid, we will add a Dependency instance which has the rollback mode behaviour from
     // initialDependencyDetails
@@ -194,7 +199,7 @@ public class PlanCreatorServiceHelper {
     }
 
     planForField.setDependencies(
-        planForField.getDependencies().toBuilder().putAllDependencyMetadata(decoratedDependencyMetadataMap).build());
+        dependenciesInPlanForField.toBuilder().putAllDependencyMetadata(decoratedDependencyMetadataMap).build());
   }
 
   void checkAndAddNodesToBePreservedInRollbackMode(
@@ -203,7 +208,9 @@ public class PlanCreatorServiceHelper {
       return;
     }
     List<String> newNodes = new ArrayList<>(planForField.getNodes().keySet());
-    newNodes.add(planForField.getPlanNode().getUuid());
+    if (planForField.getPlanNode() != null) {
+      newNodes.add(planForField.getPlanNode().getUuid());
+    }
     planForField.mergePreservedNodesInRollbackMode(newNodes);
   }
 
