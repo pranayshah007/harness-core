@@ -172,11 +172,11 @@ public class SshjClient extends SshClient {
       } catch (InterruptedException ie) {
         log.error("exception while fetching ssh session", ie);
         Thread.currentThread().interrupt();
-      } catch (JSchException jse) {
+      } catch (IOException | JSchException | LoginException | GSSException e) {
         if (retryCount == 6) {
           return fetchSSHSession(config, getLogCallback());
         }
-        log.error("Jschexception while SSH connection with retry count {}", retryCount, jse);
+        log.error("Jschexception while SSH connection with retry count {}", retryCount, e);
       }
     }
 
