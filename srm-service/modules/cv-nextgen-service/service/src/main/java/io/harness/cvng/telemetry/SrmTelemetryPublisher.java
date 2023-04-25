@@ -70,7 +70,7 @@ public class SrmTelemetryPublisher {
       map.put(GROUP_ID, accountId);
 
       SRMLicenseUsageDTO srmLicenseUsageDTO =
-          srmLicenseUsageService.getLicenseUsage(accountId, ModuleType.CV, new Date().getTime(), null);
+          srmLicenseUsageService.getLicenseUsage(accountId, ModuleType.SRM, new Date().getTime(), null);
       map.put(COUNT_ACTIVE_SERVICES_LICENSES, srmLicenseUsageDTO.getActiveServices());
 
       telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(ALL, true),
