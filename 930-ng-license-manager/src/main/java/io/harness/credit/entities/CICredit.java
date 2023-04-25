@@ -29,22 +29,4 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Persistent
 @TypeAlias("io.harness.credit.entities.CICredit")
-public class CICredit extends Credit implements PersistentRegularIterable {
-  @Override
-  public Long obtainNextIteration(String fieldName) {
-    if (CreditsKeys.creditExpiryCheckIteration.equals(fieldName)) {
-      return creditExpiryCheckIteration;
-    }
-    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
-  }
-
-  @Override
-  public String getUuid() {
-    return this.id;
-  }
-
-  @Override
-  public void updateNextIteration(String fieldName, long nextIteration) {
-    this.creditExpiryCheckIteration = nextIteration;
-  }
-}
+public class CICredit extends Credit implements PersistentRegularIterable {}
