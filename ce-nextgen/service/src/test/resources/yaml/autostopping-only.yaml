@@ -68,6 +68,7 @@ rules:
       - events
     verbs:
       - create
+      - patch
 
 ---
 apiVersion: v1
