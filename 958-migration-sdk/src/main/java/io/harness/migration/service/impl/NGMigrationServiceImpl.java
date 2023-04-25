@@ -149,8 +149,8 @@ public class NGMigrationServiceImpl implements NGMigrationService {
     if (currentVersion < maxVersion) {
       executorService.submit(() -> {
         MigrationType migrationType = migrationDetail.getMigrationTypeName();
-        try (AcquiredLock ignore = persistentLocker.waitToAcquireLock(NGSchema.class,
-                 "Background-" + NG_SCHEMA_ID + microservice + migrationType, ofMinutes(115), ofMinutes(120 + 1))) {
+        try (AcquiredLock ignore =
+                 persistentLocker.tryToAcquireInfiniteLockWithPeriodicRefresh("BGMigrationLock", ofMinutes(120))) {
           HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofHours(2), () -> {
             doMigration(true, currentVersion, maxVersion, migrations, migrationType, schemaClass, serviceName);
             return true;
