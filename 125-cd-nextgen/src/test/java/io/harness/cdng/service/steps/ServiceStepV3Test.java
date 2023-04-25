@@ -15,6 +15,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,6 +40,7 @@ import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
+import io.harness.cdng.service.steps.helpers.ServiceEntityYamlSchemaHelper;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.UUIDGenerator;
@@ -120,10 +122,11 @@ public class ServiceStepV3Test extends CategoryTest {
   @Mock private EngineExpressionService engineExpressionService;
   @Mock private NgExpressionHelper ngExpressionHelper;
   @Mock private ServiceCustomSweepingOutputHelper serviceCustomSweepingOutputHelper;
+  @Mock private ServiceEntityYamlSchemaHelper serviceEntityYamlSchemaHelper;
 
-  private static final String ACCOUNT_ID = "accountId";
-  private static final String PROJECT_ID = "projectId";
-  private static final String ORG_ID = "orgId";
+  private static final String ACCOUNT_ID = "ACCOUNT_ID";
+  private static final String PROJECT_ID = "PROJECT_ID";
+  private static final String ORG_ID = "ORG_ID";
 
   private AutoCloseable mocks;
   @InjectMocks private ServiceStepV3 step = new ServiceStepV3();
@@ -580,6 +583,42 @@ public class ServiceStepV3Test extends CategoryTest {
                                 .build(),
                             null))
         .withMessageContaining("The value provided xyz-1 does not match the required regex pattern");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ABHISHEK)
+  @Category(UnitTests.class)
+  public void testRemoveRuntimeInputsFromMergedYaml() {
+    final ServiceEntity serviceEntity = testServiceEntityWithInputs();
+    final Environment environment = testEnvEntity();
+    mockService(serviceEntity);
+    mockEnv(environment);
+
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
+
+    step.obtainChildren(buildAmbiance(),
+        ServiceStepV3Parameters.builder()
+            .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
+            .envRef(ParameterField.createValueField(environment.getIdentifier()))
+            .childrenNodeIds(new ArrayList<>())
+            .build(),
+        null);
+
+    String message = "exception from validation";
+    doThrow(new InvalidRequestException(message))
+        .when(serviceEntityYamlSchemaHelper)
+        .validateSchema(eq(ACCOUNT_ID), any());
+
+    Assertions.assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(()
+                        -> step.obtainChildren(buildAmbiance(),
+                            ServiceStepV3Parameters.builder()
+                                .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
+                                .envRef(ParameterField.createValueField(environment.getIdentifier()))
+                                .childrenNodeIds(new ArrayList<>())
+                                .build(),
+                            null))
+        .withMessage(message);
   }
 
   @Test
