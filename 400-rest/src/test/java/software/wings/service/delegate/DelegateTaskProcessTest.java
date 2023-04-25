@@ -321,7 +321,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegate(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     AwsIamRequest request = AwsIamListInstanceRolesRequest.builder().awsConfig(AwsConfig.builder().build()).build();
     DelegateTask delegateTask =
         DelegateTask.builder()
@@ -363,7 +363,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegate(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     AwsIamRequest request = AwsIamListInstanceRolesRequest.builder().awsConfig(AwsConfig.builder().build()).build();
     DelegateTask delegateTask =
         DelegateTask.builder()
@@ -405,7 +405,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegate(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     ShellScriptApprovalTaskParameters shellScriptApprovalTaskParameters =
         ShellScriptApprovalTaskParameters.builder()
             .accountId(accountId)
@@ -446,7 +446,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegate(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
 
     DataCollectionInfoV2 dataCollectionInfoV2 = SplunkDataCollectionInfoV2.builder()
                                                     .accountId(accountId)
@@ -492,7 +492,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     SettingAttribute sshSettingAttribute = new SettingAttribute();
     sshSettingAttribute.setValue(hostConnectionAttributes);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     TerraformProvisionParameters parameters = TerraformProvisionParameters.builder()
                                                   .sourceRepo(GitConfig.builder()
                                                                   .repoUrl("https://github.com/testtp")
@@ -550,7 +550,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegate(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     thrown.expect(NoEligibleDelegatesInAccountException.class);
     DelegateTask delegateTask =
         DelegateTask.builder()
@@ -585,7 +585,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createNGProjectLevelDelegateWithOwner(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     BaseNGAccess ngAccess =
         BaseNGAccess.builder().projectIdentifier(PROJ_ID).orgIdentifier(ORG_ID).accountIdentifier(accountId).build();
     Map<String, String> ngTaskSetupAbstractionsWithOwner = getNGTaskSetupAbstractionsWithOwner(
@@ -640,7 +640,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createNGOrgLevelDelegateWithOwner(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     BaseNGAccess ngAccess =
         BaseNGAccess.builder().projectIdentifier(PROJ_ID).orgIdentifier(ORG_ID).accountIdentifier(accountId).build();
     DockerArtifactDelegateRequest dockerArtifactDelegateRequest =
@@ -700,7 +700,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegate(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     HelmRepoConfigValidationTaskParams taskParams =
         HelmRepoConfigValidationTaskParams.builder().delegateSelectors(Collections.singleton("sel1")).build();
 
@@ -730,7 +730,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createNGOrgLevelDelegateWithOwner(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     BaseNGAccess ngAccess =
         BaseNGAccess.builder().projectIdentifier(PROJ_ID).orgIdentifier(ORG_ID).accountIdentifier(accountId).build();
 
@@ -771,7 +771,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createNGOrgLevelDelegateWithOwner(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     BaseNGAccess ngAccess =
         BaseNGAccess.builder().projectIdentifier(PROJ_ID).orgIdentifier(ORG_ID).accountIdentifier(accountId).build();
 
@@ -811,7 +811,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createNGProjectLevelDelegateWithOwner(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     BaseNGAccess ngAccess =
         BaseNGAccess.builder().projectIdentifier(PROJ_ID).orgIdentifier(ORG_ID).accountIdentifier(accountId).build();
     DockerArtifactDelegateRequest dockerArtifactDelegateRequest =
@@ -859,7 +859,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegate(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     AwsConfig awsConfig = new AwsConfig("ACCESS_KEY".toCharArray(), null, "", "", false, "aws-delegate", null, false,
         false, null, null, null, false, null);
     AwsEc2ListInstancesRequest request = AwsEc2ListInstancesRequest.builder()
@@ -904,7 +904,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegateWithScope(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     PcfConfig pcfConfig =
         PcfConfig.builder().accountId(accountId).endpointUrl(URL).username(USER_NAME_DECRYPTED).build();
     DelegateTask delegateTask =
@@ -949,7 +949,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegateWithScope(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     GitConfig gitConfig =
         GitConfig.builder().repoUrl(HELM_SOURCE_REPO_URL).branch("master").accountId(accountId).build();
 
@@ -988,7 +988,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegateWithScopeAndEnvironmentType(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     AwsLambdaExecuteFunctionRequest request = AwsLambdaExecuteFunctionRequest.builder()
                                                   .awsConfig(AwsConfig.builder().build())
                                                   .encryptionDetails(emptyList())
@@ -1039,7 +1039,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegateWithExcludeScope(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     GitConfig gitConfig =
         GitConfig.builder().repoUrl(HELM_SOURCE_REPO_URL).branch("master").accountId(accountId).build();
 
@@ -1076,7 +1076,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegateWithScope(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     thrown.expect(NoEligibleDelegatesInAccountException.class);
     GitConfig gitConfig =
         GitConfig.builder().repoUrl(HELM_SOURCE_REPO_URL).branch("master").accountId(accountId).build();
@@ -1113,7 +1113,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegateWithScope(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     thrown.expect(NoEligibleDelegatesInAccountException.class);
     PcfConfig pcfConfig =
         PcfConfig.builder().accountId(accountId).endpointUrl(URL).username(USER_NAME_DECRYPTED).build();
@@ -1154,7 +1154,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegateWithScope(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     StackDriverDataCollectionInfo dataCollectionInfo =
         StackDriverDataCollectionInfo.builder()
             .collectionTime(10)
@@ -1197,7 +1197,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegate(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     DelegateTask delegateTask =
         DelegateTask.builder()
             .accountId(accountId)
@@ -1234,7 +1234,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegateWithDelegateGroup(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     DelegateTask delegateTask =
         DelegateTask.builder()
             .accountId(accountId)
@@ -1272,7 +1272,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegateWithDelegateProfile(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     thrown.expect(NoEligibleDelegatesInAccountException.class);
     GitConfig gitConfig =
         GitConfig.builder().repoUrl(HELM_SOURCE_REPO_URL).branch("master").accountId(accountId).build();
@@ -1306,7 +1306,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegateWithDelegateProfile(accountId);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     thrown.expect(NoEligibleDelegatesInAccountException.class);
     GitConfig gitConfig =
         GitConfig.builder().repoUrl(HELM_SOURCE_REPO_URL).branch("master").accountId(accountId).build();
