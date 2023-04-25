@@ -75,8 +75,6 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
     PluginDetails.Builder pluginDetailsBuilder =
         PluginDetails.newBuilder()
             .putAllEnvVariables(containerDefinitionInfo.getEnvVars())
-            .setRunAsUser(
-                containerDefinitionInfo.getRunAsUser() == null ? 1000 : containerDefinitionInfo.getRunAsUser())
             .setImageDetails(
                 ImageDetails.newBuilder()
                     .setImageInformation(ImageDetailsUtils.getImageDetails(
@@ -92,6 +90,10 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
             .setTotalPortUsedDetails(PortDetails.newBuilder().addAllUsedPorts(ports).build())
             .setResource(getPluginContainerResources(containerDefinitionInfo))
             .addAllSecretVariable(secretVariables);
+
+    if (containerDefinitionInfo.getRunAsUser() != null) {
+      pluginDetailsBuilder.setRunAsUser(containerDefinitionInfo.getRunAsUser());
+    }
 
     if (ciAbstractStepNode.getStepSpecType() instanceof BackgroundStepInfo
         || ciAbstractStepNode.getStepSpecType() instanceof BackgroundStepInfoV1) {
