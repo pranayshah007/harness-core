@@ -141,22 +141,23 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
   }
 
   public TaskData getStepTask(
-      Ambiance ambiance, T containerStepInfo, String accountId, String logKey, long timeout, String parkedTaskId) {
+          Ambiance ambiance, T containerStepInfo, String accountId, String logKey, long timeout, String parkedTaskId) {
     UnitStep unitStep = getSerialisedStep(ambiance, containerStepInfo, accountId, logKey, timeout, parkedTaskId);
     LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome = (LiteEnginePodDetailsOutcome) outcomeService.resolve(
-        ambiance, RefObjectUtils.getOutcomeRefObject(LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME));
+            ambiance, RefObjectUtils.getOutcomeRefObject(LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME));
     String ip = liteEnginePodDetailsOutcome.getIpAddress();
+    String runtimeId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
 
     ExecuteStepRequest executeStepRequest = ExecuteStepRequest.newBuilder()
-                                                .setExecutionId(ambiance.getPlanExecutionId())
-                                                .setStep(unitStep)
-                                                .setTmpFilePath(TMP_PATH)
-                                                .build();
+            .setExecutionId(runtimeId)
+            .setStep(unitStep)
+            .setTmpFilePath(TMP_PATH)
+            .build();
 
     boolean isLocal = false;
     String delegateSvcEndpoint = DELEGATE_SVC_ENDPOINT;
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(ContainerStepConstants.CONTAINER_EXECUTION_CONFIG));
+            ambiance, RefObjectUtils.getSweepingOutputRefObject(ContainerStepConstants.CONTAINER_EXECUTION_CONFIG));
     if (optionalSweepingOutput.isFound()) {
       ContainerExecutionConfig output = (ContainerExecutionConfig) optionalSweepingOutput.getOutput();
       isLocal = output.isLocal();
@@ -164,12 +165,12 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
     }
 
     CIK8ExecuteStepTaskParams params = CIK8ExecuteStepTaskParams.builder()
-                                           .ip(ip)
-                                           .port(LITE_ENGINE_PORT)
-                                           .serializedStep(executeStepRequest.toByteArray())
-                                           .isLocal(isLocal)
-                                           .delegateSvcEndpoint(delegateSvcEndpoint)
-                                           .build();
+            .ip(ip)
+            .port(LITE_ENGINE_PORT)
+            .serializedStep(executeStepRequest.toByteArray())
+            .isLocal(isLocal)
+            .delegateSvcEndpoint(delegateSvcEndpoint)
+            .build();
     return containerDelegateTaskHelper.getDelegateTaskDataForExecuteStep(ambiance, timeout, params);
   }
 

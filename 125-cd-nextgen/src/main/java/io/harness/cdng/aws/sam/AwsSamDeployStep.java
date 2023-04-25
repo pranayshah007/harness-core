@@ -50,11 +50,8 @@ import io.harness.waiter.WaitNotifyEngine;
 import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -89,7 +86,7 @@ public class AwsSamDeployStep extends AbstractContainerStepV2<StepElementParamet
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
         stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
         stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, new HashMap<>(),
-        awsSamBuildStepParameters.getImage().getValue(), Collections.EMPTY_LIST);
+            "harnessdev/samdeploy:sainathtest", Collections.EMPTY_LIST);
   }
 
   @Override
