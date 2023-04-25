@@ -109,15 +109,7 @@ public class GraphDataServiceImpl implements GraphDataService {
     }
     List<CompositeSLORecord> sloRecords = getCompositeSLORecords(
         compositeServiceLevelObjective.getUuid(), startTime, endTime, filter, numOfDataPointsInBetween);
-    SLIEvaluationType evaluationType =
-        serviceLevelObjectiveV2Service
-            .getEvaluationType(ProjectParams.builder()
-                                   .accountIdentifier(compositeServiceLevelObjective.getAccountId())
-                                   .orgIdentifier(compositeServiceLevelObjective.getOrgIdentifier())
-                                   .projectIdentifier(compositeServiceLevelObjective.getProjectIdentifier())
-                                   .build(),
-                Collections.singletonList(compositeServiceLevelObjective))
-            .get(compositeServiceLevelObjective);
+    SLIEvaluationType evaluationType = compositeServiceLevelObjective.getSliEvaluationType();
     List<SLODashboardWidget.Point> sloTrend = new ArrayList<>();
     List<SLODashboardWidget.Point> errorBudgetBurndown = new ArrayList<>();
     double errorBudgetRemainingPercentage = 100;

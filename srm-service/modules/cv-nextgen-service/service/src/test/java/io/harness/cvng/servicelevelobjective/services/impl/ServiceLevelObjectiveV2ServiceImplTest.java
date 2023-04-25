@@ -285,9 +285,18 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
     SimpleServiceLevelObjective simpleServiceLevelObjective =
         (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
+    assertThat(serviceLevelObjective.getSliEvaluationType())
+        .isEqualTo(serviceLevelIndicatorService
+                       .getServiceLevelIndicator(projectParams,
+                           ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
+                               .getServiceLevelIndicators()
+                               .get(0)
+                               .getIdentifier())
+                       .getSLIEvaluationType());
     sloDTO = builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
                  .identifier("compositeSloIdentifier1")
                  .spec(CompositeServiceLevelObjectiveSpec.builder()
+                           .evaluationType(SLIEvaluationType.WINDOW)
                            .serviceLevelObjectivesDetails(
                                Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
                                                  .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
@@ -321,6 +330,8 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     sloTarget = sloTargetTypeSLOTargetTransformerMap.get(sloDTO.getSloTarget().getType())
                     .getSLOTarget(sloDTO.getSloTarget().getSpec());
     assertThat(serviceLevelObjective.getTarget()).isEqualTo(sloTarget);
+    assertThat(serviceLevelObjective.getSliEvaluationType())
+        .isEqualTo(((CompositeServiceLevelObjectiveSpec) sloDTO.getSpec()).getEvaluationType());
   }
 
   @Test
@@ -387,11 +398,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
         projectParams, compositeSLODTO.getIdentifier());
 
     // validating that the evaluation type is calculated correct.
-    Map<AbstractServiceLevelObjective, SLIEvaluationType> sliEvaluationTypeMap =
-        serviceLevelObjectiveV2Service.getEvaluationType(
-            ProjectParams.builder().accountIdentifier(projectParams.getAccountIdentifier()).build(),
-            Collections.singletonList(compositeServiceLevelObjective));
-    assertThat(sliEvaluationTypeMap.get(compositeServiceLevelObjective)).isEqualTo(SLIEvaluationType.WINDOW);
+    assertThat(compositeServiceLevelObjective.getSliEvaluationType()).isEqualTo(SLIEvaluationType.WINDOW);
   }
 
   @Test
@@ -2905,10 +2912,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     serviceLevelObjectiveResponse = serviceLevelObjectiveV2Service.create(projectParams2, compositeSLODTO);
     AbstractServiceLevelObjective serviceLevelObjective =
         serviceLevelObjectiveV2Service.getEntity(projectParams2, compositeSLODTO.getIdentifier());
-    assertThat(serviceLevelObjectiveV2Service
-                   .getEvaluationType(projectParams2, Collections.singletonList(serviceLevelObjective))
-                   .get(serviceLevelObjective))
-        .isEqualTo(SLIEvaluationType.REQUEST);
+    assertThat(serviceLevelObjective.getSliEvaluationType()).isEqualTo(SLIEvaluationType.REQUEST);
   }
 
   @Test
