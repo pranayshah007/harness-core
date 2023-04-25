@@ -11,7 +11,6 @@ import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.accesscontrol.PlatformPermissions.MANAGE_USER_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USER_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.USER;
@@ -155,7 +154,11 @@ public class UserResource {
   public ResponseDTO<UserInfo>
   getUserInfo(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
-    return ResponseDTO.newResponse(userInfoService.getCurrentUser());
+    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW)) {
+      return ResponseDTO.newResponse(userInfoService.getCurrentUserWithPreferenceData(accountIdentifier));
+
+      return ResponseDTO.newResponse(userInfoService.getCurrentUser());
+    }
   }
 
   @GET

@@ -60,6 +60,18 @@ public class UserInfoServiceImpl implements UserInfoService {
   }
 
   @Override
+  public UserInfo getCurrentUserWithPreferenceData(String accountIdentifier) {
+    Optional<String> userEmail = getUserEmail();
+    if (userEmail.isPresent()) {
+      Optional<UserInfo> userInfo =
+          CGRestUtils.getResponse(userClient.getUserWithPreferenceDataByEmailId(userEmail.get(), accountIdentifier));
+      return userInfo.get();
+    } else {
+      throw new IllegalStateException("user login required");
+    }
+  }
+
+  @Override
   public UserInfo update(UserInfo userInfo, String accountIdentifier) {
     if (PrincipalType.USER.equals(SourcePrincipalContextBuilder.getSourcePrincipal().getType())) {
       validateUserUpdateRequestOfUserPrincipalType(userInfo);

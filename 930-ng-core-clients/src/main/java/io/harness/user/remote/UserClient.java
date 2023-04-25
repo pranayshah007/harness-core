@@ -117,6 +117,9 @@ public interface UserClient {
   @GET(USERS_API + "/email/{emailId}")
   Call<RestResponse<Optional<UserInfo>>> getUserByEmailId(@Path("emailId") String emailId);
 
+  @GET(USERS_API + "/email/{emailId}")
+  Call<RestResponse<Optional<UserInfo>>> getUserWithPreferenceDataByEmailId(
+      @Path("emailId") String emailId, @Query("accountId") String accountId);
   @POST(USER_BATCH_LIST_API)
   Call<RestResponse<List<UserInfo>>> listUsers(@Query("accountId") String accountId, @Body UserFilterNG userFilterNG);
 

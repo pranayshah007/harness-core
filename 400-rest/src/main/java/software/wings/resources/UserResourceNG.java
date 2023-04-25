@@ -28,13 +28,16 @@ import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.mappers.AccountMapper;
+import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.common.beans.UserSource;
+import io.harness.ng.core.dto.GatewayAccountRequestDTO;
 import io.harness.ng.core.dto.UserInviteDTO;
 import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.PasswordChangeDTO;
 import io.harness.ng.core.user.PasswordChangeResponse;
 import io.harness.ng.core.user.TwoFactorAdminOverrideSettings;
 import io.harness.ng.core.user.UserInfo;
+import io.harness.ng.core.user.UserPreferenceData;
 import io.harness.ng.core.user.UserRequestDTO;
 import io.harness.ng.core.user.UtmInfo;
 import io.harness.rest.RestResponse;
@@ -311,6 +314,13 @@ public class UserResourceNG {
   }
 
   @GET
+  @Path("email/{emailId}")
+  public RestResponse<Optional<UserInfo>> getUserWithPreferenceDataByEmailId(
+      @PathParam("emailId") String emailId, @QueryParam("accountId") @NotEmpty String accountId) {
+    User user = userService.getUserByEmail(emailId, false);
+    return new RestResponse<>(Optional.ofNullable(convertUserToNgUserWithPreferenceData(user, accountId)));
+  }
+  @GET
   @Path("user-password-present")
   public RestResponse<Boolean> getUserByEmailId(
       @QueryParam("accountId") String accountId, @QueryParam("emailId") String emailId) {
@@ -522,6 +532,21 @@ public class UserResourceNG {
         .collect(Collectors.toList());
   }
 
+  private UserInfo convertUserToNgUserWithPreferenceData(User user, String accountId) {
+    UserInfo userInfo = convertUserToNgUser(user);
+    if (userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
+      UserPreferenceData userPreferenceData = user.getUserAccountLevelDataMap().get(accountId).getUserPreferenceData();
+      if (null != userPreferenceData) {
+        for (GatewayAccountRequestDTO accountDTO : userInfo.getAccounts()) {
+          if (accountDTO.getUuid() == accountId) {
+            accountDTO.setDefaultExperience(
+                userPreferenceData.getDefaultExperience() == NG ? DefaultExperience.NG : DefaultExperience.CG);
+          }
+        }
+      }
+    }
+    return userInfo;
+  }
   private UserInfo convertUserToNgUser(User user) {
     if (user == null) {
       return null;
