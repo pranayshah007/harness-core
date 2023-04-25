@@ -44,6 +44,7 @@ import java.net.ConnectException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
@@ -62,6 +63,8 @@ public class ProvisionServiceImpl implements ProvisionService {
   private static final String ALPHANUMERIC = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
   private static SecureRandom rnd = new SecureRandom();
   private static final int SECRET_LENGTH = 32;
+  private static final String ERROR_MESSAGE =
+      "Invalid request: Secret with identifier IDP_BACKEND_SECRET already exists in this scope";
   @Inject @Named(PROVISION_MODULE_CONFIG) ProvisionModuleConfig provisionModuleConfig;
   private final Retry retry = buildRetryAndRegisterListeners();
   private final MediaType APPLICATION_JSON = MediaType.parse("application/json");
@@ -89,8 +92,8 @@ public class ProvisionServiceImpl implements ProvisionService {
       String logMessage = String.format("Permissions already created for given account Id - %s", accountIdentifier);
       log.info(logMessage);
     } catch (Exception e) {
-      log.error(e.getMessage());
-      throw new InvalidRequestException(e.getMessage());
+      log.error(e.getMessage(), e);
+      throw new InvalidRequestException(e.getMessage(), e);
     }
   }
 
@@ -116,8 +119,15 @@ public class ProvisionServiceImpl implements ProvisionService {
     backstageEnvSecretVariable.setEnvName(Constants.BACKEND_SECRET);
     backstageEnvSecretVariable.setHarnessSecretIdentifier(secretDto.getSecret().getIdentifier());
     backstageEnvSecretVariable.setType(BackstageEnvVariable.TypeEnum.SECRET);
-    backstageEnvVariableService.create(backstageEnvSecretVariable, accountIdentifier);
-    log.info("Created BACKEND_SECRET for account Id - {}", accountIdentifier);
+    try {
+      backstageEnvVariableService.create(backstageEnvSecretVariable, accountIdentifier);
+      log.info("Created BACKEND_SECRET for account Id - {}", accountIdentifier);
+    } catch (DuplicateKeyException e) {
+      backstageEnvVariableService.update(backstageEnvSecretVariable, accountIdentifier);
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      throw new InvalidRequestException(e.getMessage(), e);
+    }
   }
 
   private SecretResponseWrapper createSecret(String accountIdentifier, SecretRequestWrapper secretRequestWrapper) {
@@ -127,9 +137,18 @@ public class ProvisionServiceImpl implements ProvisionService {
     Principal currentPrincipal = SourcePrincipalContextBuilder.getSourcePrincipal();
     SourcePrincipalContextBuilder.setSourcePrincipal(
         new ServicePrincipal(AuthorizationServiceHeader.IDP_SERVICE.getServiceId()));
-    SecretResponseWrapper dto = ngSecretService.create(accountIdentifier, null, null, true, secretRequestWrapper);
-    SourcePrincipalContextBuilder.setSourcePrincipal(currentPrincipal);
-    return dto;
+    try {
+      return ngSecretService.create(accountIdentifier, null, null, true, secretRequestWrapper);
+    } catch (Exception e) {
+      if (Objects.equals(e.getMessage(), ERROR_MESSAGE)) {
+        return ngSecretService.updateSecret(
+            Constants.IDP_BACKEND_SECRET, accountIdentifier, null, null, secretRequestWrapper);
+      }
+      log.error("Could not create IDP_BACKEND_SECRET for account Id - {}", accountIdentifier);
+      throw new InvalidRequestException(e.getMessage());
+    } finally {
+      SourcePrincipalContextBuilder.setSourcePrincipal(currentPrincipal);
+    }
   }
 
   public static String generateEncodedSecret() {

@@ -11,11 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.rule.OwnerRule.ROHIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyDouble;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -111,17 +110,17 @@ public class EfficiencyStatsDataFetcherTest extends AbstractDataFetcherTestBase 
     doReturn(Double.valueOf(4.55))
         .when(billingDataHelper)
         .getCostTrendForEntity(resultSet, entityIdToPrevBillingAmountData.get(entityIdAppender.toString()), filters);
-    doCallRealMethod().when(billingDataHelper).roundingDoubleFieldValue(any(), anyObject());
-    doCallRealMethod().when(billingDataHelper).roundingDoubleFieldValue(any(), anyObject(), anyBoolean());
+    doCallRealMethod().when(billingDataHelper).roundingDoubleFieldValue(any(), any());
+    doCallRealMethod().when(billingDataHelper).roundingDoubleFieldValue(any(), any(), anyBoolean());
     doCallRealMethod().when(billingDataHelper).getRoundedDoubleValue(anyDouble());
     doCallRealMethod().when(billingDataHelper).getRoundedDoubleValue(any());
     doCallRealMethod().when(billingDataHelper).getStartTimeFilter(filters);
     doCallRealMethod().when(billingDataHelper).getEndTimeFilter(filters);
     doCallRealMethod().when(billingDataHelper).isYearRequired(any(), any());
     doCallRealMethod().when(billingDataHelper).getTotalCostFormattedDate(any(), anyBoolean());
-    doCallRealMethod().when(billingDataHelper).calculateEfficiencyScore(anyObject());
+    doCallRealMethod().when(billingDataHelper).calculateEfficiencyScore(any());
     doCallRealMethod().when(billingDataHelper).calculateTrendPercentage(anyDouble(), anyDouble());
-    doCallRealMethod().when(billingDataHelper).calculateTrendPercentage((BigDecimal) anyObject(), anyObject());
+    doCallRealMethod().when(billingDataHelper).calculateTrendPercentage((BigDecimal) any(), any());
     doNothing().when(accountChecker).checkIsCeEnabled(anyString());
   }
 

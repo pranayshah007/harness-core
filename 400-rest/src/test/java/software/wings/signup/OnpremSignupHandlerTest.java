@@ -17,8 +17,8 @@ import static io.harness.rule.OwnerRule.SHASHANK;
 
 import static software.wings.beans.UserInvite.UserInviteBuilder.anUserInvite;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -116,7 +116,7 @@ public class OnpremSignupHandlerTest extends WingsBaseTest {
 
     onpremSignupHandler.handle(userInvite);
     Mockito.verify(userService, times(1)).saveUserInvite(userInvite);
-    Mockito.verify(userService, times(1)).completeTrialSignupAndSignIn(userInvite);
+    Mockito.verify(userService, times(1)).completeTrialSignupAndSignIn(userInvite, true);
     Mockito.verify(userService, times(0)).createNewUserAndSignIn(Mockito.any(), Mockito.anyString(), Mockito.any());
   }
 
@@ -132,7 +132,7 @@ public class OnpremSignupHandlerTest extends WingsBaseTest {
 
     onpremSignupHandler.handle(userInvite);
     Mockito.verify(userService, times(0)).saveUserInvite(userInvite);
-    Mockito.verify(userService, times(0)).completeTrialSignupAndSignIn(userInvite);
+    Mockito.verify(userService, times(0)).completeTrialSignupAndSignIn(userInvite, true);
     Mockito.verify(userService, times(1))
         .createNewUserAndSignIn(Mockito.any(), Mockito.eq(account.getUuid()), Mockito.any());
   }

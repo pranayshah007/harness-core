@@ -36,6 +36,7 @@ import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlWithTemplat
 import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
 import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineResourceConstants;
+import io.harness.pms.pipeline.ResolveInputYamlType;
 import io.harness.pms.pipeline.mappers.ExecutionGraphMapper;
 import io.harness.pms.pipeline.mappers.PipelineExecutionSummaryDtoMapper;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -410,10 +411,12 @@ public class ExecutionDetailsResource {
       @NotNull @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam("resolveExpressions") @DefaultValue("false") boolean resolveExpressions,
+      @QueryParam("resolveExpressionsType") @DefaultValue("UNKNOWN") ResolveInputYamlType resolveExpressionsType,
       @Parameter(description = "Plan Execution Id for which we want to get the Input Set YAML",
           required = true) @PathParam(NGCommonEntityConstants.PLAN_KEY) String planExecutionId) {
     return pmsExecutionService
-        .getInputSetYamlWithTemplate(accountId, orgId, projectId, planExecutionId, false, resolveExpressions)
+        .getInputSetYamlWithTemplate(
+            accountId, orgId, projectId, planExecutionId, false, resolveExpressions, resolveExpressionsType)
         .getInputSetYaml();
   }
 
@@ -436,10 +439,11 @@ public class ExecutionDetailsResource {
       @NotNull @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam("resolveExpressions") @DefaultValue("false") boolean resolveExpressions,
+      @QueryParam("resolveExpressionsType") @DefaultValue("UNKNOWN") ResolveInputYamlType resolveExpressionsType,
       @Parameter(description = "Plan Execution Id for which we want to get the Input Set YAML",
           required = true) @PathParam(NGCommonEntityConstants.PLAN_KEY) String planExecutionId) {
     return ResponseDTO.newResponse(pmsExecutionService.getInputSetYamlWithTemplate(
-        accountId, orgId, projectId, planExecutionId, false, resolveExpressions));
+        accountId, orgId, projectId, planExecutionId, false, resolveExpressions, resolveExpressionsType));
   }
 
   @GET

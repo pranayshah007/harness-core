@@ -19,6 +19,7 @@ import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -201,12 +202,14 @@ public class DashboardServiceHelperTest {
         InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironment.builder()
             .envId(ENV_2)
             .instanceGroupedByEnvironmentTypeList(instanceGroupedByEnvironmentTypeList2)
+            .envGroups(new ArrayList<>())
             .envName(ENV_2)
             .lastDeployedAt(5l)
             .build());
     instanceGroupedByEnvironmentList.add(
         InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironment.builder()
             .envId(ENV_1)
+            .envGroups(new ArrayList<>())
             .instanceGroupedByEnvironmentTypeList(instanceGroupedByEnvironmentTypeList1)
             .envName(ENV_1)
             .lastDeployedAt(4l)
@@ -216,6 +219,7 @@ public class DashboardServiceHelperTest {
     instanceGroupedByEnvironmentListGitOps.add(
         InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironment.builder()
             .envId(ENV_2)
+            .envGroups(new ArrayList<>())
             .instanceGroupedByEnvironmentTypeList(instanceGroupedByEnvironmentTypeListGitOps2)
             .envName(ENV_2)
             .lastDeployedAt(5l)
@@ -223,6 +227,7 @@ public class DashboardServiceHelperTest {
     instanceGroupedByEnvironmentListGitOps.add(
         InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironment.builder()
             .envId(ENV_1)
+            .envGroups(new ArrayList<>())
             .instanceGroupedByEnvironmentTypeList(instanceGroupedByEnvironmentTypeListGitOps1)
             .envName(ENV_1)
             .lastDeployedAt(4l)
@@ -397,7 +402,7 @@ public class DashboardServiceHelperTest {
   public void test_getInstanceGroupedByEnvironmentListHelper_NonGitOps() {
     InstanceGroupedByEnvironmentList instanceGroupedByEnvironmentList1 =
         DashboardServiceHelper.getInstanceGroupedByEnvironmentListHelper(
-            getActiveServiceInstanceInfoWithEnvTypeListNonGitOps(), false);
+            null, getActiveServiceInstanceInfoWithEnvTypeListNonGitOps(), false, null);
     InstanceGroupedByEnvironmentList instanceGroupedByEnvironmentList2 =
         InstanceGroupedByEnvironmentList.builder()
             .instanceGroupedByEnvironmentList(instanceGroupedByEnvironmentList)
@@ -411,7 +416,7 @@ public class DashboardServiceHelperTest {
   public void test_getInstanceGroupedByEnvironmentListHelper_GitOps() {
     InstanceGroupedByEnvironmentList instanceGroupedByEnvironmentList1 =
         DashboardServiceHelper.getInstanceGroupedByEnvironmentListHelper(
-            getActiveServiceInstanceInfoWithEnvTypeListGitOps(), true);
+            null, getActiveServiceInstanceInfoWithEnvTypeListGitOps(), true, null);
     InstanceGroupedByEnvironmentList instanceGroupedByEnvironmentList2 =
         InstanceGroupedByEnvironmentList.builder()
             .instanceGroupedByEnvironmentList(instanceGroupedByEnvironmentListGitOps)
@@ -424,7 +429,8 @@ public class DashboardServiceHelperTest {
   @Category(UnitTests.class)
   public void test_groupByEnvironment_NonGitOps() {
     List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironment> instanceGroupedByEnvironmentList1 =
-        DashboardServiceHelper.groupByEnvironment(instanceCountMap, infraIdToNameMap, envIdToNameMap, false);
+        DashboardServiceHelper.groupByEnvironment(
+            instanceCountMap, infraIdToNameMap, envIdToNameMap, Collections.emptyMap(), false);
     assertThat(instanceGroupedByEnvironmentList1).isEqualTo(instanceGroupedByEnvironmentList);
   }
 
@@ -433,7 +439,8 @@ public class DashboardServiceHelperTest {
   @Category(UnitTests.class)
   public void test_groupByEnvironment_GitOps() {
     List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironment> instanceGroupedByEnvironmentList1 =
-        DashboardServiceHelper.groupByEnvironment(instanceCountMap, infraIdToNameMap, envIdToNameMap, true);
+        DashboardServiceHelper.groupByEnvironment(
+            instanceCountMap, infraIdToNameMap, envIdToNameMap, Collections.emptyMap(), true);
     assertThat(instanceGroupedByEnvironmentList1).isEqualTo(instanceGroupedByEnvironmentListGitOps);
   }
 
@@ -491,7 +498,7 @@ public class DashboardServiceHelperTest {
   public void test_getInstanceGroupedByArtifactListHelper_NonGitOps() {
     InstanceGroupedOnArtifactList instanceGroupedOnArtifactList =
         DashboardServiceHelper.getInstanceGroupedByArtifactListHelper(
-            getActiveServiceInstanceInfoWithEnvTypeListNonGitOps(), false);
+            getActiveServiceInstanceInfoWithEnvTypeListNonGitOps(), false, null, null);
     assertThat(instanceGroupedOnArtifactList).isEqualTo(getInstanceGroupedOnArtifactList(false));
   }
 
@@ -501,7 +508,7 @@ public class DashboardServiceHelperTest {
   public void test_getInstanceGroupedByArtifactListHelper_GitOps() {
     InstanceGroupedOnArtifactList instanceGroupedOnArtifactList =
         DashboardServiceHelper.getInstanceGroupedByArtifactListHelper(
-            getActiveServiceInstanceInfoWithEnvTypeListGitOps(), true);
+            getActiveServiceInstanceInfoWithEnvTypeListGitOps(), true, null, null);
     assertThat(instanceGroupedOnArtifactList).isEqualTo(getInstanceGroupedOnArtifactList(true));
   }
 

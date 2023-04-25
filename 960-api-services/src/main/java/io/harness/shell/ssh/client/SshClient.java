@@ -7,10 +7,12 @@
 
 package io.harness.shell.ssh.client;
 
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.LogLevel.INFO;
+import static io.harness.shell.ssh.SshUtils.getCacheKey;
 
+import io.harness.eraro.ErrorCode;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.shell.SshSessionConfig;
@@ -23,8 +25,10 @@ import io.harness.shell.ssh.xfer.ScpRequest;
 import io.harness.shell.ssh.xfer.ScpResponse;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.regex.Pattern;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -32,43 +36,94 @@ import lombok.extern.slf4j.Slf4j;
 
 // external interface; created using SshFactory
 @Slf4j
-public abstract class SshClient {
+public abstract class SshClient implements AutoCloseable {
   @Getter(AccessLevel.PROTECTED) @Setter(AccessLevel.PROTECTED) private SshSessionConfig sshSessionConfig;
-  @Getter(AccessLevel.PROTECTED) @Setter(AccessLevel.PROTECTED) private LogCallback logCallback;
-  protected static final String SSH_NETWORK_PROXY = "SSH_NETWORK_PROXY";
-  protected static final String UUID = generateUuid();
-  /**
-   * The constant log.
-   */
-  protected static final int MAX_BYTES_READ_PER_CHANNEL =
-      1024 * 1024 * 1024; // TODO: Read from config. 1 GB per channel for now.
-
-  protected static final int CHUNK_SIZE = 512 * 1024; // 512KB
-  /**
-   * The constant DEFAULT_SUDO_PROMPT_PATTERN.
-   */
-  protected static final String DEFAULT_SUDO_PROMPT_PATTERN = "^\\[sudo\\] password for .+: .*";
-  /**
-   * The constant LINE_BREAK_PATTERN.
-   */
-  protected static final String LINE_BREAK_PATTERN = "\\R+";
-  protected Pattern lineBreakPattern = Pattern.compile(LINE_BREAK_PATTERN);
-  protected Pattern sudoPasswordPromptPattern = Pattern.compile(DEFAULT_SUDO_PROMPT_PATTERN);
-  /**
-   * The constant log.
-   */
-  protected static final String CHANNEL_IS_NOT_OPENED = "channel is not opened.";
+  @Getter(AccessLevel.PROTECTED) @Setter private LogCallback logCallback;
+  private final List<SshConnection> connectionCache = new ArrayList<>();
 
   protected char[] getCopyOfKey() {
     return Arrays.copyOf(sshSessionConfig.getKey(), sshSessionConfig.getKey().length);
   }
 
-  public abstract ExecResponse exec(ExecRequest commandData) throws SshClientException;
-  public abstract void testSession() throws SshClientException;
+  public ExecResponse exec(ExecRequest request) throws SshClientException {
+    try {
+      SshConnection sshConnection = getCachedConnection(request);
+      return execInternal(request, sshConnection);
+    } catch (SshClientException se) {
+      if (!request.isRetry() && se.getCode() == ErrorCode.SSH_RETRY) {
+        log.info("Retrying exec on host {}...", sshSessionConfig.getHost());
+        request.setRetry(true);
+        return exec(request);
+      } else {
+        throw se;
+      }
+    }
+  }
+
+  public ScpResponse scpUpload(ScpRequest request) throws SshClientException {
+    try {
+      SshConnection sshConnection = getCachedConnection(request);
+      return scpUploadInternal(request, sshConnection);
+    } catch (SshClientException se) {
+      if (!request.isRetry() && se.getCode() == ErrorCode.SSH_RETRY) {
+        log.info("Retrying scp on host {}...", sshSessionConfig.getHost());
+        request.setRetry(true);
+        return scpUpload(request);
+      } else {
+        throw se;
+      }
+    }
+  }
+
+  public SftpResponse sftpDownload(SftpRequest request) throws SshClientException {
+    try {
+      SshConnection sshConnection = getCachedConnection(request);
+      return sftpDownloadInternal(request, sshConnection);
+    } catch (SshClientException se) {
+      if (!request.isRetry() && se.getCode() == ErrorCode.SSH_RETRY) {
+        log.info("Retrying sftp on host {}...", sshSessionConfig.getHost());
+        request.setRetry(true);
+        return sftpDownload(request);
+      } else {
+        throw se;
+      }
+    }
+  }
+
+  private SshConnection getCachedConnection(BaseSshRequest request) {
+    SshConnection connection;
+    if (connectionCache.isEmpty() || request.isRetry()) {
+      log.info("No connection found. Create new connection for executionId : {}, hostName: {}",
+          getSshSessionConfig().getExecutionId(), getSshSessionConfig().getHost());
+      connection = getConnection();
+      connectionCache.add(connection);
+    } else {
+      connection = connectionCache.get(connectionCache.size() - 1);
+      try {
+        // Unnecessary but required test before session reuse for Jsch.
+        // test channel. http://stackoverflow.com/questions/16127200/jsch-how-to-keep-the-session-alive-and-up
+        testSession(connection);
+      } catch (SshClientException ex) {
+        log.info("Test failure. Creating new connection for executionId : {}, hostName: {}",
+            getSshSessionConfig().getExecutionId(), getSshSessionConfig().getHost());
+        connection = getConnection();
+        connectionCache.add(connection);
+      }
+    }
+    return connection;
+  }
+
+  protected abstract ScpResponse scpUploadInternal(ScpRequest commandData, SshConnection connection)
+      throws SshClientException;
+
+  protected abstract SftpResponse sftpDownloadInternal(SftpRequest commandData, SshConnection connection)
+      throws SshClientException;
+  protected abstract ExecResponse execInternal(ExecRequest commandData, SshConnection sshConnection)
+      throws SshClientException;
+
   public abstract void testConnection() throws SshClientException;
-  public abstract ScpResponse scpUpload(ScpRequest commandData) throws SshClientException;
-  public abstract SftpResponse sftpUpload(SftpRequest commandData) throws SshClientException;
-  public abstract Object getConnection() throws SshClientException;
+  public abstract void testSession(SshConnection sshConnection) throws SshClientException;
+  public abstract SshConnection getConnection() throws SshClientException;
   protected abstract Object getExecSession(SshConnection sshConnection) throws SshClientException;
   protected abstract Object getSftpSession(SshConnection sshConnection) throws SshClientException;
   protected String getKeyPath() {
@@ -80,16 +135,23 @@ public abstract class SshClient {
     }
     return keyPath;
   }
-  protected void init(SshSessionConfig config, LogCallback logCallback) {
-    this.sshSessionConfig = config;
-    this.logCallback = logCallback;
-  }
-
   protected void saveExecutionLog(String line) {
     saveExecutionLog(line, RUNNING);
   }
-
   protected void saveExecutionLog(String line, CommandExecutionStatus commandExecutionStatus) {
     logCallback.saveExecutionLog(line, INFO, commandExecutionStatus);
+  }
+
+  @Override
+  public void close() {
+    if (isNotEmpty(connectionCache)) {
+      for (SshConnection connection : connectionCache) {
+        try {
+          connection.close();
+        } catch (Exception ex) {
+          log.error("Failed to close connection object for key {}", getCacheKey(getSshSessionConfig()), ex);
+        }
+      }
+    }
   }
 }

@@ -118,7 +118,7 @@ public class S3ArtifactTaskHandlerTest extends CategoryTest {
                                                               .connectorRef("ref")
                                                               .bucketName("abc")
                                                               .filePathRegex("")
-                                                              .filePath("filepath/fixed")
+                                                              .filePath("filepath/fixed:4edcscsvsdvsd")
                                                               .region("us-east-1")
                                                               .encryptedDataDetails(null)
                                                               .sourceType(ArtifactSourceType.AMAZONS3)
@@ -132,7 +132,9 @@ public class S3ArtifactTaskHandlerTest extends CategoryTest {
                                  .put(ArtifactMetadataKeys.key, "filepath/fixed")
                                  .put(ArtifactMetadataKeys.artifactPath, "filepath/fixed")
                                  .build());
-    Mockito.when(awsApiHelperService.getBuild(any(), Mockito.eq("us-east-1"), eq("abc"), eq("filepath/fixed")))
+    Mockito
+        .when(
+            awsApiHelperService.getBuild(any(), Mockito.eq("us-east-1"), eq("abc"), eq("filepath/fixed:4edcscsvsdvsd")))
         .thenReturn(buildDetails);
     ArtifactTaskExecutionResponse response = s3ArtifactTaskHandler.getLastSuccessfulBuild(s3ArtifactDelegateRequest);
     assertThat(response).isNotNull();

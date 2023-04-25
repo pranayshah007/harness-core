@@ -24,6 +24,7 @@ import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.common.beans.GitlabSCM;
+import io.harness.gitsync.common.dtos.GitlabAuthenticationDTO;
 import io.harness.gitsync.common.dtos.GitlabSCMDTO;
 import io.harness.gitsync.common.dtos.GitlabSCMRequestDTO;
 import io.harness.gitsync.common.dtos.GitlabSCMResponseDTO;
@@ -88,7 +89,10 @@ public class GitlabSCMMapperTest extends GitSyncTestBase {
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testToServiceDTOInternal() {
-    assertEquals(gitlabSCMMapper.toServiceDTO(GitlabSCMRequestDTO.builder().apiAccess(gitlabApiAccessDTO).build()),
+    assertEquals(gitlabSCMMapper.toServiceDTO(
+                     GitlabSCMRequestDTO.builder()
+                         .authentication(GitlabAuthenticationDTO.builder().apiAccessDTO(gitlabApiAccessDTO).build())
+                         .build()),
         gitlabSCMDTO);
   }
 

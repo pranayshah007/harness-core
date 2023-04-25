@@ -16,7 +16,7 @@ import static software.wings.service.impl.instance.InstanceSyncTestConstants.INF
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -71,7 +71,7 @@ public class AwsLambdaInstanceSyncPerpetualTaskClientTest extends WingsBaseTest 
     AwsConfig awsConfig = AwsConfig.builder().accountId(ACCOUNT_ID).tag("tag").build();
     prepareTaskData(awsConfig);
     final AwsLambdaInstanceSyncPerpetualTaskParams taskParams =
-        (AwsLambdaInstanceSyncPerpetualTaskParams) client.getTaskParams(getClientContext());
+        (AwsLambdaInstanceSyncPerpetualTaskParams) client.getTaskParams(getClientContext(), true);
 
     assertThat(taskParams.getAwsConfig()).isNotNull();
     assertThat(taskParams.getEncryptedData()).isNotNull();

@@ -31,6 +31,7 @@ import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.AzureSshWinrmDeploymentInfoDTO;
+import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.helper.InstanceSyncHelper;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.api.NGSecretServiceV2;
@@ -73,6 +74,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskHandlerTest extends Instances
   @Mock AzureHelperService azureHelperService;
   @Mock InstanceSyncHelper instanceSyncHelper;
   @InjectMocks AzureSshWinrmInstanceSyncPerpetualTaskHandler azureSshWinrmInstanceSyncPerpetualTaskHandler;
+  @Mock DelegateServiceGrpcClient delegateServiceGrpcClient;
 
   @Test
   @Owner(developers = ARVIND)
@@ -120,6 +122,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskHandlerTest extends Instances
         AzureCapabilityHelper.fetchRequiredExecutionCapabilities(azureConnectorDTO, null);
     when(kryoSerializer.asBytes(any())).thenReturn(bytes);
     when(kryoSerializer.asDeflatedBytes(any())).thenReturn(bytes);
+    when(delegateServiceGrpcClient.isTaskTypeSupported(any(), any())).thenReturn(false);
     Any perpetualTaskPack = Any.pack(params);
 
     PerpetualTaskExecutionBundle.Builder builder = PerpetualTaskExecutionBundle.newBuilder();

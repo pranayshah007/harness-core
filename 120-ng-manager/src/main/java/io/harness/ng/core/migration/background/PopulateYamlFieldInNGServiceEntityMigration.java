@@ -59,17 +59,24 @@ public class PopulateYamlFieldInNGServiceEntityMigration implements NGMigration 
           try (HIterator<ServiceEntity> iterator = new HIterator<>(serviceQuery.fetch())) {
             for (ServiceEntity svcEntity : iterator) {
               if (isBlank(svcEntity.getYaml())) {
-                NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(svcEntity);
-                String yaml = NGServiceEntityMapper.toYaml(ngServiceConfig);
+                try {
+                  NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(svcEntity);
+                  String yaml = NGServiceEntityMapper.toYaml(ngServiceConfig);
 
-                Criteria criteria = Criteria.where(ServiceEntityKeys.id).is(svcEntity.getId());
-                org.springframework.data.mongodb.core.query.Query query =
-                    new org.springframework.data.mongodb.core.query.Query(criteria);
-                Update update = new Update();
-                update.set(ServiceEntityKeys.yaml, yaml);
+                  Criteria criteria = Criteria.where(ServiceEntityKeys.id).is(svcEntity.getId());
+                  org.springframework.data.mongodb.core.query.Query query =
+                      new org.springframework.data.mongodb.core.query.Query(criteria);
+                  Update update = new Update();
+                  update.set(ServiceEntityKeys.yaml, yaml);
 
-                mongoTemplate.findAndModify(
-                    query, update, new FindAndModifyOptions().returnNew(true), ServiceEntity.class);
+                  mongoTemplate.findAndModify(
+                      query, update, new FindAndModifyOptions().returnNew(true), ServiceEntity.class);
+                } catch (Exception e) {
+                  log.info(String.format(DEBUG_LOG
+                          + "Migration of populating yaml failed for serviceIdentifier: [%s], serviceName: [%s], projectId: [%s], orgId: [%s], accountId: [%s]",
+                      svcEntity.getIdentifier(), svcEntity.getName(), svcEntity.getProjectIdentifier(),
+                      svcEntity.getOrgIdentifier(), svcEntity.getAccountId()));
+                }
               }
             }
           }

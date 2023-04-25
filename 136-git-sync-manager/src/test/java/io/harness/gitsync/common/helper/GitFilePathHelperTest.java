@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
@@ -98,7 +98,7 @@ public class GitFilePathHelperTest extends CategoryTest {
         .when(gitSyncConnectorHelper)
         .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), anyString());
     try {
-      gitFilePathHelper.getFileUrl(scope, connectorRef, null, filePath, dummyCommitId, gitRepositoryDTO);
+      gitFilePathHelper.getFileUrl(scope, connectorRef, null, filePath, null, gitRepositoryDTO);
     } catch (WingsException ex) {
       assertThat(ex).isInstanceOf(InvalidRequestException.class);
     }

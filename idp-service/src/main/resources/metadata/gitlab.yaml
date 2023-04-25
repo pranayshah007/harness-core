@@ -1,0 +1,72 @@
+identifier: gitlab
+name: GitLab
+description: View GitLab pipelines, merge requests, languages and contributors.
+createdBy: ImmobiliareLabs
+category: Source Control Mgmt
+source: https://github.com/immobiliare/backstage-plugin-gitlab
+iconUrl: https://about.gitlab.com/images/press/logo/png/gitlab-icon-rgb.png
+imageUrl: ''
+exports:
+  defaultEntityTypes:
+    - service
+  exportDetails:
+    - type: CARD
+      name: EntityGitlabPeopleCard
+      addByDefault: true
+      layoutSchemaSpecs:
+        component: EntityGitlabPeopleCard
+        specs:
+          gridProps:
+            sm: 12
+            md: 3
+            lg: 3
+    - type: CARD
+      name: EntityGitlabLanguageCard
+      addByDefault: true
+      layoutSchemaSpecs:
+        component: EntityGitlabLanguageCard
+        specs:
+          gridProps:
+            sm: 12
+            md: 3
+            lg: 3
+    - type: CARD
+      name: EntityGitlabMergeRequestStatsCard
+      addByDefault: true
+      layoutSchemaSpecs:
+        component: EntityGitlabMergeRequestStatsCard
+        specs:
+          gridProps:
+            sm: 12
+            md: 3
+            lg: 3
+    - type: CARD
+      name: EntityGitlabReleasesCard
+      addByDefault: true
+      layoutSchemaSpecs:
+        component: EntityGitlabReleasesCard
+        specs:
+          gridProps:
+            sm: 12
+            md: 3
+            lg: 3
+    - type: CARD
+      name: EntityGitlabPipelinesTable
+      addByDefault: true
+      layoutSchemaSpecs:
+        component: EntityGitlabPipelinesTable
+        specs:
+          gridProps:
+            sm: 12
+            md: 3
+            lg: 3
+    - type: CARD
+      name: EntityGitlabMergeRequestsTable
+      addByDefault: true
+      layoutSchemaSpecs:
+        component: EntityGitlabMergeRequestsTable
+        specs:
+          gridProps:
+            sm: 12
+            md: 3
+            lg: 3

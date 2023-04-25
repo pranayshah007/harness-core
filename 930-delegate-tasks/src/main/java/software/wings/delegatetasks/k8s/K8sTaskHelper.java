@@ -175,7 +175,7 @@ public class K8sTaskHelper {
         }
         return k8sTaskHelperBase.renderTemplateForHelm(k8sDelegateTaskParams.getHelmPath(), manifestFilesDirectory,
             manifestOverrideFiles, releaseName, namespace, executionLogCallback, k8sTaskParameters.getHelmVersion(),
-            timeoutInMillis, helmCommandFlag, "");
+            timeoutInMillis, helmCommandFlag);
 
       case HelmChartRepo:
         manifestFilesDirectory = Paths
@@ -189,7 +189,7 @@ public class K8sTaskHelper {
         }
         return k8sTaskHelperBase.renderTemplateForHelm(k8sDelegateTaskParams.getHelmPath(), manifestFilesDirectory,
             manifestOverrideFiles, releaseName, namespace, executionLogCallback, k8sTaskParameters.getHelmVersion(),
-            timeoutInMillis, helmCommandFlag, "");
+            timeoutInMillis, helmCommandFlag);
 
       case KustomizeSourceRepo:
         KustomizeConfig kustomizeConfig = k8sDelegateManifestConfig.getKustomizeConfig();

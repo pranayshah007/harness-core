@@ -181,9 +181,7 @@ public class PerspectiveTimeSeriesResponseHelper {
       }
     });
 
-    return updatedDataPoints.stream()
-        .filter(dataPoint -> dataPoint.getValue().doubleValue() != 0.0D)
-        .collect(Collectors.toList());
+    return updatedDataPoints;
   }
 
   private List<DataPoint> addSharedCostsToDataPoint(

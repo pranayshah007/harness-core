@@ -10,6 +10,8 @@ package io.harness.accesscontrol.scopes.core.persistence;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.DbAliases.ACCESS_CONTROL;
 
+import static java.util.Optional.empty;
+
 import io.harness.accesscontrol.AccessControlEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,6 +21,7 @@ import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 
 import dev.morphia.annotations.Entity;
+import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -77,5 +80,10 @@ public class ScopeDBO implements PersistentRegularIterable, AccessControlEntity 
   @Override
   public String getUuid() {
     return id;
+  }
+
+  @Override
+  public Optional<String> getAccountId() {
+    return empty();
   }
 }

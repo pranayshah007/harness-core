@@ -103,6 +103,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParameters> {
   private static final long DEFAULT_TIMEOUT = TimeUnit.MINUTES.toMillis(3);
   static final String ARTIFACTS_STEP_V_2 = "artifacts_step_v2";
+  private static final String ARTIFACT_STEP_DETAIL_KEY = "ArtifactStepDetailKey";
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private ServiceStepsHelper serviceStepsHelper;
   @Inject private ArtifactStepHelper artifactStepHelper;
@@ -167,9 +168,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (noArtifactConfigured(artifacts)) {
       logCallback.saveExecutionLog(
-          String.format(
-              "No primary or sidecar artifacts configured in the service. <+%s> or <%s> expressions will not work",
-              OutcomeExpressionConstants.ARTIFACTS, OutcomeExpressionConstants.ARTIFACT),
+          "No primary or sidecar artifacts configured in the service. artifact/artifacts expressions will not work",
           LogLevel.WARN);
       return AsyncExecutableResponse.newBuilder().build();
     }
@@ -221,6 +220,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
         new ArtifactsStepV2SweepingOutput(
             primaryArtifactTaskId, artifactConfigMap, artifactConfigMapForNonDelegateTaskTypes),
         "");
+    serviceStepsHelper.publishTaskIdsStepDetailsForServiceStep(ambiance, taskIds, ARTIFACT_STEP_DETAIL_KEY);
     return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
   }
 
@@ -351,6 +351,8 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     }
 
     final ArtifactsOutcome artifactsOutcome = outcomeBuilder.sidecars(sidecarsOutcome).build();
+
+    artifactStepHelper.saveArtifactExecutionDataToStageInfo(ambiance, artifactsOutcome);
 
     sweepingOutputService.consume(
         ambiance, OutcomeExpressionConstants.ARTIFACTS, artifactsOutcome, StepCategory.STAGE.name());

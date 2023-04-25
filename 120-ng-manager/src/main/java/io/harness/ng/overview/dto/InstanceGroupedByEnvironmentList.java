@@ -24,6 +24,7 @@ public class InstanceGroupedByEnvironmentList {
   public static class InstanceGroupedByEnvironment {
     @NotNull String envId;
     String envName;
+    List<String> envGroups;
     @NotNull List<InstanceGroupedByEnvironmentType> instanceGroupedByEnvironmentTypeList;
     long lastDeployedAt;
   }

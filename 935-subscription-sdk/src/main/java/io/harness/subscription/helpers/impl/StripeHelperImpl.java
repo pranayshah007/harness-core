@@ -49,6 +49,7 @@ import com.stripe.model.Price;
 import com.stripe.model.PriceCollection;
 import com.stripe.model.Subscription;
 import com.stripe.model.SubscriptionItem;
+import com.stripe.model.SubscriptionItemCollection;
 import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.CustomerRetrieveParams;
 import com.stripe.param.CustomerUpdateParams;
@@ -60,6 +61,7 @@ import com.stripe.param.SubscriptionUpdateParams;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -71,7 +73,6 @@ public class StripeHelperImpl implements StripeHelper {
   private final TelemetryReporter telemetryReporter;
   private List<String> subscriptionExpandList = Arrays.asList("latest_invoice.payment_intent");
   private static final String ACCOUNT_IDENTIFIER_KEY = "accountIdentifier";
-  private static final String MODULE_TYPE_KEY = "moduleType";
   private static final String CUSTOMER_EMAIL_KEY = "customer_email";
   private static final String SEARCH_MODULE_TYPE_EDITION_BILLED_MAX =
       "metadata['module']:'%s' AND metadata['type']:'%s' AND metadata['edition']:'%s' AND metadata['billed']:'%s' AND metadata['max']:'%s'";
@@ -215,7 +216,7 @@ public class StripeHelperImpl implements StripeHelper {
       SubscriptionItemRequest subscriptionItemRequest) {
     return String.format(searchStringBase, subscriptionRequest.getModuleType().toString(),
         subscriptionItemRequest.getType(), subscriptionRequest.getEdition(), subscriptionRequest.getPaymentFrequency(),
-        subscriptionItemRequest.getQuantity());
+        subscriptionItemRequest.getQuantity().toString());
   }
 
   @Override
@@ -263,7 +264,6 @@ public class StripeHelperImpl implements StripeHelper {
     // Add metadata
     Map<String, String> metadata = new HashMap<>();
     metadata.put(ACCOUNT_IDENTIFIER_KEY, stripeSubscriptionRequest.getAccountIdentifier());
-    metadata.put(MODULE_TYPE_KEY, stripeSubscriptionRequest.getModuleType());
     metadata.put(CUSTOMER_EMAIL_KEY, stripeSubscriptionRequest.getCustomerEmail());
     creationParamsBuilder.setMetadata(metadata);
 
@@ -278,6 +278,19 @@ public class StripeHelperImpl implements StripeHelper {
   }
 
   @Override
+  public SubscriptionDetailDTO addToSubscription(
+      StripeSubscriptionRequest subscriptionRequest, SubscriptionDetailDTO subscription) {
+    subscription.getItems().stream().forEach(subscriptionItem -> {
+      subscriptionRequest.getItems().add(StripeItemRequest.Builder.newInstance()
+                                             .withQuantity(subscriptionItem.getQuantity())
+                                             .withPriceId(subscriptionItem.getPrice().getPriceId())
+                                             .build());
+    });
+
+    return updateSubscription(subscriptionRequest);
+  }
+
+  @Override
   public SubscriptionDetailDTO updateSubscription(StripeSubscriptionRequest stripeSubscriptionRequest) {
     Subscription subscription = stripeHandler.retrieveSubscription(stripeSubscriptionRequest.getSubscriptionId());
 
@@ -288,7 +301,7 @@ public class StripeHelperImpl implements StripeHelper {
     // Go through current subscription and update.
     SubscriptionUpdateParams.Builder updateParamBuilder = SubscriptionUpdateParams.builder();
     updateParamBuilder.setProrationBehavior(SubscriptionUpdateParams.ProrationBehavior.ALWAYS_INVOICE)
-        .setPaymentBehavior(SubscriptionUpdateParams.PaymentBehavior.PENDING_IF_INCOMPLETE)
+        .setPaymentBehavior(SubscriptionUpdateParams.PaymentBehavior.ALLOW_INCOMPLETE)
         .addAllExpand(subscriptionExpandList);
     if (!newItems.isEmpty()) {
       List<SubscriptionItem> data = subscription.getItems().getData();
@@ -553,11 +566,22 @@ public class StripeHelperImpl implements StripeHelper {
     return priceDTO;
   }
 
+  private List<ItemDTO> toItemDTOList(SubscriptionItemCollection subscriptionItemCollection) {
+    List<ItemDTO> itemDTOList = new LinkedList<>();
+    subscriptionItemCollection.getData().forEach(subscriptionItem -> {
+      itemDTOList.add(ItemDTO.builder()
+                          .quantity(subscriptionItem.getQuantity())
+                          .price(toPriceDTO(subscriptionItem.getPrice()))
+                          .build());
+    });
+    return itemDTOList;
+  }
+
   private SubscriptionDetailDTO toSubscriptionDetailDTO(Subscription subscription) {
     SubscriptionDetailDTO dto = SubscriptionDetailDTO.builder()
+                                    .items(toItemDTOList(subscription.getItems()))
                                     .subscriptionId(subscription.getId())
                                     .accountIdentifier(subscription.getMetadata().get(ACCOUNT_IDENTIFIER_KEY))
-                                    .moduletype(ModuleType.valueOf(subscription.getMetadata().get(MODULE_TYPE_KEY)))
                                     .customerId(subscription.getCustomer())
                                     .status(subscription.getStatus())
                                     .latestInvoice(subscription.getLatestInvoice())

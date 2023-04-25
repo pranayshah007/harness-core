@@ -15,8 +15,8 @@ import static software.wings.utils.WingsTestConstants.INFRA_MAPPING_ID;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.beans.DelegateTask;
@@ -73,7 +73,7 @@ public class AzureVMSSInstanceSyncPerpetualTaskClientTest extends WingsBaseTest 
   @Category(UnitTests.class)
   public void testGetTaskParams() {
     AzureVmssInstanceSyncPerpetualTaskParams taskParams =
-        (AzureVmssInstanceSyncPerpetualTaskParams) client.getTaskParams(getPerpetualTaskClientContext());
+        (AzureVmssInstanceSyncPerpetualTaskParams) client.getTaskParams(getPerpetualTaskClientContext(), true);
     assertThat(taskParams).isNotNull();
     assertThat(taskParams.getVmssId()).isEqualTo("vmss-id");
     assertThat(taskParams.getSubscriptionId()).isEqualTo("subs-id");

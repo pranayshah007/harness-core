@@ -21,6 +21,8 @@ public abstract class UserSourceCodeManagerResponseDTO {
   String accountIdentifier;
   String userIdentifier;
   SCMType type;
+  String userName;
+  String userEmail;
 
   public abstract SCMType getType();
 }

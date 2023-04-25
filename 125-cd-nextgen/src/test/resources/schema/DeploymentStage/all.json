@@ -269,6 +269,9 @@
             "connectorRef": {
               "type": "string"
             },
+            "digest": {
+              "type": "string"
+            },
             "registry": {
               "type": "string"
             },
@@ -787,6 +790,9 @@
               "type": "string"
             },
             "connectorRef": {
+              "type": "string"
+            },
+            "digest": {
               "type": "string"
             },
             "repository": {
@@ -3297,8 +3303,7 @@
       ],
       "properties": {
         "identifier": {
-          "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
+          "type": "string"
         },
         "spec": {
           "$ref": "#/definitions/ConfigFileAttributes"
@@ -4468,6 +4473,9 @@
           ],
           "properties": {
             "connectorRef": {
+              "type": "string"
+            },
+            "digest": {
               "type": "string"
             },
             "imagePath": {
@@ -5808,6 +5816,9 @@
             "connectorRef": {
               "type": "string"
             },
+            "digest": {
+              "type": "string"
+            },
             "imagePath": {
               "type": "string"
             },
@@ -6061,6 +6072,9 @@
               "type": "string",
               "minLength": 1
             },
+            "digest": {
+              "type": "string"
+            },
             "org": {
               "type": "string"
             },
@@ -6202,6 +6216,9 @@
           ],
           "properties": {
             "connectorRef": {
+              "type": "string"
+            },
+            "digest": {
               "type": "string"
             },
             "metadata": {
@@ -8868,18 +8885,18 @@
     "KustomizeManifestCommandFlag": {
       "type": "object",
       "required": [
-        "kustomizeCommandFlagType"
+        "commandType"
       ],
       "properties": {
-        "flag": {
-          "type": "string",
-          "minLength": 1
-        },
-        "kustomizeCommandFlagType": {
+        "commandType": {
           "type": "string",
           "enum": [
             "Build"
           ]
+        },
+        "flag": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -8963,8 +8980,7 @@
       ],
       "properties": {
         "identifier": {
-          "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
+          "type": "string"
         },
         "type": {
           "type": "string",
@@ -9870,6 +9886,9 @@
               "type": "string"
             },
             "connectorRef": {
+              "type": "string"
+            },
+            "digest": {
               "type": "string"
             },
             "metadata": {

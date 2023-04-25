@@ -140,6 +140,26 @@ public class EcrArtifactResource {
     return ResponseDTO.newResponse(buildDetails);
   }
 
+  @POST
+  @Path("getLastSuccessfulBuildV2")
+  @ApiOperation(
+      value = "Gets ecr last successful build with yaml expression", nickname = "getLastSuccessfulBuildForEcrWithYaml")
+  public ResponseDTO<EcrBuildDetailsDTO>
+  getLastSuccessfulBuildV2(@QueryParam("imagePath") String imagePath,
+      @QueryParam("connectorRef") String ecrConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull EcrRequestDTO ecrRequestDTO) {
+    EcrBuildDetailsDTO ecrBuildDetailsDTO =
+        artifactResourceUtils.getLastSuccessfulBuildV2ECR(imagePath, ecrConnectorIdentifier, accountId, orgIdentifier,
+            projectIdentifier, fqnPath, serviceRef, pipelineIdentifier, gitEntityBasicInfo, ecrRequestDTO);
+    return ResponseDTO.newResponse(ecrBuildDetailsDTO);
+  }
+
   @GET
   @Path("validateArtifactServer")
   @ApiOperation(value = "Validate ecr artifact server", nickname = "validateArtifactServerForEcr")

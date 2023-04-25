@@ -13,8 +13,8 @@ import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -134,7 +134,7 @@ public class ServiceEntityManagementServiceTest extends CategoryTest {
                                accountIdentifier, orgIdentifier, projectIdentifier, identifier, "", true))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
-            "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [accountIdentifier]");
+            "Force Delete is not enabled for this account. Please go to Account Resources > Default Settings > Enable Force Delete of Harness Resources to enable this.");
     verify(instanceService, never()).deleteAll(any());
   }
 

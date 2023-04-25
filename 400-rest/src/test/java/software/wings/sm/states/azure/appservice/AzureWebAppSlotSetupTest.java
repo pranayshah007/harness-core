@@ -19,9 +19,9 @@ import static software.wings.sm.states.azure.appservices.AzureWebAppSlotSetup.AP
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -62,7 +62,6 @@ import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
-import software.wings.beans.command.CommandUnit;
 import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.beans.container.UserDataSpecification;
 import software.wings.persistence.artifact.Artifact;
@@ -300,9 +299,7 @@ public class AzureWebAppSlotSetupTest extends WingsBaseTest {
       ExecutionContextImpl context, Artifact artifact) {
     ManagerExecutionLogCallback managerExecutionLogCallback = mock(ManagerExecutionLogCallback.class);
     Activity activity = Activity.builder().uuid(ACTIVITY_ID).build();
-    doReturn(activity)
-        .when(azureVMSSStateHelper)
-        .createAndSaveActivity(any(), any(), any(), any(), any(), anyListOf(CommandUnit.class));
+    doReturn(activity).when(azureVMSSStateHelper).createAndSaveActivity(any(), any(), any(), any(), any(), anyList());
     doReturn(managerExecutionLogCallback).when(azureVMSSStateHelper).getExecutionLogCallback(activity);
     AzureAppServiceStateData appServiceStateData = getAzureAppServiceStateData(app, env, service, artifact);
     doReturn(appServiceStateData)
@@ -427,9 +424,7 @@ public class AzureWebAppSlotSetupTest extends WingsBaseTest {
     ExecutionContextImpl context = mock(ExecutionContextImpl.class);
     ManagerExecutionLogCallback managerExecutionLogCallback = mock(ManagerExecutionLogCallback.class);
 
-    doReturn(activity)
-        .when(azureVMSSStateHelper)
-        .createAndSaveActivity(any(), any(), any(), any(), any(), anyListOf(CommandUnit.class));
+    doReturn(activity).when(azureVMSSStateHelper).createAndSaveActivity(any(), any(), any(), any(), any(), anyList());
     doReturn(managerExecutionLogCallback).when(azureVMSSStateHelper).getExecutionLogCallback(activity);
     doAnswer(invocation -> { throw new Exception(); })
         .when(azureVMSSStateHelper)

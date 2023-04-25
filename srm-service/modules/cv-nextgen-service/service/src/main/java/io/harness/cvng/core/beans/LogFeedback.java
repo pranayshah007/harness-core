@@ -7,6 +7,8 @@
 
 package io.harness.cvng.core.beans;
 
+import io.harness.cvng.ticket.beans.TicketResponseDto;
+
 import lombok.Builder;
 import lombok.Value;
 
@@ -26,4 +28,5 @@ public class LogFeedback {
   long updatedAt;
   String createdBy;
   String updatedBy;
+  TicketResponseDto ticket;
 }

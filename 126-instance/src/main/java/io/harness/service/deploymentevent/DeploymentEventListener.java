@@ -32,6 +32,7 @@ import io.harness.models.DeploymentEvent;
 import io.harness.models.constants.InstanceSyncFlow;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
@@ -89,8 +90,8 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
 
       InfrastructureMappingDTO infrastructureMappingDTO =
           createInfrastructureMappingIfNotExists(ambiance, serviceStepOutcome, infrastructureOutcome);
-      DeploymentSummaryDTO deploymentSummaryDTO = createDeploymentSummary(
-          ambiance, serviceStepOutcome, infrastructureOutcome, infrastructureMappingDTO, serverInstanceInfoList);
+      DeploymentSummaryDTO deploymentSummaryDTO = createDeploymentSummary(ambiance, serviceStepOutcome,
+          infrastructureOutcome, infrastructureMappingDTO, serverInstanceInfoList, event.getStatus());
 
       instanceSyncService.processInstanceSyncForNewDeployment(
           new DeploymentEvent(deploymentSummaryDTO, null, infrastructureOutcome));
@@ -152,12 +153,12 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
 
   private DeploymentSummaryDTO createDeploymentSummary(Ambiance ambiance, ServiceStepOutcome serviceOutcome,
       InfrastructureOutcome infrastructureOutcome, InfrastructureMappingDTO infrastructureMappingDTO,
-      List<ServerInstanceInfo> serverInstanceInfoList) {
+      List<ServerInstanceInfo> serverInstanceInfoList, Status status) {
     AbstractInstanceSyncHandler abstractInstanceSyncHandler = instanceSyncHandlerFactoryService.getInstanceSyncHandler(
         serviceOutcome.getType(), infrastructureOutcome.getKind());
     DeploymentInfoDTO deploymentInfoDTO =
         abstractInstanceSyncHandler.getDeploymentInfo(infrastructureOutcome, serverInstanceInfoList);
-
+    Level stageLevel = AmbianceUtils.getStageLevelFromAmbiance(ambiance).get();
     DeploymentSummaryDTO deploymentSummaryDTO =
         DeploymentSummaryDTO.builder()
             .accountIdentifier(getAccountIdentifier(ambiance))
@@ -177,6 +178,8 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
             .envGroupRef(infrastructureOutcome.getEnvironment() != null
                     ? infrastructureOutcome.getEnvironment().getEnvGroupRef()
                     : null)
+            .stageStatus(status)
+            .stageNodeExecutionId(stageLevel.getRuntimeId())
             .build();
     setArtifactDetails(ambiance, deploymentSummaryDTO, deploymentInfoDTO);
     deploymentSummaryDTO = deploymentSummaryService.save(deploymentSummaryDTO);

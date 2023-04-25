@@ -20,9 +20,9 @@ import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -105,8 +105,7 @@ public class PcfRunPluginCommandTaskHandlerTest extends CategoryTest {
         .isEqualTo("cf create-service " + pcfRunPluginScriptRequestData.getWorkingDirectory() + "/manifest.yml");
 
     verify(pcfRunPluginCommandTaskHandler, times(1))
-        .saveFilesInWorkingDirectoryStringContent(
-            anyListOf(FileData.class), eq(pcfRunPluginScriptRequestData.getWorkingDirectory()));
+        .saveFilesInWorkingDirectoryStringContent(anyList(), eq(pcfRunPluginScriptRequestData.getWorkingDirectory()));
   }
 
   private CfRunPluginCommandRequest getPcfRunPluginCommandRequest() {

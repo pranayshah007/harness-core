@@ -38,7 +38,9 @@ public class AzureRepoSCMMapper extends UserSourceCodeManagerMapper<AzureRepoSCM
 
   @Override
   AzureRepoSCMDTO toServiceDTOInternal(AzureRepoSCMRequestDTO userSourceCodeManagerRequestDTO) {
-    return AzureRepoSCMDTO.builder().apiAccess(userSourceCodeManagerRequestDTO.getApiAccess()).build();
+    return AzureRepoSCMDTO.builder()
+        .apiAccess(userSourceCodeManagerRequestDTO.getAuthentication().getApiAccessDTO())
+        .build();
   }
 
   @Override

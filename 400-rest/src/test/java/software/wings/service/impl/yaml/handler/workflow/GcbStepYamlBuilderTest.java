@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.AGORODETKI;
 import static java.util.Collections.EMPTY_MAP;
 import static java.util.Collections.singletonMap;
 import static org.junit.runners.Parameterized.Parameters;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;

@@ -55,6 +55,9 @@ cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh 
 cp -r ../../idp-service/container/scripts/ .
 echo "" > protocol.info
 
+cp ../../idp-service/config/jfr/default.jfc .
+cp ../../idp-service/config/jfr/profile.jfc .
+
 echo ${JDK} > jdk.txt
 echo ${VERSION} > version.txt
 if [ ! -z ${PURPOSE} ]

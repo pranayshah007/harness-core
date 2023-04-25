@@ -47,7 +47,9 @@ public class GitlabSCMMapper
   }
   @Override
   GitlabSCMDTO toServiceDTOInternal(GitlabSCMRequestDTO userSourceCodeManagerRequestDTO) {
-    return GitlabSCMDTO.builder().apiAccess(userSourceCodeManagerRequestDTO.getApiAccess()).build();
+    return GitlabSCMDTO.builder()
+        .apiAccess(userSourceCodeManagerRequestDTO.getAuthentication().getApiAccessDTO())
+        .build();
   }
 
   GitlabApiAccess toApiAccess(GitlabApiAccessSpecDTO spec, GitlabApiAccessType apiAccessType) {

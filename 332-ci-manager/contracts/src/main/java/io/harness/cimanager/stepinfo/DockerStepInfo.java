@@ -91,15 +91,22 @@ public class DockerStepInfo implements PluginCompatibleStep, WithConnectorRef {
   @YamlSchemaTypes({string}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) private ParameterField<Integer> runAsUser;
   @YamlSchemaTypes({string}) @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) private ParameterField<Boolean> optimize;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> remoteCacheRepo;
+  @YamlSchemaTypes(value = {string})
+  @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)
+  private ParameterField<List<String>> cacheFrom;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> cacheTo;
+  @YamlSchemaTypes({string}) @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) private ParameterField<Boolean> caching;
 
   @Builder
-  @ConstructorProperties({"identifier", "name", "retry", "connectorRef", "resources", "repo", "tags", "context",
-      "dockerfile", "target", "labels", "buildArgs", "runAsUser", "optimize", "remoteCacheImage"})
+  @ConstructorProperties(
+      {"identifier", "name", "retry", "connectorRef", "resources", "repo", "tags", "context", "dockerfile", "target",
+          "labels", "buildArgs", "runAsUser", "optimize", "remoteCacheImage", "cacheFrom", "cacheTo", "caching"})
   public DockerStepInfo(String identifier, String name, Integer retry, ParameterField<String> connectorRef,
       ContainerResource resources, ParameterField<String> repo, ParameterField<List<String>> tags,
       ParameterField<String> context, ParameterField<String> dockerfile, ParameterField<String> target,
       ParameterField<Map<String, String>> labels, ParameterField<Map<String, String>> buildArgs,
-      ParameterField<Integer> runAsUser, ParameterField<Boolean> optimize, ParameterField<String> remoteCacheRepo) {
+      ParameterField<Integer> runAsUser, ParameterField<Boolean> optimize, ParameterField<String> remoteCacheRepo,
+      ParameterField<List<String>> cacheFrom, ParameterField<String> cacheTo, ParameterField<Boolean> caching) {
     this.identifier = identifier;
     this.name = name;
     this.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);
@@ -116,6 +123,9 @@ public class DockerStepInfo implements PluginCompatibleStep, WithConnectorRef {
     this.runAsUser = runAsUser;
     this.optimize = optimize;
     this.remoteCacheRepo = remoteCacheRepo;
+    this.cacheFrom = cacheFrom;
+    this.cacheTo = cacheTo;
+    this.caching = caching;
   }
 
   @Override

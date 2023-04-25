@@ -7,24 +7,32 @@
 
 package io.harness.ng.overview.service;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.EnvironmentInstanceCountModel;
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.beans.EnvironmentFilterPropertiesDTO;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.overview.dto.ArtifactDeploymentDetail;
 import io.harness.ng.overview.dto.ArtifactInstanceDetails;
-import io.harness.ng.overview.dto.EnvironmentInstanceDetails;
+import io.harness.ng.overview.dto.EnvironmentGroupInstanceDetails;
+import io.harness.ng.overview.dto.EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
 import io.harness.ng.overview.dto.PipelineExecutionCountInfo;
 import io.harness.ng.overview.dto.ServiceArtifactExecutionDetail;
 import io.harness.ng.overview.dto.ServicePipelineInfo;
+import io.harness.ng.overview.dto.ServicePipelineWithRevertInfo;
 import io.harness.utils.IdentifierRefHelper;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -32,9 +40,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.data.domain.Page;
 
 @UtilityClass
 public class DashboardServiceHelper {
@@ -53,8 +63,9 @@ public class DashboardServiceHelper {
   private static final String PIPELINE_EXECUTION_SUMMARY_CD = "pipeline_execution_summary_cd";
   private static final String STATUS = "status";
 
-  public InstanceGroupedByEnvironmentList getInstanceGroupedByEnvironmentListHelper(
-      List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList, boolean isGitOps) {
+  public InstanceGroupedByEnvironmentList getInstanceGroupedByEnvironmentListHelper(String envGrpId,
+      List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList, boolean isGitOps,
+      Page<EnvironmentGroupEntity> environmentGroupEntitiesPage) {
     // nested map - environmentId, environmentType, infrastructureId, displayName, (count, lastDeployedAt)
     Map<String, Map<EnvironmentType, Map<String, Map<String, Pair<Integer, Long>>>>> instanceCountMap = new HashMap<>();
     Map<String, String> envIdToNameMap = new HashMap<>();
@@ -62,12 +73,42 @@ public class DashboardServiceHelper {
     // clusterId to agentId map in case of gitOps
     Map<String, String> infraIdToNameMap = new HashMap<>();
 
+    List<EnvironmentGroupEntity> environmentGroupEntities;
+    Map<String, List<String>> envToEnvGroupNameMap = new HashMap<>();
+    Map<String, List<String>> envToEnvGroupIdMap = new HashMap<>();
+
+    if (environmentGroupEntitiesPage != null) {
+      environmentGroupEntities = environmentGroupEntitiesPage.getContent();
+      for (EnvironmentGroupEntity environmentGroupEntity : environmentGroupEntities) {
+        if (EmptyPredicate.isNotEmpty(environmentGroupEntity.getEnvIdentifiers())) {
+          List<String> envIds = environmentGroupEntity.getEnvIdentifiers()
+                                    .stream()
+                                    .map(envId
+                                        -> convertIdToRef(environmentGroupEntity.getAccountId(),
+                                            environmentGroupEntity.getOrgIdentifier(),
+                                            environmentGroupEntity.getProjectIdentifier(), envId))
+                                    .collect(Collectors.toList());
+          for (String envId : envIds) {
+            envToEnvGroupNameMap.computeIfAbsent(envId, k -> new ArrayList<>()).add(environmentGroupEntity.getName());
+            envToEnvGroupIdMap.computeIfAbsent(envId, k -> new ArrayList<>())
+                .add(environmentGroupEntity.getIdentifier());
+          }
+        }
+      }
+    }
+
     activeServiceInstanceInfoList.forEach(activeServiceInstanceInfo -> {
       final String envId = activeServiceInstanceInfo.getEnvIdentifier();
       final EnvironmentType envType = activeServiceInstanceInfo.getEnvType();
       final Long lastDeployedAt = activeServiceInstanceInfo.getLastDeployedAt();
 
-      if (envId == null || lastDeployedAt == null) {
+      List<String> envGrpIdList = envToEnvGroupIdMap.get(envId);
+
+      if (isEmpty(envGrpIdList) && !isEmpty(envGrpId)) {
+        return;
+      }
+
+      if (envId == null || lastDeployedAt == null || (!isEmpty(envGrpId) && !envGrpIdList.contains(envGrpId))) {
         return;
       }
 
@@ -90,24 +131,48 @@ public class DashboardServiceHelper {
       instanceCountMap.get(envId).get(envType).get(infraId).putIfAbsent(activeServiceInstanceInfo.getDisplayName(),
           MutablePair.of(activeServiceInstanceInfo.getCount(), activeServiceInstanceInfo.getLastDeployedAt()));
     });
+
     return InstanceGroupedByEnvironmentList.builder()
         .instanceGroupedByEnvironmentList(
-            groupByEnvironment(instanceCountMap, infraIdToNameMap, envIdToNameMap, isGitOps))
+            groupByEnvironment(instanceCountMap, infraIdToNameMap, envIdToNameMap, envToEnvGroupNameMap, isGitOps))
         .build();
   }
 
   public InstanceGroupedOnArtifactList getInstanceGroupedByArtifactListHelper(
-      List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList, boolean isGitOps) {
+      List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList, boolean isGitOps,
+      Page<EnvironmentGroupEntity> environmentGroupEntitiesPage, String envGrpId) {
     // nested map - displayName, envId, environmentType, instanceGroupedByInfrastructure
     Map<String, Map<String, Map<EnvironmentType, List<InstanceGroupedOnArtifactList.InstanceGroupedOnInfrastructure>>>>
         instanceCountMap = new HashMap<>();
     Map<String, String> envIdToNameMap = new HashMap<>();
 
+    List<EnvironmentGroupEntity> environmentGroupEntities;
+    Map<String, List<String>> envToEnvGroupIdMap = new HashMap<>();
+
+    if (environmentGroupEntitiesPage != null) {
+      environmentGroupEntities = environmentGroupEntitiesPage.getContent();
+      for (EnvironmentGroupEntity environmentGroupEntity : environmentGroupEntities) {
+        if (EmptyPredicate.isNotEmpty(environmentGroupEntity.getEnvIdentifiers())) {
+          List<String> envIds = environmentGroupEntity.getEnvIdentifiers();
+          for (String envId : envIds) {
+            envToEnvGroupIdMap.computeIfAbsent(envId, k -> new ArrayList<>())
+                .add(environmentGroupEntity.getIdentifier());
+          }
+        }
+      }
+    }
+
     activeServiceInstanceInfoList.forEach(activeServiceInstanceInfo -> {
       final String envId = activeServiceInstanceInfo.getEnvIdentifier();
       final Long lastDeployedAt = activeServiceInstanceInfo.getLastDeployedAt();
 
-      if (envId == null || lastDeployedAt == null) {
+      List<String> envGrpIdList = envToEnvGroupIdMap.get(envId);
+
+      if (isEmpty(envGrpIdList) && !isEmpty(envGrpId)) {
+        return;
+      }
+
+      if (envId == null || lastDeployedAt == null || (!isEmpty(envGrpId) && !envGrpIdList.contains(envGrpId))) {
         return;
       }
 
@@ -146,6 +211,10 @@ public class DashboardServiceHelper {
     return instanceGroupedByInfrastructureBuilder.count(activeServiceInstanceInfoWithEnvType.getCount())
         .lastDeployedAt(activeServiceInstanceInfoWithEnvType.getLastDeployedAt())
         .build();
+  }
+
+  private String convertIdToRef(String accountId, String orgId, String projectId, String id) {
+    return IdentifierRefHelper.getIdentifierRefWithScope(accountId, orgId, projectId, id).buildScopedIdentifier();
   }
 
   private List<InstanceGroupedOnArtifactList.InstanceGroupedOnArtifact> groupByArtifact(
@@ -256,13 +325,15 @@ public class DashboardServiceHelper {
 
   public List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironment> groupByEnvironment(
       Map<String, Map<EnvironmentType, Map<String, Map<String, Pair<Integer, Long>>>>> instanceCountMap,
-      Map<String, String> infraIdToNameMap, Map<String, String> envIdToNameMap, boolean isGitOps) {
+      Map<String, String> infraIdToNameMap, Map<String, String> envIdToNameMap,
+      Map<String, List<String>> envToEnvGroupMap, boolean isGitOps) {
     List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironment> instanceGroupedByEnvironmentList =
         new ArrayList<>();
 
     for (Map.Entry<String, Map<EnvironmentType, Map<String, Map<String, Pair<Integer, Long>>>>> entry :
         instanceCountMap.entrySet()) {
       final String envId = entry.getKey();
+      List<String> envGroupList = envToEnvGroupMap.get(envId);
 
       List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironmentType> instanceGroupedByEnvironmentTypeList =
           groupedByEnvironmentTypes(entry.getValue(), infraIdToNameMap, isGitOps);
@@ -272,13 +343,26 @@ public class DashboardServiceHelper {
         lastDeployedAt = instanceGroupedByEnvironmentTypeList.get(0).getLastDeployedAt();
       }
 
-      instanceGroupedByEnvironmentList.add(
-          InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironment.builder()
-              .envId(envId)
-              .envName(envIdToNameMap.get(envId))
-              .instanceGroupedByEnvironmentTypeList(instanceGroupedByEnvironmentTypeList)
-              .lastDeployedAt(lastDeployedAt)
-              .build());
+      if (isEmpty(envGroupList)) {
+        instanceGroupedByEnvironmentList.add(
+            InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironment.builder()
+                .envId(envId)
+                .envGroups(Collections.emptyList())
+                .envName(envIdToNameMap.get(envId))
+                .instanceGroupedByEnvironmentTypeList(instanceGroupedByEnvironmentTypeList)
+                .lastDeployedAt(lastDeployedAt)
+                .build());
+
+      } else {
+        instanceGroupedByEnvironmentList.add(
+            InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironment.builder()
+                .envId(envId)
+                .envGroups(envGroupList)
+                .envName(envIdToNameMap.get(envId))
+                .instanceGroupedByEnvironmentTypeList(instanceGroupedByEnvironmentTypeList)
+                .lastDeployedAt(lastDeployedAt)
+                .build());
+      }
     }
 
     // sort based on last deployed time
@@ -402,42 +486,156 @@ public class DashboardServiceHelper {
 
   public ArtifactInstanceDetails getArtifactInstanceDetailsFromMap(
       Map<String, Map<String, ArtifactDeploymentDetail>> artifactDeploymentDetailsMap,
-      Map<String, String> envIdToEnvNameMap, Map<String, EnvironmentType> envIdToEnvTypeMap) {
-    List<ArtifactInstanceDetails.ArtifactInstanceDetail> artifactInstanceDetails = new ArrayList<>();
-    for (Map.Entry<String, Map<String, ArtifactDeploymentDetail>> entry : artifactDeploymentDetailsMap.entrySet()) {
-      final String displayName = entry.getKey();
-      List<EnvironmentInstanceDetails.EnvironmentInstanceDetail> environmentInstanceDetailList = new ArrayList<>();
-      for (Map.Entry<String, ArtifactDeploymentDetail> entry1 : entry.getValue().entrySet()) {
-        final String envId = entry1.getKey();
-        final ArtifactDeploymentDetail artifactDeploymentDetail = entry1.getValue();
-        if (envId == null || artifactDeploymentDetail == null) {
+      Map<String, String> envIdToEnvNameMap, Map<String, EnvironmentType> envIdToEnvTypeMap,
+      List<EnvironmentGroupEntity> environmentGroupEntities,
+      Map<String, List<ArtifactDeploymentDetail>> envToArtifactMap) {
+    Map<String, EnvironmentGroupInstanceDetails> artifactToEnvGroupMap = new HashMap<>();
+
+    Set<String> envIds = new HashSet<>();
+    if (environmentGroupEntities != null) {
+      for (EnvironmentGroupEntity envGroupEntity : environmentGroupEntities) {
+        List<ArtifactDeploymentDetail> artifactDeploymentDetailList = new ArrayList<>();
+        List<ArtifactDeploymentDetail> allArtifactDeploymentDetailList = new ArrayList<>();
+        Set<EnvironmentType> envTypes = new HashSet<>();
+        Set<String> artifacts = new HashSet<>();
+        if (EmptyPredicate.isEmpty(envGroupEntity.getEnvIdentifiers())) {
           continue;
         }
-        final String envName = envIdToEnvNameMap.get(envId);
-        final EnvironmentType environmentType = envIdToEnvTypeMap.get(envId);
-        EnvironmentInstanceDetails.EnvironmentInstanceDetail environmentInstanceDetail =
-            EnvironmentInstanceDetails.EnvironmentInstanceDetail.builder()
-                .envId(envId)
-                .envName(envName)
-                .environmentType(environmentType)
-                .artifactDeploymentDetail(artifactDeploymentDetail)
-                .build();
-        environmentInstanceDetailList.add(environmentInstanceDetail);
-      }
+        for (String envId : envGroupEntity.getEnvIdentifiers()) {
+          envId = convertIdToRef(envGroupEntity.getAccountId(), envGroupEntity.getOrgIdentifier(),
+              envGroupEntity.getProjectIdentifier(), envId);
+          List<ArtifactDeploymentDetail> artifactDeploymentDetails = envToArtifactMap.get(envId);
+          ArtifactDeploymentDetail artifactDeploymentDetail = null;
 
-      if (EmptyPredicate.isEmpty(environmentInstanceDetailList)) {
-        continue;
-      }
+          final EnvironmentType envType = envIdToEnvTypeMap.get(envId);
 
-      sortEnvironmentInstanceDetailList(environmentInstanceDetailList);
-      artifactInstanceDetails.add(
-          ArtifactInstanceDetails.ArtifactInstanceDetail.builder()
-              .artifact(displayName)
-              .environmentInstanceDetails(EnvironmentInstanceDetails.builder()
-                                              .environmentInstanceDetails(environmentInstanceDetailList)
-                                              .build())
-              .build());
+          envIds.add(envId);
+          if (envType == null) {
+            continue;
+          }
+
+          if (isNotEmpty(artifactDeploymentDetails)) {
+            sortArtifactDeploymentDetailList(artifactDeploymentDetails);
+            for (ArtifactDeploymentDetail currentArtifactDeploymentDetail : artifactDeploymentDetails) {
+              if (currentArtifactDeploymentDetail == null
+                  || EmptyPredicate.isEmpty(currentArtifactDeploymentDetail.getArtifact())) {
+                if (currentArtifactDeploymentDetail == null) {
+                  currentArtifactDeploymentDetail =
+                      ArtifactDeploymentDetail.builder().envName(envIdToEnvNameMap.get(envId)).envId(envId).build();
+                }
+                currentArtifactDeploymentDetail.setArtifact("");
+              }
+              allArtifactDeploymentDetailList.add(currentArtifactDeploymentDetail);
+            }
+
+            artifactDeploymentDetail = artifactDeploymentDetails.get(0);
+          }
+
+          envTypes.add(envType);
+          if (artifactDeploymentDetail == null || EmptyPredicate.isEmpty(artifactDeploymentDetail.getArtifact())) {
+            if (artifactDeploymentDetail == null) {
+              artifactDeploymentDetail =
+                  ArtifactDeploymentDetail.builder().envName(envIdToEnvNameMap.get(envId)).envId(envId).build();
+            }
+            artifactDeploymentDetail.setArtifact("");
+          }
+
+          artifacts.add(artifactDeploymentDetail.getArtifact());
+          artifactDeploymentDetailList.add(artifactDeploymentDetail);
+        }
+
+        Set<String> uniqueArtifacts = new HashSet<>();
+        if (EmptyPredicate.isNotEmpty(artifactDeploymentDetailList)) {
+          DashboardServiceHelper.sortArtifactDeploymentDetailList(artifactDeploymentDetailList);
+          for (ArtifactDeploymentDetail allArtifactDeploymentDetail : allArtifactDeploymentDetailList) {
+            if (uniqueArtifacts.contains(allArtifactDeploymentDetail.getArtifact())) {
+              continue;
+            }
+            uniqueArtifacts.add(allArtifactDeploymentDetail.getArtifact());
+            EnvironmentGroupInstanceDetail environmentGroupInstanceDetail =
+                EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
+                    .name(envGroupEntity.getName())
+                    .id(envGroupEntity.getIdentifier())
+                    .environmentTypes(new ArrayList<>(envTypes))
+                    .artifactDeploymentDetails(artifactDeploymentDetailList)
+                    .isEnvGroup(true)
+                    .isDrift((artifacts.size() > 1)
+                        || (artifacts.size() == 1 && !artifacts.contains(allArtifactDeploymentDetail.getArtifact())))
+                    .build();
+            if (artifactToEnvGroupMap.containsKey(allArtifactDeploymentDetail.getArtifact())) {
+              artifactToEnvGroupMap.get(allArtifactDeploymentDetail.getArtifact())
+                  .getEnvironmentGroupInstanceDetails()
+                  .add(environmentGroupInstanceDetail);
+            } else {
+              artifactToEnvGroupMap.put(allArtifactDeploymentDetail.getArtifact(),
+                  EnvironmentGroupInstanceDetails.builder()
+                      .environmentGroupInstanceDetails(new ArrayList<>(Arrays.asList(environmentGroupInstanceDetail)))
+                      .build());
+            }
+          }
+        }
+      }
     }
+
+    for (Map.Entry<String, String> entry : envIdToEnvNameMap.entrySet()) {
+      final String envId = entry.getKey();
+      if (!envIds.contains(envId)) {
+        final EnvironmentType envType = envIdToEnvTypeMap.get(envId);
+        if (envType == null) {
+          continue;
+        }
+        final String envName = entry.getValue();
+        final List<ArtifactDeploymentDetail> artifactDeploymentDetails = envToArtifactMap.get(envId);
+        sortArtifactDeploymentDetailList(artifactDeploymentDetails);
+        ArtifactDeploymentDetail artifactDeploymentDetail = null;
+        if (isNotEmpty(artifactDeploymentDetails)) {
+          artifactDeploymentDetail = artifactDeploymentDetails.get(0);
+        }
+
+        if (artifactDeploymentDetail == null || EmptyPredicate.isEmpty(artifactDeploymentDetail.getArtifact())) {
+          if (artifactDeploymentDetail == null) {
+            artifactDeploymentDetail =
+                ArtifactDeploymentDetail.builder().envName(envIdToEnvNameMap.get(envId)).envId(envId).build();
+          }
+          artifactDeploymentDetail.setArtifact("");
+        }
+
+        for (ArtifactDeploymentDetail allArtifactDeploymentDetail : envToArtifactMap.get(envId)) {
+          String artifactName =
+              isEmpty(allArtifactDeploymentDetail.getArtifact()) ? "" : allArtifactDeploymentDetail.getArtifact();
+
+          EnvironmentGroupInstanceDetail environmentGroupInstanceDetail =
+              EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
+                  .name(envName)
+                  .id(envId)
+                  .environmentTypes(envType == null ? null : Collections.singletonList(envType))
+                  .artifactDeploymentDetails(Collections.singletonList(artifactDeploymentDetail))
+                  .isEnvGroup(false)
+                  .isDrift(!artifactDeploymentDetail.getArtifact().equals(artifactName))
+                  .build();
+
+          if (artifactToEnvGroupMap.containsKey(artifactName)) {
+            artifactToEnvGroupMap.get(artifactName)
+                .getEnvironmentGroupInstanceDetails()
+                .add(environmentGroupInstanceDetail);
+          } else {
+            artifactToEnvGroupMap.put(artifactName,
+                EnvironmentGroupInstanceDetails.builder()
+                    .environmentGroupInstanceDetails(new ArrayList<>(Arrays.asList(environmentGroupInstanceDetail)))
+                    .build());
+          }
+        }
+      }
+    }
+
+    List<ArtifactInstanceDetails.ArtifactInstanceDetail> artifactInstanceDetails = new ArrayList<>();
+    for (Map.Entry<String, EnvironmentGroupInstanceDetails> entry : artifactToEnvGroupMap.entrySet()) {
+      artifactInstanceDetails.add(ArtifactInstanceDetails.ArtifactInstanceDetail.builder()
+                                      .artifact(entry.getKey())
+                                      .environmentGroupInstanceDetails(entry.getValue())
+                                      .build());
+    }
+
     sortArtifactInstanceDetailList(artifactInstanceDetails);
     return ArtifactInstanceDetails.builder().artifactInstanceDetails(artifactInstanceDetails).build();
   }
@@ -462,34 +660,86 @@ public class DashboardServiceHelper {
     });
   }
 
-  private void sortEnvironmentInstanceDetailList(
-      List<EnvironmentInstanceDetails.EnvironmentInstanceDetail> environmentInstanceDetailList) {
-    Collections.sort(
-        environmentInstanceDetailList, new Comparator<EnvironmentInstanceDetails.EnvironmentInstanceDetail>() {
-          public int compare(EnvironmentInstanceDetails.EnvironmentInstanceDetail o1,
-              EnvironmentInstanceDetails.EnvironmentInstanceDetail o2) {
+  private void sortEnvironmentGroupInstanceDetailList(
+      List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> environmentGroupInstanceDetailList) {
+    Collections.sort(environmentGroupInstanceDetailList,
+        new Comparator<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail>() {
+          public int compare(EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail o1,
+              EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail o2) {
             int c;
-            if (o1.getEnvironmentType() == null && o2.getEnvironmentType() == null) {
+            if (EmptyPredicate.isEmpty(o1.getEnvironmentTypes()) && EmptyPredicate.isEmpty(o2.getEnvironmentTypes())) {
               c = 0;
-            } else if (o1.getEnvironmentType() == null) {
+            } else if (EmptyPredicate.isEmpty(o1.getEnvironmentTypes())) {
+              c = 1;
+            } else if (EmptyPredicate.isEmpty(o2.getEnvironmentTypes())) {
               c = -1;
-            } else if (o2.getEnvironmentType() == null) {
+            } else if (o1.getEnvironmentTypes().size() > 1 && o2.getEnvironmentTypes().size() > 1) {
+              c = 0;
+            } else if (o1.getEnvironmentTypes().size() == 1
+                && o1.getEnvironmentTypes().contains(EnvironmentType.PreProduction)
+                && o2.getEnvironmentTypes().size() > 1) {
+              c = -1;
+            } else if (o2.getEnvironmentTypes().size() == 1
+                && o2.getEnvironmentTypes().contains(EnvironmentType.PreProduction)
+                && o1.getEnvironmentTypes().size() > 1) {
+              c = 1;
+            } else if (o1.getEnvironmentTypes().size() == 1
+                && o1.getEnvironmentTypes().contains(EnvironmentType.Production)
+                && o2.getEnvironmentTypes().size() > 1) {
+              c = 1;
+            } else if (o2.getEnvironmentTypes().size() == 1
+                && o2.getEnvironmentTypes().contains(EnvironmentType.Production)
+                && o1.getEnvironmentTypes().size() > 1) {
+              c = -1;
+            } else if (o1.getEnvironmentTypes().size() == 1
+                && o1.getEnvironmentTypes().contains(EnvironmentType.PreProduction)
+                && o2.getEnvironmentTypes().size() == 1
+                && o2.getEnvironmentTypes().contains(EnvironmentType.Production)) {
+              c = -1;
+            } else if (o1.getEnvironmentTypes().size() == 1
+                && o1.getEnvironmentTypes().contains(EnvironmentType.Production) && o2.getEnvironmentTypes().size() == 1
+                && o2.getEnvironmentTypes().contains(EnvironmentType.PreProduction)) {
               c = 1;
             } else {
-              c = o1.getEnvironmentType().compareTo(o2.getEnvironmentType());
+              c = 0;
             }
             if (c == 0) {
-              if (o1.getEnvName() != null && o2.getEnvName() != null) {
-                c = o1.getEnvName().compareTo(o2.getEnvName());
-              } else if (o2.getEnvName() != null) {
+              if (o1.getName() != null && o2.getName() != null) {
+                c = o1.getName().compareTo(o2.getName());
+              } else if (o2.getName() != null) {
                 c = -1;
-              } else if (o1.getEnvName() != null) {
+              } else if (o1.getName() != null) {
                 c = 1;
               }
             }
             return c;
           }
         });
+  }
+
+  private void sortArtifactDeploymentDetailList(List<ArtifactDeploymentDetail> artifactDeploymentDetailList) {
+    Collections.sort(artifactDeploymentDetailList, new Comparator<ArtifactDeploymentDetail>() {
+      public int compare(ArtifactDeploymentDetail o1, ArtifactDeploymentDetail o2) {
+        int c;
+        if (o1.getLastDeployedAt() > o2.getLastDeployedAt()) {
+          c = -1;
+        } else if (o1.getLastDeployedAt() < o2.getLastDeployedAt()) {
+          c = 1;
+        } else {
+          c = 0;
+        }
+        if (c == 0) {
+          if (o1.getEnvName() != null && o2.getEnvName() != null) {
+            c = o1.getEnvName().compareTo(o2.getEnvName());
+          } else if (o2.getEnvName() != null) {
+            c = -1;
+          } else if (o1.getEnvName() != null) {
+            c = 1;
+          }
+        }
+        return c;
+      }
+    });
   }
 
   public void sortActiveServiceInstanceInfoWithEnvTypeList(
@@ -529,7 +779,7 @@ public class DashboardServiceHelper {
   }
 
   public Map<String, Map<String, ArtifactDeploymentDetail>> constructArtifactToLastDeploymentMap(
-      List<ArtifactDeploymentDetailModel> artifactDeploymentDetails, List<String> envIds) {
+      List<ArtifactDeploymentDetailModel> artifactDeploymentDetails, Set<String> envIds) {
     Map<String, Map<String, ArtifactDeploymentDetail>> map = new HashMap<>();
     Set<String> envIdSet = new HashSet<>();
     for (ArtifactDeploymentDetailModel artifactDeploymentDetail : artifactDeploymentDetails) {
@@ -551,36 +801,143 @@ public class DashboardServiceHelper {
     return map;
   }
 
-  public EnvironmentInstanceDetails getEnvironmentInstanceDetailsFromMap(
+  public EnvironmentGroupInstanceDetails getEnvironmentInstanceDetailsFromMap(
       Map<String, ArtifactDeploymentDetail> artifactDeploymentDetailsMap, Map<String, Integer> envToCountMap,
-      Map<String, String> envIdToEnvNameMap, Map<String, EnvironmentType> envIdToEnvTypeMap) {
-    List<EnvironmentInstanceDetails.EnvironmentInstanceDetail> environmentInstanceDetails = new ArrayList<>();
+      Map<String, String> envIdToEnvNameMap, Map<String, EnvironmentType> envIdToEnvTypeMap,
+      List<EnvironmentGroupEntity> environmentGroupEntities,
+      EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO,
+      Map<String, ServicePipelineWithRevertInfo> pipelineExecutionDetailsMap,
+      List<String> pipelineExecutionIdsWhereRollbackOccurred) {
+    List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> environmentGroupInstanceDetailList =
+        new ArrayList<>();
 
-    for (Map.Entry<String, Integer> entry : envToCountMap.entrySet()) {
-      final String envId = entry.getKey();
-      final EnvironmentType envType = envIdToEnvTypeMap.get(envId);
-      final String envName = envIdToEnvNameMap.get(envId);
-      final Integer count = entry.getValue();
-      final ArtifactDeploymentDetail artifactDeploymentDetail = artifactDeploymentDetailsMap.get(envId);
-      if (artifactDeploymentDetail == null) {
-        continue;
+    Set<String> envIds = new HashSet<>();
+    if (environmentGroupEntities != null) {
+      for (EnvironmentGroupEntity envGroupEntity : environmentGroupEntities) {
+        List<ArtifactDeploymentDetail> artifactDeploymentDetailList = new ArrayList<>();
+        Set<EnvironmentType> envTypes = new HashSet<>();
+        Integer totalCount = 0;
+        int deploymentsWithoutArtifact = 0;
+        Set<String> artifacts = new HashSet<>();
+        if (EmptyPredicate.isEmpty(envGroupEntity.getEnvIdentifiers())) {
+          continue;
+        }
+        for (String envId : envGroupEntity.getEnvIdentifiers()) {
+          envId = convertIdToRef(envGroupEntity.getAccountId(), envGroupEntity.getOrgIdentifier(),
+              envGroupEntity.getProjectIdentifier(), envId);
+          ArtifactDeploymentDetail artifactDeploymentDetail = artifactDeploymentDetailsMap.get(envId);
+          final EnvironmentType envType = envIdToEnvTypeMap.get(envId);
+          if (envType == null) {
+            continue;
+          }
+
+          envIds.add(envId);
+          final Integer count = envToCountMap.get(envId);
+          if (count != null) {
+            totalCount += count;
+          }
+          if (envType != null) {
+            envTypes.add(envType);
+          }
+          if (artifactDeploymentDetail != null && EmptyPredicate.isNotEmpty(artifactDeploymentDetail.getArtifact())) {
+            artifacts.add(artifactDeploymentDetail.getArtifact());
+          } else {
+            deploymentsWithoutArtifact++;
+            if (artifactDeploymentDetail == null) {
+              artifactDeploymentDetail =
+                  ArtifactDeploymentDetail.builder().envName(envIdToEnvNameMap.get(envId)).envId(envId).build();
+            }
+          }
+          artifactDeploymentDetailList.add(artifactDeploymentDetail);
+        }
+        if (totalCount > 0) {
+          DashboardServiceHelper.sortArtifactDeploymentDetailList(artifactDeploymentDetailList);
+          boolean isValid = false;
+          for (EnvironmentType environmentType : envTypes) {
+            if (environmentFilterPropertiesDTO == null
+                || environmentFilterPropertiesDTO.getEnvironmentTypes().contains(environmentType)) {
+              isValid = true;
+            }
+          }
+          if (isValid) {
+            environmentGroupInstanceDetailList.add(
+                EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
+                    .name(envGroupEntity.getName())
+                    .id(envGroupEntity.getIdentifier())
+                    .environmentTypes(new ArrayList<>(envTypes))
+                    .artifactDeploymentDetails(artifactDeploymentDetailList)
+                    .isEnvGroup(true)
+                    .count(totalCount)
+                    .isDrift((artifacts.size() > 1) || (artifacts.size() == 1 && deploymentsWithoutArtifact > 0))
+                    .isRevert(EmptyPredicate.isNotEmpty(artifactDeploymentDetailList)
+                        && EmptyPredicate.isNotEmpty(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId())
+                        && pipelineExecutionDetailsMap.containsKey(
+                            artifactDeploymentDetailList.get(0).getLastPipelineExecutionId())
+                        && pipelineExecutionDetailsMap
+                               .get(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId())
+                               .isRevertExecution())
+                    .isRollback(EmptyPredicate.isNotEmpty(artifactDeploymentDetailList)
+                        && EmptyPredicate.isNotEmpty(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId())
+                        && pipelineExecutionDetailsMap.containsKey(
+                            artifactDeploymentDetailList.get(0).getLastPipelineExecutionId())
+                        && pipelineExecutionIdsWhereRollbackOccurred.contains(
+                            pipelineExecutionDetailsMap
+                                .get(artifactDeploymentDetailList.get(0).getLastPipelineExecutionId())
+                                .getPipelineExecutionId()))
+                    .build());
+          }
+        }
       }
-      environmentInstanceDetails.add(EnvironmentInstanceDetails.EnvironmentInstanceDetail.builder()
-                                         .environmentType(envType)
-                                         .envId(envId)
-                                         .envName(envName)
-                                         .artifactDeploymentDetail(artifactDeploymentDetail)
-                                         .count(count)
-                                         .build());
     }
 
-    DashboardServiceHelper.sortEnvironmentInstanceDetailList(environmentInstanceDetails);
+    for (Map.Entry<String, String> entry : envIdToEnvNameMap.entrySet()) {
+      final String envId = entry.getKey();
+      if (!envIds.contains(envId)) {
+        final EnvironmentType envType = envIdToEnvTypeMap.get(envId);
+        if (envType == null) {
+          continue;
+        }
+        final String envName = envIdToEnvNameMap.get(envId);
+        final Integer count = envToCountMap.get(envId);
+        final ArtifactDeploymentDetail artifactDeploymentDetail = artifactDeploymentDetailsMap.get(envId);
+        if (artifactDeploymentDetail == null) {
+          continue;
+        }
+        if (environmentFilterPropertiesDTO != null
+            && !environmentFilterPropertiesDTO.getEnvironmentTypes().contains(envType)) {
+          continue;
+        }
+        environmentGroupInstanceDetailList.add(
+            EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
+                .name(envName)
+                .id(envId)
+                .environmentTypes(Collections.singletonList(envType))
+                .artifactDeploymentDetails(Collections.singletonList(artifactDeploymentDetail))
+                .isEnvGroup(false)
+                .count(count)
+                .isDrift(false)
+                .isRevert(EmptyPredicate.isNotEmpty(artifactDeploymentDetail.getLastPipelineExecutionId())
+                    && pipelineExecutionDetailsMap.containsKey(artifactDeploymentDetail.getLastPipelineExecutionId())
+                    && pipelineExecutionDetailsMap.get(artifactDeploymentDetail.getLastPipelineExecutionId())
+                           .isRevertExecution())
+                .isRollback(EmptyPredicate.isNotEmpty(artifactDeploymentDetail.getLastPipelineExecutionId())
+                    && pipelineExecutionDetailsMap.containsKey(artifactDeploymentDetail.getLastPipelineExecutionId())
+                    && pipelineExecutionIdsWhereRollbackOccurred.contains(
+                        pipelineExecutionDetailsMap.get(artifactDeploymentDetail.getLastPipelineExecutionId())
+                            .getPipelineExecutionId()))
+                .build());
+      }
+    }
 
-    return EnvironmentInstanceDetails.builder().environmentInstanceDetails(environmentInstanceDetails).build();
+    DashboardServiceHelper.sortEnvironmentGroupInstanceDetailList(environmentGroupInstanceDetailList);
+
+    return EnvironmentGroupInstanceDetails.builder()
+        .environmentGroupInstanceDetails(environmentGroupInstanceDetailList)
+        .build();
   }
 
   public void constructEnvironmentCountMap(List<EnvironmentInstanceCountModel> environmentInstanceCounts,
-      Map<String, Integer> envToCountMap, List<String> envIds) {
+      Map<String, Integer> envToCountMap, Set<String> envIds) {
     for (EnvironmentInstanceCountModel environmentInstanceCountModel : environmentInstanceCounts) {
       final String envId = environmentInstanceCountModel.getEnvIdentifier();
       if (envId == null) {
@@ -592,7 +949,7 @@ public class DashboardServiceHelper {
   }
 
   public Map<String, ArtifactDeploymentDetail> constructEnvironmentToArtifactDeploymentMap(
-      List<ArtifactDeploymentDetailModel> artifactDeploymentDetails) {
+      List<ArtifactDeploymentDetailModel> artifactDeploymentDetails, Map<String, String> envIdToEnvNameMap) {
     Map<String, ArtifactDeploymentDetail> map = new HashMap<>();
     for (ArtifactDeploymentDetailModel artifactDeploymentDetail : artifactDeploymentDetails) {
       final String envId = artifactDeploymentDetail.getEnvIdentifier();
@@ -602,8 +959,45 @@ public class DashboardServiceHelper {
       map.putIfAbsent(envId,
           ArtifactDeploymentDetail.builder()
               .artifact(artifactDeploymentDetail.getDisplayName())
+              .envName(envIdToEnvNameMap.getOrDefault(envId, ""))
+              .envId(envId)
               .lastDeployedAt(artifactDeploymentDetail.getLastDeployedAt())
+              .lastPipelineExecutionId(artifactDeploymentDetail.getLastPipelineExecutionId())
+              .pipelineId(artifactDeploymentDetail.getLastPipelineExecutionName())
               .build());
+    }
+    return map;
+  }
+
+  public Map<String, List<ArtifactDeploymentDetail>> constructEnvironmentToArtifactDeploymentListMap(
+      List<ArtifactDeploymentDetailModel> artifactDeploymentDetails, Map<String, String> envIdToEnvNameMap) {
+    Map<String, List<ArtifactDeploymentDetail>> map = new HashMap<>();
+    for (ArtifactDeploymentDetailModel artifactDeploymentDetail : artifactDeploymentDetails) {
+      final String envId = artifactDeploymentDetail.getEnvIdentifier();
+      if (envId == null) {
+        continue;
+      }
+      if (map.containsKey(envId)) {
+        map.get(envId).add(ArtifactDeploymentDetail.builder()
+                               .artifact(artifactDeploymentDetail.getDisplayName())
+                               .envName(envIdToEnvNameMap.getOrDefault(envId, ""))
+                               .envId(envId)
+                               .lastDeployedAt(artifactDeploymentDetail.getLastDeployedAt())
+                               .lastPipelineExecutionId(artifactDeploymentDetail.getLastPipelineExecutionId())
+                               .pipelineId(artifactDeploymentDetail.getLastPipelineExecutionName())
+                               .build());
+      } else {
+        map.put(envId,
+            new ArrayList<>(
+                Arrays.asList(ArtifactDeploymentDetail.builder()
+                                  .artifact(artifactDeploymentDetail.getDisplayName())
+                                  .envName(envIdToEnvNameMap.getOrDefault(envId, ""))
+                                  .envId(envId)
+                                  .lastDeployedAt(artifactDeploymentDetail.getLastDeployedAt())
+                                  .lastPipelineExecutionId(artifactDeploymentDetail.getLastPipelineExecutionId())
+                                  .pipelineId(artifactDeploymentDetail.getLastPipelineExecutionName())
+                                  .build())));
+      }
     }
     return map;
   }
@@ -613,6 +1007,16 @@ public class DashboardServiceHelper {
     return String.format(
         "select pipeline_execution_summary_cd_id from service_infra_info where accountid = '%s' and orgidentifier = '%s' and projectidentifier = '%s' and service_id = '%s' and service_startts > %s",
         accountId, orgId, projectId, serviceId, startInterval);
+  }
+
+  public String buildRollbackDurationQuery(List<String> pipelineExecutionSummaryCdId) {
+    String statement =
+        "select pipeline_execution_summary_cd_id from service_infra_info where rollback_duration > 0 and pipeline_execution_summary_cd_id in (''";
+    for (String id : pipelineExecutionSummaryCdId) {
+      statement += String.format(",'%s'", id);
+    }
+    statement += ")";
+    return statement;
   }
 
   public String queryToFetchExecutionIdAndArtifactDetails(String accountId, String orgId, String projectId,

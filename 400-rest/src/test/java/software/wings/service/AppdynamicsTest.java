@@ -12,8 +12,7 @@ import static io.harness.rule.OwnerRule.RAGHU;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -93,8 +92,7 @@ public class AppdynamicsTest extends WingsBaseTest {
     persistence.save(user);
     UserThreadLocal.set(user);
     FieldUtils.writeField(appdynamicsDelegateService, "encryptionService", encryptionService, true);
-    when(appdDelegateProxyFactory.getV2(anyObject(), any(SyncTaskContext.class)))
-        .thenReturn(appdynamicsDelegateService);
+    when(appdDelegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(appdynamicsDelegateService);
     FieldUtils.writeField(appdynamicsService, "delegateProxyFactory", appdDelegateProxyFactory, true);
     FieldUtils.writeField(newRelicService, "delegateProxyFactory", appdDelegateProxyFactory, true);
 

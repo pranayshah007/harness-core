@@ -62,6 +62,7 @@ public final class RuleEnforcement implements PersistentEntity, UuidAware, Creat
   @Schema(description = "targetRegions") List<String> targetRegions;
   @Schema(description = "isDryRun") Boolean isDryRun;
   @Schema(description = "deleted") Boolean deleted;
+  @Schema(description = "runCount") int runCount;
   @Schema(description = "isEnabled") Boolean isEnabled;
   @Schema(description = NGCommonEntityConstants.CREATED_AT_MESSAGE) long createdAt;
   @Schema(description = NGCommonEntityConstants.UPDATED_AT_MESSAGE) long lastUpdatedAt;
@@ -111,6 +112,7 @@ public final class RuleEnforcement implements PersistentEntity, UuidAware, Creat
         .isDryRun(getIsDryRun())
         .isEnabled(getIsEnabled())
         .deleted(getDeleted())
+        .runCount(getRunCount())
         .createdAt(getCreatedAt())
         .lastUpdatedAt(getLastUpdatedAt())
         .createdBy(getCreatedBy())

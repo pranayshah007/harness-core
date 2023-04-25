@@ -10,6 +10,7 @@ package io.harness.pms.ngpipeline.inputset.helpers;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,9 +34,13 @@ import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
 
+import com.google.common.io.Resources;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -53,6 +58,15 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
   private static final String orgId = "orgId";
   private static final String projectId = "projectId";
   private static final String pipelineId = "Test_Pipline11";
+
+  private String readFile(String filename) {
+    ClassLoader classLoader = getClass().getClassLoader();
+    try {
+      return Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Could not read resource file: " + filename);
+    }
+  }
 
   @Test
   @Owner(developers = NAMAN)
@@ -174,6 +188,42 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
     assertThat(response.getModules()).containsExactly("pms");
     assertThat(response.getReplacedExpressions()).isNull();
     assertThat(response.getInputSetTemplateYaml()).isEqualTo(pipelineYamlWithRuntime);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetInputSetTemplateResponseDTOWithSelectedStagesWithoutCodebaseProperties() {
+    String pipelineYamlWithRuntime = readFile("pipeline-yaml-multiple-stages.yaml");
+    PipelineEntity pipelineEntityWithRuntime = PipelineEntity.builder().yaml(pipelineYamlWithRuntime).build();
+    doReturn(Optional.of(pipelineEntityWithRuntime))
+        .when(pmsPipelineService)
+        .getPipeline(accountId, orgId, projectId, "has_runtime", false, false, false, false);
+    doReturn(true).when(pmsInputSetService).checkForInputSetsForPipeline(accountId, orgId, projectId, "has_runtime");
+    InputSetTemplateResponseDTOPMS responseWithRuntime = validateAndMergeHelper.getInputSetTemplateResponseDTO(
+        accountId, orgId, projectId, "has_runtime", Arrays.asList("customstage", "cistage2"), false);
+    assertThat(responseWithRuntime.getHasInputSets()).isTrue();
+    assertThat(responseWithRuntime.getInputSetTemplateYaml()).isEqualTo(getRuntimeTemplateWithoutProperties());
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetInputSetTemplateResponseDTOWithSelectedStagesWithCodebaseProperties() {
+    String pipelineYamlWithRuntime = readFile("pipeline-yaml-multiple-stages.yaml");
+    PipelineEntity pipelineEntityWithRuntime = PipelineEntity.builder().yaml(pipelineYamlWithRuntime).build();
+    doReturn(Optional.of(pipelineEntityWithRuntime))
+        .when(pmsPipelineService)
+        .getPipeline(accountId, orgId, projectId, "has_runtime", false, false, false, false);
+    doReturn(true).when(pmsInputSetService).checkForInputSetsForPipeline(accountId, orgId, projectId, "has_runtime");
+    InputSetTemplateResponseDTOPMS responseWithRuntime = validateAndMergeHelper.getInputSetTemplateResponseDTO(
+        accountId, orgId, projectId, "has_runtime", Collections.singletonList("cistage1"), false);
+    assertThat(responseWithRuntime.getHasInputSets()).isTrue();
+    assertThat(responseWithRuntime.getInputSetTemplateYaml()).isEqualTo(getRuntimeTemplateWithProperties());
+    responseWithRuntime = validateAndMergeHelper.getInputSetTemplateResponseDTO(
+        accountId, orgId, projectId, "has_runtime", Arrays.asList("cistage1", "cistage2"), false);
+    assertThat(responseWithRuntime.getHasInputSets()).isTrue();
+    assertThat(responseWithRuntime.getInputSetTemplateYaml()).isEqualTo(getRuntimeTemplateWithProperties());
   }
 
   @Test
@@ -746,5 +796,47 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         + "              type: \"HarnessApproval\"\n"
         + "              spec:\n"
         + "                approvalMessage: \"<+input>\"\n";
+  }
+
+  private String getRuntimeTemplateWithoutProperties() {
+    return "pipeline:\n"
+        + "  identifier: \"temppipeline\"\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: \"customstage\"\n"
+        + "      type: \"Custom\"\n"
+        + "      spec:\n"
+        + "        execution:\n"
+        + "          steps:\n"
+        + "          - step:\n"
+        + "              identifier: \"ShellScript_1\"\n"
+        + "              type: \"ShellScript\"\n"
+        + "              spec:\n"
+        + "                source:\n"
+        + "                  type: \"Inline\"\n"
+        + "                  spec:\n"
+        + "                    script: \"<+input>\"\n";
+  }
+
+  private String getRuntimeTemplateWithProperties() {
+    return "pipeline:\n"
+        + "  identifier: \"temppipeline\"\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: \"cistage1\"\n"
+        + "      type: \"CI\"\n"
+        + "      spec:\n"
+        + "        execution:\n"
+        + "          steps:\n"
+        + "          - step:\n"
+        + "              identifier: \"Run_1\"\n"
+        + "              type: \"Run\"\n"
+        + "              spec:\n"
+        + "                command: \"<+input>\"\n"
+        + "  properties:\n"
+        + "    ci:\n"
+        + "      codebase:\n"
+        + "        repoName: \"<+input>\"\n"
+        + "        build: \"<+input>\"\n";
   }
 }

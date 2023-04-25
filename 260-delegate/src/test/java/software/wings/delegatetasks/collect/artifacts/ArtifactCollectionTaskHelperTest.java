@@ -21,11 +21,11 @@ import static software.wings.utils.WingsTestConstants.HOST_NAME;
 import static java.util.Arrays.asList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -34,7 +34,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadata;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.BambooConfig;
@@ -173,8 +172,8 @@ public class ArtifactCollectionTaskHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldNotGetAzureArtifactsFileSizeForInvalidFileName() {
     String fileName = "file.war";
-    when(azureArtifactsService.listFiles(any(AzureArtifactsConfig.class), anyListOf(EncryptedDataDetail.class),
-             any(ArtifactStreamAttributes.class), anyMap(), eq(false)))
+    when(azureArtifactsService.listFiles(
+             any(AzureArtifactsConfig.class), anyList(), any(ArtifactStreamAttributes.class), anyMap(), eq(false)))
         .thenReturn(Arrays.asList(new AzureArtifactsPackageFileInfo("random1", 4),
             new AzureArtifactsPackageFileInfo(fileName, 8), new AzureArtifactsPackageFileInfo("random2", 16)));
     getArtifactFileSize(null);
@@ -185,8 +184,8 @@ public class ArtifactCollectionTaskHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldNotGetAzureArtifactsFileSizeForNoFiles() {
     String fileName = "file.war";
-    when(azureArtifactsService.listFiles(any(AzureArtifactsConfig.class), anyListOf(EncryptedDataDetail.class),
-             any(ArtifactStreamAttributes.class), anyMap(), eq(false)))
+    when(azureArtifactsService.listFiles(
+             any(AzureArtifactsConfig.class), anyList(), any(ArtifactStreamAttributes.class), anyMap(), eq(false)))
         .thenReturn(Collections.emptyList());
     getArtifactFileSize(fileName);
   }
@@ -196,8 +195,8 @@ public class ArtifactCollectionTaskHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldNotGetAzureArtifactsFileSizeForFileNotPresent() {
     String fileName = "file.war";
-    when(azureArtifactsService.listFiles(any(AzureArtifactsConfig.class), anyListOf(EncryptedDataDetail.class),
-             any(ArtifactStreamAttributes.class), anyMap(), eq(false)))
+    when(azureArtifactsService.listFiles(
+             any(AzureArtifactsConfig.class), anyList(), any(ArtifactStreamAttributes.class), anyMap(), eq(false)))
         .thenReturn(Arrays.asList(
             new AzureArtifactsPackageFileInfo("random1", 4), new AzureArtifactsPackageFileInfo("random2", 16)));
     getArtifactFileSize(fileName);

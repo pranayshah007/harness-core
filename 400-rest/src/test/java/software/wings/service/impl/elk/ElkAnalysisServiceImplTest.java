@@ -12,11 +12,10 @@ import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -49,7 +48,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ElkAnalysisServiceImplTest extends WingsBaseTest {
@@ -82,9 +81,9 @@ public class ElkAnalysisServiceImplTest extends WingsBaseTest {
     ElkConfig elkConfig = mock(ElkConfig.class);
     when(settingService.get(eq(settingId))).thenReturn(settingAttribute);
     when(settingAttribute.getValue()).thenReturn(elkConfig);
-    when(secretManager.getEncryptionDetails(anyObject(), eq(appId), anyString())).thenReturn(encryptedDataDetails);
+    when(secretManager.getEncryptionDetails(any(), eq(appId), anyString())).thenReturn(encryptedDataDetails);
     ElkDelegateService elkDelegateService = mock(ElkDelegateService.class);
-    when(delegateProxyFactory.getV2(eq(ElkDelegateService.class), anyObject())).thenReturn(elkDelegateService);
+    when(delegateProxyFactory.getV2(eq(ElkDelegateService.class), any())).thenReturn(elkDelegateService);
     Object elkResponse = getELKResponse(15 * 201);
     when(elkDelegateService.search(any(), any(), any(), any(), anyInt())).thenReturn(elkResponse);
 
@@ -113,9 +112,9 @@ public class ElkAnalysisServiceImplTest extends WingsBaseTest {
     ElkConfig elkConfig = mock(ElkConfig.class);
     when(settingService.get(eq(settingId))).thenReturn(settingAttribute);
     when(settingAttribute.getValue()).thenReturn(elkConfig);
-    when(secretManager.getEncryptionDetails(anyObject(), eq(appId), anyString())).thenReturn(encryptedDataDetails);
+    when(secretManager.getEncryptionDetails(any(), eq(appId), anyString())).thenReturn(encryptedDataDetails);
     ElkDelegateService elkDelegateService = mock(ElkDelegateService.class);
-    when(delegateProxyFactory.getV2(eq(ElkDelegateService.class), anyObject())).thenReturn(elkDelegateService);
+    when(delegateProxyFactory.getV2(eq(ElkDelegateService.class), any())).thenReturn(elkDelegateService);
     Object elkResponse = getELKResponseVersion7(15 * 201);
     when(elkDelegateService.search(any(), any(), any(), any(), anyInt())).thenReturn(elkResponse);
 
@@ -139,9 +138,9 @@ public class ElkAnalysisServiceImplTest extends WingsBaseTest {
     ElkConfig elkConfig = mock(ElkConfig.class);
     when(settingService.get(eq(settingId))).thenReturn(settingAttribute);
     when(settingAttribute.getValue()).thenReturn(elkConfig);
-    when(secretManager.getEncryptionDetails(anyObject(), eq(appId), anyString())).thenReturn(encryptedDataDetails);
+    when(secretManager.getEncryptionDetails(any(), eq(appId), anyString())).thenReturn(encryptedDataDetails);
     ElkDelegateService elkDelegateService = mock(ElkDelegateService.class);
-    when(delegateProxyFactory.getV2(eq(ElkDelegateService.class), anyObject())).thenReturn(elkDelegateService);
+    when(delegateProxyFactory.getV2(eq(ElkDelegateService.class), any())).thenReturn(elkDelegateService);
     Object responseWithoutHost = getELKResponse(15 * 20);
     when(elkDelegateService.search(any(), any(), any(), any(), anyInt())).thenReturn(responseWithoutHost);
 
@@ -162,9 +161,9 @@ public class ElkAnalysisServiceImplTest extends WingsBaseTest {
     ElkConfig elkConfig = mock(ElkConfig.class);
     when(settingService.get(eq(settingId))).thenReturn(settingAttribute);
     when(settingAttribute.getValue()).thenReturn(elkConfig);
-    when(secretManager.getEncryptionDetails(anyObject(), eq(appId), anyString())).thenReturn(encryptedDataDetails);
+    when(secretManager.getEncryptionDetails(any(), eq(appId), anyString())).thenReturn(encryptedDataDetails);
     ElkDelegateService elkDelegateService = mock(ElkDelegateService.class);
-    when(delegateProxyFactory.getV2(eq(ElkDelegateService.class), anyObject())).thenReturn(elkDelegateService);
+    when(delegateProxyFactory.getV2(eq(ElkDelegateService.class), any())).thenReturn(elkDelegateService);
     Object responseWithoutHost = getELKResponseVersion7(15 * 20);
     when(elkDelegateService.search(any(), any(), any(), any(), anyInt())).thenReturn(responseWithoutHost);
 
@@ -185,9 +184,9 @@ public class ElkAnalysisServiceImplTest extends WingsBaseTest {
     ElkConfig elkConfig = mock(ElkConfig.class);
     when(settingService.get(eq(settingId))).thenReturn(settingAttribute);
     when(settingAttribute.getValue()).thenReturn(elkConfig);
-    when(secretManager.getEncryptionDetails(anyObject(), eq(appId), anyString())).thenReturn(encryptedDataDetails);
+    when(secretManager.getEncryptionDetails(any(), eq(appId), anyString())).thenReturn(encryptedDataDetails);
     ElkDelegateService elkDelegateService = mock(ElkDelegateService.class);
-    when(delegateProxyFactory.getV2(eq(ElkDelegateService.class), anyObject())).thenReturn(elkDelegateService);
+    when(delegateProxyFactory.getV2(eq(ElkDelegateService.class), any())).thenReturn(elkDelegateService);
     Object responseWithoutHost = getELKResponse(1000 * 15 + 1); // per minute 1000
     when(elkDelegateService.search(any(), any(), any(), any(), anyInt())).thenReturn(responseWithoutHost);
 
@@ -215,9 +214,9 @@ public class ElkAnalysisServiceImplTest extends WingsBaseTest {
     ElkConfig elkConfig = mock(ElkConfig.class);
     when(settingService.get(eq(settingId))).thenReturn(settingAttribute);
     when(settingAttribute.getValue()).thenReturn(elkConfig);
-    when(secretManager.getEncryptionDetails(anyObject(), eq(appId), anyString())).thenReturn(encryptedDataDetails);
+    when(secretManager.getEncryptionDetails(any(), eq(appId), anyString())).thenReturn(encryptedDataDetails);
     ElkDelegateService elkDelegateService = mock(ElkDelegateService.class);
-    when(delegateProxyFactory.getV2(eq(ElkDelegateService.class), anyObject())).thenReturn(elkDelegateService);
+    when(delegateProxyFactory.getV2(eq(ElkDelegateService.class), any())).thenReturn(elkDelegateService);
     Object responseWithoutHost = getELKResponseVersion7(1000 * 15 + 1); // per minute 1000
     when(elkDelegateService.search(any(), any(), any(), any(), anyInt())).thenReturn(responseWithoutHost);
 
@@ -245,9 +244,9 @@ public class ElkAnalysisServiceImplTest extends WingsBaseTest {
     ElkConfig elkConfig = mock(ElkConfig.class);
     when(settingService.get(eq(settingId))).thenReturn(settingAttribute);
     when(settingAttribute.getValue()).thenReturn(elkConfig);
-    when(secretManager.getEncryptionDetails(anyObject(), eq(appId), anyString())).thenReturn(encryptedDataDetails);
+    when(secretManager.getEncryptionDetails(any(), eq(appId), anyString())).thenReturn(encryptedDataDetails);
     ElkDelegateService elkDelegateService = mock(ElkDelegateService.class);
-    when(delegateProxyFactory.getV2(eq(ElkDelegateService.class), anyObject())).thenReturn(elkDelegateService);
+    when(delegateProxyFactory.getV2(eq(ElkDelegateService.class), any())).thenReturn(elkDelegateService);
     when(elkDelegateService.search(any(), any(), any(), any(), anyInt()))
         .thenThrow(new RuntimeException("Search failed from test...."));
 

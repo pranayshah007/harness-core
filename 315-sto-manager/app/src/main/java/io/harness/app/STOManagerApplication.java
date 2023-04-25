@@ -43,7 +43,7 @@ import io.harness.persistence.UserProvider;
 import io.harness.persistence.store.Store;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PipelineEventConsumerController;
-import io.harness.pms.listener.NgOrchestrationNotifyEventListener;
+import io.harness.pms.listener.NgOrchestrationNotifyEventListenerNonVersioned;
 import io.harness.pms.sdk.PmsSdkConfiguration;
 import io.harness.pms.sdk.PmsSdkInitHelper;
 import io.harness.pms.sdk.PmsSdkModule;
@@ -69,6 +69,7 @@ import io.harness.serializer.CiBeansRegistrars;
 import io.harness.serializer.ConnectorNextGenRegistrars;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.serializer.PrimaryVersionManagerRegistrars;
 import io.harness.serializer.StoBeansRegistrars;
 import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
@@ -197,7 +198,9 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
       @Provides
       @Singleton
       Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
-        return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().build();
+        return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
+            .addAll(PrimaryVersionManagerRegistrars.morphiaRegistrars)
+            .build();
       }
 
       @Provides
@@ -314,7 +317,7 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
   private void registerQueueListener(Injector injector) {
     log.info("Initializing queue listeners...");
     QueueListenerController queueListenerController = injector.getInstance(QueueListenerController.class);
-    queueListenerController.register(injector.getInstance(NgOrchestrationNotifyEventListener.class), 1);
+    queueListenerController.register(injector.getInstance(NgOrchestrationNotifyEventListenerNonVersioned.class), 1);
   }
 
   @Override

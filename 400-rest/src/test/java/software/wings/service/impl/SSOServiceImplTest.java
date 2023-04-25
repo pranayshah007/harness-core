@@ -22,11 +22,10 @@ import static software.wings.beans.loginSettings.LoginSettingsConstants.AUTHENTI
 
 import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyListOf;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -185,7 +184,7 @@ public class SSOServiceImplTest extends WingsBaseTest {
 
     // Upload SAML config and enable
     ssoService.uploadSamlConfiguration(accountId, new ByteArrayInputStream("test data".getBytes()), "test", "", false,
-        "", "", SAMLProviderType.ONELOGIN.name(), anyString(), any(), false);
+        "", "", SAMLProviderType.ONELOGIN.name(), anyString(), any(), "testOtherSamlName", false);
     ssoService.setAuthenticationMechanism(accountId, SAML);
     account = accountService.get(account.getUuid());
     assertThat(account.getAuthenticationMechanism()).isEqualTo(SAML);
@@ -222,7 +221,7 @@ public class SSOServiceImplTest extends WingsBaseTest {
 
     // Upload SAML config and enable
     ssoService.uploadSamlConfiguration(accountId, new ByteArrayInputStream("test data".getBytes()), "test", "", false,
-        "", "", SAMLProviderType.ONELOGIN.name(), anyString(), any(), false);
+        "", "", SAMLProviderType.ONELOGIN.name(), anyString(), any(), "testOtherSamlName", false);
     ssoService.setAuthenticationMechanism(accountId, SAML);
     account = accountService.get(account.getUuid());
     assertThat(account.getAuthenticationMechanism()).isEqualTo(SAML);
@@ -299,7 +298,6 @@ public class SSOServiceImplTest extends WingsBaseTest {
     doThrow(new InvalidRequestException("INVALID")).when(authHandler).authorizeAccountPermission(anyList());
     try {
       ssoService.getAccountAccessManagementSettings(account.getUuid());
-      assertThat(1 == 2).isTrue();
     } catch (InvalidRequestException ex) {
       assertThat(ex.getCode()).isEqualTo(ErrorCode.USER_NOT_AUTHORIZED);
     }
@@ -387,8 +385,7 @@ public class SSOServiceImplTest extends WingsBaseTest {
     when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(encryptedDataDetails);
     when(secretManager.encryptedDataDetails(any(), any(), any(), any())).thenReturn(Optional.of(encryptedDataDetail));
     ldapSettings.getConnectionSettings().setEncryptedBindPassword("EncryptedBindPassword");
-    when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
-        .thenReturn(null);
+    when(encryptionService.decrypt(any(EncryptableSetting.class), anyList(), eq(false))).thenReturn(null);
     ssoSettingService.createLdapSettings(ldapSettings);
 
     LdapSettingsWithEncryptedDataDetail resultDetails =
@@ -425,8 +422,7 @@ public class SSOServiceImplTest extends WingsBaseTest {
     when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(encryptedDataDetails);
     when(secretManager.encryptedDataDetails(any(), any(), any(), any())).thenReturn(Optional.of(encryptedDataDetail));
     ldapSettings.getConnectionSettings().setEncryptedBindSecret("EncryptedBindSecret");
-    when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
-        .thenReturn(null);
+    when(encryptionService.decrypt(any(EncryptableSetting.class), anyList(), eq(false))).thenReturn(null);
     ssoSettingService.createLdapSettings(ldapSettings);
 
     LdapSettingsWithEncryptedDataDetail resultDetails =
@@ -480,5 +476,24 @@ public class SSOServiceImplTest extends WingsBaseTest {
         .isEqualTo(SAML);
     assertThat(loginSettingsAuthMechanismUpdateEvent.getNewAuthMechanismYamlDTO().getAuthenticationMechanism())
         .isEqualTo(LDAP);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testAccessManagementSettingsV2() {
+    Account account = Account.Builder.anAccount()
+                          .withUuid("Account 1")
+                          .withOauthEnabled(false)
+                          .withAccountName("Account 1")
+                          .withLicenseInfo(getLicenseInfo())
+                          .withAppId(APP_ID)
+                          .withCompanyName("Account 1")
+                          .withAuthenticationMechanism(USER_PASSWORD)
+                          .build();
+    accountService.save(account, false);
+    doNothing().when(authHandler).authorizeAccountPermission(anyList());
+    SSOConfig accountAccessManagementSettings = ssoService.getAccountAccessManagementSettingsV2(account.getUuid());
+    assertThat(accountAccessManagementSettings).isNotNull();
   }
 }

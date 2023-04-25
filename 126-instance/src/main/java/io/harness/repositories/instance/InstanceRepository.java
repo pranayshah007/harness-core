@@ -18,4 +18,5 @@ import org.springframework.data.repository.CrudRepository;
 @OwnedBy(HarnessTeam.DX)
 public interface InstanceRepository extends CrudRepository<Instance, String>, InstanceRepositoryCustom {
   void deleteByInstanceKey(String instanceKey);
+  Instance getById(String uuid);
 }

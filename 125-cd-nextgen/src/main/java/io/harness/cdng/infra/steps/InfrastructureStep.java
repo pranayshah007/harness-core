@@ -22,11 +22,16 @@ import static java.lang.String.format;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.execution.ExecutionInfoKey;
+import io.harness.cdng.execution.InfraExecutionSummaryDetails;
+import io.harness.cdng.execution.InfraExecutionSummaryDetails.InfraExecutionSummaryDetailsBuilder;
+import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
 import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.infra.InfrastructureOutcomeProvider;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfraMapping;
@@ -107,6 +112,7 @@ import io.harness.steps.StepUtils;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.steps.executable.SyncExecutableWithRbac;
 import io.harness.steps.shellscript.K8sInfraDelegateConfigOutput;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -115,7 +121,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @OwnedBy(CDC)
 public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
@@ -136,6 +144,8 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   @Inject private CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   @Inject private InstanceOutcomeHelper instanceOutcomeHelper;
   @Inject private InfrastructureOutcomeProvider infrastructureOutcomeProvider;
+  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Inject private StageExecutionInfoService stageExecutionInfoService;
 
   @Override
   public Class<Infrastructure> getStepParametersClass() {
@@ -205,14 +215,17 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     String infrastructureKind = infrastructure.getKind();
     ExecutionInfoKey executionInfoKey =
         ExecutionInfoKeyMapper.getExecutionInfoKey(ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
-    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(
-        ambiance, executionInfoKey, infrastructureKind);
+    stageExecutionHelper.saveStageExecutionInfo(ambiance, executionInfoKey, infrastructureKind);
     stageExecutionHelper.addRollbackArtifactToStageOutcomeIfPresent(
         ambiance, stepResponseBuilder, executionInfoKey, infrastructureKind);
 
     if (logCallback != null) {
       logCallback.saveExecutionLog(
           color("Completed infrastructure step", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+    }
+    if (ngFeatureFlagHelperService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
+      saveInfraExecutionDataToStageInfo(ambiance, infrastructureOutcome);
     }
 
     return stepResponseBuilder.status(Status.SUCCEEDED)
@@ -600,5 +613,29 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   @Override
   public List<String> getLogKeys(Ambiance ambiance) {
     return StepUtils.generateLogKeys(ambiance, null);
+  }
+
+  public void saveInfraExecutionDataToStageInfo(Ambiance ambiance, InfrastructureOutcome infrastructureOutcome) {
+    stageExecutionInfoService.updateStageExecutionInfo(ambiance,
+        StageExecutionInfoUpdateDTO.builder()
+            .infraExecutionSummary(createInfraExecutionSummaryDetailsFromInfraOutcome(infrastructureOutcome))
+            .build());
+  }
+
+  protected InfraExecutionSummaryDetails createInfraExecutionSummaryDetailsFromInfraOutcome(
+      InfrastructureOutcome infrastructureOutcome) {
+    InfraExecutionSummaryDetailsBuilder infraExecutionSummaryDetailsBuilder =
+        InfraExecutionSummaryDetails.builder()
+            .infrastructureIdentifier(infrastructureOutcome.getInfraIdentifier())
+            .infrastructureName(infrastructureOutcome.getInfraName())
+            .connectorRef(infrastructureOutcome.getConnectorRef());
+    if (infrastructureOutcome.getEnvironment() != null) {
+      infraExecutionSummaryDetailsBuilder.identifier(infrastructureOutcome.getEnvironment().getIdentifier())
+          .name(infrastructureOutcome.getEnvironment().getName())
+          .type(infrastructureOutcome.getEnvironment().getType().name())
+          .envGroupId(infrastructureOutcome.getEnvironment().getEnvGroupRef())
+          .envGroupName(infrastructureOutcome.getEnvironment().getEnvGroupName());
+    }
+    return infraExecutionSummaryDetailsBuilder.build();
   }
 }

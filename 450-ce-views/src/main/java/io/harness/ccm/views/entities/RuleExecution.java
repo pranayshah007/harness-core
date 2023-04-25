@@ -11,6 +11,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.StoreIn;
 import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.ccm.views.helper.RuleExecutionStatusType;
+import io.harness.ccm.views.helper.RuleExecutionType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -61,6 +62,7 @@ public final class RuleExecution implements PersistentEntity, UuidAware, Created
   @Schema(description = "executionLogPath") String executionLogPath;
   @Schema(description = "resourceCount") long resourceCount;
   @Schema(description = "executionLogBucketType") String executionLogBucketType;
+  @Schema(description = "executionType") RuleExecutionType executionType;
   @Schema(description = "executionStatus") RuleExecutionStatusType executionStatus;
   @Schema(description = "executionCompletedAt") Long executionCompletedAt;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;

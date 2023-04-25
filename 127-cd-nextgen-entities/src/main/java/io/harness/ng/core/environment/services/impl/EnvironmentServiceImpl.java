@@ -33,6 +33,7 @@ import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
+import io.harness.eraro.ErrorMessageConstants;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
@@ -311,9 +312,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   public boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String environmentIdentifier,
       Long version, boolean forceDelete) {
     if (forceDelete && !isForceDeleteEnabled(accountId)) {
-      throw new InvalidRequestException(
-          format("Parameter forcedDelete cannot be true. Force Delete is not enabled for account [%s]", accountId),
-          USER);
+      throw new InvalidRequestException(ErrorMessageConstants.FORCE_DELETE_SETTING_NOT_ENABLED, USER);
     }
     checkArgument(isNotEmpty(accountId), "accountId must be present");
     checkArgument(isNotEmpty(environmentIdentifier), "environment Identifier must be present");

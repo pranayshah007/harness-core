@@ -1,7 +1,7 @@
 {
   "definitions": {},
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://example.com/object1679770775.json",
+  "$id": "https://example.com/object1682264120.json",
   "title": "Root",
   "type": "object",
   "additionalProperties": false,
@@ -23,6 +23,7 @@
           "type": "object",
           "required": [
             "target",
+            "pathRewrite",
             "headers"
           ],
           "properties": {
@@ -33,6 +34,24 @@
               "default": "",
               "pattern": "^.*$"
             },
+            "pathRewrite": {
+              "$id": "#root/proxy//pagerduty/pathRewrite",
+              "title": "Pathrewrite",
+              "type": "object",
+              "required": [
+                "api/proxy/pagerduty/?"
+              ],
+              "properties": {
+                "api/proxy/pagerduty/?": {
+                  "$id": "#root/proxy//pagerduty/pathRewrite/api/proxy/pagerduty/?",
+                  "title": "Api/proxy/pagerduty/?",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                }
+              }
+            }
+          ,
             "headers": {
               "$id": "#root/proxy//pagerduty/headers",
               "title": "Headers",

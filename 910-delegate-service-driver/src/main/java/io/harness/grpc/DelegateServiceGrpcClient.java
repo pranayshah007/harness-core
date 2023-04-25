@@ -77,6 +77,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -388,19 +389,20 @@ public class DelegateServiceGrpcClient {
       taskDetailsBuilder.setKryoParameters(
           ByteString.copyFrom(referenceFalseKryoSerializer.asDeflatedBytes(taskParameters)));
     }
-
-    Map<String, String> abstractionsMap = getAbstractionsMap(taskRequest.getLogStreamingAbstractions());
-
-    TaskLogAbstractions.Builder builder = TaskLogAbstractions.newBuilder().putAllValues(abstractionsMap);
+    TaskLogAbstractions.Builder builder =
+        TaskLogAbstractions.newBuilder().putAllValues(getAbstractionsMap(taskRequest.getLogStreamingAbstractions()));
 
     builder.setShouldSkipOpenStream(taskRequest.isShouldSkipOpenStream());
     builder.setBaseLogKey(taskRequest.getBaseLogKey() == null ? "" : taskRequest.getBaseLogKey());
 
     return submitTaskV2(delegateCallbackToken, AccountId.newBuilder().setId(taskRequest.getAccountId()).build(),
-        TaskSetupAbstractions.newBuilder().putAllValues(abstractionsMap).build(), builder.build(),
-        taskDetailsBuilder.build(), capabilities, taskRequest.getTaskSelectors(), holdFor, taskRequest.isForceExecute(),
-        taskRequest.isExecuteOnHarnessHostedDelegates(), taskRequest.getEligibleToExecuteDelegateIds(),
-        taskRequest.isEmitEvent(), taskRequest.getStageId(), delegateSelectionTrackingLogEnabled);
+        TaskSetupAbstractions.newBuilder()
+            .putAllValues(getAbstractionsMap(taskRequest.getTaskSetupAbstractions()))
+            .build(),
+        builder.build(), taskDetailsBuilder.build(), capabilities, taskRequest.getTaskSelectors(), holdFor,
+        taskRequest.isForceExecute(), taskRequest.isExecuteOnHarnessHostedDelegates(),
+        taskRequest.getEligibleToExecuteDelegateIds(), taskRequest.isEmitEvent(), taskRequest.getStageId(),
+        delegateSelectionTrackingLogEnabled);
   }
 
   public TaskExecutionStage cancelTask(AccountId accountId, TaskId taskId) {
@@ -542,7 +544,7 @@ public class DelegateServiceGrpcClient {
     return MapUtils.emptyIfNull(map)
         .entrySet()
         .stream()
-        .filter(entry -> isNotEmpty(entry.getValue()))
+        .filter(entry -> !Objects.isNull(entry.getValue()))
         .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
   }
 }

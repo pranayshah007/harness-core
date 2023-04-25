@@ -18,9 +18,9 @@ import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -465,15 +465,23 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
   public void testHandleLeafNodes() {
     doNothing().when(executionStrategy).processAdviserResponse(any(), any());
     String nodeUuid = generateUuid();
+    List<ExecutableResponse> executableResponse = Arrays.asList(ExecutableResponse.newBuilder().build());
     executionStrategy.handleLeafNodes(Ambiance.newBuilder().build(), NodeExecution.builder().uuid(nodeUuid).build(),
         NodeExecution.builder()
             .status(Status.ABORTED)
             .planNode(IdentityPlanNode.builder().stepType(TEST_STEP_TYPE).build())
+            .executableResponses(executableResponse)
             .build());
     verify(executionStrategy, times(1)).processAdviserResponse(any(), any());
     verify(identityNodeExecutionStrategyHelper, times(1)).copyNodeExecutionsForRetriedNodes(any(), any());
+    ArgumentCaptor<String> captureUuid = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<Status> captorStatus = ArgumentCaptor.forClass(Status.class);
+    ArgumentCaptor<Consumer> updateCapture = ArgumentCaptor.forClass(Consumer.class);
     verify(nodeExecutionService, times(1))
-        .updateStatusWithOps(nodeUuid, Status.ABORTED, null, EnumSet.noneOf(Status.class));
+        .updateStatusWithOps(captureUuid.capture(), captorStatus.capture(), updateCapture.capture(), any());
+
+    assertThat(captureUuid.getValue()).isEqualTo(nodeUuid);
+    assertThat(updateCapture.getValue()).isNotNull();
   }
 
   @Test

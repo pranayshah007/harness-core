@@ -662,6 +662,62 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
+  /v1/layout/ingest:
+    post:
+      summary: Ingest plugin layout
+      operationId: layout-ingest
+      responses:
+        '200':
+          description: OK
+      tags:
+        - LayoutProxy
+      description: Ingest plugin layout
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LayoutIngestRequest'
+  /v1/sync-app-config:
+    put:
+      summary: Sync merged app-config for a given account
+      operationId: sync-app-config
+      responses:
+        '204':
+          description: No Content
+      description: API to sync app-config for a given account. This API can be accessed by Support User only.
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - schema:
+            type: boolean
+          in: query
+          name: base_config
+          description: Set true to sync base app-config too
+      tags:
+        - MergedPluginsConfig
+  /v1/onboarding/generate-yaml:
+    post:
+      summary: Generate YAML Definition for entity
+      operationId: onboarding-generate-yaml
+      responses:
+        '200':
+          $ref: '#/components/responses/GenerateYamlResponse'
+      tags:
+        - OnboardingResource
+      x-internal: true
+      description: Generate YAML Definition for entity
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/GenerateYamlRequest'
 components:
   schemas:
     BackstageEnvVariable:
@@ -877,30 +933,6 @@ components:
       x-stoplight:
         id: 06dd99ce217ed
       description: Namespace response body
-    ImportHarnessEntitiesRequest:
-      title: ImportHarnessEntitiesRequest
-      x-stoplight:
-        id: amr368rxqugif
-      type: object
-      x-examples: {}
-      description: Details of Harness Entities and Catalog Location info
-      properties:
-        catalog_connector_info:
-          $ref: '#/components/schemas/CatalogConnectorInfo'
-          x-stoplight:
-            id: 2dpge46q45sn2
-        entities:
-          type: array
-          minItems: 0
-          items:
-            $ref: '#/components/schemas/EntitiesForImport'
-        all_import:
-          type: boolean
-          x-stoplight:
-            id: dsm3fnlholwsp
-      required:
-        - catalog_connector_info
-        - entities
     CatalogConnectorInfo:
       title: CatalogConnectorInfo
       x-stoplight:
@@ -908,7 +940,7 @@ components:
       type: object
       description: Details of IDP catalog connector
       properties:
-        source_connector:
+        connector:
           $ref: '#/components/schemas/ConnectorDetails'
           x-stoplight:
             id: 218l3eejs3pvn
@@ -918,16 +950,11 @@ components:
           type: string
         path:
           type: string
-        infra_connector:
-          $ref: '#/components/schemas/ConnectorDetails'
-          x-stoplight:
-            id: y4jr5csvofm3c
       required:
-        - source_connector
+        - connector
         - repo
         - branch
         - path
-        - infra_connector
     HarnessEntitiesCountResponse:
       title: HarnessEntitiesCountResponse
       x-stoplight:
@@ -1031,6 +1058,11 @@ components:
           type: string
         type:
           type: string
+          enum:
+            - Github
+            - Gitlab
+            - Bitbucket
+            - AzureRepo
       required:
         - identifier
         - type
@@ -1069,14 +1101,7 @@ components:
         category:
           type: string
           x-stoplight:
-            id: ql3oqpkls4fft
-          enum:
-            - Monitoring
-            - CI/CD
-            - Discovery
-            - Quality
-            - Security
-            - Source Control Mgmt
+            id: 8rqc7h1vyq7sh
         source:
           type: string
           x-stoplight:
@@ -1132,38 +1157,27 @@ components:
       title: PluginDetailedInfo
       x-stoplight:
         id: ggn3lgk0pl7jx
-      type: object
-      properties:
-        plugin_details:
-          $ref: '#/components/schemas/PluginInfo'
+      allOf:
+        - $ref: '#/components/schemas/PluginDetails'
           x-stoplight:
-            id: zfeuzsbo3e90v
-        config:
-          type: string
-          x-stoplight:
-            id: 4arnqctb1wfyl
-        exports:
-          $ref: '#/components/schemas/Exports'
-          x-stoplight:
-            id: ns1ky9089aalt
-        env_variables:
-          x-stoplight:
-            id: 4tj9fofa4b3hn
-          type: array
-          items:
-            $ref: '#/components/schemas/BackstageEnvSecretVariable'
-            x-stoplight:
-              id: v8fluu5h3dt3n
-        saved:
-          type: boolean
-          x-stoplight:
-            id: b06clr6ww9ku0
-      required:
-        - plugin_details
-        - config
-        - exports
-        - env_variables
-        - saved
+            id: 8r3tc7aptshub
+        - type: object
+          properties:
+            env_variables:
+              x-stoplight:
+                id: 4tj9fofa4b3hn
+              type: array
+              items:
+                $ref: '#/components/schemas/BackstageEnvSecretVariable'
+                x-stoplight:
+                  id: v8fluu5h3dt3n
+            saved:
+              type: boolean
+              x-stoplight:
+                id: b06clr6ww9ku0
+          required:
+            - env_variables
+            - saved
     ManualImportEntityRequest:
       title: ManualImportEntityRequest
       x-stoplight:
@@ -1329,10 +1343,28 @@ components:
           type: integer
           x-stoplight:
             id: ksifiqe7f9p5w
+        default_entity_types:
+          type: array
+          x-stoplight:
+            id: rubpg21bu2st4
+          items:
+            x-stoplight:
+              id: kth23yj667xa3
+            type: string
+        export_details:
+          x-stoplight:
+            id: xszvlkfetqvdo
+          type: array
+          items:
+            $ref: '#/components/schemas/ExportDetails'
+            x-stoplight:
+              id: ypu1bnoyc701c
       required:
         - pages
         - tab_contents
         - cards
+        - default_entity_types
+        - export_details
     MergedPluginConfigs:
       title: MergedPluginConfigs
       x-stoplight:
@@ -1413,6 +1445,186 @@ components:
       required:
         - plugin_requests
       description: Returns all plugin requests for an account
+    ExportDetails:
+      title: ExportDetails
+      x-stoplight:
+        id: dg5ogyutt74c2
+      type: object
+      properties:
+        type:
+          type: string
+          x-stoplight:
+            id: aurd52xhuftpn
+        name:
+          type: string
+          x-stoplight:
+            id: sq45ohcxqr9do
+        add_by_default:
+          type: boolean
+          x-stoplight:
+            id: 6tc18j0qbdoes
+        default_route:
+          type: string
+          x-stoplight:
+            id: oyrgvybpm6nik
+        layout_schema_specs:
+          type: object
+          x-stoplight:
+            id: aqq2o3sg33kiz
+      required:
+        - type
+        - name
+    PluginDetails:
+      title: PluginDetails
+      x-stoplight:
+        id: 4rsv9twy48kan
+      type: object
+      properties:
+        plugin_details:
+          $ref: '#/components/schemas/PluginInfo'
+          x-stoplight:
+            id: 78o6cgyocvp5q
+        config:
+          type: string
+          x-stoplight:
+            id: knh0tubwda57c
+        exports:
+          $ref: '#/components/schemas/Exports'
+          x-stoplight:
+            id: d75z7rk3lvcbb
+      required:
+        - plugin_details
+        - config
+        - exports
+    LayoutIngestRequest:
+      title: LayoutIngestRequest
+      x-stoplight:
+        id: e8du2q55p26u5
+      type: object
+      properties:
+        plugin:
+          $ref: '#/components/schemas/PluginDetails'
+          x-stoplight:
+            id: jqr3z1zl2f5vs
+      required:
+        - plugin
+    GenerateYamlRequest:
+      title: GenerateYamlRequest
+      x-stoplight:
+        id: 6afrksdt6yzf8
+      type: object
+      properties:
+        entities:
+          type: array
+          x-stoplight:
+            id: x1bjzeq0xhqe9
+          items:
+            $ref: '#/components/schemas/EntitiesForImport'
+            x-stoplight:
+              id: mn1sipjammn91
+      required:
+        - entities
+      description: Request to generate yaml for any one entity if provided or generate sample entity yaml definition
+    GenerateYamlResponse:
+      title: GenerateYamlResponse
+      x-stoplight:
+        id: lu8lnvc5d1ycn
+      type: object
+      description: Response contianing entity yaml definition and description about the entity
+      properties:
+        generated_yaml:
+          type: object
+          x-stoplight:
+            id: qlgqwff9xljw9
+          required:
+            - yaml_def
+            - description
+          properties:
+            yaml_def:
+              type: string
+              x-stoplight:
+                id: 06z2bq0czhdmr
+            description:
+              type: string
+              x-stoplight:
+                id: ywrkefgdppyrp
+      required:
+        - generated_yaml
+      x-examples: {}
+    AllEntitiesImport:
+      title: AllEntitiesImport
+      x-stoplight:
+        id: icn79gqklynqb
+      allOf:
+        - $ref: '#/components/schemas/ImportEntitiesBase'
+        - type: object
+          x-stoplight:
+            id: befy5yjyk1mho
+      x-discriminator-value: All
+      description: Import all harness entities
+    SampleEntitiesImport:
+      title: SampleEntitiesImport
+      x-stoplight:
+        id: 0n4jic9y62wnk
+      description: Import sample entities
+      x-discriminator-value: Sample
+      allOf:
+        - $ref: '#/components/schemas/ImportEntitiesBase'
+          x-stoplight:
+            id: ow59y8dd42ark
+        - type: object
+          x-stoplight:
+            id: a3pg2s49ri981
+    IndividualEntitiesImport:
+      title: IndividualEntitiesImport
+      x-stoplight:
+        id: sef7xljum4s1e
+      x-discriminator-value: Individual
+      description: Import selected harness entities
+      allOf:
+        - $ref: '#/components/schemas/ImportEntitiesBase'
+        - type: object
+          x-stoplight:
+            id: r3bpmjiqu80hs
+          properties:
+            entities:
+              x-stoplight:
+                id: wpilxcdq1y8fu
+              type: array
+              items:
+                $ref: '#/components/schemas/EntitiesForImport'
+                x-stoplight:
+                  id: ig9bbn1ayo7ou
+          required:
+            - entities
+    ImportEntitiesBase:
+      title: ImportEntitiesBase
+      x-stoplight:
+        id: wjxl1hwpwycv4
+      type: object
+      description: Abstract base for import entities
+      discriminator:
+        propertyName: type
+        mapping:
+          All: '#/components/schemas/AllEntitiesImport'
+          Individual: '#/components/schemas/IndividualEntitiesImport'
+          Sample: '#/components/schemas/SampleEntitiesImport'
+      properties:
+        type:
+          type: string
+          x-stoplight:
+            id: ivlkqhisxcx6w
+          enum:
+            - All
+            - Individual
+            - Sample
+        catalog_connector_info:
+          $ref: '#/components/schemas/CatalogConnectorInfo'
+          x-stoplight:
+            id: 2g3sd1omi2h4x
+      required:
+        - type
+        - catalog_connector_info
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -1494,14 +1706,6 @@ components:
       required: true
       schema:
         type: string
-        enum:
-          - pager-duty
-          - snyk-security
-          - harness-ci-cd
-          - github-pull-requests-board
-          - kafka
-          - lighthouse
-          - todo
     PluginName:
       name: PluginId
       in: query
@@ -1579,7 +1783,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ImportHarnessEntitiesRequest'
+            $ref: '#/components/schemas/ImportEntitiesBase'
           examples: {}
       description: Details of Harness Entities and Catalog Location info
     ManualImportEntityRequest:
@@ -1631,6 +1835,17 @@ components:
           schema:
             $ref: '#/components/schemas/RequestPlugin'
       description: Details of the plugin being requested
+    LayoutIngestRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LayoutIngestRequest'
+    GenerateYamlRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GenerateYamlRequest'
+      description: Request to generate yaml for any one entity if provided or generate sample entity yaml definition
   responses:
     BackstageEnvVariableResponse:
       description: Example response
@@ -1824,6 +2039,12 @@ components:
           schema:
             type: integer
           description: Maximum page size in Paginated response.
+    GenerateYamlResponse:
+      description: Response contianing entity yaml definition and description about the entity
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GenerateYamlResponse'
   securitySchemes:
     x-api-key:
       name: x-api-key

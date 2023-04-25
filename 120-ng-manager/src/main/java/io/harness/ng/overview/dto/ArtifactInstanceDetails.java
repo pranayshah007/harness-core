@@ -21,6 +21,6 @@ public class ArtifactInstanceDetails {
   @Builder
   public static class ArtifactInstanceDetail {
     String artifact;
-    @NotNull EnvironmentInstanceDetails environmentInstanceDetails;
+    @NotNull EnvironmentGroupInstanceDetails environmentGroupInstanceDetails;
   }
 }

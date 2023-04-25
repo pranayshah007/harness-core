@@ -86,8 +86,7 @@ public class EnvironmentResource {
       @QueryParam(NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted) {
     Optional<Environment> environment =
         environmentService.get(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, deleted);
-    return ResponseDTO.newResponse(
-        environment.get().getVersion().toString(), environment.map(EnvironmentMapper::writeDTO).orElse(null));
+    return ResponseDTO.newResponse(environment.map(EnvironmentMapper::writeDTO).orElse(null));
   }
 
   @POST
@@ -97,8 +96,7 @@ public class EnvironmentResource {
     mustBeAtProjectLevel(environmentRequestDTO);
     Environment environmentEntity = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     Environment createdEnvironment = environmentService.create(environmentEntity);
-    return ResponseDTO.newResponse(
-        createdEnvironment.getVersion().toString(), EnvironmentMapper.writeDTO(createdEnvironment));
+    return ResponseDTO.newResponse(EnvironmentMapper.writeDTO(createdEnvironment));
   }
 
   @DELETE
@@ -120,8 +118,7 @@ public class EnvironmentResource {
     Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     Environment updatedEnvironment = environmentService.update(requestEnvironment);
-    return ResponseDTO.newResponse(
-        updatedEnvironment.getVersion().toString(), EnvironmentMapper.writeDTO(updatedEnvironment));
+    return ResponseDTO.newResponse(EnvironmentMapper.writeDTO(updatedEnvironment));
   }
 
   @PUT
@@ -133,8 +130,7 @@ public class EnvironmentResource {
     Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     Environment upsertedEnvironment = environmentService.upsert(requestEnvironment, UpsertOptions.DEFAULT);
-    return ResponseDTO.newResponse(
-        upsertedEnvironment.getVersion().toString(), EnvironmentMapper.writeDTO(upsertedEnvironment));
+    return ResponseDTO.newResponse(EnvironmentMapper.writeDTO(upsertedEnvironment));
   }
 
   @GET

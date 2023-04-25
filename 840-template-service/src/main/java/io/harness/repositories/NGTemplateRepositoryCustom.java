@@ -79,7 +79,11 @@ public interface NGTemplateRepositoryCustom {
   boolean existsByAccountIdAndOrgIdAndProjectIdAndIdentifierWithoutVersionLabel(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier);
 
+  @Deprecated
   TemplateEntity update(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, Criteria criteria, Update update);
+
+  TemplateEntity updateV2(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, Criteria criteria, Update update);
 
   TemplateEntity updateIsStableTemplate(TemplateEntity templateEntity, boolean value);

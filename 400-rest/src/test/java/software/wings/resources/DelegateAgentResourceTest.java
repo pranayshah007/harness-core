@@ -29,7 +29,7 @@ import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.util.Collections.singletonList;
 import static javax.ws.rs.client.Entity.entity;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -149,6 +149,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
   private static final ManifestCollectionResponseHandler manifestCollectionResponseHandler =
       mock(ManifestCollectionResponseHandler.class);
   private static final ConnectorHearbeatPublisher connectorHearbeatPublisher = mock(ConnectorHearbeatPublisher.class);
+  private static final KryoSerializer referenceFalseKryoSerializer = mock(KryoSerializer.class);
   private static final KryoSerializer kryoSerializer = mock(KryoSerializer.class);
   private static final FeatureFlagService featureFlagService = mock(FeatureFlagService.class);
   private static final PollingResourceClient pollResourceClient = mock(PollingResourceClient.class);
@@ -165,12 +166,12 @@ public class DelegateAgentResourceTest extends CategoryTest {
   @ClassRule
   public static final ResourceTestRule RESOURCES =
       ResourceTestRule.builder()
-          .instance(
-              new DelegateAgentResource(delegateService, accountService, wingsPersistence, delegateRequestRateLimiter,
-                  subdomainUrlHelper, artifactCollectionResponseHandler, instanceSyncResponseHandler,
-                  manifestCollectionResponseHandler, connectorHearbeatPublisher, kryoSerializer,
-                  configurationController, featureFlagService, delegateTaskServiceClassic, pollResourceClient,
-                  instanceSyncResponsePublisher, delegatePollingHeartbeatService, delegateCapacityManagementService))
+          .instance(new DelegateAgentResource(delegateService, accountService, wingsPersistence,
+              delegateRequestRateLimiter, subdomainUrlHelper, artifactCollectionResponseHandler,
+              instanceSyncResponseHandler, manifestCollectionResponseHandler, connectorHearbeatPublisher,
+              kryoSerializer, configurationController, featureFlagService, delegateTaskServiceClassic,
+              pollResourceClient, instanceSyncResponsePublisher, delegatePollingHeartbeatService,
+              delegateCapacityManagementService, referenceFalseKryoSerializer))
           .instance(new AbstractBinder() {
             @Override
             protected void configure() {
@@ -271,12 +272,12 @@ public class DelegateAgentResourceTest extends CategoryTest {
             .buildSourceResponse(BuildSourceResponse.builder().build())
             .build();
 
-    when(kryoSerializer.asObject(any(byte[].class))).thenReturn(buildSourceExecutionResponse);
+    when(referenceFalseKryoSerializer.asObject(any(byte[].class))).thenReturn(buildSourceExecutionResponse);
 
     RequestBody requestBody = RequestBody.create(okhttp3.MediaType.parse("application/octet-stream"), "");
 
     RESOURCES.client()
-        .target("/agent/delegates/artifact-collection/12345679?accountId=" + ACCOUNT_ID)
+        .target("/agent/delegates/artifact-collection/v2/12345679?accountId=" + ACCOUNT_ID)
         .request()
         .post(entity(requestBody, "application/x-kryo"), new GenericType<RestResponse<Boolean>>() {});
 

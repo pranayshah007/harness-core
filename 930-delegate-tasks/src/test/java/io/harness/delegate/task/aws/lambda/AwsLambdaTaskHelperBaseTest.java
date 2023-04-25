@@ -47,12 +47,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import software.amazon.awssdk.core.SdkBytes;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(AwsLambdaTaskHelperBase.class)
+@RunWith(MockitoJUnitRunner.class)
 @OwnedBy(CDP)
 public class AwsLambdaTaskHelperBaseTest extends CategoryTest {
   @InjectMocks AwsLambdaTaskHelperBase awsLambdaTaskHelperBase;

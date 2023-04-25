@@ -518,10 +518,8 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   public void testGetMinutes() {
     Instant startTime = clock.instant();
     Instant endTime = clock.instant().plus(5, ChronoUnit.MINUTES);
-    List<Instant> minutes = graphDataService.getMinutes(startTime, endTime, 0L);
-    assertThat(minutes.size()).isEqualTo(2);
-    assertThat(minutes.get(0)).isEqualTo(startTime);
-    assertThat(minutes.get(1)).isEqualTo(endTime);
+    List<Instant> minutes = graphDataService.getMinutesExclusiveOfStartAndEndTime(startTime, endTime, 0L);
+    assertThat(minutes.size()).isEqualTo(0);
   }
 
   @Test
@@ -530,10 +528,9 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   public void testGetMinutesForMaxRecords() {
     Instant startTime = clock.instant();
     Instant endTime = clock.instant().plus(7, ChronoUnit.DAYS);
-    List<Instant> minutes = graphDataService.getMinutes(startTime, endTime, 2000);
-    assertThat(minutes.size()).isEqualTo(2017);
-    assertThat(minutes.get(0)).isEqualTo(startTime);
-    assertThat(minutes.get(2016)).isEqualTo(endTime);
+    List<Instant> minutes = graphDataService.getMinutesExclusiveOfStartAndEndTime(startTime, endTime, 2000);
+    assertThat(minutes.size()).isEqualTo(2015);
+    assertThat(minutes.get(0)).isEqualTo(startTime.plus(5, ChronoUnit.MINUTES));
   }
 
   private void testGraphCalculation(List<SLIRecord.SLIState> sliStates, SLIMissingDataType sliMissingDataType,

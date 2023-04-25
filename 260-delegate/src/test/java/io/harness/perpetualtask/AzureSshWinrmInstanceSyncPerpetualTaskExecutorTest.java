@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ARVIND;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.DelegateTestBase;
@@ -49,7 +49,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import retrofit2.Call;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -58,7 +58,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutorTest extends Delegate
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
   @Mock private AzureAsyncTaskHelper azureAsyncTaskHelper;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializer referenceFalseKryoSerializer;
 
   @InjectMocks private AzureSshWinrmInstanceSyncPerpetualTaskExecutor executor;
   @Captor private ArgumentCaptor<SshWinrmInstanceSyncPerpetualTaskResponse> perpetualTaskResponseCaptor;
@@ -84,7 +84,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutorTest extends Delegate
                  .tags(new HashMap<>())
                  .hostConnectionType("PublicIP")
                  .build())
-        .when(kryoSerializer)
+        .when(referenceFalseKryoSerializer)
         .asObject(any(byte[].class));
   }
 
@@ -125,6 +125,9 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutorTest extends Delegate
             .setAzureSshWinrmInfraDelegateConfig(ByteString.copyFrom(bytes))
             .build();
 
-    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
+    return PerpetualTaskExecutionParams.newBuilder()
+        .setCustomizedParams(Any.pack(message))
+        .setReferenceFalseKryoSerializer(true)
+        .build();
   }
 }

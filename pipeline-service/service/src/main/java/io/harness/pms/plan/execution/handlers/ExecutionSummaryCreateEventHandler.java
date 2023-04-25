@@ -23,7 +23,9 @@ import io.harness.notification.PipelineEventType;
 import io.harness.plan.Plan;
 import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -125,8 +127,20 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
     updateExecutionInfoInPipelineEntity(
         accountId, orgId, projectId, pipelineId, pipelineEntity.get().getExecutionSummaryInfo(), planExecutionId);
     Plan plan = planService.fetchPlan(ambiance.getPlanId());
-    Map<String, GraphLayoutNode> layoutNodeMap = plan.getGraphLayoutInfo().getLayoutNodesMap();
+    Map<String, GraphLayoutNode> layoutNodeMap = new HashMap<>(plan.getGraphLayoutInfo().getLayoutNodesMap());
     String startingNodeId = plan.getGraphLayoutInfo().getStartingNodeId();
+
+    if (ambiance.getMetadata().getExecutionMode() == ExecutionMode.POST_EXECUTION_ROLLBACK) {
+      startingNodeId = ambiance.getMetadata().getPostExecutionRollbackInfo(0).getPostExecutionRollbackStageId();
+      GraphLayoutNode layoutNode = layoutNodeMap.get(startingNodeId);
+      layoutNodeMap.put(startingNodeId,
+          layoutNode.toBuilder()
+              .setEdgeLayoutList(
+                  EdgeLayoutList.newBuilder()
+                      .addAllCurrentNodeChildren(layoutNode.getEdgeLayoutList().getCurrentNodeChildrenList())
+                      .build())
+              .build());
+    }
     Map<String, GraphLayoutNodeDTO> layoutNodeDTOMap = new HashMap<>();
     Set<String> modules = new LinkedHashSet<>();
     for (Map.Entry<String, GraphLayoutNode> entry : layoutNodeMap.entrySet()) {

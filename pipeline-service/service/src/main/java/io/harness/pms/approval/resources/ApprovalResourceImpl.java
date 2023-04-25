@@ -46,7 +46,8 @@ public class ApprovalResourceImpl implements ApprovalResource {
 
   public ResponseDTO<HarnessApprovalInstanceAuthorizationDTO> getHarnessApprovalInstanceAuthorization(
       @NotEmpty String approvalInstanceId) {
-    return ResponseDTO.newResponse(approvalResourceService.getHarnessApprovalInstanceAuthorization(approvalInstanceId));
+    return ResponseDTO.newResponse(
+        approvalResourceService.getHarnessApprovalInstanceAuthorization(approvalInstanceId, false));
   }
 
   public ResponseDTO<String> getInitialStageYamlSnippet(@NotNull ApprovalType approvalType, String routingId)

@@ -29,6 +29,11 @@ import io.harness.logging.LogCallback;
 import io.harness.logging.Misc;
 import io.harness.shell.ExecuteCommandResponse.ExecuteCommandResponseBuilder;
 import io.harness.shell.ShellExecutionData.ShellExecutionDataBuilder;
+import io.harness.shell.ssh.SshClientManager;
+import io.harness.shell.ssh.connection.ExecRequest;
+import io.harness.shell.ssh.connection.ExecResponse;
+import io.harness.shell.ssh.sftp.SftpRequest;
+import io.harness.shell.ssh.sftp.SftpResponse;
 import io.harness.stream.BoundedInputStream;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -45,6 +50,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.Reader;
+import java.io.StringReader;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -102,13 +109,27 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
 
   @Override
   public CommandExecutionStatus executeCommandString(String command, StringBuffer output, boolean displayCommand) {
-    try {
-      return executeCommandString(command, output, displayCommand, false);
-    } catch (SshRetryableException ex) {
-      log.info("As MaxSessions limit reached, fetching new session for executionId: {}, hostName: {}",
-          config.getExecutionId(), config.getHost());
-      saveExecutionLog(format("Retry connecting to %s ....", config.getHost()));
-      return executeCommandString(command, output, displayCommand, true);
+    if (config.isUseSshClient()) {
+      try {
+        ExecResponse response = SshClientManager.exec(
+            ExecRequest.builder().command(command).displayCommand(displayCommand).build(), config, logCallback);
+        if (output != null && isNotEmpty(response.getOutput())) {
+          output.append(response.getOutput());
+        }
+        return response.getStatus();
+      } catch (Exception ex) {
+        log.error("Failed to exec due to: ", ex);
+        throw ex;
+      }
+    } else {
+      try {
+        return executeCommandString(command, output, displayCommand, false);
+      } catch (SshRetryableException ex) {
+        log.info("As MaxSessions limit reached, fetching new session for executionId: {}, hostName: {}",
+            config.getExecutionId(), config.getHost());
+        saveExecutionLog(format("Retry connecting to %s ....", config.getHost()));
+        return executeCommandString(command, output, displayCommand, true);
+      }
     }
   }
 
@@ -209,18 +230,118 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
   @Override
   public ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect,
       List<String> secretEnvVariablesToCollect, Long timeoutInMillis) {
-    try {
-      return getExecuteCommandResponse(command, envVariablesToCollect,
-          secretEnvVariablesToCollect == null ? Collections.emptyList() : secretEnvVariablesToCollect, false);
-    } catch (SshRetryableException ex) {
-      log.info("As MaxSessions limit reached, fetching new session for executionId: {}, hostName: {}",
-          config.getExecutionId(), config.getHost());
-      saveExecutionLog(format("Retry connecting to %s ....", config.getHost()));
-      return getExecuteCommandResponse(command, envVariablesToCollect,
-          secretEnvVariablesToCollect == null ? Collections.emptyList() : secretEnvVariablesToCollect, true);
-    } finally {
-      logCallback.dispatchLogs();
+    if (config.isUseSshClient()) {
+      try {
+        return executeCommandStringWithSshClient(command, envVariablesToCollect, secretEnvVariablesToCollect);
+      } catch (Exception ex) {
+        log.error("Failed to execute command: ", ex);
+        throw ex;
+      } finally {
+        logCallback.dispatchLogs();
+      }
+    } else {
+      try {
+        return getExecuteCommandResponse(command, envVariablesToCollect,
+            secretEnvVariablesToCollect == null ? Collections.emptyList() : secretEnvVariablesToCollect, false);
+      } catch (SshRetryableException ex) {
+        log.info("As MaxSessions limit reached, fetching new session for executionId: {}, hostName: {}",
+            config.getExecutionId(), config.getHost());
+        saveExecutionLog(format("Retry connecting to %s ....", config.getHost()));
+        return getExecuteCommandResponse(command, envVariablesToCollect,
+            secretEnvVariablesToCollect == null ? Collections.emptyList() : secretEnvVariablesToCollect, true);
+      } finally {
+        logCallback.dispatchLogs();
+      }
     }
+  }
+
+  private ExecuteCommandResponse executeCommandStringWithSshClient(
+      String command, List<String> envVariablesToCollect, List<String> secretEnvVariablesToCollect) {
+    command = setupBashEnvironment(command, config, envVariablesToCollect, secretEnvVariablesToCollect);
+    ExecResponse response = SshClientManager.exec(
+        ExecRequest.builder().command(command).displayCommand(false).build(), config, logCallback);
+    Map<String, String> envVariablesMap = new HashMap<>();
+    if (response.getStatus() == SUCCESS
+        && isNotEmpty(getVariables(envVariablesToCollect, secretEnvVariablesToCollect))) {
+      SftpResponse sftpResponse =
+          SshClientManager.sftpDownload(SftpRequest.builder()
+                                            .fileName(getEnvVariablesFilename(config))
+                                            .directory(resolveEnvVarsInPath(config.getWorkingDirectory() + "/"))
+                                            .cleanup(true)
+                                            .build(),
+              config, logCallback);
+      String content = sftpResponse.getContent();
+      BufferedReader reader = null;
+      try {
+        Reader inputString = new StringReader(content);
+        reader = new BufferedReader(inputString);
+        processScriptOutputFile(envVariablesMap, reader, secretEnvVariablesToCollect);
+      } catch (IOException ex) {
+        log.error("Failed to generate output for variables", ex);
+      } finally {
+        try {
+          reader.close();
+        } catch (IOException ex2) {
+          log.error("Failed to close reader", ex2);
+        }
+      }
+
+      validateExportedVariables(envVariablesMap);
+      return ExecuteCommandResponse.builder()
+          .status(response.getStatus())
+          .commandExecutionData(ShellExecutionData.builder().sweepingOutputEnvVariables(envVariablesMap).build())
+          .build();
+    } else {
+      return ExecuteCommandResponse.builder()
+          .status(response.getStatus())
+          .commandExecutionData(ShellExecutionData.builder().sweepingOutputEnvVariables(envVariablesMap).build())
+          .build();
+    }
+  }
+
+  private String setupBashEnvironment(String command, SshSessionConfig sshSessionConfig,
+      List<String> envVariablesToCollect, List<String> secretEnvVariablesToCollect) {
+    String directoryPath = resolveEnvVarsInPath(sshSessionConfig.getWorkingDirectory() + "/");
+
+    if (isNotEmpty(sshSessionConfig.getEnvVariables())) {
+      String exportCommand = buildExportForEnvironmentVariables(sshSessionConfig.getEnvVariables());
+      command = exportCommand + "\n" + command;
+    }
+
+    String envVariablesFilename = null;
+    command = "cd \"" + directoryPath + "\"\n" + command;
+
+    // combine both variable types
+    List<String> allVariablesToCollect = getVariables(envVariablesToCollect, secretEnvVariablesToCollect);
+
+    if (!allVariablesToCollect.isEmpty()) {
+      envVariablesFilename = getEnvVariablesFilename(sshSessionConfig);
+      command = addEnvVariablesCollector(
+          command, allVariablesToCollect, "\"" + directoryPath + envVariablesFilename + "\"", ScriptType.BASH);
+    }
+
+    return command;
+  }
+
+  @NotNull
+  private static String getEnvVariablesFilename(SshSessionConfig sshSessionConfig) {
+    return "harness-" + sshSessionConfig.getExecutionId() + ".out";
+  }
+
+  @NotNull
+  private static List<String> getVariables(
+      List<String> envVariablesToCollect, List<String> secretEnvVariablesToCollect) {
+    if (null == envVariablesToCollect) {
+      envVariablesToCollect = new ArrayList<>();
+    }
+    if (null == secretEnvVariablesToCollect) {
+      secretEnvVariablesToCollect = new ArrayList<>();
+    }
+    List<String> allVariablesToCollect =
+        Stream.concat(envVariablesToCollect.stream(), secretEnvVariablesToCollect.stream())
+            .filter(EmptyPredicate::isNotEmpty)
+            .collect(Collectors.toList());
+    return allVariablesToCollect;
   }
 
   public ExecuteCommandResponse getExecuteCommandResponse(
@@ -245,6 +366,8 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
 
       ((ChannelExec) channel).setPty(true);
 
+      command = setupBashEnvironment(command, this.config, envVariablesToCollect, secretEnvVariablesToCollect);
+
       String directoryPath = resolveEnvVarsInPath(this.config.getWorkingDirectory() + "/");
 
       if (isNotEmpty(this.config.getEnvVariables())) {
@@ -256,13 +379,10 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
       command = "cd \"" + directoryPath + "\"\n" + command;
 
       // combine both variable types
-      List<String> allVariablesToCollect =
-          Stream.concat(envVariablesToCollect.stream(), secretEnvVariablesToCollect.stream())
-              .filter(EmptyPredicate::isNotEmpty)
-              .collect(Collectors.toList());
+      List<String> allVariablesToCollect = getVariables(envVariablesToCollect, secretEnvVariablesToCollect);
 
       if (!allVariablesToCollect.isEmpty()) {
-        envVariablesFilename = "harness-" + this.config.getExecutionId() + ".out";
+        envVariablesFilename = getEnvVariablesFilename(this.config);
         command = addEnvVariablesCollector(
             command, allVariablesToCollect, "\"" + directoryPath + envVariablesFilename + "\"", ScriptType.BASH);
       }

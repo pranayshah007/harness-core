@@ -467,6 +467,13 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   @Override
+  public TemplateEntity updateV2(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, Criteria criteria, Update update) {
+    return mongoTemplate.findAndModify(
+        query(criteria), update, FindAndModifyOptions.options().returnNew(true), TemplateEntity.class);
+  }
+
+  @Override
   public TemplateEntity updateIsStableTemplate(TemplateEntity templateEntity, boolean value) {
     Update update = new Update().set(TemplateEntityKeys.isStableTemplate, value);
     return mongoTemplate.findAndModify(query(buildCriteria(templateEntity)), update,

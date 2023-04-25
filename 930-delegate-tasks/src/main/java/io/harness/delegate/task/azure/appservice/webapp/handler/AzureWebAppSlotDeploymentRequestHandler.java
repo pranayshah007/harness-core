@@ -69,7 +69,7 @@ public class AzureWebAppSlotDeploymentRequestHandler
   private AzureWebAppRequestResponse executeContainer(AzureWebAppSlotDeploymentRequest taskRequest,
       AzureConfig azureConfig, AzureLogCallbackProvider logCallbackProvider) {
     AzureWebClientContext azureWebClientContext =
-        buildAzureWebClientContext(taskRequest.getInfrastructure(), azureConfig);
+        buildAzureWebClientContext(taskRequest.getInfrastructure(), azureConfig, true);
     AzureWebAppInfraDelegateConfig infrastructure = taskRequest.getInfrastructure();
     AzureAppServiceDockerDeploymentContext dockerDeploymentContext =
         toAzureAppServiceDockerDeploymentContext(taskRequest, azureWebClientContext, logCallbackProvider);

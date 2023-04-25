@@ -112,6 +112,11 @@ tiServiceConfig:
   globalToken: "78d16b66-4b4c-11eb-8377-acde48001122"
 
 sscaServiceConfig:
+  httpClientConfig:
+    baseUrl: http://localhost:8186
+    connectTimeOutSeconds: 40
+    readTimeOutSeconds: 40
+  serviceSecret: secret
   baseUrl: http://localhost:8186
   globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
 
@@ -158,6 +163,10 @@ ciExecutionServiceConfig:
   defaultCPULimit: 400
   defaultInternalImageConnector: ''
   executionLimits:
+    freeNewUser:
+      dailyMaxBuildsCount: 5
+    freeBasicUser:
+      dailyMaxBuildsCount: 25
     free:
       defaultTotalExecutionCount: 20
       defaultMacExecutionCount: 5
@@ -171,13 +180,18 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.7
-  liteEngineImage: harness/ci-lite-engine:1.16.7
+  addonImage: harness/ci-addon:1.16.10
+  liteEngineImage: harness/ci-lite-engine:1.16.10
   isLocal: false
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
     bucket: "gcp_bucket"
     serviceKey: "gcp_service_key"
+  dockerLayerCachingConfig:
+    endpoint: "endpoint"
+    bucket: "bucket"
+    accessKey: "access_key"
+    secretKey: "secret_key"
   hostedVmConfig:
     splitLinuxAmd64Pool: false
     splitLinuxArm64Pool: false
@@ -260,19 +274,19 @@ ciExecutionServiceConfig:
         - "pwsh"
         - "C:\\bin\\clone.ps1"
     buildAndPushDockerRegistryConfig:
-      image: plugins/kaniko:1.7.1
+      image: plugins/kaniko:1.7.2
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.7.1
+      image: plugins/kaniko-ecr:1.7.2
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:
-      image: plugins/kaniko-gcr:1.7.1
+      image: plugins/kaniko-gcr:1.7.2
       entrypoint:
         - /kaniko/kaniko-gcr
     buildAndPushACRConfig:
-      image: plugins/kaniko-acr:1.7.1
+      image: plugins/kaniko-acr:1.7.2
       entrypoint:
         - /kaniko/kaniko-acr
     gcsUploadConfig:
@@ -340,6 +354,8 @@ ciExecutionServiceConfig:
         name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.5.6
       gitCloneConfig:
         name: github.com/wings-software/drone-git@refs/tags/v1.3.2
+      dockerBuildxConfig:
+        name: github.com/drone-plugins/drone-buildx@refs/tags/v1.0.0
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}

@@ -14,9 +14,9 @@ import static software.wings.service.InstanceSyncConstants.HOSTNAMES;
 import static software.wings.service.InstanceSyncConstants.INFRASTRUCTURE_MAPPING_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -120,7 +120,7 @@ public class PdcPerpetualTaskClientTest extends WingsBaseTest {
   public void testGetTaskParams() {
     PerpetualTaskClientContext clientContext = getPerpetualTaskClientContext();
 
-    Message taskParams = pdcPerpetualTaskServiceClient.getTaskParams(clientContext);
+    Message taskParams = pdcPerpetualTaskServiceClient.getTaskParams(clientContext, true);
 
     assertThat(taskParams).isNotNull();
     assertThat(taskParams instanceof PdcInstanceSyncPerpetualTaskParams).isTrue();
@@ -148,7 +148,7 @@ public class PdcPerpetualTaskClientTest extends WingsBaseTest {
     when(secretsManager.getEncryptionDetails(winRmConnectionAttributes, null, null))
         .thenReturn(Collections.emptyList());
 
-    Message taskParams = pdcPerpetualTaskServiceClient.getTaskParams(clientContext);
+    Message taskParams = pdcPerpetualTaskServiceClient.getTaskParams(clientContext, true);
 
     assertThat(taskParams).isNotNull();
     assertThat(taskParams instanceof PdcInstanceSyncPerpetualTaskParams).isTrue();

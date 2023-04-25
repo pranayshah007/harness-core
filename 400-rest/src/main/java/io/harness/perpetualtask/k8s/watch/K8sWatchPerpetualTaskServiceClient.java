@@ -16,9 +16,9 @@ import io.harness.ccm.cluster.ClusterRecordService;
 import io.harness.ccm.cluster.entities.Cluster;
 import io.harness.ccm.cluster.entities.ClusterRecord;
 import io.harness.delegate.beans.TaskData;
+import io.harness.perpetualtask.PerpetualTaskClientBase;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.TaskType;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
@@ -32,9 +32,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(CE)
-public class K8sWatchPerpetualTaskServiceClient implements PerpetualTaskServiceClient {
+public class K8sWatchPerpetualTaskServiceClient extends PerpetualTaskClientBase implements PerpetualTaskServiceClient {
   @Inject private K8sClusterConfigFactory k8sClusterConfigFactory;
-  @Inject private KryoSerializer kryoSerializer;
+
   @Inject private ClusterRecordService clusterRecordService;
 
   private static final String CLOUD_PROVIDER_ID = "cloudProviderId";
@@ -42,7 +42,7 @@ public class K8sWatchPerpetualTaskServiceClient implements PerpetualTaskServiceC
   private static final String CLUSTER_NAME = "clusterName";
 
   @Override
-  public K8sWatchTaskParams getTaskParams(PerpetualTaskClientContext clientContext) {
+  public K8sWatchTaskParams getTaskParams(PerpetualTaskClientContext clientContext, boolean referenceFalse) {
     Map<String, String> clientParams = clientContext.getClientParams();
     String cloudProviderId = clientParams.get(CLOUD_PROVIDER_ID);
     String clusterId = clientParams.get(CLUSTER_ID);
@@ -52,7 +52,7 @@ public class K8sWatchPerpetualTaskServiceClient implements PerpetualTaskServiceC
       clusterName = clusterRecord.getCluster().getClusterName();
     }
     K8sClusterConfig config = k8sClusterConfigFactory.getK8sClusterConfig(clusterId);
-    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(config));
+    ByteString bytes = ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(config));
 
     // TODO(Tang): throw exception upon validation failure
 
@@ -66,10 +66,10 @@ public class K8sWatchPerpetualTaskServiceClient implements PerpetualTaskServiceC
 
   @Override
   public DelegateTask getValidationTask(PerpetualTaskClientContext clientContext, String accountId) {
-    K8sWatchTaskParams params = getTaskParams(clientContext);
+    K8sWatchTaskParams params = getTaskParams(clientContext, true);
 
     K8sClusterConfig k8sClusterConfig =
-        (K8sClusterConfig) kryoSerializer.asObject(params.getK8SClusterConfig().toByteArray());
+        (K8sClusterConfig) getKryoSerializer(true).asObject(params.getK8SClusterConfig().toByteArray());
 
     K8sTaskParameters k8sTaskParameters =
         new K8sTaskParameters("", "", "", "", k8sClusterConfig, "", "", 0, APPLY, null, null, false, false, true);
