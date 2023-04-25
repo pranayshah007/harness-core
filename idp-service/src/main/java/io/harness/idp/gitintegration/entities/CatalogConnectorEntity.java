@@ -30,6 +30,7 @@ import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import java.util.List;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -63,6 +64,7 @@ public class CatalogConnectorEntity
   @NotNull String identifier;
   @NotNull String connectorIdentifier;
   @NotNull String connectorProviderType;
+  @NotNull Set<String> delegateSelectors;
   @NotNull CatalogInfraConnectorType type;
   CatalogRepositoryDetails catalogRepositoryDetails;
   @SchemaIgnore @CreatedBy private EmbeddedUser createdBy;

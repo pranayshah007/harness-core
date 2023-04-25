@@ -32,11 +32,13 @@ import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
 import io.harness.perpetualtask.instancesyncv2.ResponseBatchConfig;
 import io.harness.serializer.KryoSerializer;
+import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.api.DeploymentEvent;
 import software.wings.api.DeploymentSummary;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.TaskType;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2DeploymentHelper;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2DeploymentHelperFactory;
 import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
@@ -57,6 +59,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.protobuf.util.Durations;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -90,12 +93,14 @@ public class CgInstanceSyncServiceV2 {
   private final InfrastructureMappingService infrastructureMappingService;
   private final SettingsServiceImpl cloudProviderService;
   private final KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   private final InstanceHandlerFactoryService instanceHandlerFactory;
   private final PersistentLocker persistentLocker;
   private final FeatureFlagService featureFlagService;
   private final InstanceSyncPerpetualTaskService instanceSyncPerpetualTaskService;
   private final InstanceService instanceService;
   private final PerpetualTaskService perpetualTaskService;
+  private final DelegateTaskService delegateTaskService;
 
   private static final int INSTANCE_COUNT_LIMIT =
       Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_INSTANCE_COUNT", "100"));
@@ -115,8 +120,16 @@ public class CgInstanceSyncServiceV2 {
 
     String infraMappingId = event.getDeploymentSummaries().iterator().next().getInfraMappingId();
     String appId = event.getDeploymentSummaries().iterator().next().getAppId();
+    String accountId = event.getDeploymentSummaries().iterator().next().getAccountId();
     InfrastructureMapping infrastructureMapping = infrastructureMappingService.get(appId, infraMappingId);
     isSupportedCloudProvider(infrastructureMapping.getComputeProviderType());
+
+    if (taskDetailsService.getForInfraMapping(accountId, infraMappingId) == null
+        && !(delegateTaskService.isTaskTypeSupportedByAllDelegates(
+            accountId, TaskType.INSTANCE_SYNC_V2_CG_SUPPORT.name()))) {
+      throw new UnsupportedOperationException(
+          format("INSTANCE_SYNC_V2_CG_SUPPORT task type is not supported for accountId: [%s]", accountId));
+    }
 
     int retryCount = 0;
     while (retryCount < HANDLE_NEW_DEPLOYMENT_MAX_RETRIES) {
@@ -197,7 +210,8 @@ public class CgInstanceSyncServiceV2 {
     }
   }
 
-  public void processInstanceSyncResult(String perpetualTaskId, CgInstanceSyncResponse result) {
+  public void processInstanceSyncResult(
+      String perpetualTaskId, CgInstanceSyncResponse result, boolean referenceFalseKryoSerializer) {
     log.info("Got the result. Starting to process. Perpetual Task Id: [{}] and response [{}]", perpetualTaskId, result);
 
     if (!result.getExecutionStatus().isEmpty()
@@ -257,7 +271,7 @@ public class CgInstanceSyncServiceV2 {
       instancesPerTask.get(instanceSyncData.getTaskDetailsId()).add(instanceSyncData);
     }
 
-    handlingInstanceSync(instancesPerTask, instanceSyncTaskDetailsMap);
+    handlingInstanceSync(instancesPerTask, instanceSyncTaskDetailsMap, referenceFalseKryoSerializer);
   }
 
   private void instanceSyncV2CleanupIfPresent(String perpetualTaskId, CgInstanceSyncResponse result) {
@@ -268,7 +282,7 @@ public class CgInstanceSyncServiceV2 {
   }
 
   private void handlingInstanceSync(Map<String, List<InstanceSyncData>> instancesPerTask,
-      Map<String, InstanceSyncTaskDetails> instanceSyncTaskDetailsMap) {
+      Map<String, InstanceSyncTaskDetails> instanceSyncTaskDetailsMap, boolean referenceFalseKryoSerializer) {
     for (String taskDetailsId : instancesPerTask.keySet()) {
       InstanceSyncTaskDetails taskDetails = instanceSyncTaskDetailsMap.get(taskDetailsId);
       if (isNull(taskDetails)) {
@@ -309,8 +323,8 @@ public class CgInstanceSyncServiceV2 {
         }
 
         for (InstanceSyncData instanceSyncData : instancesPerTask.get(taskDetailsId)) {
-          DelegateResponseData delegateResponse =
-              (DelegateResponseData) kryoSerializer.asObject(instanceSyncData.getTaskResponse().toByteArray());
+          DelegateResponseData delegateResponse = (DelegateResponseData) getKryoSerializer(referenceFalseKryoSerializer)
+                                                      .asObject(instanceSyncData.getTaskResponse().toByteArray());
           try {
             instanceSyncHandler.processInstanceSyncResponseFromPerpetualTask(infraMapping, delegateResponse);
           } catch (NoInstancesException ex) {
@@ -331,6 +345,11 @@ public class CgInstanceSyncServiceV2 {
       }
     }
   }
+
+  private KryoSerializer getKryoSerializer(boolean referenceFalse) {
+    return referenceFalse ? referenceFalseKryoSerializer : kryoSerializer;
+  }
+
   private void handleSyncFailure(InfrastructureMapping infrastructureMapping, Exception ex) {
     String errorMsg = getErrorMsg(ex);
 

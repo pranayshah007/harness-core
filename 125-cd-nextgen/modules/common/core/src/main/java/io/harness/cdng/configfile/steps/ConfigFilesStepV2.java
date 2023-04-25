@@ -106,6 +106,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
   private static final String CONFIG_FILES_STEP_V2 = "CONFIG_FILES_STEP_V2";
   static final String CONFIG_FILE_COMMAND_UNIT = "configFiles";
   static final int CONFIG_FILE_GIT_TASK_TIMEOUT = 10;
+  private static final String CONFIG_FILES_STEP_DETAIL_KEY = "ConfigFilesStepDetailKey";
 
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private CDExpressionResolver cdExpressionResolver;
@@ -217,6 +218,8 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
       sweepingOutputService.consume(
           ambiance, OutcomeExpressionConstants.CONFIG_FILES, configFilesOutcomes, StepCategory.STAGE.name());
     }
+
+    serviceStepsHelper.publishTaskIdsStepDetailsForServiceStep(ambiance, taskIds, CONFIG_FILES_STEP_DETAIL_KEY);
 
     return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).setStatus(Status.SUCCEEDED).build();
   }

@@ -31,6 +31,8 @@ import io.harness.accesscontrol.acl.ResourceAttributeProvider;
 import io.harness.accesscontrol.acl.api.ACLResource;
 import io.harness.accesscontrol.acl.api.ACLResourceImpl;
 import io.harness.accesscontrol.acl.api.ResourceAttributeProviderImpl;
+import io.harness.accesscontrol.admin.api.AccessControlAdminResource;
+import io.harness.accesscontrol.admin.api.AccessControlAdminResourceImpl;
 import io.harness.accesscontrol.aggregator.api.AggregatorResource;
 import io.harness.accesscontrol.aggregator.api.AggregatorResourceImpl;
 import io.harness.accesscontrol.aggregator.consumers.AccessControlChangeEventFailureHandler;
@@ -395,6 +397,7 @@ public class AccessControlModule extends AbstractModule {
 
     bind(ACLResource.class).to(ACLResourceImpl.class);
     bind(AggregatorResource.class).to(AggregatorResourceImpl.class);
+    bind(AccessControlAdminResource.class).to(AccessControlAdminResourceImpl.class);
     bind(HealthResource.class).to(HealthResourceImpl.class);
     bind(PermissionResource.class).to(PermissionResourceImpl.class);
     bind(AccessControlPreferenceResource.class).to(AccessControlPreferenceResourceImpl.class);

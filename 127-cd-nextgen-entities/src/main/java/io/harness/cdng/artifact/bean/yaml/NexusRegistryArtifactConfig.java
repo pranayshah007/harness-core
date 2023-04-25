@@ -108,6 +108,10 @@ public class NexusRegistryArtifactConfig implements ArtifactConfig, Visitable, W
    * Tag regex is used to get latest build from builds matching regex.
    */
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> tagRegex;
+  /**
+   * Digest refers to the SHA256 digest of the docker image file.
+   */
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> digest;
 
   /**
    * Identifier for artifact.
@@ -142,6 +146,9 @@ public class NexusRegistryArtifactConfig implements ArtifactConfig, Visitable, W
     }
     if (!ParameterField.isNull(nexusRegistryArtifactConfig.getTagRegex())) {
       resultantConfig = resultantConfig.withTagRegex(nexusRegistryArtifactConfig.getTagRegex());
+    }
+    if (!ParameterField.isNull(nexusRegistryArtifactConfig.getDigest())) {
+      resultantConfig = resultantConfig.withDigest(nexusRegistryArtifactConfig.getDigest());
     }
     return resultantConfig;
   }

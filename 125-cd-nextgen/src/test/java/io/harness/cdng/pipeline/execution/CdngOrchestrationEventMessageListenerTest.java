@@ -15,9 +15,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.pipeline.executions.CDSdkOrchestrationEventHandler;
 import io.harness.cdng.pipeline.executions.CdngOrchestrationEventMessageListener;
 import io.harness.eventsframework.consumer.Message;
-import io.harness.pms.sdk.core.execution.events.orchestration.SdkOrchestrationEventHandler;
 import io.harness.rule.Owner;
 
 import com.google.common.util.concurrent.MoreExecutors;
@@ -28,11 +28,11 @@ import org.mockito.Mockito;
 
 @OwnedBy(HarnessTeam.CDP)
 public class CdngOrchestrationEventMessageListenerTest {
-  private SdkOrchestrationEventHandler eventHandler;
+  private CDSdkOrchestrationEventHandler eventHandler;
 
   @Before
   public void setup() {
-    eventHandler = new SdkOrchestrationEventHandler();
+    eventHandler = new CDSdkOrchestrationEventHandler();
   }
 
   @Test

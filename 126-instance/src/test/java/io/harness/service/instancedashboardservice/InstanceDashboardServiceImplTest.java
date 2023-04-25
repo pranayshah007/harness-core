@@ -82,8 +82,8 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
 
   private static final List<String> BUILD_IDS = Arrays.asList("id1", "id2");
   private static final List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels =
-      Arrays.asList(new ArtifactDeploymentDetailModel(ENV_1, DISPLAY_NAME, 2l),
-          new ArtifactDeploymentDetailModel(ENV_2, DISPLAY_NAME, 1l));
+      Arrays.asList(new ArtifactDeploymentDetailModel(ENV_1, DISPLAY_NAME, 2l, null, null),
+          new ArtifactDeploymentDetailModel(ENV_2, DISPLAY_NAME, 1l, null, null));
   private static final List<EnvironmentInstanceCountModel> environmentInstanceCountModels =
       Arrays.asList(new EnvironmentInstanceCountModel(ENV_1, 2), new EnvironmentInstanceCountModel(ENV_2, 1));
   private final List<Instance> instanceList = Arrays.asList(Instance.builder()

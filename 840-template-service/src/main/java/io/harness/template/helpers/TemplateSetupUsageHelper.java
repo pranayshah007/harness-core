@@ -59,7 +59,8 @@ public class TemplateSetupUsageHelper {
         entitySetupUsageClient.listAllReferredUsages(PAGE, SIZE, accountId, templateReferenceFqn, null, null));
   }
 
-  public void publishSetupUsageEvent(TemplateEntity templateEntity, List<EntityDetailProtoDTO> referredEntities) {
+  public void publishSetupUsageEvent(
+      TemplateEntity templateEntity, List<EntityDetailProtoDTO> referredEntities, Map<String, String> metadata) {
     // Deleting all references so that any deleted entity is not still referred.
     deleteExistingSetupUsages(templateEntity);
     if (EmptyPredicate.isEmpty(referredEntities)) {
@@ -72,7 +73,7 @@ public class TemplateSetupUsageHelper {
             .setTemplateRef(
                 TemplateReferenceProtoUtils.createTemplateReferenceProto(accountId, templateEntity.getOrgIdentifier(),
                     templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(),
-                    templateEntity.getTemplateScope(), templateEntity.getVersionLabel(), null))
+                    templateEntity.getTemplateScope(), templateEntity.getVersionLabel(), metadata))
             .setType(EntityTypeProtoEnum.TEMPLATE)
             .setName(templateEntity.getName())
             .build();

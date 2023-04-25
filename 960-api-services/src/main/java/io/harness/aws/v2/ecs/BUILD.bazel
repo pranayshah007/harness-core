@@ -13,6 +13,7 @@ java_library(
     deps = [
         "//:lombok",
         "//960-api-services/src/main/java/io/harness/aws/beans:module",
+        "//960-api-services/src/main/java/io/harness/aws/util:module",
         "//960-api-services/src/main/java/io/harness/aws/v2:module",
         "//980-commons/src/main/java/io/harness/eraro:module",
         "//980-commons/src/main/java/io/harness/exception:module",

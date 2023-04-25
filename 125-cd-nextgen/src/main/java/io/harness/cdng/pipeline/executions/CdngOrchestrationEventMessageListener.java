@@ -17,7 +17,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.pms.contracts.execution.events.OrchestrationEvent;
 import io.harness.pms.events.base.PmsAbstractMessageListener;
-import io.harness.pms.sdk.core.execution.events.orchestration.SdkOrchestrationEventHandler;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -30,12 +29,12 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class CdngOrchestrationEventMessageListener
-    extends PmsAbstractMessageListener<OrchestrationEvent, SdkOrchestrationEventHandler> {
+    extends PmsAbstractMessageListener<OrchestrationEvent, CDSdkOrchestrationEventHandler> {
   @Inject
   public CdngOrchestrationEventMessageListener(@Named(SDK_SERVICE_NAME) String serviceName,
-      SdkOrchestrationEventHandler sdkOrchestrationEventHandler,
+      CDSdkOrchestrationEventHandler cdSdkOrchestrationEventHandler,
       @Named(ORCHESTRATION_EVENT_EXECUTOR_NAME) ExecutorService executorService) {
-    super(serviceName, OrchestrationEvent.class, sdkOrchestrationEventHandler, executorService);
+    super(serviceName, OrchestrationEvent.class, cdSdkOrchestrationEventHandler, executorService);
   }
 
   @Override

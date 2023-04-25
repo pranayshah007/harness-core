@@ -1,0 +1,26 @@
+inputSet:
+  name: nsnsnsn
+  tags: {}
+  identifier: nsnsnsn
+  orgIdentifier: default
+  projectIdentifier: ndndndn
+  pipeline:
+    identifier: laaajjjja
+    stages:
+      - stage:
+          identifier: msmsmsm
+          type: Deployment
+          spec:
+            serviceConfig:
+              serviceDefinition:
+                type: Kubernetes
+                spec:
+                  variables:
+                    - name: smsmms
+                      type: String
+                      value: bsbsbs
+                  artifacts:
+                    primary:
+                      type: DockerRegistry
+                      spec:
+                        tag: v12

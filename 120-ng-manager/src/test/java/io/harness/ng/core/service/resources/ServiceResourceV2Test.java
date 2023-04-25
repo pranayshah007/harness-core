@@ -66,6 +66,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -95,13 +96,13 @@ public class ServiceResourceV2Test extends CategoryTest {
   private final String IDENTIFIER = "identifier";
   private final String NAME = "name";
   ServiceEntity entity;
-  ServiceEntity entityWithMongoVersion;
   ServiceRequestDTO serviceRequestDTO;
   ServiceResponseDTO serviceResponseDTO;
 
+  private AutoCloseable mocks;
   @Before
   public void setup() {
-    MockitoAnnotations.initMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
     entity = ServiceEntity.builder()
                  .accountId(ACCOUNT_ID)
                  .orgIdentifier(ORG_IDENTIFIER)
@@ -110,14 +111,7 @@ public class ServiceResourceV2Test extends CategoryTest {
                  .version(1L)
                  .description("")
                  .build();
-    entityWithMongoVersion = ServiceEntity.builder()
-                                 .accountId(ACCOUNT_ID)
-                                 .orgIdentifier(ORG_IDENTIFIER)
-                                 .projectIdentifier(PROJ_IDENTIFIER)
-                                 .identifier(IDENTIFIER)
-                                 .description("")
-                                 .version(1L)
-                                 .build();
+
     serviceRequestDTO = ServiceRequestDTO.builder()
                             .identifier(IDENTIFIER)
                             .orgIdentifier(ORG_IDENTIFIER)
@@ -133,6 +127,13 @@ public class ServiceResourceV2Test extends CategoryTest {
                              .description("")
                              .tags(new HashMap<>())
                              .build();
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    if (mocks != null) {
+      mocks.close();
+    }
   }
 
   @Test
@@ -242,7 +243,9 @@ public class ServiceResourceV2Test extends CategoryTest {
   @Category(UnitTests.class)
   public void testListTemplate() {
     when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(entity));
-    serviceResourceV2.get(IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
+    ResponseDTO<ServiceResponse> serviceResponseResponseDTO =
+        serviceResourceV2.get(IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
+    assertThat(serviceResponseResponseDTO.getEntityTag()).isNull();
   }
 
   @Test

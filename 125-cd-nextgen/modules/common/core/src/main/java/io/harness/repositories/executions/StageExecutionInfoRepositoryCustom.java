@@ -31,4 +31,6 @@ public interface StageExecutionInfoRepositoryCustom {
       ExecutionInfoKey executionInfoKey, String executionId, int limit);
 
   DeleteResult deleteAll(Criteria criteria);
+
+  StageExecutionInfo findByStageExecutionId(String stageExecutionId, Scope scope);
 }

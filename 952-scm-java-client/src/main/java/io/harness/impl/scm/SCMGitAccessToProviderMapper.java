@@ -9,6 +9,7 @@ package io.harness.impl.scm;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.encryption.SecretRefData;
 import io.harness.gitsync.common.dtos.gitAccess.AzureRepoAccessDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GitAccessDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GithubAccessDTO;
@@ -51,7 +52,9 @@ public class SCMGitAccessToProviderMapper {
           .setIsGithubApp(true)
           .build();
     } else {
-      return GithubProvider.newBuilder().setAccessToken(getToken(githubAccessDTO)).build();
+      return GithubProvider.newBuilder()
+          .setAccessToken(getToken(((GithubAccessTokenDTO) githubAccessDTO).getTokenRef()))
+          .build();
     }
   }
 
@@ -62,13 +65,12 @@ public class SCMGitAccessToProviderMapper {
         githubAppAccessDTO.getInstallationIdRef(), githubAppAccessDTO.getPrivateKeyRef(), "https://api.github.com/");
   }
 
-  private String getToken(GithubAccessDTO githubAccessDTO) {
-    GithubAccessTokenDTO githubAccessTokenDTO = (GithubAccessTokenDTO) githubAccessDTO;
-    return scmGitProviderHelper.getToken(githubAccessTokenDTO.getTokenRef());
+  private String getToken(SecretRefData tokenRef) {
+    return scmGitProviderHelper.getToken(tokenRef);
   }
 
   private Provider mapToAzureRepoProvider(AzureRepoAccessDTO azureRepoAccessDTO) {
-    String personalAccessToken = String.valueOf(azureRepoAccessDTO.getTokenRef().getDecryptedValue());
+    String personalAccessToken = getToken(azureRepoAccessDTO.getTokenRef());
     AzureProvider azureProvider = AzureProvider.newBuilder().setPersonalAccessToken(personalAccessToken).build();
     return Provider.newBuilder().setAzure(azureProvider).build();
   }
@@ -78,8 +80,6 @@ public class SCMGitAccessToProviderMapper {
   }
 
   private GitlabProvider createGitLabProvider(GitlabAccessDTO gitlabAccessDTO) {
-    return GitlabProvider.newBuilder()
-        .setAccessToken(String.valueOf(gitlabAccessDTO.getTokenRef().getDecryptedValue()))
-        .build();
+    return GitlabProvider.newBuilder().setAccessToken(getToken(gitlabAccessDTO.getTokenRef())).build();
   }
 }

@@ -1,0 +1,19 @@
+---
+name: rule
+identifier: rule
+orgIdentifier: null
+projectIdentifier: null
+type: ServiceLevelObjective
+conditions:
+  - type: ErrorBudgetRemainingPercentage
+    spec:
+      threshold: 10
+  - type: ErrorBudgetBurnRate
+    spec:
+      threshold: 5
+      lookBackDuration: 10m
+notificationMethod:
+  type: Email
+  spec:
+    userGroups: [testUserGroup]
+    recipients: [test@harness.io]

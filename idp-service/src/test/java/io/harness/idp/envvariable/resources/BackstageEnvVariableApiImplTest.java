@@ -245,7 +245,7 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
     when(backstageEnvVariableService.findByAccountIdentifier(TEST_ACCOUNT_IDENTIFIER)).thenReturn(secrets);
     doThrow(new InvalidRequestException(ERROR_MESSAGE, USER))
         .when(backstageEnvVariableService)
-        .sync(secrets, TEST_ACCOUNT_IDENTIFIER);
+        .findAndSync(TEST_ACCOUNT_IDENTIFIER);
     Response response = backstageEnvVariableApiImpl.syncBackstageEnvVariables(TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
     assertEquals(ERROR_MESSAGE, ((ResponseMessage) response.getEntity()).getMessage());

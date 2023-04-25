@@ -141,7 +141,7 @@ public class IPAllowlistResourceUtils {
         .build();
   }
 
-  private AllowedSourceType getAllowedSourceTypeEnum(String allowedSourceType) {
+  public AllowedSourceType getAllowedSourceTypeEnum(String allowedSourceType) {
     if (isEmpty(allowedSourceType)) {
       return null;
     }

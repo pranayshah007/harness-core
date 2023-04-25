@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.VLAD;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -26,6 +27,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
@@ -34,7 +36,7 @@ import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.configfile.ConfigFilesOutcome;
-import io.harness.cdng.customDeployment.CustomDeploymentExecutionDetails;
+import io.harness.cdng.customDeployment.beans.CustomDeploymentExecutionDetails;
 import io.harness.cdng.execution.DefaultExecutionDetails;
 import io.harness.cdng.execution.ExecutionDetails;
 import io.harness.cdng.execution.ExecutionInfoKey;
@@ -55,6 +57,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.rule.Owner;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.StageStatus;
 
 import software.wings.utils.ArtifactType;
@@ -67,6 +70,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -74,6 +78,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.internal.util.collections.Sets;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -90,15 +95,21 @@ public class StageExecutionHelperTest extends CategoryTest {
   private static final String ORG_IDENTIFIER = "orgIdentifier";
   private static final String PROJECT_IDENTIFIER = "projectIdentifier";
   private static final String EXECUTION_ID = "executionId";
+  private static final String PLAN_EXECUTION_ID = "planExecutionId";
 
   @Mock private CDStepHelper cdStepHelper;
   @Mock private InstanceDeploymentInfoService instanceDeploymentInfoService;
   @Mock private StageExecutionInfoService stageExecutionInfoService;
-
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
-
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @InjectMocks private StageExecutionHelper stageExecutionHelper;
+  private AutoCloseable mocks;
 
+  @Before
+  public void setUp() throws Exception {
+    mocks = MockitoAnnotations.openMocks(this);
+    when(ngFeatureFlagHelperService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(false);
+  }
   @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
@@ -108,6 +119,7 @@ public class StageExecutionHelperTest extends CategoryTest {
                             .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_IDENTIFIER)
                             .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_IDENTIFIER)
                             .setStageExecutionId(EXECUTION_ID)
+                            .setPlanExecutionId(PLAN_EXECUTION_ID)
                             .build();
 
     Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
@@ -118,7 +130,7 @@ public class StageExecutionHelperTest extends CategoryTest {
     when(cdStepHelper.resolveArtifactsOutcome(ambiance)).thenReturn(Optional.ofNullable(artifactOutcome));
     when(cdStepHelper.getConfigFilesOutcome(ambiance)).thenReturn(Optional.of(configFilesOutcome));
 
-    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(ambiance,
+    stageExecutionHelper.saveStageExecutionInfo(ambiance,
         ExecutionInfoKey.builder()
             .scope(scope)
             .envIdentifier(ENV_IDENTIFIER)
@@ -137,6 +149,7 @@ public class StageExecutionHelperTest extends CategoryTest {
                   .serviceIdentifier(SERVICE_IDENTIFIER)
                   .stageStatus(StageStatus.IN_PROGRESS)
                   .stageExecutionId(EXECUTION_ID)
+                  .planExecutionId(PLAN_EXECUTION_ID)
                   .executionDetails(SshWinRmStageExecutionDetails.builder()
                                         .artifactsOutcome(Lists.newArrayList(artifactOutcome))
                                         .configFilesOutcome(configFilesOutcome)
@@ -150,7 +163,7 @@ public class StageExecutionHelperTest extends CategoryTest {
   public void testSaveStageExecutionInfoWithKubernetesInfraNoArtifact() {
     Ambiance ambiance = Ambiance.newBuilder().build();
 
-    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(ambiance,
+    stageExecutionHelper.saveStageExecutionInfo(ambiance,
         ExecutionInfoKey.builder()
             .scope(Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
             .envIdentifier(ENV_IDENTIFIER)
@@ -171,7 +184,7 @@ public class StageExecutionHelperTest extends CategoryTest {
     Ambiance ambiance = Ambiance.newBuilder().build();
     when(cdStepHelper.resolveArtifactsOutcome(ambiance)).thenReturn(Optional.of(mock(ArtifactOutcome.class)));
 
-    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(ambiance,
+    stageExecutionHelper.saveStageExecutionInfo(ambiance,
         ExecutionInfoKey.builder()
             .scope(Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
             .envIdentifier(ENV_IDENTIFIER)
@@ -195,7 +208,7 @@ public class StageExecutionHelperTest extends CategoryTest {
     Ambiance ambiance = Ambiance.newBuilder().build();
 
     assertThatThrownBy(()
-                           -> stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(ambiance,
+                           -> stageExecutionHelper.saveStageExecutionInfo(ambiance,
                                ExecutionInfoKey.builder()
                                    .envIdentifier(ENV_IDENTIFIER)
                                    .infraIdentifier(INFRA_IDENTIFIER)
@@ -237,6 +250,7 @@ public class StageExecutionHelperTest extends CategoryTest {
                             .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_IDENTIFIER)
                             .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_IDENTIFIER)
                             .setStageExecutionId(EXECUTION_ID)
+                            .setPlanExecutionId(PLAN_EXECUTION_ID)
                             .build();
 
     Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
@@ -247,7 +261,7 @@ public class StageExecutionHelperTest extends CategoryTest {
     when(cdStepHelper.resolveArtifactsOutcome(ambiance)).thenReturn(Optional.ofNullable(artifactOutcome));
     when(cdStepHelper.getConfigFilesOutcome(ambiance)).thenReturn(Optional.of(configFilesOutcome));
 
-    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(ambiance,
+    stageExecutionHelper.saveStageExecutionInfo(ambiance,
         ExecutionInfoKey.builder()
             .scope(scope)
             .envIdentifier(ENV_IDENTIFIER)
@@ -266,6 +280,7 @@ public class StageExecutionHelperTest extends CategoryTest {
                   .serviceIdentifier(SERVICE_IDENTIFIER)
                   .stageStatus(StageStatus.IN_PROGRESS)
                   .stageExecutionId(EXECUTION_ID)
+                  .planExecutionId(PLAN_EXECUTION_ID)
                   .executionDetails(CustomDeploymentExecutionDetails.builder()
                                         .artifactsOutcome(Lists.newArrayList(artifactOutcome))
                                         .build())
@@ -412,8 +427,7 @@ public class StageExecutionHelperTest extends CategoryTest {
 
     ArgumentCaptor<StageExecutionInfo> executionInfoArgumentCaptor = ArgumentCaptor.forClass(StageExecutionInfo.class);
 
-    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(
-        ambiance, executionInfoKey, InfrastructureKind.CUSTOM_DEPLOYMENT);
+    stageExecutionHelper.saveStageExecutionInfo(ambiance, executionInfoKey, InfrastructureKind.CUSTOM_DEPLOYMENT);
 
     verify(stageExecutionInfoService, times(1)).save(executionInfoArgumentCaptor.capture());
     StageExecutionInfo stageExecutionInfo = executionInfoArgumentCaptor.getValue();
@@ -449,7 +463,7 @@ public class StageExecutionHelperTest extends CategoryTest {
   public void testSaveStageExecutionInfoForECSInfraKindNoArtifact() {
     Ambiance ambiance = Ambiance.newBuilder().build();
 
-    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(ambiance,
+    stageExecutionHelper.saveStageExecutionInfo(ambiance,
         ExecutionInfoKey.builder()
             .scope(Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
             .envIdentifier(ENV_IDENTIFIER)
@@ -469,7 +483,7 @@ public class StageExecutionHelperTest extends CategoryTest {
   public void testSaveStageExecutionInfoForECSInfraKind() {
     Ambiance ambiance = Ambiance.newBuilder().build();
     when(cdStepHelper.resolveArtifactsOutcome(ambiance)).thenReturn(Optional.of(mock(ArtifactOutcome.class)));
-    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(ambiance,
+    stageExecutionHelper.saveStageExecutionInfo(ambiance,
         ExecutionInfoKey.builder()
             .scope(Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
             .envIdentifier(ENV_IDENTIFIER)

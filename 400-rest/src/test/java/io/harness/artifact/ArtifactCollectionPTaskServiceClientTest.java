@@ -72,7 +72,7 @@ public class ArtifactCollectionPTaskServiceClientTest extends WingsBaseTest {
     final PerpetualTaskClientContext perpetualTaskClientContext =
         PerpetualTaskClientContext.builder().clientParams(clientParamsMap).build();
     ArtifactCollectionTaskParams collectionTaskParams =
-        artifactCollectionPTaskServiceClient.getTaskParams(perpetualTaskClientContext);
+        artifactCollectionPTaskServiceClient.getTaskParams(perpetualTaskClientContext, true);
     assertThat(collectionTaskParams).isNotNull();
     assertThat(collectionTaskParams.getArtifactStreamId()).isEqualTo(artifactStreamId);
     assertThat(collectionTaskParams.getBuildSourceParams()).isNotEmpty();

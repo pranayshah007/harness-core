@@ -85,6 +85,7 @@ public class AccessControlConfiguration extends Configuration {
   public static final String ACL_PACKAGE = "io.harness.accesscontrol.acl.api";
   public static final String ACCESSCONTROL_PREFERENCE_PACKAGE = "io.harness.accesscontrol.preference.api";
   public static final String AGGREGATOR_PACKAGE = "io.harness.accesscontrol.aggregator.api";
+  public static final String ADMIN_PACKAGE = "io.harness.accesscontrol.admin.api";
   public static final String HEALTH_PACKAGE = "io.harness.accesscontrol.health";
   public static final String ENFORCEMENT_PACKAGE = "io.harness.enforcement.client.resources";
   public static final String ACCESSCONTROL_SERVER_STUB = "io.harness.spec.server.accesscontrol.v1";
@@ -142,7 +143,7 @@ public class AccessControlConfiguration extends Configuration {
         .filter(clazz
             -> StringUtils.startsWithAny(clazz.getPackage().getName(), PERMISSION_PACKAGE, ROLES_PACKAGE,
                 ROLE_ASSIGNMENTS_PACKAGE, ACL_PACKAGE, ACCESSCONTROL_PREFERENCE_PACKAGE, AGGREGATOR_PACKAGE,
-                HEALTH_PACKAGE, ENFORCEMENT_PACKAGE, ACCESSCONTROL_SERVER_STUB))
+                ADMIN_PACKAGE, HEALTH_PACKAGE, ENFORCEMENT_PACKAGE, ACCESSCONTROL_SERVER_STUB))
         .filter(clazz -> clazz.isInterface() || EmptyPredicate.isEmpty(clazz.getInterfaces()))
         .collect(Collectors.toSet());
   }

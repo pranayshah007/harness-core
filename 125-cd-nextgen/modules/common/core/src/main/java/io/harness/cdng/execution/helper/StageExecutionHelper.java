@@ -19,15 +19,18 @@ import static java.lang.String.format;
 import static java.lang.String.join;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
+import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
-import io.harness.cdng.customDeployment.CustomDeploymentExecutionDetails;
+import io.harness.cdng.customDeployment.beans.CustomDeploymentExecutionDetails;
 import io.harness.cdng.execution.DefaultExecutionDetails;
 import io.harness.cdng.execution.ExecutionDetails;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.ExecutionInfoKeyOutput;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoBuilder;
+import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.execution.spot.elastigroup.ElastigroupStageExecutionDetails;
@@ -49,11 +52,14 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.LogCallback;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.steps.OutputExpressionConstants;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.StageStatus;
 
 import software.wings.beans.LogWeight;
@@ -64,8 +70,10 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -84,6 +92,7 @@ public class StageExecutionHelper {
   @Inject private StageExecutionInfoService stageExecutionInfoService;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceDeploymentInfoService instanceDeploymentInfoService;
+  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   public boolean shouldSaveStageExecutionInfo(String infrastructureKind) {
     return InfrastructureKind.PDC.equals(infrastructureKind)
@@ -108,7 +117,7 @@ public class StageExecutionHelper {
         || InfrastructureKind.SSH_WINRM_AWS.equals(infrastructureKind);
   }
 
-  public void saveStageExecutionInfoAndPublishExecutionInfoKey(
+  public void saveStageExecutionInfo(
       @NotNull Ambiance ambiance, @Valid ExecutionInfoKey executionInfoKey, @NotNull final String infrastructureKind) {
     if (isEmpty(infrastructureKind)) {
       throw new InvalidArgumentsException(format(
@@ -121,7 +130,12 @@ public class StageExecutionHelper {
 
     Optional<ExecutionDetails> executionDetails = getExecutionDetailsByInfraKind(ambiance, infrastructureKind);
     if (executionDetails.isPresent()) {
-      saveStageExecutionInfoAndPublishExecutionInfoKey(ambiance, executionInfoKey, executionDetails.get());
+      if (ngFeatureFlagHelperService.isEnabled(
+              AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
+        saveStageExecutionInfoV2(ambiance, executionInfoKey, executionDetails.get());
+      } else {
+        saveStageExecutionInfo(ambiance, executionInfoKey, executionDetails.get());
+      }
       executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.EXECUTION_INFO_KEY_OUTPUT_NAME,
           ExecutionInfoKeyOutput.builder().executionInfoKey(executionInfoKey).build(), StepCategory.STAGE.name());
     }
@@ -270,7 +284,7 @@ public class StageExecutionHelper {
         || InfrastructureKind.CUSTOM_DEPLOYMENT.equals(infrastructureKind);
   }
 
-  private void saveStageExecutionInfoAndPublishExecutionInfoKey(
+  private void saveStageExecutionInfo(
       Ambiance ambiance, ExecutionInfoKey executionInfoKey, ExecutionDetails executionDetails) {
     StageExecutionInfoBuilder stageExecutionInfoBuilder =
         StageExecutionInfo.builder()
@@ -281,6 +295,7 @@ public class StageExecutionHelper {
             .infraIdentifier(executionInfoKey.getInfraIdentifier())
             .serviceIdentifier(executionInfoKey.getServiceIdentifier())
             .stageExecutionId(ambiance.getStageExecutionId())
+            .planExecutionId(ambiance.getPlanExecutionId())
             .stageStatus(StageStatus.IN_PROGRESS)
             .executionDetails(executionDetails);
 
@@ -289,6 +304,33 @@ public class StageExecutionHelper {
     }
 
     stageExecutionInfoService.save(stageExecutionInfoBuilder.build());
+  }
+
+  private void saveStageExecutionInfoV2(
+      Ambiance ambiance, ExecutionInfoKey executionInfoKey, ExecutionDetails executionDetails) {
+    StageExecutionInfo stageExecutionInfo = stageExecutionInfoService.findStageExecutionInfo(
+        AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+        AmbianceUtils.getProjectIdentifier(ambiance), ambiance.getStageExecutionId());
+    if (stageExecutionInfo == null) {
+      saveStageExecutionInfo(ambiance, executionInfoKey, executionDetails);
+      return;
+    }
+    Map<String, Object> updates = new HashMap<>();
+    updates.put(StageExecutionInfoKeys.executionDetails, executionDetails);
+    updates.put(StageExecutionInfoKeys.status, Status.RUNNING);
+    updates.put(StageExecutionInfoKeys.stageStatus, StageStatus.IN_PROGRESS);
+    updates.put(StageExecutionInfoKeys.envIdentifier, executionInfoKey.getEnvIdentifier());
+    updates.put(StageExecutionInfoKeys.infraIdentifier, executionInfoKey.getInfraIdentifier());
+    updates.put(StageExecutionInfoKeys.serviceIdentifier, executionInfoKey.getServiceIdentifier());
+
+    if (isNotEmpty(executionInfoKey.getDeploymentIdentifier())) {
+      updates.put(StageExecutionInfoKeys.deploymentIdentifier, executionInfoKey.getDeploymentIdentifier());
+    }
+
+    Scope scope = Scope.of(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+        AmbianceUtils.getProjectIdentifier(ambiance));
+
+    stageExecutionInfoService.update(scope, ambiance.getStageExecutionId(), updates);
   }
 
   private Optional<ExecutionDetails> getExecutionDetailsByInfraKind(

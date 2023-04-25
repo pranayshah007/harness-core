@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageResponse;
+import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.UserInviteDTO;
@@ -57,6 +58,7 @@ public interface UserClient {
   String SCIM_USER_UPDATE = "ng/user/scim";
   String SCIM_USER_DISABLED_UPDATE = "ng/user/scim/disabled";
   String USER_IN_ACCOUNT_VERIFICATION = "ng/user/user-account";
+  String USER_UPDATE_WITH_SOURCE = "ng/user/user-account-with-source";
   String USER_SAFE_DELETE = "ng/user/safeDelete/{userId}";
   String UPDATE_USER_API = "ng/user/user";
   String CREATE_USER_VIA_INVITE = "ng/user/invites/create-user";
@@ -141,6 +143,10 @@ public interface UserClient {
   @POST(USER_IN_ACCOUNT_VERIFICATION)
   Call<RestResponse<Boolean>> addUserToAccount(
       @Query(value = "userId") String userId, @Query(value = "accountId") String accountId);
+
+  @POST(USER_UPDATE_WITH_SOURCE)
+  Call<RestResponse<Boolean>> updateNGUserToCGWithSource(@Query(value = "userId") String userId,
+      @Query(value = "accountId") String accountId, @Body UserSource userSource);
 
   @GET(USER_TWO_FACTOR_AUTH_SETTINGS)
   Call<RestResponse<Optional<TwoFactorAuthSettingsInfo>>> getUserTwoFactorAuthSettings(

@@ -70,6 +70,7 @@ import io.harness.secrets.SecretDecryptor;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.ScmServiceClient;
+import io.harness.ssca.client.SSCAServiceClientModuleV2;
 import io.harness.stoserviceclient.STOServiceClientModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
@@ -261,6 +262,8 @@ public class IACMManagerServiceModule extends AbstractModule {
     install(PersistentLockModule.getInstance());
     install(new OpaClientModule(iacmManagerConfiguration.getOpaClientConfig(),
         iacmManagerConfiguration.getPolicyManagerSecret(), IACM_MANAGER.getServiceId()));
+    install(
+        new SSCAServiceClientModuleV2(iacmManagerConfiguration.getSscaServiceConfig(), IACM_MANAGER.getServiceId()));
     install(new AbstractManagerGrpcClientModule() {
       @Override
       public ManagerGrpcClientModule.Config config() {

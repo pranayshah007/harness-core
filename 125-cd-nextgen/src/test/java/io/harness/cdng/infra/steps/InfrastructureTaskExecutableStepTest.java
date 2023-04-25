@@ -33,6 +33,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
@@ -100,6 +101,7 @@ import io.harness.steps.StepHelper;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import software.wings.beans.TaskType;
@@ -137,6 +139,7 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
   @Mock InfrastructureValidator infrastructureValidator;
   @Mock private NGLogCallback mockLogCallback;
   @Mock InstanceOutcomeHelper instanceOutcomeHelper;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @InjectMocks private InfrastructureTaskExecutableStep infrastructureStep = new InfrastructureTaskExecutableStep();
 
@@ -195,6 +198,10 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(executionSweepingOutputService.resolve(
              any(), eq(RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT))))
         .thenReturn(EnvironmentOutcome.builder().build());
+    doNothing()
+        .when(infrastructureStepHelper)
+        .saveInfraExecutionDataToStageInfo(any(Ambiance.class), any(StepResponse.class));
+    when(ngFeatureFlagHelperService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(true);
     doAnswer(im -> im.getArgument(4))
         .when(stageExecutionHelper)
         .saveAndExcludeHostsWithSameArtifactDeployedIfNeeded(any(Ambiance.class), any(ExecutionInfoKey.class),
@@ -366,8 +373,7 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
         .resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(INFRA_TASK_EXECUTABLE_STEP_OUTPUT));
     doNothing()
         .when(stageExecutionHelper)
-        .saveStageExecutionInfoAndPublishExecutionInfoKey(
-            eq(ambiance), any(ExecutionInfoKey.class), eq(InfrastructureKind.SSH_WINRM_AZURE));
+        .saveStageExecutionInfo(eq(ambiance), any(ExecutionInfoKey.class), eq(InfrastructureKind.SSH_WINRM_AZURE));
     doNothing()
         .when(stageExecutionHelper)
         .addRollbackArtifactToStageOutcomeIfPresent(eq(ambiance), any(StepResponseBuilder.class),
@@ -426,8 +432,7 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
         .thenReturn(new HashSet<>(Arrays.asList("host1")));
     doNothing()
         .when(stageExecutionHelper)
-        .saveStageExecutionInfoAndPublishExecutionInfoKey(
-            eq(ambiance), any(ExecutionInfoKey.class), eq(InfrastructureKind.SSH_WINRM_AWS));
+        .saveStageExecutionInfo(eq(ambiance), any(ExecutionInfoKey.class), eq(InfrastructureKind.SSH_WINRM_AWS));
     doNothing()
         .when(stageExecutionHelper)
         .addRollbackArtifactToStageOutcomeIfPresent(eq(ambiance), any(StepResponseBuilder.class),

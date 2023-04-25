@@ -30,6 +30,8 @@ public final class ExecutionEnforcementDetails {
   @Schema(description = "Target Region") List<String> regions;
   @Schema(description = "rules ids and list of enforcement") HashMap<String, String> ruleIds;
   @Schema(description = "rules pack ids and list of enforcement") HashMap<String, String> ruleSetIds;
+  @Schema(description = "isDryRun") Boolean isDryRun;
+  @Schema(description = "isEnabled") Boolean isEnabled;
 
   public ExecutionEnforcementDetails toDTO() {
     return ExecutionEnforcementDetails.builder()
@@ -38,6 +40,8 @@ public final class ExecutionEnforcementDetails {
         .schedule(getSchedule())
         .ruleSetIds(getRuleSetIds())
         .description(getDescription())
+        .isDryRun(getIsDryRun())
+        .isEnabled(getIsEnabled())
         .build();
   }
 }

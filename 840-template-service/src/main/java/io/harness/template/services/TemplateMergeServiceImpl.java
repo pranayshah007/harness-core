@@ -27,7 +27,6 @@ import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.pms.merger.helpers.YamlRefreshHelper;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.MergeTemplateInputsInObject;
 import io.harness.template.helpers.TemplateInputsValidator;
@@ -132,7 +131,6 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
   private TemplateMergeResponseDTO getTemplateMergeResponseDTO(String accountId, String orgId, String projectId,
       String yaml, boolean getMergedYamlWithTemplateField, YamlNode yamlNode,
       Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache, boolean appendInputSetValidator) {
-    log.info("Principal in getTemplateMergeResponseDTO is {}", SourcePrincipalContextBuilder.getSourcePrincipal());
     Map<String, Object> resMap;
     if (ngTemplateFeatureFlagHelperService.isFeatureFlagEnabled(accountId, FeatureName.PIE_NG_BATCH_GET_TEMPLATES)) {
       templateCacheMap.putAll(

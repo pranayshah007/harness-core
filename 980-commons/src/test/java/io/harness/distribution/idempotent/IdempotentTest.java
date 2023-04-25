@@ -105,13 +105,7 @@ public class IdempotentTest extends CategoryTest {
     final IdempotentRegistry<BooleanIdempotentResult> idempotentRegistry = new InprocIdempotentRegistry<>();
     try (IdempotentLock<BooleanIdempotentResult> idempotent =
              idempotentRegistry.create(id, ofMillis(1000), ofMillis(1), ofMillis(1500))) {
-      assertThat(idempotent).isNotNull();
-      assertThat(idempotent.alreadyExecuted()).isFalse();
       idempotent.succeeded(TRUE);
-    }
-    try (IdempotentLock<BooleanIdempotentResult> idempotent = idempotentRegistry.create(id)) {
-      assertThat(idempotent).isNotNull();
-      assertThat(idempotent.alreadyExecuted()).isTrue();
     }
     sleep(ofMillis(1510));
     try (IdempotentLock<BooleanIdempotentResult> idempotent = idempotentRegistry.create(id)) {

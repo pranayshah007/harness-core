@@ -7,24 +7,38 @@
 
 package io.harness.ng.core.serviceoverride.mapper;
 
+import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
+import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
 import io.harness.ng.core.serviceoverride.beans.ServiceOverrideRequestDTO;
 import io.harness.ng.core.serviceoverride.beans.ServiceOverrideResponseDTO;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
+import io.harness.ng.core.yaml.CDYamlUtils;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
+import io.harness.scope.ScopeHelper;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.core.variables.NGServiceOverrides;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
 public class ServiceOverridesMapper {
   public NGServiceOverridesEntity toServiceOverridesEntity(
-      String accountId, ServiceOverrideRequestDTO serviceOverrideRequestDTO) {
+      String accountId, ServiceOverrideRequestDTO serviceOverrideRequestDTO, boolean isOverrideV2) {
     NGServiceOverridesEntity serviceOverridesEntity =
         NGServiceOverridesEntity.builder()
             .accountId(accountId)
@@ -36,8 +50,58 @@ public class ServiceOverridesMapper {
             .build();
 
     // validating the yaml
-    NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig(serviceOverridesEntity);
+    NGServiceOverrideConfig ngServiceOverrideConfig =
+        NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig(serviceOverridesEntity);
+
+    if (isOverrideV2) {
+      String updatedYaml =
+          getUpdatedYamlIfEnvRefIsNotQualifiedRef(accountId, serviceOverrideRequestDTO, ngServiceOverrideConfig);
+      if (isNotBlank(updatedYaml)) {
+        serviceOverridesEntity.setYaml(updatedYaml);
+      }
+    }
+
     return serviceOverridesEntity;
+  }
+
+  private static String getUpdatedYamlIfEnvRefIsNotQualifiedRef(String accountId,
+      ServiceOverrideRequestDTO serviceOverrideRequestDTO, NGServiceOverrideConfig ngServiceOverrideConfig) {
+    String updatedYaml = StringUtils.EMPTY;
+
+    if (ngServiceOverrideConfig.getServiceOverrideInfoConfig() != null) {
+      String environmentRef = ngServiceOverrideConfig.getServiceOverrideInfoConfig().getEnvironmentRef();
+      String[] envRefSplit = StringUtils.split(environmentRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+      Scope scope = ScopeHelper.getScope(
+          accountId, serviceOverrideRequestDTO.getOrgIdentifier(), serviceOverrideRequestDTO.getProjectIdentifier());
+
+      if ((envRefSplit == null || envRefSplit.length == 1) && !scope.equals(Scope.PROJECT)) {
+        if (isNotBlank(serviceOverrideRequestDTO.getYaml())) {
+          try {
+            final String qualifiedEnvRef = IdentifierRefHelper.getRefFromIdentifierOrRef(accountId,
+                serviceOverrideRequestDTO.getOrgIdentifier(), serviceOverrideRequestDTO.getProjectIdentifier(),
+                serviceOverrideRequestDTO.getEnvironmentIdentifier());
+            YamlField yamlField = YamlUtils.readTree(serviceOverrideRequestDTO.getYaml());
+            JsonNode serviceOverridesJsonNode =
+                yamlField.getNode().getField("serviceOverrides").getNode().getCurrJsonNode();
+            YamlField envRefYamlField = yamlField.getNode()
+                                            .getField("serviceOverrides")
+                                            .getNode()
+                                            .getField(NGServiceOverridesEntityKeys.environmentRef);
+            if (envRefYamlField != null) {
+              JsonNode envRefJsonNode = envRefYamlField.getNode().getCurrJsonNode();
+              if (envRefJsonNode != null && envRefJsonNode.isTextual()) {
+                ((ObjectNode) serviceOverridesJsonNode)
+                    .put(NGServiceOverridesEntityKeys.environmentRef, qualifiedEnvRef);
+              }
+              updatedYaml = CDYamlUtils.writeYamlString(yamlField.getNode().getCurrJsonNode());
+            }
+          } catch (Exception ex) {
+            throw new InvalidRequestException("Can not update service override due to " + ex.getMessage());
+          }
+        }
+      }
+    }
+    return updatedYaml;
   }
 
   public ServiceOverrideResponseDTO toResponseWrapper(NGServiceOverridesEntity serviceOverridesEntity) {

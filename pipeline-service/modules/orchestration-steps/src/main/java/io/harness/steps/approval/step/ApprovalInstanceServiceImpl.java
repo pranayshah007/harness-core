@@ -18,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
+import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.jira.JiraIssueNG;
@@ -64,6 +65,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
@@ -88,6 +90,7 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   private static final Set<String> approvalStepSpecTypeConstants =
       new HashSet<>(Arrays.asList(StepSpecTypeConstants.HARNESS_APPROVAL, StepSpecTypeConstants.SERVICENOW_APPROVAL,
           StepSpecTypeConstants.JIRA_APPROVAL, StepSpecTypeConstants.CUSTOM_APPROVAL));
+  @Inject private PmsEngineExpressionService pmsEngineExpressionService;
 
   @Inject
   public ApprovalInstanceServiceImpl(ApprovalInstanceRepository approvalInstanceRepository,
@@ -216,11 +219,77 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
       @NotNull EmbeddedUser user, @NotNull @Valid HarnessApprovalActivityRequestDTO request) {
     HarnessApprovalInstance instance =
         doTransaction(status -> addHarnessApprovalActivityInTransaction(approvalInstanceId, user, request));
+    return instance;
+  }
+
+  @Override
+  public void closeHarnessApprovalStep(HarnessApprovalInstance instance) {
     if (instance.getStatus().isFinalStatus()) {
       waitNotifyEngine.doneWith(
           instance.getId(), HarnessApprovalResponseData.builder().approvalInstanceId(instance.getId()).build());
     }
-    return instance;
+  }
+
+  @Override
+  public void rejectPreviousExecutions(
+      @NotNull String approvalInstanceId, @NotNull EmbeddedUser user, boolean unauthorized, Ambiance ambiance) {
+    NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
+    String pipelineUrl = pmsEngineExpressionService.renderExpression(ambiance, "<+pipeline.executionUrl>", true);
+    if (unauthorized) {
+      logCallback.saveExecutionLog(String.format(
+          "Unable to auto reject previous execution with approval id %s as the user does not have the access to reject this execution",
+          approvalInstanceId));
+      return;
+    }
+    String comment = "Rejected due to approval of " + pipelineUrl;
+    HarnessApprovalActivityRequestDTO harnessApprovalActivityRequest =
+        HarnessApprovalActivityRequestDTO.builder().comments(comment).action(HarnessApprovalAction.REJECT).build();
+    addHarnessApprovalActivity(approvalInstanceId, user, harnessApprovalActivityRequest);
+  }
+
+  @Override
+  public List<String> findAllPreviousWaitingApprovals(String accountId, String orgId, String projectId,
+      @NotEmpty String pipelineId, String approvalKey, Ambiance ambiance) {
+    Criteria criteria = Criteria.where("pipelineIdentifier").is(pipelineId);
+    criteria.and("isAutoRejectEnabled").is(true);
+
+    criteria.and(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING);
+
+    criteria.and("accountId").is(accountId);
+
+    if (!isNull(orgId)) {
+      criteria.and("orgIdentifier").is(orgId);
+    }
+    if (!isNull(projectId)) {
+      criteria.and("projectIdentifier").is(projectId);
+    }
+    if (EmptyPredicate.isNotEmpty(approvalKey)) {
+      criteria.and("approvalKey").is(approvalKey);
+    } else {
+      return new ArrayList<>();
+    }
+    List<ApprovalInstance> approvalInstances = approvalInstanceRepository.findAll(criteria);
+    approvalInstances = filterOnService(approvalInstances, ambiance);
+    log.info("No. of approval instances fetched waiting for approval that will be auto rejected : {}",
+        approvalInstances.size());
+
+    List<String> rejectedApprovalIds = new ArrayList<>();
+    approvalInstances.forEach(approvalInstance -> rejectedApprovalIds.add(approvalInstance.getId()));
+    return rejectedApprovalIds;
+  }
+
+  private List<ApprovalInstance> filterOnService(List<ApprovalInstance> approvalInstances, Ambiance currAmbiance) {
+    List<ApprovalInstance> filteredApprovalInstances = new ArrayList<>();
+    String newServiceIdentifier =
+        pmsEngineExpressionService.renderExpression(currAmbiance, "<+service.identifier>", true);
+    approvalInstances.forEach(approvalInstance -> {
+      String oldServiceIdentifier =
+          pmsEngineExpressionService.renderExpression(approvalInstance.getAmbiance(), "<+service.identifier>", true);
+      if (oldServiceIdentifier.equals(newServiceIdentifier)) {
+        filteredApprovalInstances.add(approvalInstance);
+      }
+    });
+    return filteredApprovalInstances;
   }
 
   @Override

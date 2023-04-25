@@ -10,10 +10,10 @@ package io.harness.models;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 
-@Getter
+@Data
 @AllArgsConstructor
 @EqualsAndHashCode
 public class ActiveServiceInstanceInfoWithEnvType {

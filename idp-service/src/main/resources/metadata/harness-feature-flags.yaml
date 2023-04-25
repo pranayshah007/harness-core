@@ -1,0 +1,32 @@
+identifier: harness-feature-flags
+name: Harness Feature Flags
+description: This plugin lets you view Harness Feature Flags created in your project inside Backstage.
+createdBy: harness.io
+category: Feature Flags
+core: true
+source: https://github.com/harness/backstage-plugins/tree/main/plugins/harness-feature-flags
+iconUrl: https://static.harness.io/ng-static/images/favicon.png
+imageUrl: ''
+config: |-
+  proxy:
+    '/harness':
+      target: 'https://app.harness.io/'
+      pathRewrite:
+        'api/proxy/harness/?': '/'
+      headers:
+        'x-api-key': ${HARNESS_TOKEN}
+environmentVariables:
+  - HARNESS_TOKEN
+exports:
+  defaultEntityTypes:
+    - service
+  exportDetails:
+    - type: TAB_CONTENT
+      name: EntityHarnessFeatureFlagContent
+      addByDefault: true
+      defaultRoute: /feature-flag
+      layoutSchemaSpecs:
+        name: EntityHarnessFeatureFlagContent
+        title: Feature Flags
+        contents:
+          - component: EntityHarnessFeatureFlagContent

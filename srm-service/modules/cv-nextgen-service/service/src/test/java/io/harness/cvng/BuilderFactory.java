@@ -9,6 +9,7 @@ package io.harness.cvng;
 
 import static io.harness.cvng.beans.TimeSeriesThresholdActionType.IGNORE;
 import static io.harness.cvng.core.utils.DateTimeUtils.roundDownToMinBoundary;
+import static io.harness.cvng.downtime.utils.DateTimeUtils.dtf;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -270,6 +271,7 @@ import com.google.common.collect.Sets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -1883,6 +1885,7 @@ public class BuilderFactory {
 
   public DowntimeDTO getOnetimeDurationBasedDowntimeDTO() {
     long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    LocalDateTime startDateTime = LocalDateTime.now(CVNGTestConstants.FIXED_TIME_FOR_TESTS);
     return DowntimeDTO.builder()
         .identifier("downtimeOneTimeDuration")
         .name("downtime OneTime Duration")
@@ -1902,6 +1905,7 @@ public class BuilderFactory {
                   .type(DowntimeType.ONE_TIME)
                   .spec(OnetimeDowntimeSpec.builder()
                             .startTime(startTime)
+                            .startDateTime(dtf.format(startDateTime))
                             .timezone("UTC")
                             .type(OnetimeDowntimeType.DURATION)
                             .spec(OnetimeDowntimeSpec.OnetimeDurationBasedSpec.builder()
@@ -1917,7 +1921,9 @@ public class BuilderFactory {
 
   public DowntimeDTO getOnetimeEndTimeBasedDowntimeDTO() {
     long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    LocalDateTime startDateTime = LocalDateTime.now(CVNGTestConstants.FIXED_TIME_FOR_TESTS);
     long endTime = startTime + Duration.ofMinutes(30).toSeconds();
+    LocalDateTime endDateTime = startDateTime.plusMinutes(30);
     return DowntimeDTO.builder()
         .identifier("downtimeOneTimeEndTime")
         .name("downtime OneTime EndTime")
@@ -1937,9 +1943,13 @@ public class BuilderFactory {
                   .type(DowntimeType.ONE_TIME)
                   .spec(OnetimeDowntimeSpec.builder()
                             .startTime(startTime)
+                            .startDateTime(dtf.format(startDateTime))
                             .timezone("UTC")
                             .type(OnetimeDowntimeType.END_TIME)
-                            .spec(OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec.builder().endTime(endTime).build())
+                            .spec(OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec.builder()
+                                      .endTime(endTime)
+                                      .endDateTime(dtf.format(endDateTime))
+                                      .build())
                             .build())
                   .build())
         .build();
@@ -1947,7 +1957,9 @@ public class BuilderFactory {
 
   public DowntimeDTO getRecurringDowntimeDTO() {
     long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    LocalDateTime startDateTime = LocalDateTime.now(CVNGTestConstants.FIXED_TIME_FOR_TESTS);
     long endTime = startTime + Duration.ofDays(365).toSeconds();
+    LocalDateTime endDateTime = startDateTime.plusDays(365);
     return DowntimeDTO.builder()
         .identifier("downtimeRecurring")
         .name("downtime Recurring")
@@ -1967,12 +1979,14 @@ public class BuilderFactory {
                   .type(DowntimeType.RECURRING)
                   .spec(RecurringDowntimeSpec.builder()
                             .startTime(startTime)
+                            .startDateTime(dtf.format(startDateTime))
                             .timezone("UTC")
                             .downtimeDuration(DowntimeDuration.builder()
                                                   .durationValue(30)
                                                   .durationType(DowntimeDurationType.MINUTES)
                                                   .build())
                             .recurrenceEndTime(endTime)
+                            .recurrenceEndDateTime(dtf.format(endDateTime))
                             .downtimeRecurrence(DowntimeRecurrence.builder()
                                                     .recurrenceValue(1)
                                                     .recurrenceType(DowntimeRecurrenceType.WEEK)

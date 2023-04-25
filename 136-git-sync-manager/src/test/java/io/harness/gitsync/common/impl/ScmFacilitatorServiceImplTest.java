@@ -12,12 +12,14 @@ import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
+import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -46,6 +48,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.encryption.SecretRefData;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ScmBadRequestException;
@@ -69,6 +72,9 @@ import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileUrlRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileUrlResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
+import io.harness.gitsync.common.dtos.gitAccess.GithubAccessTokenDTO;
 import io.harness.gitsync.common.helper.GitClientEnabledHelper;
 import io.harness.gitsync.common.helper.GitFilePathHelper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
@@ -749,6 +755,25 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     scmFacilitatorService.processGitFileBatchRequest(null, gitFileRequestMap, false);
     verify(scmOrchestratorService, times(1)).processScmRequestUsingManager(any());
     verify(scmOrchestratorService, times(1)).processScmRequestUsingDelegate(any());
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetUserDetails() {
+    UserDetailsRequestDTO userDetailsRequestDTO =
+        UserDetailsRequestDTO.builder()
+            .gitAccessDTO(GithubAccessTokenDTO.builder()
+                              .tokenRef(SecretRefData.builder()
+                                            .identifier("tokenRef")
+                                            .scope(io.harness.encryption.Scope.ACCOUNT)
+                                            .build())
+                              .build())
+            .build();
+    UserDetailsResponseDTO userDetailsResponseDTO =
+        UserDetailsResponseDTO.builder().userEmail("email").userName("userName").build();
+    doReturn(userDetailsResponseDTO).when(scmOrchestratorService).processScmRequestUsingManager(any());
+    assertEquals(userDetailsResponseDTO, scmFacilitatorService.getUserDetails(userDetailsRequestDTO));
   }
 
   private Scope getDefaultScope() {

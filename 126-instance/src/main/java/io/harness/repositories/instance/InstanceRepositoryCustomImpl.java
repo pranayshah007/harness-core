@@ -412,7 +412,6 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     addCriteriaForGitOpsCheck(criteria, isGitOps);
 
     MatchOperation matchStage = Aggregation.match(criteria);
-
     GroupOperation groupOperation = group(InstanceKeys.envIdentifier)
                                         .first(InstanceKeys.envIdentifier)
                                         .as(InstanceKeys.envIdentifier)
@@ -431,8 +430,9 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     addCriteriaForGitOpsCheck(criteria, isGitOps);
     MatchOperation matchOperation = Aggregation.match(criteria);
     SortOperation sortOperation = Aggregation.sort(Sort.by(Sort.Direction.DESC, InstanceKeys.lastDeployedAt));
-    ProjectionOperation projectionOperation = Aggregation.project(
-        InstanceKeys.envIdentifier, InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME, InstanceKeys.lastDeployedAt);
+    ProjectionOperation projectionOperation =
+        Aggregation.project(InstanceKeys.envIdentifier, InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME,
+            InstanceKeys.lastDeployedAt, InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastPipelineExecutionId);
     GroupOperation groupOperation;
 
     if (isEnvironmentCard) {
@@ -446,7 +446,11 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                          .first(DISPLAY_NAME)
                          .as(DISPLAY_NAME)
                          .first(InstanceKeys.lastDeployedAt)
-                         .as(InstanceKeys.lastDeployedAt);
+                         .as(InstanceKeys.lastDeployedAt)
+                         .first(InstanceKeys.lastPipelineExecutionName)
+                         .as(InstanceKeys.lastPipelineExecutionName)
+                         .first(InstanceKeys.lastPipelineExecutionId)
+                         .as(InstanceKeys.lastPipelineExecutionId);
     return mongoTemplate.aggregate(newAggregation(sortOperation, matchOperation, projectionOperation, groupOperation),
         INSTANCE_NG_COLLECTION, ArtifactDeploymentDetailModel.class);
   }

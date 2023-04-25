@@ -20,4 +20,5 @@ public class PrunedInstanceData {
   String cloudProviderInstanceId;
   Resource totalResource;
   Map<String, String> metaData;
+  Resource limitResource;
 }

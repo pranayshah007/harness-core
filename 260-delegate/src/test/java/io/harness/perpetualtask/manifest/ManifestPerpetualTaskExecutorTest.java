@@ -39,6 +39,7 @@ import software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.time.Instant;
@@ -72,6 +73,7 @@ public class ManifestPerpetualTaskExecutorTest extends DelegateTestBase {
   private ManifestPerpetualTaskExecutor manifestPerpetualTaskExecutor;
 
   @Inject KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Mock private ManifestRepositoryService manifestRepositoryService;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
@@ -81,8 +83,8 @@ public class ManifestPerpetualTaskExecutorTest extends DelegateTestBase {
 
   @Before
   public void setUp() throws Exception {
-    manifestPerpetualTaskExecutor =
-        new ManifestPerpetualTaskExecutor(manifestRepositoryService, delegateAgentManagerClient, kryoSerializer);
+    manifestPerpetualTaskExecutor = new ManifestPerpetualTaskExecutor(
+        manifestRepositoryService, delegateAgentManagerClient, kryoSerializer, referenceFalseKryoSerializer);
     perpetualTaskId = PerpetualTaskId.newBuilder().setId(UUIDGenerator.generateUuid()).build();
   }
 
@@ -99,13 +101,14 @@ public class ManifestPerpetualTaskExecutorTest extends DelegateTestBase {
     ArgumentCaptor<RequestBody> captor = ArgumentCaptor.forClass(RequestBody.class);
 
     // Chart versions are published 2 times because of batching.
-    verify(delegateAgentManagerClient, times(2)).publishManifestCollectionResult(anyString(), any(), captor.capture());
+    verify(delegateAgentManagerClient, times(2))
+        .publishManifestCollectionResultV2(anyString(), any(), captor.capture());
 
     Buffer bufferedSink = new Buffer();
     captor.getValue().writeTo(bufferedSink);
 
     ManifestCollectionExecutionResponse executionResponse =
-        (ManifestCollectionExecutionResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
+        (ManifestCollectionExecutionResponse) referenceFalseKryoSerializer.asObject(bufferedSink.readByteArray());
 
     assertThat(executionResponse.getAppManifestId()).isEqualTo(APP_MANIFEST_ID);
     assertThat(executionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
@@ -114,7 +117,7 @@ public class ManifestPerpetualTaskExecutorTest extends DelegateTestBase {
 
     responses.get(0).writeTo(bufferedSink);
     ManifestCollectionExecutionResponse executionResponse0 =
-        (ManifestCollectionExecutionResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
+        (ManifestCollectionExecutionResponse) referenceFalseKryoSerializer.asObject(bufferedSink.readByteArray());
 
     assertThat(executionResponse0.getManifestCollectionResponse().getToBeDeletedKeys()).containsExactly("1", "2");
     assertThat(executionResponse0.getManifestCollectionResponse().getHelmCharts().size()).isEqualTo(500);
@@ -122,7 +125,7 @@ public class ManifestPerpetualTaskExecutorTest extends DelegateTestBase {
 
     responses.get(1).writeTo(bufferedSink);
     ManifestCollectionExecutionResponse executionResponse1 =
-        (ManifestCollectionExecutionResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
+        (ManifestCollectionExecutionResponse) referenceFalseKryoSerializer.asObject(bufferedSink.readByteArray());
     assertThat(executionResponse1.getManifestCollectionResponse().getToBeDeletedKeys()).isEmpty();
     assertThat(executionResponse1.getManifestCollectionResponse().getHelmCharts().size()).isEqualTo(7);
     assertThat(executionResponse1.getManifestCollectionResponse().isStable()).isTrue();
@@ -147,7 +150,7 @@ public class ManifestPerpetualTaskExecutorTest extends DelegateTestBase {
     verify(manifestRepositoryService, times(1)).collectManifests(any(ManifestCollectionParams.class));
 
     verify(delegateAgentManagerClient, times(1))
-        .publishManifestCollectionResult(anyString(), any(), any(RequestBody.class));
+        .publishManifestCollectionResultV2(anyString(), any(), any(RequestBody.class));
     verify(call, times(1)).execute();
   }
 
@@ -163,13 +166,13 @@ public class ManifestPerpetualTaskExecutorTest extends DelegateTestBase {
 
     ArgumentCaptor<RequestBody> responseArgumentCaptor = ArgumentCaptor.forClass(RequestBody.class);
     verify(delegateAgentManagerClient, times(1))
-        .publishManifestCollectionResult(anyString(), any(), responseArgumentCaptor.capture());
+        .publishManifestCollectionResultV2(anyString(), any(), responseArgumentCaptor.capture());
     verify(call, times(1)).execute();
 
     Buffer bufferedSink = new Buffer();
     responseArgumentCaptor.getValue().writeTo(bufferedSink);
     ManifestCollectionExecutionResponse executionResponse =
-        (ManifestCollectionExecutionResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
+        (ManifestCollectionExecutionResponse) referenceFalseKryoSerializer.asObject(bufferedSink.readByteArray());
 
     assertThat(executionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
     assertThat(executionResponse.getErrorMessage()).isEqualTo("COLLECTION_ERROR");
@@ -191,7 +194,7 @@ public class ManifestPerpetualTaskExecutorTest extends DelegateTestBase {
 
     // Build details are published 1 time: 1 time for cleanup and then exit early because of exception.
     verify(delegateAgentManagerClient, never())
-        .publishArtifactCollectionResult(anyString(), anyString(), any(RequestBody.class));
+        .publishArtifactCollectionResultV2(anyString(), anyString(), any(RequestBody.class));
     verify(call, never()).execute();
   }
 
@@ -205,7 +208,7 @@ public class ManifestPerpetualTaskExecutorTest extends DelegateTestBase {
             .serviceId(SERVICE_ID)
             .publishedVersions(new HashSet<>(Arrays.asList("1", "2", "3")))
             .build();
-    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(manifestCollectionParams));
+    ByteString bytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(manifestCollectionParams));
     ManifestCollectionTaskParams manifestCollectionTaskParams = ManifestCollectionTaskParams.newBuilder()
                                                                     .setAppManifestId(APP_MANIFEST_ID)
                                                                     .setManifestCollectionParams(bytes)
@@ -225,12 +228,12 @@ public class ManifestPerpetualTaskExecutorTest extends DelegateTestBase {
                                                             .serviceId(SERVICE_ID)
                                                             .publishedVersions(publishedVersions)
                                                             .build();
-    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(manifestCollectionParams));
+    ByteString bytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(manifestCollectionParams));
     ManifestCollectionTaskParams manifestCollectionTaskParams = ManifestCollectionTaskParams.newBuilder()
                                                                     .setAppManifestId(APP_MANIFEST_ID)
                                                                     .setManifestCollectionParams(bytes)
                                                                     .build();
-    when(delegateAgentManagerClient.publishManifestCollectionResult(any(), any(), any(RequestBody.class)))
+    when(delegateAgentManagerClient.publishManifestCollectionResultV2(any(), any(), any(RequestBody.class)))
         .thenReturn(call);
     when(call.execute())
         .thenReturn(throwErrorWhilePublishing

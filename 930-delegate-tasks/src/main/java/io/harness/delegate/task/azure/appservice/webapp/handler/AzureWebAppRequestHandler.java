@@ -49,13 +49,19 @@ public abstract class AzureWebAppRequestHandler<T extends AzureWebAppTaskRequest
   }
 
   protected AzureWebClientContext buildAzureWebClientContext(
-      AzureWebAppInfraDelegateConfig infrastructure, AzureConfig azureConfig) {
+      AzureWebAppInfraDelegateConfig infrastructure, AzureConfig azureConfig, boolean useExtendedReadTimeout) {
     return AzureWebClientContext.builder()
         .azureConfig(azureConfig)
         .appName(infrastructure.getAppName())
         .subscriptionId(infrastructure.getSubscription())
         .resourceGroupName(infrastructure.getResourceGroup())
+        .extendedReadTimeout(useExtendedReadTimeout)
         .build();
+  }
+
+  protected AzureWebClientContext buildAzureWebClientContext(
+      AzureWebAppInfraDelegateConfig infrastructure, AzureConfig azureConfig) {
+    return buildAzureWebClientContext(infrastructure, azureConfig, false);
   }
 
   protected abstract AzureWebAppRequestResponse execute(

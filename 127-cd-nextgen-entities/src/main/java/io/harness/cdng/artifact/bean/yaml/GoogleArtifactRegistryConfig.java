@@ -86,6 +86,10 @@ public class GoogleArtifactRegistryConfig implements ArtifactConfig, Visitable, 
    * Version regex is used to get latest build from builds matching regex.
    */
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> versionRegex;
+  /**
+   * Digest refers to the SHA256 digest of the docker image file.
+   */
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> digest;
 
   @JsonProperty("repositoryType")
   @NotNull
@@ -127,6 +131,9 @@ public class GoogleArtifactRegistryConfig implements ArtifactConfig, Visitable, 
     }
     if (!ParameterField.isNull(googleArtifactRegistryConfig.getPkg())) {
       resultantConfig = resultantConfig.withPkg(googleArtifactRegistryConfig.getPkg());
+    }
+    if (!ParameterField.isNull(googleArtifactRegistryConfig.getDigest())) {
+      resultantConfig = resultantConfig.withDigest(googleArtifactRegistryConfig.getDigest());
     }
     return resultantConfig;
   }

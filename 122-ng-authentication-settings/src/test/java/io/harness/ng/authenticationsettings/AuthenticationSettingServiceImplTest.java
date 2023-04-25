@@ -27,15 +27,23 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.authenticationsettings.dtos.AuthenticationSettingsResponse;
 import io.harness.ng.authenticationsettings.dtos.mechanisms.LDAPSettings;
 import io.harness.ng.authenticationsettings.impl.AuthenticationSettingsServiceImpl;
 import io.harness.ng.authenticationsettings.remote.AuthSettingsManagerClient;
+import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
+import software.wings.beans.loginSettings.LoginSettings;
+import software.wings.beans.loginSettings.PasswordExpirationPolicy;
+import software.wings.beans.loginSettings.PasswordStrengthPolicy;
+import software.wings.beans.loginSettings.UserLockoutPolicy;
 import software.wings.beans.sso.LdapConnectionSettings;
+import software.wings.beans.sso.SSOSettings;
+import software.wings.beans.sso.SSOType;
 import software.wings.beans.sso.SamlSettings;
 import software.wings.security.authentication.SSOConfig;
 
@@ -43,7 +51,9 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -223,5 +233,74 @@ public class AuthenticationSettingServiceImplTest extends CategoryTest {
     doReturn(Response.success(mockResponse)).when(request).execute();
     authenticationSettingsServiceImpl.deleteLdapSettings(ACCOUNT_ID);
     verify(managerClient, times(1)).deleteLdapSettings(ACCOUNT_ID);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testGetAuthenticationSettingsV2() throws IOException {
+    Call<RestResponse<Set<String>>> whitelistDomainsRequest = mock(Call.class);
+    doReturn(whitelistDomainsRequest).when(managerClient).getWhitelistedDomains(anyString());
+    Set<String> strs = new HashSet<>();
+    strs.add("wl1");
+    RestResponse<Set<String>> mockSetsResp = new RestResponse<>(strs);
+    doReturn(Response.success(mockSetsResp)).when(whitelistDomainsRequest).execute();
+
+    Call<RestResponse<SSOConfig>> ssoConfigRequest = mock(Call.class);
+    doReturn(ssoConfigRequest).when(managerClient).getAccountAccessManagementSettingsV2(anyString());
+    SamlSettings samlSettings = SamlSettings.builder()
+                                    .accountId(ACCOUNT_ID)
+                                    .friendlySamlName("testSAMLFriendlyName")
+                                    .ssoType(SSOType.SAML)
+                                    .logoutUrl("http://dummy.logout.url")
+                                    .build();
+    List<SSOSettings> settings = new ArrayList<>();
+    settings.add(samlSettings);
+    SSOConfig config = SSOConfig.builder()
+                           .accountId(ACCOUNT_ID)
+                           .authenticationMechanism(AuthenticationMechanism.SAML)
+                           .ssoSettings(settings)
+                           .build();
+    RestResponse<SSOConfig> mockSSOConfigRes = new RestResponse<>(config);
+    doReturn(Response.success(mockSSOConfigRes)).when(ssoConfigRequest).execute();
+
+    Call<RestResponse<Boolean>> twoFARequest = mock(Call.class);
+    Call<RestResponse<Integer>> sessionTimeoutRequest = mock(Call.class);
+    doReturn(twoFARequest).when(managerClient).twoFactorEnabled(anyString());
+    doReturn(sessionTimeoutRequest).when(managerClient).getSessionTimeoutAtAccountLevel(anyString());
+    RestResponse<Boolean> twoFARep = new RestResponse<>(false);
+    RestResponse<Integer> sessionTimeoutResp = new RestResponse<>(50);
+    doReturn(Response.success(twoFARep)).when(twoFARequest).execute();
+    doReturn(Response.success(sessionTimeoutResp)).when(sessionTimeoutRequest).execute();
+
+    Call<RestResponse<LoginSettings>> loginSettingsRequest = mock(Call.class);
+    doReturn(loginSettingsRequest).when(managerClient).getUserNamePasswordSettings(anyString());
+
+    LoginSettings loginSettings = LoginSettings.builder()
+                                      .passwordExpirationPolicy(PasswordExpirationPolicy.builder()
+                                                                    .enabled(false)
+                                                                    .daysBeforeUserNotifiedOfPasswordExpiration(2)
+                                                                    .daysBeforePasswordExpires(1)
+                                                                    .build())
+                                      .userLockoutPolicy(UserLockoutPolicy.builder()
+                                                             .enableLockoutPolicy(false)
+                                                             .lockOutPeriod(24)
+                                                             .notifyUser(false)
+                                                             .numberOfFailedAttemptsBeforeLockout(3)
+                                                             .build())
+                                      .passwordStrengthPolicy(PasswordStrengthPolicy.builder().enabled(false).build())
+                                      .accountId(ACCOUNT_ID)
+                                      .build();
+
+    RestResponse<LoginSettings> loginSettingsResp = new RestResponse<>(loginSettings);
+    doReturn(Response.success(loginSettingsResp)).when(loginSettingsRequest).execute();
+
+    AuthenticationSettingsResponse settingsV2Response =
+        authenticationSettingsServiceImpl.getAuthenticationSettingsV2(ACCOUNT_ID);
+    assertNotNull(settingsV2Response);
+    assertNotNull(settingsV2Response.getNgAuthSettings());
+    assertNotNull(settingsV2Response.getWhitelistedDomains());
+    assertThat(settingsV2Response.getAuthenticationMechanism()).isEqualTo(AuthenticationMechanism.SAML);
+    assertThat(settingsV2Response.isTwoFactorEnabled()).isEqualTo(false);
   }
 }

@@ -180,6 +180,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   @Inject private Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
   @Inject private HsqsClientService hsqsClientService;
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
+  @Inject private CIStagePlanCreationUtils ciStagePlanCreationUtils;
 
   @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject QueueExecutionUtils queueExecutionUtils;
@@ -260,8 +261,8 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepParameters.getSpec();
 
     String logPrefix = getLogPrefix(ambiance);
-    CIStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(accountExecutionMetadataRepository,
-        ciLicenseService, AmbianceUtils.getAccountId(ambiance), initializeStepInfo.getInfrastructure());
+    ciStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(
+        AmbianceUtils.getAccountId(ambiance), initializeStepInfo.getInfrastructure());
 
     populateStrategyExpansion(initializeStepInfo, ambiance);
     CIInitializeTaskParams buildSetupTaskParams =
@@ -416,7 +417,6 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     if (initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED
         || initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.HOSTED_VM) {
       sanitizationService.validate(steps);
-      validationService.isAccountValidForExecution(accountIdentifier);
     }
   }
   private void validateConnectors(InitializeStepInfo initializeStepInfo, List<EntityDetail> connectorEntitiesList,
@@ -566,7 +566,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
     Optional<Integer> maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT));
     if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE
-        && CIStagePlanCreationUtils.isHostedInfra(initializeStepInfo.getInfrastructure())) {
+        && ciStagePlanCreationUtils.isHostedInfra(initializeStepInfo.getInfrastructure())) {
       maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT));
     }
 

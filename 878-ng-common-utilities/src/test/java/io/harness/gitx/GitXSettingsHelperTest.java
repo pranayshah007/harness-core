@@ -64,7 +64,7 @@ public class GitXSettingsHelperTest extends CategoryTest {
         () -> gitXSettingsHelper.enforceGitExperienceIfApplicable(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
-            "Git Experience is enforced for the current scope with accountId: accountId, orgIdentifier: orgId and projIdentifier: projId. Hence Interaction with INLINE entities is forbidden.");
+            "Git Experience is enforced for the current scope with accountId: [accountId], orgIdentifier: [orgId] and projIdentifier: [projId]. Hence Interaction with INLINE entities is forbidden.");
   }
 
   @Test

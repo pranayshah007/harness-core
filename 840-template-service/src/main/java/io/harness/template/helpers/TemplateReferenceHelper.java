@@ -24,6 +24,7 @@ import io.harness.common.NGExpressionUtils;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.exception.InvalidIdentifierRefException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
@@ -74,6 +75,13 @@ public class TemplateReferenceHelper {
   }
 
   public void populateTemplateReferences(TemplateEntity templateEntity) {
+    String branch = GitAwareContextHelper.getBranchInSCMGitMetadata();
+
+    Map<String, String> metadata = new HashMap<>();
+    if (branch != null) {
+      metadata.put("branch", branch);
+    }
+
     TemplateCrudHelper templateCrudHelper =
         templateCrudHelperFactory.getCrudHelperForTemplateType(templateEntity.getTemplateEntityType());
     if (!templateCrudHelper.supportsReferences()) {
@@ -88,7 +96,9 @@ public class TemplateReferenceHelper {
           getNestedTemplateReferences(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
               templateEntity.getProjectIdentifier(), entityYaml, true);
       referredEntities.addAll(referredEntitiesInLinkedTemplates);
-      templateSetupUsageHelper.publishSetupUsageEvent(templateEntity, referredEntities);
+
+      templateSetupUsageHelper.publishSetupUsageEvent(templateEntity, referredEntities, metadata);
+
     } catch (InvalidIdentifierRefException ex) {
       log.error("Error occurred while calculating template references {}", ex.getMessage());
       String scope = String.valueOf(templateEntity.getTemplateScope());

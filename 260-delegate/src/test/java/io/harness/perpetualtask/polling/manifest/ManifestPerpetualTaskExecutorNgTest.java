@@ -39,6 +39,7 @@ import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -72,6 +73,7 @@ public class ManifestPerpetualTaskExecutorNgTest extends DelegateTestBase {
   private String polling_doc_id;
 
   @Inject KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private ManifestCollectionService manifestCollectionService;
   @Mock private Call<RestResponse<Boolean>> call;
@@ -79,9 +81,9 @@ public class ManifestPerpetualTaskExecutorNgTest extends DelegateTestBase {
   @Before
   public void setup() {
     PollingResponsePublisher pollingResponsePublisher =
-        new PollingResponsePublisher(kryoSerializer, delegateAgentManagerClient);
-    manifestPerpetualTaskExecutor =
-        new ManifestPerpetualTaskExecutorNg(kryoSerializer, manifestCollectionService, pollingResponsePublisher);
+        new PollingResponsePublisher(kryoSerializer, referenceFalseKryoSerializer, delegateAgentManagerClient);
+    manifestPerpetualTaskExecutor = new ManifestPerpetualTaskExecutorNg(
+        manifestCollectionService, pollingResponsePublisher, kryoSerializer, referenceFalseKryoSerializer);
     perpetualTaskId = PerpetualTaskId.newBuilder().setId(UUIDGenerator.generateUuid()).build();
     polling_doc_id = UUIDGenerator.generateUuid();
   }

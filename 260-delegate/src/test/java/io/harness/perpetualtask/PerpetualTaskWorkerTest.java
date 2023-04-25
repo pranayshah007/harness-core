@@ -85,11 +85,12 @@ public class PerpetualTaskWorkerTest extends DelegateTestBase {
   @InjectMocks private PerpetualTaskWorker worker;
 
   @Inject KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Before
   public void setUp() throws ExecutionException, InterruptedException {
     kubernetesClusterConfig = KubernetesClusterConfig.builder().accountId(accountId).build();
-    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(kubernetesClusterConfig));
+    ByteString bytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(kubernetesClusterConfig));
     K8sWatchTaskParams k8sWatchTaskParams =
         K8sWatchTaskParams.newBuilder().setCloudProviderId(cloudProviderId).setK8SClusterConfig(bytes).build();
 

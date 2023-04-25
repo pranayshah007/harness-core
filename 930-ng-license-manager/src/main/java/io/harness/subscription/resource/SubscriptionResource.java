@@ -203,8 +203,10 @@ public class SubscriptionResource {
   cancelSubscription(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @Parameter(required = true, description = "Subscription Identifier for the Entity") @NotNull @PathParam(
-          SUBSCRIPTION_ID) String subscriptionId) {
-    subscriptionService.cancelSubscription(accountIdentifier, subscriptionId);
+          SUBSCRIPTION_ID) String subscriptionId,
+      @Parameter(required = true, description = "Module Type") @NotNull @QueryParam(
+          "moduleType") ModuleType moduleType) {
+    subscriptionService.cancelSubscription(accountIdentifier, subscriptionId, moduleType);
     return ResponseDTO.newResponse();
   }
 
@@ -237,10 +239,8 @@ public class SubscriptionResource {
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<List<SubscriptionDetailDTO>>
   listSubscriptions(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(required = true, description = "Module type for the Entity") @QueryParam(
-          "moduleType") ModuleType moduleType) {
-    return ResponseDTO.newResponse(subscriptionService.listSubscriptions(accountIdentifier, moduleType));
+      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+    return ResponseDTO.newResponse(subscriptionService.listSubscriptions(accountIdentifier));
   }
 
   @POST

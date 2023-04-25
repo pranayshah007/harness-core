@@ -54,6 +54,7 @@ import io.harness.logstreaming.LogStreamingModule;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.logstreaming.LogStreamingServiceRestClient;
 import io.harness.logstreaming.NGLogStreamingClientFactory;
+import io.harness.manage.ManagedExecutorService;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
@@ -186,7 +187,7 @@ import io.harness.service.DelegateServiceDriverModule;
 import io.harness.spec.server.pipeline.v1.InputSetsApi;
 import io.harness.spec.server.pipeline.v1.InputsApi;
 import io.harness.spec.server.pipeline.v1.PipelinesApi;
-import io.harness.ssca.client.SSCAServiceClientModule;
+import io.harness.ssca.client.SSCAServiceClientModuleV2;
 import io.harness.steps.approval.ApprovalNotificationHandler;
 import io.harness.steps.approval.step.custom.CustomApprovalHelperService;
 import io.harness.steps.approval.step.jira.JiraApprovalHelperService;
@@ -380,7 +381,7 @@ public class PipelineServiceModule extends AbstractModule {
     install(new VariableClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getNgManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
     install(new HsqsServiceClientModule(this.configuration.getQueueServiceClientConfig(), BEARER.getServiceId()));
-    install(new SSCAServiceClientModule(this.configuration.getSscaServiceConfig()));
+    install(new SSCAServiceClientModuleV2(this.configuration.getSscaServiceConfig(), PIPELINE_SERVICE.getServiceId()));
 
     registerOutboxEventHandlers();
     bind(OutboxEventHandler.class).to(PMSOutboxEventHandler.class);
@@ -740,11 +741,12 @@ public class PipelineServiceModule extends AbstractModule {
   @Singleton
   @Named("PipelineAsyncValidationExecutorService")
   public Executor pipelineAsyncValidationExecutorService() {
-    return ThreadPool.create(configuration.getPipelineAsyncValidationPoolConfig().getCorePoolSize(),
-        configuration.getPipelineAsyncValidationPoolConfig().getMaxPoolSize(),
-        configuration.getPipelineAsyncValidationPoolConfig().getIdleTime(),
-        configuration.getPipelineAsyncValidationPoolConfig().getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("PipelineAsyncValidationExecutorService-%d").build());
+    return new ManagedExecutorService(
+        ThreadPool.create(configuration.getPipelineAsyncValidationPoolConfig().getCorePoolSize(),
+            configuration.getPipelineAsyncValidationPoolConfig().getMaxPoolSize(),
+            configuration.getPipelineAsyncValidationPoolConfig().getIdleTime(),
+            configuration.getPipelineAsyncValidationPoolConfig().getTimeUnit(),
+            new ThreadFactoryBuilder().setNameFormat("PipelineAsyncValidationExecutorService-%d").build()));
   }
 
   @Provides

@@ -252,6 +252,8 @@ import io.harness.ng.overview.service.CDLandingDashboardService;
 import io.harness.ng.overview.service.CDLandingDashboardServiceImpl;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
 import io.harness.ng.overview.service.CDOverviewDashboardServiceImpl;
+import io.harness.ng.rollback.PostProdRollbackService;
+import io.harness.ng.rollback.PostProdRollbackServiceImpl;
 import io.harness.ng.scim.NGScimGroupServiceImpl;
 import io.harness.ng.scim.NGScimUserServiceImpl;
 import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
@@ -1022,6 +1024,7 @@ public class NextGenModule extends AbstractModule {
         .annotatedWith(Names.named(TEMPLATE_ENTITY + ENTITY_CRUD))
         .to(CustomDeploymentEntityCRUDStreamEventListener.class);
     bind(MessageListener.class).annotatedWith(Names.named(INSTANCE_STATS)).to(InstanceStatsEventListener.class);
+    bind(PostProdRollbackService.class).to(PostProdRollbackServiceImpl.class);
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkMetadataConstants.USER_GROUP + ENTITY_CRUD))
         .to(UserGroupEntityCRUDStreamListener.class);

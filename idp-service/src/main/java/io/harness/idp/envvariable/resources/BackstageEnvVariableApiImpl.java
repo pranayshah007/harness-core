@@ -121,9 +121,8 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
   @Override
   public Response syncBackstageEnvVariables(String harnessAccount) {
     idpCommonService.checkUserAuthorization();
-    List<BackstageEnvVariable> secrets = backstageEnvVariableService.findByAccountIdentifier(harnessAccount);
     try {
-      backstageEnvVariableService.sync(secrets, harnessAccount);
+      backstageEnvVariableService.findAndSync(harnessAccount);
     } catch (Exception e) {
       log.error("Could not sync all backstage env variables", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
