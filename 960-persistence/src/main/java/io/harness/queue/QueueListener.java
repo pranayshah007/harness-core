@@ -80,7 +80,8 @@ public abstract class QueueListener<T extends Queuable> implements Runnable {
         log.info("Thread interrupted, shutting down for queue {}", queueConsumer.getName());
         return false;
       }
-      log.error("Exception happened while fetching message from queue {}", queueConsumer.getName(), exception);
+      log.error(
+          String.format("Exception happened while fetching message from queue %s", queueConsumer.getName()), exception);
     }
 
     if (message != null) {
