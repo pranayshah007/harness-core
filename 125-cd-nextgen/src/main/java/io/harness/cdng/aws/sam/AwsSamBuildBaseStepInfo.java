@@ -74,4 +74,6 @@ public class AwsSamBuildBaseStepInfo {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<String>> buildCommandOptions;
+
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> samBuildDockerRegistryConnectorRef;
 }
