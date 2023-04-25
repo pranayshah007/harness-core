@@ -28,10 +28,9 @@ import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.mappers.AccountMapper;
-import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.common.beans.UserSource;
-import io.harness.ng.core.dto.GatewayAccountRequestDTO;
 import io.harness.ng.core.dto.UserInviteDTO;
+import io.harness.ng.core.dto.UserPreferenceDataDTO;
 import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.PasswordChangeDTO;
 import io.harness.ng.core.user.PasswordChangeResponse;
@@ -537,16 +536,13 @@ public class UserResourceNG {
     if (userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
       UserPreferenceData userPreferenceData = user.getUserAccountLevelDataMap().get(accountId).getUserPreferenceData();
       if (null != userPreferenceData) {
-        for (GatewayAccountRequestDTO accountDTO : userInfo.getAccounts()) {
-          if (accountDTO.getUuid() == accountId) {
-            accountDTO.setDefaultExperience(
-                userPreferenceData.getDefaultExperience() == NG ? DefaultExperience.NG : DefaultExperience.CG);
-          }
-        }
+        userInfo.setUserPreference(
+            UserPreferenceDataDTO.builder().defaultExperience(userPreferenceData.getDefaultExperience()).build());
       }
     }
     return userInfo;
   }
+
   private UserInfo convertUserToNgUser(User user) {
     if (user == null) {
       return null;
