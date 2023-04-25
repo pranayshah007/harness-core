@@ -56,6 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GcpSecretsManagerServiceImpl extends AbstractSecretServiceImpl implements GcpSecretsManagerService {
   private static final String CREDENTIAL_SUFFIX = "_credentials";
+  private static final String ENV_VARIABLE_WORKLOAD_IDENTITY = "USE_WORKLOAD_IDENTITY";
   @Inject private HarnessUserGroupService harnessUserGroupService;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private KmsEncryptorsRegistry kmsEncryptorsRegistry;
@@ -77,15 +78,18 @@ public class GcpSecretsManagerServiceImpl extends AbstractSecretServiceImpl impl
   @Override
   public GcpKmsConfig getGlobalKmsConfig() {
     GcpKmsConfig gcpKmsConfig = wingsPersistence.createQuery(GcpKmsConfig.class)
-                                    .field(SecretManagerConfigKeys.accountId)
-                                    .equal(GLOBAL_ACCOUNT_ID)
-                                    .field(SecretManagerConfigKeys.encryptionType)
-                                    .equal(EncryptionType.GCP_KMS)
-                                    .get();
+            .field(SecretManagerConfigKeys.accountId)
+            .equal(GLOBAL_ACCOUNT_ID)
+            .field(SecretManagerConfigKeys.encryptionType)
+            .equal(EncryptionType.GCP_KMS)
+            .get();
     if (gcpKmsConfig == null) {
       return null;
     }
-    decryptGcpConfigSecrets(gcpKmsConfig, false);
+    boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv(ENV_VARIABLE_WORKLOAD_IDENTITY));
+    if (!usingWorkloadIdentity || !gcpKmsConfig.isGlobalKms()) {
+      decryptGcpConfigSecrets(gcpKmsConfig, false);
+    }
     return gcpKmsConfig;
   }
 
