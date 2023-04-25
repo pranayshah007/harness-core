@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @AllArgsConstructor(access = AccessLevel.PUBLIC, onConstructor = @__({ @Inject }))
 @Slf4j
-public class CodeResourceImpl implements Resource {
+public class CodeRepositoryResourceImpl implements Resource {
   public static final String CODE_REPOSITORY = "CODE_REPOSITORY";
 
   @Override
