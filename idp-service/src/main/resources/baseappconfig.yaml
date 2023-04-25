@@ -1,5 +1,5 @@
-app:
-  title: Backstage Example App
-  baseUrl: http://localhost:300
-backend:
-  baseUrl: http://localhost:7007
+proxy:
+  '/harness/prod':
+    target: 'https://app.harness.io/'
+    pathRewrite:
+      'api/proxy/harness/prod/?': '/'

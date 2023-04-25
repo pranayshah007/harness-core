@@ -17,10 +17,13 @@ import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.infra.yaml.InfrastructurePlanCreatorConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.utils.YamlPipelineUtils;
 
+import com.google.common.base.Preconditions;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -43,6 +46,15 @@ public class InfrastructureEntityConfigMapper {
     }
   }
 
+  public static InfrastructureConfig toInfrastructureConfig(String yaml) {
+    Preconditions.checkArgument(isNotEmpty(yaml));
+    try {
+      return YamlPipelineUtils.read(yaml, InfrastructureConfig.class);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Cannot create infrastructure config due to " + e.getMessage());
+    }
+  }
+
   @NotNull
   public InfrastructureConfig toInfrastructureConfig(InfrastructureEntity infrastructureEntity) {
     Infrastructure infrastructure = null;
@@ -52,7 +64,6 @@ public class InfrastructureEntityConfigMapper {
       try {
         final InfrastructureConfig config =
             YamlPipelineUtils.read(infrastructureEntity.getYaml(), InfrastructureConfig.class);
-        validateFieldsOrThrow(config, infrastructureEntity);
         infrastructure = config.getInfrastructureDefinitionConfig().getSpec();
         allowSimultaneousDeployments = config.getInfrastructureDefinitionConfig().isAllowSimultaneousDeployments();
         deploymentType = config.getInfrastructureDefinitionConfig().getDeploymentType();
@@ -90,7 +101,7 @@ public class InfrastructureEntityConfigMapper {
         .collect(Collectors.toList());
   }
 
-  private static void validateFieldsOrThrow(InfrastructureConfig fromYaml, InfrastructureEntity requestedEntity) {
+  static void validateFieldsOrThrow(InfrastructureConfig fromYaml, InfrastructureEntity requestedEntity) {
     Map<String, Pair<String, String>> mismatchedEntries = new HashMap<>();
     if (StringUtils.compare(
             fromYaml.getInfrastructureDefinitionConfig().getOrgIdentifier(), requestedEntity.getOrgIdentifier())
@@ -128,5 +139,40 @@ public class InfrastructureEntityConfigMapper {
           "For the infrastructure [name: %s, identifier: %s], Found mismatch in following fields between yaml and requested value respectively: %s",
           requestedEntity.getName(), requestedEntity.getIdentifier(), mismatchedEntries));
     }
+  }
+
+  static void checkForFieldMismatch(InfrastructureConfig fromYaml, InfrastructureRequestDTO requestDTO) {
+    Map<String, Pair<String, String>> mismatchedEntries = new HashMap<>();
+    InfrastructureDefinitionConfig infraConfigFromYaml = fromYaml.getInfrastructureDefinitionConfig();
+    if (compareIfNonEmpty(infraConfigFromYaml.getOrgIdentifier(), requestDTO.getOrgIdentifier())) {
+      mismatchedEntries.put(
+          "Org Identifier", new Pair<>(infraConfigFromYaml.getOrgIdentifier(), requestDTO.getOrgIdentifier()));
+    }
+    if (compareIfNonEmpty(infraConfigFromYaml.getProjectIdentifier(), requestDTO.getProjectIdentifier())) {
+      mismatchedEntries.put("Project Identifier",
+          new Pair<>(infraConfigFromYaml.getProjectIdentifier(), requestDTO.getProjectIdentifier()));
+    }
+    if (compareIfNonEmpty(infraConfigFromYaml.getIdentifier(), requestDTO.getIdentifier())) {
+      mismatchedEntries.put("InfrastructureDefinition Identifier",
+          new Pair<>(infraConfigFromYaml.getIdentifier(), requestDTO.getIdentifier()));
+    }
+    if (compareIfNonEmpty(infraConfigFromYaml.getName(), requestDTO.getName())) {
+      mismatchedEntries.put(
+          "InfraStructureDefinition Name", new Pair<>(infraConfigFromYaml.getName(), requestDTO.getName()));
+    }
+    if (infraConfigFromYaml.getType() != null && requestDTO.getType() != null
+        && requestDTO.getType() != infraConfigFromYaml.getType()) {
+      mismatchedEntries.put("InfrastructureDefinition type",
+          new Pair<>(infraConfigFromYaml.getType().toString(), requestDTO.getType().toString()));
+    }
+    if (isNotEmpty(mismatchedEntries)) {
+      throw new InvalidRequestException(String.format(
+          "For the infrastructure [name: %s, identifier: %s], Found mismatch in following fields between yaml and requested value respectively: %s",
+          requestDTO.getName(), requestDTO.getIdentifier(), mismatchedEntries));
+    }
+  }
+
+  static boolean compareIfNonEmpty(String s1, String s2) {
+    return EmptyPredicate.isNotEmpty(s1) && EmptyPredicate.isNotEmpty(s2) && StringUtils.compare(s1, s2) != 0;
   }
 }

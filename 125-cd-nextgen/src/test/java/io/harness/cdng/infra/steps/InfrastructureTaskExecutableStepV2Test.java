@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.customdeployment.CustomDeploymentNGVariable;
@@ -107,6 +108,7 @@ import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
+import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -123,6 +125,7 @@ import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.infra.HostConnectionTypeKind;
 
@@ -170,8 +173,10 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   @Mock private CDExpressionResolver resolver;
   @Spy InstanceOutcomeHelper instanceOutcomeHelper;
   @Mock EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
+  @Mock private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
 
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @InjectMocks private InfrastructureTaskExecutableStepV2 step = new InfrastructureTaskExecutableStepV2();
   private AutoCloseable mocks;
 
@@ -207,6 +212,11 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
         .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(3, Set.class));
 
     Mockito.doReturn("taskId").when(delegateGrpcClientWrapper).submitAsyncTaskV2(any(), any());
+
+    doNothing()
+        .when(infrastructureStepHelper)
+        .saveInfraExecutionDataToStageInfo(any(Ambiance.class), any(StepResponse.class));
+    when(ngFeatureFlagHelperService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(true);
 
     doCallRealMethod().when(cdStepHelper).mapTaskRequestToDelegateTaskRequest(any(), any(), anySet());
     doCallRealMethod()
@@ -545,8 +555,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
 
     // verify some more method calls
     verify(stageExecutionHelper, times(1))
-        .saveStageExecutionInfoAndPublishExecutionInfoKey(
-            any(Ambiance.class), any(ExecutionInfoKey.class), eq("SshWinRmAws"));
+        .saveStageExecutionInfo(any(Ambiance.class), any(ExecutionInfoKey.class), eq("SshWinRmAws"));
     verify(stageExecutionHelper, times(1))
         .addRollbackArtifactToStageOutcomeIfPresent(
             any(Ambiance.class), any(StepResponseBuilder.class), any(ExecutionInfoKey.class), eq("SshWinRmAws"));
@@ -613,8 +622,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
 
     // verify some more method calls
     verify(stageExecutionHelper, times(1))
-        .saveStageExecutionInfoAndPublishExecutionInfoKey(
-            any(Ambiance.class), any(ExecutionInfoKey.class), eq("SshWinRmAzure"));
+        .saveStageExecutionInfo(any(Ambiance.class), any(ExecutionInfoKey.class), eq("SshWinRmAzure"));
     verify(stageExecutionHelper, times(1))
         .addRollbackArtifactToStageOutcomeIfPresent(
             any(Ambiance.class), any(StepResponseBuilder.class), any(ExecutionInfoKey.class), eq("SshWinRmAzure"));
@@ -796,7 +804,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     assertThat(token.getValue().getScope()).isEqualTo(Scope.ACCOUNT);
     // verify some more method calls
     verify(stageExecutionHelper, times(1))
-        .saveStageExecutionInfoAndPublishExecutionInfoKey(
+        .saveStageExecutionInfo(
             any(Ambiance.class), any(ExecutionInfoKey.class), eq(InfrastructureKind.CUSTOM_DEPLOYMENT));
     verify(stageExecutionHelper, times(1))
         .addRollbackArtifactToStageOutcomeIfPresent(any(Ambiance.class), any(StepResponseBuilder.class),

@@ -534,6 +534,15 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testCreate_Rolling_WithNoti_Success() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    notificationRuleDTO.setIdentifier("rule1");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule2");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule3");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
     ServiceLevelObjectiveV2DTO sloDTO =
         builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
             .identifier("compositeSloIdentifier1")
@@ -605,6 +614,15 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     SimpleServiceLevelObjective simpleServiceLevelObjective4 =
         (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
             projectParams, simpleServiceLevelObjectiveDTO4.getIdentifier());
+
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    notificationRuleDTO.setIdentifier("rule1");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule2");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule3");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
 
     ServiceLevelObjectiveV2DTO sloDTO =
         builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
@@ -874,6 +892,14 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                             .sloTargetPercentage(90.0)
                             .spec(RollingSLOTargetSpec.builder().periodLength("30d").build())
                             .build());
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    notificationRuleDTO.setIdentifier("rule1");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule2");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule3");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
     sloDTO.setNotificationRuleRefs(
         Arrays.asList(NotificationRuleRefDTO.builder().notificationRuleRef("rule1").enabled(true).build(),
             NotificationRuleRefDTO.builder().notificationRuleRef("rule2").enabled(true).build(),
@@ -940,6 +966,69 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
             "Can't update the compliance time period for SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s as it is associated with Composite SLO with identifier%s %s.",
+            simpleServiceLevelObjective1.getIdentifier(), projectParams.getAccountIdentifier(),
+            projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(),
+            referencedCompositeSLOIdentifiers.size() > 1 ? "s" : "",
+            String.join(", ", referencedCompositeSLOIdentifiers)));
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testUpdate_simpleSLO_associatedWithCompositeSLO_failureSLIEvaluationType() {
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
+        serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
+    SimpleServiceLevelObjective simpleServiceLevelObjective =
+        (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
+    ServiceLevelObjectiveV2DTO compositeSLODTO1 = compositeSLODTO;
+    CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec =
+        (CompositeServiceLevelObjectiveSpec) compositeSLODTO1.getSpec();
+    compositeSLODTO1.setIdentifier("newCompositeSLO1");
+    compositeServiceLevelObjectiveSpec.setServiceLevelObjectivesDetails(
+        Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                          .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                          .weightagePercentage(50.0)
+                          .accountId(simpleServiceLevelObjective1.getAccountId())
+                          .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                          .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                          .build(),
+            ServiceLevelObjectiveDetailsDTO.builder()
+                .serviceLevelObjectiveRef(simpleServiceLevelObjective2.getIdentifier())
+                .weightagePercentage(25.0)
+                .accountId(simpleServiceLevelObjective2.getAccountId())
+                .orgIdentifier(simpleServiceLevelObjective2.getOrgIdentifier())
+                .projectIdentifier(simpleServiceLevelObjective2.getProjectIdentifier())
+                .build(),
+            ServiceLevelObjectiveDetailsDTO.builder()
+                .serviceLevelObjectiveRef(simpleServiceLevelObjective.getIdentifier())
+                .weightagePercentage(25.0)
+                .accountId(simpleServiceLevelObjective.getAccountId())
+                .orgIdentifier(simpleServiceLevelObjective.getOrgIdentifier())
+                .projectIdentifier(simpleServiceLevelObjective.getProjectIdentifier())
+                .build()));
+    compositeSLODTO1.setSpec(compositeServiceLevelObjectiveSpec);
+    ServiceLevelObjectiveV2Response newCompositeSLO =
+        serviceLevelObjectiveV2Service.create(projectParams, compositeSLODTO1);
+    assertThat(newCompositeSLO.getServiceLevelObjectiveV2DTO()).isEqualTo(compositeSLODTO1);
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO1.getSpec();
+    simpleServiceLevelObjectiveSpec.setServiceLevelIndicators(
+        Collections.singletonList(builderFactory.getRequestServiceLevelIndicatorDTOBuilder().build()));
+    simpleServiceLevelObjectiveDTO1.setSpec(simpleServiceLevelObjectiveSpec);
+    List<String> referencedCompositeSLOIdentifiers =
+        compositeSLOService.getReferencedCompositeSLOs(projectParams, simpleServiceLevelObjective1.getIdentifier())
+            .stream()
+            .map(CompositeServiceLevelObjective::getIdentifier)
+            .collect(Collectors.toList());
+    assertThatThrownBy(()
+                           -> serviceLevelObjectiveV2Service.update(projectParams,
+                               simpleServiceLevelObjective1.getIdentifier(), simpleServiceLevelObjectiveDTO1))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format(
+            "Can't update the SLI evaluation type for SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s as it is associated with Composite SLO with identifier%s %s.",
             simpleServiceLevelObjective1.getIdentifier(), projectParams.getAccountIdentifier(),
             projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(),
             referencedCompositeSLOIdentifiers.size() > 1 ? "s" : "",
@@ -1056,6 +1145,15 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testUpdate_CompositeSLO_WithNotificationRule_Success() {
     ServiceLevelObjectiveV2DTO compositeSLODTO1 = compositeSLODTO;
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    notificationRuleDTO.setIdentifier("rule1");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule2");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule3");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
     compositeSLODTO1.setNotificationRuleRefs(
         Arrays.asList(NotificationRuleRefDTO.builder().notificationRuleRef("rule1").enabled(true).build(),
             NotificationRuleRefDTO.builder().notificationRuleRef("rule2").enabled(true).build(),
@@ -1761,8 +1859,9 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
     ProjectParams accountProjectParams =
         ProjectParams.builder().accountIdentifier(projectParams.getAccountIdentifier()).build();
-    List<AbstractServiceLevelObjective> serviceLevelObjectiveList = serviceLevelObjectiveV2Service.getWithChildResource(
-        accountProjectParams, Collections.singletonList(sloDTO.getIdentifier()));
+    List<AbstractServiceLevelObjective> serviceLevelObjectiveList =
+        serviceLevelObjectiveV2Service.getSimpleSLOWithChildResource(
+            accountProjectParams, Collections.singletonList(sloDTO.getIdentifier()));
     assertThat(serviceLevelObjectiveList.size()).isEqualTo(1);
     assertThat(serviceLevelObjectiveList.get(0).getIdentifier()).isEqualTo(sloDTO.getIdentifier());
   }
@@ -2072,6 +2171,14 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testBeforeNotificationRuleDelete() {
     ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    notificationRuleDTO.setIdentifier("rule1");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule2");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("rule3");
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
     sloDTO.setNotificationRuleRefs(
         Arrays.asList(NotificationRuleRefDTO.builder().notificationRuleRef("rule1").enabled(true).build(),
             NotificationRuleRefDTO.builder().notificationRuleRef("rule2").enabled(true).build(),
@@ -2105,6 +2212,21 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testCreate_withIncorrectIdentifierNotificationRule() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    sloDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder().notificationRuleRef("wrongIdentifier").enabled(true).build()));
+    createMonitoredService();
+    assertThatThrownBy(() -> serviceLevelObjectiveV2Service.create(projectParams, sloDTO))
+        .hasMessage("NotificationRule does not exist for identifier: wrongIdentifier");
+  }
+
+  @Test
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
   public void testUpdate_withNotificationRuleDelete() {
@@ -2135,8 +2257,8 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   public void testDeleteByProjectIdentifier_Success() {
     ProjectParams projectParamsTest = ProjectParams.builder()
                                           .accountIdentifier(generateUuid())
-                                          .orgIdentifier(generateUuid())
-                                          .projectIdentifier(generateUuid())
+                                          .orgIdentifier("orgIdentifier")
+                                          .projectIdentifier("project3")
                                           .build();
     ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
     MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder()
@@ -2147,12 +2269,36 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     monitoredServiceService.create(projectParamsTest.getAccountIdentifier(), monitoredServiceDTO);
     ServiceLevelObjectiveV2Service mockServiceLevelObjectiveService = spy(serviceLevelObjectiveV2Service);
     mockServiceLevelObjectiveService.create(projectParamsTest, sloDTO);
+    simpleServiceLevelObjective1 = (SimpleServiceLevelObjective) mockServiceLevelObjectiveService.getEntity(
+        projectParamsTest, sloDTO.getIdentifier());
     sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
+    mockServiceLevelObjectiveService.create(projectParamsTest, sloDTO);
+    simpleServiceLevelObjective1 = (SimpleServiceLevelObjective) mockServiceLevelObjectiveService.getEntity(
+        projectParamsTest, sloDTO.getIdentifier());
+    compositeSLODTO = builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+                          .spec(CompositeServiceLevelObjectiveSpec.builder()
+                                    .serviceLevelObjectivesDetails(Arrays.asList(
+                                        ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                                            .weightagePercentage(75.0)
+                                            .accountId(simpleServiceLevelObjective1.getAccountId())
+                                            .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                                            .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                                            .build(),
+                                        ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(simpleServiceLevelObjective2.getIdentifier())
+                                            .weightagePercentage(25.0)
+                                            .accountId(simpleServiceLevelObjective2.getAccountId())
+                                            .orgIdentifier(simpleServiceLevelObjective2.getOrgIdentifier())
+                                            .projectIdentifier(simpleServiceLevelObjective2.getProjectIdentifier())
+                                            .build()))
+                                    .build())
+                          .build();
+    compositeSLODTO.setIdentifier("compositeSLO2");
     compositeSLODTO.setOrgIdentifier(projectParamsTest.getOrgIdentifier());
     compositeSLODTO.setProjectIdentifier(projectParamsTest.getProjectIdentifier());
     mockServiceLevelObjectiveService.create(projectParamsTest, compositeSLODTO);
-    mockServiceLevelObjectiveService.create(projectParamsTest, sloDTO);
     mockServiceLevelObjectiveService.deleteByProjectIdentifier(AbstractServiceLevelObjective.class,
         projectParamsTest.getAccountIdentifier(), projectParamsTest.getOrgIdentifier(),
         projectParamsTest.getProjectIdentifier());
@@ -2165,8 +2311,8 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   public void testDeleteByOrgIdentifier_Success() {
     ProjectParams projectParamsTest = ProjectParams.builder()
                                           .accountIdentifier(generateUuid())
-                                          .orgIdentifier(generateUuid())
-                                          .projectIdentifier(generateUuid())
+                                          .orgIdentifier("orgIdentifier1")
+                                          .projectIdentifier("project")
                                           .build();
     ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
     MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder()
@@ -2177,9 +2323,33 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     monitoredServiceService.create(projectParamsTest.getAccountIdentifier(), monitoredServiceDTO);
     ServiceLevelObjectiveV2Service mockServiceLevelObjectiveService = spy(serviceLevelObjectiveV2Service);
     mockServiceLevelObjectiveService.create(projectParamsTest, sloDTO);
+    simpleServiceLevelObjective1 = (SimpleServiceLevelObjective) mockServiceLevelObjectiveService.getEntity(
+        projectParamsTest, sloDTO.getIdentifier());
     sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
     mockServiceLevelObjectiveService.create(projectParamsTest, sloDTO);
+    simpleServiceLevelObjective2 = (SimpleServiceLevelObjective) mockServiceLevelObjectiveService.getEntity(
+        projectParamsTest, sloDTO.getIdentifier());
+    compositeSLODTO = builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+                          .spec(CompositeServiceLevelObjectiveSpec.builder()
+                                    .serviceLevelObjectivesDetails(Arrays.asList(
+                                        ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                                            .weightagePercentage(75.0)
+                                            .accountId(simpleServiceLevelObjective1.getAccountId())
+                                            .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                                            .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                                            .build(),
+                                        ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(simpleServiceLevelObjective2.getIdentifier())
+                                            .weightagePercentage(25.0)
+                                            .accountId(simpleServiceLevelObjective2.getAccountId())
+                                            .orgIdentifier(simpleServiceLevelObjective2.getOrgIdentifier())
+                                            .projectIdentifier(simpleServiceLevelObjective2.getProjectIdentifier())
+                                            .build()))
+                                    .build())
+                          .build();
+    compositeSLODTO.setIdentifier("compositeSLO2");
     compositeSLODTO.setOrgIdentifier(projectParamsTest.getOrgIdentifier());
     compositeSLODTO.setProjectIdentifier(projectParamsTest.getProjectIdentifier());
     mockServiceLevelObjectiveService.create(projectParamsTest, compositeSLODTO);
@@ -2194,8 +2364,8 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   public void testDeleteByAccountIdentifier_Success() {
     ProjectParams projectParamsTest = ProjectParams.builder()
                                           .accountIdentifier(generateUuid())
-                                          .orgIdentifier(generateUuid())
-                                          .projectIdentifier(generateUuid())
+                                          .orgIdentifier("orgIdentifier")
+                                          .projectIdentifier("project")
                                           .build();
     ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
     MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder()
@@ -2206,12 +2376,37 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     monitoredServiceService.create(projectParamsTest.getAccountIdentifier(), monitoredServiceDTO);
     ServiceLevelObjectiveV2Service mockServiceLevelObjectiveService = spy(serviceLevelObjectiveV2Service);
     mockServiceLevelObjectiveService.create(projectParamsTest, sloDTO);
-    compositeSLODTO.setOrgIdentifier(projectParamsTest.getOrgIdentifier());
-    compositeSLODTO.setProjectIdentifier(projectParamsTest.getProjectIdentifier());
-    mockServiceLevelObjectiveService.create(projectParamsTest, compositeSLODTO);
+    simpleServiceLevelObjective1 = (SimpleServiceLevelObjective) mockServiceLevelObjectiveService.getEntity(
+        projectParamsTest, sloDTO.getIdentifier());
     sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
     mockServiceLevelObjectiveService.create(projectParamsTest, sloDTO);
+    simpleServiceLevelObjective2 = (SimpleServiceLevelObjective) mockServiceLevelObjectiveService.getEntity(
+        projectParamsTest, sloDTO.getIdentifier());
+    compositeSLODTO = builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+                          .spec(CompositeServiceLevelObjectiveSpec.builder()
+                                    .serviceLevelObjectivesDetails(Arrays.asList(
+                                        ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                                            .weightagePercentage(75.0)
+                                            .accountId(simpleServiceLevelObjective1.getAccountId())
+                                            .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                                            .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                                            .build(),
+                                        ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(simpleServiceLevelObjective2.getIdentifier())
+                                            .weightagePercentage(25.0)
+                                            .accountId(simpleServiceLevelObjective2.getAccountId())
+                                            .orgIdentifier(simpleServiceLevelObjective2.getOrgIdentifier())
+                                            .projectIdentifier(simpleServiceLevelObjective2.getProjectIdentifier())
+                                            .build()))
+                                    .build())
+                          .build();
+    compositeSLODTO.setIdentifier("compositeSLO2");
+    compositeSLODTO.setOrgIdentifier(projectParamsTest.getOrgIdentifier());
+    compositeSLODTO.setProjectIdentifier(projectParamsTest.getProjectIdentifier());
+    mockServiceLevelObjectiveService.create(projectParamsTest, compositeSLODTO);
+
     mockServiceLevelObjectiveService.deleteByAccountIdentifier(
         AbstractServiceLevelObjective.class, projectParamsTest.getAccountIdentifier());
     verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any());
@@ -2397,7 +2592,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
-  public void testSendNotification_compositeSLO() throws IllegalAccessException, IOException {
+  public void testSendNotification_compositeSLO() throws IllegalAccessException {
     NotificationRuleDTO notificationRuleDTO =
         builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
     NotificationRuleResponse notificationRuleResponseOne =
@@ -2433,6 +2628,86 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
 
     serviceLevelObjectiveV2Service.handleNotification(serviceLevelObjective);
     verify(notificationClient, times(1)).sendNotificationAsync(any());
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testNotification_requestCompositeSLO_errorBudgetRemaining() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    NotificationRuleResponse notificationRuleResponseOne =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setName("rule2");
+    notificationRuleDTO.setIdentifier("rule2");
+    notificationRuleDTO.setConditions(
+        Arrays.asList(NotificationRuleCondition.builder()
+                          .type(NotificationRuleConditionType.ERROR_BUDGET_REMAINING_MINUTES)
+                          .spec(ErrorBudgetRemainingMinutesConditionSpec.builder().threshold(9000.0).build())
+                          .build()));
+    NotificationRuleResponse notificationRuleResponseTwo =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    simpleServiceLevelObjectiveDTO1 = builderFactory.getSimpleRequestServiceLevelObjectiveV2DTOBuilder()
+                                          .identifier("requestSimpleSLOIdentifier")
+                                          .build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec1 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO1.getSpec();
+    simpleServiceLevelObjectiveSpec1.setMonitoredServiceRef(monitoredServiceDTO.getIdentifier());
+    simpleServiceLevelObjectiveSpec1.setHealthSourceRef(generateUuid());
+    simpleServiceLevelObjectiveDTO1.setSpec(simpleServiceLevelObjectiveSpec1);
+    serviceLevelObjectiveV2Service.create(projectParams, simpleServiceLevelObjectiveDTO1);
+    simpleServiceLevelObjective1 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        projectParams, simpleServiceLevelObjectiveDTO1.getIdentifier());
+
+    simpleServiceLevelObjectiveDTO2 = builderFactory.getSimpleRequestServiceLevelObjectiveV2DTOBuilder()
+                                          .identifier("requestSimpleSLOIdentifier2")
+                                          .build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec2 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO2.getSpec();
+    simpleServiceLevelObjectiveSpec2.setMonitoredServiceRef(monitoredServiceDTO.getIdentifier());
+    simpleServiceLevelObjectiveSpec2.setHealthSourceRef(generateUuid());
+    simpleServiceLevelObjectiveDTO2.setSpec(simpleServiceLevelObjectiveSpec2);
+    serviceLevelObjectiveV2Service.create(projectParams, simpleServiceLevelObjectiveDTO2);
+    simpleServiceLevelObjective2 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        projectParams, simpleServiceLevelObjectiveDTO2.getIdentifier());
+
+    compositeSLODTO = builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+                          .identifier("requestCompositeSLO")
+                          .name("requestCompositeSLO")
+                          .spec(CompositeServiceLevelObjectiveSpec.builder()
+                                    .evaluationType(SLIEvaluationType.REQUEST)
+                                    .serviceLevelObjectivesDetails(Arrays.asList(
+                                        ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                                            .weightagePercentage(75.0)
+                                            .accountId(simpleServiceLevelObjective1.getAccountId())
+                                            .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                                            .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                                            .build(),
+                                        ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(simpleServiceLevelObjective2.getIdentifier())
+                                            .weightagePercentage(25.0)
+                                            .accountId(simpleServiceLevelObjective2.getAccountId())
+                                            .orgIdentifier(simpleServiceLevelObjective2.getOrgIdentifier())
+                                            .projectIdentifier(simpleServiceLevelObjective2.getProjectIdentifier())
+                                            .build()))
+                                    .build())
+                          .build();
+
+    compositeSLODTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponseOne.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build(),
+            NotificationRuleRefDTO.builder()
+                .notificationRuleRef(notificationRuleResponseTwo.getNotificationRule().getIdentifier())
+                .enabled(true)
+                .build()));
+    createMonitoredService();
+    assertThatThrownBy(() -> serviceLevelObjectiveV2Service.create(projectParams, compositeSLODTO))
+        .hasMessage(
+            "Invalid notification with identifier: rule2. Request based composite SLOs can't have notifications for condition [Error Budget Remaining].");
   }
 
   @Test
@@ -2481,8 +2756,11 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
     AbstractServiceLevelObjective serviceLevelObjective =
         serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
-    createSLIRecords(((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators().get(0));
-
+    String sliId = serviceLevelIndicatorService
+                       .getServiceLevelIndicator(projectParams,
+                           ((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators().get(0))
+                       .getUuid();
+    createSLIRecords(sliId);
     SLONotificationRule.SLOErrorBudgetBurnRateCondition condition =
         SLONotificationRule.SLOErrorBudgetBurnRateCondition.builder()
             .threshold(0.04)
@@ -2549,6 +2827,188 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                    .getNotificationRules(serviceLevelObjective)
                    .size())
         .isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetEvaluationType_accountCompositeSLO() {
+    builderFactory = BuilderFactory.getDefault();
+    builderFactory.getContext().setProjectIdentifier("project1");
+    builderFactory.getContext().setOrgIdentifier("orgIdentifier");
+    accountId = builderFactory.getContext().getAccountId();
+    orgIdentifier = builderFactory.getContext().getOrgIdentifier();
+    projectIdentifier = builderFactory.getContext().getProjectIdentifier();
+    projectParams = ProjectParams.builder()
+                        .accountIdentifier(accountId)
+                        .orgIdentifier(orgIdentifier)
+                        .projectIdentifier(projectIdentifier)
+                        .build();
+
+    monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder()
+                              .identifier("service2_env2")
+                              .name("monitored service 2")
+                              .sources(MonitoredServiceDTO.Sources.builder().build())
+                              .serviceRef("service2")
+                              .environmentRef("env2")
+                              .build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+
+    simpleServiceLevelObjectiveDTO1 =
+        builderFactory.getSimpleRequestServiceLevelObjectiveV2DTOBuilder().identifier("simpleSLOIdentifier").build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec1 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO1.getSpec();
+    simpleServiceLevelObjectiveSpec1.setMonitoredServiceRef(monitoredServiceDTO.getIdentifier());
+    simpleServiceLevelObjectiveSpec1.setHealthSourceRef(generateUuid());
+    simpleServiceLevelObjectiveDTO1.setSpec(simpleServiceLevelObjectiveSpec1);
+    serviceLevelObjectiveV2Service.create(projectParams, simpleServiceLevelObjectiveDTO1);
+    simpleServiceLevelObjective1 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        projectParams, simpleServiceLevelObjectiveDTO1.getIdentifier());
+
+    simpleServiceLevelObjectiveDTO2 =
+        builderFactory.getSimpleRequestServiceLevelObjectiveV2DTOBuilder().identifier("compositeSloIdentifier").build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec2 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO2.getSpec();
+    simpleServiceLevelObjectiveSpec2.setMonitoredServiceRef(monitoredServiceDTO.getIdentifier());
+    simpleServiceLevelObjectiveSpec2.setHealthSourceRef(generateUuid());
+    simpleServiceLevelObjectiveSpec2.setServiceLevelIndicators(
+        Collections.singletonList(builderFactory.getRequestServiceLevelIndicatorDTOBuilder().build()));
+    simpleServiceLevelObjectiveDTO2.setSpec(simpleServiceLevelObjectiveSpec2);
+    serviceLevelObjectiveV2Service.create(projectParams, simpleServiceLevelObjectiveDTO2);
+    simpleServiceLevelObjective2 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        projectParams, simpleServiceLevelObjectiveDTO2.getIdentifier());
+
+    ProjectParams projectParams2 = ProjectParams.builder().accountIdentifier(accountId).build();
+
+    compositeSLODTO = builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+                          .projectIdentifier(null)
+                          .orgIdentifier(null)
+                          .spec(CompositeServiceLevelObjectiveSpec.builder()
+                                    .evaluationType(SLIEvaluationType.REQUEST)
+                                    .serviceLevelObjectivesDetails(Arrays.asList(
+                                        ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(simpleServiceLevelObjective2.getIdentifier())
+                                            .weightagePercentage(25.0)
+                                            .accountId(simpleServiceLevelObjective2.getAccountId())
+                                            .orgIdentifier(simpleServiceLevelObjective2.getOrgIdentifier())
+                                            .projectIdentifier(simpleServiceLevelObjective2.getProjectIdentifier())
+                                            .build(),
+                                        ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                                            .weightagePercentage(75.0)
+                                            .accountId(simpleServiceLevelObjective1.getAccountId())
+                                            .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                                            .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                                            .build()))
+                                    .build())
+                          .build();
+    serviceLevelObjectiveResponse = serviceLevelObjectiveV2Service.create(projectParams2, compositeSLODTO);
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams2, compositeSLODTO.getIdentifier());
+    assertThat(serviceLevelObjectiveV2Service
+                   .getEvaluationType(projectParams2, Collections.singletonList(serviceLevelObjective))
+                   .get(serviceLevelObjective))
+        .isEqualTo(SLIEvaluationType.REQUEST);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetAllReferredSLOs() {
+    builderFactory = BuilderFactory.getDefault();
+    builderFactory.getContext().setProjectIdentifier("project1");
+    projectIdentifier = builderFactory.getContext().getProjectIdentifier();
+    projectParams = ProjectParams.builder()
+                        .accountIdentifier(accountId)
+                        .orgIdentifier(orgIdentifier)
+                        .projectIdentifier(projectIdentifier)
+                        .build();
+
+    monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder()
+                              .orgIdentifier(orgIdentifier)
+                              .projectIdentifier(projectIdentifier)
+                              .identifier("service2_env2")
+                              .name("monitored service 2")
+                              .sources(MonitoredServiceDTO.Sources.builder().build())
+                              .serviceRef("service2")
+                              .environmentRef("env2")
+                              .build();
+    monitoredServiceService.create(accountId, monitoredServiceDTO);
+
+    simpleServiceLevelObjectiveDTO1 =
+        builderFactory.getSimpleRequestServiceLevelObjectiveV2DTOBuilder().identifier("simpleSLOIdentifier").build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec1 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO1.getSpec();
+    simpleServiceLevelObjectiveSpec1.setMonitoredServiceRef(monitoredServiceDTO.getIdentifier());
+    simpleServiceLevelObjectiveSpec1.setHealthSourceRef(generateUuid());
+    simpleServiceLevelObjectiveDTO1.setSpec(simpleServiceLevelObjectiveSpec1);
+    serviceLevelObjectiveV2Service.create(projectParams, simpleServiceLevelObjectiveDTO1);
+    simpleServiceLevelObjective1 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        projectParams, simpleServiceLevelObjectiveDTO1.getIdentifier());
+
+    simpleServiceLevelObjectiveDTO2 =
+        builderFactory.getSimpleRequestServiceLevelObjectiveV2DTOBuilder().identifier("simpleSLOIdentifier3").build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec2 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO2.getSpec();
+    simpleServiceLevelObjectiveSpec2.setMonitoredServiceRef(monitoredServiceDTO.getIdentifier());
+    simpleServiceLevelObjectiveSpec2.setHealthSourceRef(generateUuid());
+    simpleServiceLevelObjectiveSpec2.setServiceLevelIndicators(
+        Collections.singletonList(builderFactory.getRequestServiceLevelIndicatorDTOBuilder().build()));
+    simpleServiceLevelObjectiveDTO2.setSpec(simpleServiceLevelObjectiveSpec2);
+    serviceLevelObjectiveV2Service.create(projectParams, simpleServiceLevelObjectiveDTO2);
+    simpleServiceLevelObjective2 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        projectParams, simpleServiceLevelObjectiveDTO2.getIdentifier());
+
+    ProjectParams projectParams2 = ProjectParams.builder().accountIdentifier(accountId).build();
+
+    compositeSLODTO = builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+                          .projectIdentifier(null)
+                          .orgIdentifier(null)
+                          .spec(CompositeServiceLevelObjectiveSpec.builder()
+                                    .serviceLevelObjectivesDetails(
+                                        Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                                                          .serviceLevelObjectiveRef("simpleSLOIdentifier2")
+                                                          .weightagePercentage(25.0)
+                                                          .accountId(simpleServiceLevelObjective2.getAccountId())
+                                                          .orgIdentifier("orgIdentifier")
+                                                          .projectIdentifier("project")
+                                                          .build(),
+                                            ServiceLevelObjectiveDetailsDTO.builder()
+                                                .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                                                .weightagePercentage(75.0)
+                                                .accountId(simpleServiceLevelObjective1.getAccountId())
+                                                .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                                                .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                                                .build()))
+                                    .build())
+                          .build();
+    List<AbstractServiceLevelObjective> serviceLevelObjectiveList = serviceLevelObjectiveV2Service.getAllReferredSLOs(
+        projectParams2, (CompositeServiceLevelObjectiveSpec) compositeSLODTO.getSpec());
+    assertThat(serviceLevelObjectiveList.size()).isEqualTo(2);
+    assertThat(serviceLevelObjectiveList.get(0).getIdentifier()).isEqualTo("simpleSLOIdentifier");
+    assertThat(serviceLevelObjectiveList.get(0).getProjectIdentifier()).isEqualTo("project1");
+    assertThat(serviceLevelObjectiveList.get(1).getIdentifier()).isEqualTo("simpleSLOIdentifier2");
+    assertThat(serviceLevelObjectiveList.get(1).getProjectIdentifier()).isEqualTo("project");
+  }
+
+  private ServiceLevelObjectiveV2DTO createSimpleWindowSLOBuilder(
+      String orgIdentifier, String projectIdentifier, String identifier) {
+    return builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .name(identifier)
+        .identifier(identifier)
+        .build();
+  }
+
+  private ServiceLevelObjectiveV2DTO createSimpleRequestSLOBuilder(
+      String orgIdentifier, String projectIdentifier, String identifier) {
+    return builderFactory.getSimpleRequestServiceLevelObjectiveV2DTOBuilder()
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .name(identifier)
+        .identifier(identifier)
+        .build();
   }
 
   private ServiceLevelObjectiveV2DTO createSLOBuilder() {

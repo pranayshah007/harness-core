@@ -23,6 +23,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.elastigroup.output.ElastigroupConfigurationOutput;
 import io.harness.cdng.execution.ExecutionInfoKey;
@@ -31,6 +32,8 @@ import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.InfrastructureStepDetails;
+import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
@@ -84,6 +87,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.rbac.PipelineRbacHelper;
+import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.execution.invokers.StrategyHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -98,6 +102,7 @@ import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.steps.shellscript.K8sInfraDelegateConfigOutput;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.google.inject.Inject;
@@ -123,6 +128,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
                                                .setType(ExecutionNodeType.INFRASTRUCTURE_TASKSTEP_V2.getName())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
+  private static final String INFRASTRUCTURE_STEP_DETAIL_KEY = "InfrastructureStepDetailKey";
 
   @Inject private InfrastructureEntityService infrastructureEntityService;
   @Inject private InfrastructureStepHelper infrastructureStepHelper;
@@ -134,6 +140,8 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   @Inject private InfrastructureValidator infrastructureValidator;
   @Inject private CDExpressionResolver resolver;
   @Inject private StrategyHelper strategyHelper;
+  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
 
   @Override
   public Class<InfrastructureTaskExecutableStepV2Params> getStepParametersClass() {
@@ -171,6 +179,9 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
                   .map(TaskSelectorYaml::getDelegateSelectors)
                   .collect(Collectors.toSet()));
       String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
+      sdkGraphVisualizationDataService.publishStepDetailInformation(ambiance,
+          InfrastructureStepDetails.builder().taskIds(Collections.singletonList(taskId)).build(),
+          INFRASTRUCTURE_STEP_DETAIL_KEY);
       return AsyncExecutableResponse.newBuilder()
           .addCallbackIds(taskId)
           .addAllLogKeys(StepUtils.generateLogKeys(ambiance, List.of(LOG_SUFFIX)))
@@ -187,11 +198,17 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   @Override
   public StepResponse handleAsyncResponse(Ambiance ambiance, InfrastructureTaskExecutableStepV2Params stepParameters,
       Map<String, ResponseData> responseDataMap) {
+    StepResponse stepResponse;
     try (PmsSecurityContextEventGuard securityContextEventGuard = new PmsSecurityContextEventGuard(ambiance)) {
-      return handleAsyncResponseInternal(ambiance, responseDataMap);
+      stepResponse = handleAsyncResponseInternal(ambiance, responseDataMap);
     } catch (Exception ex) {
-      return prepareFailureResponse(ex);
+      stepResponse = prepareFailureResponse(ex);
     }
+    if (ngFeatureFlagHelperService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
+      infrastructureStepHelper.saveInfraExecutionDataToStageInfo(ambiance, stepResponse);
+    }
+    return stepResponse;
   }
 
   StepResponse handleAsyncResponseInternal(Ambiance ambiance, Map<String, ResponseData> responseDataMap) {
@@ -247,8 +264,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     String infrastructureKind = infrastructureOutcome.getKind();
     ExecutionInfoKey executionInfoKey =
         ExecutionInfoKeyMapper.getExecutionInfoKey(ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
-    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(
-        ambiance, executionInfoKey, infrastructureKind);
+    stageExecutionHelper.saveStageExecutionInfo(ambiance, executionInfoKey, infrastructureKind);
     stageExecutionHelper.addRollbackArtifactToStageOutcomeIfPresent(
         ambiance, stepResponseBuilder, executionInfoKey, infrastructureKind);
 
@@ -398,7 +414,8 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
     if (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome
         || infrastructureOutcome instanceof K8sDirectInfrastructureOutcome
-        || infrastructureOutcome instanceof K8sAzureInfrastructureOutcome) {
+        || infrastructureOutcome instanceof K8sAzureInfrastructureOutcome
+        || infrastructureOutcome instanceof K8sAwsInfrastructureOutcome) {
       publishK8sInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
     }
 

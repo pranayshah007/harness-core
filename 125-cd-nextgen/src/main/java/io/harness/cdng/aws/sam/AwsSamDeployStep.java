@@ -9,60 +9,67 @@ package io.harness.cdng.aws.sam;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.callback.DelegateCallbackToken;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
-import io.harness.pms.sdk.core.steps.io.PassThroughData;
-import io.harness.pms.sdk.core.steps.io.StepInputPackage;
+import io.harness.pms.sdk.core.plugin.AbstractContainerStepV2;
+import io.harness.pms.sdk.core.plugin.ContainerUnitStepUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.supplier.ThrowingSupplier;
+import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.tasks.ResponseData;
+import io.harness.yaml.core.timeout.Timeout;
 
+import com.google.inject.Inject;
+import java.util.Collections;
+import java.util.Map;
+import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class AwsSamDeployStep extends TaskChainExecutableWithRollbackAndRbac {
+public class AwsSamDeployStep extends AbstractContainerStepV2<StepElementParameters> {
+  @Inject Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.AWS_SAM_DEPLOY.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    // nothing
-  }
-
-  @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
-      throws Exception {
-    log.info("Calling executeNextLink");
-    return TaskChainResponse.builder().build();
-  }
-
-  @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
-    return StepResponse.builder()
-        .status(Status.SUCCEEDED)
-        .stepOutcome(StepResponse.StepOutcome.builder().build())
-        .build();
-  }
-
-  @Override
-  public TaskChainResponse startChainLinkAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return TaskChainResponse.builder().build();
-  }
-
-  @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
+  }
+
+  @Override
+  public long getTimeout(Ambiance ambiance, StepElementParameters stepElementParameters) {
+    return Timeout.fromString((String) stepElementParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis();
+  }
+
+  @Override
+  public UnitStep getSerialisedStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId,
+      String logKey, long timeout, String parkedTaskId) {
+    // Todo: Add entrypoint
+    //    AwsSamBuildStepParameters awsSamBuildStepParameters = (AwsSamBuildStepParameters)
+    //    stepElementParameters.getSpec(); stepElementParameters.getSpec();
+    // todo: add env variable and image and entrypoint
+    return ContainerUnitStepUtils.serializeStepWithStepParameters(
+        getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
+        stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
+        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, Collections.emptyMap(), "",
+        Collections.EMPTY_LIST);
+  }
+
+  @Override
+  public StepResponse.StepOutcome getAnyOutComeForStep(
+      Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
+    // todo: if required to consume any output do it here.
+    return null;
+  }
+
+  @Override
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+    // we need to check if rbac check is req or not.
   }
 }

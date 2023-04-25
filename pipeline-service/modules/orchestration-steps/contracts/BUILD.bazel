@@ -14,8 +14,8 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//835-pipeline-ci-commons:module",
         "//878-ng-common-utilities:module",
+        "//879-pipeline-ci-commons:module",
         "//880-pipeline-cd-commons:module",
         "//884-pms-commons:module",
         "//953-yaml-commons:module",

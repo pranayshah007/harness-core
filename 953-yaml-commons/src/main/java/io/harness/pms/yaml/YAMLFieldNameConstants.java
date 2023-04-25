@@ -29,6 +29,7 @@ public class YAMLFieldNameConstants {
   public final String STAGES = "stages";
   public final String STRATEGY = "strategy";
   public final String CLONE = "clone";
+  public final String CLONE_CODEBASE = "cloneCodebase";
   public final String DISABLED = "disabled";
   public final String WHEN = "when";
 
@@ -57,6 +58,7 @@ public class YAMLFieldNameConstants {
   public final String ENVIRONMENT = "environment";
   public final String PROVISIONER = "provisioner";
   public final String CONNECTOR_REF = "connectorRef";
+  public final String CREDENTIALS_REF = "credentialsRef";
   public final String CONNECTOR_REFS = "connectorRefs";
   public final String FILES = "files";
   public final String SECRET_FILES = "secretFiles";
@@ -109,6 +111,8 @@ public class YAMLFieldNameConstants {
 
   public final String SERVICE_CONFIG = "serviceConfig";
   // todo(abhinav): make this step group once battle tested
-  public final String STEP_GROUP_V2 = "stepGroupv2";
+  public final String STEP_GROUP_V2 = "stepGroup";
   public final String STEP_GROUP_CHILD_NODE_ID = "stepsChildNodeId";
+
+  public final String COMBINED_ROLLBACK_STATUS = "combinedRollbackStatus";
 }

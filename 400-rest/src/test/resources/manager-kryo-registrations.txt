@@ -833,6 +833,9 @@
 5619:software.wings.delegatetasks.buildsource.BuildSourceResponse
 5620:software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse
 5621:software.wings.delegatetasks.buildsource.BuildSourceParameters.BuildSourceRequestType
+5622:com.amazonaws.services.secretsmanager.model.AWSSecretsManagerException
+5623:com.amazonaws.AmazonServiceException
+5624:com.amazonaws.AmazonServiceException.ErrorType
 5626:software.wings.beans.notification.NotificationSettings
 5671:software.wings.api.EcsSetupElement
 5700:io.harness.waiter.StringNotifyProgressData
@@ -1139,6 +1142,7 @@
 7435:software.wings.service.impl.aws.model.AwsAmiTrafficShiftAlbSwitchRouteRequest
 7436:software.wings.api.AwsAmiTrafficShiftAlbStateExecutionData
 7437:io.harness.delegate.beans.executioncapability.KustomizeCapability
+7438:software.wings.helpers.ext.gcb.models.RepoSource
 7439:software.wings.sm.states.gcbconfigs.GcbOptions
 7440:software.wings.sm.states.gcbconfigs.GcbTriggerBuildSpec
 7441:software.wings.sm.states.gcbconfigs.GcbRemoteBuildSpec
@@ -1150,6 +1154,8 @@
 7447:software.wings.beans.TechStack
 7448:software.wings.sm.states.ParameterEntry
 7449:software.wings.api.k8s.K8sHelmDeploymentElement
+7450:software.wings.helpers.ext.gcb.models.HashType
+7451:software.wings.helpers.ext.gcb.models.Volume
 7452:software.wings.beans.servicenow.ServiceNowFieldType
 7453:io.harness.dashboard.Action
 7457:software.wings.api.TemplatizedSecretManagerStateExecutionData
@@ -1905,6 +1911,7 @@
 29310:io.harness.delegate.task.serverless.response.ServerlessPrepareRollbackDataResponse
 29311:io.harness.delegate.beans.serverless.ServerlessPrepareRollbackDataResult
 29312:io.harness.delegate.beans.serverless.ServerlessAwsLambdaPrepareRollbackDataResult
+29313:io.harness.delegate.beans.storeconfig.GitFetchedStoreDelegateConfig
 31010:java.lang.StackTraceElement[]
 31011:java.lang.StackTraceElement
 31012:io.harness.exception.DelegateErrorHandlerException
@@ -1961,6 +1968,9 @@
 40030:io.harness.perpetualtask.PerpetualTaskClientContext
 40031:io.harness.delegate.beans.Delegate
 40041:io.harness.delegate.beans.DelegateGroup
+40042:io.harness.delegate.beans.K8sConfigDetails
+40043:io.harness.delegate.beans.K8sPermissionType
+40044:io.harness.delegate.beans.DelegateGroupStatus
 40051:io.harness.ccm.cluster.entities.DirectKubernetesCluster
 40052:io.harness.ccm.cluster.entities.EcsCluster
 40053:io.harness.ccm.cluster.entities.GcpKubernetesCluster
@@ -2045,6 +2055,9 @@
 50031:software.wings.persistence.artifact.Artifact.Status
 50032:com.mongodb.MongoExecutionTimeoutException
 50033:com.amazonaws.services.kms.model.AWSKMSException
+50034:io.harness.ng.core.user.UserAccountLevelData
+50035:io.harness.ng.core.common.beans.Generation
+50036:io.harness.ng.core.common.beans.UserSource
 54320:io.harness.ng.core.entities.Organization
 54321:io.harness.ng.core.entities.Project
 54322:io.harness.ng.core.entities.SampleEncryptableSettingImplementation
@@ -2944,6 +2957,7 @@
 878019:io.harness.pms.sdk.core.execution.AsyncTimeoutResponseData
 878020:io.harness.pms.sdk.core.execution.async.AsyncProgressData
 878021:io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters
+878022:io.harness.advisers.nextstep.NextStageAdviserParameters
 930001:io.harness.licensing.beans.modules.CDModuleLicenseDTO
 930002:io.harness.licensing.beans.modules.CEModuleLicenseDTO
 930003:io.harness.licensing.beans.modules.CFModuleLicenseDTO
@@ -2979,6 +2993,13 @@
 955018:io.harness.beans.FileGitDetails
 955019:io.harness.beans.ContentType
 955021:io.harness.beans.GetBatchFileRequestIdentifier
+955022:io.harness.gitsync.common.dtos.gitAccess.GitAccessDTO
+955023:io.harness.gitsync.common.dtos.gitAccess.GithubAccessDTO
+955024:io.harness.gitsync.common.dtos.gitAccess.GitlabAccessDTO
+955025:io.harness.gitsync.common.dtos.gitAccess.GithubAccessTokenDTO
+955026:io.harness.gitsync.common.dtos.gitAccess.AzureRepoAccessDTO
+955027:io.harness.gitsync.common.dtos.gitAccess.GithubAppAccessDTO
+955028:io.harness.beans.Scope
 970001:io.harness.request.RequestContextData
 970002:io.harness.request.RequestContext
 970003:io.harness.gitsync.interceptor.GitSyncBranchContext
@@ -3028,7 +3049,13 @@
 980100:software.wings.beans.infrastructure.instance.info.K8sPodInfo
 980101:software.wings.beans.infrastructure.instance.info.K8sContainerInfo
 1010101:io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse
-
+1800003:io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionGenOneDeployRequest
+1800004:io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionGenOneDeployResponse
+1800005:io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionGenOnePrepareRollbackRequest
+1800006:io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionGenOnePrepareRollbackResponse
+1800007:io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionGenOneRollbackRequest
+1800008:io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionGenOneRollbackResponse
+1800009:io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceFetchType
 5731600:io.harness.aws.beans.AsgLoadBalancerConfig
 5731601:io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackRequest
 5731602:io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResponse
@@ -3168,3 +3195,4 @@
 10000523:io.harness.delegate.task.pcf.artifact.GoogleCloudStorageTasArtifactRequestDetails
 10000524:io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig
 10000526:io.harness.beans.HttpCertificateNG
+10000527:software.wings.beans.ServiceHookDelegateConfig

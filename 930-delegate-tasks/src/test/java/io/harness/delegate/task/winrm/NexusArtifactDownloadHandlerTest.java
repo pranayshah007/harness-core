@@ -100,9 +100,19 @@ public class NexusArtifactDownloadHandlerTest extends CategoryTest {
         .isEqualTo("$Headers = @{\n"
             + "    Authorization = \"Basic dXNlcm5hbWU6ZGVjcnlwdGVkVmFsdWU=\"\n"
             + "}\n"
-            + " [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n"
-            + " $ProgressPreference = 'SilentlyContinue'\n"
-            + " Invoke-WebRequest -Uri \"https://nexus3.dev.harness.io/repository/maven-releases/mygroup/myartifact/1.8/myartifact-1.8.war\" -Headers $Headers -OutFile \"destinationPath\\myartifact-1.8.war\"");
+            + "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n"
+            + "$ProgressPreference = 'SilentlyContinue'\n"
+            + "$var1 = $env:HARNESS_ENV_PROXY\n"
+            + "$var2 = $env:HTTP_PROXY\n"
+            + "if ( ([string]::IsNullOrEmpty($var2)) -and  (\"true\" -eq $var1) ) {\n"
+            + " Write-Host \"HTTP_PROXY environment variable not found or empty\"\n"
+            + "}\n"
+            + "if ( (-not [string]::IsNullOrEmpty($var2)) -and  (\"true\" -eq $var1) ) {\n"
+            + " Write-Host \"Using HTTP_PROXY environment variable\"\n"
+            + " Invoke-WebRequest -Uri \"https://nexus3.dev.harness.io/repository/maven-releases/mygroup/myartifact/1.8/myartifact-1.8.war\" -Headers $Headers -OutFile \"destinationPath\\myartifact-1.8.war\" -Proxy \"$env:HTTP_PROXY\"\n"
+            + "} else {\n"
+            + " Invoke-WebRequest -Uri \"https://nexus3.dev.harness.io/repository/maven-releases/mygroup/myartifact/1.8/myartifact-1.8.war\" -Headers $Headers -OutFile \"destinationPath\\myartifact-1.8.war\"\n"
+            + "}");
   }
 
   @Test

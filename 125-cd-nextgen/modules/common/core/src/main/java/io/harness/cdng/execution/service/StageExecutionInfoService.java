@@ -13,6 +13,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.StageExecutionInfo;
+import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
+import io.harness.plancreator.steps.common.StageElementParameters;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.utils.StageStatus;
 
 import java.util.List;
@@ -93,4 +97,13 @@ public interface StageExecutionInfoService {
    * @param scope
    */
   void deleteAtAllScopes(Scope scope);
+
+  StageExecutionInfo findStageExecutionInfo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String stageExecutionId);
+
+  StageExecutionInfo createStageExecutionInfo(
+      Ambiance ambiance, StageElementParameters stageElementParameters, Level stageLevel);
+
+  StageExecutionInfo updateStageExecutionInfo(
+      Ambiance ambiance, StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO);
 }

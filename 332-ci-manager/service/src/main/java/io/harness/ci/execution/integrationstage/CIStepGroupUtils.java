@@ -295,6 +295,7 @@ public class CIStepGroupUtils {
 
     Map<String, ParameterField<String>> envVariables = new HashMap<>();
     if (ciCodebase.getSslVerify().getValue() != null && !ciCodebase.getSslVerify().getValue()) {
+      // Set GIT_SSL_NO_VERIFY=true only when ssl verify is false
       envVariables.put(GIT_SSL_NO_VERIFY, ParameterField.createValueField(STRING_TRUE));
     }
 

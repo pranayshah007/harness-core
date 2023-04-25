@@ -31,6 +31,7 @@ import io.harness.k8s.model.KubernetesConfig.KubernetesConfigBuilder;
 import io.harness.k8s.model.OidcGrantType;
 
 import com.google.inject.Singleton;
+import java.util.Base64;
 
 @Singleton
 @OwnedBy(CDP)
@@ -81,14 +82,17 @@ public class K8sYamlToDelegateDTOMapper {
       case CLIENT_KEY_CERT:
         kubernetesConfigBuilder.authType(KubernetesClusterAuthType.CLIENT_KEY_CERT);
         KubernetesClientKeyCertDTO clientKeyCertDTO = (KubernetesClientKeyCertDTO) authDTO.getCredentials();
-        kubernetesConfigBuilder.clientCert(clientKeyCertDTO.getClientCertRef().getDecryptedValue());
-        kubernetesConfigBuilder.clientKey(clientKeyCertDTO.getClientKeyRef().getDecryptedValue());
+        kubernetesConfigBuilder.clientCert(
+            addPaddingInSecretIfNeeded(clientKeyCertDTO.getClientCertRef().getDecryptedValue()));
+        kubernetesConfigBuilder.clientKey(
+            addPaddingInSecretIfNeeded(clientKeyCertDTO.getClientKeyRef().getDecryptedValue()));
         kubernetesConfigBuilder.clientKeyPassphrase(clientKeyCertDTO.getClientKeyPassphraseRef() != null
                 ? clientKeyCertDTO.getClientKeyPassphraseRef().getDecryptedValue()
                 : null);
         kubernetesConfigBuilder.clientKeyAlgo(clientKeyCertDTO.getClientKeyAlgo());
-        kubernetesConfigBuilder.caCert(
-            clientKeyCertDTO.getCaCertRef() != null ? clientKeyCertDTO.getCaCertRef().getDecryptedValue() : null);
+        kubernetesConfigBuilder.caCert(clientKeyCertDTO.getCaCertRef() != null
+                ? addPaddingInSecretIfNeeded(clientKeyCertDTO.getCaCertRef().getDecryptedValue())
+                : null);
         break;
 
       case SERVICE_ACCOUNT:
@@ -122,5 +126,15 @@ public class K8sYamlToDelegateDTOMapper {
             String.format("Unsupported Manual Credential type: [%s]", authDTO.getAuthType()));
     }
     return kubernetesConfigBuilder.build();
+  }
+
+  private char[] addPaddingInSecretIfNeeded(char[] secret) {
+    try {
+      byte[] decodedBytes = Base64.getDecoder().decode(new String(secret));
+      String finalSecret = new String(Base64.getEncoder().encode(decodedBytes));
+      return finalSecret.toCharArray();
+    } catch (Exception ex) {
+      return secret;
+    }
   }
 }

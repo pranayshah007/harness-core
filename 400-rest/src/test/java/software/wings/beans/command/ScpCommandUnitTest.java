@@ -29,11 +29,11 @@ import static software.wings.utils.WingsTestConstants.SETTING_ID;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -45,7 +45,6 @@ import io.harness.delegate.beans.artifact.ArtifactFileMetadata;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.nexus.NexusRequest;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.AccessType;
 import io.harness.shell.BaseScriptExecutor;
 
@@ -509,7 +508,7 @@ public class ScpCommandUnitTest extends WingsBaseTest {
         BuildDetails.Builder.aBuildDetails().withArtifactDownloadMetadata(artifactFileMetadataList).build();
     List<BuildDetails> buildDetailsList = new ArrayList<>();
     buildDetailsList.add(buildDetails);
-    when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
+    when(encryptionService.decrypt(any(EncryptableSetting.class), anyList(), eq(false)))
         .thenReturn((EncryptableSetting) hostConnectionAttributes.getValue());
     when(nexusTwoService.getVersion(any(NexusRequest.class), any(), any(), any(), any(), any(), any()))
         .thenReturn(buildDetailsList);

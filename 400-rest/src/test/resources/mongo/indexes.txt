@@ -71,6 +71,7 @@ artifactStream {"name": "settingId_1", "background": true} {"settingId": 1}
 artifactStream {"name": "templateUuid_1", "background": true} {"templateUuid": 1}
 artifactStream {"name": "yaml", "unique": true} {"appId": 1, "serviceId": 1, "name": 1}
 artifacts {"name": "accountId_artifactStreamId_createdAt", "background": true} {"accountId": 1, "artifactStreamId": 1, "createdAt": -1}
+artifacts {"name": "accountId_artifactStreamId_revision_createdAt", "background": true} {"accountId": 1, "artifactStreamId": 1, "metadata.buildNo": 1, "createdAt": -1}
 artifacts {"name": "accountId_createdAt_artifactStreamIds", "background": true} {"accountId": 1, "createdAt": -1, "artifactStreamId": 1}
 artifacts {"name": "appId_artifactStreamId_metadata_image", "background": true} {"appId": 1, "artifactStreamId": 1, "metadata.image": 1}
 artifacts {"name": "appId_artifactStreamId_status_createdAt", "background": true} {"appId": 1, "artifactStreamId": 1, "status": 1, "createdAt": -1}

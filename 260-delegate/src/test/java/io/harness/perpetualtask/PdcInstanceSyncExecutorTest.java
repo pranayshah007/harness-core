@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.ARVIND;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.DelegateTestBase;
@@ -30,6 +30,7 @@ import software.wings.service.impl.aws.model.response.HostReachabilityResponse;
 import software.wings.utils.HostValidationService;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -45,13 +46,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import retrofit2.Call;
 
 @RunWith(MockitoJUnitRunner.class)
 @OwnedBy(CDP)
 public class PdcInstanceSyncExecutorTest extends DelegateTestBase {
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
   @Mock private HostValidationService hostValidationService;
@@ -63,10 +65,10 @@ public class PdcInstanceSyncExecutorTest extends DelegateTestBase {
 
   @Before
   public void setUp() throws IOException {
-    on(pdcInstanceSyncExecutor).set("kryoSerializer", kryoSerializer);
+    on(pdcInstanceSyncExecutor).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
     doReturn(call)
         .when(delegateAgentManagerClient)
-        .publishInstanceSyncResult(any(), any(), perpetualTaskResponseCaptor.capture());
+        .publishInstanceSyncResultV2(any(), any(), perpetualTaskResponseCaptor.capture());
     doReturn(retrofit2.Response.success(SUCCESS)).when(call).execute();
   }
 
@@ -97,10 +99,14 @@ public class PdcInstanceSyncExecutorTest extends DelegateTestBase {
         PdcInstanceSyncPerpetualTaskParams.newBuilder()
             .addHostNames("h1")
             .addHostNames("h2")
-            .setEncryptedData(ByteString.copyFrom(kryoSerializer.asBytes(Collections.emptyList())))
-            .setSettingAttribute(ByteString.copyFrom(kryoSerializer.asBytes(SettingAttribute.builder().build())))
+            .setEncryptedData(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(Collections.emptyList())))
+            .setSettingAttribute(
+                ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(SettingAttribute.builder().build())))
             .build();
 
-    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
+    return PerpetualTaskExecutionParams.newBuilder()
+        .setCustomizedParams(Any.pack(message))
+        .setReferenceFalseKryoSerializer(true)
+        .build();
   }
 }

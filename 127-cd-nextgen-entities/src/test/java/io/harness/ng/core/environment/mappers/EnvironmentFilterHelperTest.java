@@ -11,12 +11,14 @@ import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
@@ -30,14 +32,17 @@ import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
+import com.mongodb.BasicDBList;
 import java.beans.PropertyDescriptor;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
@@ -203,8 +208,81 @@ public class EnvironmentFilterHelperTest extends CategoryTest {
     assertThat(criteriaObj.get(NGServiceOverridesEntityKeys.accountId)).isEqualTo(accountIdentifier);
     assertThat(criteriaObj.get(NGServiceOverridesEntityKeys.projectIdentifier)).isEqualTo(projectIdentifier);
     assertThat(criteriaObj.get(NGServiceOverridesEntityKeys.orgIdentifier)).isEqualTo(orgIdentifier);
-    assertThat(criteriaObj.get(NGServiceOverridesEntityKeys.environmentRef)).isEqualTo(environmentIdentifier);
     assertThat(criteriaObj.get(NGServiceOverridesEntityKeys.serviceRef)).isEqualTo(serviceIdentifier);
+
+    BasicDBList andOp = (BasicDBList) criteriaObj.get("$and");
+    Document orDocument = (Document) andOp.get(0);
+    BasicDBList orOp = (BasicDBList) orDocument.get("$or");
+    assertThat(orOp.size()).isEqualTo(2);
+    List<String> keysInCriteria = orOp.stream()
+                                      .map(o -> (Document) o)
+                                      .map(Document::keySet)
+                                      .flatMap(Collection::stream)
+                                      .collect(Collectors.toList());
+    List<String> valuesInCriteria = orOp.stream()
+                                        .map(o -> (Document) o)
+                                        .map(Document::values)
+                                        .flatMap(Collection::stream)
+                                        .collect(Collectors.toList())
+                                        .stream()
+                                        .map(o -> (String) o)
+                                        .collect(Collectors.toList());
+
+    assertThat(keysInCriteria)
+        .containsExactlyInAnyOrder(
+            NGServiceOverridesEntityKeys.environmentRef, NGServiceOverridesEntityKeys.environmentRef);
+    assertThat(valuesInCriteria).hasSize(2);
+    assertThat(valuesInCriteria).containsExactlyInAnyOrder(environmentIdentifier, environmentIdentifier);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void testListServiceOverridesCriteriaWithScopedEnvRef() {
+    Criteria criteria = environmentFilterHelper.createCriteriaForGetServiceOverrides(
+        accountIdentifier, orgIdentifier, projectIdentifier, "account." + environmentIdentifier, serviceIdentifier);
+    Document criteriaObj = criteria.getCriteriaObject();
+    assertThat(criteriaObj.get(NGServiceOverridesEntityKeys.accountId)).isEqualTo(accountIdentifier);
+    assertThat(criteriaObj.get(NGServiceOverridesEntityKeys.projectIdentifier)).isNull();
+    assertThat(criteriaObj.get(NGServiceOverridesEntityKeys.orgIdentifier)).isNull();
+    assertThat(criteriaObj.get(NGServiceOverridesEntityKeys.serviceRef)).isEqualTo(serviceIdentifier);
+
+    BasicDBList andOp = (BasicDBList) criteriaObj.get("$and");
+    Document orDocument = (Document) andOp.get(0);
+    BasicDBList orOp = (BasicDBList) orDocument.get("$or");
+    assertThat(orOp.size()).isEqualTo(2);
+    List<String> keysInCriteria = orOp.stream()
+                                      .map(o -> (Document) o)
+                                      .map(Document::keySet)
+                                      .flatMap(Collection::stream)
+                                      .collect(Collectors.toList());
+    List<String> valuesInCriteria = orOp.stream()
+                                        .map(o -> (Document) o)
+                                        .map(Document::values)
+                                        .flatMap(Collection::stream)
+                                        .collect(Collectors.toList())
+                                        .stream()
+                                        .map(o -> (String) o)
+                                        .collect(Collectors.toList());
+
+    assertThat(keysInCriteria)
+        .containsExactlyInAnyOrder(
+            NGServiceOverridesEntityKeys.environmentRef, NGServiceOverridesEntityKeys.environmentRef);
+    assertThat(valuesInCriteria).hasSize(2);
+    assertThat(valuesInCriteria).containsExactlyInAnyOrder(environmentIdentifier, "account." + environmentIdentifier);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void testListServiceOverridesCriteriaInvalidEnvRef() {
+    assertThatThrownBy(
+        ()
+            -> environmentFilterHelper.createCriteriaForGetServiceOverrides(accountIdentifier, orgIdentifier,
+                projectIdentifier, "randomScope." + environmentIdentifier, serviceIdentifier))
+        .isInstanceOf(InvalidIdentifierRefException.class)
+        .hasMessageContaining(
+            "Invalid Identifier Reference randomScope.environmentIdentifier. Valid references must be one of the following formats [ id, org.id, account.id ]  for scope [ project, organisation, account ] respectively");
   }
 
   @Test

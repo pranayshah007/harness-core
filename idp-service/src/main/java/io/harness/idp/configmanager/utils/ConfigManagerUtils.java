@@ -6,6 +6,8 @@
  */
 package io.harness.idp.configmanager.utils;
 
+import static io.harness.idp.common.CommonUtils.readFileFromClassPath;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -15,14 +17,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import com.google.common.io.Resources;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
@@ -55,15 +54,6 @@ public class ConfigManagerUtils {
 
   private static final String SNYK_SECURITY_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/snyk-security-schema.json";
 
-  public String readFile(String filename) {
-    ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-    try {
-      return Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
-    } catch (IOException e) {
-      throw new InvalidRequestException("Could not read resource file: " + filename, e);
-    }
-  }
-
   public String asYaml(String jsonString) throws IOException {
     JsonNode jsonNodeTree = new ObjectMapper().readTree(jsonString);
     String jsonAsYaml =
@@ -80,15 +70,15 @@ public class ConfigManagerUtils {
   public String getIntegrationConfigBasedOnConnectorType(String connectorType) {
     switch (connectorType) {
       case "Github":
-        return readFile(GITHUB_CONFIG_FILE);
+        return readFileFromClassPath(GITHUB_CONFIG_FILE);
       case "Github_App":
-        return readFile(GITHUB_APP_CONFIG_FILE);
+        return readFileFromClassPath(GITHUB_APP_CONFIG_FILE);
       case "Gitlab":
-        return readFile(GITLAB_CONFIG_FILE);
+        return readFileFromClassPath(GITLAB_CONFIG_FILE);
       case "AzureRepo":
-        return readFile(AZURE_CONFIG_FILE);
+        return readFileFromClassPath(AZURE_CONFIG_FILE);
       case "Bitbucket":
-        return readFile(BITBUCKET_CONFIG_FILE);
+        return readFileFromClassPath(BITBUCKET_CONFIG_FILE);
       default:
         return null;
     }
@@ -114,15 +104,15 @@ public class ConfigManagerUtils {
   public String getJsonSchemaBasedOnConnectorTypeForIntegrations(String connectorType) {
     switch (connectorType) {
       case "Github":
-        return readFile(GITHUB_JSON_SCHEMA_FILE);
+        return readFileFromClassPath(GITHUB_JSON_SCHEMA_FILE);
       case "Github_App":
-        return readFile(GITHUB_APP_JSON_SCHEMA_FILE);
+        return readFileFromClassPath(GITHUB_APP_JSON_SCHEMA_FILE);
       case "Gitlab":
-        return readFile(GITLAB_JSON_SCHEMA_FILE);
+        return readFileFromClassPath(GITLAB_JSON_SCHEMA_FILE);
       case "AzureRepo":
-        return readFile(AZURE_JSON_SCHEMA_FILE);
+        return readFileFromClassPath(AZURE_JSON_SCHEMA_FILE);
       case "Bitbucket":
-        return readFile(BITBUCKET_JSON_SCHEMA_FILE);
+        return readFileFromClassPath(BITBUCKET_JSON_SCHEMA_FILE);
       default:
         return null;
     }
@@ -138,11 +128,11 @@ public class ConfigManagerUtils {
   public String getPluginConfig(String configId) {
     switch (configId) {
       case "kafka":
-        return readFile(KAFKA_PLUGIN_CONFIG_PATH);
+        return readFileFromClassPath(KAFKA_PLUGIN_CONFIG_PATH);
       case "pager-duty":
-        return readFile(PAGER_DUTY_PLUGIN_CONFIG);
+        return readFileFromClassPath(PAGER_DUTY_PLUGIN_CONFIG);
       case "snyk-security":
-        return readFile(SNYK_SECURITY_PLUGIN_CONFIG);
+        return readFileFromClassPath(SNYK_SECURITY_PLUGIN_CONFIG);
       default:
         return null;
     }
@@ -151,11 +141,11 @@ public class ConfigManagerUtils {
   public String getPluginConfigSchema(String configId) {
     switch (configId) {
       case "kafka":
-        return readFile(KAFKA_PLUGIN_JSON_SCHEMA_PATH);
+        return readFileFromClassPath(KAFKA_PLUGIN_JSON_SCHEMA_PATH);
       case "pager-duty":
-        return readFile(PAGER_DUTY_PLUGIN_JSON_SCHEMA_PATH);
+        return readFileFromClassPath(PAGER_DUTY_PLUGIN_JSON_SCHEMA_PATH);
       case "snyk-security":
-        return readFile(SNYK_SECURITY_PLUGIN_JSON_SCHEMA_PATH);
+        return readFileFromClassPath(SNYK_SECURITY_PLUGIN_JSON_SCHEMA_PATH);
       default:
         return null;
     }

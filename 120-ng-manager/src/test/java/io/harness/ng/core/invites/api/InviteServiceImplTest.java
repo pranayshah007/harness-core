@@ -24,11 +24,12 @@ import static io.harness.rule.OwnerRule.UJJAWAL;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -499,8 +500,9 @@ public class InviteServiceImplTest extends CategoryTest {
     when(jwtGeneratorUtils.verifyJWTToken(any(), any())).thenReturn(Collections.singletonMap(InviteKeys.id, claim));
     when(inviteRepository.findFirstByIdAndDeleted(any(), any())).thenReturn(Optional.of(getDummyInvite()));
     when(ngUserService.getUserByEmail(any(), anyBoolean())).thenReturn(Optional.of(user));
+    doNothing().when(ngUserService).waitForRbacSetup(any(), anyString(), anyString());
     boolean result = inviteService.completeInvite(Optional.of(getDummyInvite()));
-
+    verify(ngUserService, times(1)).waitForRbacSetup(any(), anyString(), anyString());
     assertThat(result).isTrue();
     verify(inviteRepository, times(1)).updateInvite(idCapture.capture(), updateCapture.capture());
     assertThat(idCapture.getValue()).isEqualTo(inviteId);

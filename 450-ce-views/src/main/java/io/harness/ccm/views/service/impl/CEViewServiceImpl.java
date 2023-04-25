@@ -106,7 +106,7 @@ public class CEViewServiceImpl implements CEViewService {
   private static final String DEFAULT_CLUSTER_FIELD_ID = "clusterName";
   private static final String DEFAULT_CLUSTER_FIELD_NAME = "Cluster Name";
 
-  private static final int VIEW_COUNT = 1000;
+  private static final int VIEW_COUNT = 10000;
 
   @Inject private CEViewDao ceViewDao;
   @Inject private CEViewFolderDao ceViewFolderDao;
@@ -272,8 +272,24 @@ public class CEViewServiceImpl implements CEViewService {
       }
     }
 
-    ceView.setDataSources(new ArrayList<>(viewFieldIdentifierSet));
+    setDataSources(ceView, viewFieldIdentifierSet);
     ceView.setViewPreferences(CEViewPreferenceUtils.getCEViewPreferences(ceView));
+  }
+
+  private void setDataSources(final CEView ceView, final Set<ViewFieldIdentifier> viewFieldIdentifierSet) {
+    if (ceView.getViewType() == ViewType.DEFAULT) {
+      if (DEFAULT_AZURE_VIEW_NAME.equals(ceView.getName())) {
+        ceView.setDataSources(Collections.singletonList(ViewFieldIdentifier.AZURE));
+      } else if (DEFAULT_AWS_VIEW_NAME.equals(ceView.getName())) {
+        ceView.setDataSources(Collections.singletonList(ViewFieldIdentifier.AWS));
+      } else if (DEFAULT_GCP_VIEW_NAME.equals(ceView.getName())) {
+        ceView.setDataSources(Collections.singletonList(ViewFieldIdentifier.GCP));
+      } else {
+        ceView.setDataSources(new ArrayList<>(viewFieldIdentifierSet));
+      }
+    } else {
+      ceView.setDataSources(new ArrayList<>(viewFieldIdentifierSet));
+    }
   }
 
   @Override

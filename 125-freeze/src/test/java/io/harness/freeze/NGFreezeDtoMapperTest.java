@@ -135,8 +135,9 @@ public class NGFreezeDtoMapperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateYamlWithEmptyFreezeInfoConfig() {
     FreezeConfig freezeConfig = FreezeConfig.builder().build();
-    assertThatThrownBy(
-        () -> NGFreezeDtoMapper.validateFreezeYaml(freezeConfig, ORG_IDENTIFIER, PROJ_IDENTIFIER, FreezeType.MANUAL))
+    assertThatThrownBy(()
+                           -> NGFreezeDtoMapper.validateFreezeYaml(
+                               freezeConfig, ORG_IDENTIFIER, PROJ_IDENTIFIER, FreezeType.MANUAL, Scope.PROJECT))
         .isInstanceOf(InvalidRequestException.class);
   }
 
@@ -144,8 +145,13 @@ public class NGFreezeDtoMapperTest extends CategoryTest {
   @Owner(developers = UTKARSH_CHOUBEY)
   @Category(UnitTests.class)
   public void testValidateYamlWithMultipleWindows() {
-    FreezeInfoConfig freezeInfoConfig =
-        FreezeInfoConfig.builder().identifier("id").name("name").status(FreezeStatus.ENABLED).build();
+    FreezeInfoConfig freezeInfoConfig = FreezeInfoConfig.builder()
+                                            .identifier("id")
+                                            .name("name")
+                                            .status(FreezeStatus.ENABLED)
+                                            .orgIdentifier(ORG_IDENTIFIER)
+                                            .projectIdentifier(PROJ_IDENTIFIER)
+                                            .build();
     List<FreezeWindow> windows = new LinkedList<>();
     FreezeWindow freezeWindow1 = new FreezeWindow();
     freezeWindow1.setStartTime("st");
@@ -157,8 +163,9 @@ public class NGFreezeDtoMapperTest extends CategoryTest {
     windows.add(freezeWindow2);
     freezeInfoConfig.setWindows(windows);
     FreezeConfig freezeConfig = FreezeConfig.builder().freezeInfoConfig(freezeInfoConfig).build();
-    assertThatThrownBy(
-        () -> NGFreezeDtoMapper.validateFreezeYaml(freezeConfig, ORG_IDENTIFIER, PROJ_IDENTIFIER, FreezeType.MANUAL))
+    assertThatThrownBy(()
+                           -> NGFreezeDtoMapper.validateFreezeYaml(
+                               freezeConfig, ORG_IDENTIFIER, PROJ_IDENTIFIER, FreezeType.MANUAL, Scope.PROJECT))
         .isInstanceOf(InvalidRequestException.class);
   }
 }

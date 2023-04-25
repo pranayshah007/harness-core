@@ -13,13 +13,13 @@ servers:
 tags:
   - name: Account Template
     description: This contains APIs for Account-scoped Templates.
-    x-displayName: Account Templates [Beta]
+    x-displayName: 'Account Templates [Beta]'
   - name: Org Template
     description: This contains APIs for Organization-scoped Templates.
-    x-displayName: Organization Templates [Beta]
+    x-displayName: 'Organization Templates [Beta]'
   - name: Project Template
     description: This contains APIs for Project-scoped Templates.
-    x-displayName: Project Templates [Beta]
+    x-displayName: 'Project Templates [Beta]'
 paths:
   /v1/templates:
     post:
@@ -405,6 +405,57 @@ paths:
       description: Updates the stable version of Template at Project scope.
       requestBody:
         $ref: '#/components/requestBodies/TemplateFetchBody'
+  '/v1/templates/{template}/import':
+    post:
+      summary: Import Template
+      operationId: import-template-acc
+      responses:
+        '200':
+          $ref: '#/components/responses/TemplateImportResponseBody'
+      requestBody:
+        $ref: '#/components/requestBodies/TemplateImportRequestBody'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+      description: Import template at account level
+      tags:
+        - Account Template
+    parameters:
+      - $ref: '#/components/parameters/Template'
+  '/v1/orgs/{org}/templates/{template}/import':
+    parameters:
+      - $ref: '#/components/parameters/Org'
+      - $ref: '#/components/parameters/Template'
+    post:
+      summary: Import template
+      operationId: import-template-org
+      responses:
+        '200':
+          $ref: '#/components/responses/TemplateImportResponseBody'
+      description: Import template at org level
+      tags:
+        - Org Template
+      requestBody:
+        $ref: '#/components/requestBodies/TemplateImportRequestBody'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+  '/v1/orgs/{org}/projects/{project}/templates/{template}/import':
+    parameters:
+      - $ref: '#/components/parameters/Org'
+      - $ref: '#/components/parameters/Project'
+      - $ref: '#/components/parameters/Template'
+    post:
+      summary: Import Template
+      operationId: import-template-project
+      responses:
+        '200':
+          $ref: '#/components/responses/TemplateImportResponseBody'
+      description: Import template at a project level
+      tags:
+        - Project Template
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+      requestBody:
+        $ref: '#/components/requestBodies/TemplateImportRequestBody'
 components:
   schemas:
     TemplateResponse:
@@ -1068,6 +1119,58 @@ components:
           description: |
             Version which is set as stable for the given Template
       description: Template stable version update Response
+    GitImportDetails:
+      title: Git Import Details
+      x-stoplight:
+        id: bbds2rpqe3pqw
+      type: object
+      description: Contains parameters related to importing an Entity for Git Experience.
+      properties:
+        connector_ref:
+          type: string
+        repo_name:
+          type: string
+        branch_name:
+          type: string
+        file_path:
+          type: string
+        is_force_import:
+          type: boolean
+    TemplateImportRequestDTO:
+      title: Template Import Request DTO
+      x-stoplight:
+        id: 03dzgfw2f3met
+      type: object
+      description: Information of Tempalte import request DTO
+      properties:
+        template_name:
+          type: string
+        template_version:
+          type: string
+        template_description:
+          type: string
+    TemplateImportRequestBody:
+      title: TemplateImportRequestBody
+      x-stoplight:
+        id: gcku4ku2gffc8
+      type: object
+      description: Template Import Request Body
+      properties:
+        git_import_details:
+          $ref: '#/components/schemas/GitImportDetails'
+        template_import_request:
+          $ref: '#/components/schemas/TemplateImportRequestDTO'
+    TemplateImportResponseBody:
+      title: TemplateImportResponseBody
+      x-stoplight:
+        id: 25p5q0nndqepd
+      type: object
+      description: Contains the Template details for the given Template ID and version
+      properties:
+        template_identifier:
+          type: string
+        template_version:
+          type: string
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -1493,6 +1596,11 @@ components:
                 is_stable: true
                 comments: sample_comment
       description: Templates Create Request Body
+    TemplateImportRequestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TemplateImportRequestBody'
   responses:
     TemplateResponse:
       description: Template Response Body
@@ -1833,5 +1941,11 @@ components:
             example-1:
               value: |
                 stable_version: example_version
+    TemplateImportResponseBody:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TemplateImportResponseBody'
 security:
   - x-api-key: []

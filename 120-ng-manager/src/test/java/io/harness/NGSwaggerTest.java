@@ -10,11 +10,11 @@ package io.harness;
 import static io.harness.rule.OwnerRule.VIKAS;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mockStatic;
 
 import io.harness.category.element.UnitTests;
 import io.harness.ng.NextGenApplication;
 import io.harness.ng.NextGenConfiguration;
-import io.harness.pms.sdk.PmsSdkModule;
 import io.harness.rule.Owner;
 import io.harness.yaml.YamlSdkModule;
 
@@ -35,25 +35,24 @@ import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.client.JerseyClientBuilder;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.AssumptionViolatedException;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({PmsSdkModule.class, YamlSdkModule.class})
-@PowerMockIgnore({"javax.security.*", "javax.net.*", "javax.management.*"})
+@RunWith(MockitoJUnitRunner.class)
 @Slf4j
 public class NGSwaggerTest extends CategoryTest {
   public static MongoServer MONGO_SERVER;
   public static DropwizardTestSupport<NextGenConfiguration> SUPPORT;
   private static final String CONDITIONAL_ON_ENV = "swaggerGeneration";
+  private MockedStatic<YamlSdkModule> aStatic;
 
   private static MongoServer startMongoServer() {
     final MongoServer mongoServer = new MongoServer(new MemoryBackend());
@@ -73,13 +72,22 @@ public class NGSwaggerTest extends CategoryTest {
     return String.format("mongodb://%s:%s/ng-harness", addr.getHost(), addr.getPort());
   }
 
+  @Before
+  public void setup() {
+    aStatic = mockStatic(YamlSdkModule.class);
+  }
+
+  @After
+  public void cleanup() {
+    aStatic.close();
+  }
+
   @BeforeClass
   public static void beforeClass() throws Exception {
     if (!Objects.equals("true", System.getProperty(CONDITIONAL_ON_ENV))) {
       return;
     }
     MONGO_SERVER = startMongoServer();
-    PowerMockito.mockStatic(YamlSdkModule.class);
     //    initializeDefaultInstance(any());
     SUPPORT = new DropwizardTestSupport<NextGenConfiguration>(NextGenApplication.class,
         ResourceHelpers.resourceFilePath("test-config.yml"), ConfigOverride.config("mongo.uri", getMongoUri()));

@@ -91,7 +91,7 @@ managerClientConfig:
   readTimeOutSeconds: 15
 
 backstageHttpClientConfig:
-  baseUrl: http://localhost:7007/api/
+  baseUrl: https://localhost:7007
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
@@ -102,7 +102,13 @@ idpServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7
 jwtAuthSecret: dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq
 jwtIdentityServiceSecret: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU
 
+managerTarget: localhost:9880
+managerAuthority: localhost
+
 onboardingModuleConfig:
+  descriptionForEntitySelected: This is an example of how the corresponding service definition YAML files will be created.
+  descriptionForSampleEntity: Since you either do not have any Harness services or have not selected in the previous step, we will create your first software component to introduce you to Developer Portal features.
+  useGitServiceGrpcForSingleEntityPush: false
   tmpPathForCatalogInfoYamlStore: /tmp
   catalogInfoLocationDefaultPath: /.harness-idp-entities
   sampleEntities:
@@ -133,3 +139,9 @@ backstagePodLabel: ""
 
 provisionModuleConfig:
   triggerPipelineUrl: ""
+
+env: ""
+prEnvDefaultBackstageNamespace: ""
+
+backstageAppBaseUrl: https://localhost:3000
+backstagePostgresHost: ""

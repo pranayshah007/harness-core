@@ -32,8 +32,8 @@ ARG TARGETARCH
 ARG BASEURL=https://app.harness.io/public/shared/delegates
 ARG DELEGATEVERSION
 
-RUN mkdir -m 777 -p client-tools/scm/ef2d02fb \
-  && curl -s -L -o client-tools/scm/ef2d02fb/scm https://app.harness.io/public/shared/tools/scm/release/ef2d02fb/bin/linux/$TARGETARCH/scm \
+RUN mkdir -m 777 -p client-tools/scm/9182190a \
+  && curl -s -L -o client-tools/scm/9182190a/scm https://app.harness.io/public/shared/tools/scm/release/9182190a/bin/linux/$TARGETARCH/scm \
   && chmod -R 775 /opt/harness-delegate \
   && chgrp -R 0 /opt/harness-delegate \
   && chown -R 1001 /opt/harness-delegate

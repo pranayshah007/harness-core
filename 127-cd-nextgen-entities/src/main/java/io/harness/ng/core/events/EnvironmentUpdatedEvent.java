@@ -26,6 +26,7 @@ import io.harness.ng.core.ResourceScope;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashMap;
@@ -133,7 +134,7 @@ public class EnvironmentUpdatedEvent implements Event {
       case SERVICE_OVERRIDE:
         NGServiceOverridesEntity ngServiceOverridesEntity =
             newServiceOverridesEntity == null ? oldServiceOverridesEntity : newServiceOverridesEntity;
-        return ngServiceOverridesEntity.getEnvironmentRef();
+        return IdentifierRefHelper.getIdentifier(ngServiceOverridesEntity.getEnvironmentRef());
       case INFRASTRUCTURE:
         InfrastructureEntity infrastructure =
             newInfrastructureEntity == null ? oldInfrastructureEntity : newInfrastructureEntity;

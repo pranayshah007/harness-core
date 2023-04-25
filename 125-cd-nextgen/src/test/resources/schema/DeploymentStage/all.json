@@ -6287,6 +6287,25 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "GoogleCloudFunctionGenOneDefinitionManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "GoogleCloudFunctionsServiceSpec": {
       "allOf": [
         {
@@ -6294,7 +6313,11 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {
+            "environmentType": {
+              "type": "string"
+            }
+          }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6308,13 +6331,28 @@
           "type": "object",
           "required": [
             "connectorRef",
+            "fetchType",
             "project",
             "repository",
             "sourceDirectory"
           ],
           "properties": {
+            "branch": {
+              "type": "string"
+            },
+            "commitId": {
+              "type": "string"
+            },
             "connectorRef": {
               "type": "string"
+            },
+            "fetchType": {
+              "type": "string",
+              "enum": [
+                "Branch",
+                "Commit",
+                "Tag"
+              ]
             },
             "project": {
               "type": "string"
@@ -6323,6 +6361,9 @@
               "type": "string"
             },
             "sourceDirectory": {
+              "type": "string"
+            },
+            "tag": {
               "type": "string"
             }
           }
@@ -6808,7 +6849,7 @@
             "store": {
               "$ref": "#/definitions/StoreConfigWrapper"
             },
-            "subChartName": {
+            "subChartPath": {
               "type": "string"
             },
             "valuesPaths": {
@@ -7222,7 +7263,8 @@
             "GoogleCloudFunctions",
             "AWS_SAM",
             "AwsLambda",
-            "KubernetesAws"
+            "KubernetesAws",
+            "KubernetesRancher"
           ]
         }
       },
@@ -8825,18 +8867,18 @@
     "KustomizeManifestCommandFlag": {
       "type": "object",
       "required": [
-        "kustomizeCommandFlagType"
+        "commandType"
       ],
       "properties": {
-        "flag": {
-          "type": "string",
-          "minLength": 1
-        },
-        "kustomizeCommandFlagType": {
+        "commandType": {
           "type": "string",
           "enum": [
             "Build"
           ]
+        },
+        "flag": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -8950,7 +8992,8 @@
             "GoogleCloudFunctionDefinition",
             "AwsLambdaFunctionDefinition",
             "AwsLambdaFunctionAliasDefinition",
-            "AwsSamDirectory"
+            "AwsSamDirectory",
+            "GoogleCloudFunctionGenOneDefinition"
           ]
         }
       },
@@ -9160,6 +9203,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GoogleCloudFunctionDefinitionManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleCloudFunctionGenOneDefinition"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudFunctionGenOneDefinitionManifest"
               }
             }
           }

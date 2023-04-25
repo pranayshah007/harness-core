@@ -52,7 +52,8 @@ public class GoogleFunctionInstanceSyncPerpetualTaskHandler extends InstanceSync
     List<ExecutionCapability> executionCapabilities = getExecutionCapabilities(deploymentReleaseDataList);
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier());
+        infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier(),
+        infrastructureMappingDTO.getAccountIdentifier());
   }
 
   private List<GoogleFunctionDeploymentReleaseData> populateDeploymentReleaseList(
@@ -76,6 +77,7 @@ public class GoogleFunctionInstanceSyncPerpetualTaskHandler extends InstanceSync
         .googleFunctionInfraConfig(googleFunctionInfraConfig)
         .function(deploymentInfoDTO.getFunctionName())
         .region(deploymentInfoDTO.getRegion())
+        .environmentType(deploymentInfoDTO.getEnvironmentType())
         .build();
   }
 
@@ -102,22 +104,25 @@ public class GoogleFunctionInstanceSyncPerpetualTaskHandler extends InstanceSync
       String accountIdentifier, List<GoogleFunctionDeploymentReleaseData> deploymentReleaseData) {
     return GoogleFunctionInstanceSyncPerpetualTaskParams.newBuilder()
         .setAccountId(accountIdentifier)
-        .addAllGoogleFunctionsDeploymentReleaseList(toGoogleFunctionsDeploymentReleaseList(deploymentReleaseData))
+        .addAllGoogleFunctionsDeploymentReleaseList(
+            toGoogleFunctionsDeploymentReleaseList(deploymentReleaseData, accountIdentifier))
         .build();
   }
 
   private List<GoogleFunctionDeploymentRelease> toGoogleFunctionsDeploymentReleaseList(
-      List<GoogleFunctionDeploymentReleaseData> deploymentReleaseData) {
-    return deploymentReleaseData.stream().map(this::toGoogleFunctionDeploymentRelease).collect(Collectors.toList());
+      List<GoogleFunctionDeploymentReleaseData> deploymentReleaseData, String accountIdentifier) {
+    return deploymentReleaseData.stream()
+        .map(data -> toGoogleFunctionDeploymentRelease(data, accountIdentifier))
+        .collect(Collectors.toList());
   }
 
   private GoogleFunctionDeploymentRelease toGoogleFunctionDeploymentRelease(
-      GoogleFunctionDeploymentReleaseData releaseData) {
+      GoogleFunctionDeploymentReleaseData releaseData, String accountIdentifier) {
     return GoogleFunctionDeploymentRelease.newBuilder()
         .setFunction(releaseData.getFunction())
         .setRegion(releaseData.getRegion())
-        .setGoogleFunctionsInfraConfig(
-            ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getGoogleFunctionInfraConfig())))
+        .setGoogleFunctionsInfraConfig(ByteString.copyFrom(
+            getKryoSerializer(accountIdentifier).asBytes(releaseData.getGoogleFunctionInfraConfig())))
         .build();
   }
 
@@ -136,6 +141,7 @@ public class GoogleFunctionInstanceSyncPerpetualTaskHandler extends InstanceSync
     return GoogleFunctionInstanceSyncRequest.builder()
         .googleFunctionInfraConfig(googleFunctionsDeploymentReleaseData.getGoogleFunctionInfraConfig())
         .function(googleFunctionsDeploymentReleaseData.getFunction())
+        .environmentType(googleFunctionsDeploymentReleaseData.getEnvironmentType())
         .build();
   }
 }

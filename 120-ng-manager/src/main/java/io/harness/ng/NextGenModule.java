@@ -14,6 +14,7 @@ import static io.harness.audit.ResourceTypeConstants.DEPLOYMENT_FREEZE;
 import static io.harness.audit.ResourceTypeConstants.ENVIRONMENT;
 import static io.harness.audit.ResourceTypeConstants.ENVIRONMENT_GROUP;
 import static io.harness.audit.ResourceTypeConstants.FILE;
+import static io.harness.audit.ResourceTypeConstants.IP_ALLOWLIST_CONFIG;
 import static io.harness.audit.ResourceTypeConstants.ORGANIZATION;
 import static io.harness.audit.ResourceTypeConstants.PROJECT;
 import static io.harness.audit.ResourceTypeConstants.SECRET;
@@ -212,6 +213,7 @@ import io.harness.ng.core.outbox.ApiKeyEventHandler;
 import io.harness.ng.core.outbox.DelegateProfileEventHandler;
 import io.harness.ng.core.outbox.EnvironmentGroupOutboxEventHandler;
 import io.harness.ng.core.outbox.EnvironmentOutboxEventHandler;
+import io.harness.ng.core.outbox.IPAllowlistConfigEventHandler;
 import io.harness.ng.core.outbox.NextGenOutboxEventHandler;
 import io.harness.ng.core.outbox.OrganizationEventHandler;
 import io.harness.ng.core.outbox.ProjectEventHandler;
@@ -250,6 +252,8 @@ import io.harness.ng.overview.service.CDLandingDashboardService;
 import io.harness.ng.overview.service.CDLandingDashboardServiceImpl;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
 import io.harness.ng.overview.service.CDOverviewDashboardServiceImpl;
+import io.harness.ng.rollback.PostProdRollbackService;
+import io.harness.ng.rollback.PostProdRollbackServiceImpl;
 import io.harness.ng.scim.NGScimGroupServiceImpl;
 import io.harness.ng.scim.NGScimUserServiceImpl;
 import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
@@ -774,6 +778,7 @@ public class NextGenModule extends AbstractModule {
     });
     install(new NGLdapModule(appConfig));
     install(new NgVariableModule(appConfig));
+    install(new NGIpAllowlistModule(appConfig));
     install(EntitySetupUsageModule.getInstance());
     install(PersistentLockModule.getInstance());
     install(new TransactionOutboxModule(
@@ -980,6 +985,7 @@ public class NextGenModule extends AbstractModule {
     outboxEventHandlerMapBinder.addBinding(VARIABLE).to(VariableEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(SETTING).to(SettingEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(DEPLOYMENT_FREEZE).to(FreezeOutboxEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(IP_ALLOWLIST_CONFIG).to(IPAllowlistConfigEventHandler.class);
   }
 
   private void registerEventsFrameworkMessageListeners() {
@@ -1018,6 +1024,7 @@ public class NextGenModule extends AbstractModule {
         .annotatedWith(Names.named(TEMPLATE_ENTITY + ENTITY_CRUD))
         .to(CustomDeploymentEntityCRUDStreamEventListener.class);
     bind(MessageListener.class).annotatedWith(Names.named(INSTANCE_STATS)).to(InstanceStatsEventListener.class);
+    bind(PostProdRollbackService.class).to(PostProdRollbackServiceImpl.class);
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkMetadataConstants.USER_GROUP + ENTITY_CRUD))
         .to(UserGroupEntityCRUDStreamListener.class);

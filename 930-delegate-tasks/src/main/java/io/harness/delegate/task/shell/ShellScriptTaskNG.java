@@ -33,6 +33,7 @@ import io.harness.shell.ScriptSshExecutor;
 import io.harness.shell.ShellExecutorConfig;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.SshSessionManager;
+import io.harness.shell.ssh.SshClientManager;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -94,6 +95,7 @@ public class ShellScriptTaskNG extends AbstractDelegateRunnableTask {
       } finally {
         if (isNotEmpty(taskParameters.getExecutionId()) && isNotEmpty(taskParameters.getHost())) {
           SshSessionManager.evictAndDisconnectCachedSession(taskParameters.getExecutionId(), taskParameters.getHost());
+          SshClientManager.evictCacheAndDisconnect(taskParameters.getExecutionId(), taskParameters.getHost());
         }
       }
     } else {
@@ -118,6 +120,7 @@ public class ShellScriptTaskNG extends AbstractDelegateRunnableTask {
             .build();
       } finally {
         SshSessionManager.evictAndDisconnectCachedSession(taskParameters.getExecutionId(), taskParameters.getHost());
+        SshClientManager.evictCacheAndDisconnect(taskParameters.getExecutionId(), taskParameters.getHost());
       }
     }
   }

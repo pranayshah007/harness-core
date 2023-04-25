@@ -18,6 +18,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
+import io.harness.plancreator.steps.internal.PmsStepPlanCreatorUtils;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -38,6 +39,7 @@ import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
+import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.common.steps.stepgroup.StepGroupStep;
 import io.harness.steps.common.steps.stepgroup.StepGroupStepParameters;
 import io.harness.steps.plugin.ContainerStepSpec;
@@ -84,9 +86,10 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
         ((ContainerStepSpec) stepElementParameters.getSpec()).setIdentifier(config.getIdentifier());
       }
     }
-    PlanNode initPlanNode =
-        InitContainerStepPlanCreater.createPlanForField(initStepNodeId, stepParameters, advisorParametersInitStep);
-    PlanNode stepPlanNode = createPlanForStep(stepNodeId, stepParameters);
+    PlanNode initPlanNode = InitContainerStepPlanCreater.createPlanForField(
+        initStepNodeId, stepParameters, advisorParametersInitStep, StepSpecTypeConstants.INIT_CONTAINER_STEP);
+    PlanNode stepPlanNode = createPlanForStep(stepNodeId, stepParameters,
+        PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), false));
 
     planCreationResponseMap.put(
         initPlanNode.getUuid(), PlanCreationResponse.builder().node(initPlanNode.getUuid(), initPlanNode).build());
@@ -153,7 +156,8 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
     return stepElement.getStepSpecType().getStepParameters();
   }
 
-  public abstract PlanNode createPlanForStep(String stepNodeId, StepParameters stepParameters);
+  public abstract PlanNode createPlanForStep(
+      String stepNodeId, StepParameters stepParameters, List<AdviserObtainment> adviserObtainments);
 
   private void addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx, String uuid,
       String name, String identifier, LinkedHashMap<String, PlanCreationResponse> responseMap) {

@@ -46,7 +46,9 @@ import io.harness.cdng.gitops.UpdateReleaseRepoStepInfo;
 import io.harness.cdng.gitops.syncstep.SyncStepInfo;
 import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStepInfo;
 import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStepInfo;
+import io.harness.cdng.googlefunctions.deploygenone.GoogleFunctionsGenOneDeployStep;
 import io.harness.cdng.googlefunctions.rollback.GoogleFunctionsRollbackStepInfo;
+import io.harness.cdng.googlefunctions.rollbackgenone.GoogleFunctionsGenOneRollbackStep;
 import io.harness.cdng.googlefunctions.trafficShift.GoogleFunctionsTrafficShiftStepInfo;
 import io.harness.cdng.helm.HelmDeployStepInfo;
 import io.harness.cdng.helm.rollback.HelmRollbackStepInfo;
@@ -132,7 +134,8 @@ import io.swagger.annotations.ApiModel;
         GoogleFunctionsDeployStepInfo.class, GoogleFunctionsDeployWithoutTrafficStepInfo.class,
         GoogleFunctionsTrafficShiftStepInfo.class, GoogleFunctionsRollbackStepInfo.class, AwsSamDeployStepInfo.class,
         AwsLambdaDeployStepInfo.class, AwsSamRollbackStepInfo.class, AwsLambdaRollbackStepInfo.class,
-        BambooBuildStepInfo.class, TasRouteMappingStepInfo.class})
+        BambooBuildStepInfo.class, TasRouteMappingStepInfo.class, GoogleFunctionsGenOneDeployStep.class,
+        GoogleFunctionsGenOneRollbackStep.class})
 
 @OwnedBy(HarnessTeam.CDC)
 // keeping this class because of the swagger annotation and UI dependency on it

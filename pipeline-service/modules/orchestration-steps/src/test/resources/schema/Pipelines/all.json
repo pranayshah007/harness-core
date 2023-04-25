@@ -408,6 +408,21 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CIVolume": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "EmptyDir",
+            "PersistentVolumeClaim",
+            "HostPath"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "Capabilities": {
       "type": "object",
       "properties": {
@@ -679,6 +694,24 @@
             }
           ]
         },
+        "harnessImageConnectorRef": {
+          "type": "string"
+        },
+        "hostNames": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
         "initTimeout": {
           "type": "string"
         },
@@ -772,7 +805,7 @@
             {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/ContainerVolume"
+                "$ref": "#/definitions/CIVolume"
               }
             },
             {
@@ -966,21 +999,6 @@
           "type": "string",
           "enum": [
             "KubernetesDirect"
-          ]
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "ContainerVolume": {
-      "type": "object",
-      "discriminator": "type",
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "EmptyDir",
-            "PersistentVolumeClaim",
-            "HostPath"
           ]
         }
       },
@@ -1261,7 +1279,7 @@
     "EmptyDirYaml": {
       "allOf": [
         {
-          "$ref": "#/definitions/ContainerVolume"
+          "$ref": "#/definitions/CIVolume"
         },
         {
           "type": "object",
@@ -1629,7 +1647,7 @@
     "HostPathYaml": {
       "allOf": [
         {
-          "$ref": "#/definitions/ContainerVolume"
+          "$ref": "#/definitions/CIVolume"
         },
         {
           "type": "object",
@@ -2689,7 +2707,7 @@
     "PersistentVolumeClaimYaml": {
       "allOf": [
         {
-          "$ref": "#/definitions/ContainerVolume"
+          "$ref": "#/definitions/CIVolume"
         },
         {
           "type": "object",
@@ -2882,6 +2900,18 @@
               ]
             }
           }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "PipelineRollbackStageConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StageInfoConfig"
+        },
+        {
+          "type": "object",
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4390,6 +4420,22 @@
                 "properties": {
                   "spec": {
                     "$ref": "#/definitions/PipelineStageConfig"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "PipelineRollback"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/PipelineRollbackStageConfig"
                   }
                 }
               }

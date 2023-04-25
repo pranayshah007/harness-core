@@ -30,6 +30,8 @@ import io.harness.git.model.GitBaseRequest;
 import io.harness.git.model.GitRepositoryType;
 import io.harness.git.model.JgitSshAuthRequest;
 import io.harness.shell.SshSessionConfig;
+import io.harness.shell.ssh.SshFactory;
+import io.harness.shell.ssh.client.jsch.JschConnection;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -39,9 +41,9 @@ import com.jcraft.jsch.Session;
 import java.io.IOException;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.jgit.transport.JschConfigSessionFactory;
-import org.eclipse.jgit.transport.OpenSshConfig;
 import org.eclipse.jgit.transport.SshSessionFactory;
+import org.eclipse.jgit.transport.ssh.jsch.JschConfigSessionFactory;
+import org.eclipse.jgit.transport.ssh.jsch.OpenSshConfig;
 import org.eclipse.jgit.util.FS;
 
 @Singleton
@@ -98,7 +100,11 @@ public class NGGitServiceImpl implements NGGitService {
           throws JSchException {
         sshSessionConfig.setPort(port); // use port from repo URL
         sshSessionConfig.setHost(host);
-        return getSSHSession(sshSessionConfig);
+        if (sshSessionConfig.isUseSshClient()) {
+          return ((JschConnection) SshFactory.getSshClient(sshSessionConfig).getConnection()).getSession();
+        } else {
+          return getSSHSession(sshSessionConfig);
+        }
       }
 
       @Override

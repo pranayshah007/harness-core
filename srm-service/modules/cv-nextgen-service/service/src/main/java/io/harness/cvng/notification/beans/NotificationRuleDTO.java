@@ -29,8 +29,8 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "NotificationRule", description = "This is the Notification Rule entity defined in Harness")
 public class NotificationRuleDTO implements YamlDTO {
-  @ApiModelProperty(required = true) @EntityIdentifier String orgIdentifier;
-  @ApiModelProperty(required = true) @EntityIdentifier String projectIdentifier;
+  @EntityIdentifier(allowBlank = true) String orgIdentifier;
+  @EntityIdentifier(allowBlank = true) String projectIdentifier;
   @ApiModelProperty(required = true) @NotNull @EntityIdentifier String identifier;
   @ApiModelProperty(required = true) @NotNull @NGEntityName String name;
 

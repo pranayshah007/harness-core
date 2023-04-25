@@ -13,8 +13,8 @@ import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -50,6 +50,7 @@ import io.harness.verificationclient.CVNextGenServiceClient;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -90,12 +91,12 @@ public class DataCollectionPerpetualTaskExecutorTest extends DelegateTestBase {
 
   private PerpetualTaskExecutionParams perpetualTaskParams;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Before
   public void setup() throws IllegalAccessException, IOException {
     dataCollector = Mockito.spy(new DataCollectionPerpetualTaskExecutor());
-    on(dataCollector).set("kryoSerializer", kryoSerializer);
+    on(dataCollector).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
     cvngRequestExecutor = new CVNGRequestExecutor();
     FieldUtils.writeField(dataCollector, "cvngRequestExecutor", cvngRequestExecutor, true);
     FieldUtils.writeField(cvngRequestExecutor, "executorService", Executors.newFixedThreadPool(1), true);
@@ -161,12 +162,13 @@ public class DataCollectionPerpetualTaskExecutorTest extends DelegateTestBase {
                                                     .connectorConfigDTO(appDynamicsConnectorDTO)
                                                     .encryptedDataDetails(encryptedDataDetailList)
                                                     .build();
-    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(cvDataCollectionInfo));
+    ByteString bytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(cvDataCollectionInfo));
     perpetualTaskParams = PerpetualTaskExecutionParams.newBuilder()
                               .setCustomizedParams(Any.pack(DataCollectionPerpetualTaskParams.newBuilder()
                                                                 .setAccountId(accountId)
                                                                 .setDataCollectionInfo(bytes)
                                                                 .build()))
+                              .setReferenceFalseKryoSerializer(true)
                               .build();
   }
 

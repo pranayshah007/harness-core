@@ -15,6 +15,7 @@ import static software.wings.ngmigration.NGMigrationEntityType.SERVICE_COMMAND_T
 
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.encryption.Scope;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
@@ -192,13 +193,14 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     Response<ResponseDTO<TemplateWrapperResponseDTO>> resp =
         templateClient
-            .createTemplate(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
-                inputDTO.getProjectIdentifier(),
-                RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.write(yamlFile.getYaml())))
+            .createTemplate(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
+                RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.write(yamlFile.getYaml())),
+                StoreType.INLINE)
             .execute();
     log.info("Template creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);

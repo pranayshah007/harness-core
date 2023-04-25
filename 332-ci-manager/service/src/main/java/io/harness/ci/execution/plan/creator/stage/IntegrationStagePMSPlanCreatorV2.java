@@ -61,7 +61,6 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.serializer.KryoSerializer;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 import io.harness.when.utils.RunInfoUtils;
@@ -92,8 +91,8 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
   @Inject private KryoSerializer kryoSerializer;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private CILicenseService ciLicenseService;
-  @Inject CIAccountExecutionMetadataRepository accountExecutionMetadataRepository;
   @Inject private CIFeatureFlagService featureFlagService;
+  @Inject CIStagePlanCreationUtils ciStagePlanCreationUtils;
 
   @Override
   public String getExecutionInputTemplateAndModifyYamlField(YamlField yamlField) {
@@ -128,8 +127,7 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
 
     Infrastructure infrastructure = IntegrationStageStepParametersPMS.getInfrastructure(stageNode, ctx);
 
-    CIStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(
-        accountExecutionMetadataRepository, ciLicenseService, ctx.getAccountIdentifier(), infrastructure);
+    ciStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(ctx.getAccountIdentifier(), infrastructure);
 
     CodeBase codeBase = IntegrationStageUtils.getCICodebase(ctx);
     if (featureFlagService.isEnabled(FeatureName.CI_PIPELINE_VARIABLES_IN_STEPS, ctx.getAccountIdentifier())) {
@@ -204,7 +202,7 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
     stageNode.setIdentifier(StrategyUtils.getIdentifierWithExpression(ctx, stageNode.getIdentifier()));
     stageNode.setName(StrategyUtils.getIdentifierWithExpression(ctx, stageNode.getName()));
 
-    StageElementParametersBuilder stageParameters = CIStagePlanCreationUtils.getStageParameters(stageNode);
+    StageElementParametersBuilder stageParameters = ciStagePlanCreationUtils.getStageParameters(stageNode);
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));

@@ -20,15 +20,17 @@ import io.harness.idp.onboarding.service.OnboardingService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.OnboardingResourceApi;
+import io.harness.spec.server.idp.v1.model.GenerateYamlRequest;
+import io.harness.spec.server.idp.v1.model.GenerateYamlResponse;
 import io.harness.spec.server.idp.v1.model.HarnessBackstageEntities;
 import io.harness.spec.server.idp.v1.model.HarnessEntitiesCountResponse;
+import io.harness.spec.server.idp.v1.model.HarnessEntitiesResponse;
+import io.harness.spec.server.idp.v1.model.ImportEntitiesBase;
 import io.harness.spec.server.idp.v1.model.ImportEntitiesResponse;
-import io.harness.spec.server.idp.v1.model.ImportHarnessEntitiesRequest;
 import io.harness.spec.server.idp.v1.model.ManualImportEntityRequest;
 import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
-import java.util.List;
 import javax.validation.Valid;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
@@ -53,22 +55,34 @@ public class OnboardingResourceApiImpl implements OnboardingResourceApi {
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
   public Response getHarnessEntities(@AccountIdentifier String harnessAccount, Integer page, Integer limit, String sort,
-      String order, String searchTerm, List projectsToFilter) {
+      String order, String searchTerm, String projectToFilter) {
     log.info("Request received to get harness entities for idp import. Account = {}", harnessAccount);
     int pageIndex = page == null ? UI_DEFAULT_PAGE : page;
     int pageLimit = limit == null ? UI_DEFAULT_PAGE_LIMIT : limit;
     PageResponse<HarnessBackstageEntities> harnessEntities = onboardingService.getHarnessEntities(
-        harnessAccount, pageIndex, pageLimit, sort, order, searchTerm, projectsToFilter);
+        harnessAccount, pageIndex, pageLimit, sort, order, searchTerm, projectToFilter);
     ResponseBuilder responseBuilder = Response.ok();
     ResponseBuilder responseBuilderWithLinks =
         ApiUtils.addLinksHeader(responseBuilder, harnessEntities.getTotalItems(), pageIndex, pageLimit);
-    return responseBuilderWithLinks.entity(harnessEntities.getContent()).build();
+    HarnessEntitiesResponse harnessEntitiesResponse = new HarnessEntitiesResponse();
+    harnessEntitiesResponse.setHarnessBackstageEntities(harnessEntities.getContent());
+    return responseBuilderWithLinks.entity(harnessEntitiesResponse).build();
+  }
+
+  @Override
+  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
+  public Response onboardingGenerateYaml(
+      @Valid GenerateYamlRequest generateYamlRequest, @AccountIdentifier String harnessAccount) {
+    log.info("Request received to generate entity yaml definition. Account = {}, Request = {}", harnessAccount,
+        generateYamlRequest);
+    GenerateYamlResponse generateYamlResponse = onboardingService.generateYaml(harnessAccount, generateYamlRequest);
+    return Response.status(Response.Status.OK).entity(generateYamlResponse).build();
   }
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
   public Response importHarnessEntities(
-      @Valid ImportHarnessEntitiesRequest importHarnessEntitiesRequest, @AccountIdentifier String harnessAccount) {
+      @Valid ImportEntitiesBase importHarnessEntitiesRequest, @AccountIdentifier String harnessAccount) {
     log.info("Request received to import harness entities to IDP. Account = {}, Request = {}", harnessAccount,
         importHarnessEntitiesRequest);
     ImportEntitiesResponse importHarnessEntities =

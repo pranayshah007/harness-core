@@ -26,4 +26,6 @@ public interface SLOHealthIndicatorService {
   void upsert(AbstractServiceLevelObjective serviceLevelObjective);
   void delete(ProjectParams projectParams, String serviceLevelObjectiveIdentifier);
   SLOGraphData getGraphData(ProjectParams projectParams, AbstractServiceLevelObjective serviceLevelObjective);
+
+  boolean getFailedState(ProjectParams projectParams, AbstractServiceLevelObjective serviceLevelObjective);
 }

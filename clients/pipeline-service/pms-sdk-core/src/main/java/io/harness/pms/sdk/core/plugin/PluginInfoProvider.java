@@ -12,4 +12,6 @@ import io.harness.pms.contracts.plan.PluginCreationResponse;
 
 public interface PluginInfoProvider {
   PluginCreationResponse getPluginInfo(PluginCreationRequest request);
+
+  boolean isSupported(String stepType);
 }

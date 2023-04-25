@@ -13,8 +13,8 @@ import static software.wings.utils.WingsTestConstants.ENV_ID;
 import static software.wings.utils.WingsTestConstants.INFRA_MAPPING_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 
@@ -73,7 +73,7 @@ public class CustomDeploymentInstanceSyncClientTest extends WingsBaseTest {
     PerpetualTaskClientContext clientContext = buildPerpetualTaskClientContext();
 
     final CustomDeploymentInstanceSyncTaskParams taskParams =
-        (CustomDeploymentInstanceSyncTaskParams) instanceSyncClient.getTaskParams(clientContext);
+        (CustomDeploymentInstanceSyncTaskParams) instanceSyncClient.getTaskParams(clientContext, true);
 
     assertThat(taskParams.getScript()).isEqualTo("echo abc");
     assertThat(taskParams.getAccountId()).isEqualTo(ACCOUNT_ID);
@@ -88,7 +88,7 @@ public class CustomDeploymentInstanceSyncClientTest extends WingsBaseTest {
     PerpetualTaskClientContext clientContext = buildPerpetualTaskClientContext();
 
     final CustomDeploymentInstanceSyncTaskParams taskParams =
-        (CustomDeploymentInstanceSyncTaskParams) instanceSyncClient.getTaskParams(clientContext);
+        (CustomDeploymentInstanceSyncTaskParams) instanceSyncClient.getTaskParams(clientContext, true);
 
     assertThat(taskParams).isNull();
   }

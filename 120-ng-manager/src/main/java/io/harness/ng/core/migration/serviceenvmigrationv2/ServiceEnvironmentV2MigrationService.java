@@ -157,6 +157,7 @@ public class ServiceEnvironmentV2MigrationService {
                                   .infraIdentifierFormat(requestDto.getInfraIdentifierFormat())
                                   .templateMap(requestDto.getTemplateMap())
                                   .branch(requestDto.getBranch())
+                                  .isNewBranch(requestDto.isNewBranch())
                                   .expressionMap(new HashMap<>())
                                   .stageMap(new HashMap<>())
                                   .build(),

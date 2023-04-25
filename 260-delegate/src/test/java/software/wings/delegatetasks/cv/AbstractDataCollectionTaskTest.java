@@ -10,16 +10,15 @@ package software.wings.delegatetasks.cv;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyVararg;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -75,7 +74,8 @@ public class AbstractDataCollectionTaskTest extends CategoryTest {
   public void setupTests() throws IllegalAccessException, DataCollectionException {
     initMocks(this);
     abstractDataCollectionTask = mock(AbstractDataCollectionTask.class, Mockito.CALLS_REAL_METHODS);
-    when(delegateCVActivityLogService.getLogger(any(), any(), anyLong(), any(), any(), anyVararg())).thenReturn(logger);
+    when(delegateCVActivityLogService.getLogger(any(), any(), anyLong(), any(), any(), anyLong(), anyLong()))
+        .thenReturn(logger);
     FieldUtils.writeField(abstractDataCollectionTask, "dataCollectorFactory", dataCollectorFactory, true);
     FieldUtils.writeField(abstractDataCollectionTask, "injector", injector, true);
     FieldUtils.writeField(abstractDataCollectionTask, "cvActivityLogService", delegateCVActivityLogService, true);
@@ -120,7 +120,7 @@ public class AbstractDataCollectionTaskTest extends CategoryTest {
     DataCollectionInfoV2 dataCollectionInfo = createDataCollectionInfo();
     when(dataCollectionInfo.getEncryptableSetting()).thenReturn(Optional.empty());
     abstractDataCollectionTask.run(dataCollectionInfo);
-    verifyZeroInteractions(encryptionService);
+    verifyNoInteractions(encryptionService);
   }
 
   @Test

@@ -25,6 +25,7 @@ public class GitFileFetchRunnableParams {
   Scope scope;
   String repoName;
   String branchName;
+  String commitId;
   String filePath;
   String connectorRef;
   ScmConnector scmConnector;

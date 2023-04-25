@@ -43,6 +43,8 @@ import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.git.GitClientHelper;
+import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
 import io.harness.impl.ScmResponseStatusUtils;
 import io.harness.logger.RepoBranchLogContext;
 import io.harness.logging.AutoLogContext;
@@ -138,6 +140,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ScmServiceClientImpl implements ScmServiceClient {
   ScmGitProviderMapper scmGitProviderMapper;
   ScmGitProviderHelper scmGitProviderHelper;
+  SCMGitAccessToProviderMapper scmGitAccessToProviderMapper;
 
   @Override
   public CreateFileResponse createFile(ScmConnector scmConnector, GitFileDetails gitFileDetails,
@@ -192,10 +195,9 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     }
 
     final FileModifyRequest.Builder fileModifyRequestBuilder = getFileModifyRequest(scmConnector, gitFileDetails);
-    handleUpdateFileRequestIfBBOnPrem(fileModifyRequestBuilder, scmConnector, gitFileDetails);
+    handleCommitIdInUpdateFileRequest(fileModifyRequestBuilder, scmConnector, gitFileDetails);
     final FileModifyRequest fileModifyRequest =
         fileModifyRequestBuilder.setBlobId(Strings.nullToEmpty(gitFileDetails.getOldFileSha()))
-            .setCommitId(Strings.nullToEmpty(gitFileDetails.getCommitId()))
             .setUseGitClient(useGitClient)
             .build();
     UpdateFileResponse updateFileResponse =
@@ -931,11 +933,16 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   }
 
   @Override
-  public GetAuthenticatedUserResponse getAuthenticatedUser(
-      ScmConnector scmConnector, SCMGrpc.SCMBlockingStub scmBlockingStub) {
-    Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
-    return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getAuthenticatedUser,
-        GetAuthenticatedUserRequest.newBuilder().setProvider(gitProvider).build());
+  public UserDetailsResponseDTO getUserDetails(
+      UserDetailsRequestDTO userDetailsRequestDTO, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    Provider gitProvider = scmGitAccessToProviderMapper.mapToSCMGitProvider(userDetailsRequestDTO.getGitAccessDTO());
+    GetAuthenticatedUserResponse getAuthenticatedUserResponse =
+        ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getAuthenticatedUser,
+            GetAuthenticatedUserRequest.newBuilder().setProvider(gitProvider).build());
+    return UserDetailsResponseDTO.builder()
+        .userName(getAuthenticatedUserResponse.getUserLogin())
+        .userEmail(getAuthenticatedUserResponse.getEmail())
+        .build();
   }
 
   @Override
@@ -1222,9 +1229,9 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     return Optional.empty();
   }
 
-  private void handleUpdateFileRequestIfBBOnPrem(
+  private void handleCommitIdInUpdateFileRequest(
       FileModifyRequest.Builder fileModifyRequestBuilder, ScmConnector scmConnector, GitFileDetails gitFileDetails) {
-    if (isBitbucketOnPrem(scmConnector)) {
+    if (isBitbucketOnPrem(scmConnector) || isGitlab(scmConnector)) {
       fileModifyRequestBuilder.setCommitId(gitFileDetails.getCommitId());
     }
   }
@@ -1252,6 +1259,9 @@ public class ScmServiceClientImpl implements ScmServiceClient {
 
   private boolean isBitbucket(ScmConnector scmConnector) {
     return ConnectorType.BITBUCKET.equals(scmConnector.getConnectorType());
+  }
+  private boolean isGitlab(ScmConnector scmConnector) {
+    return ConnectorType.GITLAB.equals(scmConnector.getConnectorType());
   }
 
   // Need to not process and rethrow exceptions defined in SCM GRPC Utils so that ScmDelegateClient is able to handle

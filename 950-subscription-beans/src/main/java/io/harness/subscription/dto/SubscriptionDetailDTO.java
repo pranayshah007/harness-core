@@ -7,12 +7,12 @@
 
 package io.harness.subscription.dto;
 
-import io.harness.ModuleType;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
+import org.jvnet.hk2.annotations.Optional;
 
 @Data
 @Builder
@@ -22,7 +22,6 @@ public class SubscriptionDetailDTO {
   private String subscriptionId;
   private String accountIdentifier;
   private String customerId;
-  private ModuleType moduletype;
   private String status;
   private Long cancelAt;
   private Long canceledAt;
@@ -30,4 +29,5 @@ public class SubscriptionDetailDTO {
   private PendingUpdateDetailDTO pendingUpdate;
   private String latestInvoice;
   private InvoiceDetailDTO latestInvoiceDetail;
+  @Optional private List<ItemDTO> items;
 }

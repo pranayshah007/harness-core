@@ -10,6 +10,7 @@ package software.wings.core.ssh.executors;
 import static io.harness.rule.OwnerRule.AGORODETKI;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -21,17 +22,16 @@ import io.harness.shell.SshSessionConfig;
 
 import software.wings.delegatetasks.DelegateFileManager;
 
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ScriptSshExecutor.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ScriptSshExecutorTest extends CategoryTest {
   private static final String ENV_VAR_VALUE = "/some/valid/path";
 
@@ -44,19 +44,20 @@ public class ScriptSshExecutorTest extends CategoryTest {
   @Before
   public void setup() throws Exception {
     when(sshSessionConfig.getExecutionId()).thenReturn("ID");
-    scriptSshExecutor = PowerMockito.spy(new ScriptSshExecutor(logCallback, true, sshSessionConfig));
-    PowerMockito.doReturn(ENV_VAR_VALUE).when(scriptSshExecutor, "getEnvVarValue", "Path");
-    PowerMockito.doReturn(ENV_VAR_VALUE).when(scriptSshExecutor, "getEnvVarValue", "HOME");
+    scriptSshExecutor = spy(new ScriptSshExecutor(logCallback, true, sshSessionConfig));
   }
 
   @Test
   @Owner(developers = AGORODETKI)
   @Category(UnitTests.class)
-  public void shouldRecognizeEnvVarsInPathAndReplaceWithValuesExtractedFromSystem() {
-    assertThat(scriptSshExecutor.resolveEnvVarsInPath("$HOME")).isEqualTo(ENV_VAR_VALUE);
-    assertThat(scriptSshExecutor.resolveEnvVarsInPath("$HOME/abc/$Path"))
-        .isEqualTo(ENV_VAR_VALUE + "/abc" + ENV_VAR_VALUE);
-    assertThat(scriptSshExecutor.resolveEnvVarsInPath("$HOME/work$Path/abc"))
-        .isEqualTo(ENV_VAR_VALUE + "/work" + ENV_VAR_VALUE + "/abc");
+  public void shouldRecognizeEnvVarsInPathAndReplaceWithValuesExtractedFromSystem() throws Exception {
+    Map<String, String> envVars = Map.ofEntries(Map.entry("Path", ENV_VAR_VALUE), Map.entry("HOME", ENV_VAR_VALUE));
+    new EnvironmentVariables(envVars).execute(() -> {
+      assertThat(scriptSshExecutor.resolveEnvVarsInPath("$HOME")).isEqualTo(ENV_VAR_VALUE);
+      assertThat(scriptSshExecutor.resolveEnvVarsInPath("$HOME/abc/$Path"))
+          .isEqualTo(ENV_VAR_VALUE + "/abc" + ENV_VAR_VALUE);
+      assertThat(scriptSshExecutor.resolveEnvVarsInPath("$HOME/work$Path/abc"))
+          .isEqualTo(ENV_VAR_VALUE + "/work" + ENV_VAR_VALUE + "/abc");
+    });
   }
 }

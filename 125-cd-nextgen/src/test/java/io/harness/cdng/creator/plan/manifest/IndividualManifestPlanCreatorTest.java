@@ -57,7 +57,7 @@ public class IndividualManifestPlanCreatorTest extends CDNGTestBase {
   public void testGetSupportedTypes() {
     Map<String, Set<String>> supportedTypes = individualManifestPlanCreator.getSupportedTypes();
     assertThat(supportedTypes.containsKey(YamlTypes.MANIFEST_CONFIG)).isEqualTo(true);
-    assertThat(supportedTypes.get(YamlTypes.MANIFEST_CONFIG).size()).isEqualTo(26);
+    assertThat(supportedTypes.get(YamlTypes.MANIFEST_CONFIG).size()).isEqualTo(27);
     Set<String> manifestsSupportedTypes = supportedTypes.get(YamlTypes.MANIFEST_CONFIG);
 
     Set<String> expectedSupportedTypes = new HashSet<>(Arrays.asList(ManifestType.K8Manifest, ManifestType.VALUES,
@@ -68,7 +68,8 @@ public class IndividualManifestPlanCreatorTest extends CDNGTestBase {
         ManifestType.TAS_AUTOSCALER, ManifestType.DeploymentRepo, ManifestType.AsgLaunchTemplate,
         ManifestType.AsgConfiguration, ManifestType.AsgScalingPolicy, ManifestType.AsgScheduledUpdateGroupAction,
         ManifestType.GoogleCloudFunctionDefinition, ManifestType.AwsLambdaFunctionDefinition,
-        ManifestType.AwsLambdaFunctionAliasDefinition, ManifestType.AwsSamDirectory));
+        ManifestType.AwsLambdaFunctionAliasDefinition, ManifestType.AwsSamDirectory,
+        ManifestType.GoogleCloudFunctionGenOneDefinition));
 
     assertThat(manifestsSupportedTypes.containsAll(expectedSupportedTypes)).isEqualTo(true);
   }

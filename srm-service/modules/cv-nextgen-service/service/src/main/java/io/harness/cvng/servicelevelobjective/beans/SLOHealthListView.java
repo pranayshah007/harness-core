@@ -52,6 +52,8 @@ public class SLOHealthListView {
   @NotNull SLIEvaluationType evaluationType;
   DowntimeStatusDetails downtimeStatusDetails;
   @NotNull ProjectParams projectParams;
+
+  @NotNull boolean failedState;
   @NotNull
   public ErrorBudgetRisk getErrorBudgetRisk() {
     return ErrorBudgetRisk.getFromPercentage(errorBudgetRemainingPercentage);
@@ -81,6 +83,7 @@ public class SLOHealthListView {
                            .accountIdentifier(serviceLevelObjective.getAccountId())
                            .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
                            .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
-                           .build());
+                           .build())
+        .failedState(sloHealthIndicator.getFailedState() != null && sloHealthIndicator.getFailedState());
   }
 }

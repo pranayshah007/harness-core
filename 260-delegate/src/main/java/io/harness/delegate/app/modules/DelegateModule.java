@@ -146,6 +146,9 @@ import io.harness.delegate.exceptionhandler.handler.TerragruntRuntimeExceptionHa
 import io.harness.delegate.googlefunction.GoogleFunctionCommandTaskHandler;
 import io.harness.delegate.googlefunction.GoogleFunctionDeployCommandTaskHandler;
 import io.harness.delegate.googlefunction.GoogleFunctionDeployWithoutTrafficCommandTaskHandler;
+import io.harness.delegate.googlefunction.GoogleFunctionGenOneDeployCommandTaskHandler;
+import io.harness.delegate.googlefunction.GoogleFunctionGenOnePrepareRollbackCommandTaskHandler;
+import io.harness.delegate.googlefunction.GoogleFunctionGenOneRollbackCommandTaskHandler;
 import io.harness.delegate.googlefunction.GoogleFunctionPrepareRollbackCommandTaskHandler;
 import io.harness.delegate.googlefunction.GoogleFunctionRollbackCommandTaskHandler;
 import io.harness.delegate.googlefunction.GoogleFunctionTrafficShiftCommandTaskHandler;
@@ -329,6 +332,9 @@ import io.harness.delegate.task.gitops.GitOpsFetchAppTask;
 import io.harness.delegate.task.googlefunction.GoogleFunctionCommandTask;
 import io.harness.delegate.task.googlefunction.GoogleFunctionDeployTask;
 import io.harness.delegate.task.googlefunction.GoogleFunctionDeployWithoutTrafficTask;
+import io.harness.delegate.task.googlefunction.GoogleFunctionGenOneDeployTask;
+import io.harness.delegate.task.googlefunction.GoogleFunctionGenOnePrepareRollbackTask;
+import io.harness.delegate.task.googlefunction.GoogleFunctionGenOneRollbackTask;
 import io.harness.delegate.task.googlefunction.GoogleFunctionPrepareRollbackTask;
 import io.harness.delegate.task.googlefunction.GoogleFunctionRollbackTask;
 import io.harness.delegate.task.googlefunction.GoogleFunctionTrafficShiftTask;
@@ -488,6 +494,8 @@ import io.harness.git.GitClientV2;
 import io.harness.git.GitClientV2Impl;
 import io.harness.googlefunctions.GoogleCloudFunctionClient;
 import io.harness.googlefunctions.GoogleCloudFunctionClientImpl;
+import io.harness.googlefunctions.GoogleCloudFunctionGenOneClient;
+import io.harness.googlefunctions.GoogleCloudFunctionGenOneClientImpl;
 import io.harness.googlefunctions.GoogleCloudRunClient;
 import io.harness.googlefunctions.GoogleCloudRunClientImpl;
 import io.harness.helm.HelmClient;
@@ -1942,6 +1950,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.AWS_CF_TASK).toInstance(AwsCFTask.class);
     mapBinder.addBinding(TaskType.K8S_COMMAND_TASK).toInstance(K8sTask.class);
     mapBinder.addBinding(TaskType.K8S_COMMAND_TASK_NG).toInstance(K8sTaskNG.class);
+    mapBinder.addBinding(TaskType.K8S_COMMAND_TASK_NG_V2).toInstance(K8sTaskNG.class);
     mapBinder.addBinding(TaskType.K8S_DRY_RUN_MANIFEST_TASK_NG).toInstance(K8sTaskNG.class);
     mapBinder.addBinding(TaskType.K8S_WATCH_TASK).toInstance(AssignmentTask.class);
     mapBinder.addBinding(TaskType.TRIGGER_TASK).toInstance(TriggerTask.class);
@@ -1981,6 +1990,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.HELM_VALUES_FETCH).toInstance(HelmValuesFetchTask.class);
     mapBinder.addBinding(TaskType.HELM_VALUES_FETCH_NG).toInstance(HelmValuesFetchTaskNG.class);
     mapBinder.addBinding(TaskType.HELM_COMMAND_TASK_NG).toInstance(HelmCommandTaskNG.class);
+    mapBinder.addBinding(TaskType.HELM_COMMAND_TASK_NG_V2).toInstance(HelmCommandTaskNG.class);
     mapBinder.addBinding(TaskType.HELM_COLLECT_CHART).toInstance(HelmCollectChartTask.class);
     mapBinder.addBinding(TaskType.SLACK).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.INITIALIZATION_PHASE).toInstance(CIInitializeTask.class);
@@ -2040,6 +2050,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V3).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V4).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V5).toInstance(TerraformTaskNG.class);
+    mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V6).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.SCM_PUSH_TASK).toInstance(ScmPushTask.class);
     mapBinder.addBinding(TaskType.SCM_PATH_FILTER_EVALUATION_TASK).toInstance(ScmPathFilterEvaluationTask.class);
     mapBinder.addBinding(TaskType.SCM_GIT_REF_TASK).toInstance(ScmGitRefTask.class);
@@ -2126,6 +2137,15 @@ public class DelegateModule extends AbstractModule {
         .to(GoogleFunctionTrafficShiftCommandTaskHandler.class);
     googleFunctionCommandTaskHandlerMapBinder.addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_ROLLBACK.name())
         .to(GoogleFunctionRollbackCommandTaskHandler.class);
+    googleFunctionCommandTaskHandlerMapBinder
+        .addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_GEN_ONE_PREPARE_ROLLBACK.name())
+        .to(GoogleFunctionGenOnePrepareRollbackCommandTaskHandler.class);
+    googleFunctionCommandTaskHandlerMapBinder
+        .addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_GEN_ONE_DEPLOY.name())
+        .to(GoogleFunctionGenOneDeployCommandTaskHandler.class);
+    googleFunctionCommandTaskHandlerMapBinder
+        .addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_GEN_ONE_ROLLBACK.name())
+        .to(GoogleFunctionGenOneRollbackCommandTaskHandler.class);
     // AWS ASG NG
     mapBinder.addBinding(TaskType.AWS_ASG_CANARY_DEPLOY_TASK_NG).toInstance(AsgCanaryDeployTaskNG.class);
     mapBinder.addBinding(TaskType.AWS_ASG_CANARY_DELETE_TASK_NG).toInstance(AsgCanaryDeleteTaskNG.class);
@@ -2142,6 +2162,7 @@ public class DelegateModule extends AbstractModule {
     bind(EcsV2Client.class).to(EcsV2ClientImpl.class);
     bind(ElbV2Client.class).to(ElbV2ClientImpl.class);
     bind(GoogleCloudFunctionClient.class).to(GoogleCloudFunctionClientImpl.class);
+    bind(GoogleCloudFunctionGenOneClient.class).to(GoogleCloudFunctionGenOneClientImpl.class);
     bind(GoogleCloudRunClient.class).to(GoogleCloudRunClientImpl.class);
     bind(EksV2Client.class).to(EksV2ClientImpl.class);
 
@@ -2195,6 +2216,11 @@ public class DelegateModule extends AbstractModule {
         .toInstance(GoogleFunctionPrepareRollbackTask.class);
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_ROLLBACK_TASK).toInstance(GoogleFunctionRollbackTask.class);
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK).toInstance(GoogleFunctionTrafficShiftTask.class);
+    mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_GEN_ONE_DEPLOY_TASK).toInstance(GoogleFunctionGenOneDeployTask.class);
+    mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_GEN_ONE_PREPARE_ROLLBACK_TASK)
+        .toInstance(GoogleFunctionGenOnePrepareRollbackTask.class);
+    mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_GEN_ONE_ROLLBACK_TASK)
+        .toInstance(GoogleFunctionGenOneRollbackTask.class);
 
     // AWS Lambda
     mapBinder.addBinding(TaskType.AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG).toInstance(AwsLambdaDeployTask.class);

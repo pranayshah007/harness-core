@@ -41,7 +41,7 @@ public class GitEntityInfo {
   Boolean isFullSyncFlow;
   String resolvedConflictCommitId;
   @Setter StoreType storeType;
-  String connectorRef;
+  @Setter String connectorRef;
   @Setter String repoName;
   @Wither @Setter String lastCommitId;
   @Setter String parentEntityRepoUrl;
@@ -50,6 +50,7 @@ public class GitEntityInfo {
   @Setter String parentEntityAccountIdentifier;
   @Setter String parentEntityOrgIdentifier;
   @Setter String parentEntityProjectIdentifier;
+  @Setter boolean isDefaultBranch;
 
   public boolean isNull() {
     // todo @Abhinav Maybe we should use null in place of default

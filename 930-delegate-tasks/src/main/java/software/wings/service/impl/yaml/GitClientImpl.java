@@ -61,6 +61,8 @@ import io.harness.git.model.GitRepositoryType;
 import io.harness.logging.LogCallback;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.SshSessionConfig;
+import io.harness.shell.ssh.SshFactory;
+import io.harness.shell.ssh.client.jsch.JschConnection;
 
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitOperationContext;
@@ -140,8 +142,6 @@ import org.eclipse.jgit.revwalk.RevSort;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.HttpTransport;
-import org.eclipse.jgit.transport.JschConfigSessionFactory;
-import org.eclipse.jgit.transport.OpenSshConfig.Host;
 import org.eclipse.jgit.transport.SshSessionFactory;
 import org.eclipse.jgit.transport.SshTransport;
 import org.eclipse.jgit.transport.TagOpt;
@@ -149,6 +149,8 @@ import org.eclipse.jgit.transport.TransportHttp;
 import org.eclipse.jgit.transport.http.HttpConnection;
 import org.eclipse.jgit.transport.http.HttpConnectionFactory;
 import org.eclipse.jgit.transport.http.apache.HttpClientConnectionFactory;
+import org.eclipse.jgit.transport.ssh.jsch.JschConfigSessionFactory;
+import org.eclipse.jgit.transport.ssh.jsch.OpenSshConfig.Host;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.util.FS;
 import org.eclipse.jgit.util.HttpSupport;
@@ -1324,7 +1326,11 @@ public class GitClientImpl implements GitClient {
       protected Session createSession(Host hc, String user, String host, int port, FS fs) throws JSchException {
         SshSessionConfig sshSessionConfig = createSshSessionConfig(settingAttribute, host);
         sshSessionConfig.setPort(port); // use port from repo URL
-        return getSSHSession(sshSessionConfig);
+        if (sshSessionConfig.isUseSshClient()) {
+          return ((JschConnection) SshFactory.getSshClient(sshSessionConfig).getConnection()).getSession();
+        } else {
+          return getSSHSession(sshSessionConfig);
+        }
       }
 
       @Override

@@ -32,7 +32,8 @@ public class PipelineCoreBackgroundMigrationDetails implements MigrationDetails 
   @Override
   public List<Pair<Integer, Class<? extends NGMigration>>> getMigrations() {
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
-        .add(Pair.of(1, PopulateAmbianceFieldsAtFirstLevelInApprovalInstancesMigration.class))
+        .add(Pair.of(1, NoopPipelineCoreMigration.class))
+        .add(Pair.of(2, PopulateAmbianceFieldsAtFirstLevelInApprovalInstancesMigration.class))
         .build();
   }
 }

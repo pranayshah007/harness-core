@@ -372,12 +372,10 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       sharedCostBucketNames.forEach(sharedCostBucketName -> sharedCosts.put(sharedCostBucketName, 0.0));
     }
 
-    double totalSharedCostInUnattributed = 0.0D;
     List<QLCEViewEntityStatsDataPoint> entityStatsDataPoints = new ArrayList<>();
     for (FieldValueList row : result.iterateAll()) {
       QLCEViewEntityStatsDataPointBuilder dataPointBuilder = QLCEViewEntityStatsDataPoint.builder();
       Double cost = null;
-      double sharedCostInUnattributed = 0.0D;
       String name = DEFAULT_GRID_ENTRY_NAME;
       String id = DEFAULT_STRING_VALUE;
       for (Field field : fields) {
@@ -392,7 +390,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
               cost = getNumericValue(row, field, skipRoundOff);
               dataPointBuilder.cost(cost);
             } else if (sharedCostBucketNames.contains(field.getName())) {
-              sharedCostInUnattributed = getNumericValue(row, field, skipRoundOff);
               sharedCosts.put(
                   field.getName(), sharedCosts.get(field.getName()) + getNumericValue(row, field, skipRoundOff));
             }
@@ -407,10 +404,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         dataPointBuilder.costTrend(
             viewBillingServiceHelper.getCostTrendForEntity(cost, costTrendData.get(id), startTimeForTrend));
       }
-      if (businessMapping != null && businessMapping.getUnallocatedCost() != null
-          && name.equals(businessMapping.getUnallocatedCost().getLabel())) {
-        totalSharedCostInUnattributed += sharedCostInUnattributed;
-      }
       entityStatsDataPoints.add(dataPointBuilder.build());
     }
 
@@ -419,13 +412,10 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
           viewBillingServiceHelper.getUpdatedDataPoints(entityStatsDataPoints, entityNames, accountId, conversionField);
     }
 
-    if (businessMapping != null) {
-      if (!sharedCostBucketNames.isEmpty() && addSharedCostFromGroupBy) {
-        entityStatsDataPoints =
-            viewBusinessMappingResponseHelper.addSharedCosts(entityStatsDataPoints, sharedCosts, businessMapping);
-      }
-      entityStatsDataPoints = viewBusinessMappingResponseHelper.subtractDuplicateSharedCostFromUnattributed(
-          entityStatsDataPoints, totalSharedCostInUnattributed, businessMapping);
+    // TODO: Remove this code because addSharedCostFromGroupBy will always false.
+    if (businessMapping != null && !sharedCostBucketNames.isEmpty() && addSharedCostFromGroupBy) {
+      entityStatsDataPoints =
+          viewBusinessMappingResponseHelper.addSharedCosts(entityStatsDataPoints, sharedCosts, businessMapping);
     }
 
     if (entityStatsDataPoints.size() > MAX_LIMIT_VALUE) {
@@ -795,7 +785,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     String fieldName = viewParametersHelper.getEntityGroupByFieldName(Collections.emptyList());
     for (FieldValueList row : result.iterateAll()) {
       double cost = 0.0;
-      double sharedCostInUnattributed = 0.0;
       String entityName = null;
       for (Field field : fields) {
         switch (field.getName()) {
@@ -824,7 +813,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
           default:
             if (sharedCostBucketNames.contains(field.getName())) {
               sharedCost += getNumericValue(row, field);
-              sharedCostInUnattributed += getNumericValue(row, field);
             }
             if (field.getType().getStandardType() == StandardSQLTypeName.STRING) {
               entityName = fetchStringValue(row, field, fieldName);
@@ -835,10 +823,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       if (entityName == null
           || (includeOthersCost || !entityName.equals(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName()))) {
         totalCost += cost;
-      }
-      if (businessMappingFromGroupBy != null && businessMappingFromGroupBy.getUnallocatedCost() != null
-          && entityName != null && entityName.equals(businessMappingFromGroupBy.getUnallocatedCost().getLabel())) {
-        totalCost -= sharedCostInUnattributed;
       }
     }
 

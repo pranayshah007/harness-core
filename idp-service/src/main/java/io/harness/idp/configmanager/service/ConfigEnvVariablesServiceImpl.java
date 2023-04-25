@@ -56,6 +56,9 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
       throw new InvalidRequestException(new Gson().toJson(errorMessagesForEnvVariables));
     }
 
+    // Deleting older crated env secret variables
+    deleteConfigEnvVariables(accountIdentifier, appConfig.getConfigId());
+
     configEnvVariablesRepository.saveAll(configVariables);
 
     // creating secrets on the namespace of backstage and storing in DB
@@ -82,9 +85,6 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
       throw new InvalidRequestException(new Gson().toJson(errorMessagesForEnvVariables));
     }
 
-    // Deleting older crated env secret variables
-    deleteConfigEnvVariables(accountIdentifier, appConfig.getConfigId());
-
     // creating new updated env variables
     return insertConfigEnvVariables(appConfig, accountIdentifier);
   }
@@ -104,9 +104,18 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
   public void deleteConfigEnvVariables(String accountIdentifier, String configId) {
     List<PluginConfigEnvVariablesEntity> pluginsEnvVariablesEntity =
         configEnvVariablesRepository.findAllByAccountIdentifierAndPluginId(accountIdentifier, configId);
-    configEnvVariablesRepository.deleteAllByPluginId(configId);
+    configEnvVariablesRepository.deleteAllByAccountIdentifierAndPluginId(accountIdentifier, configId);
     backstageEnvVariableService.deleteMultiUsingEnvNames(
         getEnvVariablesFromEntities(pluginsEnvVariablesEntity), accountIdentifier);
+  }
+
+  @Override
+  public List<String> getAllEnvVariablesForAccountIdentifierAndPluginId(String accountIdentifier, String pluginId) {
+    List<PluginConfigEnvVariablesEntity> pluginsEnvVariablesEntity =
+        configEnvVariablesRepository.findAllByAccountIdentifierAndPluginId(accountIdentifier, pluginId);
+    return pluginsEnvVariablesEntity.stream()
+        .map(PluginConfigEnvVariablesEntity::getEnvName)
+        .collect(Collectors.toList());
   }
 
   private List<BackstageEnvVariable> getListOfBackstageEnvSecretVariable(AppConfig appConfig) {

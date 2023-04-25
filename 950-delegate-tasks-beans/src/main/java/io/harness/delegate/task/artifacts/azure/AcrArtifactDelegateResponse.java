@@ -15,6 +15,7 @@ import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -30,14 +31,17 @@ public class AcrArtifactDelegateResponse extends ArtifactDelegateResponse {
   /** Tag refers to exact tag number */
   String tag;
 
+  Map<String, String> label;
+
   @Builder
   public AcrArtifactDelegateResponse(ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType,
-      String subscription, String registry, String repository, String tag) {
+      String subscription, String registry, String repository, String tag, Map<String, String> label) {
     super(buildDetails, sourceType);
     this.subscription = subscription;
     this.registry = registry;
     this.repository = repository;
     this.tag = tag;
+    this.label = label;
   }
 
   @Override

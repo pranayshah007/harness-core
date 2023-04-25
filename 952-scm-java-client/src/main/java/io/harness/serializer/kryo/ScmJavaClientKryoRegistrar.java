@@ -16,6 +16,7 @@ import io.harness.beans.FileGitDetails;
 import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.HookEventType;
 import io.harness.beans.Repository;
+import io.harness.beans.Scope;
 import io.harness.beans.WebhookGitUser;
 import io.harness.beans.gitsync.GitFileDetails;
 import io.harness.beans.gitsync.GitFilePathDetails;
@@ -24,6 +25,12 @@ import io.harness.beans.gitsync.GitWebhookDetails;
 import io.harness.beans.response.GitFileResponse;
 import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.exception.ScmException;
+import io.harness.gitsync.common.dtos.gitAccess.AzureRepoAccessDTO;
+import io.harness.gitsync.common.dtos.gitAccess.GitAccessDTO;
+import io.harness.gitsync.common.dtos.gitAccess.GithubAccessDTO;
+import io.harness.gitsync.common.dtos.gitAccess.GithubAccessTokenDTO;
+import io.harness.gitsync.common.dtos.gitAccess.GithubAppAccessDTO;
+import io.harness.gitsync.common.dtos.gitAccess.GitlabAccessDTO;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
 import io.harness.product.ci.scm.proto.CreatePRResponse;
 import io.harness.product.ci.scm.proto.CreateWebhookResponse;
@@ -60,5 +67,12 @@ public class ScmJavaClientKryoRegistrar implements KryoRegistrar {
     kryo.register(FileGitDetails.class, 955018);
     kryo.register(ContentType.class, 955019);
     kryo.register(GetBatchFileRequestIdentifier.class, 955021);
+    kryo.register(GitAccessDTO.class, 955022);
+    kryo.register(GithubAccessDTO.class, 955023);
+    kryo.register(GitlabAccessDTO.class, 955024);
+    kryo.register(GithubAccessTokenDTO.class, 955025);
+    kryo.register(AzureRepoAccessDTO.class, 955026);
+    kryo.register(GithubAppAccessDTO.class, 955027);
+    kryo.register(Scope.class, 955028);
   }
 }

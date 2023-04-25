@@ -15,7 +15,7 @@ import io.harness.cdng.creator.plan.infrastructure.InfraRollbackPMSPlanCreator;
 import io.harness.cdng.pipeline.beans.RollbackNode;
 import io.harness.cdng.pipeline.beans.RollbackOptionalChildChainStepParameters;
 import io.harness.cdng.pipeline.beans.RollbackOptionalChildChainStepParameters.RollbackOptionalChildChainStepParametersBuilder;
-import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
+import io.harness.cdng.pipeline.steps.CombinedRollbackStep;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
@@ -31,6 +31,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 
+import java.util.Collections;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -86,12 +87,14 @@ public class RollbackPlanCreator {
                                           .build());
     }
 
+    String combinedRollbackNodeUuid =
+        stageNode.getUuid() + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX;
     PlanNode deploymentStageRollbackNode =
         PlanNode.builder()
-            .uuid(stageNode.getUuid() + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX)
+            .uuid(combinedRollbackNodeUuid)
             .name(NGCommonUtilPlanCreationConstants.ROLLBACK_NODE_NAME)
             .identifier(YAMLFieldNameConstants.ROLLBACK_STEPS)
-            .stepType(RollbackOptionalChildChainStep.STEP_TYPE)
+            .stepType(CombinedRollbackStep.STEP_TYPE)
             .stepParameters(stepParametersBuilder.build())
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
@@ -102,7 +105,10 @@ public class RollbackPlanCreator {
             .build();
 
     PlanCreationResponse finalResponse =
-        PlanCreationResponse.builder().node(deploymentStageRollbackNode.getUuid(), deploymentStageRollbackNode).build();
+        PlanCreationResponse.builder()
+            .node(deploymentStageRollbackNode.getUuid(), deploymentStageRollbackNode)
+            .preservedNodesInRollbackMode(Collections.singletonList(combinedRollbackNodeUuid))
+            .build();
     finalResponse.merge(executionRollbackPlanNode);
     finalResponse.merge(infraRollbackPlan);
 

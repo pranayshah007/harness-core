@@ -7,6 +7,7 @@
 
 package io.harness.cdng.creator.plan.steps;
 
+import static io.harness.pms.contracts.plan.ExecutionMode.PIPELINE_ROLLBACK;
 import static io.harness.pms.contracts.plan.ExecutionMode.POST_EXECUTION_ROLLBACK;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAHIL;
@@ -105,11 +106,15 @@ public class CDStepsPlanCreatorTest extends CDNGTestBase {
 
     Map<ExecutionMode, List<AdviserObtainment>> advisorObtainmentsPerMode =
         planForParentNode.getAdvisorObtainmentsForExecutionMode();
-    assertThat(advisorObtainmentsPerMode).hasSize(1);
+    assertThat(advisorObtainmentsPerMode).hasSize(2);
     assertThat(advisorObtainmentsPerMode).containsKey(POST_EXECUTION_ROLLBACK);
     assertThat(advisorObtainmentsPerMode.get(POST_EXECUTION_ROLLBACK)).hasSize(1);
     AdviserObtainment postExecAdvisor = advisorObtainmentsPerMode.get(POST_EXECUTION_ROLLBACK).get(0);
     assertThat(postExecAdvisor.getType()).isEqualTo(NextStepAdviser.ADVISER_TYPE);
+    assertThat(advisorObtainmentsPerMode).containsKey(PIPELINE_ROLLBACK);
+    assertThat(advisorObtainmentsPerMode.get(PIPELINE_ROLLBACK)).hasSize(1);
+    AdviserObtainment prbAdvisor = advisorObtainmentsPerMode.get(PIPELINE_ROLLBACK).get(0);
+    assertThat(prbAdvisor.getType()).isEqualTo(NextStepAdviser.ADVISER_TYPE);
     mockSettings.close();
   }
 

@@ -31,6 +31,7 @@ import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifact.ArtifactUtilities;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ArtifactoryRegistryException;
@@ -91,41 +92,82 @@ public class ArtifactoryClientImpl {
   public List<Map<String, String>> getLabels(
       ArtifactoryConfigRequest artifactoryConfig, String imageName, String repositoryName, String buildNos) {
     log.debug("Retrieving label docker in artifactory");
-
-    Artifactory artifactory = getArtifactoryClient(artifactoryConfig);
-    ArtifactoryRequest repositoryRequest =
-        new ArtifactoryRequestImpl()
-            .apiUrl(format("api/storage/%s/%s/%s/manifest.json?properties", repositoryName, imageName, buildNos))
-            .method(GET)
-            .responseType(JSON);
     List<Map<String, String>> labels = new ArrayList<>();
 
     try {
-      ArtifactoryResponse response = artifactory.restCall(repositoryRequest);
-      handleErrorResponse(response);
+      ArtifactoryResponse response = fetchImageManifest(artifactoryConfig, imageName, repositoryName, buildNos);
+      labels = getLabels(response);
       Map<String, Map<String, List<String>>> responseList = response.parseBody(Map.class);
       Map<String, List<String>> properties = responseList.get("properties");
-
-      Map<String, String> filteredAndParsedLabels =
-          properties.entrySet()
-              .stream()
-              .filter(e -> e.getKey().startsWith("docker.label"))
-              .collect(Collectors.toMap(e -> e.getKey().replaceFirst("docker.label.", ""), e -> e.getValue().get(0)));
-      labels.add(filteredAndParsedLabels);
-
-      if (EmptyPredicate.isEmpty(filteredAndParsedLabels)) {
+      if (EmptyPredicate.isEmpty(labels) || EmptyPredicate.isEmpty(labels.get(0))) {
         log.warn("Docker image doesn't have labels. Properties: {}", properties);
       } else {
-        log.debug("Retrieving labels {} for image {} for repository {} for version {} was success",
-            filteredAndParsedLabels, imageName, repositoryName, buildNos);
+        log.debug("Retrieving labels {} for image {} for repository {} for version {} was success", labels.get(0),
+            imageName, repositoryName, buildNos);
       }
-
     } catch (Exception e) {
       log.error("Failed to retrieve docker label in artifactory. Image name: {}, Repository Name: {}, Version: {}",
           imageName, repositoryName, buildNos);
       handleAndRethrow(e, USER);
     }
     return labels;
+  }
+
+  private ArtifactoryResponse fetchImageManifest(ArtifactoryConfigRequest artifactoryConfig, String imageName,
+      String repositoryName, String build) throws IOException {
+    Artifactory artifactory = getArtifactoryClient(artifactoryConfig);
+    ArtifactoryRequest repositoryRequest =
+        new ArtifactoryRequestImpl()
+            .apiUrl(format("api/storage/%s/%s/%s/manifest.json?properties", repositoryName, imageName, build))
+            .method(GET)
+            .responseType(JSON);
+    ArtifactoryResponse response = null;
+    response = artifactory.restCall(repositoryRequest);
+    handleErrorResponse(response);
+    return response;
+  }
+
+  private List<Map<String, String>> getLabels(ArtifactoryResponse response) throws IOException {
+    List<Map<String, String>> labels = new ArrayList<>();
+    Map<String, Map<String, List<String>>> responseList = response.parseBody(Map.class);
+    Map<String, List<String>> properties = responseList.get("properties");
+
+    Map<String, String> filteredAndParsedLabels =
+        properties.entrySet()
+            .stream()
+            .filter(e -> e.getKey().startsWith("docker.label"))
+            .collect(Collectors.toMap(e -> e.getKey().replaceFirst("docker.label.", ""), e -> e.getValue().get(0)));
+    labels.add(filteredAndParsedLabels);
+    return labels;
+  }
+
+  private String getSHA(ArtifactoryResponse response) throws IOException {
+    Map<String, Map<String, List<String>>> responseList = response.parseBody(Map.class);
+    Map<String, List<String>> properties = responseList.get("properties");
+    List<String> sha = properties.get("docker.manifest.digest");
+    if (EmptyPredicate.isEmpty(sha)) {
+      return null;
+    }
+    return sha.get(0);
+  }
+
+  public ArtifactMetaInfo getArtifactMetaInfo(
+      ArtifactoryConfigRequest artifactoryConfig, String imageName, String repositoryName, String build) {
+    ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().build();
+    try {
+      ArtifactoryResponse response = fetchImageManifest(artifactoryConfig, imageName, repositoryName, build);
+      String sha = getSHA(response);
+      artifactMetaInfo.setSha(sha);
+      artifactMetaInfo.setShaV2(sha);
+      List<Map<String, String>> labels = getLabels(response);
+      artifactMetaInfo.setLabels(labels.get(0));
+    } catch (Exception e) {
+      log.error(
+          "Failed to retrieve docker image manifest in artifactory. Image name: {}, Repository Name: {}, Version: {}",
+          imageName, repositoryName, build);
+      handleAndRethrow(e, USER);
+    }
+    return artifactMetaInfo;
   }
 
   public boolean validateArtifactServer(ArtifactoryConfigRequest config) {

@@ -127,7 +127,6 @@ public class SubscriptionResourceTest extends CategoryTest {
       SubscriptionDetailDTO.builder()
           .accountIdentifier(ACCOUNT_IDENTIFIER)
           .latestInvoice(INVOICE_ID)
-          .moduletype(DEFAULT_MODULE_TYPE)
           .subscriptionId(SUBSCRIPTION_ID)
           .build();
 
@@ -233,9 +232,11 @@ public class SubscriptionResourceTest extends CategoryTest {
   @Owner(developers = OwnerRule.TOMMY)
   @Category(UnitTests.class)
   public void testCancelSubscription() {
-    ResponseDTO responseDTO = subscriptionResource.cancelSubscription(ACCOUNT_IDENTIFIER, SUBSCRIPTION_ID);
+    ResponseDTO responseDTO =
+        subscriptionResource.cancelSubscription(ACCOUNT_IDENTIFIER, SUBSCRIPTION_ID, ModuleType.CF);
 
-    Mockito.verify(subscriptionService, times(1)).cancelSubscription(ACCOUNT_IDENTIFIER, SUBSCRIPTION_ID);
+    Mockito.verify(subscriptionService, times(1))
+        .cancelSubscription(ACCOUNT_IDENTIFIER, SUBSCRIPTION_ID, ModuleType.CF);
 
     assertThat(responseDTO).isNotNull();
   }
@@ -259,14 +260,11 @@ public class SubscriptionResourceTest extends CategoryTest {
   @Owner(developers = OwnerRule.TOMMY)
   @Category(UnitTests.class)
   public void testListSubscription() {
-    doReturn(List.of(DEFAULT_SUBSCRIPTION_DETAIL_DTO))
-        .when(subscriptionService)
-        .listSubscriptions(ACCOUNT_IDENTIFIER, DEFAULT_MODULE_TYPE);
+    doReturn(List.of(DEFAULT_SUBSCRIPTION_DETAIL_DTO)).when(subscriptionService).listSubscriptions(ACCOUNT_IDENTIFIER);
 
-    ResponseDTO<List<SubscriptionDetailDTO>> responseDTO =
-        subscriptionResource.listSubscriptions(ACCOUNT_IDENTIFIER, DEFAULT_MODULE_TYPE);
+    ResponseDTO<List<SubscriptionDetailDTO>> responseDTO = subscriptionResource.listSubscriptions(ACCOUNT_IDENTIFIER);
 
-    Mockito.verify(subscriptionService, times(1)).listSubscriptions(ACCOUNT_IDENTIFIER, DEFAULT_MODULE_TYPE);
+    Mockito.verify(subscriptionService, times(1)).listSubscriptions(ACCOUNT_IDENTIFIER);
     assertThat(responseDTO.getData()).isNotNull();
   }
 

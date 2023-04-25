@@ -21,6 +21,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PL_NEW_SCIM_STANDARDS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.common.beans.UserSource.SCIM;
 
 import static java.util.Collections.emptyList;
 
@@ -110,6 +111,8 @@ public class NGScimUserServiceImpl implements ScimUserService {
       }
       ngUserService.addUserToScope(
           user.getUuid(), Scope.of(accountId, null, null), null, null, UserMembershipUpdateSource.SYSTEM);
+      ngUserService.updateNGUserToCGWithSource(
+          user.getUuid(), Scope.builder().accountIdentifier(accountId).build(), SCIM);
       return Response.status(Response.Status.CREATED).entity(getUserInternal(user.getUuid(), accountId)).build();
     } else {
       String userName = getName(userQuery);
@@ -290,8 +293,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
       }
 
       String updatedEmail = getPrimaryEmail(scimUser);
-      if (ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.UPDATE_EMAILS_VIA_SCIM)
-          && existingUser.getEmail() != null && !existingUser.getEmail().equals(updatedEmail)) {
+      if (existingUser.getEmail() != null && !existingUser.getEmail().equals(updatedEmail)) {
         userMetadata.setEmail(updatedEmail);
         userMetadata.setExternallyManaged(true);
         log.info("NGSCIM: Updating email for user {} ; Updated email: {}", userId, updatedEmail);
@@ -299,6 +301,8 @@ public class NGScimUserServiceImpl implements ScimUserService {
 
       ngUserService.updateUserMetadata(userMetadata);
       log.info("NGSCIM: Updated metadata for user: {}", userId);
+
+      ngUserService.updateNGUserToCGWithSource(userId, Scope.builder().accountIdentifier(accountId).build(), SCIM);
 
       if (ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.PL_USER_DELETION_V2)) {
         if (scimUser.getActive() != null && !scimUser.getActive()) {
@@ -363,8 +367,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
       }
     }
 
-    if (ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.UPDATE_EMAILS_VIA_SCIM)
-        && "userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
+    if ("userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
         && !userMetadataDTO.getEmail().equalsIgnoreCase(patchOperation.getValue(String.class))) {
       String updatedEmail = patchOperation.getValue(String.class).toLowerCase();
       userMetadataDTO.setEmail(updatedEmail);
@@ -379,6 +382,8 @@ public class NGScimUserServiceImpl implements ScimUserService {
       userMetadataDTO.setExternallyManaged(true);
       ngUserService.updateUserMetadata(userMetadataDTO);
     }
+
+    ngUserService.updateNGUserToCGWithSource(userId, Scope.builder().accountIdentifier(accountId).build(), SCIM);
 
     if (!ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.PL_USER_DELETION_V2)
         && patchOperation.getValue(ScimUserValuedObject.class) != null) {

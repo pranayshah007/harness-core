@@ -18,7 +18,7 @@ import static software.wings.yaml.errorhandling.GitSyncError.GitSyncDirection.GI
 import static java.lang.String.format;
 import static javax.ws.rs.client.Entity.entity;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;

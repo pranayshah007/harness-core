@@ -16,7 +16,7 @@ import static software.wings.graphql.schema.type.instance.QLInstanceType.PHYSICA
 import static com.google.common.collect.Lists.newArrayList;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;

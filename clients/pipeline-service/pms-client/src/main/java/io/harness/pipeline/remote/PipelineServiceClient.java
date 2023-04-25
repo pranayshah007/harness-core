@@ -44,6 +44,7 @@ import retrofit2.http.Query;
 public interface PipelineServiceClient {
   String PIPELINE_ENDPOINT = "pipelines/";
   String PIPELINE_INPUT_SET_ENDPOINT = "inputSets/";
+  String PIPELINE_EXECUTE_ENDPOINT = "pipeline/execute/";
 
   @POST(PIPELINE_ENDPOINT + "list/")
   Call<ResponseDTO<PageResponse<PMSPipelineSummaryResponseDTO>>> listPipelines(
@@ -142,4 +143,12 @@ public interface PipelineServiceClient {
       @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Query(value = NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @Body InputSetTemplateRequestDTO inputSetTemplateRequestDTO);
+
+  @POST(PIPELINE_EXECUTE_ENDPOINT + "postExecutionRollback/{planExecutionId}")
+  Call<ResponseDTO<Object>> triggerPostExecutionRollback(@Path(NGCommonEntityConstants.PLAN_KEY) String planExecutionId,
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query(value = NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @Query(value = "stageNodeExecutionIds") String nodeExecutionIds);
 }

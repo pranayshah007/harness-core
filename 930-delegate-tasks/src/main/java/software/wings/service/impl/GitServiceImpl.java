@@ -33,6 +33,8 @@ import io.harness.git.model.PushResultGit;
 import io.harness.logging.LogCallback;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.SshSessionConfig;
+import io.harness.shell.ssh.SshFactory;
+import io.harness.shell.ssh.client.jsch.JschConnection;
 
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitFileConfig;
@@ -62,9 +64,9 @@ import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.transport.HttpTransport;
-import org.eclipse.jgit.transport.JschConfigSessionFactory;
-import org.eclipse.jgit.transport.OpenSshConfig;
 import org.eclipse.jgit.transport.SshSessionFactory;
+import org.eclipse.jgit.transport.ssh.jsch.JschConfigSessionFactory;
+import org.eclipse.jgit.transport.ssh.jsch.OpenSshConfig;
 import org.eclipse.jgit.util.FS;
 
 @Singleton
@@ -129,7 +131,11 @@ public class GitServiceImpl implements GitService {
           throws JSchException {
         SshSessionConfig sshSessionConfig = createSshSessionConfig(settingAttribute, host);
         sshSessionConfig.setPort(port); // use port from repo URL
-        return getSSHSession(sshSessionConfig);
+        if (sshSessionConfig.isUseSshClient()) {
+          return ((JschConnection) SshFactory.getSshClient(sshSessionConfig).getConnection()).getSession();
+        } else {
+          return getSSHSession(sshSessionConfig);
+        }
       }
 
       @Override

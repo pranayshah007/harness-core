@@ -306,6 +306,13 @@ public class CENextGenModule extends AbstractModule {
       boolean isClickHouseEnabled() {
         return configuration.isClickHouseEnabled();
       }
+
+      @Provides
+      @Singleton
+      @Named("governanceConfig")
+      io.harness.remote.GovernanceConfig governanceConfig() {
+        return configuration.getGovernanceConfig();
+      }
     });
 
     // Bind Services

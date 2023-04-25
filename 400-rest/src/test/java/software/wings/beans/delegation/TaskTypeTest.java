@@ -473,6 +473,15 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(433, "TAS_ROUTE_MAPPING");
     taskTypeOrdinalMapping.put(434, "AWS_EKS_LIST_CLUSTERS_TASK");
     taskTypeOrdinalMapping.put(435, "TERRAFORM_TASK_NG_V5");
+    taskTypeOrdinalMapping.put(436, "GOOGLE_FUNCTION_GEN_ONE_DEPLOY_TASK");
+    taskTypeOrdinalMapping.put(437, "GOOGLE_FUNCTION_GEN_ONE_ROLLBACK_TASK");
+    taskTypeOrdinalMapping.put(438, "GOOGLE_FUNCTION_GEN_ONE_PREPARE_ROLLBACK_TASK");
+    taskTypeOrdinalMapping.put(439, "TERRAFORM_TASK_NG_V6");
+    taskTypeOrdinalMapping.put(440, "K8S_COMMAND_TASK_NG_V2");
+    taskTypeOrdinalMapping.put(441, "HELM_COMMAND_TASK_NG_V2");
+    taskTypeOrdinalMapping.put(442, "INSTANCE_SYNC_V2_CG_SUPPORT");
+    taskTypeOrdinalMapping.put(443, "PT_SERIALIZATION_SUPPORT");
+
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
   }

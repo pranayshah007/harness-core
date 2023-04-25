@@ -28,6 +28,9 @@ public interface PmsEngineExpressionService {
   @Deprecated Object resolve(Ambiance ambiance, Object o, boolean skipUnresolvedExpressionsCheck);
   Object resolve(Ambiance ambiance, Object o, ExpressionMode expressionMode);
   Object resolve(Ambiance ambiance, Object o, ExpressionMode expressionMode, Map<String, String> contextMap);
+  Object evaluateExpression(
+      Ambiance ambiance, String expression, ExpressionMode expressionMode, Map<String, String> contextMap);
+
   default EngineExpressionEvaluator prepareExpressionEvaluator(Ambiance ambiance) {
     return null;
   }

@@ -17,8 +17,8 @@ import io.harness.logging.LogCallback;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.AccessType;
 import io.harness.shell.SshSessionConfig;
-import io.harness.shell.ssh.agent.SshClient;
-import io.harness.shell.ssh.agent.jsch.JschClient;
+import io.harness.shell.ssh.client.SshClient;
+import io.harness.shell.ssh.client.jsch.JschClient;
 
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;

@@ -7,10 +7,16 @@
 
 package io.harness.idp.status.resources;
 
+import static io.harness.idp.common.Constants.IDP_PERMISSION;
+import static io.harness.idp.common.Constants.IDP_RESOURCE_TYPE;
+
+import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
 import io.harness.idp.status.service.StatusInfoService;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.StatusInfoApi;
 import io.harness.spec.server.idp.v1.model.StatusInfo;
 import io.harness.spec.server.idp.v1.model.StatusInfoRequest;
@@ -25,6 +31,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
+@NextGenManagerAuth
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
 public class StatusInfoApiImpl implements StatusInfoApi {
@@ -49,7 +56,9 @@ public class StatusInfoApiImpl implements StatusInfoApi {
   }
 
   @Override
-  public Response saveStatusInfoByType(String type, @Valid StatusInfoRequest body, String harnessAccount) {
+  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
+  public Response saveStatusInfoByType(
+      String type, @Valid StatusInfoRequest body, @AccountIdentifier String harnessAccount) {
     try {
       StatusInfo statusInfo = statusInfoService.save(body.getStatus(), harnessAccount, type);
       StatusInfoResponse statusInfoResponse = new StatusInfoResponse();

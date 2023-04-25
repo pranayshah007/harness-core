@@ -29,7 +29,7 @@ import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
-import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.configfile.ConfigFilesOutcome;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.freeze.FreezeOutcome;
 import io.harness.cdng.gitops.steps.GitOpsEnvOutCome;
@@ -1210,8 +1210,8 @@ public class ServiceStepV3Test extends CategoryTest {
                                                           .build())
                                     .build();
     String yaml = NGFreezeDtoMapper.toYaml(freezeConfig);
-    FreezeConfigEntity freezeConfigEntity =
-        NGFreezeDtoMapper.toFreezeConfigEntity("accountId", null, null, yaml, FreezeType.GLOBAL);
+    FreezeConfigEntity freezeConfigEntity = NGFreezeDtoMapper.toFreezeConfigEntity(
+        "accountId", "orgIdentifier", "projectIdentifier", yaml, FreezeType.GLOBAL);
     return NGFreezeDtoMapper.prepareFreezeResponseSummaryDto(freezeConfigEntity);
   }
 }

@@ -74,6 +74,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -503,9 +504,13 @@ public class MigratorUtility {
   }
 
   public static List<GraphNode> getSteps(Workflow workflow) {
+    List<GraphNode> stepYamls = new ArrayList<>();
+    if (workflow == null || workflow.getOrchestrationWorkflow() == null
+        || !(workflow.getOrchestrationWorkflow() instanceof CanaryOrchestrationWorkflow)) {
+      return stepYamls;
+    }
     CanaryOrchestrationWorkflow orchestrationWorkflow =
         (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
-    List<GraphNode> stepYamls = new ArrayList<>();
     PhaseStep postDeploymentPhaseStep = orchestrationWorkflow.getPostDeploymentSteps();
     if (postDeploymentPhaseStep != null && EmptyPredicate.isNotEmpty(postDeploymentPhaseStep.getSteps())) {
       stepYamls.addAll(postDeploymentPhaseStep.getSteps());
@@ -585,7 +590,7 @@ public class MigratorUtility {
         .build();
   }
 
-  public static MigrationInputDTO getMigrationInput(ImportDTO importDTO) {
+  public static MigrationInputDTO getMigrationInput(String requestAuthToken, ImportDTO importDTO) {
     Map<NGMigrationEntityType, InputDefaults> defaults = new HashMap<>();
     Map<CgEntityId, BaseProvidedInput> overrides = new HashMap<>();
     Map<String, Object> expressions = new HashMap<>();
@@ -608,6 +613,10 @@ public class MigratorUtility {
     }
 
     return MigrationInputDTO.builder()
+        .destinationAccountIdentifier(StringUtils.defaultIfBlank(
+            importDTO.getDestinationDetails().getAccountIdentifier(), importDTO.getAccountIdentifier()))
+        .destinationAuthToken(
+            StringUtils.defaultIfBlank(importDTO.getDestinationDetails().getAuthToken(), requestAuthToken))
         .accountIdentifier(importDTO.getAccountIdentifier())
         .orgIdentifier(importDTO.getDestinationDetails().getOrgIdentifier())
         .projectIdentifier(importDTO.getDestinationDetails().getProjectIdentifier())
@@ -673,5 +682,34 @@ public class MigratorUtility {
     } else {
       return val;
     }
+  }
+
+  public static String toTimeoutString(long timestamp) {
+    long tSec = timestamp / 1000;
+    String timeString = "10m";
+
+    long days = TimeUnit.SECONDS.toDays(tSec);
+    if (days > 0) {
+      timeString = days + "d";
+      tSec -= TimeUnit.DAYS.toSeconds(days);
+    }
+
+    long hours = TimeUnit.SECONDS.toHours(tSec);
+    if (hours > 0) {
+      timeString = hours + "h";
+      tSec -= TimeUnit.HOURS.toSeconds(hours);
+    }
+
+    long minutes = TimeUnit.SECONDS.toMinutes(tSec);
+    if (minutes > 0) {
+      timeString = minutes + "m";
+      tSec -= TimeUnit.MINUTES.toSeconds(minutes);
+    }
+
+    long seconds = tSec;
+    if (seconds > 0) {
+      timeString = seconds + "s";
+    }
+    return timeString;
   }
 }

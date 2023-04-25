@@ -10,6 +10,7 @@ package software.wings.resources;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.common.beans.Generation.NG;
 import static io.harness.security.dto.PrincipalType.USER;
 
 import static software.wings.security.PermissionAttribute.PermissionType.USER_PERMISSION_MANAGEMENT;
@@ -27,6 +28,7 @@ import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.mappers.AccountMapper;
+import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.dto.UserInviteDTO;
 import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.PasswordChangeDTO;
@@ -111,7 +113,7 @@ public class UserResourceNG {
     User user = convertUserRequesttoUser(userRequest);
     String accountId = user.getDefaultAccountId();
 
-    User createdUser = userService.createNewUserAndSignIn(user, accountId);
+    User createdUser = userService.createNewUserAndSignIn(user, accountId, NG);
 
     return new RestResponse<>(convertUserToNgUser(createdUser));
   }
@@ -198,6 +200,10 @@ public class UserResourceNG {
   public RestResponse<Boolean> deleteUser(
       @QueryParam("accountId") String accountId, @QueryParam("userId") String userId) {
     if (featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, accountId)) {
+      if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
+          && userService.delete(accountId, userId, NG)) {
+        return new RestResponse<>(true);
+      }
       if (userService.isUserPresent(userId) && userServiceHelper.isUserActiveInNG(userService.get(userId), accountId)) {
         userServiceHelper.deleteUserFromNG(userId, accountId, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
       }
@@ -320,6 +326,14 @@ public class UserResourceNG {
     return new RestResponse<>(true);
   }
 
+  @PUT
+  @Path("invites/user")
+  public RestResponse<Boolean> createUserWithAccountLevelDataForInvite(@Body @NotNull UserInviteDTO userInvite,
+      @QueryParam("shouldSendTwoFactorAuthResetEmail") boolean shouldSendTwoFactorAuthResetEmail) {
+    userService.completeNGInviteWithAccountLevelData(userInvite, shouldSendTwoFactorAuthResetEmail);
+    return new RestResponse<>(true);
+  }
+
   @GET
   @Path("limit-check")
   public RestResponse<Boolean> getUserLimitCheckForAccount(
@@ -409,6 +423,14 @@ public class UserResourceNG {
   public RestResponse<Boolean> addUserToAccount(
       @QueryParam("userId") String userId, @QueryParam("accountId") String accountId) {
     userService.addUserToAccount(userId, accountId);
+    return new RestResponse<>(true);
+  }
+
+  @POST
+  @Path("/user-account-with-source")
+  public RestResponse<Boolean> updateNGUserToCGWithSource(
+      @QueryParam("userId") String userId, @QueryParam("accountId") String accountId, @Body UserSource userSource) {
+    userService.addUserToAccount(userId, accountId, userSource);
     return new RestResponse<>(true);
   }
 
@@ -567,6 +589,8 @@ public class UserResourceNG {
     }
     User user = userService.getUserByEmail(userInfo.getEmail());
     user.setName(userInfo.getName());
+    user.setFamilyName(userInfo.getFamilyName());
+    user.setGivenName(userInfo.getGivenName());
     return user;
   }
 

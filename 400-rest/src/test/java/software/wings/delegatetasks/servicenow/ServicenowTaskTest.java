@@ -14,8 +14,8 @@ import static software.wings.beans.servicenow.ServiceNowTicketType.INCIDENT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -56,13 +56,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import retrofit2.Call;
 import retrofit2.Response;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Response.class, JsonNode.class})
+@RunWith(MockitoJUnitRunner.class)
 @OwnedBy(HarnessTeam.CDP)
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class ServicenowTaskTest extends CategoryTest {

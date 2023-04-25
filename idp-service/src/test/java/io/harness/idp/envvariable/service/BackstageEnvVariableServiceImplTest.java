@@ -19,9 +19,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptedSecretValue;
 import io.harness.category.element.UnitTests;
+import io.harness.client.NgConnectorManagerClient;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.app.IdpServiceRule;
+import io.harness.idp.common.IdpCommonService;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvSecretVariableEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity.BackstageEnvVariableMapper;
@@ -30,9 +32,12 @@ import io.harness.idp.envvariable.repositories.BackstageEnvVariableRepository;
 import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.service.NamespaceService;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.rule.LifecycleRule;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.UserPrincipal;
 import io.harness.spec.server.idp.v1.model.BackstageEnvConfigVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
@@ -48,7 +53,9 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -71,7 +78,11 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
   @Rule public LifecycleRule lifecycleRule = new LifecycleRule();
   @Rule public IdpServiceRule apiServiceRule = new IdpServiceRule(lifecycleRule.getClosingFactory());
   @Inject private Map<BackstageEnvVariableType, BackstageEnvVariableMapper> mapBinder;
+  @InjectMocks IdpCommonService idpCommonService;
+  @Mock NgConnectorManagerClient ngConnectorManagerClient;
   private BackstageEnvVariableServiceImpl backstageEnvVariableService;
+  private static final String ADMIN_USER_ID = "lv0euRhKRCyiXWzS7pOg6g";
+  private static final String ACCOUNT_ID = "123";
 
   @Before
   public void setUp() {
@@ -95,7 +106,38 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
+  public void testFindByIdAndAccountIdentifierNotPresent() {
+    Optional<BackstageEnvVariable> envVariableOpt =
+        backstageEnvVariableService.findByIdAndAccountIdentifier(TEST_IDENTIFIER, TEST_ACCOUNT_IDENTIFIER);
+    assertTrue(envVariableOpt.isEmpty());
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testFindByEnvNameAndAccountIdentifier() {
+    BackstageEnvSecretVariableEntity envVariableEntity = BackstageEnvSecretVariableEntity.builder().build();
+    when(backstageEnvVariableRepository.findByEnvNameAndAccountIdentifier(TEST_ENV_NAME, TEST_ACCOUNT_IDENTIFIER))
+        .thenReturn(Optional.of(envVariableEntity));
+    Optional<BackstageEnvVariable> envVariableOpt =
+        backstageEnvVariableService.findByEnvNameAndAccountIdentifier(TEST_ENV_NAME, TEST_ACCOUNT_IDENTIFIER);
+    assertTrue(envVariableOpt.isPresent());
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testFindByEnvNameAndAccountIdentifierNotPresent() {
+    Optional<BackstageEnvVariable> envVariableOpt =
+        backstageEnvVariableService.findByEnvNameAndAccountIdentifier(TEST_ENV_NAME, TEST_ACCOUNT_IDENTIFIER);
+    assertTrue(envVariableOpt.isEmpty());
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
   public void testCreate() {
+    checkUserAuth();
     mockAccountNamespaceMapping();
     BackstageEnvSecretVariable envVariable = new BackstageEnvSecretVariable();
     envVariable.harnessSecretIdentifier(TEST_SECRET_IDENTIFIER);
@@ -118,6 +160,7 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testCreateMulti() {
+    checkUserAuth();
     mockAccountNamespaceMapping();
     BackstageEnvSecretVariable envVariable1 = new BackstageEnvSecretVariable();
     envVariable1.harnessSecretIdentifier(TEST_SECRET_IDENTIFIER);
@@ -150,6 +193,7 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testUpdate() {
+    checkUserAuth();
     mockAccountNamespaceMapping();
     BackstageEnvSecretVariable envVariable = new BackstageEnvSecretVariable();
     envVariable.harnessSecretIdentifier(TEST_SECRET_IDENTIFIER);
@@ -174,6 +218,7 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testUpdateMulti() {
+    checkUserAuth();
     mockAccountNamespaceMapping();
     BackstageEnvSecretVariable envVariable1 = new BackstageEnvSecretVariable();
     envVariable1.harnessSecretIdentifier(TEST_SECRET_IDENTIFIER);
@@ -223,6 +268,7 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testDelete() {
+    checkUserAuth();
     mockAccountNamespaceMapping();
     BackstageEnvSecretVariableEntity envVariableEntity = BackstageEnvSecretVariableEntity.builder().build();
     when(backstageEnvVariableRepository.findByIdAndAccountIdentifier(TEST_SECRET_IDENTIFIER, TEST_ACCOUNT_IDENTIFIER))
@@ -237,6 +283,7 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testDeleteNotFound() {
+    checkUserAuth();
     backstageEnvVariableService.delete(TEST_SECRET_IDENTIFIER, TEST_ACCOUNT_IDENTIFIER);
   }
 
@@ -244,6 +291,7 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testDeleteMulti() {
+    checkUserAuth();
     mockAccountNamespaceMapping();
     BackstageEnvSecretVariableEntity backstageEnvVariableEntity1 = BackstageEnvSecretVariableEntity.builder().build();
     backstageEnvVariableEntity1.setHarnessSecretIdentifier(TEST_SECRET_IDENTIFIER);
@@ -304,6 +352,7 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testSyncConfigValue() {
+    checkUserAuth();
     mockAccountNamespaceMapping();
     BackstageEnvConfigVariable envVariable1 = new BackstageEnvConfigVariable();
     envVariable1.envName(TEST_ENV_NAME);
@@ -313,9 +362,37 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
     verify(k8sClient).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyMap(), eq(false));
   }
 
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testFindAndSync() {
+    checkUserAuth();
+    mockAccountNamespaceMapping();
+    BackstageEnvConfigVariable envVariable1 = new BackstageEnvConfigVariable();
+    envVariable1.envName(TEST_ENV_NAME);
+    envVariable1.setValue(TEST_DECRYPTED_VALUE);
+    envVariable1.type(BackstageEnvVariable.TypeEnum.CONFIG);
+    BackstageEnvVariableEntity envVariableEntity1 =
+        mapBinder.get(BackstageEnvVariableType.CONFIG).fromDto(envVariable1, TEST_ACCOUNT_IDENTIFIER);
+    when(backstageEnvVariableRepository.findByAccountIdentifier(TEST_ACCOUNT_IDENTIFIER))
+        .thenReturn(Collections.singletonList(envVariableEntity1));
+    backstageEnvVariableService.sync(Collections.singletonList(envVariable1), TEST_ACCOUNT_IDENTIFIER);
+    verify(k8sClient).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyMap(), eq(false));
+  }
+
   @After
   public void tearDown() throws Exception {
     openMocks.close();
+  }
+
+  private void checkUserAuth() {
+    MockedStatic<SecurityContextBuilder> mockSecurityContext = mockStatic(SecurityContextBuilder.class);
+    mockSecurityContext.when(SecurityContextBuilder::getPrincipal)
+        .thenReturn(new UserPrincipal(ADMIN_USER_ID, "admin@harness.io", "admin", ACCOUNT_ID));
+    MockedStatic<CGRestUtils> mockRestUtils = mockStatic(CGRestUtils.class);
+    mockRestUtils.when(() -> CGRestUtils.getResponse(any())).thenReturn(true);
+    idpCommonService.checkUserAuthorization();
+    verify(ngConnectorManagerClient, times(1)).isHarnessSupportUser(ADMIN_USER_ID);
   }
 
   private void mockAccountNamespaceMapping() {

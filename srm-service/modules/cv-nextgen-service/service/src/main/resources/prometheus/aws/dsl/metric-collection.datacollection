@@ -19,7 +19,7 @@ while Var:index !=  Var:lengthOfItems {
         Var:hostQueryParamMap.put("start",Var:startTime)
         Var:hostQueryParamMap.put("end",Var:endTime)
         Var:hostQueryParamMap.put("match[]",Var:concatenatedFilter)
-        Var hostResult = sync-call-aws(url=Var:baseUrlForHostCollection, header=Env:commonHeaders, options=Env:commonOptions, method=GET, region=Env:region, serviceName=Env:serviceName, secretAccessKey=Env:awsSecretKey, accessKeyId=Env:awsAccessKey, awsQueryParams=Var:hostQueryParamMap)
+        Var hostResult = sync-call-aws(url=Var:baseUrlForHostCollection, header=Env:commonHeaders, options=Env:commonOptions, method=GET, region=Env:region, serviceName=Env:serviceName, secretAccessKey=Env:awsSecretKey, accessKeyId=Env:awsAccessKey, securityToken=Env:awsSecurityToken, awsQueryParams=Var:hostQueryParamMap)
         Var hostList = extract(Var:hostResult,$.data)
         Var hostListLength = Var:hostList.length()
 
@@ -36,7 +36,7 @@ while Var:index !=  Var:lengthOfItems {
             Var:dataQueryParamMap.put("end",Var:endTime)
             Var:dataQueryParamMap.put("step","60s")
             Var:dataQueryParamMap.put("query", Var:query)
-            Var result = sync-call-aws(url=Env:baseUrlForDataCollection, header=Env:commonHeaders, options=Env:commonOptions, method=GET, region=Env:region, serviceName=Env:serviceName, secretAccessKey=Env:awsSecretKey, accessKeyId=Env:awsAccessKey, awsQueryParams=Var:dataQueryParamMap)
+            Var result = sync-call-aws(url=Env:baseUrlForDataCollection, header=Env:commonHeaders, options=Env:commonOptions, method=GET, region=Env:region, serviceName=Env:serviceName, secretAccessKey=Env:awsSecretKey, accessKeyId=Env:awsAccessKey, securityToken=Env:awsSecurityToken, awsQueryParams=Var:dataQueryParamMap)
             Var resultList = extract(Var:result, $.data.result)
             foreach metric in Var:resultList {
               Var data = extract(Var:metric,$.values)
@@ -61,7 +61,7 @@ while Var:index !=  Var:lengthOfItems {
         Var:dataQueryParamMap.put("end",Var:endTime)
         Var:dataQueryParamMap.put("step","60s")
         Var:dataQueryParamMap.put("query", Var:query)
-        Var result = sync-call-aws(url=Env:baseUrlForDataCollection, header=Env:commonHeaders, options=Env:commonOptions, method=GET, region=Env:region, serviceName=Env:serviceName, secretAccessKey=Env:awsSecretKey, accessKeyId=Env:awsAccessKey, awsQueryParams=Var:dataQueryParamMap)
+        Var result = sync-call-aws(url=Env:baseUrlForDataCollection, header=Env:commonHeaders, options=Env:commonOptions, method=GET, region=Env:region, serviceName=Env:serviceName, secretAccessKey=Env:awsSecretKey, accessKeyId=Env:awsAccessKey, securityToken=Env:awsSecurityToken, awsQueryParams=Var:dataQueryParamMap)
         Var resultList = extract(Var:result, $.data.result)
         foreach metric in Var:resultList {
           Var data = extract(Var:metric,$.values)

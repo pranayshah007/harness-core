@@ -8,10 +8,10 @@
 package io.harness.gitsync.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.gitsync.interceptor.GitSyncConstants.DEFAULT;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.UnexpectedException;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -81,7 +81,7 @@ public class GitContextHelper {
   }
 
   public boolean isNullOrDefault(String val) {
-    return EmptyPredicate.isEmpty(val) || val.equals(DEFAULT);
+    return isEmpty(val) || val.equals(DEFAULT);
   }
 
   public String getBranch() {

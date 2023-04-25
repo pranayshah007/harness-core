@@ -15,6 +15,7 @@ import io.harness.secret.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -25,6 +26,11 @@ import lombok.EqualsAndHashCode;
 @JsonTypeName("Password")
 public class TGTPasswordSpecDTO extends TGTGenerationSpecDTO implements DecryptableEntity {
   @ApiModelProperty(dataType = "string") @SecretReference private SecretRefData password;
+
+  @Override
+  public List<DecryptableEntity> getDecryptableEntities() {
+    return List.of(this);
+  }
 
   @Override
   public TGTGenerationSpec toEntity() {

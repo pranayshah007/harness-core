@@ -27,6 +27,7 @@ import io.harness.security.annotations.InternalApi;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -57,7 +58,9 @@ public class PollingResource {
   private KryoSerializer kryoSerializer;
   private PollingResponseHandler pollingResponseHandler;
   private PollingService pollingService;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
+  //@TODO: Remove the V1 version once all delegates adopt the V2 version of this endpoint
   @POST
   @Path("delegate-response/{perpetualTaskId}")
   @ApiOperation(hidden = true, value = "Communication APIs for polling framework.", nickname = "processPollingResult")
@@ -67,6 +70,19 @@ public class PollingResource {
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
       PollingDelegateResponse executionResponse =
           (PollingDelegateResponse) kryoSerializer.asObject(serializedExecutionResponse);
+      pollingResponseHandler.handlePollingResponse(perpetualTaskId, accountId, executionResponse);
+    }
+  }
+
+  @POST
+  @Path("delegate-response/v2/{perpetualTaskId}")
+  @ApiOperation(hidden = true, value = "Communication APIs for polling framework.", nickname = "processPollingResultV2")
+  public void processPollingResultNgV2(@PathParam("perpetualTaskId") @NotEmpty String perpetualTaskId,
+      @QueryParam("accountId") @NotEmpty String accountId, byte[] serializedExecutionResponse) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
+      PollingDelegateResponse executionResponse =
+          (PollingDelegateResponse) referenceFalseKryoSerializer.asObject(serializedExecutionResponse);
       pollingResponseHandler.handlePollingResponse(perpetualTaskId, accountId, executionResponse);
     }
   }

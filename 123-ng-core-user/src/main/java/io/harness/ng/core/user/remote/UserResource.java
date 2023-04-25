@@ -55,6 +55,7 @@ import io.harness.ng.core.user.PasswordChangeResponse;
 import io.harness.ng.core.user.TwoFactorAuthMechanismInfo;
 import io.harness.ng.core.user.TwoFactorAuthSettingsInfo;
 import io.harness.ng.core.user.UserInfo;
+import io.harness.ng.core.user.UserInfoUpdateDTO;
 import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.remote.dto.UserAggregateDTO;
 import io.harness.ng.core.user.remote.dto.UserFilter;
@@ -490,11 +491,33 @@ public class UserResource {
   updateUserInfo(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true)
                  @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body UserInfo userInfo) {
     if (isUserExternallyManaged(userInfo.getUuid())) {
-      log.info("User is externally managed, cannot update user - userId: {}", userInfo.getUuid());
+      log.warn("User is externally managed, cannot update user - userId: {}", userInfo.getUuid());
       throw new InvalidRequestException(
           "User is externally managed by your Identity Provider and cannot be updated via UI/API. To update user information in Harness, update it from your Identity Provider");
     } else {
       return ResponseDTO.newResponse(userInfoService.update(userInfo, accountIdentifier));
+    }
+  }
+
+  @PUT
+  @Path("{userId}")
+  @ApiOperation(value = "update user information", nickname = "updateUserName")
+  @Operation(operationId = "updateUserInfo", summary = "Update User", description = "Updates the User information",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the update User information")
+      })
+  public ResponseDTO<UserInfo>
+  updateUserInfoV2(@Parameter(description = "User Identifier") @PathParam("userId") String userId,
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY)
+      String accountIdentifier, @Body UserInfoUpdateDTO userInfo) {
+    if (isUserExternallyManaged(userId)) {
+      log.warn("User is externally managed, cannot update user - userId: {}", userId);
+      throw new InvalidRequestException(
+          "User is externally managed by your Identity Provider and cannot be updated via UI/API. To update user information in Harness, update it from your Identity Provider");
+    } else {
+      return ResponseDTO.newResponse(userInfoService.update(userInfo, userId, accountIdentifier));
     }
   }
 

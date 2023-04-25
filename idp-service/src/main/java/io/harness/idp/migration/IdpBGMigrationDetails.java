@@ -35,6 +35,8 @@ public class IdpBGMigrationDetails implements MigrationDetails {
         .add(Pair.of(1, PluginInfoMigration.class))
         .add(Pair.of(2, PluginInfoDeleteMigration.class))
         .add(Pair.of(3, PluginInfoMigration.class))
+        .add(Pair.of(4, PluginInfoMigration.class))
+        .add(Pair.of(5, PluginInfoMigration.class))
         .build();
   }
 }

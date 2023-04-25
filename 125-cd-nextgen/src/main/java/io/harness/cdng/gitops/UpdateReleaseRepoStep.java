@@ -223,6 +223,9 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
         // Convert variables map from Map<String, Object> to Map<String, String>
         for (String key : cluster.getVariables().keySet()) {
           Object value = cluster.getVariables().get(key);
+          if (value instanceof String && ((String) value).startsWith("${ngSecretManager.obtain")) {
+            continue;
+          }
           if (value.getClass() == ParameterField.class) {
             ParameterField<Object> p = (ParameterField) value;
             flattennedVariables.put(key, p.getValue().toString());
@@ -256,6 +259,13 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
           ExpressionEvaluatorUtils.updateExpressions(
               copyParameter, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
           flattennedVariables.put(variableEntry.getKey(), copyParameter.getValue().toString());
+
+          for (String key : flattennedVariables.keySet()) {
+            String value = flattennedVariables.get(key);
+            if (value.matches("[-+]?[0-9]*\\.0")) {
+              flattennedVariables.put(key, value.split("\\.")[0]);
+            }
+          }
         }
         filePathsToVariables.put(file, flattennedVariables);
       }
