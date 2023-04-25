@@ -87,7 +87,7 @@ public class GcpSecretsManagerServiceImpl extends AbstractSecretServiceImpl impl
       return null;
     }
     boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv(ENV_VARIABLE_WORKLOAD_IDENTITY));
-    log.info("UseWorkloadIdentity:" + usingWorkloadIdentity + ", IsGlobalKMS:"+ gcpKmsConfig.isGlobalKms());
+    log.error("UseWorkloadIdentity:" + usingWorkloadIdentity + ", IsGlobalKMS:"+ gcpKmsConfig.isGlobalKms());
     if (!usingWorkloadIdentity || !gcpKmsConfig.isGlobalKms()) {
       decryptGcpConfigSecrets(gcpKmsConfig, false);
     }
