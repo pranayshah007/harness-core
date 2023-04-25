@@ -30,8 +30,11 @@ public class CILocalClient implements CIModuleLicenseClient {
     long expiryTime = Instant.now().plus(TRIAL_DURATION, ChronoUnit.DAYS).toEpochMilli();
     long currentTime = Instant.now().toEpochMilli();
 
-    CIModuleLicenseDTOBuilder<?, ?> builder =
-        CIModuleLicenseDTO.builder().startTime(currentTime).expiryTime(expiryTime).status(LicenseStatus.ACTIVE);
+    CIModuleLicenseDTOBuilder<?, ?> builder = CIModuleLicenseDTO.builder()
+                                                  .startTime(currentTime)
+                                                  .expiryTime(expiryTime)
+                                                  .status(LicenseStatus.ACTIVE)
+                                                  .selfService(true);
 
     switch (edition) {
       case ENTERPRISE:
