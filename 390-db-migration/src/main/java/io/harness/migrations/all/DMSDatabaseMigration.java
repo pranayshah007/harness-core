@@ -4,8 +4,6 @@ import static io.harness.ng.DbAliases.DMS;
 import static io.harness.ng.DbAliases.HARNESS;
 
 import io.harness.configuration.DeployMode;
-import io.harness.delegate.beans.VersionOverride;
-import io.harness.delegate.beans.VersionOverrideType;
 import io.harness.delegate.utils.DelegateDBMigrationFailed;
 import io.harness.migration.DelegateMigrationFlag;
 import io.harness.migrations.Migration;
@@ -24,7 +22,6 @@ import dev.morphia.query.Query;
 import java.util.Arrays;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.DateTime;
 
 @Slf4j
 public class DMSDatabaseMigration implements Migration, SeedDataMigration {
@@ -36,14 +33,19 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
   final Store harnessStore = Store.builder().name(HARNESS).build();
   private static final String ON_PREM_MIGRATION_DONE = "onPremMigrationDone";
 
+  private static final String MIGRATION_FAIL_EXCEPTION_FORMAT = "Delegate DB migration failed for collection: %s";
+
   private static final String DEPLOY_MODE = System.getenv(DeployMode.DEPLOY_MODE);
 
   long startTime;
 
   // agentMTLS, delegateRing collection are not used smp.
-  private final List<String> entityList = Arrays.asList("versionOverride", "delegateConnectionResults",
-      "delegateGroups", "delegateProfiles", "delegateRing", "delegateScopes", "delegateSequenceConfig",
-      "delegateTokens", "delegates", "perpetualTask", "perpetualTaskScheduleConfig", "taskSelectorMaps");
+  private final List<String> entityList =
+      Arrays.asList("versionOverride", "delegateConnectionResults", "delegateGroups", "delegateProfiles",
+          "delegateRing", "delegateScopes", "delegateSequenceConfig", "delegateTokens", "delegates", "perpetualTask",
+          "perpetualTaskScheduleConfig", "taskSelectorMaps", "delegateTasks");
+
+  private final String DELEGATE_TASK = "delegateTasks";
 
   // Do not fail migration if migration of these collection fails.
   private final List<String> failSafeCollection = Arrays.asList("delegateConnectionResults");
@@ -70,12 +72,25 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
 
     try {
       for (String collection : entityList) {
-        // Retry once per collection migration failure.
-        try {
-          migrateCollection(collection);
-        } catch (Exception ex) {
-          log.warn("Migration for collection {} failed in attempt 1 with exception {}", collection, ex);
-          migrateCollection(collection);
+        log.info("working for entity {}", collection);
+        if (collection.equals(DELEGATE_TASK)) {
+          if (checkIndexCount(collection)) {
+            toggleFlag("delegateTask", true);
+            Class<?> collectionClass = getClassForCollectionName(collection);
+            if (!postToggleCorrectness(collectionClass)) {
+              throw new DelegateDBMigrationFailed(String.format(MIGRATION_FAIL_EXCEPTION_FORMAT, collection));
+            }
+          } else {
+            throw new DelegateDBMigrationFailed(String.format(MIGRATION_FAIL_EXCEPTION_FORMAT, collection));
+          }
+        } else {
+          try {
+            // Retry once per collection migration failure.
+            migrateCollection(collection);
+          } catch (Exception ex) {
+            log.warn("Migration for collection {} failed in attempt 1 with exception {}", collection, ex);
+            migrateCollection(collection);
+          }
         }
       }
     } catch (Exception ex) {
@@ -87,19 +102,16 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
 
   private void migrateCollection(String collection) throws DelegateDBMigrationFailed {
     Class<?> collectionClass = getClassForCollectionName(collection);
-    log.info("working for entity {}", collection);
     if (persistToNewDatabase(collection)) {
       log.info("Going to toggle flag");
       toggleFlag(collectionClass.getCanonicalName(), true);
       if (!postToggleCorrectness(collectionClass)) {
-        throw new DelegateDBMigrationFailed(
-            String.format("Delegate DB migration failed for collection: %s", collection));
+        throw new DelegateDBMigrationFailed(String.format(MIGRATION_FAIL_EXCEPTION_FORMAT, collection));
       }
     } else {
       // only throw exception if collection is not fail safe.
       if (!failSafeCollection.contains(collection)) {
-        throw new DelegateDBMigrationFailed(
-            String.format("Delegate DB migration failed for collection: %s", collection));
+        throw new DelegateDBMigrationFailed(String.format(MIGRATION_FAIL_EXCEPTION_FORMAT, collection));
       }
     }
   }
@@ -175,21 +187,11 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
 
     log.info("verifyWriteOperation, documents in new db and old db {}, {}", documentsInNewDB, insertCount);
     boolean insertSuccessful = documentsInNewDB == insertCount;
-    if (!insertSuccessful) {
+    boolean isIndexCountSame = checkIndexCount(collection);
+
+    if (!insertSuccessful || !isIndexCountSame) {
       return false;
     }
-
-    // Check index count
-    final DBCollection newCollection = persistence.getCollection(dmsStore, collection);
-    final DBCollection oldCollection = persistence.getCollection(harnessStore, collection);
-
-    log.info("Value of new index and old are {}, {}", newCollection.getIndexInfo().size(),
-        oldCollection.getIndexInfo().size());
-
-    if (newCollection.getIndexInfo().size() != oldCollection.getIndexInfo().size()) {
-      return false;
-    }
-
     // Check that data is coming from old DB
     Store store = persistence.getStore(getClassForCollectionName(collection));
 
@@ -200,5 +202,18 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
 
   Class<?> getClassForCollectionName(String collectionName) {
     return morphia.getMapper().getClassFromCollection(collectionName);
+  }
+
+  private boolean checkIndexCount(String collection) {
+    final DBCollection newCollection = persistence.getCollection(dmsStore, collection);
+    final DBCollection oldCollection = persistence.getCollection(harnessStore, collection);
+
+    log.info("Value of new index and old are {}, {}", newCollection.getIndexInfo().size(),
+        oldCollection.getIndexInfo().size());
+
+    if (newCollection.getIndexInfo().size() != oldCollection.getIndexInfo().size()) {
+      return false;
+    }
+    return true;
   }
 }
