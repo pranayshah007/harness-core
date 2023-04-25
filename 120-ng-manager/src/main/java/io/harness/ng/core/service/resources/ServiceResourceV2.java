@@ -416,7 +416,7 @@ public class ServiceResourceV2 {
       @Parameter(description = "List of ServicesIds") @QueryParam("serviceIdentifiers") List<String> serviceIdentifiers,
       @Parameter(
           description =
-              "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
+              "Specifies the sorting criteria of the list . Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
       @QueryParam("sort") List<String> sort,
       @QueryParam("type") ServiceDefinitionType type, @QueryParam("gitOpsEnabled") Boolean gitOpsEnabled,
       @Parameter(description = "The Identifier of deployment template if infrastructure is of type custom deployment")
