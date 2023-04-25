@@ -46,11 +46,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
-@Slf4j
 public class GraphDataServiceImpl implements GraphDataService {
   @Inject SLIRecordService sliRecordService;
   @Inject CompositeSLORecordService compositeSLORecordService;
@@ -254,7 +251,6 @@ public class GraphDataServiceImpl implements GraphDataService {
     }
     List<SLIRecord> sliRecords =
         getSLIRecords(serviceLevelIndicator.getUuid(), startTime, endTime, filter, numOfDataPointsInBetween);
-    log.info("Fetched {} sliRecords for SLI with id {}", sliRecords.size(), serviceLevelIndicator.getUuid());
     MonitoredServiceParams monitoredServiceParams =
         MonitoredServiceParams.builder()
             .accountIdentifier(serviceLevelIndicator.getAccountId())
@@ -525,14 +521,7 @@ public class GraphDataServiceImpl implements GraphDataService {
     List<Instant> minutes = getMinutes(startTime, endTime, numOfPoints);
     minutes.add(firstRecord.getTimestamp());
     minutes.add(lastRecord.getTimestamp()); // always include start and end minute.
-    List<SLIRecord> sliRecords = sliRecordService.getSLIRecordsOfMinutes(sliId, minutes);
-    if (sliRecords.size() == 1) {
-      log.info(
-          "[SLO Health Indicator Debug]: sliId: {}, startTime: {}, endTime: {}, filte: {}, numOfPoints: {}, minutes: {}, firstRecord:{}, lastRecord:{}",
-          sliId, startTime, endTime, filter, numOfPoints, minutes, firstRecord, lastRecord);
-      log.error("[SLO Health Indicator Debug]: Stacktrace {}", ExceptionUtils.getStackTrace(new Throwable()));
-    }
-    return sliRecords;
+    return sliRecordService.getSLIRecordsOfMinutes(sliId, minutes);
   }
 
   @VisibleForTesting
