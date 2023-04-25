@@ -90,7 +90,7 @@ public class AwsSamDeployPluginInfoProvider extends CDPluginInfoProvider {
                               .putAllEnvVariables(getEnvironmentVariables(
                                   request.getAmbiance(), awsSamDeployStepInfo.getDeployCommandOptions()))
                               .setImageDetails(imageDetails)
-                              .addAllPortUsed(ports)
+                              .addPortUsed(nextPort)
                               .setTotalPortUsedDetails(PortDetails.newBuilder().addAllUsedPorts(ports).build())
                               .build())
         .build();
