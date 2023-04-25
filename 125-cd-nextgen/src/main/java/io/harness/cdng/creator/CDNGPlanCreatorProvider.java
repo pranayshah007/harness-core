@@ -140,6 +140,7 @@ import io.harness.cdng.creator.plan.steps.aws.lambda.AwsLambdaRollbackStepPlanCr
 import io.harness.cdng.creator.plan.steps.aws.sam.AwsSamBuildStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.sam.AwsSamDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.sam.AwsSamRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.aws.sam.DownloadManifestsStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotDeploymentStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotSwapSlotPlanCreator;
@@ -227,6 +228,7 @@ import io.harness.cdng.creator.variables.aws.AwsLambdaRollbackStepVariableCreato
 import io.harness.cdng.creator.variables.aws.sam.AwsSamBuildStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.sam.AwsSamDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.sam.AwsSamRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.aws.sam.DownloadManifestsStepVariableCreator;
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsDeployWithoutTrafficStepVariableCreator;
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsGenOneDeployStepVariableCreator;
@@ -486,6 +488,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new AwsSamDeployStepPlanCreator());
     planCreators.add(new AwsSamBuildStepPlanCreator());
     planCreators.add(new AwsSamRollbackStepPlanCreator());
+    planCreators.add(new DownloadManifestsStepPlanCreator());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -626,6 +629,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new AwsSamDeployStepVariableCreator());
     variableCreators.add(new AwsSamBuildStepVariableCreator());
     variableCreators.add(new AwsSamRollbackStepVariableCreator());
+    variableCreators.add(new DownloadManifestsStepVariableCreator());
 
     return variableCreators;
   }

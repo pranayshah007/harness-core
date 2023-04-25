@@ -216,6 +216,7 @@ public interface YamlTypes {
   String AWS_SAM_DEPLOY = StepSpecTypeConstants.AWS_SAM_DEPLOY;
   String AWS_SAM_BUILD = StepSpecTypeConstants.AWS_SAM_BUILD;
   String AWS_SAM_ROLLBACK = StepSpecTypeConstants.AWS_SAM_ROLLBACK;
+  String DOWNLOAD_MANIFESTS = StepSpecTypeConstants.DOWNLOAD_MANIFESTS;
 
   String AWS_LAMBDA_ROLLBACK = StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK;
   String TAS_ROUTE_MAPPING = StepSpecTypeConstants.TAS_ROUTE_MAPPING;

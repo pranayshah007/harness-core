@@ -22,6 +22,7 @@ import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepInfo;
 import io.harness.cdng.aws.sam.AwsSamBuildStepInfo;
 import io.harness.cdng.aws.sam.AwsSamDeployStepInfo;
 import io.harness.cdng.aws.sam.AwsSamRollbackStepInfo;
+import io.harness.cdng.aws.sam.DownloadManifestsStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepInfo;
@@ -134,7 +135,7 @@ import io.swagger.annotations.ApiModel;
         AsgBlueGreenSwapServiceStepInfo.class, TerraformCloudRunStepInfo.class, TerraformCloudRollbackStepInfo.class,
         GoogleFunctionsDeployStepInfo.class, GoogleFunctionsDeployWithoutTrafficStepInfo.class,
         GoogleFunctionsTrafficShiftStepInfo.class, GoogleFunctionsRollbackStepInfo.class, AwsSamDeployStepInfo.class,
-        AwsSamBuildStepInfo.class, AwsLambdaDeployStepInfo.class, AwsSamRollbackStepInfo.class,
+        AwsSamBuildStepInfo.class, AwsLambdaDeployStepInfo.class, AwsSamRollbackStepInfo.class, DownloadManifestsStepInfo.class,
         AwsLambdaRollbackStepInfo.class, BambooBuildStepInfo.class, TasRouteMappingStepInfo.class,
         GoogleFunctionsGenOneDeployStep.class, GoogleFunctionsGenOneRollbackStep.class})
 
