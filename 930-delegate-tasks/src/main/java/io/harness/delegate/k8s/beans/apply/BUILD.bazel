@@ -11,20 +11,12 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s/modules:module",
-        "//950-delegate-tasks-beans:module",
-        "//delegate/src/main/java/io/harness/delegate/executor:module",
-        "//delegate/src/main/java/io/harness/delegate/executor/bundle:module",
-        "//delegate/src/main/java/io/harness/kryo/registrars:module",
+        "//:lombok",
+        "//960-api-services/src/main/java/io/harness/k8s/kubectl:module",
+        "//960-api-services/src/main/java/io/harness/k8s/model:module",
+        "//970-api-services-beans/src/main/java/io/harness/k8s/model:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
     ],
-)
-
-java_binary(
-    name = "K8sNgApplication",
-    main_class = "io.harness.taskapps.k8s.application.K8sNgApplication",
-    visibility = ["//visibility:public"],
-    runtime_deps = [":module"],
-    deps = [],
 )
 
 run_analysis_per_module()
