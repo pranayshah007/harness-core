@@ -14,7 +14,6 @@ import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStep
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 
 import software.wings.beans.GraphNode;
@@ -54,7 +53,8 @@ public class TerraformRollbackStepMapperImpl extends BaseTerraformProvisionerMap
 
     TerraformRollbackStepInfo terraformRollbackStepInfo = new TerraformRollbackStepInfo();
     terraformRollbackStepInfo.setDelegateSelectors(getDelegateSelectors(state));
-    terraformRollbackStepInfo.setProvisionerIdentifier(MigratorUtility.RUNTIME_INPUT);
+    terraformRollbackStepInfo.setProvisionerIdentifier(
+        getProvisionerIdentifier(migrationContext, state.getProvisionerId()));
 
     terraformRollbackStepNode.setTerraformRollbackStepInfo(terraformRollbackStepInfo);
     return terraformRollbackStepNode;

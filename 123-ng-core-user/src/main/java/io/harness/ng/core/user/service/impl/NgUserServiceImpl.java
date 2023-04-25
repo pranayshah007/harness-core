@@ -12,6 +12,12 @@ import static io.harness.NGConstants.ALL_RESOURCES_INCLUDING_CHILD_SCOPES_RESOUR
 import static io.harness.NGConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.LICENSE_PERMISSION;
+import static io.harness.NGConstants.LICENSE_RESOURCE;
+import static io.harness.NGConstants.ORGANIZATION_RESOURCE;
+import static io.harness.NGConstants.ORGANIZATION_VIEW_PERMISSION;
+import static io.harness.NGConstants.PROJECT_RESOURCE;
+import static io.harness.NGConstants.PROJECT_VIEW_PERMISSION;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
@@ -25,6 +31,7 @@ import static io.harness.remote.client.NGRestUtils.getResponse;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.utils.PageUtils.getPageRequest;
 
+import static java.lang.Boolean.FALSE;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -32,6 +39,9 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.accesscontrol.AccessControlAdminClient;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.principals.PrincipalDTO;
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentCreateRequestDTO;
@@ -111,6 +121,10 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
+import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -121,6 +135,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
@@ -164,6 +179,7 @@ public class NgUserServiceImpl implements NgUserService {
   private final LastAdminCheckService lastAccountAdminCheckService;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private final DefaultUserGroupService defaultUserGroupService;
+  private final AccessControlClient accessControlClient;
   private static final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
 
   @Inject
@@ -174,7 +190,8 @@ public class NgUserServiceImpl implements NgUserService {
       UserGroupService userGroupService, UserMetadataRepository userMetadataRepository, InviteService inviteService,
       NotificationClient notificationClient, AccountOrgProjectHelper accountOrgProjectHelper,
       LicenseService licenseService, LastAdminCheckService lastAccountAdminCheckService,
-      NGFeatureFlagHelperService ngFeatureFlagHelperService, DefaultUserGroupService defaultUserGroupService) {
+      NGFeatureFlagHelperService ngFeatureFlagHelperService, DefaultUserGroupService defaultUserGroupService,
+      @Named("PRIVILEGED") AccessControlClient accessControlClient) {
     this.userClient = userClient;
     this.accountClient = accountClient;
     this.userMembershipRepository = userMembershipRepository;
@@ -190,6 +207,7 @@ public class NgUserServiceImpl implements NgUserService {
     this.lastAccountAdminCheckService = lastAccountAdminCheckService;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     this.defaultUserGroupService = defaultUserGroupService;
+    this.accessControlClient = accessControlClient;
   }
 
   @Override
@@ -571,6 +589,66 @@ public class NgUserServiceImpl implements NgUserService {
     }
     defaultUserGroupService.addUserToDefaultUserGroup(scope, userId);
     userGroupService.addUserToUserGroups(scope, userId, getValidUserGroups(scope, userGroups));
+  }
+
+  @Override
+  public void waitForRbacSetup(Scope scope, String userId, String email) {
+    try {
+      boolean rbacSetupSuccessful = busyPollUntilAccountRBACSetupCompletes(scope, userId, 100, 1000);
+      if (FALSE.equals(rbacSetupSuccessful)) {
+        log.error("User [{}] couldn't be assigned at scope [{}] in stipulated time", userId, scope);
+        throw new InvalidRequestException(
+            "Provisioning access took longer than usual, please try logging-in in few minutes");
+      } else {
+        log.info("Polling for RBAC setup is successful for the user [{}] at scope [{}]", userId, scope);
+      }
+    } catch (Exception e) {
+      log.error(String.format("Failed to check rbac setup for user [%s] at scope [%s] ", userId, scope), e);
+      throw new InvalidRequestException("Provisioning access failed, please contact support");
+    }
+  }
+
+  @VisibleForTesting
+  protected boolean busyPollUntilAccountRBACSetupCompletes(
+      Scope scope, String userId, int maxAttempts, long retryDurationInMillis) {
+    RetryConfig config = RetryConfig.custom()
+                             .maxAttempts(maxAttempts)
+                             .waitDuration(Duration.ofMillis(retryDurationInMillis))
+                             .retryOnResult(FALSE::equals)
+                             .retryExceptions(Exception.class)
+                             .ignoreExceptions(IOException.class)
+                             .build();
+    Retry retry = Retry.of("check rbac setup", config);
+    Retry.EventPublisher publisher = retry.getEventPublisher();
+    publisher.onRetry(event
+        -> log.info("Retrying access check for user {} at scope {} {}", userId, scope.toString(), event.toString()));
+    Supplier<Boolean> hasAccess = Retry.decorateSupplier(retry,
+        ()
+            -> accessControlClient.hasAccess(io.harness.accesscontrol.acl.api.Principal.builder()
+                                                 .principalType(PrincipalType.USER)
+                                                 .principalIdentifier(userId)
+                                                 .build(),
+                ResourceScope.of(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier()),
+                Resource.of(getScopeResource(scope), null), getScopePermission(scope)));
+    return hasAccess.get();
+  }
+
+  private String getScopePermission(Scope scope) {
+    if (!isEmpty(scope.getProjectIdentifier())) {
+      return PROJECT_VIEW_PERMISSION;
+    } else if (!isEmpty(scope.getOrgIdentifier())) {
+      return ORGANIZATION_VIEW_PERMISSION;
+    }
+    return LICENSE_PERMISSION;
+  }
+
+  private String getScopeResource(Scope scope) {
+    if (!isEmpty(scope.getProjectIdentifier())) {
+      return PROJECT_RESOURCE;
+    } else if (!isEmpty(scope.getOrgIdentifier())) {
+      return ORGANIZATION_RESOURCE;
+    }
+    return LICENSE_RESOURCE;
   }
 
   private List<String> getValidUserGroups(Scope scope, List<String> userGroupIdentifiers) {

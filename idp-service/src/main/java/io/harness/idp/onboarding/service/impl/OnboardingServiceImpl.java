@@ -77,6 +77,7 @@ import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
 import io.harness.spec.server.idp.v1.model.EntitiesForImport;
 import io.harness.spec.server.idp.v1.model.GenerateYamlRequest;
 import io.harness.spec.server.idp.v1.model.GenerateYamlResponse;
+import io.harness.spec.server.idp.v1.model.GenerateYamlResponseGeneratedYaml;
 import io.harness.spec.server.idp.v1.model.HarnessBackstageEntities;
 import io.harness.spec.server.idp.v1.model.HarnessEntitiesCountResponse;
 import io.harness.spec.server.idp.v1.model.ImportEntitiesBase;
@@ -159,18 +160,20 @@ public class OnboardingServiceImpl implements OnboardingService {
   public GenerateYamlResponse generateYaml(String harnessAccount, GenerateYamlRequest generateYamlRequest) {
     List<EntitiesForImport> entities = generateYamlRequest.getEntities();
     GenerateYamlResponse generateYamlResponse = new GenerateYamlResponse();
+    GenerateYamlResponseGeneratedYaml generatedYaml = new GenerateYamlResponseGeneratedYaml();
     if (!entities.isEmpty()) {
       Map<String, Map<String, List<String>>> orgProjectsServicesMapping =
           getOrgProjectsServicesMapping(Collections.singletonList(entities.get(0).getIdentifier()));
       ServiceResponseDTO serviceResponseDTO = getServiceDTOS(harnessAccount, orgProjectsServicesMapping).get(0);
       BackstageCatalogComponentEntity backstageCatalogComponentEntity =
           harnessServiceToBackstageComponent(Collections.singletonList(serviceResponseDTO)).get(0);
-      generateYamlResponse.setYamlDef(writeObjectAsYaml(backstageCatalogComponentEntity));
-      generateYamlResponse.setDescription(onboardingModuleConfig.getDescriptionForEntitySelected());
+      generatedYaml.setYamlDef(writeObjectAsYaml(backstageCatalogComponentEntity));
+      generatedYaml.setDescription(onboardingModuleConfig.getDescriptionForEntitySelected());
     } else {
-      generateYamlResponse.setYamlDef(readFileFromClassPath(SAMPLE_ENTITY_CLASSPATH_LOCATION));
-      generateYamlResponse.setDescription(onboardingModuleConfig.getDescriptionForSampleEntity());
+      generatedYaml.setYamlDef(readFileFromClassPath(SAMPLE_ENTITY_CLASSPATH_LOCATION));
+      generatedYaml.setDescription(onboardingModuleConfig.getDescriptionForSampleEntity());
     }
+    generateYamlResponse.setGeneratedYaml(generatedYaml);
     return generateYamlResponse;
   }
 

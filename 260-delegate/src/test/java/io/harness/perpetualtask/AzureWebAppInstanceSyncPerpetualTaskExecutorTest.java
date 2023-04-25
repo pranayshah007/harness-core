@@ -54,6 +54,7 @@ import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -78,6 +79,8 @@ public class AzureWebAppInstanceSyncPerpetualTaskExecutorTest extends DelegateTe
   private static final String ACCOUNT_ID = "accountId";
 
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+
   @Mock private Call<RestResponse<Boolean>> call;
   @Mock private AzureAppServiceService azureAppServiceService;
   @Mock private AzureConnectorMapper azureConnectorMapper;
@@ -92,7 +95,7 @@ public class AzureWebAppInstanceSyncPerpetualTaskExecutorTest extends DelegateTe
 
   @Before
   public void setUp() throws IOException {
-    on(azureWebAppInstanceSyncPerpetualTaskExecutor).set("kryoSerializer", kryoSerializer);
+    on(azureWebAppInstanceSyncPerpetualTaskExecutor).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
     doReturn(call)
         .when(delegateAgentManagerClient)
         .processInstanceSyncNGResult(anyString(), anyString(), perpetualTaskResponseCaptor.capture());
@@ -118,8 +121,10 @@ public class AzureWebAppInstanceSyncPerpetualTaskExecutorTest extends DelegateTe
             .addAllAzureWebAppDeploymentReleaseList(deploymentReleases)
             .build();
 
-    PerpetualTaskExecutionParams perpetualTaskExecutionParams =
-        PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
+    PerpetualTaskExecutionParams perpetualTaskExecutionParams = PerpetualTaskExecutionParams.newBuilder()
+                                                                    .setCustomizedParams(Any.pack(message))
+                                                                    .setReferenceFalseKryoSerializer(true)
+                                                                    .build();
 
     azureWebAppInstanceSyncPerpetualTaskExecutor.runOnce(
         PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK_ID).build(), perpetualTaskExecutionParams, Instant.EPOCH);
@@ -164,8 +169,10 @@ public class AzureWebAppInstanceSyncPerpetualTaskExecutorTest extends DelegateTe
             .addAllAzureWebAppDeploymentReleaseList(deploymentReleases)
             .build();
 
-    PerpetualTaskExecutionParams perpetualTaskExecutionParams =
-        PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
+    PerpetualTaskExecutionParams perpetualTaskExecutionParams = PerpetualTaskExecutionParams.newBuilder()
+                                                                    .setCustomizedParams(Any.pack(message))
+                                                                    .setReferenceFalseKryoSerializer(true)
+                                                                    .build();
 
     azureWebAppInstanceSyncPerpetualTaskExecutor.runOnce(
         PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK_ID).build(), perpetualTaskExecutionParams, Instant.EPOCH);
@@ -224,7 +231,8 @@ public class AzureWebAppInstanceSyncPerpetualTaskExecutorTest extends DelegateTe
         .setResourceGroupName(RESOURCE_GROUP)
         .setAppName(APP_NAME)
         .setSlotName(DEPLOYMENT_SLOT)
-        .setAzureWebAppInfraDelegateConfig(ByteString.copyFrom(kryoSerializer.asBytes(azureWebAppInfraDelegateConfig)))
+        .setAzureWebAppInfraDelegateConfig(
+            ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(azureWebAppInfraDelegateConfig)))
         .build();
   }
 }

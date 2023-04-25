@@ -82,7 +82,7 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   static final String TEST_SECRET_ENV_NAME = "test-env-name";
 
   static final String TEST_VALID_MERGED_APP_CONFIG =
-      "---\nproxy:\n  /harness/prod:\n    target: https://app.harness.io/\nkafka:\n  clientId: backstage\n  clusters:\n  - name: cluster\n    dashboardUrl: https://akhq.io/\n    brokers:\n    - localhost:9092\n";
+      "---\nproxy:\n  /harness/prod:\n    target: https://app.harness.io/\n    pathRewrite:\n      api/proxy/harness/prod/?: /\nkafka:\n  clientId: backstage\n  clusters:\n  - name: cluster\n    dashboardUrl: https://akhq.io/\n    brokers:\n    - localhost:9092\n";
   static final String TEST_NAMESPACE_FOR_ACCOUNT = "test-namespace";
 
   static final String TEST_EXPECTED_CONFIG_VALUE_AFTER_MERGE = "---\n"

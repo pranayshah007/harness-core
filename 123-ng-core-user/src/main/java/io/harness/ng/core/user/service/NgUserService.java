@@ -89,6 +89,8 @@ public interface NgUserService {
   void addUserToScope(String userId, Scope scope, List<RoleBinding> roleBindings, List<String> userGroups,
       UserMembershipUpdateSource source);
 
+  void waitForRbacSetup(Scope scope, String userId, String email);
+
   boolean isUserAtScope(String userId, Scope scope);
 
   boolean isUserLastAdminAtScope(String userId, Scope scope);

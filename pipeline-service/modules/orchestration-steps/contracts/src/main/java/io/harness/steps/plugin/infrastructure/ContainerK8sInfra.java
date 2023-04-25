@@ -11,6 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
 import io.harness.pms.yaml.YamlNode;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -39,4 +42,23 @@ public class ContainerK8sInfra implements ContainerStepInfra {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   String uuid;
+
+  // Todo(Sahil): Merge with Infrastructure
+  public Infrastructure toCIInfra() {
+    return K8sDirectInfraYaml.builder()
+        .type(Infrastructure.Type.KUBERNETES_DIRECT)
+        .spec(K8sDirectInfraYamlSpec.builder()
+                  .annotations(spec.getAnnotations())
+                  .containerSecurityContext(spec.getContainerSecurityContext())
+                  .labels(spec.getLabels())
+                  .os(spec.getOs())
+                  .connectorRef(spec.getConnectorRef())
+                  .harnessImageConnectorRef(spec.getHarnessImageConnectorRef())
+                  .labels(spec.getLabels())
+                  .runAsUser(spec.getRunAsUser())
+                  .initTimeout(spec.getInitTimeout())
+                  .namespace(spec.getNamespace())
+                  .build())
+        .build();
+  }
 }

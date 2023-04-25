@@ -452,31 +452,20 @@ public class NGTemplateServiceImpl implements NGTemplateService {
                                             .withLastUpdatedTemplate(updateLastUpdatedTemplateFlag)
                                             .withIsEntityInvalid(false);
 
-      TemplateEntity template = null;
-
       // Updating the stable template version.
       if (setStableTemplate && !templateToUpdate.isStableTemplate()) {
         TemplateEntity templateToUpdateWithStable = templateToUpdate.withStableTemplate(true);
         String finalComments = comments;
-        template = transactionHelper.performTransaction(() -> {
+        return transactionHelper.performTransaction(() -> {
           makePreviousStableTemplateFalse(templateEntity.getAccountIdentifier(), templateEntity.getOrgIdentifier(),
               templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(),
               templateToUpdate.getVersionLabel());
           return templateServiceHelper.makeTemplateUpdateCall(templateToUpdateWithStable, oldTemplateEntity, changeType,
               finalComments, TemplateUpdateEventType.TEMPLATE_STABLE_TRUE_WITH_YAML_CHANGE_EVENT, false);
         });
-      } else {
-        template = templateServiceHelper.makeTemplateUpdateCall(templateToUpdate, oldTemplateEntity, changeType,
-            comments, eventType != null ? eventType : TemplateUpdateEventType.OTHERS_EVENT, false);
       }
-
-      GitAwareContextHelper.setIsDefaultBranchInGitEntityInfo();
-      if (doPublishSetupUsages(templateEntity)) {
-        templateReferenceHelper.populateTemplateReferences(template);
-      }
-
-      return template;
-
+      return templateServiceHelper.makeTemplateUpdateCall(templateToUpdate, oldTemplateEntity, changeType, comments,
+          eventType != null ? eventType : TemplateUpdateEventType.OTHERS_EVENT, false);
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
           format(DUP_KEY_EXP_FORMAT_STRING, templateEntity.getIdentifier(), templateEntity.getVersionLabel(),
@@ -516,8 +505,12 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         TemplateEntity templateEntity = templateOptional.get();
         validateTemplateVersion(versionLabel, templateEntity);
 
-        if (doPublishSetupUsages(templateOptional.get())) {
-          templateReferenceHelper.populateTemplateReferences(templateOptional.get());
+        try {
+          if (doPublishSetupUsages(templateOptional.get())) {
+            templateReferenceHelper.populateTemplateReferences(templateOptional.get());
+          }
+        } catch (Exception e) {
+          log.error("Error occurred while publishing template references {}", e.getMessage());
         }
       }
 

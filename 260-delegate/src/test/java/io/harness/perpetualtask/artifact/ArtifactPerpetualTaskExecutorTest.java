@@ -38,6 +38,7 @@ import software.wings.delegatetasks.buildsource.BuildSourceResponse;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -67,6 +68,7 @@ public class ArtifactPerpetualTaskExecutorTest extends DelegateTestBase {
   private ArtifactPerpetualTaskExecutor artifactPerpetualTaskExecutor;
 
   @Inject KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Mock private ArtifactRepositoryServiceImpl artifactRepositoryService;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
@@ -76,8 +78,8 @@ public class ArtifactPerpetualTaskExecutorTest extends DelegateTestBase {
 
   @Before
   public void setUp() throws Exception {
-    artifactPerpetualTaskExecutor =
-        new ArtifactPerpetualTaskExecutor(artifactRepositoryService, delegateAgentManagerClient, kryoSerializer);
+    artifactPerpetualTaskExecutor = new ArtifactPerpetualTaskExecutor(
+        artifactRepositoryService, delegateAgentManagerClient, kryoSerializer, referenceFalseKryoSerializer);
     perpetualTaskId = PerpetualTaskId.newBuilder().setId(UUIDGenerator.generateUuid()).build();
   }
 
@@ -91,7 +93,8 @@ public class ArtifactPerpetualTaskExecutorTest extends DelegateTestBase {
     verify(artifactRepositoryService, times(1)).publishCollectedArtifacts(any(BuildSourceParameters.class), any());
 
     // Build details are published 3 time: 1 time for cleanup and then 2 times for collection because of batching.
-    verify(delegateAgentManagerClient, times(3)).publishArtifactCollectionResult(any(), any(), any(RequestBody.class));
+    verify(delegateAgentManagerClient, times(3))
+        .publishArtifactCollectionResultV2(any(), any(), any(RequestBody.class));
     verify(call, times(3)).execute();
   }
 
@@ -105,7 +108,8 @@ public class ArtifactPerpetualTaskExecutorTest extends DelegateTestBase {
     verify(artifactRepositoryService, times(1)).publishCollectedArtifacts(any(BuildSourceParameters.class), any());
 
     // Build details are published 1 time: 1 time for cleanup and then exit early because of exception.
-    verify(delegateAgentManagerClient, times(1)).publishArtifactCollectionResult(any(), any(), any(RequestBody.class));
+    verify(delegateAgentManagerClient, times(1))
+        .publishArtifactCollectionResultV2(any(), any(), any(RequestBody.class));
     verify(call, times(1)).execute();
   }
 
@@ -115,12 +119,12 @@ public class ArtifactPerpetualTaskExecutorTest extends DelegateTestBase {
                                                       .artifactStreamType(DOCKER.name())
                                                       .savedBuildDetailsKeys(new HashSet<>(asList("1", "2", "3")))
                                                       .build();
-    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(buildSourceParameters));
+    ByteString bytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(buildSourceParameters));
     ArtifactCollectionTaskParams artifactCollectionTaskParams = ArtifactCollectionTaskParams.newBuilder()
                                                                     .setArtifactStreamId(ARTIFACT_STREAM_ID)
                                                                     .setBuildSourceParams(bytes)
                                                                     .build();
-    when(delegateAgentManagerClient.publishArtifactCollectionResult(any(), any(), any(RequestBody.class)))
+    when(delegateAgentManagerClient.publishArtifactCollectionResultV2(any(), any(), any(RequestBody.class)))
         .thenReturn(call);
 
     when(call.execute())

@@ -105,8 +105,6 @@ public class TemplateReferenceHelper {
       throw new InvalidIdentifierRefException(String.format(
           "Unable to save to %s. Template can be saved to %s only when all the referenced entities are available in the scope.",
           scope, scope));
-    } catch (Exception e) {
-      log.error("Error occurred while publishing template references {}", e.getMessage());
     }
   }
 

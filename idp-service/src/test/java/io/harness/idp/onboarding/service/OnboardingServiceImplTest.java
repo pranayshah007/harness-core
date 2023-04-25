@@ -161,8 +161,9 @@ public class OnboardingServiceImplTest extends CategoryTest {
     GenerateYamlResponse generateYamlResponse =
         onboardingServiceImpl.generateYaml(ACCOUNT_IDENTIFIER, new GenerateYamlRequest().entities(new ArrayList<>()));
     assertNotNull(generateYamlResponse);
-    assertEquals(onboardingModuleConfig.getDescriptionForSampleEntity(), generateYamlResponse.getDescription());
-    assertEquals(GENERATE_YAML_DEF, generateYamlResponse.getYamlDef());
+    assertEquals(onboardingModuleConfig.getDescriptionForSampleEntity(),
+        generateYamlResponse.getGeneratedYaml().getDescription());
+    assertEquals(GENERATE_YAML_DEF, generateYamlResponse.getGeneratedYaml().getYamlDef());
   }
 
   @Test

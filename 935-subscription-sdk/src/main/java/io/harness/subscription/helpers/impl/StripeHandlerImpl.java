@@ -25,6 +25,7 @@ import com.stripe.model.Price;
 import com.stripe.model.PriceCollection;
 import com.stripe.model.PriceSearchResult;
 import com.stripe.model.Subscription;
+import com.stripe.model.SubscriptionSearchResult;
 import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.CustomerRetrieveParams;
 import com.stripe.param.CustomerUpdateParams;
@@ -34,6 +35,7 @@ import com.stripe.param.PriceListParams;
 import com.stripe.param.PriceSearchParams;
 import com.stripe.param.SubscriptionCreateParams;
 import com.stripe.param.SubscriptionRetrieveParams;
+import com.stripe.param.SubscriptionSearchParams;
 import com.stripe.param.SubscriptionUpdateParams;
 import java.util.HashMap;
 import java.util.List;
@@ -138,6 +140,14 @@ public class StripeHandlerImpl {
       return Customer.retrieve(customerId, customerRetrieveParams, null);
     } catch (StripeException e) {
       throw new InvalidRequestException("Unable to retrieve customer information", e);
+    }
+  }
+
+  SubscriptionSearchResult searchSubscriptions(SubscriptionSearchParams subscriptionSearchParams) {
+    try {
+      return Subscription.search(subscriptionSearchParams);
+    } catch (StripeException e) {
+      throw new InvalidRequestException("Unable to list subscriptions", e);
     }
   }
 

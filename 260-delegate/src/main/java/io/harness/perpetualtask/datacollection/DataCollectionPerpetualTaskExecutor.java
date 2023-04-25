@@ -74,6 +74,7 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
   @Inject private TimeSeriesDataStoreService timeSeriesDataStoreService;
   @Inject private LogRecordDataStoreService logRecordDataStoreService;
   @Inject private HostRecordDataStoreService hostRecordDataStoreService;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private KryoSerializer kryoSerializer;
 
   @Inject private DataCollectionDSLService dataCollectionDSLService;
@@ -88,7 +89,8 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
         AnyUtils.unpack(params.getCustomizedParams(), DataCollectionPerpetualTaskParams.class);
     log.info("Executing for !! dataCollectionWorkerId: {}", taskParams.getDataCollectionWorkerId());
     CVDataCollectionInfo dataCollectionInfo =
-        (CVDataCollectionInfo) kryoSerializer.asObject(taskParams.getDataCollectionInfo().toByteArray());
+        (CVDataCollectionInfo) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+            .asObject(taskParams.getDataCollectionInfo().toByteArray());
     log.info("DataCollectionInfo {} ", dataCollectionInfo);
     try (DataCollectionLogContext ignored = new DataCollectionLogContext(
              taskParams.getDataCollectionWorkerId(), dataCollectionInfo.getDataCollectionType(), OVERRIDE_ERROR)) {
@@ -282,5 +284,9 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
   @Override
   public boolean cleanup(PerpetualTaskId taskId, PerpetualTaskExecutionParams params) {
     return true;
+  }
+
+  private KryoSerializer getKryoSerializer(boolean useReferenceFalseSerializer) {
+    return useReferenceFalseSerializer ? referenceFalseKryoSerializer : kryoSerializer;
   }
 }

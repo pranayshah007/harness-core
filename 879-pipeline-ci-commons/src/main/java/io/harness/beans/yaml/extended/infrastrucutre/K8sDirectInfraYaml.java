@@ -38,6 +38,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
@@ -57,7 +58,7 @@ public class K8sDirectInfraYaml implements Infrastructure {
   String uuid;
 
   @Data
-  @Builder
+  @SuperBuilder
   @NoArgsConstructor
   @AllArgsConstructor
   public static class K8sDirectInfraYamlSpec {

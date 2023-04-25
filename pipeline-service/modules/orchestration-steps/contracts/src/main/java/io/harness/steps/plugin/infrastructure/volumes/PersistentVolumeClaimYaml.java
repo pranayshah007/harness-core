@@ -34,6 +34,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("persistentVolumeClaim")
 @OwnedBy(CI)
 @RecasterAlias("io.harness.steps.plugin.infrastructure.volumes.PersistentVolumeClaimYaml")
+@Deprecated
 public class PersistentVolumeClaimYaml implements ContainerVolume {
   @Builder.Default @NotNull private ContainerVolume.Type type = Type.PERSISTENT_VOLUME_CLAIM;
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> mountPath;

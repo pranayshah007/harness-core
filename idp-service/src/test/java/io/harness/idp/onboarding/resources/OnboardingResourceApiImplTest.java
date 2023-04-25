@@ -21,6 +21,7 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.GenerateYamlRequest;
 import io.harness.spec.server.idp.v1.model.GenerateYamlResponse;
+import io.harness.spec.server.idp.v1.model.GenerateYamlResponseGeneratedYaml;
 import io.harness.spec.server.idp.v1.model.HarnessBackstageEntities;
 import io.harness.spec.server.idp.v1.model.HarnessEntitiesCountResponse;
 import io.harness.spec.server.idp.v1.model.HarnessEntitiesResponse;
@@ -113,15 +114,15 @@ public class OnboardingResourceApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testOnboardingGenerateYaml() {
     GenerateYamlResponse generateYamlResponse = new GenerateYamlResponse();
-    generateYamlResponse.setDescription(GENERATE_YAML_DESC);
-    generateYamlResponse.setYamlDef(GENERATE_YAML_DEF);
+    generateYamlResponse.setGeneratedYaml(
+        new GenerateYamlResponseGeneratedYaml().description(GENERATE_YAML_DESC).yamlDef(GENERATE_YAML_DEF));
     when(onboardingService.generateYaml(ACCOUNT_IDENTIFIER, new GenerateYamlRequest()))
         .thenReturn(generateYamlResponse);
     Response response = onboardingResourceApiImpl.onboardingGenerateYaml(new GenerateYamlRequest(), ACCOUNT_IDENTIFIER);
     assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
     GenerateYamlResponse generateYamlResponseFromApi = (GenerateYamlResponse) response.getEntity();
-    assertThat(generateYamlResponseFromApi.getDescription()).isEqualTo(GENERATE_YAML_DESC);
-    assertThat(generateYamlResponseFromApi.getYamlDef()).isEqualTo(GENERATE_YAML_DEF);
+    assertThat(generateYamlResponseFromApi.getGeneratedYaml().getDescription()).isEqualTo(GENERATE_YAML_DESC);
+    assertThat(generateYamlResponseFromApi.getGeneratedYaml().getYamlDef()).isEqualTo(GENERATE_YAML_DEF);
   }
 
   @Test

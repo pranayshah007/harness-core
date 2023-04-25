@@ -1539,17 +1539,25 @@ components:
       type: object
       description: Response contianing entity yaml definition and description about the entity
       properties:
-        yaml_def:
-          type: string
+        generated_yaml:
+          type: object
           x-stoplight:
-            id: b9a1z1ixle6e0
-        description:
-          type: string
-          x-stoplight:
-            id: n4cd9raohifd2
+            id: qlgqwff9xljw9
+          required:
+            - yaml_def
+            - description
+          properties:
+            yaml_def:
+              type: string
+              x-stoplight:
+                id: 06z2bq0czhdmr
+            description:
+              type: string
+              x-stoplight:
+                id: ywrkefgdppyrp
       required:
-        - yaml_def
-        - description
+        - generated_yaml
+      x-examples: {}
     AllEntitiesImport:
       title: AllEntitiesImport
       x-stoplight:
@@ -2051,14 +2059,7 @@ components:
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              generated_yaml:
-                $ref: '#/components/schemas/GenerateYamlResponse'
-                x-stoplight:
-                  id: bphw0sqlu2jkj
-            required:
-              - generated_yaml
+            $ref: '#/components/schemas/GenerateYamlResponse'
   securitySchemes:
     x-api-key:
       name: x-api-key

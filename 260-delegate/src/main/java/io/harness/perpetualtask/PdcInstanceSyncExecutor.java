@@ -17,7 +17,6 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.PdcInstanceSyncPerpetualTaskParams;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.HostReachabilityInfo;
 import software.wings.beans.dto.SettingAttribute;
@@ -33,9 +32,8 @@ import org.eclipse.jetty.server.Response;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
-public class PdcInstanceSyncExecutor implements PerpetualTaskExecutor {
+public class PdcInstanceSyncExecutor extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject private KryoSerializer kryoSerializer;
   @Inject private HostValidationService hostValidationService;
 
   @Override
@@ -45,7 +43,8 @@ public class PdcInstanceSyncExecutor implements PerpetualTaskExecutor {
         AnyUtils.unpack(params.getCustomizedParams(), PdcInstanceSyncPerpetualTaskParams.class);
 
     final SettingAttribute settingAttribute =
-        (SettingAttribute) kryoSerializer.asObject(instanceSyncParams.getSettingAttribute().toByteArray());
+        (SettingAttribute) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+            .asObject(instanceSyncParams.getSettingAttribute().toByteArray());
     HostReachabilityResponse response;
     try {
       List<HostReachabilityInfo> hostReachabilityInfos =
@@ -62,7 +61,7 @@ public class PdcInstanceSyncExecutor implements PerpetualTaskExecutor {
           HostReachabilityResponse.builder().executionStatus(ExecutionStatus.FAILED).errorMessage(message).build();
     }
     try {
-      execute(delegateAgentManagerClient.publishInstanceSyncResult(
+      execute(delegateAgentManagerClient.publishInstanceSyncResultV2(
           taskId.getId(), settingAttribute.getAccountId(), response));
     } catch (Exception e) {
       log.error(String.format(

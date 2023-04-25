@@ -7,7 +7,6 @@
 
 package io.harness.subscription.entities;
 
-import io.harness.ModuleType;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -45,7 +44,7 @@ public class SubscriptionDetail implements PersistentEntity, NGAccountAccess {
 
   @Id @dev.morphia.annotations.Id protected String id;
   @Trimmed @NotEmpty protected String accountIdentifier;
-  @NotEmpty protected ModuleType moduleType;
+  protected String paymentFrequency;
   @Trimmed @NotEmpty protected String subscriptionId;
   @Trimmed @NotEmpty protected String customerId;
   protected String status;
@@ -56,19 +55,6 @@ public class SubscriptionDetail implements PersistentEntity, NGAccountAccess {
   @LastModifiedBy protected EmbeddedUser lastUpdatedBy;
   @CreatedDate protected Long createdAt;
   @LastModifiedDate protected Long lastUpdatedAt;
-
-  //  public static List<MongoIndex> mongoIndexes() {
-  //    return ImmutableList.<MongoIndex>builder()
-  //        .add(CompoundMongoIndex.builder()
-  //                 .name("accountIdentifier_and_moduletype_subscriptionDetail_query_index")
-  //                 .fields(Arrays.asList(SubscriptionDetailKeys.accountIdentifier, SubscriptionDetailKeys.moduleType))
-  //                 .build())
-  //        .add(CompoundMongoIndex.builder()
-  //                 .name("subscriptionId_subscriptionDetail_query_index")
-  //                 .fields(Arrays.asList(SubscriptionDetailKeys.subscriptionId))
-  //                 .build())
-  //        .build();
-  //  }
 
   public boolean isIncomplete() {
     return INCOMPLETE.equalsIgnoreCase(status);
