@@ -16,7 +16,7 @@ function download_saas_apm_binaries(){
 	echo "INFO: Download Status: AppServerAgent.zip: $STATUS2"
 	chmod 711 AppServerAgent.zip
 
-	curl ${OT_AGENT} --output ${OT_AGENT##*/}; STATUS3=$?
+	curl --location ${OT_AGENT} --output ${OT_AGENT##*/}; STATUS3=$?
 	echo "INFO: Download Status: ${OT_AGENT##*/}: $STATUS3"
 	chmod 711 ${OT_AGENT##*/}
 
@@ -30,7 +30,7 @@ function download_saas_apm_binaries(){
 
 export APPD_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/appd/AppServerAgent-1.8-23.2.0.34668.zip'
 export ET_AGENT='https://get.et.harness.io/releases/latest/nix/harness-et-agent.tar.gz'
-export OT_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/opentelemetry/opentelemetry-javaagent.jar'
+export OT_AGENT='https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v1.25.0/opentelemetry-javaagent.jar'
 
 echo "STEP 1: INFO: Downloading APM Binaries Locally..."
 download_saas_apm_binaries
