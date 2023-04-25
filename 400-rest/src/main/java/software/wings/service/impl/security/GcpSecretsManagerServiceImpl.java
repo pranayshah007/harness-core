@@ -78,19 +78,15 @@ public class GcpSecretsManagerServiceImpl extends AbstractSecretServiceImpl impl
   @Override
   public GcpKmsConfig getGlobalKmsConfig() {
     GcpKmsConfig gcpKmsConfig = wingsPersistence.createQuery(GcpKmsConfig.class)
-            .field(SecretManagerConfigKeys.accountId)
-            .equal(GLOBAL_ACCOUNT_ID)
-            .field(SecretManagerConfigKeys.encryptionType)
-            .equal(EncryptionType.GCP_KMS)
-            .get();
+                                    .field(SecretManagerConfigKeys.accountId)
+                                    .equal(GLOBAL_ACCOUNT_ID)
+                                    .field(SecretManagerConfigKeys.encryptionType)
+                                    .equal(EncryptionType.GCP_KMS)
+                                    .get();
     if (gcpKmsConfig == null) {
       return null;
     }
-    boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv(ENV_VARIABLE_WORKLOAD_IDENTITY));
-    log.error("UseWorkloadIdentity:" + usingWorkloadIdentity + ", IsGlobalKMS:"+ gcpKmsConfig.isGlobalKms());
-    if (!usingWorkloadIdentity || !gcpKmsConfig.isGlobalKms()) {
-      decryptGcpConfigSecrets(gcpKmsConfig, false);
-    }
+    decryptGcpConfigSecrets(gcpKmsConfig, false);
     return gcpKmsConfig;
   }
 
@@ -345,6 +341,11 @@ public class GcpSecretsManagerServiceImpl extends AbstractSecretServiceImpl impl
 
   @Override
   public void decryptGcpConfigSecrets(GcpKmsConfig secretManagerConfig, boolean maskSecret) {
+    boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv(ENV_VARIABLE_WORKLOAD_IDENTITY));
+    log.error("UseWorkloadIdentity:" + usingWorkloadIdentity + ", IsGlobalKMS:"+ secretManagerConfig.isGlobalKms());
+    if (usingWorkloadIdentity && secretManagerConfig.isGlobalKms()) {
+      return;
+    }
     if (maskSecret) {
       secretManagerConfig.maskSecrets();
     } else {
