@@ -20,7 +20,13 @@ message K8sInstanceSyncPerpetualTaskParamsV2 {
 message K8sDeploymentReleaseDetails {
   string release_name = 1;
   repeated string namespaces = 2;
-  oneof cluster {
-    string cluster_name = 3;
+  oneof cluster_config {
+    CloudClusterConfig cloud_cluster_config = 3;
   }
+}
+
+message CloudClusterConfig {
+  string cluster_name = 1;
+  string subscription_id = 2;
+  string resource_group = 3;
 }
