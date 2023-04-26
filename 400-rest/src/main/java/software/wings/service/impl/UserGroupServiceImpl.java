@@ -1092,8 +1092,10 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   private void removeUserGroupFromInvites(String accountId, String userGroupId) {
-    List<UserInvite> invites = userService.getInvitesFromAccountId(accountId);
-    invites.forEach(invite -> invite.getUserGroups().removeIf(x -> x.getUuid().equals(userGroupId)));
+    List<UserInvite> invites = userService.getInvitesFromAccountIdAndUserGroupId(accountId, userGroupId);
+    invites.forEach(invite -> invite.getUserGroups().removeIf(group -> group.getUuid().equals(userGroupId)));
+    log.info(
+        "Removing user group id {} from userInvites for unlink SSO group flow in account {}", userGroupId, accountId);
     wingsPersistence.save(invites);
   }
 

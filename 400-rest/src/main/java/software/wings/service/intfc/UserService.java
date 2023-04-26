@@ -499,6 +499,16 @@ public interface UserService extends OwnedByAccount {
    * @return the String
    */
   String getInviteIdFromToken(String jwtToken);
+
+  /**
+   * Gets invites from accountId & userGroupId.
+   *
+   * @param accountId the account id
+   * @param userGroupId the userGroup id
+   * @return the invites list
+   */
+  List<UserInvite> getInvitesFromAccountIdAndUserGroupId(String accountId, String userGroupId);
+
   /**
    * Gets user account role.
    *
