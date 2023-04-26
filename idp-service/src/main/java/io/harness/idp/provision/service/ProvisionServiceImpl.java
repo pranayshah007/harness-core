@@ -14,9 +14,11 @@ import static io.harness.remote.client.CGRestUtils.getResponse;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.client.NgConnectorManagerClient;
 import io.harness.exception.AccessDeniedException;
+import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.idp.common.Constants;
+import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.provision.ProvisionModuleConfig;
 import io.harness.idp.settings.service.BackstagePermissionsService;
@@ -69,16 +71,22 @@ public class ProvisionServiceImpl implements ProvisionService {
   private final Retry retry = buildRetryAndRegisterListeners();
   private final MediaType APPLICATION_JSON = MediaType.parse("application/json");
   @Inject NgConnectorManagerClient ngConnectorManagerClient;
+
+  @Inject ConfigManagerService configManagerService;
   private static final List<String> permissions =
       List.of("user_read", "user_update", "user_delete", "owner_read", "owner_update", "owner_delete", "all_create");
   @Inject BackstagePermissionsService backstagePermissionsService;
   @Inject BackstageEnvVariableService backstageEnvVariableService;
   @Inject @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
 
+  private static final String OVERRIDE_CONFIG_MAP_CREATE_ERROR =
+      "While provisioning error in creating the backstage-override-config for account - {}, Exception - {}";
+
   @Override
   public void triggerPipelineAndCreatePermissions(String accountIdentifier, String namespace) {
     createBackstageBackendSecret(accountIdentifier);
     createDefaultPermissions(accountIdentifier);
+    createBackstageOverrideConfig(accountIdentifier);
     makeTriggerApi(accountIdentifier, namespace);
   }
 
@@ -199,5 +207,14 @@ public class ProvisionServiceImpl implements ProvisionService {
             StreamResetException.class});
     RetryHelper.registerEventListeners(exponentialRetry);
     return exponentialRetry;
+  }
+
+  private void createBackstageOverrideConfig(String accountIdentifier) {
+    try {
+      configManagerService.mergeAndSaveAppConfig(accountIdentifier);
+    } catch (Exception e) {
+      log.error(OVERRIDE_CONFIG_MAP_CREATE_ERROR, accountIdentifier, e);
+      throw new GeneralException("Failed to create base-override-config", e);
+    }
   }
 }
