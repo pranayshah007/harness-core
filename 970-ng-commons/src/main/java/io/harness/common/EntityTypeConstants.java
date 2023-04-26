@@ -232,6 +232,6 @@ public interface EntityTypeConstants {
 
   String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
   String CD_SSCA_ORCHESTRATION = "CdSscaOrchestration";
-  String TAS_ROUTE_MAPPING = "TasRouteMapping";
+  String TAS_ROUTE_MAPPING = "RouteMapping";
   String BACKSTAGE_ENVIRONMENT_VARIABLE = "BackstageEnvironmentVariable";
 }
