@@ -17,6 +17,7 @@ import io.harness.ng.core.migration.timescale.AddRollbackDurationToServiceInfraI
 import io.harness.ng.core.migration.timescale.CreateConnectorsTable;
 import io.harness.ng.core.migration.timescale.CreateModuleLicensesTable;
 import io.harness.ng.core.migration.timescale.CreateNgUserTable;
+import io.harness.ng.core.migration.timescale.CreateRuntimeInputsInfoTable;
 import io.harness.ng.core.migration.timescale.GetActiveServicesByDateFunction;
 import io.harness.ng.core.migration.timescale.GetServiceInstancesByDateFunction;
 
@@ -47,6 +48,7 @@ public class NGCoreTimeScaleMigrationDetails implements MigrationDetails {
         .add(Pair.of(7, CreateConnectorsTable.class))
         .add(Pair.of(8, CreateNgUserTable.class))
         .add(Pair.of(9, AddDeletedAtColumns.class))
+        .add(Pair.of(10, CreateRuntimeInputsInfoTable.class))
         .build();
   }
 }
