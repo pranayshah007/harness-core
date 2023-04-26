@@ -110,7 +110,8 @@ public class AsgBlueGreenRollbackCommandTaskHandler extends AsgCommandTaskNGHand
       } else {
         if (isNotEmpty(stageAsgManifestsDataForRollback)) {
           asgSdkManager.info("Rolling back Stage ASG %s to previous version", stageAsgName);
-          executeRollbackVersion(asgSdkManager, stageAsgName, stageAsgManifestsDataForRollback);
+          executeRollbackVersion(
+              asgSdkManager, stageAsgName, stageAsgManifestsDataForRollback, awsInternalConfig, region);
         } else {
           asgSdkManager.info("Deleting Stage ASG %s as it hasn't previous version", stageAsgName);
           asgSdkManager.deleteAsg(stageAsgName);
@@ -118,7 +119,8 @@ public class AsgBlueGreenRollbackCommandTaskHandler extends AsgCommandTaskNGHand
 
         if (isNotEmpty(prodAsgManifestsDataForRollback)) {
           asgSdkManager.info("Rolling back Prod ASG %s to previous version", prodAsgName);
-          executeRollbackVersion(asgSdkManager, prodAsgName, prodAsgManifestsDataForRollback);
+          executeRollbackVersion(
+              asgSdkManager, prodAsgName, prodAsgManifestsDataForRollback, awsInternalConfig, region);
         }
 
         if (asgBlueGreenRollbackRequest.isServicesSwapped()) {
@@ -174,8 +176,8 @@ public class AsgBlueGreenRollbackCommandTaskHandler extends AsgCommandTaskNGHand
         .executeUpsert();
   }
 
-  private void executeRollbackVersion(
-      AsgSdkManager asgSdkManager, String asgName, Map<String, List<String>> asgManifestsDataForRollback) {
+  private void executeRollbackVersion(AsgSdkManager asgSdkManager, String asgName,
+      Map<String, List<String>> asgManifestsDataForRollback, AwsInternalConfig awsInternalConfig, String region) {
     if (isNotEmpty(asgManifestsDataForRollback)) {
       asgSdkManager.info("Rolling back to previous version of ASG %s", asgName);
 
@@ -203,7 +205,11 @@ public class AsgBlueGreenRollbackCommandTaskHandler extends AsgCommandTaskNGHand
               .addHandler(AsgLaunchTemplate,
                   AsgLaunchTemplateManifestRequest.builder().manifests(Arrays.asList(asgLaunchTemplateVersion)).build())
               .addHandler(AsgConfiguration,
-                  AsgConfigurationManifestRequest.builder().manifests(Arrays.asList(asgConfigurationContent)).build())
+                  AsgConfigurationManifestRequest.builder()
+                      .manifests(Arrays.asList(asgConfigurationContent))
+                      .awsInternalConfig(awsInternalConfig)
+                      .region(region)
+                      .build())
               .addHandler(AsgScalingPolicy,
                   AsgScalingPolicyManifestRequest.builder().manifests(asgScalingPolicyContent).build())
               .addHandler(AsgScheduledUpdateGroupAction,
