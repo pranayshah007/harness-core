@@ -146,7 +146,7 @@ public class GitAwareContextHelper {
     GitEntityInfo gitEntityInfo = getGitRequestParamsInfo();
 
     if (gitEntityInfo != null) {
-      gitEntityInfo.setDefaultBranch(isEmpty(gitEntityInfo.getBranch()));
+      gitEntityInfo.setIsDefaultBranch(isEmpty(gitEntityInfo.getBranch()));
     }
   }
 
@@ -154,7 +154,7 @@ public class GitAwareContextHelper {
     GitEntityInfo gitEntityInfo = getGitRequestParamsInfo();
 
     if (gitEntityInfo != null) {
-      return gitEntityInfo.isDefaultBranch();
+      return gitEntityInfo.getIsDefaultBranch();
     }
 
     return false;
@@ -164,7 +164,7 @@ public class GitAwareContextHelper {
     GitEntityInfo gitEntityInfo = getGitRequestParamsInfo();
 
     if (gitEntityInfo != null) {
-      gitEntityInfo.setDefaultBranch(isEmpty(branch));
+      gitEntityInfo.setIsDefaultBranch(isEmpty(branch));
     }
   }
 
