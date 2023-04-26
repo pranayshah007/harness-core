@@ -181,17 +181,16 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     String primaryArtifactTaskId = null;
 
     if (artifacts.getPrimary() != null) {
-      ArtifactConfig artifactConfig = artifacts.getPrimary().getSpec();
-      artifactConfig.validate();
       ACTION actionForPrimaryArtifact =
           shouldCreateDelegateTask(artifacts.getPrimary().getSourceType(), artifacts.getPrimary().getSpec());
       if (ACTION.CREATE_DELEGATE_TASK.equals(actionForPrimaryArtifact)) {
-        checkAndWarnIfDoesNotFollowIdentifierRegex(
-            artifacts.getPrimary().getSpec().getIdentifier(), "Primary", logCallback);
-        primaryArtifactTaskId = createDelegateTask(
-            ambiance, logCallback, artifacts.getPrimary().getSpec(), artifacts.getPrimary().getSourceType(), true);
+        ArtifactConfig artifactConfig = artifacts.getPrimary().getSpec();
+        artifactConfig.validate();
+        checkAndWarnIfDoesNotFollowIdentifierRegex(artifactConfig.getIdentifier(), "Primary", logCallback);
+        primaryArtifactTaskId =
+            createDelegateTask(ambiance, logCallback, artifactConfig, artifacts.getPrimary().getSourceType(), true);
         taskIds.add(primaryArtifactTaskId);
-        artifactConfigMap.put(primaryArtifactTaskId, artifacts.getPrimary().getSpec());
+        artifactConfigMap.put(primaryArtifactTaskId, artifactConfig);
       } else if (ACTION.RUN_SYNC.equals(actionForPrimaryArtifact)) {
         artifactConfigMapForNonDelegateTaskTypes.add(artifacts.getPrimary().getSpec());
       }
@@ -204,12 +203,13 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
         ACTION actionForSidecar =
             shouldCreateDelegateTask(sidecar.getSidecar().getSourceType(), sidecar.getSidecar().getSpec());
         if (ACTION.CREATE_DELEGATE_TASK.equals(actionForSidecar)) {
-          checkAndWarnIfDoesNotFollowIdentifierRegex(
-              sidecar.getSidecar().getSpec().getIdentifier(), "Sidecar", logCallback);
-          String taskId = createDelegateTask(
-              ambiance, logCallback, sidecar.getSidecar().getSpec(), sidecar.getSidecar().getSourceType(), false);
+          ArtifactConfig artifactConfig = sidecar.getSidecar().getSpec();
+          artifactConfig.validate();
+          checkAndWarnIfDoesNotFollowIdentifierRegex(artifactConfig.getIdentifier(), "Sidecar", logCallback);
+          String taskId =
+              createDelegateTask(ambiance, logCallback, artifactConfig, sidecar.getSidecar().getSourceType(), false);
           taskIds.add(taskId);
-          artifactConfigMap.put(taskId, sidecar.getSidecar().getSpec());
+          artifactConfigMap.put(taskId, artifactConfig);
         } else if (ACTION.RUN_SYNC.equals(actionForSidecar)) {
           checkAndWarnIfDoesNotFollowIdentifierRegex(
               sidecar.getSidecar().getSpec().getIdentifier(), "Sidecar", logCallback);

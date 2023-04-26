@@ -172,6 +172,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
   private static final String NULL_FILEPATH_FILEPATH_REGEX_MESSAGE =
       "value for filePath and filePathRegex is empty or not provided";
   private static final ParameterField<String> CONNECTOR = ParameterField.createValueField("connector");
+  private static final ParameterField<String> TAG_NULL = ParameterField.createValueField(null);
   private static final ParameterField<String> TAG_EMPTY = ParameterField.createValueField("");
   private static final ParameterField<String> TAG_INPUT = ParameterField.createValueField("<+input>");
 
@@ -244,11 +245,11 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
   private List<ArtifactConfig> getArtifactConfigTagNull() {
     List<ArtifactConfig> artifactConfigList = new ArrayList<>();
-    artifactConfigList.add(DockerHubArtifactConfig.builder().connectorRef(CONNECTOR).tag(null).build());
-    artifactConfigList.add(AcrArtifactConfig.builder().connectorRef(CONNECTOR).tag(null).build());
-    artifactConfigList.add(EcrArtifactConfig.builder().connectorRef(CONNECTOR).tag(null).build());
-    artifactConfigList.add(GcrArtifactConfig.builder().connectorRef(CONNECTOR).tag(null).build());
-    artifactConfigList.add(NexusRegistryArtifactConfig.builder().connectorRef(CONNECTOR).tag(null).build());
+    artifactConfigList.add(DockerHubArtifactConfig.builder().connectorRef(CONNECTOR).tag(TAG_NULL).build());
+    artifactConfigList.add(AcrArtifactConfig.builder().connectorRef(CONNECTOR).tag(TAG_NULL).build());
+    artifactConfigList.add(EcrArtifactConfig.builder().connectorRef(CONNECTOR).tag(TAG_NULL).build());
+    artifactConfigList.add(GcrArtifactConfig.builder().connectorRef(CONNECTOR).tag(TAG_NULL).build());
+    artifactConfigList.add(NexusRegistryArtifactConfig.builder().connectorRef(CONNECTOR).tag(TAG_NULL).build());
 
     return artifactConfigList;
   }
@@ -264,6 +265,28 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     return artifactConfigList;
   }
 
+  private List<ArtifactConfig> getArtifactConfigTagRegexNull() {
+    List<ArtifactConfig> artifactConfigList = new ArrayList<>();
+    artifactConfigList.add(DockerHubArtifactConfig.builder().connectorRef(CONNECTOR).tagRegex(TAG_NULL).build());
+    artifactConfigList.add(AcrArtifactConfig.builder().connectorRef(CONNECTOR).tagRegex(TAG_NULL).build());
+    artifactConfigList.add(EcrArtifactConfig.builder().connectorRef(CONNECTOR).tagRegex(TAG_NULL).build());
+    artifactConfigList.add(GcrArtifactConfig.builder().connectorRef(CONNECTOR).tagRegex(TAG_NULL).build());
+    artifactConfigList.add(NexusRegistryArtifactConfig.builder().connectorRef(CONNECTOR).tagRegex(TAG_NULL).build());
+
+    return artifactConfigList;
+  }
+
+  private List<ArtifactConfig> getArtifactConfigTagRegexEmpty() {
+    List<ArtifactConfig> artifactConfigList = new ArrayList<>();
+    artifactConfigList.add(DockerHubArtifactConfig.builder().connectorRef(CONNECTOR).tagRegex(TAG_EMPTY).build());
+    artifactConfigList.add(AcrArtifactConfig.builder().connectorRef(CONNECTOR).tagRegex(TAG_EMPTY).build());
+    artifactConfigList.add(EcrArtifactConfig.builder().connectorRef(CONNECTOR).tagRegex(TAG_EMPTY).build());
+    artifactConfigList.add(GcrArtifactConfig.builder().connectorRef(CONNECTOR).tagRegex(TAG_EMPTY).build());
+    artifactConfigList.add(NexusRegistryArtifactConfig.builder().connectorRef(CONNECTOR).tagRegex(TAG_EMPTY).build());
+
+    return artifactConfigList;
+  }
+
   private List<ArtifactConfig> getArtifactConfigTagInput() {
     List<ArtifactConfig> artifactConfigList = new ArrayList<>();
     artifactConfigList.add(DockerHubArtifactConfig.builder().connectorRef(CONNECTOR).tag(TAG_INPUT).build());
@@ -271,6 +294,17 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     artifactConfigList.add(EcrArtifactConfig.builder().connectorRef(CONNECTOR).tag(TAG_INPUT).build());
     artifactConfigList.add(GcrArtifactConfig.builder().connectorRef(CONNECTOR).tag(TAG_INPUT).build());
     artifactConfigList.add(NexusRegistryArtifactConfig.builder().connectorRef(CONNECTOR).tag(TAG_INPUT).build());
+
+    return artifactConfigList;
+  }
+
+  private List<ArtifactConfig> getArtifactConfigTagRegexInput() {
+    List<ArtifactConfig> artifactConfigList = new ArrayList<>();
+    artifactConfigList.add(DockerHubArtifactConfig.builder().connectorRef(CONNECTOR).tagRegex(TAG_INPUT).build());
+    artifactConfigList.add(AcrArtifactConfig.builder().connectorRef(CONNECTOR).tagRegex(TAG_INPUT).build());
+    artifactConfigList.add(EcrArtifactConfig.builder().connectorRef(CONNECTOR).tagRegex(TAG_INPUT).build());
+    artifactConfigList.add(GcrArtifactConfig.builder().connectorRef(CONNECTOR).tagRegex(TAG_INPUT).build());
+    artifactConfigList.add(NexusRegistryArtifactConfig.builder().connectorRef(CONNECTOR).tagRegex(TAG_INPUT).build());
 
     return artifactConfigList;
   }
@@ -287,10 +321,10 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
   private List<ArtifactConfig> getArtifactConfigVersionNull() {
     List<ArtifactConfig> artifactConfigList = new ArrayList<>();
-    artifactConfigList.add(AMIArtifactConfig.builder().connectorRef(CONNECTOR).version(null).build());
-    artifactConfigList.add(AzureArtifactsConfig.builder().connectorRef(CONNECTOR).version(null).build());
-    artifactConfigList.add(GithubPackagesArtifactConfig.builder().connectorRef(CONNECTOR).version(null).build());
-    artifactConfigList.add(GoogleArtifactRegistryConfig.builder().connectorRef(CONNECTOR).version(null).build());
+    artifactConfigList.add(AMIArtifactConfig.builder().connectorRef(CONNECTOR).version(TAG_NULL).build());
+    artifactConfigList.add(AzureArtifactsConfig.builder().connectorRef(CONNECTOR).version(TAG_NULL).build());
+    artifactConfigList.add(GithubPackagesArtifactConfig.builder().connectorRef(CONNECTOR).version(TAG_NULL).build());
+    artifactConfigList.add(GoogleArtifactRegistryConfig.builder().connectorRef(CONNECTOR).version(TAG_NULL).build());
 
     return artifactConfigList;
   }
@@ -313,6 +347,51 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     artifactConfigList.add(GoogleArtifactRegistryConfig.builder().connectorRef(CONNECTOR).version(TAG_INPUT).build());
 
     return artifactConfigList;
+  }
+
+  private List<ArtifactConfig> getArtifactConfigVersionRegexNull() {
+    List<ArtifactConfig> artifactConfigList = new ArrayList<>();
+    artifactConfigList.add(AMIArtifactConfig.builder().connectorRef(CONNECTOR).versionRegex(TAG_NULL).build());
+    artifactConfigList.add(AzureArtifactsConfig.builder().connectorRef(CONNECTOR).versionRegex(TAG_NULL).build());
+    artifactConfigList.add(
+        GithubPackagesArtifactConfig.builder().connectorRef(CONNECTOR).versionRegex(TAG_NULL).build());
+    artifactConfigList.add(
+        GoogleArtifactRegistryConfig.builder().connectorRef(CONNECTOR).versionRegex(TAG_NULL).build());
+
+    return artifactConfigList;
+  }
+
+  private List<ArtifactConfig> getArtifactConfigVersionRegexEmpty() {
+    List<ArtifactConfig> artifactConfigList = new ArrayList<>();
+    artifactConfigList.add(AMIArtifactConfig.builder().connectorRef(CONNECTOR).versionRegex(TAG_EMPTY).build());
+    artifactConfigList.add(AzureArtifactsConfig.builder().connectorRef(CONNECTOR).versionRegex(TAG_EMPTY).build());
+    artifactConfigList.add(
+        GithubPackagesArtifactConfig.builder().connectorRef(CONNECTOR).versionRegex(TAG_EMPTY).build());
+    artifactConfigList.add(
+        GoogleArtifactRegistryConfig.builder().connectorRef(CONNECTOR).versionRegex(TAG_EMPTY).build());
+
+    return artifactConfigList;
+  }
+
+  private List<ArtifactConfig> getArtifactConfigVersionRegexInput() {
+    List<ArtifactConfig> artifactConfigList = new ArrayList<>();
+    artifactConfigList.add(AMIArtifactConfig.builder().connectorRef(CONNECTOR).versionRegex(TAG_INPUT).build());
+    artifactConfigList.add(AzureArtifactsConfig.builder().connectorRef(CONNECTOR).versionRegex(TAG_INPUT).build());
+    artifactConfigList.add(
+        GithubPackagesArtifactConfig.builder().connectorRef(CONNECTOR).versionRegex(TAG_INPUT).build());
+    artifactConfigList.add(
+        GoogleArtifactRegistryConfig.builder().connectorRef(CONNECTOR).versionRegex(TAG_INPUT).build());
+
+    return artifactConfigList;
+  }
+
+  private void checkResponse(ArtifactSource source1, String message) {
+    doReturn(getServiceYaml(artifactListConfigHelper(Arrays.asList(source1), source1.getIdentifier())))
+        .when(cdStepHelper)
+        .fetchServiceYamlFromSweepingOutput(Mockito.any(Ambiance.class));
+    assertThatThrownBy(() -> step.executeAsync(ambiance, stepParameters, inputPackage, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(message);
   }
 
   @Test
@@ -529,37 +608,62 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     List<ArtifactConfig> artifactConfigListNull = getArtifactConfigTagNull();
     List<ArtifactConfig> artifactConfigListEmpty = getArtifactConfigTagEmpty();
     List<ArtifactConfig> artifactConfigListInput = getArtifactConfigTagInput();
+    List<ArtifactConfig> artifactConfigListNullRegex = getArtifactConfigTagRegexNull();
+    List<ArtifactConfig> artifactConfigListEmptyRegex = getArtifactConfigTagRegexEmpty();
+    List<ArtifactConfig> artifactConfigListInputRegex = getArtifactConfigTagRegexInput();
 
     for (int i = 0; i < artifactSourceTypes.size(); i++) {
       ArtifactSource source1 = ArtifactSource.builder()
                                    .identifier("source1-id")
-                                   .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
+                                   .sourceType(artifactSourceTypes.get(i))
                                    .spec(artifactConfigListNull.get(i))
                                    .build();
-      doReturn(getServiceYaml(artifactListConfigHelper(Arrays.asList(source1), source1.getIdentifier())))
-          .when(cdStepHelper)
-          .fetchServiceYamlFromSweepingOutput(Mockito.any(Ambiance.class));
-      assertThatThrownBy(() -> step.executeAsync(ambiance, stepParameters, inputPackage, null))
-          .isInstanceOf(InvalidRequestException.class)
-          .hasMessage(NULL_TAG_TAG_REGEX_MESSAGE);
 
+      checkResponse(source1, NULL_TAG_TAG_REGEX_MESSAGE);
       source1.setSpec(artifactConfigListEmpty.get(i));
-
-      doReturn(getServiceYaml(artifactListConfigHelper(Arrays.asList(source1), source1.getIdentifier())))
-          .when(cdStepHelper)
-          .fetchServiceYamlFromSweepingOutput(Mockito.any(Ambiance.class));
-      assertThatThrownBy(() -> step.executeAsync(ambiance, stepParameters, inputPackage, null))
-          .isInstanceOf(InvalidRequestException.class)
-          .hasMessage(NULL_TAG_TAG_REGEX_MESSAGE);
-
+      checkResponse(source1, NULL_TAG_TAG_REGEX_MESSAGE);
       source1.setSpec(artifactConfigListInput.get(i));
+      checkResponse(source1, NULL_TAG_TAG_REGEX_MESSAGE);
+      source1.setSpec(artifactConfigListInputRegex.get(i));
+      checkResponse(source1, NULL_TAG_TAG_REGEX_MESSAGE);
+      source1.setSpec(artifactConfigListNullRegex.get(i));
+      checkResponse(source1, NULL_TAG_TAG_REGEX_MESSAGE);
+      source1.setSpec(artifactConfigListEmptyRegex.get(i));
+      checkResponse(source1, NULL_TAG_TAG_REGEX_MESSAGE);
+    }
+  }
 
-      doReturn(getServiceYaml(artifactListConfigHelper(Arrays.asList(source1), source1.getIdentifier())))
-          .when(cdStepHelper)
-          .fetchServiceYamlFromSweepingOutput(Mockito.any(Ambiance.class));
-      assertThatThrownBy(() -> step.executeAsync(ambiance, stepParameters, inputPackage, null))
-          .isInstanceOf(InvalidRequestException.class)
-          .hasMessage(NULL_TAG_TAG_REGEX_MESSAGE);
+  @Test
+  @Owner(developers = OwnerRule.ABHISHEK)
+  @Category(UnitTests.class)
+  public void validateArtifactConfig_Version() {
+    // Prepare test data
+
+    List<ArtifactSourceType> artifactSourceTypes = getArtifactSourceTypesHavingVersionField();
+    List<ArtifactConfig> artifactConfigListNull = getArtifactConfigVersionNull();
+    List<ArtifactConfig> artifactConfigListEmpty = getArtifactConfigVersionEmpty();
+    List<ArtifactConfig> artifactConfigListInput = getArtifactConfigVersionInput();
+    List<ArtifactConfig> artifactConfigListNullRegex = getArtifactConfigVersionRegexNull();
+    List<ArtifactConfig> artifactConfigListEmptyRegex = getArtifactConfigVersionRegexEmpty();
+    List<ArtifactConfig> artifactConfigListInputRegex = getArtifactConfigVersionRegexInput();
+
+    for (int i = 0; i < artifactSourceTypes.size(); i++) {
+      ArtifactSource source1 = ArtifactSource.builder()
+                                   .identifier("source1-id")
+                                   .sourceType(artifactSourceTypes.get(i))
+                                   .spec(artifactConfigListNull.get(i))
+                                   .build();
+      checkResponse(source1, NULL_VERSION_VERSION_REGEX_MESSAGE);
+      source1.setSpec(artifactConfigListEmpty.get(i));
+      checkResponse(source1, NULL_VERSION_VERSION_REGEX_MESSAGE);
+      source1.setSpec(artifactConfigListInput.get(i));
+      checkResponse(source1, NULL_VERSION_VERSION_REGEX_MESSAGE);
+      source1.setSpec(artifactConfigListInputRegex.get(i));
+      checkResponse(source1, NULL_VERSION_VERSION_REGEX_MESSAGE);
+      source1.setSpec(artifactConfigListNullRegex.get(i));
+      checkResponse(source1, NULL_VERSION_VERSION_REGEX_MESSAGE);
+      source1.setSpec(artifactConfigListEmptyRegex.get(i));
+      checkResponse(source1, NULL_VERSION_VERSION_REGEX_MESSAGE);
     }
   }
 
@@ -567,78 +671,72 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
   @Owner(developers = OwnerRule.ABHISHEK)
   @Category(UnitTests.class)
   public void validateAmazonS3HubArtifactConfig_NullTag() {
-    ArgumentCaptor<ArtifactsStepV2SweepingOutput> captor = ArgumentCaptor.forClass(ArtifactsStepV2SweepingOutput.class);
-    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
-        ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    AmazonS3ArtifactConfig amazonS3ArtifactConfig =
+        AmazonS3ArtifactConfig.builder().connectorRef(CONNECTOR).filePath(TAG_NULL).build();
 
     // Prepare test data
     ArtifactSource source1 = ArtifactSource.builder()
                                  .identifier("source1-id")
                                  .sourceType(ArtifactSourceType.AMAZONS3)
-                                 .spec(AmazonS3ArtifactConfig.builder()
-                                           .connectorRef(ParameterField.createValueField("connector"))
-                                           .filePath(ParameterField.createValueField(null))
-                                           .build())
+                                 .spec(amazonS3ArtifactConfig)
                                  .build();
-    doReturn(getServiceYaml(artifactListConfigHelper(Arrays.asList(source1), source1.getIdentifier())))
-        .when(cdStepHelper)
-        .fetchServiceYamlFromSweepingOutput(Mockito.any(Ambiance.class));
 
-    assertThatThrownBy(() -> step.executeAsync(ambiance, stepParameters, inputPackage, null))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(NULL_FILEPATH_FILEPATH_REGEX_MESSAGE);
+    checkResponse(source1, NULL_FILEPATH_FILEPATH_REGEX_MESSAGE);
+
+    amazonS3ArtifactConfig.setFilePath(null);
+    amazonS3ArtifactConfig.setFilePathRegex(TAG_NULL);
+
+    source1.setSpec(amazonS3ArtifactConfig);
+
+    checkResponse(source1, NULL_FILEPATH_FILEPATH_REGEX_MESSAGE);
   }
 
   @Test
   @Owner(developers = OwnerRule.ABHISHEK)
   @Category(UnitTests.class)
   public void validateAmazonS3ArtifactConfig_InputFilePath() {
-    ArgumentCaptor<ArtifactsStepV2SweepingOutput> captor = ArgumentCaptor.forClass(ArtifactsStepV2SweepingOutput.class);
-    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
-        ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    AmazonS3ArtifactConfig amazonS3ArtifactConfig =
+        AmazonS3ArtifactConfig.builder().connectorRef(CONNECTOR).filePath(TAG_INPUT).build();
 
     // Prepare test data
     ArtifactSource source1 = ArtifactSource.builder()
                                  .identifier("source1-id")
                                  .sourceType(ArtifactSourceType.AMAZONS3)
-                                 .spec(AmazonS3ArtifactConfig.builder()
-                                           .connectorRef(ParameterField.createValueField("connector"))
-                                           .filePath(ParameterField.createValueField("<+input>"))
-                                           .build())
+                                 .spec(amazonS3ArtifactConfig)
                                  .build();
-    doReturn(getServiceYaml(artifactListConfigHelper(Arrays.asList(source1), source1.getIdentifier())))
-        .when(cdStepHelper)
-        .fetchServiceYamlFromSweepingOutput(Mockito.any(Ambiance.class));
 
-    assertThatThrownBy(() -> step.executeAsync(ambiance, stepParameters, inputPackage, null))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(NULL_FILEPATH_FILEPATH_REGEX_MESSAGE);
+    checkResponse(source1, NULL_FILEPATH_FILEPATH_REGEX_MESSAGE);
+
+    amazonS3ArtifactConfig.setFilePath(null);
+    amazonS3ArtifactConfig.setFilePathRegex(TAG_INPUT);
+
+    source1.setSpec(amazonS3ArtifactConfig);
+
+    checkResponse(source1, NULL_FILEPATH_FILEPATH_REGEX_MESSAGE);
   }
 
   @Test
   @Owner(developers = OwnerRule.ABHISHEK)
   @Category(UnitTests.class)
   public void validateAmazonS3ArtifactConfig_EmptyFilePath() {
-    ArgumentCaptor<ArtifactsStepV2SweepingOutput> captor = ArgumentCaptor.forClass(ArtifactsStepV2SweepingOutput.class);
-    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
-        ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    AmazonS3ArtifactConfig amazonS3ArtifactConfig =
+        AmazonS3ArtifactConfig.builder().connectorRef(CONNECTOR).filePath(TAG_EMPTY).build();
 
     // Prepare test data
     ArtifactSource source1 = ArtifactSource.builder()
                                  .identifier("source1-id")
                                  .sourceType(ArtifactSourceType.AMAZONS3)
-                                 .spec(AmazonS3ArtifactConfig.builder()
-                                           .connectorRef(ParameterField.createValueField("connector"))
-                                           .filePath(ParameterField.createValueField(""))
-                                           .build())
+                                 .spec(amazonS3ArtifactConfig)
                                  .build();
-    doReturn(getServiceYaml(artifactListConfigHelper(Arrays.asList(source1), source1.getIdentifier())))
-        .when(cdStepHelper)
-        .fetchServiceYamlFromSweepingOutput(Mockito.any(Ambiance.class));
 
-    assertThatThrownBy(() -> step.executeAsync(ambiance, stepParameters, inputPackage, null))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(NULL_FILEPATH_FILEPATH_REGEX_MESSAGE);
+    checkResponse(source1, NULL_FILEPATH_FILEPATH_REGEX_MESSAGE);
+
+    amazonS3ArtifactConfig.setFilePath(null);
+    amazonS3ArtifactConfig.setFilePathRegex(TAG_EMPTY);
+
+    source1.setSpec(amazonS3ArtifactConfig);
+
+    checkResponse(source1, NULL_FILEPATH_FILEPATH_REGEX_MESSAGE);
   }
 
   @Test
