@@ -51,8 +51,14 @@ public class InstanceGroupedByEnvironmentList {
   @Value
   @Builder
   public static class InstanceGroupedByArtifact {
+    // Passing the instanceKey and infrastructureMappingId to uniquely identity the Instance for rollback.
+    String instanceKey;
+    String infrastructureMappingId;
     String artifact; // displayName of artifact
     Integer count;
     long lastDeployedAt;
+    String lastPlanExecutionId;
+    String stageNodeExecutionId;
+    String pipelineIdentifier;
   }
 }

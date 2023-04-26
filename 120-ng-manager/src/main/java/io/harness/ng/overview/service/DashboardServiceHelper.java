@@ -67,7 +67,9 @@ public class DashboardServiceHelper {
       List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList, boolean isGitOps,
       Page<EnvironmentGroupEntity> environmentGroupEntitiesPage) {
     // nested map - environmentId, environmentType, infrastructureId, displayName, (count, lastDeployedAt)
-    Map<String, Map<EnvironmentType, Map<String, Map<String, Pair<Integer, Long>>>>> instanceCountMap = new HashMap<>();
+    Map<String,
+        Map<EnvironmentType, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>>>>
+        instanceCountMap = new HashMap<>();
     Map<String, String> envIdToNameMap = new HashMap<>();
     // since we are already filtering instances on service type (gitOps or non-gitOps), infraIdToNameMap will contain
     // clusterId to agentId map in case of gitOps
@@ -128,8 +130,19 @@ public class DashboardServiceHelper {
 
       infraIdToNameMap.putIfAbsent(infraId, infraName);
       instanceCountMap.get(envId).get(envType).putIfAbsent(infraId, new HashMap<>());
-      instanceCountMap.get(envId).get(envType).get(infraId).putIfAbsent(activeServiceInstanceInfo.getDisplayName(),
-          MutablePair.of(activeServiceInstanceInfo.getCount(), activeServiceInstanceInfo.getLastDeployedAt()));
+      InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact byArtifact =
+          InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+              .instanceKey(activeServiceInstanceInfo.getInstanceKey())
+              .infrastructureMappingId(activeServiceInstanceInfo.getInfrastructureMappingId())
+              .lastPlanExecutionId(activeServiceInstanceInfo.getLastPipelineExecutionId())
+              .pipelineIdentifier(activeServiceInstanceInfo.getLastPipelineExecutionName())
+              .stageNodeExecutionId(activeServiceInstanceInfo.getStageNodeExecutionId())
+              .lastDeployedAt(activeServiceInstanceInfo.getLastDeployedAt())
+              .count(activeServiceInstanceInfo.getCount())
+              .artifact(activeServiceInstanceInfo.getDisplayName())
+              .build();
+      instanceCountMap.get(envId).get(envType).get(infraId).putIfAbsent(
+          activeServiceInstanceInfo.getDisplayName(), byArtifact);
     });
 
     return InstanceGroupedByEnvironmentList.builder()
@@ -324,14 +337,17 @@ public class DashboardServiceHelper {
   }
 
   public List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironment> groupByEnvironment(
-      Map<String, Map<EnvironmentType, Map<String, Map<String, Pair<Integer, Long>>>>> instanceCountMap,
+      Map<String,
+          Map<EnvironmentType, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>>>>
+          instanceCountMap,
       Map<String, String> infraIdToNameMap, Map<String, String> envIdToNameMap,
       Map<String, List<String>> envToEnvGroupMap, boolean isGitOps) {
     List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironment> instanceGroupedByEnvironmentList =
         new ArrayList<>();
 
-    for (Map.Entry<String, Map<EnvironmentType, Map<String, Map<String, Pair<Integer, Long>>>>> entry :
-        instanceCountMap.entrySet()) {
+    for (Map.Entry<String,
+             Map<EnvironmentType, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>>>>
+             entry : instanceCountMap.entrySet()) {
       final String envId = entry.getKey();
       List<String> envGroupList = envToEnvGroupMap.get(envId);
 
@@ -379,12 +395,14 @@ public class DashboardServiceHelper {
   }
 
   public List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironmentType> groupedByEnvironmentTypes(
-      Map<EnvironmentType, Map<String, Map<String, Pair<Integer, Long>>>> instanceCountMap,
+      Map<EnvironmentType, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>>>
+          instanceCountMap,
       Map<String, String> infraIdToNameMap, boolean isGitOps) {
     List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironmentType> instanceGroupedByEnvironmentTypeList =
         new ArrayList<>();
 
-    for (Map.Entry<EnvironmentType, Map<String, Map<String, Pair<Integer, Long>>>> entry :
+    for (Map.Entry<EnvironmentType,
+             Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>>> entry :
         instanceCountMap.entrySet()) {
       EnvironmentType environmentType = entry.getKey();
 
@@ -418,12 +436,13 @@ public class DashboardServiceHelper {
   }
 
   public List<InstanceGroupedByEnvironmentList.InstanceGroupedByInfrastructure> groupedByInfrastructures(
-      Map<String, Map<String, Pair<Integer, Long>>> instanceCountMap, Map<String, String> infraIdToNameMap,
-      boolean isGitOps) {
+      Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>> instanceCountMap,
+      Map<String, String> infraIdToNameMap, boolean isGitOps) {
     List<InstanceGroupedByEnvironmentList.InstanceGroupedByInfrastructure> instanceGroupedByInfrastructureList =
         new ArrayList<>();
 
-    for (Map.Entry<String, Map<String, Pair<Integer, Long>>> entry : instanceCountMap.entrySet()) {
+    for (Map.Entry<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>> entry :
+        instanceCountMap.entrySet()) {
       String infraId = entry.getKey();
 
       List<InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> instanceGroupedByArtifactList =
@@ -460,15 +479,12 @@ public class DashboardServiceHelper {
   }
 
   public List<InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> groupedByArtifacts(
-      Map<String, Pair<Integer, Long>> instanceCountMap) {
+      Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> instanceCountMap) {
     List<InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> instanceGroupedByArtifactList = new ArrayList<>();
 
-    for (Map.Entry<String, Pair<Integer, Long>> entry : instanceCountMap.entrySet()) {
-      instanceGroupedByArtifactList.add(InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
-                                            .artifact(entry.getKey())
-                                            .count(entry.getValue().getKey())
-                                            .lastDeployedAt(entry.getValue().getValue())
-                                            .build());
+    for (Map.Entry<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> entry :
+        instanceCountMap.entrySet()) {
+      instanceGroupedByArtifactList.add(entry.getValue());
     }
 
     // sort based on last deployed time

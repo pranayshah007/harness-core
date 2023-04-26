@@ -309,7 +309,6 @@ io.harness.beans.steps.stepinfo.ActionStepInfo
 io.harness.beans.steps.nodes.ActionStepNode
 io.harness.beans.steps.stepinfo.BitriseStepInfo
 io.harness.beans.steps.nodes.BitriseStepNode
-io.harness.beans.Clone
 io.harness.beans.stages.V1.IntegrationStageNodeV1
 io.harness.cimanager.stages.V1.IntegrationStageConfigImplV1
 io.harness.beans.steps.nodes.V1.ScriptStepNode

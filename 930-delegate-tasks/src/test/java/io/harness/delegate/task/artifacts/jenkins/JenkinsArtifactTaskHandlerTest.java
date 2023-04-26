@@ -8,6 +8,7 @@
 package io.harness.delegate.task.artifacts.jenkins;
 
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -391,6 +392,42 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
         .when(jenkinsRegistryService)
         .getLastSuccessfulBuildForJob(
             jenkinsInternalConfig, jobName, jenkinsArtifactDelegateRequest.getArtifactPaths());
+
+    ArtifactTaskExecutionResponse lastSuccessfulBuild =
+        jenkinsArtifactTaskHandler.getLastSuccessfulBuild(jenkinsArtifactDelegateRequest);
+    assertThat(lastSuccessfulBuild).isNotNull();
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().size()).isEqualTo(1);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuildForVerifyingOlderBuild() throws UnsupportedEncodingException {
+    String jobName = "FIS_Cleared_Derivatives_Core/NextGen/Build Custom Branch Images/keepbranch%2Fbo-development";
+    JenkinsConnectorDTO jenkinsConnectorDTO =
+        JenkinsConnectorDTO.builder()
+            .jenkinsUrl("https://Jenkins.com")
+            .auth(JenkinsAuthenticationDTO.builder().authType(JenkinsAuthType.USER_PASSWORD).build())
+            .build();
+    JenkinsArtifactDelegateRequest jenkinsArtifactDelegateRequest =
+        JenkinsArtifactDelegateRequest.builder()
+            .artifactPaths(Collections.singletonList("artifactPath"))
+            .jobName(jobName)
+            .jenkinsConnectorDTO(jenkinsConnectorDTO)
+            .buildNumber("oldertag")
+            .build();
+    BuildDetails buildDetails = BuildDetails.Builder.aBuildDetails().withNumber("tag").build();
+    BuildDetails buildDetailsForOlderBuild = BuildDetails.Builder.aBuildDetails().withNumber("tag").build();
+    JenkinsInternalConfig jenkinsInternalConfig =
+        JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
+    jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
+    doReturn(Collections.singletonList(buildDetails))
+        .when(jenkinsRegistryService)
+        .getBuildsForJob(jenkinsInternalConfig, jobName, jenkinsArtifactDelegateRequest.getArtifactPaths(), 25);
+
+    doReturn(buildDetailsForOlderBuild)
+        .when(jenkinsRegistryService)
+        .verifyBuildForJob(
+            jenkinsInternalConfig, jobName, jenkinsArtifactDelegateRequest.getArtifactPaths(), "oldertag");
 
     ArtifactTaskExecutionResponse lastSuccessfulBuild =
         jenkinsArtifactTaskHandler.getLastSuccessfulBuild(jenkinsArtifactDelegateRequest);

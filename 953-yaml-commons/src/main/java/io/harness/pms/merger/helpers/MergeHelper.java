@@ -21,20 +21,25 @@ import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.pms.merger.fqn.FQNNode.NodeType;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.pms.yaml.validation.InputSetValidator;
 import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.serializer.JsonUtils;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -356,5 +361,26 @@ public class MergeHelper {
     }
     toBeRemovedFQNs.forEach(pipelineNode::removePath);
     return JsonUtils.asJson(pipelineNode.getCurrJsonNode());
+  }
+
+  public String mergeOptionsRuntimeInput(String pipelineYaml, String runtimeInputYaml) {
+    if (EmptyPredicate.isEmpty(runtimeInputYaml)) {
+      return pipelineYaml;
+    }
+    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+    JsonNode pipelineNode = YamlUtils.tryReadTree(pipelineYaml).getNode().getCurrJsonNode();
+    JsonNode runtimeInputNode = YamlUtils.tryReadTree(runtimeInputYaml).getNode().getCurrJsonNode();
+    Map<String, Object> runtimeInputMap = JsonPipelineUtils.jsonNodeToMap(runtimeInputNode);
+    if (EmptyPredicate.isNotEmpty(runtimeInputMap) && runtimeInputMap.containsKey(YAMLFieldNameConstants.OPTIONS)) {
+      Map<String, Object> optionsMap = new HashMap<>();
+      optionsMap.put(YAMLFieldNameConstants.OPTIONS, runtimeInputMap.get(YAMLFieldNameConstants.OPTIONS));
+      try {
+        pipelineNode = objectMapper.readerForUpdating(pipelineNode).readValue(YamlUtils.write(optionsMap));
+        return objectMapper.writeValueAsString(pipelineNode);
+      } catch (IOException ex) {
+        throw new InvalidRequestException("Invalid yaml", ex);
+      }
+    }
+    return pipelineYaml;
   }
 }

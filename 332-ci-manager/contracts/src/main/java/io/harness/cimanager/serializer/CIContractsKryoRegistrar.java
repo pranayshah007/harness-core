@@ -37,7 +37,6 @@ import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.CustomSecretVariable;
 import io.harness.beans.yaml.extended.CustomTextVariable;
 import io.harness.beans.yaml.extended.CustomVariable;
-import io.harness.beans.yaml.extended.clone.Clone;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml.DockerInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
@@ -78,6 +77,7 @@ import io.harness.when.beans.StageWhenCondition;
 import com.esotericsoftware.kryo.Kryo;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.DecimalNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.NullNode;
@@ -146,7 +146,7 @@ public class CIContractsKryoRegistrar implements KryoRegistrar {
     kryo.register(IntegrationStageNodeV1.StepType.class, 110124);
     kryo.register(ArrayNode.class, 110125);
     kryo.register(IntNode.class, 110126);
-    kryo.register(Clone.class, 110127);
+    kryo.register(DecimalNode.class, 110127);
 
     kryo.register(PlatformV1.class, 110129);
     kryo.register(OS.class, 110130);

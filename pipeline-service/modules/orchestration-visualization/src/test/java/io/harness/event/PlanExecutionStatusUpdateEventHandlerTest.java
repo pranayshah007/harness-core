@@ -24,7 +24,6 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.rule.Owner;
-import io.harness.testlib.RealMongo;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -39,7 +38,7 @@ public class PlanExecutionStatusUpdateEventHandlerTest extends OrchestrationVisu
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void shouldUpdateGraphWithStatusAndEndTs() {
     PlanExecution planExecution = PlanExecution.builder()
                                       .uuid(generateUuid())

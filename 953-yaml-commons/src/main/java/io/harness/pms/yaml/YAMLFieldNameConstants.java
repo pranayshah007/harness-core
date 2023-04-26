@@ -66,6 +66,7 @@ public class YAMLFieldNameConstants {
   public final String CODEBASE_CONNECTOR_REF = "ciCodebase.connectorRef";
   public final String USE_ROLLBACK_STRATEGY = "useRollbackStrategy";
   public final String USE_PIPELINE_ROLLBACK_STRATEGY = "usePipelineRollbackStrategy";
+  public final String PIPELINE_ROLLBACK_FAILURE_INFO = "pipelineRollbackFailureInfo";
   public final String FAILED_CHILDREN_OUTPUT = "failedChildrenOutput";
   public final String COMMAND = "Command";
 
@@ -100,9 +101,9 @@ public class YAMLFieldNameConstants {
   public final String GROUP = "group";
   public static final String OUTPUTS = "outputs";
 
+  public final String OPTIONS = "options";
   public final String REPOSITORY = "repository";
   public final String DEFAULT = "default";
-  public final String REFERENCE = "reference";
   public final String REGISTRY = "registry";
 
   public final String VALUES_PATHS = "valuesPaths";

@@ -15,11 +15,11 @@ import static io.harness.rule.OwnerRule.SAHIL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-import io.harness.advisers.nextstep.NextStepAdviser;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
+import io.harness.cdng.advisers.CDStepsRollbackModeAdviser;
 import io.harness.cdng.creator.plan.CDStepsPlanCreator;
 import io.harness.plancreator.execution.StepsExecutionConfig;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
@@ -110,11 +110,11 @@ public class CDStepsPlanCreatorTest extends CDNGTestBase {
     assertThat(advisorObtainmentsPerMode).containsKey(POST_EXECUTION_ROLLBACK);
     assertThat(advisorObtainmentsPerMode.get(POST_EXECUTION_ROLLBACK)).hasSize(1);
     AdviserObtainment postExecAdvisor = advisorObtainmentsPerMode.get(POST_EXECUTION_ROLLBACK).get(0);
-    assertThat(postExecAdvisor.getType()).isEqualTo(NextStepAdviser.ADVISER_TYPE);
+    assertThat(postExecAdvisor.getType()).isEqualTo(CDStepsRollbackModeAdviser.ADVISER_TYPE);
     assertThat(advisorObtainmentsPerMode).containsKey(PIPELINE_ROLLBACK);
     assertThat(advisorObtainmentsPerMode.get(PIPELINE_ROLLBACK)).hasSize(1);
     AdviserObtainment prbAdvisor = advisorObtainmentsPerMode.get(PIPELINE_ROLLBACK).get(0);
-    assertThat(prbAdvisor.getType()).isEqualTo(NextStepAdviser.ADVISER_TYPE);
+    assertThat(prbAdvisor.getType()).isEqualTo(CDStepsRollbackModeAdviser.ADVISER_TYPE);
     mockSettings.close();
   }
 

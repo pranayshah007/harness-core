@@ -927,3 +927,5 @@ io.harness.beans.steps.outcome.CIStepArtifactOutcome
 io.harness.beans.execution.ManualExecutionSource
 io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml
 io.harness.beans.sweepingoutputs.StepArtifactSweepingOutput
+io.harness.cdng.k8s.K8sBGStageScaleDownStepInfo
+io.harness.cdng.k8s.K8sBGStageScaleDownStepParameters

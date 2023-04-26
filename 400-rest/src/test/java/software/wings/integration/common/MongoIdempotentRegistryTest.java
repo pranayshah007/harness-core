@@ -26,7 +26,6 @@ import io.harness.distribution.idempotence.IdempotentRegistry;
 import io.harness.distribution.idempotence.IdempotentResult;
 import io.harness.distribution.idempotence.UnableToRegisterIdempotentOperationException;
 import io.harness.rule.Owner;
-import io.harness.testlib.RealMongo;
 import io.harness.threading.Concurrent;
 
 import software.wings.WingsBaseTest;
@@ -89,7 +88,7 @@ public class MongoIdempotentRegistryTest extends WingsBaseTest {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void testMongoRegisterNewAssumptions() {
     wingsPersistence.delete(Idempotent.class, id.getValue());
 
@@ -118,7 +117,7 @@ public class MongoIdempotentRegistryTest extends WingsBaseTest {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void testMongoRegisterSucceededAssumptions() {
     Idempotent doneIdempotent = Idempotent.builder().uuid(id.getValue()).state(SUCCEEDED).build();
     wingsPersistence.save(doneIdempotent);
@@ -174,7 +173,7 @@ public class MongoIdempotentRegistryTest extends WingsBaseTest {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void testConcurrency() throws InterruptedException {
     wingsPersistence.delete(Idempotent.class, id.getValue());
     concurrencyTest(idempotentRegistry);
@@ -197,7 +196,7 @@ public class MongoIdempotentRegistryTest extends WingsBaseTest {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void testResult() throws InterruptedException, UnableToRegisterIdempotentOperationException {
     wingsPersistence.delete(Idempotent.class, dataId.getValue());
     assertThat(operation(dataId)).isEqualTo("data: result 1");
@@ -207,7 +206,7 @@ public class MongoIdempotentRegistryTest extends WingsBaseTest {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void testTimeout() throws InterruptedException, UnableToRegisterIdempotentOperationException {
     wingsPersistence.delete(Idempotent.class, id.getValue());
     IdempotentLock<TestIdempotentResult> idempotentLock = IdempotentLock.create(id, idempotentRegistry);
