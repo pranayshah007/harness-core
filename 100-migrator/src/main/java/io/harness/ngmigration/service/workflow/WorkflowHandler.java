@@ -92,6 +92,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -960,46 +961,36 @@ public abstract class WorkflowHandler {
   // Note: If this is called it means we want to create a stage template
   // If the number of stages we get is more than 1 then we throw error
   JsonNode buildMultiStagePipelineTemplate(MigrationContext migrationContext, WorkflowMigrationContext context) {
-    List<AbstractStageNode> stages = getStagesForMultiServiceWorkflow(migrationContext, context);
-    if (stages.size() > 1) {
-      throw new IllegalStateException("More than one stages found for multi-service workflow as stage template");
-    }
-    AbstractStageNode abstractStageNode = stages.get(0);
-    String type = abstractStageNode instanceof DeploymentStageNode ? "Deployment" : "Custom";
-    return JsonPipelineUtils.asTree(
-        ImmutableMap.<String, Object>builder()
-            .put("type", type)
-            .put("spec", abstractStageNode.getStageInfoConfig())
-            .put("variables",
-                getVariables(migrationContext, context.getWorkflow(), abstractStageNode.getStageInfoConfig()))
-            .put("failureStrategies", getDefaultFailureStrategy(context))
-            .put("when", getSkipCondition())
-            .build());
+    return buildCanaryStageTemplate(migrationContext, context);
   }
 
   // For multi-service WF
   boolean shouldCreateStageTemplate(Workflow workflow) {
-    PhaseStep prePhaseStep = getPreDeploymentPhase(workflow);
+    OrchestrationWorkflowType workflowType = workflow.getOrchestration().getOrchestrationWorkflowType();
+    if (workflowType != OrchestrationWorkflowType.MULTI_SERVICE) {
+      return true;
+    }
     List<WorkflowPhase> phases = getPhases(workflow);
-    PhaseStep postPhaseStep = getPostDeploymentPhase(workflow);
 
-    int stageCount = 0;
-    if (EmptyPredicate.isNotEmpty(prePhaseStep.getSteps())) {
-      stageCount += 1;
+    // Case where all the phases uses same service and infra and are not templatized
+    // Later need to handle templatization case as well.
+    if (isNotEmpty(phases)) {
+      Set<String> serviceIds = new HashSet<>();
+      Set<String> infraDefIds = new HashSet<>();
+
+      for (WorkflowPhase workflowPhase : phases) {
+        if (workflowPhase.checkServiceTemplatized() || workflowPhase.checkInfraDefinitionTemplatized()) {
+          return false;
+        }
+        String serviceId = workflowPhase.getServiceId();
+        String infraDefinitionId = workflowPhase.getInfraDefinitionId();
+        serviceIds.add(serviceId);
+        infraDefIds.add(infraDefinitionId);
+        if (serviceIds.size() > 1 || infraDefIds.size() > 1) {
+          return false;
+        }
+      }
     }
-
-    if (EmptyPredicate.isNotEmpty(postPhaseStep.getSteps())) {
-      stageCount += 1;
-    }
-
-    if (EmptyPredicate.isNotEmpty(phases)) {
-      stageCount += phases.stream()
-                        .filter(phase -> EmptyPredicate.isNotEmpty(phase.getPhaseSteps()))
-                        .flatMap(phase -> phase.getPhaseSteps().stream())
-                        .filter(phaseStep -> EmptyPredicate.isNotEmpty(phaseStep.getSteps()))
-                        .count();
-    }
-
-    return stageCount <= 1;
+    return true;
   }
 }
