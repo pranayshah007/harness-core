@@ -43,38 +43,38 @@ public class CreditExpiryIteratorHandler implements Handler<Credit> {
   private CreditService creditService;
 
   @Inject
-  public CreditExpiryIteratorHandler(PersistenceIteratorFactory persistenceIteratorFactory, MorphiaPersistenceProvider<Credit> persistenceProvider, CreditService creditService) {
+  public CreditExpiryIteratorHandler(PersistenceIteratorFactory persistenceIteratorFactory,
+      MorphiaPersistenceProvider<Credit> persistenceProvider, CreditService creditService) {
     this.persistenceIteratorFactory = persistenceIteratorFactory;
     this.persistenceProvider = persistenceProvider;
     this.creditService = creditService;
   }
 
-
   public void registerIterator(int threadPoolSize) {
     persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
-            PersistenceIteratorFactory.PumpExecutorOptions.builder()
-                    .name(this.getClass().getName())
-                    .poolSize(threadPoolSize)
-                    .interval(ofHours(8))
-                    .build(),
-            Credit.class,
-            MongoPersistenceIterator.<Credit, MorphiaFilterExpander<Credit>>builder()
-                    .clazz(Credit.class)
-                    .fieldName(Credit.CreditsKeys.creditExpiryCheckIteration)
-                    .targetInterval(ofSeconds(31))
-                    .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
-                    .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
-                    .handler(this)
-                    .filterExpander(query
-                            -> query.field(Credit.CreditsKeys.creditStatus)
-                            .equal(CreditStatus.ACTIVE)
-                            .field(Credit.CreditsKeys.expiryTime)
-                            .greaterThan(0)
-                            .field(Credit.CreditsKeys.expiryTime)
-                            .lessThan(System.currentTimeMillis()))
-                    .schedulingType(REGULAR)
-                    .persistenceProvider(persistenceProvider)
-                    .redistribute(true));
+        PersistenceIteratorFactory.PumpExecutorOptions.builder()
+            .name(this.getClass().getName())
+            .poolSize(threadPoolSize)
+            .interval(ofHours(8))
+            .build(),
+        Credit.class,
+        MongoPersistenceIterator.<Credit, MorphiaFilterExpander<Credit>>builder()
+            .clazz(Credit.class)
+            .fieldName(Credit.CreditsKeys.creditExpiryCheckIteration)
+            .targetInterval(ofSeconds(31))
+            .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+            .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
+            .handler(this)
+            .filterExpander(query
+                -> query.field(Credit.CreditsKeys.creditStatus)
+                       .equal(CreditStatus.ACTIVE)
+                       .field(Credit.CreditsKeys.expiryTime)
+                       .greaterThan(0)
+                       .field(Credit.CreditsKeys.expiryTime)
+                       .lessThan(System.currentTimeMillis()))
+            .schedulingType(REGULAR)
+            .persistenceProvider(persistenceProvider)
+            .redistribute(true));
   }
 
   @Override
