@@ -15,7 +15,6 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.yaml.YamlSchemaTypes;
-import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -44,24 +43,4 @@ public class Repository {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   ParameterField<String> name;
-  // TODO: remove below properties
-  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH) boolean disabled;
-  public boolean getDisabled() {
-    return disabled;
-  }
-  @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH) boolean insecure;
-  @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH) Integer depth;
-  @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH) boolean trace;
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = "io.harness.yaml.repository.Strategy")
-  @Builder.Default
-  Strategy strategy = Strategy.MERGE_COMMIT;
-  public Strategy getStrategy() {
-    if (strategy == null) {
-      return Strategy.MERGE_COMMIT;
-    }
-    return strategy;
-  }
-  @YamlSchemaTypes({runtime}) ParameterField<Reference> reference;
-  ContainerResource resources;
 }
