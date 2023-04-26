@@ -68,6 +68,9 @@ import java.util.Objects;
 import java.util.Optional;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
+
+import io.harness.template.services.TemplateResourceApiMapper;
+import io.harness.template.services.TemplateResourceApiUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -86,11 +89,13 @@ import org.springframework.data.domain.Sort;
 public class TemplateResourceApiUtilsTest extends CategoryTest {
   @Rule public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
 
-  @InjectMocks TemplateResourceApiUtils templateResourceApiUtils;
+  @InjectMocks
+  TemplateResourceApiUtils templateResourceApiUtils;
   @Mock NGTemplateService templateService;
   @Mock AccessControlClient accessControlClient;
   @Inject VariablesServiceBlockingStub variablesServiceBlockingStub;
-  @Mock TemplateResourceApiMapper templateResourceApiMapper;
+  @Mock
+  TemplateResourceApiMapper templateResourceApiMapper;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";

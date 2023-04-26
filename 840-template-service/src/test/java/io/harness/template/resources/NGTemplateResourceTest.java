@@ -63,6 +63,7 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.helpers.TemplateReferenceHelper;
 import io.harness.template.helpers.TemplateYamlConversionHelper;
+import io.harness.template.services.NGTemplateResourceImpl;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateMergeService;
@@ -105,7 +106,7 @@ import org.springframework.data.domain.Sort;
 public class NGTemplateResourceTest extends CategoryTest {
   @Rule public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
 
-  NGTemplateResource templateResource;
+  NGTemplateResourceImpl templateResource;
   @Mock NGTemplateService templateService;
   @Mock NGTemplateServiceHelper templateServiceHelper;
   @Mock AccessControlClient accessControlClient;
@@ -160,7 +161,7 @@ public class NGTemplateResourceTest extends CategoryTest {
     // Create a VariablesStub using the in-process channel;
     variablesServiceBlockingStub = VariablesServiceGrpc.newBlockingStub(channel);
 
-    templateResource = new NGTemplateResource(templateService, templateServiceHelper, accessControlClient,
+    templateResource = new NGTemplateResourceImpl(templateService, templateServiceHelper, accessControlClient,
         templateMergeService, variablesServiceBlockingStub, templateYamlConversionHelper, templateReferenceHelper,
         customDeploymentResourceClient, templateVariableCreatorFactory);
     ClassLoader classLoader = this.getClass().getClassLoader();

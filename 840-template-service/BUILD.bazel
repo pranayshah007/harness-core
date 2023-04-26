@@ -11,6 +11,7 @@ shared_dependencies = [
     "@maven//:com_google_guava_guava",
     "@maven//:io_netty_netty_all",
 ] + [
+    "//840-template-service/contracts:module",
     "//840-template-service/contracts/openapi/v1:template-server-spec-module",
     "//878-ng-common-utilities:module",
     "//884-pms-commons:module",
