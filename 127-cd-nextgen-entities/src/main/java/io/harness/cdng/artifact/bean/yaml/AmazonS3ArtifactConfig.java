@@ -17,6 +17,7 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.exception.InvalidRequestException;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.pms.yaml.ParameterField;
@@ -130,5 +131,12 @@ public class AmazonS3ArtifactConfig implements ArtifactConfig, Visitable, WithCo
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return connectorRefMap;
+  }
+
+  @Override
+  public void validate() {
+    if (ArtifactConfigHelper.checkNullOrInput(filePath) && ArtifactConfigHelper.checkNullOrInput(filePathRegex)) {
+      throw new InvalidRequestException("value for filePath and filePathRegex is empty or not provided");
+    }
   }
 }

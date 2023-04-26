@@ -22,6 +22,7 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryConfigSpec;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.exception.InvalidRequestException;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.pms.yaml.ParameterField;
@@ -151,5 +152,12 @@ public class NexusRegistryArtifactConfig implements ArtifactConfig, Visitable, W
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return connectorRefMap;
+  }
+
+  @Override
+  public void validate() {
+    if (ArtifactConfigHelper.checkNullOrInput(tag) && ArtifactConfigHelper.checkNullOrInput(tagRegex)) {
+      throw new InvalidRequestException("value for tag and tagRegex is empty or not provided");
+    }
   }
 }

@@ -181,6 +181,8 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     String primaryArtifactTaskId = null;
 
     if (artifacts.getPrimary() != null) {
+      ArtifactConfig artifactConfig = artifacts.getPrimary().getSpec();
+      artifactConfig.validate();
       ACTION actionForPrimaryArtifact =
           shouldCreateDelegateTask(artifacts.getPrimary().getSourceType(), artifacts.getPrimary().getSpec());
       if (ACTION.CREATE_DELEGATE_TASK.equals(actionForPrimaryArtifact)) {

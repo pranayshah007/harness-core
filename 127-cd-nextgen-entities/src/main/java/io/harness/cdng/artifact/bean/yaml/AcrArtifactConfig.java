@@ -17,6 +17,7 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.exception.InvalidRequestException;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.pms.yaml.ParameterField;
@@ -147,5 +148,12 @@ public class AcrArtifactConfig implements ArtifactConfig, Visitable, WithConnect
   @ApiModelProperty(hidden = true)
   public List<ParameterField<String>> getStringParameterFields() {
     return Arrays.asList(connectorRef, subscriptionId, registry, repository, tag, tagRegex);
+  }
+
+  @Override
+  public void validate() {
+    if (ArtifactConfigHelper.checkNullOrInput(tag) && ArtifactConfigHelper.checkNullOrInput(tagRegex)) {
+      throw new InvalidRequestException("value for tag and tagRegex is empty or not provided");
+    }
   }
 }

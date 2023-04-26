@@ -710,14 +710,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       mergedServiceYaml = serviceEntity.getYaml();
     }
 
-    try {
-      mergedServiceYaml = removeRuntimeInputsFromMergedYaml(mergedServiceYaml);
-      serviceEntityYamlSchemaHelper.validateSchema(accountId, mergedServiceYaml);
-    } catch (IOException e) {
-      throw new InvalidRequestException(
-          format(UNABLE_TO_READ_YAML, serviceEntity.getName(), serviceEntity.getIdentifier()), e);
-    }
-
     final NGServiceConfig ngServiceConfig;
     try {
       ngServiceConfig = YamlUtils.read(mergedServiceYaml, NGServiceConfig.class);

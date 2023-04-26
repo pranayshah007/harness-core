@@ -20,6 +20,7 @@ import io.harness.data.validator.EntityIdentifier;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ami.AMIFilter;
 import io.harness.delegate.task.artifacts.ami.AMITag;
+import io.harness.exception.InvalidRequestException;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.pms.yaml.ParameterField;
@@ -157,5 +158,12 @@ public class AMIArtifactConfig implements ArtifactConfig, Visitable, WithConnect
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
 
     return connectorRefMap;
+  }
+
+  @Override
+  public void validate() {
+    if (ArtifactConfigHelper.checkNullOrInput(version) && ArtifactConfigHelper.checkNullOrInput(versionRegex)) {
+      throw new InvalidRequestException("value for version and versionRegex is empty or not provided");
+    }
   }
 }
