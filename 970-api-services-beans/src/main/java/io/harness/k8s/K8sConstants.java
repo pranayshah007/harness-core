@@ -197,6 +197,8 @@ public interface K8sConstants {
   String AZURE_AUTH_PLUGIN_BINARY = "kubelogin";
   String USE_GKE_GCLOUD_AUTH_PLUGIN = "USE_GKE_GCLOUD_AUTH_PLUGIN";
   String CLOUDSDK_CONFIG = "CLOUDSDK_CONFIG";
+  String GOOGLE_APPLICATION_CREDENTIALS = "GOOGLE_APPLICATION_CREDENTIALS";
+  String GOOGLE_APPLICATION_CREDENTIALS_FLAG = "--use_application_default_credentials";
   String GKE_LOGIN_CREDENTIALS_PATH = ".gcloud";
   String GCP_AUTH_PLUGIN_BINARY = "gke-gcloud-auth-plugin";
   String GCP_AUTH_CMD = "gcloud";

@@ -31,7 +31,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.filesystem.FileIo;
 import io.harness.gcp.helpers.GcpCredentialsHelperService;
-import io.harness.gcpcli.GcpCliClient;
 import io.harness.k8s.K8sConstants;
 import io.harness.k8s.model.GcpAccessTokenSupplier;
 import io.harness.k8s.model.KubernetesClusterAuthType;
@@ -40,6 +39,7 @@ import io.harness.k8s.model.KubernetesConfig.KubernetesConfigBuilder;
 import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.k8s.model.kubeconfig.Exec;
 import io.harness.k8s.model.kubeconfig.InteractiveMode;
+import io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.serializer.JsonUtils;
@@ -256,6 +256,9 @@ public class GkeClusterHelper {
     if (isExecAuthPluginBinaryAvailable(K8sConstants.GCP_AUTH_PLUGIN_BINARY, logCallback)) {
       kubernetesConfigBuilder.authType(KubernetesClusterAuthType.EXEC_OAUTH);
       kubernetesConfigBuilder.exec(getGkeUserExecConfig(serviceAccountKeyFileContent, workingDirectory, logCallback));
+      KubeConfigAuthPluginHelper.runCommand(
+          K8sConstants.GCP_AUTH_PLUGIN_BINARY + " " + K8sConstants.GOOGLE_APPLICATION_CREDENTIALS_FLAG, logCallback,
+          new HashMap<>());
     }
     return kubernetesConfigBuilder.build();
   }
@@ -353,8 +356,8 @@ public class GkeClusterHelper {
       if (isNotEmpty(serviceAccountKeyFileContent) && absoluteWorkingDirectory != null) {
         String gcpKeyFilePath = Paths.get(absoluteWorkingDirectory, K8sConstants.GCP_JSON_KEY_FILE_NAME).toString();
         FileIo.writeUtf8StringToFile(gcpKeyFilePath, String.valueOf(serviceAccountKeyFileContent));
-        GcpCliClient.loginToGcpCluster(gcpKeyFilePath, getGkeEnv(absoluteWorkingDirectory), logCallback);
-        envVariableList.add(new EnvVariable(K8sConstants.CLOUDSDK_CONFIG, absoluteWorkingDirectory));
+        //        GcpCliClient.loginToGcpCluster(gcpKeyFilePath, getGkeEnv(absoluteWorkingDirectory), logCallback);
+        envVariableList.add(new EnvVariable(K8sConstants.GOOGLE_APPLICATION_CREDENTIALS, gcpKeyFilePath));
         envVariableList.add(new EnvVariable(K8sConstants.USE_GKE_GCLOUD_AUTH_PLUGIN, "true"));
       }
     } catch (IOException ex) {
