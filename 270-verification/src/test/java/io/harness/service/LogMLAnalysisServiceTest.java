@@ -49,7 +49,6 @@ import io.harness.serializer.JsonUtils;
 import io.harness.service.intfc.ContinuousVerificationService;
 import io.harness.service.intfc.LearningEngineService;
 import io.harness.service.intfc.LogAnalysisService;
-import io.harness.testlib.RealMongo;
 
 import software.wings.api.PhaseElement;
 import software.wings.api.ServiceElement;
@@ -277,7 +276,7 @@ public class LogMLAnalysisServiceTest extends VerificationBase {
   @Test
   @Owner(developers = RAGHU)
   @Category(UnitTests.class)
-  @RealMongo
+
   @Ignore("TODO: Legacy test failures")
   public void saveLogDataValid() throws Exception {
     StateExecutionInstance stateExecutionInstance = new StateExecutionInstance();
@@ -331,7 +330,7 @@ public class LogMLAnalysisServiceTest extends VerificationBase {
   @Test
   @Owner(developers = RAGHU)
   @Category(UnitTests.class)
-  @RealMongo
+
   @Ignore("TODO: Legacy test failures")
   public void getLogDataNoPreviousAnalysis() throws Exception {
     File file = new File("270-verification/src/test/resources/elk/logml_data_record.json");
@@ -358,7 +357,7 @@ public class LogMLAnalysisServiceTest extends VerificationBase {
   @Test
   @Owner(developers = RAGHU)
   @Category(UnitTests.class)
-  @RealMongo
+
   @Ignore("TODO: Legacy test failures")
   public void getLogDataPreviousAnalysis() throws Exception {
     File file = new File("270-verification/src/test/resources/elk/logml_data_record.json");
@@ -405,7 +404,7 @@ public class LogMLAnalysisServiceTest extends VerificationBase {
   @Test
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)
-  @RealMongo
+
   @Ignore("TODO: Legacy test failures")
   public void getLogDataPreviousAnalysis_noPreviousBaseline() throws Exception {
     File file = new File("270-verification/src/test/resources/elk/logml_data_record.json");
@@ -454,7 +453,7 @@ public class LogMLAnalysisServiceTest extends VerificationBase {
   @Test
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)
-  @RealMongo
+
   @Ignore("TODO: Legacy test failures")
   public void getLogDataPreviousAnalysis_hasPreviousBaselineNoData() throws Exception {
     File file = new File("270-verification/src/test/resources/elk/logml_data_record.json");
@@ -484,7 +483,7 @@ public class LogMLAnalysisServiceTest extends VerificationBase {
   @Test
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)
-  @RealMongo
+
   @Ignore("TODO: Legacy test failures")
   public void getLogDataPreviousAnalysis_noPreviousBaselineNoControlData() throws Exception {
     File file = new File("270-verification/src/test/resources/elk/logml_data_record.json");
@@ -514,7 +513,7 @@ public class LogMLAnalysisServiceTest extends VerificationBase {
   @Test
   @Owner(developers = RAGHU)
   @Category(UnitTests.class)
-  @RealMongo
+
   @Ignore("TODO: Legacy test failures")
   public void getLogDataSuccessfulWorkflowExecution() throws Exception {
     StateExecutionInstance stateExecutionInstance = new StateExecutionInstance();
@@ -571,7 +570,7 @@ public class LogMLAnalysisServiceTest extends VerificationBase {
   @Test
   @Owner(developers = RAGHU)
   @Category(UnitTests.class)
-  @RealMongo
+
   @Ignore("TODO: Legacy test failures")
   public void testBumpClusterLevel() throws Exception {
     StateExecutionInstance stateExecutionInstance = new StateExecutionInstance();
@@ -637,7 +636,7 @@ public class LogMLAnalysisServiceTest extends VerificationBase {
   @Test
   @Owner(developers = RAGHU)
   @Category(UnitTests.class)
-  @RealMongo
+
   @Ignore("TODO: Legacy test failures")
   public void testIsLogDataCollected() throws Exception {
     String query = UUID.randomUUID().toString();
@@ -1055,7 +1054,7 @@ public class LogMLAnalysisServiceTest extends VerificationBase {
   @Test
   @Owner(developers = RAGHU)
   @Category(UnitTests.class)
-  @RealMongo
+
   @Ignore("TODO: Legacy test failures")
   public void hasDataRecords() throws Exception {
     String query = UUID.randomUUID().toString();
@@ -1129,7 +1128,7 @@ public class LogMLAnalysisServiceTest extends VerificationBase {
   @Test
   @Owner(developers = RAGHU)
   @Category(UnitTests.class)
-  @RealMongo
+
   @Ignore("TODO: Legacy test failures")
   public void deleteClusterLevel() throws Exception {
     String query = UUID.randomUUID().toString();
