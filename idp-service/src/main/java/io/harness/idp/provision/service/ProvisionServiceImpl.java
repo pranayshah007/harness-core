@@ -140,7 +140,7 @@ public class ProvisionServiceImpl implements ProvisionService {
     try {
       return ngSecretService.create(accountIdentifier, null, null, true, secretRequestWrapper);
     } catch (Exception e) {
-      if (Objects.equals(e.getMessage(), ERROR_MESSAGE)) {
+      if (e.getMessage().equals(ERROR_MESSAGE)) {
         return ngSecretService.updateSecret(
             Constants.IDP_BACKEND_SECRET, accountIdentifier, null, null, secretRequestWrapper);
       }
