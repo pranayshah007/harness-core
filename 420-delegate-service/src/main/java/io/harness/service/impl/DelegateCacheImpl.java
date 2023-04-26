@@ -372,20 +372,21 @@ public class DelegateCacheImpl implements DelegateCache {
   }
 
   private Delegate getDelegateFromRedisCache(String delegateId, boolean forceRefresh) {
-    if (delegateRedisCache.get(delegateId) == null || forceRefresh) {
-      Delegate delegate = persistence.createQuery(Delegate.class).filter(DelegateKeys.uuid, delegateId).get();
-      if (delegate == null) {
-        log.warn("Unable to find delegate {} in DB.", delegateId);
-        return null;
-      }
-      if (delegateRedisCache.get(delegateId) != null) {
-        Delegate delegateFromCache = delegateRedisCache.get(delegateId);
-        // override hb value from cache as cache has the latest HB
-        delegate.setLastHeartBeat(delegateFromCache.getLastHeartBeat());
-        delegate.setVersion(delegateFromCache.getVersion());
-      }
-      delegateRedisCache.put(delegateId, delegate);
+    Delegate delegateFromCache = delegateRedisCache.get(delegateId);
+    if (delegateFromCache != null && !forceRefresh) {
+      return delegateFromCache;
     }
+    Delegate delegate = persistence.createQuery(Delegate.class).filter(DelegateKeys.uuid, delegateId).get();
+    if (delegate == null) {
+      log.warn("Unable to find delegate {} in DB.", delegateId);
+      return null;
+    }
+    if (delegateFromCache != null) {
+      // override hb value from cache as cache has the latest HB
+      delegate.setLastHeartBeat(delegateFromCache.getLastHeartBeat());
+      delegate.setVersion(delegateFromCache.getVersion());
+    }
+    delegateRedisCache.put(delegateId, delegate);
     return delegateRedisCache.get(delegateId);
   }
 
