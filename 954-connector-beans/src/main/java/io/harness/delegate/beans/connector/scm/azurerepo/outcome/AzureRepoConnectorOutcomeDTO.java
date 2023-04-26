@@ -9,20 +9,13 @@ package io.harness.delegate.beans.connector.scm.azurerepo.outcome;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
-import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
-import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
-import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsSpecDTO;
-import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoSshCredentialsDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -63,26 +56,5 @@ public class AzureRepoConnectorOutcomeDTO
     this.apiAccess = apiAccess;
     this.delegateSelectors = delegateSelectors;
     this.executeOnDelegate = executeOnDelegate;
-  }
-
-  @Override
-  public List<DecryptableEntity> getDecryptableEntities() {
-    List<DecryptableEntity> decryptableEntities = new ArrayList<>();
-    if (authentication.getType() == GitAuthType.HTTP) {
-      AzureRepoHttpCredentialsSpecDTO httpCredentialsSpec =
-          ((AzureRepoHttpCredentialsDTO) authentication.getSpec()).getHttpCredentialsSpec();
-      if (httpCredentialsSpec != null) {
-        decryptableEntities.add(httpCredentialsSpec);
-      }
-    } else {
-      AzureRepoSshCredentialsDTO sshCredential = (AzureRepoSshCredentialsDTO) authentication.getSpec();
-      if (sshCredential != null) {
-        decryptableEntities.add(sshCredential);
-      }
-    }
-    if (apiAccess != null && apiAccess.getSpec() != null) {
-      decryptableEntities.add(apiAccess.getSpec());
-    }
-    return decryptableEntities;
   }
 }

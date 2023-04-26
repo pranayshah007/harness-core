@@ -7,15 +7,11 @@
 
 package io.harness.delegate.beans.connector.gcpconnector.outcome;
 
-import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
-import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -38,12 +34,4 @@ public class GcpConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implements
   @Valid @NotNull GcpConnectorCredentialOutcomeDTO credential;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
-
-  @Override
-  public List<DecryptableEntity> getDecryptableEntities() {
-    if (credential.getType() == GcpCredentialType.MANUAL_CREDENTIALS) {
-      return Collections.singletonList(credential.getSpec());
-    }
-    return null;
-  }
 }
