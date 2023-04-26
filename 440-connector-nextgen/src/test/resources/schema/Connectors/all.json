@@ -4411,6 +4411,9 @@
             "tokenRef"
           ],
           "properties": {
+            "apiUrl": {
+              "type": "string"
+            },
             "tokenRef": {
               "type": "string"
             }
