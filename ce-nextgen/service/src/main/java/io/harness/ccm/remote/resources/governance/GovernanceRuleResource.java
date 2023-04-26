@@ -33,9 +33,11 @@ import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dao.RuleEnforcementDAO;
 import io.harness.ccm.views.dto.CloneRuleDTO;
 import io.harness.ccm.views.dto.CreateRuleDTO;
+import io.harness.ccm.views.dto.GovernanceAdhocEnqueueDTO;
 import io.harness.ccm.views.dto.GovernanceEnqueueResponseDTO;
 import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
 import io.harness.ccm.views.dto.ListDTO;
+import io.harness.ccm.views.entities.RecommendatioAdhocDTO;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.entities.RuleClone;
 import io.harness.ccm.views.entities.RuleEnforcement;
@@ -680,10 +682,31 @@ public class GovernanceRuleResource {
   enqueueAdhoc(@Parameter(required = false, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Valid String accountId,
       @RequestBody(required = true, description = "Request body for queuing the governance job")
-      @Valid GovernanceJobEnqueueDTO governanceJobEnqueueDTO) throws IOException {
-    rbacHelper.checkRuleExecutePermission(accountId, null, null, governanceJobEnqueueDTO.getRuleId());
-    rbacHelper.checkAccountExecutePermission(accountId, null, null, governanceJobEnqueueDTO.getIdentifier());
-    return governanceRuleService.enqueueAdhoc(accountId, governanceJobEnqueueDTO);
+      @Valid GovernanceAdhocEnqueueDTO governanceAdhocEnqueueDTO) throws IOException {
+    List<String> ruleExecutionId = new ArrayList<>();
+    rbacHelper.checkRuleExecutePermission(accountId, null, null, governanceAdhocEnqueueDTO.getRuleId());
+    for (String targetAccount : governanceAdhocEnqueueDTO.getTargetAccountDetails().keySet()) {
+      RecommendatioAdhocDTO recommendationAdhocDTO =
+          governanceAdhocEnqueueDTO.getTargetAccountDetails().get(targetAccount);
+      rbacHelper.checkAccountExecutePermission(accountId, null, null, recommendationAdhocDTO.getIdentifier());
+      for (String targetRegion : governanceAdhocEnqueueDTO.getTargetRegions()) {
+        GovernanceJobEnqueueDTO governanceJobEnqueueDTO =
+            GovernanceJobEnqueueDTO.builder()
+                .targetRegion(targetRegion)
+                .targetAccountId(targetAccount)
+                .ruleId(governanceAdhocEnqueueDTO.getRuleId())
+                .roleArn(recommendationAdhocDTO.getRoleArn())
+                .externalId(recommendationAdhocDTO.getExternalId())
+                .isDryRun(governanceAdhocEnqueueDTO.getIsDryRun())
+                .policy(governanceAdhocEnqueueDTO.getPolicy())
+                .ruleCloudProviderType(governanceAdhocEnqueueDTO.getRuleCloudProviderType())
+                .build();
+        log.info("enqueued: {}", governanceJobEnqueueDTO);
+        ruleExecutionId.add(governanceRuleService.enqueueAdhoc(accountId, governanceJobEnqueueDTO));
+      }
+    }
+
+    return ResponseDTO.newResponse(GovernanceEnqueueResponseDTO.builder().ruleExecutionId(ruleExecutionId).build());
   }
 
   @NextGenManagerAuth
