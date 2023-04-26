@@ -10,6 +10,7 @@ package io.harness.registrars;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.advisers.CDStepsRollbackModeAdviser;
 import io.harness.cdng.advisers.RollbackCustomAdviser;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.sdk.core.adviser.Adviser;
@@ -26,6 +27,7 @@ public class CDServiceAdviserRegistrar {
     Map<AdviserType, Class<? extends Adviser>> advisersMap =
         new HashMap<>(PipelineServiceUtilAdviserRegistrar.getEngineAdvisers());
     advisersMap.put(RollbackCustomAdviser.ADVISER_TYPE, RollbackCustomAdviser.class);
+    advisersMap.put(CDStepsRollbackModeAdviser.ADVISER_TYPE, CDStepsRollbackModeAdviser.class);
     return advisersMap;
   }
 }

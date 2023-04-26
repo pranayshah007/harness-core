@@ -9,10 +9,10 @@ package io.harness.cdng.creator.plan;
 
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
-import io.harness.advisers.nextstep.NextStepAdviser;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.advisers.CDStepsRollbackModeAdviser;
 import io.harness.cdng.advisers.RollbackCustomAdviser;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.execution.StepsExecutionConfig;
@@ -77,12 +77,12 @@ public class CDStepsPlanCreator extends GenericStepsNodePlanCreator {
         .adviserObtainment(AdviserObtainment.newBuilder().setType(RollbackCustomAdviser.ADVISER_TYPE).build())
         .advisorObtainmentForExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK,
             Collections.singletonList(AdviserObtainment.newBuilder()
-                                          .setType(NextStepAdviser.ADVISER_TYPE)
+                                          .setType(CDStepsRollbackModeAdviser.ADVISER_TYPE)
                                           .setParameters(adviserParamsBytes)
                                           .build()))
         .advisorObtainmentForExecutionMode(ExecutionMode.PIPELINE_ROLLBACK,
             Collections.singletonList(AdviserObtainment.newBuilder()
-                                          .setType(NextStepAdviser.ADVISER_TYPE)
+                                          .setType(CDStepsRollbackModeAdviser.ADVISER_TYPE)
                                           .setParameters(adviserParamsBytes)
                                           .build()))
         .build();
