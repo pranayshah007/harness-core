@@ -1358,13 +1358,25 @@ public class UserGroupServiceImpl implements UserGroupService {
 
     String accountId = appService.getAccountIdByAppId(appId);
     log.info("[USERGROUP-DEBUG]: deleted appId {} for account {}", appId, accountId);
-    try (HIterator<UserGroup> userGroupIterator = new HIterator<>(wingsPersistence.createQuery(UserGroup.class)
-                                                                      .filter(UserGroupKeys.accountId, accountId)
-                                                                      .project(UserGroup.ID_KEY2, true)
-                                                                      .project(UserGroupKeys.accountId, true)
-                                                                      .project(UserGroupKeys.appPermissions, true)
-                                                                      .project(UserGroupKeys.memberIds, true)
-                                                                      .fetch())) {
+    Query<UserGroup> query;
+    if (isNotEmpty(accountId)) {
+      query = wingsPersistence.createQuery(UserGroup.class)
+                  .filter(UserGroupKeys.accountId, accountId)
+                  .project(UserGroup.ID_KEY2, true)
+                  .project(UserGroupKeys.accountId, true)
+                  .project(UserGroupKeys.appPermissions, true)
+                  .project(UserGroupKeys.memberIds, true);
+    } else {
+      query = wingsPersistence.createQuery(UserGroup.class)
+                  .field(UserGroupKeys.appIds)
+                  .in(deletedIds)
+                  .project(UserGroup.ID_KEY2, true)
+                  .project(UserGroupKeys.accountId, true)
+                  .project(UserGroupKeys.appPermissions, true)
+                  .project(UserGroupKeys.memberIds, true);
+    }
+
+    try (HIterator<UserGroup> userGroupIterator = new HIterator<>(query.fetch())) {
       while (userGroupIterator.hasNext()) {
         final UserGroup userGroup = userGroupIterator.next();
         removeAppIdsFromAppPermissions(userGroup, deletedIds);
