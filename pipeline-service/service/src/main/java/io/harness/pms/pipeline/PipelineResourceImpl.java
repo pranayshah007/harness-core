@@ -336,15 +336,20 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId,
       @ResourceIdentifier String pipelineId, GitEntityFindInfoDTO gitEntityBasicInfo, Boolean getMetadataOnly,
       boolean loadFromFallbackBranch, String loadFromCache) {
+    long finalStartTime = System.currentTimeMillis();
     log.info(
         String.format("Get pipeline summary for pipeline with with identifier %s in project %s, org %s, account %s",
             pipelineId, projectId, orgId, accountId));
 
     Optional<PipelineEntity> pipelineEntity;
+    long startTime = System.currentTimeMillis();
     pipelineEntity = pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false,
         Boolean.TRUE.equals(getMetadataOnly), loadFromFallbackBranch,
         GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCache));
 
+    log.info("total time taken to fetch pipeline {} - {} ", pipelineId, System.currentTimeMillis() - startTime);
+
+    startTime = System.currentTimeMillis();
     PMSPipelineSummaryResponseDTO pipelineSummary = PMSPipelineDtoMapper.preparePipelineSummary(
         pipelineEntity.orElseThrow(
             ()
@@ -352,6 +357,9 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
                     String.format("Pipeline with the given ID: %s does not exist or has been deleted", pipelineId))),
         getMetadataOnly);
 
+    log.info("Pipeline summary prepare time - {}", System.currentTimeMillis() - startTime);
+
+    log.info("Final for {} time taken is {}", pipelineId, System.currentTimeMillis() - finalStartTime);
     return ResponseDTO.newResponse(pipelineSummary);
   }
 
