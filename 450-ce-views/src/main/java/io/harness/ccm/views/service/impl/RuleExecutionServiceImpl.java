@@ -73,4 +73,9 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
 
     return filterValues;
   }
+
+  @Override
+  public RuleExecutionList getRuleRecommendationDetails(String ruleRecommendationId) {
+    return rulesExecutionDAO.getRuleRecommendationDetails(ruleRecommendationId);
+  }
 }

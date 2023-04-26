@@ -200,6 +200,25 @@ public class GovernanceRuleExecutionResource {
   }
 
   @GET
+  @Path("recommendation/{recommendationId}")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Return getRuleRecommendation details", nickname = "getRuleRecommendation")
+  @Operation(operationId = "getRuleRecommendation", summary = "Return getRuleRecommendation details",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            description = "getRuleRecommendation", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+
+  public ResponseDTO<RuleExecutionList>
+  getRuleRecommendation(
+      @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @PathParam("recommendationId") @NotNull @Valid String recommendationId) {
+    return ResponseDTO.newResponse(ruleExecutionService.getRuleRecommendationDetails(recommendationId));
+  }
+
+  @GET
   @Path("execution/{ruleExecutionId}")
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Return logs for a rule execution", nickname = "getRuleExecutionDetails")

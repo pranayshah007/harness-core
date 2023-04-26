@@ -12,6 +12,9 @@ import static io.harness.persistence.HQuery.excludeValidate;
 import io.harness.ccm.commons.entities.CCMTimeFilter;
 import io.harness.ccm.views.entities.RuleExecution;
 import io.harness.ccm.views.entities.RuleExecution.RuleExecutionKeys;
+import io.harness.ccm.views.entities.RuleRecommendation;
+import io.harness.ccm.views.entities.RuleRecommendation.RuleRecommendationId;
+import io.harness.ccm.views.helper.ExecutionSummary;
 import io.harness.ccm.views.helper.RuleExecutionFilter;
 import io.harness.ccm.views.helper.RuleExecutionList;
 import io.harness.exception.InvalidRequestException;
@@ -22,6 +25,7 @@ import com.google.inject.Singleton;
 import dev.morphia.query.CriteriaContainer;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -94,5 +98,17 @@ public class RuleExecutionDAO {
                                            .asList());
 
     return ruleExecutionList;
+  }
+  public RuleExecutionList getRuleRecommendationDetails(String ruleRecommendationId) {
+    RuleRecommendation ruleRecommendation = hPersistence.createQuery(RuleRecommendation.class)
+                                                .field(RuleRecommendationId.uuid)
+                                                .equal(ruleRecommendationId)
+                                                .get();
+    List<String> executionIds = new ArrayList<>();
+    for (ExecutionSummary executionSummary : ruleRecommendation.getExecutions()) {
+      executionIds.add(executionSummary.getRuleExecutionID());
+    }
+    RuleExecutionFilter ruleExecutionFilter = RuleExecutionFilter.builder().executionIds(executionIds).build();
+    return filterExecution(ruleExecutionFilter);
   }
 }
