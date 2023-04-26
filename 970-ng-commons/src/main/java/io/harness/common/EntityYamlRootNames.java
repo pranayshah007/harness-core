@@ -225,6 +225,7 @@ public class EntityYamlRootNames {
   public static final String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
   public static final String TAS_ROLLING_ROLLBACK = "TasRollingRollback";
   public static final String K8S_DRY_RUN_MANIFEST = "K8sDryRun";
+  public static final String K8S_BG_STAGE_SCALE_DOWN = "K8sBlueGreenStageScaleDown";
   public static final String ASG_BLUE_GREEN_SWAP_SERVICE_STEP = "AsgBlueGreenSwapService";
   public static final String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
   public static final String TERRAFORM_CLOUD_ROLLBACK = "TerraformCloudRollback";
