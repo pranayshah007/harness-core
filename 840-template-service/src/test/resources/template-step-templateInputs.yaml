@@ -1,7 +1,7 @@
-type: "ShellScript"
+type: ShellScript
 spec:
   source:
-    type: "Inline"
+    type: Inline
     spec:
-      script: "<+input>"
-timeout: "<+input>"
+      script: <+input>
+timeout: <+input>

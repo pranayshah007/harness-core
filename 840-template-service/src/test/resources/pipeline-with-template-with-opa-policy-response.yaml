@@ -1,49 +1,49 @@
 pipeline:
-  name: "opa ex"
-  identifier: "opa_ex"
+  name: opa ex
+  identifier: opa_ex
   template:
-    templateRef: "PipelineTemplevel1"
+    templateRef: PipelineTemplevel1
     versionLabel: 1
   stages:
-  - stage:
-      name: "lvl2temp"
-      identifier: "lvl2temp"
-      template:
-        templateRef: "stg_temp2"
-        versionLabel: "1"
-        templateInputs:
-          type: "Approval"
-          spec:
-            execution:
-              steps:
-              - step:
-                  identifier: "shell"
-                  type: "ShellScript"
-                  spec:
-                    source:
-                      type: "Inline"
+    - stage:
+        name: lvl2temp
+        identifier: lvl2temp
+        template:
+          templateRef: stg_temp2
+          versionLabel: "1"
+          templateInputs:
+            type: Approval
+            spec:
+              execution:
+                steps:
+                  - step:
+                      identifier: shell
+                      type: ShellScript
                       spec:
-                        script: "ls"
-      type: "Approval"
-      spec:
-        execution:
-          steps:
-          - step:
-              identifier: "shell"
-              type: "ShellScript"
-              name: "shell"
-              spec:
-                shell: "Bash"
-                onDelegate: true
-                source:
-                  type: "Inline"
+                        source:
+                          type: Inline
+                          spec:
+                            script: ls
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - step:
+                  identifier: shell
+                  type: ShellScript
+                  name: shell
                   spec:
-                    script: "ls"
-                environmentVariables: []
-                outputVariables: []
-                executionTarget: {}
-              timeout: "10m"
-        serviceDependencies: []
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: ls
+                    environmentVariables: []
+                    outputVariables: []
+                    executionTarget: {}
+                  timeout: 10m
+          serviceDependencies: []
   tags: {}
-  projectIdentifier: "projId"
-  orgIdentifier: "orgId"
+  projectIdentifier: projId
+  orgIdentifier: orgId
