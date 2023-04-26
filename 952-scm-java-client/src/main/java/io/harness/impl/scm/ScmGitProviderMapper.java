@@ -20,6 +20,7 @@ import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketOAuthDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
@@ -32,6 +33,7 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.git.GitClientHelper;
+import io.harness.product.ci.scm.proto.AuthType;
 import io.harness.product.ci.scm.proto.AzureProvider;
 import io.harness.product.ci.scm.proto.BitbucketCloudProvider;
 import io.harness.product.ci.scm.proto.BitbucketServerProvider;
@@ -134,13 +136,20 @@ public class ScmGitProviderMapper {
 
   private BitbucketCloudProvider createBitbucketCloudProvider(BitbucketConnectorDTO bitbucketConnector) {
     BitbucketApiAccessDTO apiAccess = bitbucketConnector.getApiAccess();
-    BitbucketUsernameTokenApiAccessDTO bitbucketUsernameTokenApiAccessDTO =
-        (BitbucketUsernameTokenApiAccessDTO) apiAccess.getSpec();
-    String username = getSecretAsStringFromPlainTextOrSecretRef(
-        bitbucketUsernameTokenApiAccessDTO.getUsername(), bitbucketUsernameTokenApiAccessDTO.getUsernameRef());
-    String appPassword = String.valueOf(bitbucketUsernameTokenApiAccessDTO.getTokenRef().getDecryptedValue());
-
-    return BitbucketCloudProvider.newBuilder().setUsername(username).setAppPassword(appPassword).build();
+    if (apiAccess.getSpec() instanceof BitbucketUsernameTokenApiAccessDTO) {
+      BitbucketUsernameTokenApiAccessDTO bitbucketUsernameTokenApiAccessDTO =
+          (BitbucketUsernameTokenApiAccessDTO) apiAccess.getSpec();
+      String username = getSecretAsStringFromPlainTextOrSecretRef(
+          bitbucketUsernameTokenApiAccessDTO.getUsername(), bitbucketUsernameTokenApiAccessDTO.getUsernameRef());
+      String appPassword = String.valueOf(bitbucketUsernameTokenApiAccessDTO.getTokenRef().getDecryptedValue());
+      return BitbucketCloudProvider.newBuilder().setUsername(username).setAppPassword(appPassword).build();
+    } else {
+      BitbucketOAuthDTO bitBucketOAuthDTO = (BitbucketOAuthDTO) apiAccess.getSpec();
+      return BitbucketCloudProvider.newBuilder()
+          .setOauthToken(scmGitProviderHelper.getToken(bitBucketOAuthDTO.getTokenRef()))
+          .setAuthType(AuthType.OAUTH)
+          .build();
+    }
   }
 
   private BitbucketServerProvider createBitbucketServerProvider(BitbucketConnectorDTO bitbucketConnector) {

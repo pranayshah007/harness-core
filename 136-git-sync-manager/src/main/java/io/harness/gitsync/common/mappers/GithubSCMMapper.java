@@ -56,9 +56,9 @@ public class GithubSCMMapper
   public GithubApiAccess toApiAccess(GithubApiAccessSpecDTO spec, GithubApiAccessType apiAccessType) {
     switch (apiAccessType) {
       case OAUTH:
-        final GithubOauthDTO GithubOauthDTO = (GithubOauthDTO) spec;
+        final GithubOauthDTO githubOauthDTO = (GithubOauthDTO) spec;
         return GithubOauth.builder()
-            .tokenRef(SecretRefHelper.getSecretConfigString(GithubOauthDTO.getTokenRef()))
+            .tokenRef(SecretRefHelper.getSecretConfigString(githubOauthDTO.getTokenRef()))
             .build();
       default:
         throw new UnknownEnumTypeException("Github Api Access Type", apiAccessType.getDisplayName());
