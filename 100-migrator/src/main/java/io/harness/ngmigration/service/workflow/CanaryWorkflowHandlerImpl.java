@@ -23,18 +23,14 @@ import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Workflow;
-import software.wings.service.impl.yaml.handler.workflow.CanaryWorkflowYamlHandler;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Sets;
-import com.google.inject.Inject;
 import java.util.Set;
 
 public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
   private static final Set<OrchestrationWorkflowType> ROLLING_WORKFLOW_TYPES =
       Sets.newHashSet(BASIC, BLUE_GREEN, ROLLING);
-
-  @Inject CanaryWorkflowYamlHandler canaryWorkflowYamlHandler;
 
   @Override
   public TemplateEntityType getTemplateType(Workflow workflow) {
@@ -42,7 +38,7 @@ public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
     if (workflowType != OrchestrationWorkflowType.MULTI_SERVICE) {
       return STAGE_TEMPLATE;
     }
-    return PIPELINE_TEMPLATE;
+    return shouldCreateStageTemplate(workflow) ? STAGE_TEMPLATE : PIPELINE_TEMPLATE;
   }
 
   PhaseStep getPreDeploymentPhase(Workflow workflow) {
