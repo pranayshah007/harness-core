@@ -542,7 +542,7 @@ paths:
         $ref: '#/components/requestBodies/IPAllowlistConfigRequest'
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
     get:
       summary: List IP Allowlist Configs
       operationId: get-ip-allowlist-configs
@@ -566,7 +566,7 @@ paths:
         - x-api-key: []
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
     parameters: []
   '/v1/ip-allowlist/{ip-config-identifier}':
     get:
@@ -582,7 +582,7 @@ paths:
           $ref: '#/components/responses/IPAllowlistConfigResponse'
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
     parameters:
       - schema:
           type: string
@@ -604,7 +604,7 @@ paths:
         - x-api-key: []
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
     delete:
       summary: Delete an IP Allowlist config
       operationId: delete-ip-allowlist-config
@@ -618,14 +618,11 @@ paths:
         - x-api-key: []
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
   '/v1/ip-allowlist/validate-unique-identifier/{ip-config-identifier}':
     get:
       summary: Validate unique IP Allowlist config identifier
       operationId: validate-unique-ip-allowlist-config-identifier
-      responses:
-        '200':
-          $ref: '#/components/responses/IPAllowlistConfigValidateResponse'
       description: Checks whether the IP Allowlist config identifier is unique or not
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
@@ -633,7 +630,10 @@ paths:
         - x-api-key: []
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
+      responses:
+        '204':
+          description: No Content
     parameters:
       - schema:
           type: string
@@ -665,7 +665,7 @@ paths:
         - x-api-key: []
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
     parameters: []
   /v1/secrets:
     post:
@@ -1913,7 +1913,7 @@ components:
         name:
           type: string
           description: Name of the IP Config defined in Harness
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          pattern: '^[0-9a-zA-Z-_ ]{0,127}$'
           minLength: 1
           maxLength: 128
         identifier:
