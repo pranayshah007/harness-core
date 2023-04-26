@@ -731,7 +731,8 @@ public enum FeatureName {
   CHAOS_DASHBOARD_ENABLED("Enables chaos dashboards in CHAOS module", HarnessTeam.CHAOS),
   PL_NEW_PAGE_SIZE(
       "Enables new default page size for several listing pages like pipelines, access control, executions, connectors, etc.",
-      HarnessTeam.PL);
+      HarnessTeam.PL),
+  CDS_SUPPORT_TICKET_DEFLECTION("Enable api to create zendesk ticket and for generating coveo token", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

@@ -7,23 +7,18 @@
 
 package io.harness.resourcegroup.v1.remote.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.swagger.annotations.ApiModel;
-import javax.validation.constraints.NotNull;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+
 import lombok.Builder;
 import lombok.Data;
+import org.jetbrains.annotations.NotNull;
 
 @Data
 @Builder
-@JsonIgnoreProperties(ignoreUnknown = true)
-@ApiModel("ZendeskDescription")
-public class ZendeskDescription {
+@OwnedBy(HarnessTeam.CDP)
+public class CoveoResponseDTO {
   @NotNull String message;
-  @NotNull String url;
-  @NotNull String userBrowser;
-  @NotNull String browserResolution;
-  @NotNull String userOS;
-  @NotNull String userName;
-  @NotNull String accountId;
-  @NotNull String module;
+  @NotNull Integer code;
+  String token;
 }
