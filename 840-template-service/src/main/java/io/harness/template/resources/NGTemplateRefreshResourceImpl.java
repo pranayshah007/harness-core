@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.template.services;
+package io.harness.template.resources;
 
 import com.google.inject.Inject;
 import io.harness.NGCommonEntityConstants;
@@ -27,7 +27,7 @@ import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.beans.PermissionTypes;
 import io.harness.template.mappers.NGTemplateDtoMapper;
-import io.harness.template.resources.NGTemplateRefreshResource;
+import io.harness.template.services.TemplateRefreshService;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

@@ -21,8 +21,10 @@ java_library(
         "//970-ng-commons:module",
         "//980-commons:module",
         "//clients/access-control/sdk:module",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:io_swagger_swagger_annotations",
         "@maven//:javax_validation_validation_api",
+        "@maven//:org_glassfish_jersey_media_jersey_media_multipart",
     ],
 )
 

@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.template.services;
+package io.harness.template.resources;
 
 import com.google.inject.Inject;
 import io.harness.NGCommonEntityConstants;
@@ -77,7 +77,11 @@ import io.harness.template.helpers.TemplateReferenceHelper;
 import io.harness.template.helpers.TemplateYamlConversionHelper;
 import io.harness.template.helpers.YamlVariablesUtils;
 import io.harness.template.mappers.NGTemplateDtoMapper;
-import io.harness.template.resources.NGTemplateResource;
+import io.harness.template.services.NGTemplateService;
+import io.harness.template.services.NGTemplateServiceHelper;
+import io.harness.template.services.TemplateMergeService;
+import io.harness.template.services.TemplateVariableCreatorFactory;
+import io.harness.template.services.TemplateVariableCreatorService;
 import io.harness.template.utils.TemplateUtils;
 import io.harness.utils.PageUtils;
 import io.swagger.annotations.ApiParam;
@@ -129,7 +133,8 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
     private final TemplateYamlConversionHelper templateYamlConversionHelper;
     private final TemplateReferenceHelper templateReferenceHelper;
     @Inject CustomDeploymentResourceClient customDeploymentResourceClient;
-    @Inject TemplateVariableCreatorFactory templateVariableCreatorFactory;
+    @Inject
+    TemplateVariableCreatorFactory templateVariableCreatorFactory;
 
     public static final String TEMPLATE_PARAM_MESSAGE = "Template Identifier for the entity";
 

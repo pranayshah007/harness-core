@@ -255,8 +255,9 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
   }
 
   private void registerResources(Environment environment, Injector injector) {
+    Set<String> resources = new HashSet<>(List.of("io.harness.template.resources.NGTemplateResource", "io.harness.template.resources.NGTemplateRefreshResource", "io.harness.template.resources.NGTemplateSchemaResource"));
     for (Class<?> resource : getResourceClasses()) {
-      if (Resource.isAcceptable(resource)) {
+      if (Resource.isAcceptable(resource) || resources.contains(resource.getName())) {
         environment.jersey().register(injector.getInstance(resource));
       }
     }
