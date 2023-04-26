@@ -206,8 +206,8 @@ public class Instance {
 
   private String lastPipelineExecutionId;
   private String lastPipelineExecutionName;
-  String stageNodeExecutionId;
-  Status stageStatus;
+  private String stageNodeExecutionId;
+  private Status stageStatus;
 
   private InstanceInfo instanceInfo;
 

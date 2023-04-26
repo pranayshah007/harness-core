@@ -16,6 +16,7 @@ import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
@@ -23,8 +24,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,9 +43,19 @@ public class DashboardServiceHelperTest {
   private static final String TAG = "tag";
   private static final String STATUS = "status";
 
+  private String instanceKey1 = "instanceKey1";
+  private String infraMappingId1 = "infraMappingId1";
+  private String instanceKey2 = "instanceKey2";
+  private String infraMappingId2 = "infraMappingId2";
+  private String lastPipelineExecutionName;
+  private String lastPipelineExecutionId;
+  private String stageNodeExecutionId;
+  private Status stageStatus;
   private Map<String, String> envIdToNameMap;
   private Map<String, String> infraIdToNameMap;
-  private Map<String, Map<EnvironmentType, Map<String, Map<String, Pair<Integer, Long>>>>> instanceCountMap;
+  private Map<String,
+      Map<EnvironmentType, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>>>>
+      instanceCountMap;
 
   private List<InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> instanceGroupedByArtifactList1;
   private List<InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> instanceGroupedByArtifactList2;
@@ -71,29 +80,39 @@ public class DashboardServiceHelperTest {
   public void setup() {
     instanceGroupedByArtifactList1 = new ArrayList<>();
     instanceGroupedByArtifactList1.add(InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+                                           .instanceKey(instanceKey2)
+                                           .infrastructureMappingId(infraMappingId2)
                                            .artifact(DISPLAY_NAME_2)
                                            .lastDeployedAt(2l)
                                            .count(1)
                                            .build());
     instanceGroupedByArtifactList1.add(InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+                                           .instanceKey(instanceKey1)
+                                           .infrastructureMappingId(infraMappingId1)
                                            .artifact(DISPLAY_NAME_1)
                                            .lastDeployedAt(1l)
                                            .count(1)
                                            .build());
     instanceGroupedByArtifactList2 = new ArrayList<>();
     instanceGroupedByArtifactList2.add(InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+                                           .instanceKey(instanceKey1)
+                                           .infrastructureMappingId(infraMappingId1)
                                            .artifact(DISPLAY_NAME_1)
                                            .lastDeployedAt(3l)
                                            .count(1)
                                            .build());
     instanceGroupedByArtifactList3 = new ArrayList<>();
     instanceGroupedByArtifactList3.add(InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+                                           .instanceKey(instanceKey1)
+                                           .infrastructureMappingId(infraMappingId1)
                                            .artifact(DISPLAY_NAME_1)
                                            .lastDeployedAt(4l)
                                            .count(1)
                                            .build());
     instanceGroupedByArtifactList4 = new ArrayList<>();
     instanceGroupedByArtifactList4.add(InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+                                           .instanceKey(instanceKey1)
+                                           .infrastructureMappingId(infraMappingId1)
                                            .artifact(DISPLAY_NAME_1)
                                            .lastDeployedAt(5l)
                                            .count(1)
@@ -246,31 +265,41 @@ public class DashboardServiceHelperTest {
 
   private List<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvTypeListNonGitOps() {
     List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList = new ArrayList<>();
-    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(
-        ENV_1, ENV_1, EnvironmentType.PreProduction, INFRA_1, INFRA_1, null, null, 1l, DISPLAY_NAME_1, 1));
-    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(
-        ENV_1, ENV_1, EnvironmentType.PreProduction, INFRA_1, INFRA_1, null, null, 2l, DISPLAY_NAME_2, 1));
-    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(
-        ENV_1, ENV_1, EnvironmentType.PreProduction, INFRA_2, INFRA_2, null, null, 3l, DISPLAY_NAME_1, 1));
-    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(
-        ENV_1, ENV_1, EnvironmentType.Production, INFRA_1, INFRA_1, null, null, 4l, DISPLAY_NAME_1, 1));
-    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(
-        ENV_2, ENV_2, EnvironmentType.Production, INFRA_1, INFRA_1, null, null, 5l, DISPLAY_NAME_1, 1));
+    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
+        ENV_1, ENV_1, EnvironmentType.PreProduction, INFRA_1, INFRA_1, null, null, 1l, DISPLAY_NAME_1, 1,
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
+    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey2, infraMappingId2,
+        ENV_1, ENV_1, EnvironmentType.PreProduction, INFRA_1, INFRA_1, null, null, 2l, DISPLAY_NAME_2, 1,
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
+    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
+        ENV_1, ENV_1, EnvironmentType.PreProduction, INFRA_2, INFRA_2, null, null, 3l, DISPLAY_NAME_1, 1,
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
+    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
+        ENV_1, ENV_1, EnvironmentType.Production, INFRA_1, INFRA_1, null, null, 4l, DISPLAY_NAME_1, 1,
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
+    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
+        ENV_2, ENV_2, EnvironmentType.Production, INFRA_1, INFRA_1, null, null, 5l, DISPLAY_NAME_1, 1,
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
     return activeServiceInstanceInfoWithEnvTypeList;
   }
 
   private List<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvTypeListGitOps() {
     List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList = new ArrayList<>();
-    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(
-        ENV_1, ENV_1, EnvironmentType.PreProduction, null, null, INFRA_1, INFRA_1, 1l, DISPLAY_NAME_1, 1));
-    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(
-        ENV_1, ENV_1, EnvironmentType.PreProduction, null, null, INFRA_1, INFRA_1, 2l, DISPLAY_NAME_2, 1));
-    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(
-        ENV_1, ENV_1, EnvironmentType.PreProduction, null, null, INFRA_2, INFRA_2, 3l, DISPLAY_NAME_1, 1));
-    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(
-        ENV_1, ENV_1, EnvironmentType.Production, null, null, INFRA_1, INFRA_1, 4l, DISPLAY_NAME_1, 1));
-    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(
-        ENV_2, ENV_2, EnvironmentType.Production, null, null, INFRA_1, INFRA_1, 5l, DISPLAY_NAME_1, 1));
+    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
+        ENV_1, ENV_1, EnvironmentType.PreProduction, null, null, INFRA_1, INFRA_1, 1l, DISPLAY_NAME_1, 1,
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
+    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey2, infraMappingId2,
+        ENV_1, ENV_1, EnvironmentType.PreProduction, null, null, INFRA_1, INFRA_1, 2l, DISPLAY_NAME_2, 1,
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
+    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
+        ENV_1, ENV_1, EnvironmentType.PreProduction, null, null, INFRA_2, INFRA_2, 3l, DISPLAY_NAME_1, 1,
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
+    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
+        ENV_1, ENV_1, EnvironmentType.Production, null, null, INFRA_1, INFRA_1, 4l, DISPLAY_NAME_1, 1,
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
+    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
+        ENV_2, ENV_2, EnvironmentType.Production, null, null, INFRA_1, INFRA_1, 5l, DISPLAY_NAME_1, 1,
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
     return activeServiceInstanceInfoWithEnvTypeList;
   }
 
@@ -363,33 +392,76 @@ public class DashboardServiceHelperTest {
     return InstanceGroupedOnArtifactList.builder().instanceGroupedOnArtifactList(instanceGroupedOnArtifact).build();
   }
 
-  private Map<String, Map<EnvironmentType, Map<String, Map<String, Pair<Integer, Long>>>>> getInstanceCountMap() {
-    Map<String, Pair<Integer, Long>> buildToCountMap1 = new HashMap<>();
-    buildToCountMap1.put(DISPLAY_NAME_1, MutablePair.of(1, 1l));
-    buildToCountMap1.put(DISPLAY_NAME_2, MutablePair.of(1, 2l));
-    Map<String, Pair<Integer, Long>> buildToCountMap2 = new HashMap<>();
-    buildToCountMap2.put(DISPLAY_NAME_1, MutablePair.of(1, 3l));
-    Map<String, Pair<Integer, Long>> buildToCountMap3 = new HashMap<>();
-    buildToCountMap3.put(DISPLAY_NAME_1, MutablePair.of(1, 4l));
-    Map<String, Pair<Integer, Long>> buildToCountMap4 = new HashMap<>();
-    buildToCountMap4.put(DISPLAY_NAME_1, MutablePair.of(1, 5l));
+  private Map<String,
+      Map<EnvironmentType, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>>>>
+  getInstanceCountMap() {
+    Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> buildToCountMap1 = new HashMap<>();
+    buildToCountMap1.put(DISPLAY_NAME_1,
+        InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+            .instanceKey(instanceKey1)
+            .infrastructureMappingId(infraMappingId1)
+            .count(1)
+            .artifact(DISPLAY_NAME_1)
+            .lastDeployedAt(1l)
+            .build());
+    buildToCountMap1.put(DISPLAY_NAME_2,
+        InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+            .instanceKey(instanceKey2)
+            .infrastructureMappingId(infraMappingId2)
+            .artifact(DISPLAY_NAME_2)
+            .count(1)
+            .lastDeployedAt(2l)
+            .build());
+    Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> buildToCountMap2 = new HashMap<>();
+    buildToCountMap2.put(DISPLAY_NAME_1,
+        InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+            .instanceKey(instanceKey1)
+            .infrastructureMappingId(infraMappingId1)
+            .artifact(DISPLAY_NAME_1)
+            .count(1)
+            .lastDeployedAt(3l)
+            .build());
+    Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> buildToCountMap3 = new HashMap<>();
+    buildToCountMap3.put(DISPLAY_NAME_1,
+        InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+            .instanceKey(instanceKey1)
+            .infrastructureMappingId(infraMappingId1)
+            .artifact(DISPLAY_NAME_1)
+            .count(1)
+            .lastDeployedAt(4l)
+            .build());
+    Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> buildToCountMap4 = new HashMap<>();
+    buildToCountMap4.put(DISPLAY_NAME_1,
+        InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+            .instanceKey(instanceKey1)
+            .infrastructureMappingId(infraMappingId1)
+            .artifact(DISPLAY_NAME_1)
+            .count(1)
+            .lastDeployedAt(5l)
+            .build());
 
-    Map<String, Map<String, Pair<Integer, Long>>> infraToBuildMap1 = new HashMap<>();
+    Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>> infraToBuildMap1 =
+        new HashMap<>();
     infraToBuildMap1.put(INFRA_1, buildToCountMap1);
     infraToBuildMap1.put(INFRA_2, buildToCountMap2);
-    Map<String, Map<String, Pair<Integer, Long>>> infraToBuildMap2 = new HashMap<>();
+    Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>> infraToBuildMap2 =
+        new HashMap<>();
     infraToBuildMap2.put(INFRA_1, buildToCountMap3);
-    Map<String, Map<String, Pair<Integer, Long>>> infraToBuildMap3 = new HashMap<>();
+    Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>> infraToBuildMap3 =
+        new HashMap<>();
     infraToBuildMap3.put(INFRA_1, buildToCountMap4);
 
-    Map<EnvironmentType, Map<String, Map<String, Pair<Integer, Long>>>> environmentTypeToInfraMap1 = new HashMap<>();
+    Map<EnvironmentType, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>>>
+        environmentTypeToInfraMap1 = new HashMap<>();
     environmentTypeToInfraMap1.put(EnvironmentType.PreProduction, infraToBuildMap1);
     environmentTypeToInfraMap1.put(EnvironmentType.Production, infraToBuildMap2);
-    Map<EnvironmentType, Map<String, Map<String, Pair<Integer, Long>>>> environmentTypeToInfraMap2 = new HashMap<>();
+    Map<EnvironmentType, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>>>
+        environmentTypeToInfraMap2 = new HashMap<>();
     environmentTypeToInfraMap2.put(EnvironmentType.Production, infraToBuildMap3);
 
-    Map<String, Map<EnvironmentType, Map<String, Map<String, Pair<Integer, Long>>>>> environmentToTypeMap =
-        new HashMap<>();
+    Map<String,
+        Map<EnvironmentType, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>>>>
+        environmentToTypeMap = new HashMap<>();
     environmentToTypeMap.put(ENV_1, environmentTypeToInfraMap1);
     environmentToTypeMap.put(ENV_2, environmentTypeToInfraMap2);
 

@@ -36,16 +36,19 @@ public class PostProdRollbackServiceImpl implements PostProdRollbackService {
   @Inject private InstanceRepository instanceRepository;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Override
-  public PostProdRollbackCheckDTO checkIfRollbackAllowed(String accountIdentifier, String instanceUuid) {
+  public PostProdRollbackCheckDTO checkIfRollbackAllowed(
+      String accountIdentifier, String instanceKey, String infraMappingId) {
     if (!cdFeatureFlagHelper.isEnabled(accountIdentifier, POST_PROD_ROLLBACK)) {
       throw new InvalidRequestException(String.format(
           "PostProd rollback Feature-flag %s is disabled. Please contact harness support for enabling the feature-flag",
           POST_PROD_ROLLBACK.name()));
     }
     PostProdRollbackCheckDTOBuilder rollbackCheckDTO = PostProdRollbackCheckDTO.builder().isRollbackAllowed(true);
-    Instance instance = instanceRepository.getById(instanceUuid);
+    Instance instance =
+        instanceRepository.getInstanceByInstanceKeyAndInfrastructureMappingId(instanceKey, infraMappingId);
     if (instance == null) {
-      throw new InvalidRequestException(String.format("Could not find the instance for ID %s", instanceUuid));
+      throw new InvalidRequestException(String.format(
+          "Could not find the instance for InstanceKey %s and infraMappingId %s", instanceKey, infraMappingId));
     }
     if (instance.getStageStatus() != Status.SUCCEEDED) {
       rollbackCheckDTO.isRollbackAllowed(false);
@@ -61,16 +64,19 @@ public class PostProdRollbackServiceImpl implements PostProdRollbackService {
   }
 
   @Override
-  public PostProdRollbackResponseDTO triggerRollback(String accountIdentifier, String instanceUuid) {
-    PostProdRollbackCheckDTO checkDTO = checkIfRollbackAllowed(accountIdentifier, instanceUuid);
+  public PostProdRollbackResponseDTO triggerRollback(
+      String accountIdentifier, String instanceKey, String infraMappingId) {
+    PostProdRollbackCheckDTO checkDTO = checkIfRollbackAllowed(accountIdentifier, instanceKey, infraMappingId);
     if (!checkDTO.isRollbackAllowed()) {
       return PostProdRollbackResponseDTO.builder()
           .isRollbackTriggered(false)
-          .instanceUuid(instanceUuid)
+          .instanceKey(instanceKey)
+          .infraMappingId(infraMappingId)
           .message(checkDTO.getMessage())
           .build();
     }
-    Instance instance = instanceRepository.getById(instanceUuid);
+    Instance instance =
+        instanceRepository.getInstanceByInstanceKeyAndInfrastructureMappingId(instanceKey, infraMappingId);
     Object response = null;
     try {
       // TODO: Get the pipelineIdentifier. That would be used for doing the RBAC check.
@@ -78,12 +84,16 @@ public class PostProdRollbackServiceImpl implements PostProdRollbackService {
           instance.getLastPipelineExecutionId(), instance.getAccountIdentifier(), instance.getOrgIdentifier(),
           instance.getProjectIdentifier(), "getPipelineId", instance.getStageNodeExecutionId()));
     } catch (Exception ex) {
-      throw new InvalidRequestException("Could not trigger the rollback for instance with ID " + instanceUuid, ex);
+      throw new InvalidRequestException(
+          String.format("Could not trigger the rollback for instance with InstanceKey %s and infraMappingId %s",
+              instanceKey, infraMappingId),
+          ex);
     }
     String planExecutionId = (String) (((Map<String, Map>) response).get("planExecution")).get("uuid");
     return PostProdRollbackResponseDTO.builder()
         .isRollbackTriggered(true)
-        .instanceUuid(instanceUuid)
+        .instanceKey(instanceKey)
+        .infraMappingId(infraMappingId)
         .planExecutionId(planExecutionId)
         .build();
   }

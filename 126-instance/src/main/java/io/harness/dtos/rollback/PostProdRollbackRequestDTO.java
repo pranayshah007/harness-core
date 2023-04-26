@@ -10,16 +10,14 @@ package io.harness.dtos.rollback;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 
 @OwnedBy(HarnessTeam.CDP)
 @Getter
 @Builder
-public class PostProdRollbackResponseDTO {
-  boolean isRollbackTriggered;
-  String instanceKey;
-  String infraMappingId;
-  String planExecutionId;
-  String message;
+public class PostProdRollbackRequestDTO {
+  @NotNull String instanceKey;
+  @NotNull String infrastructureMappingId;
 }
