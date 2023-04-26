@@ -45,6 +45,8 @@ public abstract class SshClient implements AutoCloseable {
   @Getter(AccessLevel.PROTECTED) @Setter private LogCallback logCallback;
   private final List<SshConnection> connectionCache = new ArrayList<>();
 
+  public abstract SshClientType getType();
+
   protected char[] getCopyOfKey() {
     return Arrays.copyOf(sshSessionConfig.getKey(), sshSessionConfig.getKey().length);
   }
@@ -52,6 +54,7 @@ public abstract class SshClient implements AutoCloseable {
   public ExecResponse exec(ExecRequest request) throws SshClientException {
     try {
       SshConnection sshConnection = getCachedConnection(request);
+      saveExecutionLog("Exec using " + getType());
       return execInternal(request, sshConnection);
     } catch (SshClientException se) {
       if (!request.isRetry() && se.getCode() == ErrorCode.SSH_RETRY) {
@@ -69,6 +72,7 @@ public abstract class SshClient implements AutoCloseable {
 
     try {
       SshConnection sshConnection = getCachedConnection(request);
+      saveExecutionLog("SCP using " + getType());
       return scpUploadInternal(request, sshConnection);
     } catch (SshClientException se) {
       if (!request.isRetry() && se.getCode() == ErrorCode.SSH_RETRY) {
@@ -86,6 +90,7 @@ public abstract class SshClient implements AutoCloseable {
   public SftpResponse sftpDownload(SftpRequest request) throws SshClientException {
     try {
       SshConnection sshConnection = getCachedConnection(request);
+      saveExecutionLog("SFTP download using " + getType());
       return sftpDownloadInternal(request, sshConnection);
     } catch (SshClientException se) {
       if (!request.isRetry() && se.getCode() == ErrorCode.SSH_RETRY) {

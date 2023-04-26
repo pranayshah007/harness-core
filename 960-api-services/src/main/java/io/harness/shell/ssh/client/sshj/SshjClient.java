@@ -22,6 +22,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.logging.LogCallback;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.ssh.client.SshClient;
+import io.harness.shell.ssh.client.SshClientType;
 import io.harness.shell.ssh.client.SshConnection;
 import io.harness.shell.ssh.connection.ExecRequest;
 import io.harness.shell.ssh.connection.ExecResponse;
@@ -70,9 +71,15 @@ public class SshjClient extends SshClient {
   }
 
   @Override
+  public SshClientType getType() {
+    return SshClientType.SSHJ;
+  }
+
+  @Override
   protected ExecResponse execInternal(ExecRequest commandData, SshConnection sshConnection) {
     try (SshjExecSession execSession = getExecSession(sshConnection)) {
       Session session = execSession.getSession();
+      saveExecutionLog(format("Connection to %s established", getSshSessionConfig().getHost()));
       session.allocateDefaultPTY();
 
       if (commandData.isDisplayCommand()) {
@@ -84,16 +91,24 @@ public class SshjClient extends SshClient {
       Session.Command cmd = session.exec(commandData.getCommand());
       String output = IOUtils.readFully(cmd.getInputStream()).toString();
       cmd.join();
+      if (isNotEmpty(output)) {
+        saveExecutionLog("Script logs: \n" + output);
+      } else {
+        saveExecutionLog("No logs from the script");
+      }
       Integer exitStatus = cmd.getExitStatus();
+      saveExecutionLog("Executing command completed");
       return ExecResponse.builder().output(output).exitCode(exitStatus).status(SUCCESS).build();
     } catch (SshClientException ex) {
       if (ex.getCode() == SSH_RETRY) {
         throw ex;
       }
       log.error("Command execution failed with error", ex);
+      saveExecutionLog("Command finished with status " + FAILURE, FAILURE);
       return ExecResponse.builder().output(null).exitCode(1).status(FAILURE).build();
     } catch (Exception ex) {
       log.error("Command execution failed with error", ex);
+      saveExecutionLog("Command finished with status " + FAILURE, FAILURE);
       return ExecResponse.builder().output(null).exitCode(1).status(FAILURE).build();
     }
   }
@@ -120,7 +135,7 @@ public class SshjClient extends SshClient {
       if (e.getMessage().contains("open failed")) {
         throw new SshjClientException(SSH_RETRY, "Connection exception " + e.getMessage(), e);
       }
-
+      saveExecutionLog("Command finished with status " + FAILURE, FAILURE);
       throw new SshjClientException("Connection exception " + e.getMessage(), e);
     } catch (Exception e) {
       saveExecutionLogError(
@@ -141,10 +156,12 @@ public class SshjClient extends SshClient {
         if (sftpRequest.isCleanup()) {
           sftpClient.getSFTPEngine().remove(path);
         }
+        saveExecutionLog("SFTP Download finished");
         return SftpResponse.builder().success(true).content(content).status(SUCCESS).exitCode(0).build();
       }
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      saveExecutionLog("Command finished with status " + FAILURE, FAILURE);
+      throw new SshjClientException(e.getMessage());
     }
   }
 

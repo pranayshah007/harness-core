@@ -42,6 +42,7 @@ import io.harness.security.EncryptionUtils;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.SshUserInfo;
 import io.harness.shell.ssh.client.SshClient;
+import io.harness.shell.ssh.client.SshClientType;
 import io.harness.shell.ssh.client.SshConnection;
 import io.harness.shell.ssh.connection.ExecRequest;
 import io.harness.shell.ssh.connection.ExecResponse;
@@ -136,7 +137,6 @@ public class JschClient extends SshClient {
 
           if (channel.isClosed()) {
             commandExecutionStatus = channel.getExitStatus() == 0 ? SUCCESS : FAILURE;
-            saveExecutionLog("Command finished with status " + commandExecutionStatus, commandExecutionStatus);
             return ExecResponse.builder()
                 .output(output.toString())
                 .exitCode(channel.getExitStatus())
@@ -679,6 +679,11 @@ public class JschClient extends SshClient {
                                      .withUseSshClient(config.isUseSshClient())
                                      .build();
     return getSSHSessionWithRetry(newConfig);
+  }
+
+  @Override
+  public SshClientType getType() {
+    return SshClientType.JSCH;
   }
 
   @Override
