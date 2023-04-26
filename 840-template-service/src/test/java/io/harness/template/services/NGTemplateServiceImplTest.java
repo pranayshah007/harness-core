@@ -36,7 +36,6 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.encryption.Scope;
@@ -89,7 +88,6 @@ import io.harness.template.helpers.TemplateReferenceHelper;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.resources.NGTemplateResource;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
-import io.harness.template.yaml.TemplateYamlFacade;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -134,21 +132,18 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Mock GitXSettingsHelper gitXSettingsHelper;
 
   @InjectMocks NGTemplateServiceImpl templateService;
-
+  @Mock private NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
   @Mock NGTemplateSchemaServiceImpl templateSchemaService;
   @Mock AccessControlClient accessControlClient;
   @Mock TemplateMergeServiceHelper templateMergeServiceHelper;
   @Inject TemplateMergeServiceHelper injectedTemplateMergeServiceHelper;
 
   @Mock TemplateGitXService templateGitXService;
-  @Mock NGTemplateFeatureFlagHelperService featureFlagHelperService;
   @Mock GitAwareEntityHelper gitAwareEntityHelper;
   @Mock NgManagerReconcileClient ngManagerReconcileClient;
   @InjectMocks InputsValidator inputsValidator;
   @InjectMocks TemplateInputsValidator templateInputsValidator;
   @InjectMocks TemplateMergeServiceImpl templateMergeService;
-  private TemplateYamlFacade templateYamlFacade = new TemplateYamlFacade();
-
   private final String ACCOUNT_ID = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
@@ -187,13 +182,6 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     on(templateService).set("organizationClient", organizationClient);
     on(templateService).set("templateReferenceHelper", templateReferenceHelper);
     on(templateService).set("templateMergeService", templateMergeService);
-    on(templateMergeServiceHelper).set("templateYamlFacade", templateYamlFacade);
-    on(templateMergeService).set("templateYamlFacade", templateYamlFacade);
-    on(templateYamlFacade).set("featureFlagHelperService", featureFlagHelperService);
-
-    doReturn(true)
-        .when(featureFlagHelperService)
-        .isFeatureFlagEnabled("", FeatureName.CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS);
 
     doNothing().when(enforcementClientService).checkAvailability(any(), any());
     doNothing().when(gitXSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());

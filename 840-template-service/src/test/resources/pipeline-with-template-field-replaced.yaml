@@ -1,40 +1,40 @@
 pipeline:
-  name: "test1"
-  identifier: "test1"
-  projectIdentifier: "inderproj"
-  orgIdentifier: "Archit"
+  name: test1
+  identifier: test1
+  projectIdentifier: inderproj
+  orgIdentifier: Archit
   tags: {}
   stages:
-  - stage:
-      name: "ci"
-      identifier: "ci"
-      type: "CI"
-      spec:
-        cloneCodebase: false
-        infrastructure:
-          type: "KubernetesDirect"
-          spec:
-            connectorRef: "<+input>"
-            namespace: "<+input>"
-        execution:
-          steps:
-          - step:
-              type: "Plugin"
-              name: "plugin"
-              identifier: "plugin"
-              spec:
-                connectorRef: "<+input>"
-                image: "<+input>"
-                settings:
-                  template: "value"
-          - step:
-              identifier: "http"
-              name: "http step"
-              type: "Http"
-              spec:
-                url: "https://www.google.com"
-                method: "POST.allowedValues(POST, PUT, GET)"
-                headers: []
-                outputVariables: []
-                requestBody: ""
-              timeout: "10s"
+    - stage:
+        name: ci
+        identifier: ci
+        type: CI
+        spec:
+          cloneCodebase: false
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: <+input>
+              namespace: <+input>
+          execution:
+            steps:
+              - step:
+                  type: Plugin
+                  name: plugin
+                  identifier: plugin
+                  spec:
+                    connectorRef: <+input>
+                    image: <+input>
+                    settings:
+                      template: value
+              - step:
+                  identifier: http
+                  name: http step
+                  type: Http
+                  spec:
+                    url: https://www.google.com
+                    method: "POST.allowedValues(POST, PUT, GET)"
+                    headers: []
+                    outputVariables: []
+                    requestBody: ""
+                  timeout: 10s

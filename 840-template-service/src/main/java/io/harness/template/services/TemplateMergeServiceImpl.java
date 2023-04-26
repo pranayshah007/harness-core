@@ -34,7 +34,7 @@ import io.harness.template.helpers.TemplateMergeServiceHelper;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.template.utils.TemplateUtils;
-import io.harness.template.yaml.TemplateYamlFacade;
+import io.harness.template.yaml.TemplateYamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
@@ -57,14 +57,12 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
 
   @Inject private NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
-  @Inject private TemplateYamlFacade templateYamlFacade;
-
   @Override
   public String getTemplateInputs(String accountId, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, String versionLabel, boolean loadFromCache) {
     Optional<TemplateEntity> optionalTemplateEntity = templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
         accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, false, loadFromCache);
-    if (!optionalTemplateEntity.isPresent()) {
+    if (optionalTemplateEntity.isEmpty()) {
       throw new NGTemplateException("Template to fetch template inputs does not exist.");
     }
     return templateMergeServiceHelper.createTemplateInputsFromTemplate(optionalTemplateEntity.get().getYaml());
@@ -124,7 +122,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
     JsonNode updatedJsonNode =
         YamlRefreshHelper.refreshNodeFromSourceNode(originalTemplateInputSetJsonNode, templateInputSetJsonNode);
     return TemplateRetainVariablesResponse.builder()
-        .mergedTemplateInputs(templateYamlFacade.writeYamlString(updatedJsonNode))
+        .mergedTemplateInputs(TemplateYamlUtils.writeYamlString(updatedJsonNode))
         .build();
   }
 
@@ -149,11 +147,11 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
     List<TemplateReferenceSummary> templateReferenceSummaries =
         getTemplateReferenceSummaries(accountId, orgId, projectId, yaml, templateCacheMap);
     return TemplateMergeResponseDTO.builder()
-        .mergedPipelineYaml(templateYamlFacade.writeYamlString(resMap))
+        .mergedPipelineYaml(TemplateYamlUtils.writeYamlString(resMap))
         .templateReferenceSummaries(templateReferenceSummaries)
         .mergedPipelineYamlWithTemplateRef(mergeTemplateInputsInObject == null
                 ? null
-                : templateYamlFacade.writeYamlString(mergeTemplateInputsInObject.getResMapWithOpaResponse()))
+                : TemplateYamlUtils.writeYamlString(mergeTemplateInputsInObject.getResMapWithOpaResponse()))
         .cacheResponseMetadata(NGTemplateDtoMapper.getCacheResponse())
         .build();
   }
