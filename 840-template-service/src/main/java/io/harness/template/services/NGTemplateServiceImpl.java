@@ -504,14 +504,6 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       if (templateOptional.isPresent() && StoreType.REMOTE.equals(templateOptional.get().getStoreType())) {
         TemplateEntity templateEntity = templateOptional.get();
         validateTemplateVersion(versionLabel, templateEntity);
-
-        try {
-          if (doPublishSetupUsages(templateOptional.get())) {
-            templateReferenceHelper.populateTemplateReferences(templateOptional.get());
-          }
-        } catch (Exception e) {
-          log.error("Error occurred while publishing template references {}", e.getMessage());
-        }
       }
 
       return templateOptional;
