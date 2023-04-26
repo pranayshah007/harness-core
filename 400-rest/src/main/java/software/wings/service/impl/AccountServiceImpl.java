@@ -14,6 +14,8 @@ import static io.harness.beans.FeatureName.CG_LICENSE_USAGE;
 import static io.harness.beans.FeatureName.PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
+import static io.harness.beans.SearchFilter.Operator.GT;
+import static io.harness.beans.SortOrder.OrderType.ASC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.ACCOUNT_DOES_NOT_EXIST;
@@ -60,6 +62,7 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.PageResponse.PageResponseBuilder;
+import io.harness.beans.SortOrder;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.ccm.license.CeLicenseInfo;
 import io.harness.cdlicense.impl.CgCdLicenseUsageService;
@@ -101,6 +104,8 @@ import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.account.OauthProviderType;
 import io.harness.ng.core.dto.AccountDTO;
+import io.harness.ng.core.dto.GlobalGatewayAccountRequestDTO;
+import io.harness.ng.core.dto.GlobalGatewayAccountResponseDTO;
 import io.harness.ng.core.user.SessionTimeoutSettings;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
@@ -1247,6 +1252,32 @@ public class AccountServiceImpl implements AccountService {
       for (Account account : iterator) {
         accountDTOList.add(AccountMapper.toAccountDTO(account));
       }
+    }
+    return accountDTOList;
+  }
+
+  public List<GlobalGatewayAccountResponseDTO> getAllAccounts(
+      GlobalGatewayAccountRequestDTO globalGatewayAccountRequestDTO) {
+    log.info("Inside get all acccount gateway {}", globalGatewayAccountRequestDTO);
+    int pageSize = PageRequest.DEFAULT_PAGE_SIZE;
+    if (null != globalGatewayAccountRequestDTO.getPageSize()) {
+      pageSize = globalGatewayAccountRequestDTO.getPageSize();
+    }
+    PageRequest<Account> accountPageRequest = aPageRequest().withLimit(String.valueOf(pageSize)).build();
+    if (null != globalGatewayAccountRequestDTO.getNextUuid()) {
+      accountPageRequest.addFilter(ID_KEY2, GT, globalGatewayAccountRequestDTO.getNextUuid());
+    }
+    accountPageRequest.setOrders(
+        Collections.singletonList(SortOrder.Builder.aSortOrder().withField(ID_KEY2, ASC).build()));
+    PageResponse<Account> responses = wingsPersistence.query(Account.class, accountPageRequest, excludeAuthorityCount)
+                                          .project(ID_KEY2, true)
+                                          .project(AccountKeys.accountName, true)
+                                          .project(AccountKeys.subdomainUrl, true)
+                                          .filter(ApplicationKeys.appId, GLOBAL_APP_ID);
+    List<Account> accounts = responses.getResponse();
+    List<GlobalGatewayAccountResponseDTO> accountDTOList = new ArrayList<>();
+    for (Account account : accounts) {
+      accountDTOList.add(AccountMapper.toGlobalGatewayAccountResponseDTO(account));
     }
     return accountDTOList;
   }

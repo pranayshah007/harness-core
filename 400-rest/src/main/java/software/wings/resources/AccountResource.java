@@ -42,6 +42,8 @@ import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.marketplace.gcp.GcpMarketPlaceApiHandler;
 import io.harness.ng.core.account.DefaultExperience;
+import io.harness.ng.core.dto.GlobalGatewayAccountRequestDTO;
+import io.harness.ng.core.dto.GlobalGatewayAccountResponseDTO;
 import io.harness.rest.RestResponse;
 import io.harness.scheduler.PersistentScheduler;
 import io.harness.security.annotations.InternalApi;
@@ -515,6 +517,21 @@ public class AccountResource {
       @NotNull AccountEvent accountEvent, @QueryParam("oneTimeOnly") @DefaultValue("true") boolean oneTimeOnly,
       @QueryParam("trialOnly") @DefaultValue("true") boolean trialOnly) {
     return new RestResponse<>(accountService.postCustomEvent(accountId, accountEvent, oneTimeOnly, trialOnly));
+  }
+
+  @POST
+  @Path("list-account-gateway")
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = LOGGED_IN)
+  public RestResponse<List<GlobalGatewayAccountResponseDTO>> getPaginatedAccountList(
+      @NotNull GlobalGatewayAccountRequestDTO globalGatewayAccountRequestDTO) {
+    try {
+      accountService.getAllAccounts(globalGatewayAccountRequestDTO);
+    } catch (Exception ex) {
+      log.error("Exception while calling", ex);
+    }
+    return new RestResponse<>(accountService.getAllAccounts(globalGatewayAccountRequestDTO));
   }
 
   @PATCH

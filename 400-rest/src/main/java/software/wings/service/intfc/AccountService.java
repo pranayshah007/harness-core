@@ -24,6 +24,8 @@ import io.harness.managerclient.HttpsCertRequirement.CertRequirement;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
+import io.harness.ng.core.dto.GlobalGatewayAccountRequestDTO;
+import io.harness.ng.core.dto.GlobalGatewayAccountResponseDTO;
 import io.harness.ng.core.user.SessionTimeoutSettings;
 import io.harness.validation.Create;
 import io.harness.validation.Update;
@@ -124,6 +126,8 @@ public interface AccountService {
   String getWatcherVersion(String accountId);
 
   String getAccountPrimaryDelegateVersion(String accountId);
+
+  List<GlobalGatewayAccountResponseDTO> getAllAccounts(GlobalGatewayAccountRequestDTO globalGatewayAccountRequestDTO);
 
   List<Account> listAllAccountsWithoutTheGlobalAccount();
 

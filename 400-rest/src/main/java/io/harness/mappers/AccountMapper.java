@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.dto.GatewayAccountRequestDTO;
+import io.harness.ng.core.dto.GlobalGatewayAccountResponseDTO;
 
 import software.wings.beans.Account;
 
@@ -58,6 +59,14 @@ public class AccountMapper {
         .createdFromNG(account.isCreatedFromNG())
         .isNextGenEnabled(account.isNextGenEnabled())
         .defaultExperience(account.getDefaultExperience())
+        .build();
+  }
+
+  public static GlobalGatewayAccountResponseDTO toGlobalGatewayAccountResponseDTO(Account account) {
+    return GlobalGatewayAccountResponseDTO.builder()
+        .uuid(account.getUuid())
+        .accountName(account.getAccountName())
+        .subdomainUrl(account.getSubdomainUrl())
         .build();
   }
 }
