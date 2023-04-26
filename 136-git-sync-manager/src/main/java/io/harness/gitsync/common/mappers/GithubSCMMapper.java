@@ -53,7 +53,7 @@ public class GithubSCMMapper
         .build();
   }
 
-  GithubApiAccess toApiAccess(GithubApiAccessSpecDTO spec, GithubApiAccessType apiAccessType) {
+  public GithubApiAccess toApiAccess(GithubApiAccessSpecDTO spec, GithubApiAccessType apiAccessType) {
     switch (apiAccessType) {
       case OAUTH:
         final GithubOauthDTO GithubOauthDTO = (GithubOauthDTO) spec;

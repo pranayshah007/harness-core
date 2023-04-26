@@ -18,7 +18,8 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 
 @HarnessRepo
 @OwnedBy(HarnessTeam.PIPELINE)
-public interface UserSourceCodeManagerRepository extends PagingAndSortingRepository<UserSourceCodeManager, String> {
+public interface UserSourceCodeManagerRepository
+    extends PagingAndSortingRepository<UserSourceCodeManager, String>, UserSourceCodeManagerRepositoryCustom {
   List<UserSourceCodeManager> findByAccountIdentifierAndUserIdentifier(String accountIdentifier, String userIdentifier);
   UserSourceCodeManager findByAccountIdentifierAndUserIdentifierAndType(
       String accountIdentifier, String userIdentifier, SCMType type);

@@ -47,8 +47,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -137,6 +139,48 @@ public class UserSourceCodeManagerResource {
     UserSourceCodeManagerDTO scmToSave =
         scmMapBinder.get(userSourceCodeManagerRequest.getType()).toServiceDTO(userSourceCodeManagerRequest);
     UserSourceCodeManagerDTO userSourceCodeManagerDTO = userSourceCodeManagerService.save(scmToSave);
+    return ResponseDTO.newResponse(
+        scmMapBinder.get(userSourceCodeManagerDTO.getType()).toResponseDTO(userSourceCodeManagerDTO));
+  }
+
+  @DELETE
+  @Hidden
+  @ApiOperation(value = "delete user source code manager", nickname = "deleteUserSourceCodeManager")
+  @Operation(operationId = "deleteUserSourceCodeManager", summary = "Deletes User Source Code Manager",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            description =
+                "This contains a boolean which indicates whether or not a userSourceCodeManager was successfully deleted")
+      })
+  public ResponseDTO<Boolean>
+  delete(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+             "accountIdentifier") @NotNull String accountIdentifier,
+      @Parameter(description = "userIdentifier") @QueryParam("userIdentifier") @NotNull String userIdentifier,
+      @Parameter(description = "Type of Git Provider") @QueryParam("type") @NotNull SCMType type) {
+    long deleted = userSourceCodeManagerService.delete(accountIdentifier, userIdentifier, type);
+    if (deleted > 0) {
+      return ResponseDTO.newResponse(true);
+    } else {
+      return ResponseDTO.newResponse(false);
+    }
+  }
+
+  @PUT
+  @Hidden
+  @ApiOperation(value = "update user source code manager", nickname = "updateUserSourceCodeManager")
+  @Operation(operationId = "updateUserSourceCodeManager", summary = "Updates User Source Code Manager",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "This contains details of the updated userSourceCodeManager")
+      })
+  public ResponseDTO<UserSourceCodeManagerResponseDTO>
+  update(@RequestBody(description = "This contains details of Source Code Manager") @NotNull
+      @Body UserSourceCodeManagerRequestDTO userSourceCodeManagerRequest) {
+    UserSourceCodeManagerDTO scmToUpdate =
+        scmMapBinder.get(userSourceCodeManagerRequest.getType()).toServiceDTO(userSourceCodeManagerRequest);
+    UserSourceCodeManagerDTO userSourceCodeManagerDTO = userSourceCodeManagerService.update(scmToUpdate);
     return ResponseDTO.newResponse(
         scmMapBinder.get(userSourceCodeManagerDTO.getType()).toResponseDTO(userSourceCodeManagerDTO));
   }
