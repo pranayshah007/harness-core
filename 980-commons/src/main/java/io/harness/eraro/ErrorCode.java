@@ -671,7 +671,13 @@ public enum ErrorCode {
   OPA_POLICY_EVALUATION_ERROR,
 
   USER_MARKED_FAILURE,
-  SSH_RETRY("Ssh retryable error");
+  SSH_RETRY("Ssh retryable error"),
+  HTTP_CLIENT_ERROR_RESPONSE,
+  HTTP_INTERNAL_SERVER_ERROR,
+  HTTP_BAD_GATEWAY,
+  HTTP_SERVICE_UNAVAILABLE,
+  HTTP_GATEWAY_TIMEOUT,
+  HTTP_SERVER_ERROR_RESPONSE;
 
   private Status status = BAD_REQUEST;
   private String description;
