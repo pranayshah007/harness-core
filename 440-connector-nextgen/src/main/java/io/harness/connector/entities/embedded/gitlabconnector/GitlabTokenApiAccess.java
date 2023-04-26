@@ -16,4 +16,5 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("io.harness.connector.entities.embedded.gitlabconnector.GitlabTokenApiAccess")
 public class GitlabTokenApiAccess implements GitlabApiAccess {
   String tokenRef;
+  String apiUrl;
 }

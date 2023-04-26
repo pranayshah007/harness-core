@@ -28,6 +28,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
@@ -162,7 +163,7 @@ public class ScmGitProviderMapper {
     return Provider.newBuilder()
         .setGitlab(createGitLabProvider(gitlabConnector))
         .setDebug(debug)
-        .setEndpoint(GitClientHelper.getGitlabApiURL(gitlabConnector.getUrl()))
+        .setEndpoint(GitClientHelper.getGitlabApiURL(gitlabConnector.getUrl(), getGitlabApiUrl(gitlabConnector)))
         .setSkipVerify(skipVerify)
         .setAdditionalCertsPath(getAdditionalCertsPath())
         .build();
@@ -256,5 +257,18 @@ public class ScmGitProviderMapper {
           "The Personal Access Token is not set. Please set the Personal Access Token in the Git Connector which has permissions to use providers API's");
     }
     return String.valueOf(githubOauthDTO.getTokenRef().getDecryptedValue());
+  }
+
+  private String getGitlabApiUrl(GitlabConnectorDTO gitlabConnector) {
+    if (gitlabConnector.getApiAccess() == null || gitlabConnector.getApiAccess().getSpec() == null) {
+      // not expected
+      return null;
+    }
+    GitlabApiAccessSpecDTO spec = gitlabConnector.getApiAccess().getSpec();
+    if (spec instanceof GitlabTokenSpecDTO) {
+      GitlabTokenSpecDTO tokenSpec = (GitlabTokenSpecDTO) spec;
+      return tokenSpec.getApiUrl();
+    }
+    return null;
   }
 }
