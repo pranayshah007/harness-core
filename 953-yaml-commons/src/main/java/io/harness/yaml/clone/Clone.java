@@ -1,11 +1,11 @@
 /*
- * Copyright 2022 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.yaml.repository;
+package io.harness.yaml.clone;
 
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
@@ -33,35 +33,31 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.CI)
-public class Repository {
+public class Clone {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   String uuid;
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  ParameterField<String> connector;
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  ParameterField<String> name;
-  // TODO: remove below properties
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH) boolean disabled;
-  public boolean getDisabled() {
-    return disabled;
-  }
-  @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH) boolean insecure;
-  @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH) Integer depth;
-  @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH) boolean trace;
   @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = "io.harness.yaml.repository.Strategy")
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  ParameterField<Boolean> insecure;
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH)
+  ParameterField<Integer> depth;
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  ParameterField<Boolean> trace;
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = "io.harness.yaml.clone.Strategy")
   @Builder.Default
-  Strategy strategy = Strategy.MERGE_COMMIT;
+  Strategy strategy = Strategy.MERGE;
   public Strategy getStrategy() {
     if (strategy == null) {
-      return Strategy.MERGE_COMMIT;
+      return Strategy.MERGE;
     }
     return strategy;
   }
-  @YamlSchemaTypes({runtime}) ParameterField<Reference> reference;
-  ContainerResource resources;
+  @YamlSchemaTypes({runtime}) ParameterField<Ref> ref;
+  @YamlSchemaTypes({runtime}) ContainerResource resources;
 }

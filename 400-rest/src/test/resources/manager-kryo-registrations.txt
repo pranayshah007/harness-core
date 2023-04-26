@@ -2280,11 +2280,13 @@
 88509:io.harness.yaml.extended.ci.codebase.BuildType
 88510:io.harness.yaml.extended.ci.codebase.PRCloneStrategy
 88511:io.harness.yaml.repository.Repository
-88512:io.harness.yaml.repository.Reference
-88513:io.harness.yaml.repository.ReferenceType
-88514:io.harness.yaml.repository.Strategy
+88512:io.harness.yaml.clone.Ref
+88513:io.harness.yaml.clone.RefType
+88514:io.harness.yaml.clone.Strategy
 88515:io.harness.yaml.registry.Registry
 88516:io.harness.yaml.registry.RegistryCredential
+88517:io.harness.yaml.options.Options
+88518:io.harness.yaml.clone.Clone
 90001:software.wings.service.impl.apm.AWSPrometheusInfo
 95001:io.harness.delegate.beans.logstreaming.UnitProgressData
 95002:io.harness.waiter.WaitInstanceTimeoutCallback

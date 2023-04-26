@@ -16,18 +16,14 @@ import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.YamlUpdates;
-import io.harness.pms.utils.PipelineYamlHelper;
-import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.OptionUtils;
 import io.harness.pms.yaml.PipelineVersion;
-import io.harness.pms.yaml.RepositoryUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
-import io.harness.yaml.registry.Registry;
-import io.harness.yaml.repository.Reference;
-import io.harness.yaml.repository.Repository;
+import io.harness.yaml.options.Options;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
@@ -206,32 +202,18 @@ public class PlanCreatorUtils {
     return new AutoLogContext(logContextMap, AutoLogContext.OverrideBehavior.OVERRIDE_NESTS);
   }
 
-  public Dependency createGlobalDependency(
-      KryoSerializer kryoSerializer, String pipelineVersion, String pipelineYaml, String inputSetYaml) {
+  public Dependency createGlobalDependency(KryoSerializer kryoSerializer, String pipelineVersion, String pipelineYaml) {
     switch (pipelineVersion) {
       case PipelineVersion.V1:
-        return Dependency.newBuilder()
-            .putAllMetadata(getRepositoryDependency(kryoSerializer, pipelineYaml, inputSetYaml))
-            .putAllMetadata(getRegistryDependency(kryoSerializer, pipelineYaml))
-            .build();
+        return Dependency.newBuilder().putAllMetadata(getOptionsDependency(kryoSerializer, pipelineYaml)).build();
       default:
         return null;
     }
   }
 
-  private Map<String, ByteString> getRepositoryDependency(
-      KryoSerializer kryoSerializer, String pipelineYaml, String inputSetYaml) {
-    Optional<Repository> optionalRepository = RepositoryUtils.getRepositoryFromPipelineYaml(pipelineYaml);
-    Repository repository = optionalRepository.orElse(Repository.builder().build());
-    Optional<Reference> optionalReference = RepositoryUtils.getReferenceFromInputPayload(inputSetYaml);
-    repository.setReference(
-        optionalReference.map(ParameterField::createValueField).orElseGet(repository::getReference));
-    return Map.of(YAMLFieldNameConstants.REPOSITORY, ByteString.copyFrom(kryoSerializer.asBytes(repository)));
-  }
-
-  private Map<String, ByteString> getRegistryDependency(KryoSerializer kryoSerializer, String pipelineYaml) {
-    Optional<Registry> optionalRegistry = PipelineYamlHelper.getRegistry(pipelineYaml);
-    Registry registry = optionalRegistry.orElse(Registry.builder().build());
-    return Map.of(YAMLFieldNameConstants.REGISTRY, ByteString.copyFrom(kryoSerializer.asBytes(registry)));
+  private Map<String, ByteString> getOptionsDependency(KryoSerializer kryoSerializer, String pipelineYaml) {
+    Optional<Options> optionalOptions = OptionUtils.getOptions(pipelineYaml);
+    Options options = optionalOptions.orElse(Options.builder().build());
+    return Map.of(YAMLFieldNameConstants.OPTIONS, ByteString.copyFrom(kryoSerializer.asBytes(options)));
   }
 }

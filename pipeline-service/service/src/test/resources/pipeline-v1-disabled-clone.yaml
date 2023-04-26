@@ -17,8 +17,9 @@ inputs:
     desc: docker password
     enums: [secret1, secret2]
     required: true
-repository:
-  disabled: true
+options:
+  clone:
+    disabled: true
 stages:
   - name: output variable
     type: ci

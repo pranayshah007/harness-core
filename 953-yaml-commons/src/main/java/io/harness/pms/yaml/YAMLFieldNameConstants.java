@@ -100,9 +100,9 @@ public class YAMLFieldNameConstants {
   public final String GROUP = "group";
   public static final String OUTPUTS = "outputs";
 
+  public final String OPTIONS = "options";
   public final String REPOSITORY = "repository";
   public final String DEFAULT = "default";
-  public final String REFERENCE = "reference";
   public final String REGISTRY = "registry";
 
   public final String VALUES_PATHS = "valuesPaths";
