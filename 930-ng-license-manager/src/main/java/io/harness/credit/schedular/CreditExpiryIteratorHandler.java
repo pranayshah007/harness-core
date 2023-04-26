@@ -15,6 +15,7 @@ import static java.time.Duration.ofSeconds;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.credit.entities.Credit;
+import io.harness.credit.entities.Credit.CreditsKeys;
 import io.harness.credit.services.CreditService;
 import io.harness.credit.utils.CreditStatus;
 import io.harness.iterator.PersistenceIteratorFactory;
@@ -60,17 +61,17 @@ public class CreditExpiryIteratorHandler implements Handler<Credit> {
         Credit.class,
         MongoPersistenceIterator.<Credit, MorphiaFilterExpander<Credit>>builder()
             .clazz(Credit.class)
-            .fieldName(Credit.CreditsKeys.creditExpiryCheckIteration)
+            .fieldName(CreditsKeys.creditExpiryCheckIteration)
             .targetInterval(ofSeconds(31))
             .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
             .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
             .handler(this)
             .filterExpander(query
-                -> query.field(Credit.CreditsKeys.creditStatus)
+                -> query.field(CreditsKeys.creditStatus)
                        .equal(CreditStatus.ACTIVE)
-                       .field(Credit.CreditsKeys.expiryTime)
+                       .field(CreditsKeys.expiryTime)
                        .greaterThan(0)
-                       .field(Credit.CreditsKeys.expiryTime)
+                       .field(CreditsKeys.expiryTime)
                        .lessThan(System.currentTimeMillis()))
             .schedulingType(REGULAR)
             .persistenceProvider(persistenceProvider)
