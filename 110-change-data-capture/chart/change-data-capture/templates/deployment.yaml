@@ -1,0 +1,189 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "change-data-capture.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "change-data-capture.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "change-data-capture.selectorLabels" . | nindent 6 }}
+  {{- if .Values.updateStrategy }}
+  strategy: {{- toYaml .Values.updateStrategy | nindent 4 }}
+  {{- end }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: change-data-capture
+        {{- include "change-data-capture.selectorLabels" . | nindent 8 }}
+    spec:
+      {{ include "change-data-capture.pullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "change-data-capture.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.schedulerName }}
+      schedulerName: {{ .Values.schedulerName }}
+      {{- end }}
+      {{- if .Values.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- end }}
+      initContainers:
+
+
+
+      {{- if .Values.global.database.mongo.installed }}
+      - name: wait-for-mongo
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        {{- if .Values.waitForInitContainer.resources }}
+        resources:
+          {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.waitForInitContainer.resources "context" $) | nindent 12 }}
+        {{- end }}
+        securityContext:
+          {{- toYaml .Values.waitForInitContainer.containerSecurityContext | nindent 12 }}
+        imagePullPolicy: {{ .Values.waitForInitContainer.imagePullPolicy }}
+        args:
+          - "pod"
+          - "-lapp=mongodb-replicaset"
+      {{- end }}
+      - name: wait-for-timescale
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        {{- if .Values.waitForInitContainer.resources }}
+        resources:
+          {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.waitForInitContainer.resources "context" $) | nindent 12 }}
+        {{- end }}
+        securityContext:
+          {{- toYaml .Values.waitForInitContainer.containerSecurityContext | nindent 12 }}
+        imagePullPolicy: {{ .Values.waitForInitContainer.imagePullPolicy }}
+        args:
+          - "pod"
+          - "-lapp=timescaledb-single-chart"
+      - name: wait-for-ng-manager
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        {{- if .Values.waitForInitContainer.resources }}
+        resources:
+          {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.waitForInitContainer.resources "context" $) | nindent 12 }}
+        {{- end }}
+        securityContext:
+          {{- toYaml .Values.waitForInitContainer.containerSecurityContext | nindent 12 }}
+        imagePullPolicy: {{ .Values.waitForInitContainer.imagePullPolicy }}
+        args:
+          - "pod"
+          - "-lapp=ng-manager"
+        {{- if .Values.initContainers }}
+        {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.initContainers "context" $) | nindent 8 }}
+        {{- end }}
+      containers:
+        - name: change-data-capture
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+              {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          env:
+            {{- include "harnesscommon.dbconnection.mongoEnv" . | indent 12 }}
+            - name : TIMESCALEDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.timescaleSecret.password.name }}
+                  key: {{ .Values.timescaleSecret.password.key }}
+            - name: TIMESCALEDB_USERNAME
+              value: postgres
+            - name: MONGO_URI
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "harness" "context" $) }}
+            - name: EVENTS_MONGO_URI
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "events" "context" $) }}
+            - name: PMS_MONGO_URI
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "pms-harness" "context" $) }}
+            - name: CDC_MONGO_URI
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "change-data-capture" "context" $) }}
+            - name: NG_HARNESS_MONGO_URI
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "ng-harness" "context" $) }}
+            - name: TIMESCALEDB_URI
+              value: 'jdbc:postgresql://timescaledb-single-chart.{{ .Release.Namespace }}:5432/harness'
+            {{- if .Values.extraEnvVars }}
+            {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
+          envFrom:
+          - configMapRef:
+              name: change-data-capture
+              {{- if .Values.extraEnvVarsCM }}
+              name: {{ include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVarsCM "context" $) }}
+              {{- end }}
+          {{- if .Values.extraEnvVarsSecret }}
+          - secretRef:
+              name: {{ include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVarsSecret "context" $) }}
+            {{- end }}
+          {{- if .Values.extraVolumeMounts }}
+          volumeMounts:
+            {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraVolumeMounts "context" $) | nindent 12 }}
+            {{- end }}
+          {{- if .Values.resources }}
+          resources:
+            {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.resources "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{ if .Values.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.startupProbe.successThreshold }}
+            failureThreshold: {{ .Values.startupProbe.failureThreshold }}
+          {{- end }}
+        {{- if .Values.sidecars }}
+        {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.sidecars "context" $) | nindent 8 }}
+        {{- end }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - change-data-capture
+            topologyKey: "kubernetes.io/hostname"
+      {{- with .Values.affinity }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.extraVolumes }}
+      volumes:
+        {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraVolumes "context" $) | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
