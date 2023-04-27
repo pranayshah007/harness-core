@@ -9,6 +9,7 @@ A Helm chart for Kubernetes
 | Repository | Name | Version |
 |------------|------|---------|
 | file://./database | database | 0.1.x |
+| file://./secrets | secrets | 0.1.x |
 
 ## Values
 

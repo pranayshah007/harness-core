@@ -2,5 +2,8 @@ dependencies:
 - name: database
   repository: file://./database
   version: 0.1.0
-digest: sha256:dc75d9b4615181ce5044a984fe8c874e2ca340adc0fd1afe8630854c1c7a7862
-generated: "2023-03-30T00:38:37.691502+05:30"
+- name: secrets
+  repository: file://./secrets
+  version: 0.1.0
+digest: sha256:518276e18af74f38af724ae5f4c050c53965048f986ffbf676b134ea501e9b89
+generated: "2023-04-27T23:02:18.342587+05:30"
