@@ -24,8 +24,7 @@ public class DelegateMetricsConstants {
   public static final String TASK_REJECTED = "task_rejected";
   public static final String DELEGATE_DISCONNECTED = "delegate_disconnected";
   public static final String DELEGATE_CONNECTED = "delegate_connected";
-  public static final String MEMORY_USAGE_ABOVE_THRESHOLD = "delegate_memory_usage_above_threshold";
-  public static final String DELEGATE_USAGE_ABOVE_THRESHOLD = "delegate_pod_usage_above_threshold";
+  public static final String RESOURCE_CONSUMPTION_ABOVE_THRESHOLD = "delegate_resource_consumption_above_threshold";
 
   private static final String DELEGATE_NAME_LABEL = "delegate_name";
   private static final String TASK_TYPE_LABEL = "task_type";
@@ -42,9 +41,8 @@ public class DelegateMetricsConstants {
     put(DELEGATE_DISCONNECTED, create("Delegate disconnected.", DELEGATE_NAME_LABEL));
     put(DELEGATE_CONNECTED, create("Delegate connected.", DELEGATE_NAME_LABEL));
     put(DELEGATE_CONNECTED, create("Delegate connected.", DELEGATE_NAME_LABEL));
-    put(MEMORY_USAGE_ABOVE_THRESHOLD, create("Delegate consuming more than 90% of memory.", DELEGATE_NAME_LABEL));
-    put(DELEGATE_USAGE_ABOVE_THRESHOLD,
-        create("Delegate pod resource consumption above threshold.", DELEGATE_NAME_LABEL));
+    put(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD,
+        create("Delegate resource consumption reached more than 90% .", DELEGATE_NAME_LABEL));
   }
 
   private static void put(String metricName, DelegateMetricDetails metricDetails) {

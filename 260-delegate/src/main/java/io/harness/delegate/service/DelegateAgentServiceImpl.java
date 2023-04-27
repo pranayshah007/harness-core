@@ -49,8 +49,7 @@ import static io.harness.delegate.message.MessengerType.DELEGATE;
 import static io.harness.delegate.message.MessengerType.WATCHER;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_CONNECTED;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_DISCONNECTED;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_USAGE_ABOVE_THRESHOLD;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.MEMORY_USAGE_ABOVE_THRESHOLD;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.RESOURCE_CONSUMPTION_ABOVE_THRESHOLD;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_CURRENTLY_EXECUTING;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_IN_QUEUE;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_COMPLETED;
@@ -739,7 +738,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           "Reached resource threshold, temporarily reject incoming task request. CurrentProcessRSSMB {} ThresholdMB {}",
           currentRSSMB, maxProcessRSSThresholdMB);
       rejectRequest.compareAndSet(false, true);
-      metricRegistry.recordGaugeInc(MEMORY_USAGE_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME});
+      metricRegistry.recordGaugeInc(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME});
       return;
     }
 
@@ -749,7 +748,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           "Reached resource threshold, temporarily reject incoming task request. CurrentPodRSSMB {} ThresholdMB {}",
           currentPodRSSMB, maxPodRSSThresholdMB);
       rejectRequest.compareAndSet(false, true);
-      metricRegistry.recordGaugeInc(MEMORY_USAGE_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME});
+      metricRegistry.recordGaugeInc(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME});
       return;
     }
     log.info("Process info CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
@@ -758,7 +757,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     if (getCPULoadAverage() > 90) {
       log.warn("CPU Average load is above 90%");
       rejectRequest.compareAndSet(false, true);
-      metricRegistry.recordGaugeInc(DELEGATE_USAGE_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME});
+      metricRegistry.recordGaugeInc(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME});
       return;
     }
 
