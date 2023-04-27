@@ -30,6 +30,7 @@ public class GcpSecretManagerConfigMapper {
                                                           .name(configDTO.getName())
                                                           .delegateSelectors(configDTO.getDelegateSelectors())
                                                           .credentials(configDTO.getCredentials())
+                                                          .assumeCredentialsOnDelegate(configDTO.getAssumeCredentialsOnDelegate())
                                                           .build();
     gcpSecretsManagerConfig.setNgMetadata(ngMetaDataFromDto(configDTO));
     gcpSecretsManagerConfig.setAccountId(configDTO.getAccountIdentifier());

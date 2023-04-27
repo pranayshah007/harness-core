@@ -23,6 +23,7 @@ public class GcpSecretManagerEntityToDTO
     return GcpSecretManagerConnectorDTO.builder()
         .isDefault(connector.getIsDefault())
         .credentialsRef(SecretRefHelper.createSecretRef(connector.getCredentialsRef()))
+        .assumeCredentialsOnDelegate(connector.getAssumeCredentialsOnDelegate())
         .build();
   }
 }

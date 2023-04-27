@@ -319,14 +319,14 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
 
   @VisibleForTesting
   public GoogleCredentials getGoogleCredentials(GcpSecretsManagerConfig gcpSecretsManagerConfig) {
-    if (BooleanUtils.isTrue(gcpSecretsManagerConfig.getAssumeCredentialsOnDelegate())) {
-      return GoogleCredentials.newBuilder().build();
-    }
+    try {
+      if (BooleanUtils.isTrue(gcpSecretsManagerConfig.getAssumeCredentialsOnDelegate())) {
+          return GoogleCredentials.getApplicationDefault();
+      }
     if (gcpSecretsManagerConfig.getCredentials() == null) {
       throw new SecretManagementException(GCP_SECRET_OPERATION_ERROR,
           "GCP Secret Manager credentials are missing. Please check if the credentials secret exists.", USER);
     }
-    try {
       return GoogleCredentials
           .fromStream(new ByteArrayInputStream(String.valueOf(gcpSecretsManagerConfig.getCredentials()).getBytes()))
           .createScoped(Lists.newArrayList("https://www.googleapis.com/auth/cloud-platform"));
@@ -337,7 +337,6 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
     }
   }
 
-  //TODO Richa: See if this returns projectId with GOOGLE_APPLICATION_CREDENTIALS set
   public String getProjectId(GoogleCredentials credentials) {
     if (credentials instanceof ServiceAccountCredentials) {
       return ((ServiceAccountCredentials) credentials).getProjectId();

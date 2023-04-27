@@ -121,7 +121,10 @@ public class GcpSecretsManagerConfig extends SecretManagerConfig {
   @Override
   public SecretManagerConfigDTO toDTO(boolean maskSecrets) {
     GcpSecretManagerConfigDTO configDTO =
-        GcpSecretManagerConfigDTO.builder().delegateSelectors(getDelegateSelectors()).build();
+        GcpSecretManagerConfigDTO.builder()
+                .delegateSelectors(getDelegateSelectors())
+                .assumeCredentialsOnDelegate(getAssumeCredentialsOnDelegate())
+                .build();
     if (!maskSecrets) {
       configDTO.setCredentials(getCredentials());
     }
