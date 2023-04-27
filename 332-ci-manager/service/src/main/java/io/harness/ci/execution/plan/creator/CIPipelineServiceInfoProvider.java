@@ -9,6 +9,7 @@ package io.harness.ci.plan.creator;
 
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.ssca.SscaBeansRegistrar.sscaStepPaletteSteps;
+import static io.harness.steps.plugin.ContainerStepConstants.PLUGIN;
 
 import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
@@ -194,11 +195,12 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
                                .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
                                .build();
 
-    StepInfo backgroundStepInfo = StepInfo.newBuilder()
-                                      .setName("Background")
-                                      .setType(StepSpecTypeConstants.BACKGROUND)
-                                      .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
-                                      .build();
+    StepInfo backgroundStepInfo =
+        StepInfo.newBuilder()
+            .setName("Background")
+            .setType(StepSpecTypeConstants.BACKGROUND)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths("Build").build())
+            .build();
 
     StepInfo runTestsStepInfo = StepInfo.newBuilder()
                                     .setName("Run Tests")
@@ -213,11 +215,12 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
                                   .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
                                   .build();
 
-    StepInfo gitCloneStepInfo = StepInfo.newBuilder()
-                                    .setName("Git Clone")
-                                    .setType(StepSpecTypeConstants.GIT_CLONE)
-                                    .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
-                                    .build();
+    StepInfo gitCloneStepInfo =
+        StepInfo.newBuilder()
+            .setName("Git Clone")
+            .setType(StepSpecTypeConstants.GIT_CLONE)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths("Build").build())
+            .build();
 
     StepInfo restoreCacheFromGCS = StepInfo.newBuilder()
                                        .setName("Restore Cache From GCS")
