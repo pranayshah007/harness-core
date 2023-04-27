@@ -57,6 +57,9 @@ public class ScmGitProviderHelper {
   private String getSlugFromUrl(String url) {
     String repoName = gitClientHelper.getGitRepo(url);
     String ownerName = gitClientHelper.getGitOwner(url, false);
+    if (repoName.contains("/")) {
+      return repoName;
+    }
     return ownerName + "/" + repoName;
   }
 

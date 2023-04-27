@@ -41,6 +41,9 @@ import static java.lang.String.format;
 import static org.apache.commons.codec.binary.Hex.encodeHexString;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessSpecDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.exception.GitClientException;
 import io.harness.exception.GitConnectionDelegateException;
 import io.harness.exception.InvalidRequestException;
@@ -235,7 +238,8 @@ public class GitClientHelper {
     return "https://";
   }
 
-  public static String getGitlabApiURL(String url, String apiUrl) {
+  public static String getGitlabApiURL(String url, GitlabConnectorDTO gitConfigDTO) {
+    String apiUrl = getGitlabApiUrl(gitConfigDTO);
     if (!StringUtils.isBlank(apiUrl)) {
       return StringUtils.stripEnd(apiUrl, "/") + "/";
     }
@@ -245,6 +249,19 @@ public class GitClientHelper {
       String domain = GitClientHelper.getGitSCM(url);
       return getHttpProtocolPrefix(url) + domain + "/";
     }
+  }
+
+  private static String getGitlabApiUrl(GitlabConnectorDTO gitlabConnector) {
+    if (gitlabConnector.getApiAccess() == null || gitlabConnector.getApiAccess().getSpec() == null) {
+      // not expected
+      return null;
+    }
+    GitlabApiAccessSpecDTO spec = gitlabConnector.getApiAccess().getSpec();
+    if (spec instanceof GitlabTokenSpecDTO) {
+      GitlabTokenSpecDTO tokenSpec = (GitlabTokenSpecDTO) spec;
+      return tokenSpec.getApiUrl();
+    }
+    return null;
   }
 
   public static String getBitBucketApiURL(String url) {

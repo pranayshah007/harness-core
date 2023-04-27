@@ -210,7 +210,9 @@ public class GitStatusCheckHelper {
       return Failsafe.with(retryPolicy)
           .get(()
                    -> gitlabService.sendStatus(
-                       GitlabConfig.builder().gitlabUrl(getGitlabApiURL(gitConfigDTO.getUrl())).build(),
+                       GitlabConfig.builder()
+                           .gitlabUrl(GitClientHelper.getGitlabApiURL(gitConfigDTO.getUrl(), gitConfigDTO))
+                           .build(),
                        gitStatusCheckParams.getUserName(), token, null, gitStatusCheckParams.getSha(),
                        gitStatusCheckParams.getOwner(), gitStatusCheckParams.getRepo(), bodyObjectMap));
     } else {
@@ -317,7 +319,7 @@ public class GitStatusCheckHelper {
     return domain + customEndpoint;
   }
 
-  private String getGitlabApiURL(String url) {
+  private String getGitlabApiURL(String url, GitlabConnectorDTO gitlabConnectorDTO) {
     if (url.contains("gitlab.com")) {
       return GITLAB_API_URL;
     } else {
