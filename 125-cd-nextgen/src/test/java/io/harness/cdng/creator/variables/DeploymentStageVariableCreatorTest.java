@@ -464,32 +464,33 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
             .executionDependencyValue("pipeline/stages/[0]/stage/spec/execution")
             .build();
 
-    TestData data3 = TestData.builder()
-                         .pipelineYamlFile("pipelineWithV2ServiceEnv.yaml")
-                         .serviceYamlFile("ServiceWithArtifactSourcesButFixedPrimaryRef.yaml")
-                         .envYamlFile("environmentV2.yaml")
-                         .infraYamlFile("k8sDirectInfrastructure.yaml")
-                         .expectedSvcFqn(List.of("service.identifier", "service.name", "service.description",
-                             "service.type", "service.tags", "service.gitOpsEnabled", "artifacts.primary.connectorRef",
-                             "artifacts.primary.repositoryName", "artifacts.primary.artifactPath",
-                             "artifacts.primary.repositoryFormat", "artifacts.primary.tag",
-                             "artifacts.primary.tagRegex", "artifacts.primary.identifier", "artifacts.primary.type",
-                             "artifacts.primary.primaryArtifact", "artifacts.primary.image",
-                             "artifacts.primary.imagePullSecret", "artifacts.primary.dockerConfigJsonSecret",
-                             "artifacts.primary.registryHostname", "artifacts.primary.metadata",
-                             "artifacts.primary.label", "serviceVariables.envVar1", "serviceVariables.svar1"))
-                         .expectedEnvFqn(List.of("env.name", "env.identifier", "env.description", "env.type",
-                             "env.tags", "env.environmentRef", "env.variables.envVar1", "env.variables.svar1",
-                             "env.envGroupRef", "env.envGroupName"))
-                         .expectedInfraFqn(List.of("infra.connectorRef", "infra.namespace", "infra.releaseName",
-                             "infra.infrastructureKey", "infra.connector"))
-                         .provisionerDependencyIndex(-1)
-                         .envFqnIndex(0)
-                         .infraFqnIndex(1)
-                         .svcFqnIndex(2)
-                         .executionDependencyIndex(3)
-                         .executionDependencyValue("pipeline/stages/[0]/stage/spec/execution")
-                         .build();
+    TestData data3 =
+        TestData.builder()
+            .pipelineYamlFile("pipelineWithV2ServiceEnv.yaml")
+            .serviceYamlFile("ServiceWithArtifactSourcesButFixedPrimaryRef.yaml")
+            .envYamlFile("environmentV2.yaml")
+            .infraYamlFile("k8sDirectInfrastructure.yaml")
+            .expectedSvcFqn(
+                List.of("service.identifier", "service.name", "service.description", "service.type", "service.tags",
+                    "service.gitOpsEnabled", "artifacts.primary.connectorRef", "artifacts.primary.repositoryName",
+                    "artifacts.primary.artifactPath", "artifacts.primary.repositoryFormat", "artifacts.primary.tag",
+                    "artifacts.primary.tagRegex", "artifacts.primary.identifier", "artifacts.primary.type",
+                    "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePullSecret",
+                    "artifacts.primary.dockerConfigJsonSecret", "artifacts.primary.registryHostname",
+                    "artifacts.primary.digest", "artifacts.primary.metadata", "artifacts.primary.label",
+                    "serviceVariables.envVar1", "serviceVariables.svar1"))
+            .expectedEnvFqn(
+                List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
+                    "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))
+            .expectedInfraFqn(List.of("infra.connectorRef", "infra.namespace", "infra.releaseName",
+                "infra.infrastructureKey", "infra.connector"))
+            .provisionerDependencyIndex(-1)
+            .envFqnIndex(0)
+            .infraFqnIndex(1)
+            .svcFqnIndex(2)
+            .executionDependencyIndex(3)
+            .executionDependencyValue("pipeline/stages/[0]/stage/spec/execution")
+            .build();
 
     TestData data4 =
         TestData.builder()
@@ -508,14 +509,15 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                 "artifacts.sidecars.gcr_test.tagRegex", "artifacts.sidecars.gcr_test.registryHostname",
                 "artifacts.sidecars.gcr_test.identifier", "artifacts.sidecars.gcr_test.type",
                 "artifacts.sidecars.gcr_test.primaryArtifact", "artifacts.sidecars.gcr_test.image",
-                "artifacts.sidecars.gcr_test.imagePullSecret", "artifacts.sidecars.gcr_test.metadata",
-                "artifacts.sidecars.gcr_test.label", "artifacts.sidecars.gcr_test.dockerConfigJsonSecret",
-                "artifacts.primary.connectorRef", "artifacts.primary.imagePath", "artifacts.primary.tag",
-                "artifacts.primary.tagRegex", "artifacts.primary.identifier", "artifacts.primary.type",
-                "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePullSecret",
-                "artifacts.primary.label", "artifacts.primary.displayName", "artifacts.primary.digest",
-                "artifacts.primary.metadata", "artifacts.primary.dockerConfigJsonSecret", "serviceVariables.svar2",
-                "serviceVariables.envVar1", "serviceVariables.svar1"))
+                "artifacts.sidecars.gcr_test.imagePullSecret", "artifacts.sidecars.gcr_test.digest",
+                "artifacts.sidecars.gcr_test.metadata", "artifacts.sidecars.gcr_test.label",
+                "artifacts.sidecars.gcr_test.dockerConfigJsonSecret", "artifacts.primary.connectorRef",
+                "artifacts.primary.imagePath", "artifacts.primary.tag", "artifacts.primary.tagRegex",
+                "artifacts.primary.identifier", "artifacts.primary.type", "artifacts.primary.primaryArtifact",
+                "artifacts.primary.image", "artifacts.primary.imagePullSecret", "artifacts.primary.label",
+                "artifacts.primary.displayName", "artifacts.primary.digest", "artifacts.primary.metadata",
+                "artifacts.primary.dockerConfigJsonSecret", "serviceVariables.svar2", "serviceVariables.envVar1",
+                "serviceVariables.svar1"))
             .expectedEnvFqn(
                 List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
                     "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))
@@ -546,14 +548,15 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                 "artifacts.sidecars.gcr_test.tagRegex", "artifacts.sidecars.gcr_test.registryHostname",
                 "artifacts.sidecars.gcr_test.identifier", "artifacts.sidecars.gcr_test.type",
                 "artifacts.sidecars.gcr_test.primaryArtifact", "artifacts.sidecars.gcr_test.image",
-                "artifacts.sidecars.gcr_test.imagePullSecret", "artifacts.sidecars.gcr_test.metadata",
-                "artifacts.sidecars.gcr_test.label", "artifacts.sidecars.gcr_test.dockerConfigJsonSecret",
-                "artifacts.primary.connectorRef", "artifacts.primary.imagePath", "artifacts.primary.tag",
-                "artifacts.primary.tagRegex", "artifacts.primary.identifier", "artifacts.primary.type",
-                "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePullSecret",
-                "artifacts.primary.label", "artifacts.primary.displayName", "artifacts.primary.digest",
-                "artifacts.primary.metadata", "artifacts.primary.dockerConfigJsonSecret", "serviceVariables.svar2",
-                "serviceVariables.envVar1", "serviceVariables.svar1"))
+                "artifacts.sidecars.gcr_test.imagePullSecret", "artifacts.sidecars.gcr_test.digest",
+                "artifacts.sidecars.gcr_test.metadata", "artifacts.sidecars.gcr_test.label",
+                "artifacts.sidecars.gcr_test.dockerConfigJsonSecret", "artifacts.primary.connectorRef",
+                "artifacts.primary.imagePath", "artifacts.primary.tag", "artifacts.primary.tagRegex",
+                "artifacts.primary.identifier", "artifacts.primary.type", "artifacts.primary.primaryArtifact",
+                "artifacts.primary.image", "artifacts.primary.imagePullSecret", "artifacts.primary.label",
+                "artifacts.primary.displayName", "artifacts.primary.digest", "artifacts.primary.metadata",
+                "artifacts.primary.dockerConfigJsonSecret", "serviceVariables.svar2", "serviceVariables.envVar1",
+                "serviceVariables.svar1"))
             .expectedEnvFqn(
                 List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
                     "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))
@@ -585,14 +588,15 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                 "artifacts.sidecars.gcr_test.tagRegex", "artifacts.sidecars.gcr_test.registryHostname",
                 "artifacts.sidecars.gcr_test.identifier", "artifacts.sidecars.gcr_test.type",
                 "artifacts.sidecars.gcr_test.primaryArtifact", "artifacts.sidecars.gcr_test.image",
-                "artifacts.sidecars.gcr_test.imagePullSecret", "artifacts.sidecars.gcr_test.metadata",
-                "artifacts.sidecars.gcr_test.label", "artifacts.sidecars.gcr_test.dockerConfigJsonSecret",
-                "artifacts.primary.connectorRef", "artifacts.primary.imagePath", "artifacts.primary.tag",
-                "artifacts.primary.tagRegex", "artifacts.primary.identifier", "artifacts.primary.type",
-                "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePullSecret",
-                "artifacts.primary.label", "artifacts.primary.displayName", "artifacts.primary.digest",
-                "artifacts.primary.metadata", "artifacts.primary.dockerConfigJsonSecret", "serviceVariables.svar2",
-                "serviceVariables.envVar1", "serviceVariables.svar1"))
+                "artifacts.sidecars.gcr_test.imagePullSecret", "artifacts.sidecars.gcr_test.digest",
+                "artifacts.sidecars.gcr_test.metadata", "artifacts.sidecars.gcr_test.label",
+                "artifacts.sidecars.gcr_test.dockerConfigJsonSecret", "artifacts.primary.connectorRef",
+                "artifacts.primary.imagePath", "artifacts.primary.tag", "artifacts.primary.tagRegex",
+                "artifacts.primary.identifier", "artifacts.primary.type", "artifacts.primary.primaryArtifact",
+                "artifacts.primary.image", "artifacts.primary.imagePullSecret", "artifacts.primary.label",
+                "artifacts.primary.displayName", "artifacts.primary.digest", "artifacts.primary.metadata",
+                "artifacts.primary.dockerConfigJsonSecret", "serviceVariables.svar2", "serviceVariables.envVar1",
+                "serviceVariables.svar1"))
             .expectedEnvFqn(
                 List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
                     "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))
