@@ -4,6 +4,7 @@ pipeline_stages:
   - "stages/cd/deployment-stage-node.yaml"
   - "stages/ci/integration-stage-node.yaml"
   - "stages/pie/pipeline-stage-node.yaml"
+  - "stages/security/security-stage-node.yaml"
 
 custom_stage_steps:
   - "steps/wait_step.yaml"
