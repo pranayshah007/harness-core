@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: delegate-proxy
+  namespace: {{ .Release.Namespace }}
+data:
+  proxy.conf: "server { root /www/data;proxy_http_version 1.1;\n}"
