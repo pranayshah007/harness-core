@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cv-nextgen
+  namespace: {{ .Release.Namespace }}
+data:
+  DEPLOY_MODE: {{ .Values.config.DEPLOY_MODE }}
+  ENV: {{ .Values.config.ENV }}
+  LOGGING_LEVEL: {{ .Values.appLogLevel }}
+  MANAGER_URL: http://harness-manager.{{ .Release.Namespace }}.svc.cluster.local:9090/
+  NG_MANAGER_URL: http://ng-manager.{{ .Release.Namespace }}.svc.cluster.local:7090/
+  MEMORY: {{ .Values.java.memory | quote }}
+  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.config.STACK_DRIVER_LOGGING_ENABLED | quote }}
+  VERIFICATION_PORT: {{ .Values.config.VERIFICATION_PORT | quote }}
+  VERIFICATION_SERVICE_SECRET: {{ .Values.config.VERIFICATION_SERVICE_SECRET | quote }}
+  NOTIFICATION_BASE_URL: http://platform-service.{{ .Release.Namespace }}.svc.cluster.local:9005/api/
+  SHOULD_CONFIGURE_WITH_NOTIFICATION: {{ .Values.config.SHOULD_CONFIGURE_WITH_NOTIFICATION | quote }}
+  PORTAL_URL: {{ .Values.global.loadbalancerURL }}
+  MANAGER_CLIENT_BASEURL: http://harness-manager.{{ .Release.Namespace }}.svc.cluster.local:9090/
+  EVENTS_FRAMEWORK_REDIS_URL: {{ .Values.config.EVENTS_FRAMEWORK_REDIS_URL | default "redis://localhost:6379" }}
+  EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.config.EVENTS_FRAMEWORK_USE_SENTINEL }}
+  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: {{ .Values.config.EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME }}
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ .Values.config.EVENTS_FRAMEWORK_REDIS_SENTINELS | default ("redis://redis-sentinel-harness-announce-0.NAMESPACE:26379,redis://redis-sentinel-harness-announce-1.NAMESPACE:26379,redis://redis-sentinel-harness-announce-2.NAMESPACE:26379" | replace "NAMESPACE" .Release.Namespace ) }}
+  SHOULD_CONFIGURE_WITH_PMS: {{ .Values.config.SHOULD_CONFIGURE_WITH_PMS | quote }}
+  PMS_TARGET: {{ .Values.config.PMS_TARGET | default "pipeline-service:12011" }}
+  PMS_AUTHORITY: {{ .Values.config.PMS_AUTHORITY | default "pipeline-service:12011" }}
+  GRPC_SERVER_PORT: {{ .Values.config.GRPC_SERVER_PORT | quote }}
+  CACHE_CONFIG_REDIS_URL: {{ .Values.config.CACHE_CONFIG_REDIS_URL | default "redis://localhost:6379" }}
+  CACHE_BACKEND: {{ .Values.config.CACHE_BACKEND | quote }}
+  CACHE_CONFIG_REDIS_SENTINELS: {{ .Values.config.CACHE_CONFIG_REDIS_SENTINELS | default ("redis://redis-sentinel-harness-announce-0.NAMESPACE:26379,redis://redis-sentinel-harness-announce-1.NAMESPACE:26379,redis://redis-sentinel-harness-announce-2.NAMESPACE:26379" | replace "NAMESPACE" .Release.Namespace ) }}
+  CACHE_CONFIG_SENTINEL_MASTER_NAME: {{ .Values.config.CACHE_CONFIG_SENTINEL_MASTER_NAME | quote }}
+  CACHE_CONFIG_USE_SENTINEL: {{ .Values.config.CACHE_CONFIG_USE_SENTINEL | quote }}
+  MOCK_ACCESS_CONTROL_SERVICE: {{ .Values.config.MOCK_ACCESS_CONTROL_SERVICE | quote }}
+  ACCESS_CONTROL_BASE_URL:  http://access-control.{{ .Release.Namespace }}.svc.cluster.local:9006/api/
+  ACCESS_CONTROL_ENABLED: {{ .Values.config.ACCESS_CONTROL_ENABLED | quote }}
