@@ -108,8 +108,9 @@ public interface UserClient {
       @Query(value = "userId") String userId, @Query("disabled") boolean disabled);
 
   @POST(USER_SIGNUP_MARKETPLACE)
-  Call<RestResponse<UserInfo>> createMarketplaceUserAndCompleteSignup(@Body SignupDTO dto,
-      @Query("inviteId") String inviteId, @Query("marketPlaceToken") String marketPlaceToken, @Body AccountDTO account);
+  Call<RestResponse<UserInfo>> createMarketplaceUserAndCompleteSignup(@Query("inviteId") String inviteId,
+      @Query("marketPlaceToken") String marketPlaceToken, @Query("email") String email,
+      @Query("password") String password, @Body AccountDTO account);
 
   @POST(USER_SIGNUP_COMMUNITY)
   Call<RestResponse<UserInfo>> createCommunityUserAndCompleteSignup(@Body SignupInviteDTO userRequest);
