@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pipeline-service
+  namespace: {{ .Release.Namespace }}
+data:
+  CACHE_BACKEND: "REDIS"
+  CACHE_CONFIG_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace }}:26379'
+  CACHE_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
+  CACHE_CONFIG_USE_SENTINEL: "true"
+  DEPLOY_MODE: KUBERNETES_ONPREM
+  LOGGING_LEVEL: {{ .Values.appLogLevel }}
+  LOCK_CONFIG_REDIS_SENTINELS: redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace }}:26379
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis
+  LOCK_CONFIG_USE_SENTINEL: "true"
+  MEMORY: {{ .Values.java.memory | quote }}
+  MANAGER_TARGET: harness-manager:9879
+  MANAGER_AUTHORITY: harness-manager:9879
+  GRPC_SERVER_PORT: "12011"
+  NG_MANAGER_TARGET: ng-manager:9979
+  NG_MANAGER_AUTHORITY: ng-manager:9979
+  NG_MANAGER_GITSYNC_TARGET: ng-manager:13002
+  NG_MANAGER_GITSYNC_AUTHORITY: ng-manager:13002
+  CI_MANAGER_TARGET: ci-manager:9979
+  CI_MANAGER_AUTHORITY: ci-manager:9979
+  SCM_SERVICE_URI: "scm-service:8091"
+  EVENTS_FRAMEWORK_REDIS_URL: 'redis://localhost:6379'
+  EVENTS_FRAMEWORK_USE_SENTINEL: "true"
+  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace }}:26379'
+  PIPELINE_SERVICE_BASE_URL: '{{ .Values.global.loadbalancerURL }}/ng/#'
+  PMS_API_BASE_URL: '{{ .Values.global.loadbalancerURL }}/gateway/pipeline/api/'
+  LOG_STREAMING_SERVICE_BASEURL: 'http://log-service.{{ .Release.Namespace }}.svc.cluster.local:8079/'
+  MANAGER_BASE_URL: 'http://harness-manager:9090/api/'
+  NG_MANAGER_BASE_URL: 'http://ng-manager:7090/'
+  WEBHOOK_TRIGGER_BASEURL: '{{ .Values.global.loadbalancerURL }}/ng/api/'
+  CUSTOM_TRIGGER_BASEURL: '{{ .Values.global.loadbalancerURL }}/gateway/pipeline/api/'
+  ACCESS_CONTROL_BASE_URL: 'http://access-control:9006/api/'
+  NOTIFICATION_BASE_URL: 'http://platform-service:9005/api/'
+  TEMPLATE_SERVICE_ENDPOINT: 'http://template-service:15002/api/'
+  CI_MANAGER_BASE_URL: 'http://ci-manager:7090/'
+  MANAGER_CLIENT_BASEURL: 'http://harness-manager:9090/api/'
+  AUTH_ENABLED: "true"
+  USE_REDIS_FOR_INTERRUPTS: "true"
+  USE_REDIS_FOR_ORCHESTRATION_EVENTS: "true"
+  USE_REDIS_FOR_SDK_RESPONSE_EVENTS: "true"
+  MOCK_ACCESS_CONTROL_SERVICE: "false"
+  ACCESS_CONTROL_ENABLED: "true"
+  ENABLE_DASHBOARD_TIMESCALE: "true"
+  SHOULD_USE_INSTANCE_CACHE: "false"
+  STO_MANAGER_BASE_URL: 'http://sto-manager:7090/'
+  STO_MANAGER_AUTHORITY: sto-manager:9979
+  STO_MANAGER_TARGET: sto-manager:9979
+  CV_MANAGER_BASE_URL: 'http://cv-nextgen:6060/cv/api/'
+  CVNG_MANAGER_AUTHORITY: cv-nextgen:9979
+  CVNG_MANAGER_TARGET: cv-nextgen:9979
+  {{- if .Values.global.opa.enabled }}
+  OPA_SERVER_BASEURL: 'http://policy-mgmt.{{ .Release.Namespace }}.svc.cluster.local:3000/'
+  OPA_SERVER_SECRET: "dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq"
+  {{- end }}
+  ENABLE_AUDIT : 'true'
+  AUDIT_SERVICE_BASE_URL: http://platform-service:9005/api/
