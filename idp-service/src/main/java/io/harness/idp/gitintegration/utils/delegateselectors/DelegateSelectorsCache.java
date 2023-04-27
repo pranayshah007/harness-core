@@ -5,13 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.events.eventlisteners.messagehandler;
+package io.harness.idp.gitintegration.utils.delegateselectors;
 
-import io.harness.eventsframework.consumer.Message;
-import io.harness.eventsframework.entity_crud.EntityChangeDTO;
-
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-public interface EventMessageHandler {
-  void handleMessage(Message message, EntityChangeDTO entityChangeDTO, String action) throws ExecutionException;
+public interface DelegateSelectorsCache {
+  Set<String> get(String accountIdentifier, String host) throws ExecutionException;
+  void put(String accountIdentifier, String host, Set<String> delegateSelectors) throws ExecutionException;
 }

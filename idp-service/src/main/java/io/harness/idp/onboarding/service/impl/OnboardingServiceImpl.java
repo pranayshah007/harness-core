@@ -50,6 +50,7 @@ import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
 import io.harness.idp.gitintegration.service.GitIntegrationService;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
+import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsCache;
 import io.harness.idp.onboarding.beans.BackstageCatalogComponentEntity;
 import io.harness.idp.onboarding.beans.BackstageCatalogDomainEntity;
 import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
@@ -98,6 +99,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
@@ -122,6 +124,7 @@ public class OnboardingServiceImpl implements OnboardingService {
   @Inject BackstageResourceClient backstageResourceClient;
   @Inject GitIntegrationService gitIntegrationService;
   @Inject StatusInfoService statusInfoService;
+  @Inject DelegateSelectorsCache delegateSelectorsCache;
 
   @Override
   public HarnessEntitiesCountResponse getHarnessEntitiesCount(String accountIdentifier) {
@@ -179,7 +182,7 @@ public class OnboardingServiceImpl implements OnboardingService {
 
   @Override
   public ImportEntitiesResponse importHarnessEntities(
-      String accountIdentifier, ImportEntitiesBase importHarnessEntitiesRequest) {
+      String accountIdentifier, ImportEntitiesBase importHarnessEntitiesRequest) throws ExecutionException {
     CatalogConnectorInfo catalogConnectorInfo = importHarnessEntitiesRequest.getCatalogConnectorInfo();
 
     if (importHarnessEntitiesRequest.getType().equals(ImportEntitiesBase.TypeEnum.SAMPLE)) {
@@ -198,14 +201,17 @@ public class OnboardingServiceImpl implements OnboardingService {
     catalogConnectorInfo.getConnector().setIdentifier(
         GitIntegrationUtils.replaceAccountScopeFromConnectorId(catalogConnectorInfo.getConnector().getIdentifier()));
 
-    ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(
-        ConnectorType.fromString(String.valueOf(catalogConnectorInfo.getConnector().getType())));
     log.info("IDP onboarding import - connector processor initialized for type = {}",
         catalogConnectorInfo.getConnector().getType());
 
+    ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(
+        ConnectorType.fromString(String.valueOf(catalogConnectorInfo.getConnector().getType())));
     ConnectorInfoDTO connectorInfoDTO =
         connectorProcessor.getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier());
     String catalogInfraConnectorType = connectorProcessor.getInfraConnectorType(connectorInfoDTO);
+    saveCatalogConnector(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType, connectorInfoDTO);
+    createCatalogInfraConnectorInBackstageK8S(
+        accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType, connectorInfoDTO);
 
     String tmpPathForCatalogInfoYamlStore =
         onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore() + SLASH_DELIMITER + accountIdentifier;
@@ -234,7 +240,6 @@ public class OnboardingServiceImpl implements OnboardingService {
     io.harness.security.dto.UserPrincipal userPrincipalFromContext =
         (io.harness.security.dto.UserPrincipal) SourcePrincipalContextBuilder.getSourcePrincipal();
 
-    saveCatalogConnector(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType);
     saveStatusInfo(accountIdentifier, StatusType.ONBOARDING.name(), StatusInfo.CurrentStatusEnum.COMPLETED,
         STATUS_UPDATE_REASON_FOR_ONBOARDING_COMPLETED);
 
@@ -271,7 +276,8 @@ public class OnboardingServiceImpl implements OnboardingService {
           -> registerLocationInBackstage(
               accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, Collections.singletonList(sampleEntity)));
 
-      createCatalogInfraConnectorInBackstageK8S(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType);
+      createCatalogInfraConnectorInBackstageK8S(
+          accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType, connectorInfoDTO);
 
       log.info("Finished operation of yaml generation, pushing to source, registering in backstage, "
           + "creating connector secret in K8S for all entities");
@@ -420,8 +426,8 @@ public class OnboardingServiceImpl implements OnboardingService {
     }
   }
 
-  private ImportEntitiesResponse importSampleEntity(
-      String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo) {
+  private ImportEntitiesResponse importSampleEntity(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo)
+      throws ExecutionException {
     catalogConnectorInfo.getConnector().setIdentifier(
         GitIntegrationUtils.replaceAccountScopeFromConnectorId(catalogConnectorInfo.getConnector().getIdentifier()));
 
@@ -432,6 +438,11 @@ public class OnboardingServiceImpl implements OnboardingService {
 
     String catalogInfraConnectorType = connectorProcessor.getInfraConnectorType(
         connectorProcessor.getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier()));
+    ConnectorInfoDTO connectorInfoDTO =
+        connectorProcessor.getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier());
+    saveCatalogConnector(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType, connectorInfoDTO);
+    createCatalogInfraConnectorInBackstageK8S(
+        accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType, connectorInfoDTO);
 
     String tmpPathForCatalogInfoYamlStore =
         onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore() + SLASH_DELIMITER + accountIdentifier;
@@ -457,9 +468,6 @@ public class OnboardingServiceImpl implements OnboardingService {
         + SAMPLE_ENTITY_NAME + SLASH_DELIMITER + SAMPLE_ENTITY_NAME.toLowerCase() + YAML_FILE_EXTENSION);
     registerLocationInBackstage(accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, locationTargets);
 
-    createCatalogInfraConnectorInBackstageK8S(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType);
-
-    saveCatalogConnector(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType);
     saveStatusInfo(accountIdentifier, StatusType.ONBOARDING.name(), StatusInfo.CurrentStatusEnum.COMPLETED,
         STATUS_UPDATE_REASON_FOR_ONBOARDING_COMPLETED);
 
@@ -646,8 +654,10 @@ public class OnboardingServiceImpl implements OnboardingService {
     return serviceResponseDTOS;
   }
 
-  private void saveCatalogConnector(
-      String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo, String catalogInfraConnectorType) {
+  private void saveCatalogConnector(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
+      String catalogInfraConnectorType, ConnectorInfoDTO connectorInfoDTO) throws ExecutionException {
+    Set<String> delegateSelectors = GitIntegrationUtils.extractDelegateSelectors(connectorInfoDTO);
+    String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
     CatalogConnectorEntity catalogConnectorEntity = new CatalogConnectorEntity();
 
     catalogConnectorEntity.setAccountIdentifier(accountIdentifier);
@@ -657,8 +667,11 @@ public class OnboardingServiceImpl implements OnboardingService {
     catalogConnectorEntity.setConnectorProviderType(String.valueOf(catalogConnectorInfo.getConnector().getType()));
     catalogConnectorEntity.setCatalogRepositoryDetails(new CatalogRepositoryDetails(
         catalogConnectorInfo.getRepo(), catalogConnectorInfo.getBranch(), catalogConnectorInfo.getPath()));
+    catalogConnectorEntity.setHost(host);
+    catalogConnectorEntity.setDelegateSelectors(delegateSelectors);
 
     catalogConnectorRepository.save(catalogConnectorEntity);
+    delegateSelectorsCache.put(accountIdentifier, host, delegateSelectors);
     log.info("Saved catalogConnector to DB. Account = {}", accountIdentifier);
   }
 
@@ -722,14 +735,9 @@ public class OnboardingServiceImpl implements OnboardingService {
     }
   }
 
-  private void createCatalogInfraConnectorInBackstageK8S(
-      String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo, String catalogInfraConnectorType) {
+  private void createCatalogInfraConnectorInBackstageK8S(String accountIdentifier,
+      CatalogConnectorInfo catalogConnectorInfo, String catalogInfraConnectorType, ConnectorInfoDTO connectorInfoDTO) {
     try {
-      String type = String.valueOf(catalogConnectorInfo.getConnector().getType());
-      ConnectorProcessor connectorProcessor =
-          connectorProcessorFactory.getConnectorProcessor(ConnectorType.fromString(type));
-      ConnectorInfoDTO connectorInfoDTO =
-          connectorProcessor.getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier());
       gitIntegrationService.createConnectorInBackstage(accountIdentifier, connectorInfoDTO,
           CatalogInfraConnectorType.valueOf(catalogInfraConnectorType),
           catalogConnectorInfo.getConnector().getIdentifier());
