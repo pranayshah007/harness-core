@@ -271,14 +271,6 @@ public class NGFreezeDtoMapper {
       throw new InvalidRequestException("FreezeInfoConfig cannot be empty");
     }
     FreezeInfoConfig freezeInfoConfig = freezeConfig.getFreezeInfoConfig();
-    if (!Scope.ACCOUNT.equals(freezeScope) && freezeInfoConfig.getOrgIdentifier() == null
-        && FreezeType.MANUAL.equals(type)) {
-      throw new InvalidRequestException("Org Identifier can not be null.");
-    }
-    if (Scope.PROJECT.equals(freezeScope) && freezeInfoConfig.getProjectIdentifier() == null
-        && FreezeType.MANUAL.equals(type)) {
-      throw new InvalidRequestException("Project Identifier can not be null.");
-    }
     List<FreezeEntityRule> rules = freezeInfoConfig.getRules();
     List<FreezeWindow> windows = freezeInfoConfig.getWindows();
     if (FreezeType.MANUAL.equals(type)) {
