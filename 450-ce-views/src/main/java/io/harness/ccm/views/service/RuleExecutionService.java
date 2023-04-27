@@ -20,5 +20,5 @@ public interface RuleExecutionService {
   List<RuleExecution> list(String accountId);
   RuleExecutionList filterExecution(RuleExecutionFilter rulesExecutionFilter);
   FilterValues filterValue(String accountId);
-  RuleExecutionList getRuleRecommendationDetails(String ruleRecommendationId);
+  RuleExecutionList getRuleRecommendationDetails(String ruleRecommendationId, String accountId);
 }

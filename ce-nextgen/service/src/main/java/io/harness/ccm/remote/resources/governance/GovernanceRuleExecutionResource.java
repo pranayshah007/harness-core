@@ -215,7 +215,7 @@ public class GovernanceRuleExecutionResource {
       @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("recommendationId") @NotNull @Valid String recommendationId) {
-    return ResponseDTO.newResponse(ruleExecutionService.getRuleRecommendationDetails(recommendationId));
+    return ResponseDTO.newResponse(ruleExecutionService.getRuleRecommendationDetails(recommendationId, accountId));
   }
 
   @GET

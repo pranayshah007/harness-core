@@ -99,7 +99,7 @@ public class RuleExecutionDAO {
 
     return ruleExecutionList;
   }
-  public RuleExecutionList getRuleRecommendationDetails(String ruleRecommendationId) {
+  public RuleExecutionList getRuleRecommendationDetails(String ruleRecommendationId, String accountId) {
     RuleRecommendation ruleRecommendation = hPersistence.createQuery(RuleRecommendation.class)
                                                 .field(RuleRecommendationId.uuid)
                                                 .equal(ruleRecommendationId)
@@ -108,7 +108,8 @@ public class RuleExecutionDAO {
     for (ExecutionSummary executionSummary : ruleRecommendation.getExecutions()) {
       executionIds.add(executionSummary.getRuleExecutionID());
     }
-    RuleExecutionFilter ruleExecutionFilter = RuleExecutionFilter.builder().executionIds(executionIds).build();
+    RuleExecutionFilter ruleExecutionFilter =
+        RuleExecutionFilter.builder().executionIds(executionIds).accountId(accountId).build();
     return filterExecution(ruleExecutionFilter);
   }
 }
