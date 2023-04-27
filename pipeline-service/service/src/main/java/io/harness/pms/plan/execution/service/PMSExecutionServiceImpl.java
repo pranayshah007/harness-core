@@ -43,6 +43,7 @@ import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.IssuedBy;
 import io.harness.pms.contracts.interrupts.ManualIssuer;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.TimeRange;
 import io.harness.pms.filter.utils.ModuleInfoFilterUtils;
@@ -145,6 +146,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     }
 
     criteria.and(PlanExecutionSummaryKeys.isLatestExecution).ne(!isLatest);
+    criteria.and(PlanExecutionSummaryKeys.executionMode).ne(ExecutionMode.PIPELINE_ROLLBACK);
 
     Criteria filterCriteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(filterIdentifier) && filterProperties != null) {
