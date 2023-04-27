@@ -47,15 +47,7 @@ import static io.harness.delegate.message.MessageConstants.WATCHER_PROCESS;
 import static io.harness.delegate.message.MessageConstants.WATCHER_VERSION;
 import static io.harness.delegate.message.MessengerType.DELEGATE;
 import static io.harness.delegate.message.MessengerType.WATCHER;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_CONNECTED;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_DISCONNECTED;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_USAGE_ABOVE_THRESHOLD;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.MEMORY_USAGE_ABOVE_THRESHOLD;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_CURRENTLY_EXECUTING;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_IN_QUEUE;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_EXECUTION_TIME;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_FAILED;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_TIMEOUT;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.*;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
 import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
 import static io.harness.eraro.ErrorCode.REVOKED_TOKEN;
@@ -2747,7 +2739,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         response = delegateAgentManagerClient.sendTaskStatus(delegateId, taskId, accountId, taskResponse).execute();
         if (response != null && response.code() >= 200 && response.code() <= 299) {
           log.debug("Task {} response sent to manager", taskId);
-          metricRegistry.recordGaugeInc(TASK_FAILED, new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()});
+          metricRegistry.recordGaugeInc(TASK_COMPLETED, new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()});
           break;
         }
         log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId,
