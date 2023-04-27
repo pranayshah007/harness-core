@@ -1,6 +1,9 @@
 pipeline_stages:
-  - "stages/custom/stage.yaml"
-  - "template_node.yaml"
+  - "stages/custom/custom-stage-node.yaml"
+  - "stages/approval/approval-stage-node.yaml"
+  - "stages/cd/deployment-stage-node.yaml"
+  - "stages/ci/integration-stage-node.yaml"
+  - "stages/pie/pipeline-stage-node.yaml"
 
 custom_stage_steps:
   - "steps/wait_step.yaml"
