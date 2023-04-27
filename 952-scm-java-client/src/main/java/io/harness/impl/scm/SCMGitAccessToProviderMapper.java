@@ -11,6 +11,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.encryption.SecretRefData;
 import io.harness.gitsync.common.dtos.gitAccess.AzureRepoAccessDTO;
+import io.harness.gitsync.common.dtos.gitAccess.AzureRepoOAuthAccessDTO;
+import io.harness.gitsync.common.dtos.gitAccess.AzureRepoTokenAccessDTO;
 import io.harness.gitsync.common.dtos.gitAccess.BitbucketAccessDTO;
 import io.harness.gitsync.common.dtos.gitAccess.BitbucketOAuthAccessDTO;
 import io.harness.gitsync.common.dtos.gitAccess.BitbucketUsernameTokenAccessDTO;
@@ -40,6 +42,8 @@ public class SCMGitAccessToProviderMapper {
       return mapToGitLabProvider((GitlabAccessDTO) gitAccessDTO);
     } else if (gitAccessDTO instanceof AzureRepoAccessDTO) {
       return mapToAzureRepoProvider((AzureRepoAccessDTO) gitAccessDTO);
+    } else if (gitAccessDTO instanceof BitbucketAccessDTO) {
+      return mapToBitbucketProvider((BitbucketAccessDTO) gitAccessDTO);
     } else {
       throw new NotImplementedException(
           String.format("The scm apis for the provider type %s is not supported", gitAccessDTO.getClass()));
@@ -75,9 +79,17 @@ public class SCMGitAccessToProviderMapper {
   }
 
   private Provider mapToAzureRepoProvider(AzureRepoAccessDTO azureRepoAccessDTO) {
-    String personalAccessToken = getToken(azureRepoAccessDTO.getTokenRef());
-    AzureProvider azureProvider = AzureProvider.newBuilder().setPersonalAccessToken(personalAccessToken).build();
-    return Provider.newBuilder().setAzure(azureProvider).build();
+    return Provider.newBuilder().setAzure(createAzureProvider(azureRepoAccessDTO)).build();
+  }
+
+  private AzureProvider createAzureProvider(AzureRepoAccessDTO azureRepoAccessDTO) {
+    if (azureRepoAccessDTO instanceof AzureRepoTokenAccessDTO) {
+      AzureRepoTokenAccessDTO azureRepoTokenAccessDTO = (AzureRepoTokenAccessDTO) azureRepoAccessDTO;
+      return AzureProvider.newBuilder().setPersonalAccessToken(getToken(azureRepoTokenAccessDTO.getTokenRef())).build();
+    } else {
+      AzureRepoOAuthAccessDTO azureRepoOAuthAccessDTO = (AzureRepoOAuthAccessDTO) azureRepoAccessDTO;
+      return AzureProvider.newBuilder().setPersonalAccessToken(getToken(azureRepoOAuthAccessDTO.getTokenRef())).build();
+    }
   }
 
   private Provider mapToGitLabProvider(GitlabAccessDTO gitlabAccessDTO) {

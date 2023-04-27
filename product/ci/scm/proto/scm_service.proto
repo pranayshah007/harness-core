@@ -279,6 +279,8 @@ message AzureProvider {
   string personal_access_token = 1;
   string organization = 2;
   string project = 3;
+  string oauth_token = 4;
+  AuthType auth_type = 5;
 }
 
 message HarnessAccessToken {

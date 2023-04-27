@@ -11,6 +11,7 @@ import io.harness.ScopeIdentifiers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoOAuthDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketOAuthDTO;
@@ -24,6 +25,8 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.AzureRepoAccessRequest;
+import io.harness.gitsync.AzureRepoOAuthAccessRequest;
+import io.harness.gitsync.AzureRepoTokenAccessRequest;
 import io.harness.gitsync.BitbucketAccessRequest;
 import io.harness.gitsync.BitbucketOAuthAccessRequest;
 import io.harness.gitsync.BitbucketUserNameTokenAccessRequest;
@@ -112,11 +115,26 @@ public class GitAccessRequestMapper {
         switch (azureRepoApiAccessDTO.getType()) {
           case TOKEN:
             return GitAccessRequest.newBuilder()
+                .setAzureRepo(AzureRepoAccessRequest.newBuilder()
+                                  .setToken(AzureRepoTokenAccessRequest.newBuilder()
+                                                .setTokenRef(buildSecretRefData(
+                                                    ((AzureRepoTokenSpecDTO) azureRepoApiAccessDTO.getSpec())
+                                                        .getTokenRef()
+                                                        .getIdentifier(),
+                                                    accountIdentifier))
+                                                .build())
+                                  .build())
+                .build();
+          case OAUTH:
+            return GitAccessRequest.newBuilder()
                 .setAzureRepo(
                     AzureRepoAccessRequest.newBuilder()
-                        .setTokenRef(buildSecretRefData(
-                            ((AzureRepoTokenSpecDTO) azureRepoApiAccessDTO.getSpec()).getTokenRef().getIdentifier(),
-                            accountIdentifier))
+                        .setOauth(
+                            AzureRepoOAuthAccessRequest.newBuilder()
+                                .setTokenRef(buildSecretRefData(
+                                    ((AzureRepoOAuthDTO) azureRepoApiAccessDTO.getSpec()).getTokenRef().getIdentifier(),
+                                    accountIdentifier))
+                                .build())
                         .build())
                 .build();
           default:

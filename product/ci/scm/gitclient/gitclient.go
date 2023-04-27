@@ -217,15 +217,23 @@ func GetGitClient(p pb.Provider, log *zap.SugaredLogger) (client *scm.Client, er
 		}
 	case *pb.Provider_Azure:
 		client = azure.NewDefault(p.GetAzure().GetOrganization(), p.GetAzure().GetProject())
+		if p.GetAzure().GetAuthType() == pb.AuthType_OAUTH {
 		// prepend ':' and encode the access token as base64
-		encodedToken := fmt.Sprintf(":%s", p.GetAzure().GetPersonalAccessToken())
+		encodedToken := fmt.Sprintf(":%s", p.GetAzure().GetOauthToken())
 		encodedToken = base64.StdEncoding.EncodeToString([]byte(encodedToken))
-		client.Client = &http.Client{
-			Transport: &transport.Custom{
-				Before: func(r *http.Request) {
-					r.Header.Set("Authorization", fmt.Sprintf("Basic %s", encodedToken))
-				},
-			},
+		 client.Client = &http.Client{
+                		Transport: oauthTransport(p.GetAzure().GetOauthToken(), p.GetSkipVerify(), p.GetAdditionalCertsPath(), log),}
+		} else {
+		// prepend ':' and encode the access token as base64
+        		encodedToken := fmt.Sprintf(":%s", p.GetAzure().GetPersonalAccessToken())
+        		encodedToken = base64.StdEncoding.EncodeToString([]byte(encodedToken))
+            client.Client = &http.Client{
+                Transport: &transport.Custom{
+                    Before: func(r *http.Request) {
+                        r.Header.Set("Authorization", fmt.Sprintf("Basic %s", encodedToken))
+                    },
+                },
+            }
 		}
 	case *pb.Provider_Harness:
 		switch p.GetHarness().Provider.(type) {

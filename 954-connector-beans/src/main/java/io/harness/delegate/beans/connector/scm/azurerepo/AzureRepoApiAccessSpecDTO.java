@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.scm.azurerepo;
 
+import static io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorConstants.OAUTH;
 import static io.harness.delegate.beans.connector.scm.github.GithubConnectorConstants.TOKEN;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -19,7 +20,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @OwnedBy(HarnessTeam.PL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonSubTypes({ @JsonSubTypes.Type(value = AzureRepoTokenSpecDTO.class, name = TOKEN) })
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = AzureRepoTokenSpecDTO.class, name = TOKEN)
+  , @JsonSubTypes.Type(value = AzureRepoOAuthDTO.class, name = OAUTH)
+})
 @Schema(name = "AzureRepoApiAccessSpec",
     description =
         "This contains details of the information such as references of username and password needed for Azure Repo API access")

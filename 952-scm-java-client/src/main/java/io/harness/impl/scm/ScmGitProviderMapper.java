@@ -17,6 +17,7 @@ import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoOAuthDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
@@ -100,8 +101,14 @@ public class ScmGitProviderMapper {
     project = GitClientHelper.getAzureRepoProject(orgAndProject);
     String azureRepoApiURL = GitClientHelper.getAzureRepoApiURL(azureRepoConnector.getUrl());
     AzureRepoApiAccessDTO apiAccess = azureRepoConnector.getApiAccess();
-    AzureRepoTokenSpecDTO azureRepoUsernameTokenApiAccessDTO = (AzureRepoTokenSpecDTO) apiAccess.getSpec();
-    String personalAccessToken = String.valueOf(azureRepoUsernameTokenApiAccessDTO.getTokenRef().getDecryptedValue());
+    String personalAccessToken;
+    if (apiAccess.getSpec() instanceof AzureRepoTokenSpecDTO) {
+      AzureRepoTokenSpecDTO azureRepoUsernameTokenApiAccessDTO = (AzureRepoTokenSpecDTO) apiAccess.getSpec();
+      personalAccessToken = String.valueOf(azureRepoUsernameTokenApiAccessDTO.getTokenRef().getDecryptedValue());
+    } else {
+      AzureRepoOAuthDTO azureRepoOAuthDTO = (AzureRepoOAuthDTO) apiAccess.getSpec();
+      personalAccessToken = String.valueOf(azureRepoOAuthDTO.getTokenRef().getDecryptedValue());
+    }
     AzureProvider.Builder azureProvider =
         AzureProvider.newBuilder().setOrganization(org).setPersonalAccessToken(personalAccessToken);
     if (isNotEmpty(project)) {

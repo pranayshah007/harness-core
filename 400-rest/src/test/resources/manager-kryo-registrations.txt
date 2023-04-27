@@ -1760,6 +1760,7 @@
 19553:io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO
 19554:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsValidationParams
 19555:io.harness.delegate.beans.connector.scm.bitbucket.BitbucketOAuthDTO
+19556:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoOAuthDTO
 19630:io.harness.delegate.beans.connector.helm.OciHelmValidationParams
 19640:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams
 19641:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse
@@ -3006,6 +3007,8 @@
 955029:io.harness.gitsync.common.dtos.gitAccess.BitbucketAccessDTO
 955030:io.harness.gitsync.common.dtos.gitAccess.BitbucketOAuthAccessDTO
 955031:io.harness.gitsync.common.dtos.gitAccess.BitbucketUsernameTokenAccessDTO
+955032:io.harness.gitsync.common.dtos.gitAccess.AzureRepoOAuthAccessDTO
+955033:io.harness.gitsync.common.dtos.gitAccess.AzureRepoTokenAccessDTO
 970001:io.harness.request.RequestContextData
 970002:io.harness.request.RequestContext
 970003:io.harness.gitsync.interceptor.GitSyncBranchContext

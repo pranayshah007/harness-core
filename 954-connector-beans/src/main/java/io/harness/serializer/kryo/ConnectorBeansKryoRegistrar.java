@@ -175,6 +175,7 @@ import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoCredentialsDTO
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsSpecDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoOAuthDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoUsernameTokenDTO;
@@ -344,6 +345,7 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(GithubOauthDTO.class, 19552);
     kryo.register(GitlabOauthDTO.class, 19553);
     kryo.register(BitbucketOAuthDTO.class, 19555);
+    kryo.register(AzureRepoOAuthDTO.class, 19556);
     kryo.register(LocalConnectorDTO.class, 543237);
     kryo.register(GcpKmsConnectorDTO.class, 543238);
 

@@ -655,6 +655,8 @@ public class NGSecretResourceV2 {
 
       } catch (IllegalAccessException illegalAccessException) {
         log.error("Error while checking access permission for secret: {}", field, illegalAccessException);
+      } catch (Exception ex) {
+        log.error("ds", ex);
       }
     }
     return ResponseDTO.newResponse(encryptedDataService.getEncryptionDetails(
