@@ -194,4 +194,5 @@ public class NGCommonEntityConstants {
   public static final String FILE_STORE_FUNCTOR = "fileStore";
   public static final String PLAN_NAME = "planName";
   public static final String TARGET_IDENTIFIER_KEY = "targetIdentifier";
+  public static final String NOTES_FOR_PIPELINE_EXECUTION = "notesForPipelineExecution";
 }

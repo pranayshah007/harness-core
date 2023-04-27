@@ -7,6 +7,8 @@
 
 package io.harness.pms.plan.execution;
 
+import static io.harness.pms.pipeline.PipelineResourceConstants.NOTES_FOR_PLAN_EXECUTION_PARAM_MESSAGE;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
@@ -113,6 +115,8 @@ public interface PlanExecutionResource {
       @NotEmpty String pipelineIdentifier, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @QueryParam("useFQNIfError") @DefaultValue("false") boolean useFQNIfErrorResponse,
       @QueryParam("notifyOnlyUser") @DefaultValue("false") boolean notifyOnlyUser,
+      @QueryParam(NGCommonEntityConstants.NOTES_FOR_PIPELINE_EXECUTION) @Parameter(
+          description = NOTES_FOR_PLAN_EXECUTION_PARAM_MESSAGE) @DefaultValue("") String notes,
       @ApiParam(hidden = true) @RequestBody(
           description =
               "Enter Runtime Input YAML if the Pipeline contains Runtime Inputs. Template for this can be Fetched from /inputSets/template API.",
@@ -148,7 +152,9 @@ public interface PlanExecutionResource {
       @NotNull String pipelineIdentifier,
       @PathParam(NGCommonEntityConstants.PLAN_KEY)
       @Parameter(description = PlanExecutionResourceConstants.PLAN_EXECUTION_ID_PARAM_MESSAGE) @ResourceIdentifier
-      @NotNull String planExecutionId, @QueryParam("stageNodeExecutionIds") @NotNull String stageNodeExecutionIds);
+      @NotNull String planExecutionId, @QueryParam("stageNodeExecutionIds") @NotNull String stageNodeExecutionIds,
+      @QueryParam(NGCommonEntityConstants.NOTES_FOR_PIPELINE_EXECUTION) @Parameter(
+          description = NOTES_FOR_PLAN_EXECUTION_PARAM_MESSAGE) @DefaultValue("") String notes);
 
   @POST
   @Path("/{identifier}/v2")
@@ -177,6 +183,8 @@ public interface PlanExecutionResource {
       @Parameter(description = PlanExecutionResourceConstants.PIPELINE_IDENTIFIER_PARAM_MESSAGE) @ResourceIdentifier
       @NotEmpty String pipelineIdentifier, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @QueryParam("useFQNIfError") @DefaultValue("false") boolean useFQNIfErrorResponse,
+      @QueryParam(NGCommonEntityConstants.NOTES_FOR_PIPELINE_EXECUTION) @Parameter(
+          description = NOTES_FOR_PLAN_EXECUTION_PARAM_MESSAGE) @DefaultValue("") String notes,
       @ApiParam(hidden = true) @Parameter(
           description =
               "InputSet YAML if the pipeline contains runtime inputs. This will be empty by default if pipeline does not contains runtime inputs")
@@ -206,7 +214,9 @@ public interface PlanExecutionResource {
           description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE) String pipelineIdentifier,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @QueryParam("useFQNIfError") @DefaultValue("false") boolean useFQNIfErrorResponse,
-      RunStageRequestDTO runStageRequestDTO);
+      RunStageRequestDTO runStageRequestDTO,
+      @QueryParam(NGCommonEntityConstants.NOTES_FOR_PIPELINE_EXECUTION) @Parameter(
+          description = NOTES_FOR_PLAN_EXECUTION_PARAM_MESSAGE) @DefaultValue("") String notes);
 
   @POST
   @Path("/rerun/{originalExecutionId}/{identifier}/stages")
@@ -235,7 +245,9 @@ public interface PlanExecutionResource {
       @Parameter(description = PlanExecutionResourceConstants.ORIGINAL_EXECUTION_IDENTIFIER_PARAM_MESSAGE)
       String originalExecutionId, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @QueryParam("useFQNIfError") @DefaultValue("false") boolean useFQNIfErrorResponse,
-      RunStageRequestDTO runStageRequestDTO);
+      RunStageRequestDTO runStageRequestDTO,
+      @QueryParam(NGCommonEntityConstants.NOTES_FOR_PIPELINE_EXECUTION) @Parameter(
+          description = NOTES_FOR_PLAN_EXECUTION_PARAM_MESSAGE) @DefaultValue("") String notes);
 
   @POST
   @Path("/rerun/{originalExecutionId}/{identifier}")
@@ -270,7 +282,9 @@ public interface PlanExecutionResource {
       @ApiParam(hidden = true) @Parameter(
           description =
               "InputSet YAML if the pipeline contains runtime inputs. This will be empty by default if pipeline does not contains runtime inputs")
-      String inputSetPipelineYaml);
+      String inputSetPipelineYaml,
+      @QueryParam(NGCommonEntityConstants.NOTES_FOR_PIPELINE_EXECUTION) @Parameter(
+          description = NOTES_FOR_PLAN_EXECUTION_PARAM_MESSAGE) @DefaultValue("") String notes);
 
   @POST
   @Path("/rerun/v2/{originalExecutionId}/{identifier}")
@@ -305,7 +319,9 @@ public interface PlanExecutionResource {
       @ApiParam(hidden = true) @Parameter(
           description =
               "InputSet YAML if the pipeline contains runtime inputs. This will be empty by default if pipeline does not contains runtime inputs")
-      String inputSetPipelineYaml);
+      String inputSetPipelineYaml,
+      @QueryParam(NGCommonEntityConstants.NOTES_FOR_PIPELINE_EXECUTION) @Parameter(
+          description = NOTES_FOR_PLAN_EXECUTION_PARAM_MESSAGE) @DefaultValue("") String notes);
 
   @POST
   @Path("/debug/{originalExecutionId}/{identifier}/stages")
@@ -459,7 +475,9 @@ public interface PlanExecutionResource {
       @Parameter(description = PlanExecutionResourceConstants.PIPELINE_IDENTIFIER_PARAM_MESSAGE) @ResourceIdentifier
       @NotEmpty String pipelineIdentifier, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @QueryParam("useFQNIfError") @DefaultValue("false") boolean useFQNIfErrorResponse,
-      @NotNull @Valid MergeInputSetRequestDTOPMS mergeInputSetRequestDTO);
+      @NotNull @Valid MergeInputSetRequestDTOPMS mergeInputSetRequestDTO,
+      @QueryParam(NGCommonEntityConstants.NOTES_FOR_PIPELINE_EXECUTION) @Parameter(
+          description = NOTES_FOR_PLAN_EXECUTION_PARAM_MESSAGE) @DefaultValue("") String notes);
 
   @POST
   @Path("rerun/{originalExecutionId}/{identifier}/inputSetList")
@@ -492,7 +510,9 @@ public interface PlanExecutionResource {
       @Parameter(description = PipelineResourceConstants.USE_FQN_IF_ERROR_RESPONSE_ERROR_MESSAGE,
           required = true) @QueryParam("useFQNIfError") @DefaultValue("false") boolean useFQNIfErrorResponse,
       @RequestBody(required = true, description = "InputSet reference details") @NotNull
-      @Valid MergeInputSetRequestDTOPMS mergeInputSetRequestDTO);
+      @Valid MergeInputSetRequestDTOPMS mergeInputSetRequestDTO,
+      @QueryParam(NGCommonEntityConstants.NOTES_FOR_PIPELINE_EXECUTION) @Parameter(
+          description = NOTES_FOR_PLAN_EXECUTION_PARAM_MESSAGE) @DefaultValue("") String notes);
 
   @PUT
   @ApiOperation(value = "pause, resume or stop the pipeline executions", nickname = "handleInterrupt")
@@ -676,7 +696,9 @@ public interface PlanExecutionResource {
           description = PlanExecutionResourceConstants.RUN_ALL_STAGES) @DefaultValue("true") boolean runAllStages,
       @PathParam(NGCommonEntityConstants.IDENTIFIER_KEY)
       @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE) @ResourceIdentifier
-      @NotEmpty String pipelineIdentifier, @ApiParam(hidden = true) String inputSetPipelineYaml);
+      @NotEmpty String pipelineIdentifier, @ApiParam(hidden = true) String inputSetPipelineYaml,
+      @QueryParam(NGCommonEntityConstants.NOTES_FOR_PIPELINE_EXECUTION) @Parameter(
+          description = NOTES_FOR_PLAN_EXECUTION_PARAM_MESSAGE) @DefaultValue("") String notes);
 
   @GET
   @Path("retryHistory/{planExecutionId}")

@@ -21,6 +21,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.apiexamples.PipelineAPIConstants;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filter.dto.FilterPropertiesDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -35,6 +36,7 @@ import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlWithTemplateDTO;
 import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
 import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
+import io.harness.pms.pipeline.PipelineExecutionNotesDTO;
 import io.harness.pms.pipeline.PipelineResourceConstants;
 import io.harness.pms.pipeline.ResolveInputYamlType;
 import io.harness.pms.pipeline.mappers.ExecutionGraphMapper;
@@ -72,6 +74,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -119,6 +122,7 @@ public class ExecutionDetailsResource {
   @Inject private final AccessControlClient accessControlClient;
   @Inject private final PmsGitSyncHelper pmsGitSyncHelper;
   @Inject private final ExecutionHelper executionHelper;
+  @Inject private final PlanExecutionMetadataService planExecutionMetadataService;
 
   @POST
   @Path("/summary")
@@ -496,5 +500,53 @@ public class ExecutionDetailsResource {
     Criteria criteria = pmsExecutionService.formCriteriaForRepoAndBranchListing(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, repoName);
     return ResponseDTO.newResponse(pmsExecutionService.getListOfBranches(criteria));
+  }
+
+  @GET
+  @Path("/{planExecutionId}/notes")
+  @ApiOperation(value = "Get Notes of an execution from planExecutionMetadata", nickname = "getNotesForExecution")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @Operation(operationId = "getNotesForExecution", summary = "Get Notes for a pipelineExecution",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns Notes of a pipelineExecution")
+      })
+  public ResponseDTO<PipelineExecutionNotesDTO>
+  getNotesForPlanExecution(
+      @NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @NotNull @PathParam(NGCommonEntityConstants.PLAN_KEY) @Parameter(
+          description = "ExecutionId of the execution for which we want to get notes",
+          required = true) String planExecutionId) {
+    String pipelineExecutionNotes = planExecutionMetadataService.getNotesForExecution(planExecutionId);
+    return ResponseDTO.newResponse(PipelineExecutionNotesDTO.builder().notes(pipelineExecutionNotes).build());
+  }
+
+  @PUT
+  @Path("/{planExecutionId}/notes")
+  @ApiOperation(value = "Updates Notes of a pipelineExecution", nickname = "getNotesForExecution")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @Operation(operationId = "updateNotesForExecution", summary = "Updates Notes for a pipelineExecution",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns Notes of a pipelineExecution")
+      })
+  public ResponseDTO<PipelineExecutionNotesDTO>
+  updateNotesForPlanExecution(
+      @NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @NotNull @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @NotNull @Parameter(description = PlanExecutionResourceConstants.NOTES_OF_A_PIPELINE_EXECUTION,
+          required = true) @QueryParam(NGCommonEntityConstants.NOTES_FOR_PIPELINE_EXECUTION) String notes,
+      @NotNull @PathParam(NGCommonEntityConstants.PLAN_KEY) @Parameter(
+          description = "ExecutionId of the execution for which we want to update notes",
+          required = true) String planExecutionId) {
+    String pipelineExecutionNotes = planExecutionMetadataService.updateNotesForExecution(planExecutionId, notes);
+    return ResponseDTO.newResponse(PipelineExecutionNotesDTO.builder().notes(pipelineExecutionNotes).build());
   }
 }

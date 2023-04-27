@@ -198,11 +198,20 @@ public class ExecutionHelper {
 
     return (modules != null) && (modules.contains("ci"));
   }
-  @SneakyThrows
+
   public ExecArgs buildExecutionArgs(PipelineEntity pipelineEntity, String moduleType, String mergedRuntimeInputYaml,
       List<String> stagesToRun, Map<String, String> expressionValues, ExecutionTriggerInfo triggerInfo,
       String originalExecutionId, RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser,
       boolean isDebug) {
+    return buildExecutionArgs(pipelineEntity, moduleType, mergedRuntimeInputYaml, stagesToRun, expressionValues,
+        triggerInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser, isDebug, null);
+  }
+
+  @SneakyThrows
+  public ExecArgs buildExecutionArgs(PipelineEntity pipelineEntity, String moduleType, String mergedRuntimeInputYaml,
+      List<String> stagesToRun, Map<String, String> expressionValues, ExecutionTriggerInfo triggerInfo,
+      String originalExecutionId, RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser,
+      boolean isDebug, String notes) {
     long start = System.currentTimeMillis();
     final String executionId = generateUuid();
 
@@ -257,7 +266,7 @@ public class ExecutionHelper {
       }
 
       Builder planExecutionMetadataBuilder = obtainPlanExecutionMetadata(mergedRuntimeInputYaml, executionId,
-          stagesExecutionInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser, version);
+          stagesExecutionInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser, version, notes);
       if (stagesExecutionInfo.isStagesExecution()) {
         pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity.getAccountId(),
             YamlUtils.extractPipelineField(planExecutionMetadataBuilder.build().getProcessedYaml()));
@@ -407,7 +416,7 @@ public class ExecutionHelper {
 
   private PlanExecutionMetadata.Builder obtainPlanExecutionMetadata(String mergedRuntimeInputYaml, String executionId,
       StagesExecutionInfo stagesExecutionInfo, String originalExecutionId,
-      RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser, String version) {
+      RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser, String version, String notes) {
     long start = System.currentTimeMillis();
     boolean isRetry = retryExecutionParameters.isRetry();
     String pipelineYaml = stagesExecutionInfo.getPipelineYamlToRun();
@@ -418,7 +427,8 @@ public class ExecutionHelper {
             .yaml(pipelineYaml)
             .stagesExecutionMetadata(stagesExecutionInfo.toStagesExecutionMetadata())
             .allowStagesExecution(stagesExecutionInfo.isAllowStagesExecution())
-            .notifyOnlyUser(notifyOnlyUser);
+            .notifyOnlyUser(notifyOnlyUser)
+            .notes(notes);
     String currentProcessedYaml;
     try {
       switch (version) {
