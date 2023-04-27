@@ -20,8 +20,6 @@ public class FeatureFlagNames {
 
   public static final String SRM_SLO_TOGGLE = "SRM_SLO_TOGGLE";
 
-  public static final String ELK_HEALTH_SOURCE = "ELK_HEALTH_SOURCE";
-
   public static final String SRM_DOWNTIME = "SRM_DOWNTIME";
   public static final String SRM_SLO_ANNOTATIONS = "SRM_SLO_ANNOTATIONS";
 

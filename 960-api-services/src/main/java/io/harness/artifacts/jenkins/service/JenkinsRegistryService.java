@@ -82,6 +82,19 @@ public class JenkinsRegistryService {
               "Failed to fetch build details jenkins server " + ExceptionUtils.getMessage(ex), USER));
     }
   }
+  public BuildDetails verifyBuildForJob(
+      JenkinsInternalConfig jenkinsInternalConfig, String jobname, List<String> artifactPaths, String buildNumber) {
+    try {
+      return jenkinsRegistryUtils.verifyBuildForJob(jenkinsInternalConfig, jobname, artifactPaths, buildNumber);
+    } catch (WingsException e) {
+      throw e;
+    } catch (IOException ex) {
+      throw NestedExceptionUtils.hintWithExplanationException("Failed to fetch build details",
+          "Check if the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Jobs.",
+          new InvalidRequestException(
+              "Failed to fetch build details jenkins server " + ExceptionUtils.getMessage(ex), USER));
+    }
+  }
 
   public BuildDetails getLastSuccessfulBuildForJob(
       JenkinsInternalConfig jenkinsInternalConfig, String jobName, List<String> artifactPaths) {

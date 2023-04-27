@@ -82,6 +82,7 @@ artifacts {"name": "artifactStream_revision", "background": true} {"artifactStre
 artifacts {"name": "createdAt_1", "background": true} {"createdAt": 1}
 artifacts {"name": "owners", "background": true} {"artifactStreamId": 1, "appId": 1}
 audits {"name": "accountId_createdAt_earAffectedResourceOperation_earAffectedResourceType", "background": true} {"accountId": 1, "createdAt": -1, "entityAuditRecords.affectedResourceOperation": 1, "entityAuditRecords.affectedResourceType": 1}
+audits {"name": "accountId_earAppId_createdByUUID_createdAt", "background": true} {"accountId": 1, "entityAuditRecords.appId": 1, "createdBy.uuid": 1, "createdAt": -1}
 audits {"name": "accountId_entityId_createdAt", "background": true} {"accountId": 1, "entityAuditRecords.entityId": 1, "createdAt": -1}
 audits {"name": "appId_1", "background": true} {"appId": 1}
 audits {"name": "createdAt_1", "background": true} {"createdAt": 1}

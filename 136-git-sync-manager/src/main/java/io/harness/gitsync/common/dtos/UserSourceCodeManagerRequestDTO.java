@@ -11,10 +11,13 @@ import io.harness.ng.userprofile.commons.SCMType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 @Data
+@NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @SuperBuilder
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY)
@@ -24,4 +27,6 @@ public abstract class UserSourceCodeManagerRequestDTO {
   SCMType type;
 
   public abstract SCMType getType();
+  @Schema(description = "Authentication Details of User Source Code Manager")
+  public abstract UserSourceCodeManagerAuthentication getAuthentication();
 }

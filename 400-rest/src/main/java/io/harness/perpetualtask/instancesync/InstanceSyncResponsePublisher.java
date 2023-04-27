@@ -61,6 +61,31 @@ public class InstanceSyncResponsePublisher {
         accountIdentifier, perpetualTaskId);
   }
 
+  public void publishInstanceSyncResponseV2ToNG(
+      String accountIdentifier, String perpetualTaskId, InstanceSyncResponseV2 instanceSyncResponseV2) {
+    if (instanceSyncResponseV2 == null) {
+      log.error("Instance sync perpetual task response is null for accountIdentifier : {} and perpetualTaskId : {}",
+          accountIdentifier, perpetualTaskId);
+    }
+    boolean response = false;
+    int retry = 0;
+    while (!response && retry < 3) {
+      try {
+        response = NGRestUtils.getResponse(instanceSyncResourceClient.sendPerpetualTaskV2Response(
+            accountIdentifier, perpetualTaskId, instanceSyncResponseV2));
+      } catch (Exception exception) {
+        log.error(
+            "Error occured while sending instance sync perpetual task v2 response from CG to NG for accountIdentifier : {} and perpetualTaskId : {}",
+            accountIdentifier, perpetualTaskId, exception);
+      }
+      retry += 1;
+    }
+
+    log.info(
+        "Successfully pushed instance sync perpetual task v2 response from CG to NG for accountIdentifier : {} and perpetualTaskId : {}",
+        accountIdentifier, perpetualTaskId);
+  }
+
   public InstanceSyncTaskDetails fetchTaskDetails(String perpetualTaskId, String accountId) {
     try {
       return getResponse(instanceSyncResourceClient.getInstanceSyncTaskDetails(accountId, perpetualTaskId));

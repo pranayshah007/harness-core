@@ -35,11 +35,14 @@ import io.harness.aws.asg.manifest.request.AsgInstanceRefreshManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScheduledActionManifestRequest;
+import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.AsgNGException;
 import io.harness.delegate.task.aws.asg.AsgCommandRequest;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
+import io.harness.delegate.task.aws.asg.AsgInfraConfig;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployRequest;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployResponse;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployResult;
@@ -51,6 +54,7 @@ import io.harness.logging.LogCallback;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
+import software.wings.service.impl.AwsUtils;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
@@ -68,6 +72,8 @@ import org.apache.commons.lang3.tuple.Pair;
 @Slf4j
 public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
   @Inject private AsgTaskHelper asgTaskHelper;
+  @Inject private ElbV2Client elbV2Client;
+  @Inject private AwsUtils awsUtils;
 
   @Override
   protected AsgCommandResponse executeTaskInternal(AsgCommandRequest asgCommandRequest,
@@ -88,12 +94,15 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
         iLogStreamingTaskClient, AsgCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
 
     try {
-      AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback);
+      AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback, elbV2Client);
+      AsgInfraConfig asgInfraConfig = asgCommandRequest.getAsgInfraConfig();
+      String region = asgInfraConfig.getRegion();
+      AwsInternalConfig awsInternalConfig = awsUtils.getAwsInternalConfig(asgInfraConfig.getAwsConnectorDTO(), region);
       asgSdkManager.info("Starting Rolling Deployment");
 
       AutoScalingGroupContainer autoScalingGroupContainer = executeRollingDeployWithInstanceRefresh(asgSdkManager,
           asgStoreManifestsContent, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage,
-          asgRollingDeployRequest.getAmiImageId());
+          asgRollingDeployRequest.getAmiImageId(), awsInternalConfig, region);
 
       AsgRollingDeployResult asgRollingDeployResult = AsgRollingDeployResult.builder()
                                                           .autoScalingGroupContainer(autoScalingGroupContainer)
@@ -117,7 +126,8 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
 
   private AutoScalingGroupContainer executeRollingDeployWithInstanceRefresh(AsgSdkManager asgSdkManager,
       Map<String, List<String>> asgStoreManifestsContent, Boolean skipMatching, Boolean useAlreadyRunningInstances,
-      Integer instanceWarmup, Integer minimumHealthyPercentage, String amiImageId) {
+      Integer instanceWarmup, Integer minimumHealthyPercentage, String amiImageId, AwsInternalConfig awsInternalConfig,
+      String region) {
     // Get the content of all required manifest files
     String asgLaunchTemplateContent = asgTaskHelper.getAsgLaunchTemplateContent(asgStoreManifestsContent);
     String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
@@ -150,6 +160,8 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
                 AsgConfigurationManifestRequest.builder()
                     .manifests(Arrays.asList(asgConfigurationContent))
                     .useAlreadyRunningInstances(useAlreadyRunningInstances)
+                    .awsInternalConfig(awsInternalConfig)
+                    .region(region)
                     .build())
             .addHandler(
                 AsgScalingPolicy, AsgScalingPolicyManifestRequest.builder().manifests(asgScalingPolicyContent).build())

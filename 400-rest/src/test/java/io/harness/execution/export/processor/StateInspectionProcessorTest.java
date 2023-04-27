@@ -12,10 +12,9 @@ import static io.harness.rule.OwnerRule.GARVIT;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -29,7 +28,9 @@ import io.harness.state.inspection.StateInspectionService;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.Rule;
 import org.junit.Test;
@@ -81,12 +82,20 @@ public class StateInspectionProcessorTest extends CategoryTest {
   @Test
   @Owner(developers = GARVIT)
   @Category(UnitTests.class)
-  public void testProcess() {
+  public void shouldNotProcessWhenStateExecutionInstanceIdsEmpty() {
     StateInspectionProcessor stateInspectionProcessor = new StateInspectionProcessor();
     stateInspectionProcessor.setStateInspectionService(stateInspectionService);
 
     stateInspectionProcessor.process();
-    verify(stateInspectionService, never()).listUsingSecondary(any());
+    verify(stateInspectionService, never()).search(any(), any());
+  }
+
+  @Test
+  @Owner(developers = GARVIT)
+  @Category(UnitTests.class)
+  public void shouldProcessWhenStateExecutionInstanceIdsNotEmpty() {
+    StateInspectionProcessor stateInspectionProcessor = new StateInspectionProcessor();
+    stateInspectionProcessor.setStateInspectionService(stateInspectionService);
 
     GraphNodeMetadata nodeMetadata1 = GraphNodeMetadata.builder().id("nid1").hasInspection(true).build();
     GraphNodeMetadata nodeMetadata2 = GraphNodeMetadata.builder().id("nid2").build();
@@ -98,18 +107,35 @@ public class StateInspectionProcessorTest extends CategoryTest {
             .executionGraph(asList(nodeMetadata1, nodeMetadata2, nodeMetadata3, nodeMetadata4))
             .build());
 
-    when(stateInspectionService.listUsingSecondary(any())).thenReturn(Collections.emptyList());
     stateInspectionProcessor.process();
-    verify(stateInspectionService, times(1)).listUsingSecondary(any());
+    verify(stateInspectionService).search(eq(Set.of("nid1", "nid3", "nid4")), any());
+  }
 
-    when(stateInspectionService.listUsingSecondary(any()))
-        .thenReturn(asList(StateInspection.builder().stateExecutionInstanceId("random").build(),
+  @Test
+  @Owner(developers = GARVIT)
+  @Category(UnitTests.class)
+  public void testProcess() {
+    StateInspectionProcessor stateInspectionProcessor = new StateInspectionProcessor();
+    stateInspectionProcessor.setStateInspectionService(stateInspectionService);
+
+    GraphNodeMetadata nodeMetadata1 = GraphNodeMetadata.builder().id("nid1").hasInspection(true).build();
+    GraphNodeMetadata nodeMetadata2 = GraphNodeMetadata.builder().id("nid2").build();
+    GraphNodeMetadata nodeMetadata3 = GraphNodeMetadata.builder().id("nid3").hasInspection(true).build();
+    GraphNodeMetadata nodeMetadata4 = GraphNodeMetadata.builder().id("nid4").hasInspection(true).build();
+    stateInspectionProcessor.visitExecutionMetadata(
+        WorkflowExecutionMetadata.builder()
+            .id("id")
+            .executionGraph(asList(nodeMetadata1, nodeMetadata2, nodeMetadata3, nodeMetadata4))
+            .build());
+
+    final List<StateInspection> stateInspections =
+        asList(StateInspection.builder().stateExecutionInstanceId("random").build(),
             StateInspection.builder().stateExecutionInstanceId("nid1").data(prepareData("k1")).build(),
             StateInspection.builder().stateExecutionInstanceId("nid2").data(prepareData("k2")).build(),
             StateInspection.builder().stateExecutionInstanceId("nid3").data(prepareData("k3")).build(),
-            StateInspection.builder().stateExecutionInstanceId("nid4").data(prepareData(null)).build()));
-    stateInspectionProcessor.process();
-    verify(stateInspectionService, times(2)).listUsingSecondary(any());
+            StateInspection.builder().stateExecutionInstanceId("nid4").data(prepareData(null)).build());
+    stateInspections.forEach(stateInspectionProcessor::process);
+
     assertThat(nodeMetadata1.getExecutionContext()
                    .stream()
                    .map(ExpressionVariableUsage.Item::getExpression)

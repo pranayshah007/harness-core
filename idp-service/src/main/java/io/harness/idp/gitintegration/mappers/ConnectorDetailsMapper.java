@@ -31,15 +31,16 @@ public class ConnectorDetailsMapper {
     return connectorDetails;
   }
 
-  public CatalogConnectorEntity fromDTO(ConnectorDetails connectorDetails, String accountIdentifier,
-      String infraConnectorType, Set<String> delegateSelectors) {
+  public CatalogConnectorEntity fromDTO(String identifier, String accountIdentifier, String connectorProviderType,
+      Set<String> delegateSelectors, String host, String infraConnectorType) {
     return CatalogConnectorEntity.builder()
-        .identifier(Constants.IDP_PREFIX + connectorDetails.getIdentifier())
+        .identifier(Constants.IDP_PREFIX + identifier)
         .accountIdentifier(accountIdentifier)
-        .connectorIdentifier(connectorDetails.getIdentifier())
-        .connectorProviderType(connectorDetails.getType().toString())
+        .connectorIdentifier(identifier)
+        .connectorProviderType(connectorProviderType)
         .type(CatalogInfraConnectorType.valueOf(infraConnectorType))
         .delegateSelectors(delegateSelectors)
+        .host(host)
         .build();
   }
 

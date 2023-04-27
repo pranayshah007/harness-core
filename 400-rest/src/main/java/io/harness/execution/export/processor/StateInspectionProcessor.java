@@ -19,9 +19,9 @@ import io.harness.state.inspection.StateInspection;
 import io.harness.state.inspection.StateInspectionData;
 import io.harness.state.inspection.StateInspectionService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.Setter;
@@ -54,17 +54,7 @@ public class StateInspectionProcessor implements ExportExecutionsProcessor, Grap
       return;
     }
 
-    List<StateInspection> stateInspections =
-        stateInspectionService.listUsingSecondary(stateExecutionInstanceIdToNodeMetadataMap.keySet());
-    if (isEmpty(stateInspections)) {
-      return;
-    }
-
-    for (StateInspection stateInspection : stateInspections) {
-      updateGraphNodeMetadata(
-          stateExecutionInstanceIdToNodeMetadataMap.get(stateInspection.getStateExecutionInstanceId()),
-          stateInspection);
-    }
+    stateInspectionService.search(stateExecutionInstanceIdToNodeMetadataMap.keySet(), this::process);
   }
 
   private void updateGraphNodeMetadata(GraphNodeMetadata nodeMetadata, StateInspection stateInspection) {
@@ -87,5 +77,11 @@ public class StateInspectionProcessor implements ExportExecutionsProcessor, Grap
             .stream()
             .filter(variable -> variable.getExpression() != null && variable.getValue() != null)
             .collect(Collectors.toList()));
+  }
+
+  @VisibleForTesting
+  void process(StateInspection stateInspection) {
+    updateGraphNodeMetadata(
+        stateExecutionInstanceIdToNodeMetadataMap.get(stateInspection.getStateExecutionInstanceId()), stateInspection);
   }
 }

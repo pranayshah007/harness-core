@@ -17,5 +17,6 @@ import org.springframework.data.repository.CrudRepository;
 @HarnessRepo
 @OwnedBy(HarnessTeam.CDP)
 public interface InstanceSyncPerpetualTaskMappingRepository
-    extends CrudRepository<InstanceSyncPerpetualTaskMapping, String>,
-            InstanceSyncPerpetualTaskMappingRepositoryCustom {}
+    extends CrudRepository<InstanceSyncPerpetualTaskMapping, String>, InstanceSyncPerpetualTaskMappingRepositoryCustom {
+  boolean deleteByAccountIdAndPerpetualTaskId(String accountId, String perpetualTaskId);
+}

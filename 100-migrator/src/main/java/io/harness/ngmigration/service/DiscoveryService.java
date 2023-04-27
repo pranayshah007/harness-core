@@ -82,6 +82,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import javax.ws.rs.core.StreamingOutput;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -435,7 +436,10 @@ public class DiscoveryService {
 
     List<SkippedExpressionDetail> skippedExpressionDetails = new ArrayList<>();
     for (NGYamlFile yamlFile : files) {
-      Set<String> skippedExpressions = MigratorExpressionUtils.getExpressions(yamlFile);
+      Set<String> skippedExpressions = SetUtils.emptyIfNull(MigratorExpressionUtils.getExpressions(yamlFile))
+                                           .stream()
+                                           .filter(exp -> exp.contains("."))
+                                           .collect(Collectors.toSet());
       if (EmptyPredicate.isNotEmpty(skippedExpressions)) {
         skippedExpressionDetails.add(SkippedExpressionDetail.builder()
                                          .expressions(skippedExpressions)

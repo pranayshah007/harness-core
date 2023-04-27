@@ -218,6 +218,7 @@ public interface EntityTypeConstants {
   String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
   String TAS_ROLLING_ROLLBACK = "TasRollingRollback";
   String K8S_DRY_RUN_MANIFEST = "K8sDryRun";
+  String K8S_BG_STAGE_SCALE_DOWN = "K8sBlueGreenStageScaleDown";
   String ASG_BLUE_GREEN_SWAP_SERVICE_STEP = "AsgBlueGreenSwapService";
 
   String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
@@ -232,6 +233,6 @@ public interface EntityTypeConstants {
 
   String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
   String CD_SSCA_ORCHESTRATION = "CdSscaOrchestration";
-  String TAS_ROUTE_MAPPING = "TasRouteMapping";
+  String TAS_ROUTE_MAPPING = "RouteMapping";
   String BACKSTAGE_ENVIRONMENT_VARIABLE = "BackstageEnvironmentVariable";
 }

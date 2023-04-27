@@ -20,6 +20,7 @@ public interface ApprovalResourceService {
   ApprovalInstanceResponseDTO get(@NotNull String approvalInstanceId);
   ApprovalInstanceResponseDTO addHarnessApprovalActivity(
       @NotNull String approvalInstanceId, @NotNull @Valid HarnessApprovalActivityRequestDTO request);
-  HarnessApprovalInstanceAuthorizationDTO getHarnessApprovalInstanceAuthorization(@NotNull String approvalInstanceId);
+  HarnessApprovalInstanceAuthorizationDTO getHarnessApprovalInstanceAuthorization(
+      @NotNull String approvalInstanceId, boolean skipHasAlreadyApprovedValidation);
   String getYamlSnippet(ApprovalType approvalType, String accountId) throws IOException;
 }

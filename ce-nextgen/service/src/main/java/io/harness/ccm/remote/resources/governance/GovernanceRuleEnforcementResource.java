@@ -80,7 +80,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
@@ -261,7 +260,7 @@ public class GovernanceRuleEnforcementResource {
                 .schedule(ruleEnforcement.getExecutionSchedule())
                 .disabled(!ruleEnforcement.getIsEnabled())
                 .name(ruleEnforcement.getUuid().toLowerCase())
-                .displayname(ruleEnforcement.getName() + "_" + ruleEnforcement.getUuid())
+                .displayname("ag_" + ruleEnforcement.getName() + "_" + ruleEnforcement.getUuid())
                 .timezone(ruleEnforcement.getExecutionTimezone())
                 .executor(SCHEDULER_EXECUTOR)
                 .metadata(metadata)
@@ -408,19 +407,51 @@ public class GovernanceRuleEnforcementResource {
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_ENFORCEMENT_UPDATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 
-    // Update dkron if enforcement is toggled
-    if (configuration.getGovernanceConfig().isUseDkron()
-        && !Objects.equals(ruleEnforcementFromMongo.getIsEnabled(), ruleEnforcement.getIsEnabled())) {
+    // Update dkron if enforcement is toggled or schedule is changed or timezone is changed
+    if (configuration.getGovernanceConfig().isUseDkron()) {
       log.info("Use dkron is enabled in config.");
       try {
-        String schedulerName = ruleEnforcement.getUuid().toLowerCase();
-        okhttp3.RequestBody body = okhttp3.RequestBody.create(null, new byte[0]);
-        Response res = schedulerClient.toggleJob(body, schedulerName).execute();
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put(RULE_ENFORCEMENT_ID, ruleEnforcementFromMongo.getUuid());
+        Map<String, String> tags = new HashMap<>();
+        tags.put(configuration.getGovernanceConfig().getTagsKey(), configuration.getGovernanceConfig().getTagsValue());
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put(ACCOUNT_ID, ruleEnforcement.getAccountId());
+        metadata.put(EXECUTION_SCHEDULE, ruleEnforcement.getExecutionSchedule());
+        metadata.put(ENFORCEMENT_ID, ruleEnforcement.getUuid());
+        JSONArray headers = new JSONArray();
+        headers.add(CONTENT_TYPE_APPLICATION_JSON);
+        SchedulerDTO schedulerDTO =
+            SchedulerDTO.builder()
+                .tags(tags)
+                .retries(2)
+                .schedule(ruleEnforcement.getExecutionSchedule()) // This can be updated by user
+                .disabled(!ruleEnforcement.getIsEnabled()) // This can be updated by user
+                .name(ruleEnforcementFromMongo.getUuid().toLowerCase())
+                .displayname("ag_" + ruleEnforcementFromMongo.getName() + "_" + ruleEnforcementFromMongo.getUuid())
+                .timezone(ruleEnforcement.getExecutionTimezone()) // This can be updated by user
+                .executor(SCHEDULER_EXECUTOR)
+                .metadata(metadata)
+                .executor_config(SchedulerDTO.ExecutorConfig.builder()
+                                     .method(SCHEDULER_HTTP_METHOD)
+                                     .timeout(SCHEDULER_HTTP_TIMEOUT)
+                                     .debug(SCHEDULER_IS_DEBUG)
+                                     .url(configuration.getGovernanceConfig().getCallbackApiEndpoint())
+                                     .body(jsonObject.toString())
+                                     .headers(headers.toString())
+                                     .tlsNoVerifyPeer("true") // Skip verifying certs
+                                     .build())
+                .build();
+        log.info(new Gson().toJson(schedulerDTO));
+        okhttp3.RequestBody body =
+            okhttp3.RequestBody.create(okhttp3.MediaType.parse("application/json"), new Gson().toJson(schedulerDTO));
+        Response res = schedulerClient.createOrUpdateJob(body).execute();
         log.info(CODE_MESSAGE_BODY, res.code(), res.message(), res.body());
       } catch (Exception e) {
-        log.error("Error in toggle'ing job from dkron", e);
+        log.error("Error in creating/updating job in dkron", e);
       }
     }
+
     ruleEnforcementService.update(ruleEnforcement);
     RuleEnforcement updatedRuleEnforcement = ruleEnforcementService.listId(accountId, ruleEnforcement.getUuid(), false);
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {

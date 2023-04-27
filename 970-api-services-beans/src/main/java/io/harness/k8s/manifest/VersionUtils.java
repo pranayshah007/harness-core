@@ -22,6 +22,7 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import io.harness.k8s.model.HarnessAnnotations;
+import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.logging.LogCallback;
@@ -87,30 +88,10 @@ public class VersionUtils {
 
     for (KubernetesResource resource : resources) {
       if (shouldUpdateVersionedReferences(resource)) {
-        UnaryOperator<Object> updateConfigMapReference = t -> {
-          KubernetesResourceId configMapResourceId = KubernetesResourceId.builder()
-                                                         .namespace(resource.getResourceId().getNamespace())
-                                                         .kind(ConfigMap.name())
-                                                         .name((String) t)
-                                                         .build();
-          if (versionedResources.contains(configMapResourceId)) {
-            return t + revisionSeparator + revision;
-          }
-          return t;
-        };
-
-        UnaryOperator<Object> updateSecretReference = t -> {
-          KubernetesResourceId secretResourceId = KubernetesResourceId.builder()
-                                                      .namespace(resource.getResourceId().getNamespace())
-                                                      .kind(Secret.name())
-                                                      .name((String) t)
-                                                      .build();
-          if (versionedResources.contains(secretResourceId)) {
-            return t + revisionSeparator + revision;
-          }
-          return t;
-        };
-
+        UnaryOperator<Object> updateConfigMapReference =
+            createTransformationOperator(resource, ConfigMap, versionedResources, revisionSeparator + revision);
+        UnaryOperator<Object> updateSecretReference =
+            createTransformationOperator(resource, Secret, versionedResources, revisionSeparator + revision);
         resource.transformConfigMapAndSecretRef(updateConfigMapReference, updateSecretReference);
       }
     }
@@ -125,20 +106,39 @@ public class VersionUtils {
     }
 
     UnaryOperator<Object> appendSuffixOperator = t -> t + suffix;
+    Set<KubernetesResourceId> suffixedResources = new HashSet<>();
 
     for (KubernetesResource resource : resources) {
       if (shouldVersion(resource)) {
+        suffixedResources.add(resource.getResourceId().cloneInternal());
         resource.transformName(appendSuffixOperator);
       }
     }
 
     for (KubernetesResource resource : resources) {
       if (shouldUpdateVersionedReferences(resource)) {
-        UnaryOperator<Object> updateReference = t -> t + suffix;
-
-        resource.transformConfigMapAndSecretRef(updateReference, updateReference);
+        UnaryOperator<Object> updateConfigmapReference =
+            createTransformationOperator(resource, ConfigMap, suffixedResources, suffix);
+        UnaryOperator<Object> updateSecretReference =
+            createTransformationOperator(resource, Secret, suffixedResources, suffix);
+        resource.transformConfigMapAndSecretRef(updateConfigmapReference, updateSecretReference);
       }
     }
+  }
+
+  private static UnaryOperator<Object> createTransformationOperator(KubernetesResource resource, Kind targetObjectKind,
+      Set<KubernetesResourceId> modifiedResources, String modifier) {
+    return t -> {
+      KubernetesResourceId resourceId = KubernetesResourceId.builder()
+                                            .namespace(resource.getResourceId().getNamespace())
+                                            .kind(targetObjectKind.name())
+                                            .name((String) t)
+                                            .build();
+      if (modifiedResources.contains(resourceId)) {
+        return t + modifier;
+      }
+      return t;
+    };
   }
 
   private static String getLongestPossibleSuffix(

@@ -32,7 +32,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -54,10 +53,7 @@ public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetServic
         projectParams, sloErrorBudgetResetDTO.getServiceLevelObjectiveIdentifier());
     Preconditions.checkNotNull(serviceLevelObjective, "SLO with identifier:%s not found",
         sloErrorBudgetResetDTO.getServiceLevelObjectiveIdentifier());
-    Preconditions.checkArgument(serviceLevelObjectiveV2Service
-                                    .getEvaluationType(projectParams, Collections.singletonList(serviceLevelObjective))
-                                    .get(serviceLevelObjective)
-            == SLIEvaluationType.WINDOW,
+    Preconditions.checkArgument(serviceLevelObjective.getSliEvaluationType() == SLIEvaluationType.WINDOW,
         "ServiceLevelObjective Should be of type Window.");
     SLOErrorBudgetReset sloErrorBudgetReset = entityFromDTO(projectParams, sloErrorBudgetResetDTO,
         serviceLevelObjective

@@ -174,6 +174,9 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
             .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
             .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
             .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
+            .pipelineIdentifier(AmbianceUtils.getPipelineIdentifier(ambiance))
+            .stageIdentifier(stageElementParameters.getIdentifier())
+            .stageName(stageElementParameters.getName())
             .status(Status.RUNNING)
             .stageStatus(StageStatus.IN_PROGRESS);
     final List<String> tags = new LinkedList<>();

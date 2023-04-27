@@ -8,7 +8,6 @@
 package io.harness.template.services;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.beans.FeatureName.CDS_FORCE_DELETE_ENTITIES;
 import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -504,14 +503,6 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       if (templateOptional.isPresent() && StoreType.REMOTE.equals(templateOptional.get().getStoreType())) {
         TemplateEntity templateEntity = templateOptional.get();
         validateTemplateVersion(versionLabel, templateEntity);
-
-        try {
-          if (doPublishSetupUsages(templateOptional.get())) {
-            templateReferenceHelper.populateTemplateReferences(templateOptional.get());
-          }
-        } catch (Exception e) {
-          log.error("Error occurred while publishing template references {}", e.getMessage());
-        }
       }
 
       return templateOptional;
@@ -596,10 +587,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   private boolean isForceDeleteEnabled(String accountIdentifier) {
-    boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
-    boolean isForceDeleteEnabledBySettings =
-        isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
-    return isForceDeleteFFEnabled && isForceDeleteEnabledBySettings;
+    return isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
   }
 
   @VisibleForTesting
@@ -608,12 +596,6 @@ public class NGTemplateServiceImpl implements NGTemplateService {
                             .getResponse(settingsClient.getSetting(
                                 SettingIdentifiers.ENABLE_FORCE_DELETE, accountIdentifier, null, null))
                             .getValue());
-  }
-
-  @VisibleForTesting
-  protected boolean isForceDeleteFFEnabled(String accountIdentifier) {
-    return CGRestUtils.getResponse(
-        accountClient.isFeatureFlagEnabled(CDS_FORCE_DELETE_ENTITIES.name(), accountIdentifier));
   }
 
   @VisibleForTesting

@@ -7,11 +7,14 @@
 
 package io.harness.cdng.artifact.resources.acr.mappers;
 
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -21,13 +24,16 @@ import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.resources.acr.dtos.AcrRegistriesDTO;
 import io.harness.cdng.artifact.resources.acr.dtos.AcrRepositoriesDTO;
+import io.harness.cdng.artifact.resources.acr.dtos.AcrRequestDTO;
 import io.harness.cdng.artifact.resources.acr.service.AcrResourceServiceImpl;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.connector.services.ConnectorService;
+import io.harness.delegate.beans.azure.AcrBuildDetailsDTO;
 import io.harness.delegate.beans.azure.AcrResponseDTO;
 import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
 import io.harness.delegate.beans.azure.response.AzureRepositoriesResponse;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
+import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
@@ -38,6 +44,7 @@ import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import io.fabric8.utils.Lists;
+import java.util.Arrays;
 import java.util.Collections;
 import org.junit.Rule;
 import org.junit.Test;
@@ -113,6 +120,59 @@ public class AcrResourceServiceImplTest extends CategoryTest {
 
     assertThat(acrResponseDTO).isEqualTo(acrResponseDTOres);
   }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild() {
+    AzureConnectorDTO azureArtifactsConnectorDTO = AzureConnectorDTO.builder().build();
+
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier(ACCOUNT_ID)
+                                      .identifier("identifier")
+                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .build();
+    BaseNGAccess baseNGAccess = BaseNGAccess.builder()
+                                    .accountIdentifier(ACCOUNT_ID)
+                                    .orgIdentifier(ORG_IDENTIFIER)
+                                    .projectIdentifier(PROJECT_IDENTIFIER)
+                                    .build();
+
+    ArtifactBuildDetailsNG artifactBuildDetailsNG = ArtifactBuildDetailsNG.builder().number("tag").build();
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
+
+    AcrArtifactDelegateResponse ecrArtifactDelegateResponse =
+        new AcrArtifactDelegateResponse(artifactBuildDetailsNG, null, null, null, null, null, null);
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
+        ArtifactTaskExecutionResponse.builder()
+            .artifactDelegateResponses(Collections.singletonList(ecrArtifactDelegateResponse))
+            .build();
+
+    when(azureHelperService.getEncryptionDetails(azureArtifactsConnectorDTO, baseNGAccess))
+        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+    when(azureHelperService.executeSyncTask(any(), eq(baseNGAccess), eq(ArtifactTaskType.GET_LAST_SUCCESSFUL_BUILD),
+             eq("ACR Artifact Get Last Successful Build task failure due to error")))
+        .thenReturn(ArtifactTaskResponse.builder()
+                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                        .artifactTaskExecutionResponse(artifactTaskExecutionResponse)
+                        .build());
+    doReturn(azureArtifactsConnectorDTO).when(azureHelperService).getConnector(identifierRef);
+    when(azureHelperService.getBaseNGAccess(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER)).thenReturn(baseNGAccess);
+
+    AcrBuildDetailsDTO acrBuildDetailsDTO = AcrBuildDetailsDTO.builder().build();
+    AcrResponseDTO acrResponseDTO =
+        AcrResponseDTO.builder().buildDetailsList(Arrays.asList(acrBuildDetailsDTO)).build();
+
+    when(azureHelperService.getAcrResponseDTO(artifactTaskExecutionResponse)).thenReturn(acrResponseDTO);
+
+    AcrBuildDetailsDTO acrBuildDetailsDTOResult = acrResourceService.getLastSuccessfulBuild(identifierRef, SUBSCRIPTION,
+        "registry", "repository", ORG_IDENTIFIER, PROJECT_IDENTIFIER, AcrRequestDTO.builder().build());
+
+    assertThat(acrBuildDetailsDTO).isSameAs(acrBuildDetailsDTOResult);
+    verify(azureHelperService).getAcrResponseDTO(artifactTaskExecutionResponse);
+  }
+
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)

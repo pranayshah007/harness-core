@@ -1504,6 +1504,16 @@
                   "type": "string"
                 }
               ]
+            },
+            "isAutoRejectEnabled": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             }
           }
         }

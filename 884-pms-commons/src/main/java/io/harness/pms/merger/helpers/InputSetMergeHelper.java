@@ -92,8 +92,8 @@ public class InputSetMergeHelper {
     if (mergedInputSetNode.get(YAMLFieldNameConstants.INPUTS) != null) {
       inputsMap.put(YAMLFieldNameConstants.INPUTS, mergedInputSetNode.get(YAMLFieldNameConstants.INPUTS));
     }
-    if (mergedInputSetNode.get(YAMLFieldNameConstants.REPOSITORY) != null) {
-      inputsMap.put(YAMLFieldNameConstants.REPOSITORY, mergedInputSetNode.get(YAMLFieldNameConstants.REPOSITORY));
+    if (mergedInputSetNode.get(YAMLFieldNameConstants.OPTIONS) != null) {
+      inputsMap.put(YAMLFieldNameConstants.OPTIONS, mergedInputSetNode.get(YAMLFieldNameConstants.OPTIONS));
     }
     return YamlPipelineUtils.writeYamlString(inputsMap);
   }

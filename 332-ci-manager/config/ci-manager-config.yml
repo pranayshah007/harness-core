@@ -180,8 +180,8 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.9
-  liteEngineImage: harness/ci-lite-engine:1.16.9
+  addonImage: harness/ci-addon:1.16.11
+  liteEngineImage: harness/ci-lite-engine:1.16.11
   isLocal: false
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
@@ -274,19 +274,19 @@ ciExecutionServiceConfig:
         - "pwsh"
         - "C:\\bin\\clone.ps1"
     buildAndPushDockerRegistryConfig:
-      image: plugins/kaniko:1.7.1
+      image: plugins/kaniko:1.7.2
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.7.1
+      image: plugins/kaniko-ecr:1.7.2
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:
-      image: plugins/kaniko-gcr:1.7.1
+      image: plugins/kaniko-gcr:1.7.2
       entrypoint:
         - /kaniko/kaniko-gcr
     buildAndPushACRConfig:
-      image: plugins/kaniko-acr:1.7.1
+      image: plugins/kaniko-acr:1.7.2
       entrypoint:
         - /kaniko/kaniko-acr
     gcsUploadConfig:
@@ -314,13 +314,13 @@ ciExecutionServiceConfig:
       windowsEntrypoint:
         - "C:\\bin\\drone-artifactory.exe"
     cacheGCSConfig:
-      image: plugins/cache:1.5.2
+      image: plugins/cache:1.5.7
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.5.2
+      image: plugins/cache:1.5.7
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
@@ -340,8 +340,8 @@ ciExecutionServiceConfig:
       s3Upload: plugins/s3:1.2.0
       security: harness/sto-plugin:dev
       artifactoryUpload: plugins/artifactory:1.2.0
-      cacheGCS: plugins/cache:1.5.2
-      cacheS3: plugins/cache:1.5.2
+      cacheGCS: plugins/cache:1.5.7
+      cacheS3: plugins/cache:1.5.7
       sscaOrchestration: harness/ssca-plugin:latest
     vmContainerlessStepConfig:
       s3UploadConfig:

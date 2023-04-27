@@ -35,6 +35,7 @@ import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.BaseNGAccess;
+import io.harness.ng.core.NGAccess;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesync.K8sDeploymentRelease;
 import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParams;
@@ -173,12 +174,20 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
 
   private K8sInstanceSyncPerpetualTaskParamsV2 createK8sInstanceSyncPerpetualTaskV2Params(
       InfrastructureMappingDTO infrastructureMappingDTO, ConnectorInfoDTO connectorInfoDTO) {
+    NGAccess ngAccess = BaseNGAccess.builder()
+                            .accountIdentifier(infrastructureMappingDTO.getAccountIdentifier())
+                            .orgIdentifier(connectorInfoDTO.getOrgIdentifier())
+                            .projectIdentifier(connectorInfoDTO.getProjectIdentifier())
+                            .build();
     return K8sInstanceSyncPerpetualTaskParamsV2.newBuilder()
         .setAccountId(infrastructureMappingDTO.getAccountIdentifier())
         .setOrgId(connectorInfoDTO.getOrgIdentifier())
         .setProjectId(connectorInfoDTO.getProjectIdentifier())
         .setConnectorInfoDto(ByteString.copyFrom(
             getKryoSerializer(infrastructureMappingDTO.getAccountIdentifier()).asBytes(connectorInfoDTO)))
+        .setEncryptedData(
+            ByteString.copyFrom(getKryoSerializer(infrastructureMappingDTO.getAccountIdentifier())
+                                    .asBytes(k8sEntityHelper.getEncryptionDataDetails(connectorInfoDTO, ngAccess))))
         .build();
   }
 

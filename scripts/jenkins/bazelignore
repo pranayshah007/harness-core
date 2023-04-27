@@ -31,4 +31,5 @@ toolset
 .*./build.properties$
 .*.gitleaksignore$
 .*.jira-projects.txt$
+.github/
 

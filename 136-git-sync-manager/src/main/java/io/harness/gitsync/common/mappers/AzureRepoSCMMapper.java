@@ -38,7 +38,9 @@ public class AzureRepoSCMMapper extends UserSourceCodeManagerMapper<AzureRepoSCM
 
   @Override
   AzureRepoSCMDTO toServiceDTOInternal(AzureRepoSCMRequestDTO userSourceCodeManagerRequestDTO) {
-    return AzureRepoSCMDTO.builder().apiAccess(userSourceCodeManagerRequestDTO.getApiAccess()).build();
+    return AzureRepoSCMDTO.builder()
+        .apiAccess(userSourceCodeManagerRequestDTO.getAuthentication().getApiAccessDTO())
+        .build();
   }
 
   @Override
@@ -46,7 +48,7 @@ public class AzureRepoSCMMapper extends UserSourceCodeManagerMapper<AzureRepoSCM
     return AzureRepoSCMResponseDTO.builder().apiAccess(dto.getApiAccess()).build();
   }
 
-  AzureRepoApiAccess toApiAccess(AzureRepoApiAccessSpecDTO spec, AzureRepoApiAccessType apiAccessType) {
+  public AzureRepoApiAccess toApiAccess(AzureRepoApiAccessSpecDTO spec, AzureRepoApiAccessType apiAccessType) {
     switch (apiAccessType) {
       default:
         throw new UnknownEnumTypeException("Azure Repo Api Access Type ", apiAccessType.getDisplayName());

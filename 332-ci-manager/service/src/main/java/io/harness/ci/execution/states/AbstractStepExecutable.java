@@ -296,6 +296,8 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
     String taskId = queueDelegateTask(ambiance, timeoutInMillis, accountId, ciDelegateTaskExecutor, params,
         new ArrayList<>(), eligibleToExecuteDelegateIds);
 
+    log.info("Created VM task {} for step {}", taskId, stepIdentifier);
+
     return AsyncExecutableResponse.newBuilder()
         .addCallbackIds(taskId)
         .addAllLogKeys(CollectionUtils.emptyIfNull(singletonList(logKey)))

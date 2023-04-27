@@ -90,6 +90,10 @@ public class ArtifactoryRegistryArtifactConfig implements ArtifactConfig, Visita
    */
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> tagRegex;
   /**
+   * Digest refers to the SHA256 digest of the docker image file.
+   */
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> digest;
+  /**
    * Identifier for artifact.
    */
   @EntityIdentifier @VariableExpression(skipVariableExpression = true) String identifier;
@@ -139,6 +143,9 @@ public class ArtifactoryRegistryArtifactConfig implements ArtifactConfig, Visita
     if (!ParameterField.isNull(artifactoryRegistryArtifactConfig.getArtifactPathFilter())) {
       resultantConfig =
           resultantConfig.withArtifactPathFilter(artifactoryRegistryArtifactConfig.getArtifactPathFilter());
+    }
+    if (!ParameterField.isNull(artifactoryRegistryArtifactConfig.getDigest())) {
+      resultantConfig = resultantConfig.withDigest(artifactoryRegistryArtifactConfig.getDigest());
     }
     return resultantConfig;
   }

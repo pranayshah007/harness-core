@@ -106,8 +106,8 @@ managerTarget: localhost:9880
 managerAuthority: localhost
 
 onboardingModuleConfig:
-  descriptionForEntitySelected: This is an example of how the corresponding service definition YAML files will be created.
-  descriptionForSampleEntity: Since you either do not have any Harness services or have not selected in the previous step, we will create your first software component to introduce you to Developer Portal features.
+  descriptionForEntitySelected: A YAML file will be created for each service inside your GitHub repository. An example of what the files will look like is shown below
+  descriptionForSampleEntity: Because you didn't choose any Harness services to import in the previous step, an example Harness service catalog-info.yaml will be created inside your GitHub repository as shown below
   useGitServiceGrpcForSingleEntityPush: false
   tmpPathForCatalogInfoYamlStore: /tmp
   catalogInfoLocationDefaultPath: /.harness-idp-entities

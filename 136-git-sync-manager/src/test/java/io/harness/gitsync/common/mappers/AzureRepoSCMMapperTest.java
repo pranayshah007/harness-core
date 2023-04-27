@@ -26,6 +26,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.UnknownEnumTypeException;
 import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.common.beans.AzureRepoSCM;
+import io.harness.gitsync.common.dtos.AzureRepoAuthenticationDTO;
 import io.harness.gitsync.common.dtos.AzureRepoSCMDTO;
 import io.harness.gitsync.common.dtos.AzureRepoSCMRequestDTO;
 import io.harness.gitsync.common.dtos.AzureRepoSCMResponseDTO;
@@ -95,7 +96,10 @@ public class AzureRepoSCMMapperTest extends GitSyncTestBase {
   @Category(UnitTests.class)
   public void testToServiceDTOInternal() {
     assertEquals(
-        azureRepoSCMMapper.toServiceDTO(AzureRepoSCMRequestDTO.builder().apiAccess(azureRepoApiAccessDTO).build()),
+        azureRepoSCMMapper.toServiceDTO(
+            AzureRepoSCMRequestDTO.builder()
+                .authentication(AzureRepoAuthenticationDTO.builder().apiAccessDTO(azureRepoApiAccessDTO).build())
+                .build()),
         azureRepoSCMDTO);
   }
 

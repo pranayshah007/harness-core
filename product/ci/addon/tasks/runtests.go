@@ -624,9 +624,9 @@ func (r *runTestsTask) execute(ctx context.Context) (map[string]string, error) {
 	stepOutput := make(map[string]string)
 	if len(r.envVarOutputs) != 0 {
 		var err error
-		outputVars, err := fetchOutputVariables(outputFile, r.fs, r.log)
+		outputVars, err := fetchOutputVariablesFromDotEnv(outputFile, r.log)
 		if err != nil {
-			logCommandExecErr(r.log, "error encountered while fetching output of runtest step", r.id, cmdToExecute, retryCount, start, err)
+			logCommandExecErr(r.log, "error encountered while fetching output of runtest step from .env File", r.id, cmdToExecute, retryCount, start, err)
 			return nil, err
 		}
 

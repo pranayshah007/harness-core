@@ -52,6 +52,9 @@ public interface AuthSettingsManagerClient {
   @GET(API_PREFIX + "sso/get-access-management")
   Call<RestResponse<SSOConfig>> getAccountAccessManagementSettings(@Query("accountId") @NotEmpty String accountId);
 
+  @GET(API_PREFIX + "sso/v2/get-access-management")
+  Call<RestResponse<SSOConfig>> getAccountAccessManagementSettingsV2(@Query("accountId") @NotEmpty String accountId);
+
   @GET(API_PREFIX + "accounts/get-whitelisted-domains")
   Call<RestResponse<Set<String>>> getWhitelistedDomains(@Query("accountId") @NotEmpty String accountId);
 
@@ -90,7 +93,8 @@ public interface AuthSettingsManagerClient {
       @Part("groupMembershipAttr") RequestBody groupMembershipAttr,
       @Part("authorizationEnabled") RequestBody authorizationEnabled, @Part("logoutUrl") RequestBody logoutUrl,
       @Part("entityIdentifier") RequestBody entityIdentifier, @Part("samlProviderType") RequestBody samlProviderType,
-      @Part("clientId") RequestBody clientId, @Part("clientSecret") RequestBody clientSecret);
+      @Part("clientId") RequestBody clientId, @Part("clientSecret") RequestBody clientSecret,
+      @Part("friendlySamlName") RequestBody friendlySamlName);
 
   @Multipart
   @PUT(API_PREFIX + "sso/saml-idp-metadata-upload")

@@ -13,13 +13,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidYamlException;
 import io.harness.pms.yaml.PipelineVersion;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.yaml.registry.Registry;
 
 import java.io.IOException;
-import java.util.Optional;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,19 +44,5 @@ public class PipelineYamlHelper {
           String.format("Invalid yaml passed. Error due to - %s", ioException.getMessage()), ioException);
     }
     return isEmpty(version) ? PipelineVersion.V0 : version;
-  }
-
-  public Optional<Registry> getRegistry(String pipelineYaml) {
-    YamlField registryField = YamlUtils.tryReadTree(pipelineYaml).getNode().getField(YAMLFieldNameConstants.REGISTRY);
-    Registry registry = null;
-    if (registryField != null) {
-      try {
-        registry = YamlUtils.read(registryField.getNode().toString(), Registry.class);
-      } catch (IOException ex) {
-        log.error("Error while deserializing the YamlField into Registry", ex);
-        throw new InvalidYamlException(String.format("Invalid yaml passed. Error due to - %s", ex.getMessage()), ex);
-      }
-    }
-    return Optional.ofNullable(registry);
   }
 }
