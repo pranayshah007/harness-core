@@ -32,11 +32,12 @@ import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import lombok.Builder;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Value;
 
 @OwnedBy(HarnessTeam.CDC)
-@Value
+@Data
 @Builder
 @SimpleVisitorHelper(helperClass = ArtifactSourceVisitorHelper.class)
 public class ArtifactSource implements Visitable {

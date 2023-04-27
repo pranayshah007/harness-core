@@ -469,7 +469,6 @@
         },
         "type": {
           "type": "string",
-          "readOnly": true,
           "enum": [
             "DockerRegistry",
             "Gcr",
