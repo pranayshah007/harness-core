@@ -108,4 +108,9 @@ public class DebeziumConfig {
    * that should be processed during each iteration of this connector.
    */
   @JsonProperty("max.batch.size") private String maxStreamBatchSize;
+
+  /**
+   * Replica set name
+   */
+  @JsonProperty("replicaSetName") private String replicaSetName;
 }

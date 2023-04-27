@@ -173,6 +173,7 @@ public abstract class AggregatorBaseSyncController implements Runnable {
     props.setProperty(TRANSFORMS_UNWRAP_ADD_HEADERS, "op");
     props.setProperty(SNAPSHOT_FETCH_SIZE, debeziumConfig.getSnapshotFetchSize());
     props.setProperty(MAX_STREAM_BATCH_SIZE, debeziumConfig.getMaxStreamBatchSize());
+    props.setProperty("replicaSetName", debeziumConfig.getReplicaSetName());
 
     return DebeziumEngine.create(Json.class).using(props).notifying(changeConsumer).build();
   }

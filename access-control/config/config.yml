@@ -187,7 +187,7 @@ notificationConfig:
 aggregatorModuleConfig:
   debezium:
     name: ${DEBEZIUM_NAME:-aggregator}
-    offset.storage.file.filename: ${OFFSET_STORAGE_FILE_FILENAME:-mongodb://127.0.0.1:27018,127.0.0.1:27019,127.0.0.1:27020/accesscontrol?replicaSet=rs0}
+    offset.storage.file.filename: ${OFFSET_STORAGE_FILE_FILENAME:-localhost:27018,localhost:27019,localhost:27020}
     key.converter.schemas.enable: ${KEY_CONVERTER_SCHEMAS_ENABLE:-false}
     value.converter.schemas.enable: ${VALUE_CONVERTER_SCHEMAS_ENABLE:-false}
     offset.flush.interval.ms: ${OFFSET_FLUSH_INTERVAL_MS:-5000}
@@ -204,6 +204,7 @@ aggregatorModuleConfig:
     collection.include.list: ${COLLECTION_INCLUDE_LIST:-accesscontrol.roles,accesscontrol.roleassignments,accesscontrol.resourcegroups,accesscontrol.usergroups}
     snapshot.fetch.size: ${SNAPSHOT_FETCH_SIZE:-2000}
     max.batch.size: ${MAX_STREAM_BATCH_SIZE:-512}
+    replicaSetName: ${REPLICA_SET_NAME:-rs0}
   enabled: ${AGGREGATOR_ENABLED:-true}
   exportMetricsToStackDriver: ${EXPORT_METRICS_TO_STACK_DRIVER:-false}
 

@@ -7,18 +7,23 @@
 
 package io.harness.aggregator;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.aggregator.models.MongoReconciliationOffset;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
-import com.mongodb.MongoClientURI;
+import com.mongodb.MongoCredential;
 import com.mongodb.ReadPreference;
+import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import com.mongodb.connection.ClusterType;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -41,24 +46,52 @@ public class MongoOffsetBackingStore extends MemoryOffsetBackingStore {
   @Override
   public void configure(WorkerConfig workerConfig) {
     super.configure(workerConfig);
-    String connectionUri = workerConfig.getString("offset.storage.file.filename");
     collectionName = workerConfig.getString("offset.storage.topic");
-    MongoClientURI uri = new MongoClientURI(connectionUri);
 
-    MongoClientSettings mongoClientSettings =
+    String userName = "";
+    String password = "";
+    try {
+      userName = workerConfig.originals().get("mongodb.user").toString();
+      password = workerConfig.originals().get("mongodb.password").toString();
+    } catch (Exception ex) {
+      // Ignore as in local user and password is not present.
+    }
+
+    String dbName = workerConfig.originals().get("database.include.list").toString();
+    String hosts = workerConfig.getString("offset.storage.file.filename");
+    String replicaSetName = workerConfig.originals().get("replicaSetName").toString();
+    List<ServerAddress> serverAddressList = new ArrayList<>();
+    String[] hostList = hosts.split(",");
+    for (String s : hostList) {
+      String[] hostAndPort = s.split(":");
+      String host = hostAndPort[0];
+      int port = Integer.parseInt(hostAndPort[1]);
+      ServerAddress serverAddress = new ServerAddress(host, port);
+      serverAddressList.add(serverAddress);
+    }
+
+    MongoClientSettings.Builder mongoClientSettingsBuilder =
         MongoClientSettings.builder()
-            .applyConnectionString(new ConnectionString(connectionUri))
             .retryWrites(true)
+            .applyToClusterSettings(builder
+                -> builder.hosts(serverAddressList)
+                       .requiredClusterType(ClusterType.REPLICA_SET)
+                       .requiredReplicaSetName(replicaSetName)
+                       .serverSelectionTimeout(90000, TimeUnit.MILLISECONDS))
             .applyToSocketSettings(builder -> builder.connectTimeout(30000, TimeUnit.MILLISECONDS))
             .applyToClusterSettings(builder -> builder.serverSelectionTimeout(90000, TimeUnit.MILLISECONDS))
             .applyToSocketSettings(builder -> builder.readTimeout(360000, TimeUnit.MILLISECONDS))
             .applyToConnectionPoolSettings(builder -> builder.maxConnectionIdleTime(600000, TimeUnit.MILLISECONDS))
             .applyToConnectionPoolSettings(builder -> builder.maxSize(300))
-            .readPreference(ReadPreference.primary())
-            .build();
-    mongoClient = MongoClients.create(mongoClientSettings);
+            .readPreference(ReadPreference.primary());
 
-    mongoTemplate = new MongoTemplate(mongoClient, Objects.requireNonNull(uri.getDatabase()));
+    if (isNotEmpty(userName) && isNotEmpty(password)) {
+      MongoCredential credential = MongoCredential.createCredential(userName, dbName, password.toCharArray());
+      mongoClientSettingsBuilder.credential(credential);
+    }
+
+    mongoClient = MongoClients.create(mongoClientSettingsBuilder.build());
+    mongoTemplate = new MongoTemplate(mongoClient, Objects.requireNonNull(dbName));
   }
 
   @Override
