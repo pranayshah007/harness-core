@@ -9,10 +9,11 @@ package io.harness.cdng.serviceoverridesv2.validators;
 
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
+import org.jetbrains.annotations.NotNull;
 
 public class EnvGlobalOverrideValidator implements ServiceOverrideTypeBasedValidator {
   @Override
-  public void validateRequest(ServiceOverrideRequestDTOV2 requestDTOV2) {}
+  public void validateRequest(@NotNull ServiceOverrideRequestDTOV2 requestDTOV2) {}
 
   @Override
   public String generateServiceOverrideIdentifier(NGServiceOverridesEntity serviceOverridesEntity) {
