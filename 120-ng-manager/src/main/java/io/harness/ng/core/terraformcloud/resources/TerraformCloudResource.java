@@ -15,7 +15,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.provision.terraformcloud.resources.dtos.OrganizationsDTO;
 import io.harness.cdng.provision.terraformcloud.resources.dtos.WorkspacesDTO;
 import io.harness.cdng.provision.terraformcloud.resources.service.TerraformCloudResourceService;
-import io.harness.ng.core.OrgAndProjectValidationHelper;
+import io.harness.cdng.validations.helper.OrgAndProjectValidationHelper;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;

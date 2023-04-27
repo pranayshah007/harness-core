@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ng.core;
+package io.harness.cdng.serviceoverridesv2.validators;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
@@ -24,14 +24,16 @@ import com.google.inject.Inject;
 import java.util.Optional;
 import javax.validation.constraints.NotEmpty;
 import javax.ws.rs.NotFoundException;
+import lombok.NonNull;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 public class EnvironmentValidationHelper {
   @Inject private EnvironmentService environmentService;
 
-  public boolean checkThatEnvExists(@NotEmpty String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      @NotEmpty String environmentRef) {
+  @NonNull
+  public Environment checkThatEnvExists(@NotEmpty String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, @NotEmpty String environmentRef) {
     checkArgument(isNotEmpty(accountIdentifier), "accountId must be present");
 
     Optional<Environment> environment;
@@ -50,6 +52,6 @@ public class EnvironmentValidationHelper {
     if (environment.isEmpty()) {
       throw new NotFoundException(String.format("Environment with ref [%s] not found", environmentRef));
     }
-    return true;
+    return environment.get();
   }
 }

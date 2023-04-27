@@ -23,7 +23,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ng.core.OrgAndProjectValidationHelper;
+import io.harness.cdng.validations.helper.OrgAndProjectValidationHelper;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;

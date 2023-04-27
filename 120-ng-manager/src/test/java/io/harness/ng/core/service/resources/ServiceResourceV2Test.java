@@ -41,7 +41,7 @@ import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourc
 import io.harness.cdng.manifest.yaml.kinds.KustomizeCommandFlagType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ng.core.OrgAndProjectValidationHelper;
+import io.harness.cdng.validations.helper.OrgAndProjectValidationHelper;
 import io.harness.ng.core.beans.ServiceV2YamlMetadata;
 import io.harness.ng.core.beans.ServicesV2YamlMetadataDTO;
 import io.harness.ng.core.beans.ServicesYamlMetadataApiInput;

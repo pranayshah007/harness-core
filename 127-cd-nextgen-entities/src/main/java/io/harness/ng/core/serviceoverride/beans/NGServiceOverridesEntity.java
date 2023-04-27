@@ -58,6 +58,14 @@ public class NGServiceOverridesEntity implements PersistentEntity, ScopeAware {
                  .field(NGServiceOverridesEntityKeys.environmentRef)
                  .field(NGServiceOverridesEntityKeys.serviceRef)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("unique_accountId_organizationIdentifier_projectIdentifier_identifier")
+                 .unique(true)
+                 .field(NGServiceOverridesEntityKeys.accountId)
+                 .field(NGServiceOverridesEntityKeys.orgIdentifier)
+                 .field(NGServiceOverridesEntityKeys.projectIdentifier)
+                 .field(NGServiceOverridesEntityKeys.identifier)
+                 .build())
         .build();
   }
 

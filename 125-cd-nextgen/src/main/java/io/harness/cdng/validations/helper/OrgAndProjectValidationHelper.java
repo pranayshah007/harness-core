@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ng.core;
+package io.harness.cdng.validations.helper;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -31,14 +31,14 @@ public class OrgAndProjectValidationHelper {
       String orgIdentifier, String projectIdentifier, String accountIdentifier) {
     if (isNotEmpty(orgIdentifier)) {
       final Optional<Organization> organization = organizationService.get(accountIdentifier, orgIdentifier);
-      if (!organization.isPresent()) {
+      if (organization.isEmpty()) {
         throw new NotFoundException(String.format("org [%s] not found.", orgIdentifier));
       }
     }
 
     if (isNotEmpty(orgIdentifier) && isNotEmpty(projectIdentifier)) {
       final Optional<Project> project = projectService.get(accountIdentifier, orgIdentifier, projectIdentifier);
-      if (!project.isPresent()) {
+      if (project.isEmpty()) {
         throw new NotFoundException(String.format("project [%s] not found.", projectIdentifier));
       }
     }
