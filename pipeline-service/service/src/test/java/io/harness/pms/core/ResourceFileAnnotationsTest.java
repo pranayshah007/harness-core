@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.PipelineServiceConfiguration;
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -42,6 +43,7 @@ public class ResourceFileAnnotationsTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testNickNameUniqueness() {
     // Not adding PATCH at present.
     Set<Class<? extends Annotation>> supportedAnnotation = new HashSet<>();
@@ -69,6 +71,7 @@ public class ResourceFileAnnotationsTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testPathParams() {
     Collection<Class<?>> resourceClasses = PipelineServiceConfiguration.getResourceClasses();
     for (Class<?> clazz : resourceClasses) {
