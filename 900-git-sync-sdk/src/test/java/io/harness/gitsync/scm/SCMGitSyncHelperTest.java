@@ -15,7 +15,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.harness.EntityType;
@@ -266,7 +266,7 @@ public class SCMGitSyncHelperTest extends GitSdkTestBase {
         .thenReturn(successfulGetFileResponse);
 
     ScmGetFileResponse scmGetFileResponse = scmGitSyncHelper.getFileByBranch(
-        getDefaultScope(), repo, branch, filePath, connectorRef, false, entityType, contextMap, false);
+        getDefaultScope(), repo, branch, commitId, filePath, connectorRef, false, entityType, contextMap, false);
     assertThat(scmGetFileResponse).isNotNull();
     assertThat(scmGetFileResponse.getFileContent()).isEqualTo(fileContent);
     assertThat(scmGetFileResponse.getGitMetaData().getRepoName()).isEqualTo(repo);
@@ -286,8 +286,8 @@ public class SCMGitSyncHelperTest extends GitSdkTestBase {
         .thenReturn(failureGetFileResponse);
 
     assertThatThrownBy(()
-                           -> scmGitSyncHelper.getFileByBranch(getDefaultScope(), repo, branch, filePath, connectorRef,
-                               false, entityType, contextMap, false))
+                           -> scmGitSyncHelper.getFileByBranch(getDefaultScope(), repo, branch, commitId, filePath,
+                               connectorRef, false, entityType, contextMap, false))
         .isInstanceOf(ScmInternalServerErrorException.class)
         .hasMessage(error);
   }

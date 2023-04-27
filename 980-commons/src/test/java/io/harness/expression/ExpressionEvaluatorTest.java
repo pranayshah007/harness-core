@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.GEORGE;
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 
 import static java.util.Arrays.asList;
@@ -515,5 +516,19 @@ public class ExpressionEvaluatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldThrowInValidVariableName() {
     ExpressionEvaluator.isValidVariableName("${invalidVar}");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void shouldSelectJsonFromListWithOneElement() {
+    String json = "[{\"title\":\"testValue\"}]";
+
+    ExpressionEvaluator expressionEvaluator = new ExpressionEvaluator();
+    expressionEvaluator.addFunctor("json", new JsonFunctor());
+
+    Map<String, Object> context = ImmutableMap.<String, Object>builder().put("body", json).build();
+
+    assertThat(expressionEvaluator.substitute("${json.select(\".[0].title\", body)}", context)).isEqualTo("testValue");
   }
 }

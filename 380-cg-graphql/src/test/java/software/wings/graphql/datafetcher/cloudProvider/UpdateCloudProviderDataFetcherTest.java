@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.IGOR;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.isA;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;

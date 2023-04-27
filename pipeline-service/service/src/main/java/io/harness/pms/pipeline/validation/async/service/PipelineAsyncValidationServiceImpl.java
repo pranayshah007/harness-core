@@ -113,8 +113,9 @@ public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidati
     PipelineValidationEvent pipelineValidationEvent = eventByUuid.get();
 
     Long currentTs = System.currentTimeMillis();
-    if (NGDateUtils.getDiffOfTimeStampsInMinutes(currentTs, pipelineValidationEvent.getStartTs())
-        > MAX_TIME_FOR_PIPELINE_VALIDATION) {
+    if (!ValidationStatus.isFinalStatus(pipelineValidationEvent.getStatus())
+        && NGDateUtils.getDiffOfTimeStampsInMinutes(currentTs, pipelineValidationEvent.getStartTs())
+            > MAX_TIME_FOR_PIPELINE_VALIDATION) {
       try {
         return Optional.of(updateEvent(
             pipelineValidationEvent.getUuid(), ValidationStatus.TERMINATED, pipelineValidationEvent.getResult()));

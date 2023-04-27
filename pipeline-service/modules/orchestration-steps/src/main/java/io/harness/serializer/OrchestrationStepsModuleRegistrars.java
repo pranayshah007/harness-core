@@ -99,6 +99,7 @@ public class OrchestrationStepsModuleRegistrars {
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
           .addAll(NGCommonModuleRegistrars.morphiaRegistrars)
           .addAll(FeatureFlagBeansRegistrars.morphiaRegistrars)
+          .addAll(ContainerRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends TypeConverter>> morphiaConverters =

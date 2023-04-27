@@ -221,6 +221,10 @@ public class CIStepInfoUtils {
     if (!featureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId)) {
       return false;
     }
+    if (ciStepInfoType == CIStepInfoType.DOCKER
+        && !featureFlagService.isEnabled(FeatureName.CIE_USE_DOCKER_BUILDX, accountId)) {
+      return false;
+    }
     String pluginName = ciExecutionConfigService.getContainerlessPluginNameForVM(ciStepInfoType);
     return isNotEmpty(pluginName);
   }

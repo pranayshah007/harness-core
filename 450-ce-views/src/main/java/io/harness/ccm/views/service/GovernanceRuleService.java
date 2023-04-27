@@ -6,6 +6,7 @@
  */
 
 package io.harness.ccm.views.service;
+import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
 import io.harness.ccm.views.helper.RuleList;
@@ -29,4 +30,5 @@ public interface GovernanceRuleService {
   void validateAWSSchema(Rule rule);
   Set<ConnectorInfoDTO> getConnectorResponse(String accountId, Set<String> targetAccounts);
   List<ConnectorResponseDTO> getAWSConnectorWithTargetAccounts(List<String> accounts, String accountId);
+  String enqueueAdhoc(String accountId, GovernanceJobEnqueueDTO governanceJobEnqueueDTO);
 }

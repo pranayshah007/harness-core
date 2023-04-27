@@ -15,5 +15,6 @@ import lombok.Data;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CronTriggerSpec implements ScheduledTriggerSpec {
+  String type;
   String expression;
 }

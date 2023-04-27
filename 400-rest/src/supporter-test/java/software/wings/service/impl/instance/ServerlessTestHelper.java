@@ -7,9 +7,9 @@
 
 package software.wings.service.impl.instance;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
@@ -22,6 +22,8 @@ import software.wings.dl.WingsPersistence;
 
 import dev.morphia.AdvancedDatastore;
 import dev.morphia.aggregation.AggregationPipeline;
+import dev.morphia.aggregation.Group;
+import dev.morphia.aggregation.Projection;
 import dev.morphia.query.CriteriaContainer;
 import dev.morphia.query.FieldEnd;
 import dev.morphia.query.Query;
@@ -74,12 +76,12 @@ public class ServerlessTestHelper {
     doReturn(aggregationPipelineMOck).when(advancedDatastoreMock).createAggregation(nullable(Class.class));
 
     doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).match(nullable(Query.class));
-    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).group(anyList(), any());
-    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).group(nullable(String.class), any());
+    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).group(anyList(), any(Group[].class));
+    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).group(nullable(String.class), any(Group[].class));
     doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).skip(nullable(Integer.class));
     doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).limit(nullable(Integer.class));
-    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).sort(any());
-    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).project(any());
+    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).sort(any(Sort[].class));
+    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).project(any(Projection[].class));
 
     return Mocks.builder()
         .aggregationPipelineMock(aggregationPipelineMOck)

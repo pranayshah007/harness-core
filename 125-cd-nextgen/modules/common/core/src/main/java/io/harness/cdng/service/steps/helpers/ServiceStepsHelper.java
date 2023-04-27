@@ -9,12 +9,18 @@ package io.harness.cdng.service.steps.helpers;
 
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.execution.ServiceExecutionSummaryDetails;
+import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.service.beans.ServiceDefinition;
+import io.harness.cdng.service.beans.ServiceStepDetails;
+import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.service.steps.constants.ServiceConfigStepConstants;
 import io.harness.cdng.service.steps.constants.ServiceSectionStepConstants;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
@@ -35,7 +41,9 @@ import io.harness.pms.rbac.NGResourceType;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.rbac.PrincipalTypeProtoToPrincipalTypeMapper;
 import io.harness.pms.sdk.core.data.Outcome;
+import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
+import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.steps.EntityReferenceExtractorUtils;
@@ -52,9 +60,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
+@Slf4j
 public class ServiceStepsHelper {
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private OutcomeService outcomeService;
@@ -62,6 +72,8 @@ public class ServiceStepsHelper {
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
+  @Inject private StageExecutionInfoService stageExecutionInfoService;
+  @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
 
   public void checkForVariablesAccessOrThrow(Ambiance ambiance, NGServiceConfig serviceConfig, String serviceRef) {
     final ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
@@ -173,5 +185,34 @@ public class ServiceStepsHelper {
     Set<String> runtimeIds = new HashSet<>();
     outcomeRefs.forEach(or -> runtimeIds.add(or.getInstanceId()));
     return outcomeService.fetchOutcomes(new ArrayList<>(runtimeIds));
+  }
+
+  public void saveServiceExecutionDataToStageInfo(Ambiance ambiance, StepResponse stepResponse) {
+    stageExecutionInfoService.updateStageExecutionInfo(ambiance,
+        StageExecutionInfoUpdateDTO.builder().serviceInfo(createServiceInfoFromResponse(stepResponse)).build());
+  }
+
+  private ServiceExecutionSummaryDetails createServiceInfoFromResponse(StepResponse stepResponse) {
+    if (stepResponse.getStepOutcomes() != null) {
+      for (StepResponse.StepOutcome stepOutcome : stepResponse.getStepOutcomes()) {
+        if (stepOutcome.getOutcome() instanceof ServiceStepOutcome) {
+          ServiceStepOutcome serviceStepOutcome = (ServiceStepOutcome) stepOutcome.getOutcome();
+          return ServiceExecutionSummaryDetails.builder()
+              .identifier(serviceStepOutcome.getIdentifier())
+              .displayName(serviceStepOutcome.getName())
+              .deploymentType(serviceStepOutcome.getServiceDefinitionType())
+              .gitOpsEnabled(serviceStepOutcome.isGitOpsEnabled())
+              .build();
+        }
+      }
+    }
+    return ServiceExecutionSummaryDetails.builder().build();
+  }
+
+  public void publishTaskIdsStepDetailsForServiceStep(Ambiance ambiance, Set<String> taskIds, String name) {
+    if (isNotEmpty(taskIds)) {
+      sdkGraphVisualizationDataService.publishStepDetailInformation(
+          prepareServiceAmbiance(ambiance), ServiceStepDetails.builder().taskIds(taskIds).build(), name);
+    }
   }
 }

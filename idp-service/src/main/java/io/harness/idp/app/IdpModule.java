@@ -48,6 +48,8 @@ import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory
 import io.harness.idp.gitintegration.resources.ConnectorInfoApiImpl;
 import io.harness.idp.gitintegration.service.GitIntegrationService;
 import io.harness.idp.gitintegration.service.GitIntegrationServiceImpl;
+import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsCache;
+import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsInMemoryCache;
 import io.harness.idp.health.resources.HealthResource;
 import io.harness.idp.health.service.HealthResourceImpl;
 import io.harness.idp.k8s.client.K8sApiClient;
@@ -246,7 +248,7 @@ public class IdpModule extends AbstractModule {
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new ServiceResourceClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
-    install(new BackstageResourceClientModule(appConfig.getBackstageHttpClientConfig()));
+    install(new BackstageResourceClientModule());
     install(DelegateServiceDriverModule.getInstance(false, false));
     install(ExceptionModule.getInstance());
     install(new AbstractWaiterModule() {
@@ -313,6 +315,7 @@ public class IdpModule extends AbstractModule {
         .annotatedWith(Names.named("DefaultPREnvAccountIdToNamespaceMappingCreator"))
         .toInstance(new ManagedExecutorService(Executors.newSingleThreadExecutor()));
     bind(HealthResource.class).to(HealthResourceImpl.class);
+    bind(DelegateSelectorsCache.class).to(DelegateSelectorsInMemoryCache.class);
 
     MapBinder<BackstageEnvVariableType, BackstageEnvVariableMapper> backstageEnvVariableMapBinder =
         MapBinder.newMapBinder(binder(), BackstageEnvVariableType.class, BackstageEnvVariableMapper.class);
@@ -400,7 +403,6 @@ public class IdpModule extends AbstractModule {
   public ServiceHttpClientConfig ngManagerServiceHttpClientConfig() {
     return this.appConfig.getNgManagerServiceHttpClientConfig();
   }
-
   @Provides
   @Singleton
   @Named("ngManagerServiceSecret")
@@ -428,6 +430,18 @@ public class IdpModule extends AbstractModule {
       DelegateServiceGrpcClient delegateServiceGrpcClient) {
     return Suppliers.memoize(() -> getDelegateCallbackToken(delegateServiceGrpcClient));
   }
+  @Provides
+  @Singleton
+  @Named("backstageAppBaseUrl")
+  public String appBaseUrl() {
+    return this.appConfig.getBackstageAppBaseUrl();
+  }
+  @Provides
+  @Singleton
+  @Named("backstagePostgresHost")
+  public String postgresHost() {
+    return this.appConfig.getBackstagePostgresHost();
+  }
 
   private DelegateCallbackToken getDelegateCallbackToken(DelegateServiceGrpcClient delegateServiceClient) {
     log.info("Generating Delegate callback token");
@@ -440,5 +454,12 @@ public class IdpModule extends AbstractModule {
             .build());
     log.info("delegate callback token generated =[{}]", delegateCallbackToken.getToken());
     return delegateCallbackToken;
+  }
+
+  @Provides
+  @Singleton
+  @Named("backstageHttpClientConfig")
+  public ServiceHttpClientConfig backstageHttpClientConfig() {
+    return this.appConfig.getBackstageHttpClientConfig();
   }
 }

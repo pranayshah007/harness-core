@@ -17,6 +17,7 @@ import javax.validation.constraints.NotEmpty;
 @OwnedBy(HarnessTeam.CDP)
 public interface InstanceSyncPerpetualTaskMappingService {
   InstanceSyncPerpetualTaskMappingDTO save(InstanceSyncPerpetualTaskMappingDTO instanceSyncPerpetualTaskMapping);
+  boolean delete(String accountId, String perpetualTaskId);
 
   Optional<InstanceSyncPerpetualTaskMapping> findByConnectorRef(
       @NotEmpty String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotEmpty String connectorId);

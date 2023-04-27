@@ -76,6 +76,7 @@ public class AzureUtils {
   private static String SCOPE_SUFFIX = ".default";
 
   private static HttpClient cachedAzureHttpClient;
+  private static HttpClient cachedAzureHttpClientForLogStreaming;
 
   static String BEGIN_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----";
   static String END_PRIVATE_KEY = "-----END PRIVATE KEY-----";
@@ -287,14 +288,23 @@ public class AzureUtils {
     return new RetryPolicy(retryOptions);
   }
 
-  public synchronized HttpClient getAzureHttpClient() {
-    if (cachedAzureHttpClient != null) {
-      return cachedAzureHttpClient;
+  public synchronized HttpClient getAzureHttpClient(boolean useExtendedReadTimeout) {
+    int readTimeout = AzureConstants.REST_CLIENT_READ_TIMEOUT_SECONDS;
+
+    if (useExtendedReadTimeout) {
+      if (cachedAzureHttpClientForLogStreaming != null) {
+        return cachedAzureHttpClientForLogStreaming;
+      }
+      readTimeout = AzureConstants.REST_CLIENT_READ_TIMEOUT_EXTENDED_SECONDS;
+    } else {
+      if (cachedAzureHttpClient != null) {
+        return cachedAzureHttpClient;
+      }
     }
 
     HttpClientOptions httpClientOptions = new HttpClientOptions();
     httpClientOptions.setConnectTimeout(Duration.ofSeconds(AzureConstants.REST_CLIENT_CONNECT_TIMEOUT_SECONDS))
-        .setReadTimeout(Duration.ofSeconds(AzureConstants.REST_CLIENT_READ_TIMEOUT_SECONDS))
+        .setReadTimeout(Duration.ofSeconds(readTimeout))
         .setWriteTimeout(Duration.ofSeconds(AzureConstants.REST_CLIENT_WRITE_TIMEOUT_SECONDS))
         .setConnectionIdleTimeout(Duration.ofSeconds(AzureConstants.REST_CLIENT_IDLE_TIMEOUT_SECONDS))
         .setMaximumConnectionPoolSize(AzureConstants.REST_CONNECTION_POOL_SIZE);
@@ -304,8 +314,17 @@ public class AzureUtils {
       httpClientOptions.setProxyOptions(proxyOptions);
     }
 
-    cachedAzureHttpClient = new OkHttpAsyncClientProvider().createInstance(httpClientOptions);
-    return cachedAzureHttpClient;
+    if (useExtendedReadTimeout) {
+      cachedAzureHttpClientForLogStreaming = new OkHttpAsyncClientProvider().createInstance(httpClientOptions);
+      return cachedAzureHttpClientForLogStreaming;
+    } else {
+      cachedAzureHttpClient = new OkHttpAsyncClientProvider().createInstance(httpClientOptions);
+      return cachedAzureHttpClient;
+    }
+  }
+
+  public HttpClient getAzureHttpClient() {
+    return getAzureHttpClient(false);
   }
 
   public HttpPipeline getAzureHttpPipeline(

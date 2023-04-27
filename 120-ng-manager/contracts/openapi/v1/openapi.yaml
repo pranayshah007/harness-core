@@ -10,7 +10,7 @@ servers:
     description: Harness host URL.
 tags:
   - name: Organization
-    description: Create and manage organizations in your account. You use organizations to group together related projects. For example, you can use an organization to group together projects within a business unit or division.
+    description: 'Create and manage organizations in your account. You use organizations to group together related projects. For example, you can use an organization to group together projects within a business unit or division.'
   - name: Org Project
     description: This contains APIs for projects.
     x-displayName: 'Project [Beta]'
@@ -542,7 +542,7 @@ paths:
         $ref: '#/components/requestBodies/IPAllowlistConfigRequest'
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
     get:
       summary: List IP Allowlist Configs
       operationId: get-ip-allowlist-configs
@@ -551,22 +551,22 @@ paths:
           $ref: '#/components/responses/IPAllowlistConfigListResponse'
       description: Retrieves the information of the IP Allowlist Config
       parameters:
-        - schema:
-            type: array
-            items:
-              type: string
-          in: query
-          description: Identifier field of IP Allowlist config
-          name: identifier
         - $ref: '#/components/parameters/SearchTerm'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+        - schema:
+            type: string
+          in: query
+          description: This is to filter IP allowlist configs only blocked from UI or API
+          name: allowed_source_type
       security:
         - x-api-key: []
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
     parameters: []
   '/v1/ip-allowlist/{ip-config-identifier}':
     get:
@@ -582,7 +582,7 @@ paths:
           $ref: '#/components/responses/IPAllowlistConfigResponse'
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
     parameters:
       - schema:
           type: string
@@ -604,7 +604,7 @@ paths:
         - x-api-key: []
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
     delete:
       summary: Delete an IP Allowlist config
       operationId: delete-ip-allowlist-config
@@ -618,14 +618,11 @@ paths:
         - x-api-key: []
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
   '/v1/ip-allowlist/validate-unique-identifier/{ip-config-identifier}':
     get:
       summary: Validate unique IP Allowlist config identifier
       operationId: validate-unique-ip-allowlist-config-identifier
-      responses:
-        '200':
-          $ref: '#/components/responses/IPAllowlistConfigValidateResponse'
       description: Checks whether the IP Allowlist config identifier is unique or not
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
@@ -633,7 +630,10 @@ paths:
         - x-api-key: []
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
+      responses:
+        '204':
+          description: No Content
     parameters:
       - schema:
           type: string
@@ -659,13 +659,13 @@ paths:
         - schema:
             type: string
           in: query
-          name: ip_address_block
-          description: This is the IP address or block of IP address against which we need to verify if a given IP address is allowed or not
+          name: custom_ip_address_block
+          description: This is the IP address or block of IP address against which we need to verify if a given IP address is allowed or not. If not passed we do the validation against the IP configs within Harness.
       security:
         - x-api-key: []
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
     parameters: []
   /v1/secrets:
     post:
@@ -1913,7 +1913,7 @@ components:
         name:
           type: string
           description: Name of the IP Config defined in Harness
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          pattern: '^[0-9a-zA-Z-_ ]{0,127}$'
           minLength: 1
           maxLength: 128
         identifier:
@@ -1980,6 +1980,27 @@ components:
           type: integer
           format: int64
           description: Last modification timestamp for IP Allowlist config.
+    IPAllowlistConfigValidateResponse:
+      title: IPAllowlistConfigValidateResponse
+      x-stoplight:
+        id: ll7dxdbr3e2yg
+      type: object
+      properties:
+        allowed_for_custom_block:
+          type: boolean
+          description: This indicates if given IP Address lies in range of custome IP block or not.
+        allowlisted_configs:
+          type: array
+          description: |
+            This is the list of IP configs configured in Harness from which IP address is allowed. This is empty in case of custom IP address block.
+          items:
+            $ref: '#/components/schemas/IPAllowlistConfigResponse'
+        allowed_for_ui:
+          type: boolean
+          description: This indicates if a given IP is allowlisted in Harness for UI requests
+        allowed_for_api:
+          type: boolean
+          description: This indicates if a given IP is allowlisted in Harness for API requests
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2467,7 +2488,7 @@ components:
       content:
         application/json:
           schema:
-            type: boolean
+            $ref: '#/components/schemas/IPAllowlistConfigValidateResponse'
   requestBodies:
     ServiceRequest:
       content:

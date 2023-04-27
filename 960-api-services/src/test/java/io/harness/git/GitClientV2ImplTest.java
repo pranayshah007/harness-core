@@ -26,9 +26,9 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Fail.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -913,5 +913,33 @@ public class GitClientV2ImplTest extends CategoryTest {
     assertThat(remoteListing.get("refs/heads/master").getTarget().getName()).isEqualTo("refs/heads/master");
     assertThat(remoteListing.get("refs/remotes/origin/master").getTarget().getName())
         .isEqualTo("refs/remotes/origin/master");
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testEnsureRepoLocallyClonedAndUpdatedWithDepth() throws Exception {
+    String repoPathInternal = Files.createTempDirectory(UUID.randomUUID().toString()).toString();
+    createRepo(repoPathInternal, false);
+    Git gitInternal = Git.open(new File(repoPathInternal));
+
+    assertThatThrownBy(() -> gitClient.ensureRepoLocallyClonedAndUpdated(null)).isInstanceOf(GeneralException.class);
+    GitBaseRequest request = GitBaseRequest.builder()
+                                 .repoUrl(repoPathInternal)
+                                 .authRequest(new UsernamePasswordAuthRequest(USERNAME, PASSWORD.toCharArray()))
+                                 .branch("main")
+                                 .cloneDepth(1)
+                                 .build();
+
+    doReturn(repoPathInternal).when(gitClientHelper).getRepoDirectory(request);
+    String remoteUrl = addRemote(repoPathInternal);
+    assertThat(gitInternal.getRepository().getConfig().getString("remote", "origin", "url")).isEqualTo(remoteUrl);
+
+    assertThatThrownBy(() -> gitClient.ensureRepoLocallyClonedAndUpdated(request))
+        .hasMessageContaining("Unable to checkout given reference: main");
+
+    request.setBranch("master");
+    request.setRepoUrl(remoteUrl);
+    gitClient.ensureRepoLocallyClonedAndUpdated(request);
   }
 }

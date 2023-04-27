@@ -17,6 +17,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 public interface BackstageEnvVariableService {
   Optional<BackstageEnvVariable> findByIdAndAccountIdentifier(String identifier, String accountIdentifier);
+  Optional<BackstageEnvVariable> findByEnvNameAndAccountIdentifier(String envName, String accountIdentifier);
   List<BackstageEnvVariable> findByAccountIdentifier(String accountIdentifier);
   BackstageEnvVariable create(BackstageEnvVariable environmentSecret, String accountIdentifier);
   List<BackstageEnvVariable> createMulti(List<BackstageEnvVariable> requestSecrets, String harnessAccount);
@@ -25,7 +26,7 @@ public interface BackstageEnvVariableService {
   void deleteMulti(List<String> secretIdentifiers, String accountIdentifier);
   void processSecretUpdate(EntityChangeDTO entityChangeDTO);
   void delete(String secretIdentifier, String harnessAccount);
-  void sync(List<BackstageEnvVariable> environmentSecrets, String accountIdentifier);
+  void findAndSync(String accountIdentifier);
   List<BackstageEnvSecretVariable> getAllSecretIdentifierForMultipleEnvVariablesInAccount(
       String accountIdentifier, List<String> envVariables);
   void deleteMultiUsingEnvNames(List<String> envNames, String accountIdentifier);

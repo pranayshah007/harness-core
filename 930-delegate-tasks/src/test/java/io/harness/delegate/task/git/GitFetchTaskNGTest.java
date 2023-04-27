@@ -12,9 +12,9 @@ import static io.harness.rule.OwnerRule.ABHINAV2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -37,11 +37,9 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.git.model.FetchFilesResult;
-import io.harness.git.model.GitFile;
 import io.harness.logging.LogCallback;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.SshSessionConfig;
 
 import java.io.IOException;
@@ -108,18 +106,14 @@ public class GitFetchTaskNGTest {
     MockitoAnnotations.initMocks(this);
     doReturn(executorService).when(logStreamingTaskClient).obtainTaskProgressExecutor();
     doReturn(future).when(executorService).submit(any(Runnable.class));
-    doNothing()
-        .when(gitDecryptionHelper)
-        .decryptGitConfig(any(GitConfigDTO.class), anyListOf(EncryptedDataDetail.class));
-    doReturn(sshSessionConfig)
-        .when(gitDecryptionHelper)
-        .getSSHSessionConfig(any(SSHKeySpecDTO.class), anyListOf(EncryptedDataDetail.class));
+    doNothing().when(gitDecryptionHelper).decryptGitConfig(any(GitConfigDTO.class), anyList());
+    doReturn(sshSessionConfig).when(gitDecryptionHelper).getSSHSessionConfig(any(SSHKeySpecDTO.class), anyList());
     doNothing()
         .when(gitFetchFilesTaskHelper)
-        .printFileNamesInExecutionLogs(anyListOf(String.class), any(LogCallback.class), any(Boolean.class));
+        .printFileNamesInExecutionLogs(anyList(), any(LogCallback.class), any(Boolean.class));
     doNothing()
         .when(gitFetchFilesTaskHelper)
-        .printFileNamesInExecutionLogs(any(LogCallback.class), anyListOf(GitFile.class), any(Boolean.class));
+        .printFileNamesInExecutionLogs(any(LogCallback.class), anyList(), any(Boolean.class));
     doReturn(new ArrayList<>()).when(fetchFilesResult).getFiles();
   }
 

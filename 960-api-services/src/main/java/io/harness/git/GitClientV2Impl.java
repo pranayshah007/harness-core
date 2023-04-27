@@ -284,6 +284,9 @@ public class GitClientV2Impl implements GitClientV2 {
         cloneCommand.setNoCheckout(true);
       }
     }
+    if (request.getCloneDepth() != null) {
+      cloneCommand.setDepth(request.getCloneDepth());
+    }
     try (Git git = cloneCommand.call()) {
     } catch (GitAPIException ex) {
       log.error(GIT_YAML_LOG_PREFIX + "Error in cloning repo: " + ExceptionSanitizer.sanitizeForLogging(ex));

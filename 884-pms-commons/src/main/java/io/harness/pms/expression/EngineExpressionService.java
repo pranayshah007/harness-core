@@ -32,4 +32,11 @@ public interface EngineExpressionService {
         "The resolve with contextMap is not supported by this engineExpressionService implementation. NodeExecutionId: %s, PlanExecutionId: %s",
         AmbianceUtils.obtainCurrentRuntimeId(ambiance), ambiance.getPlanExecutionId()));
   };
+
+  default Object evaluateExpression(Ambiance ambiance, String expression,
+      io.harness.expression.common.ExpressionMode expressionMode, Map<String, String> contextMap) {
+    throw new InvalidRequestException(String.format(
+        "The evaluate with contextMap is not supported by this engineExpressionService implementation. NodeExecutionId: %s, PlanExecutionId: %s",
+        AmbianceUtils.obtainCurrentRuntimeId(ambiance), ambiance.getPlanExecutionId()));
+  }
 }

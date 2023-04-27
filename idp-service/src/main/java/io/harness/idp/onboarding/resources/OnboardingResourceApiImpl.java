@@ -16,19 +16,23 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eraro.ResponseMessage;
 import io.harness.idp.onboarding.service.OnboardingService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.OnboardingResourceApi;
+import io.harness.spec.server.idp.v1.model.GenerateYamlRequest;
+import io.harness.spec.server.idp.v1.model.GenerateYamlResponse;
 import io.harness.spec.server.idp.v1.model.HarnessBackstageEntities;
 import io.harness.spec.server.idp.v1.model.HarnessEntitiesCountResponse;
 import io.harness.spec.server.idp.v1.model.HarnessEntitiesResponse;
+import io.harness.spec.server.idp.v1.model.ImportEntitiesBase;
 import io.harness.spec.server.idp.v1.model.ImportEntitiesResponse;
-import io.harness.spec.server.idp.v1.model.ImportHarnessEntitiesRequest;
 import io.harness.spec.server.idp.v1.model.ManualImportEntityRequest;
 import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
+import java.util.concurrent.ExecutionException;
 import javax.validation.Valid;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
@@ -69,12 +73,29 @@ public class OnboardingResourceApiImpl implements OnboardingResourceApi {
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
+  public Response onboardingGenerateYaml(
+      @Valid GenerateYamlRequest generateYamlRequest, @AccountIdentifier String harnessAccount) {
+    log.info("Request received to generate entity yaml definition. Account = {}, Request = {}", harnessAccount,
+        generateYamlRequest);
+    GenerateYamlResponse generateYamlResponse = onboardingService.generateYaml(harnessAccount, generateYamlRequest);
+    return Response.status(Response.Status.OK).entity(generateYamlResponse).build();
+  }
+
+  @Override
+  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
   public Response importHarnessEntities(
-      @Valid ImportHarnessEntitiesRequest importHarnessEntitiesRequest, @AccountIdentifier String harnessAccount) {
+      @Valid ImportEntitiesBase importHarnessEntitiesRequest, @AccountIdentifier String harnessAccount) {
     log.info("Request received to import harness entities to IDP. Account = {}, Request = {}", harnessAccount,
         importHarnessEntitiesRequest);
-    ImportEntitiesResponse importHarnessEntities =
-        onboardingService.importHarnessEntities(harnessAccount, importHarnessEntitiesRequest);
+    ImportEntitiesResponse importHarnessEntities;
+    try {
+      importHarnessEntities = onboardingService.importHarnessEntities(harnessAccount, importHarnessEntitiesRequest);
+    } catch (ExecutionException e) {
+      log.error("Error in importHarnessEntities - account = {}, error = {}", harnessAccount, e.getMessage(), e);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
+    }
     return Response.status(Response.Status.OK).entity(importHarnessEntities).build();
   }
 

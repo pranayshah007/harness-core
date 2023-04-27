@@ -15,17 +15,16 @@ import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.apache.commons.io.IOUtils.contentEquals;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
-import static org.powermock.api.mockito.PowerMockito.doReturn;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -60,13 +59,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.modules.junit4.PowerMockRunnerDelegate;
+import org.mockito.MockedStatic;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockRunnerDelegate(JUnitParamsRunner.class)
-@PrepareForTest({WinRmSession.class, SshHelperUtils.class, InstallUtils.class})
+@RunWith(JUnitParamsRunner.class)
 @OwnedBy(CDP)
 @TargetModule(_930_DELEGATE_TASKS)
 public class FileBasedWinRmExecutorTest extends CategoryTest {
@@ -97,31 +92,32 @@ public class FileBasedWinRmExecutorTest extends CategoryTest {
   }
 
   private void testCopyConfigFilesForExecutor(int size, FileBasedWinRmExecutor executor) throws IOException {
-    mockStatic(SshHelperUtils.class);
-    mockStatic(InstallUtils.class);
-    mockRemoteCommandStatus(executor, SUCCESS);
-    when(SshHelperUtils.executeLocalCommand(anyString(), any(LogCallback.class), any(Writer.class), anyBoolean(),
-             anyMapOf(String.class, String.class)))
-        .thenAnswer(i -> true);
-    when(InstallUtils.getPath(any(), any())).thenAnswer(i -> "/tmp/dummypath/tool");
-    doReturn(buildByteInputStream(size))
-        .when(delegateFileManager)
-        .downloadByConfigFileId(anyString(), anyString(), anyString(), anyString());
-    executor.copyConfigFiles(buildConfigFileMetadata(size));
+    try (MockedStatic<SshHelperUtils> ignore = mockStatic(SshHelperUtils.class);
+         MockedStatic<InstallUtils> ignore1 = mockStatic(InstallUtils.class)) {
+      mockRemoteCommandStatus(executor, SUCCESS);
+      when(SshHelperUtils.executeLocalCommand(
+               anyString(), any(LogCallback.class), any(Writer.class), anyBoolean(), anyMap()))
+          .thenAnswer(i -> true);
+      when(InstallUtils.getPath(any(), any())).thenAnswer(i -> "/tmp/dummypath/tool");
+      when(delegateFileManager.downloadByConfigFileId(anyString(), anyString(), anyString(), anyString()))
+          .thenReturn(buildByteInputStream(size));
+      executor.copyConfigFiles(buildConfigFileMetadata(size));
 
-    final ArgumentCaptor<byte[]> captor = ArgumentCaptor.forClass(byte[].class);
-    verify(executor, atLeastOnce()).getCopyConfigCommand(captor.capture(), any(), any());
+      final ArgumentCaptor<byte[]> captor = ArgumentCaptor.forClass(byte[].class);
+      verify(executor, atLeastOnce()).getCopyConfigCommand(captor.capture(), any(), any());
 
-    final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-    captor.getAllValues().forEach(v -> {
-      try {
-        byteArrayOutputStream.write(v);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    });
-    assertThat(contentEquals(buildByteInputStream(size), new ByteArrayInputStream(byteArrayOutputStream.toByteArray())))
-        .isTrue();
+      final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+      captor.getAllValues().forEach(v -> {
+        try {
+          byteArrayOutputStream.write(v);
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      });
+      assertThat(
+          contentEquals(buildByteInputStream(size), new ByteArrayInputStream(byteArrayOutputStream.toByteArray())))
+          .isTrue();
+    }
   }
 
   @Test
@@ -197,7 +193,8 @@ public class FileBasedWinRmExecutorTest extends CategoryTest {
 
   private void mockRemoteCommandStatus(FileBasedWinRmExecutor executor, CommandExecutionStatus status)
       throws IOException {
-    doReturn(status).when(executor).executeRemoteCommand(any(WinRmSession.class), any(ExecutionLogWriter.class),
-        any(ExecutionLogWriter.class), anyString(), anyBoolean());
+    when(executor.executeRemoteCommand(any(WinRmSession.class), any(ExecutionLogWriter.class),
+             any(ExecutionLogWriter.class), anyString(), anyBoolean()))
+        .thenReturn(status);
   }
 }

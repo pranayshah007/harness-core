@@ -9,6 +9,7 @@ package io.harness.idp.provision.service;
 
 import static io.harness.rule.OwnerRule.SARTHAK_KASAT;
 import static io.harness.rule.OwnerRule.VIGNESWARA;
+import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -17,12 +18,20 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.client.NgConnectorManagerClient;
+import io.harness.exception.InvalidRequestException;
+import io.harness.idp.common.Constants;
 import io.harness.idp.common.IdpCommonService;
+import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.settings.service.BackstagePermissionsService;
+import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.rule.Owner;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
+import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.BackstagePermissions;
 
 import java.util.List;
@@ -35,6 +44,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.springframework.dao.DuplicateKeyException;
 
 @OwnedBy(HarnessTeam.IDP)
 public class ProvisionServiceImplTest {
@@ -42,6 +52,10 @@ public class ProvisionServiceImplTest {
   @InjectMocks IdpCommonService idpCommonService;
   @Mock NgConnectorManagerClient ngConnectorManagerClient;
   @Mock BackstagePermissionsService backstagePermissionsService;
+  @Mock SecretManagerClientService ngSecretService;
+  @Mock BackstageEnvVariableService backstageEnvVariableService;
+  private static final String ERROR_MESSAGE =
+      "Invalid request: Secret with identifier IDP_BACKEND_SECRET already exists in this scope";
   private static final String ADMIN_USER_ID = "lv0euRhKRCyiXWzS7pOg6g";
   private static final String DEFAULT_USER_ID = "0osgWsTZRsSZ8RWfjLRkEg";
   private static final String ACCOUNT_ID = "123";
@@ -98,5 +112,42 @@ public class ProvisionServiceImplTest {
     verify(ngConnectorManagerClient, times(1)).isHarnessSupportUser(DEFAULT_USER_ID);
     mockSecurityContext.close();
     mockRestUtils.close();
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testCreateBackstageBackendSecret() {
+    SecretResponseWrapper dto = SecretResponseWrapper.builder()
+                                    .secret(SecretDTOV2.builder().identifier(Constants.IDP_BACKEND_SECRET).build())
+                                    .build();
+    when(ngSecretService.create(eq(ACCOUNT_ID), eq(null), eq(null), eq(true), any())).thenReturn(dto);
+    provisionServiceImpl.createBackstageBackendSecret(ACCOUNT_ID);
+    BackstageEnvSecretVariable backstageEnvSecretVariable = new BackstageEnvSecretVariable();
+    backstageEnvSecretVariable.setEnvName(Constants.BACKEND_SECRET);
+    backstageEnvSecretVariable.setHarnessSecretIdentifier(dto.getSecret().getIdentifier());
+    backstageEnvSecretVariable.setType(BackstageEnvVariable.TypeEnum.SECRET);
+    verify(backstageEnvVariableService).create(backstageEnvSecretVariable, ACCOUNT_ID);
+  }
+
+  @Test
+  @Owner(developers = SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testUpdateBackstageBackendSecret() {
+    SecretResponseWrapper dto = SecretResponseWrapper.builder()
+                                    .secret(SecretDTOV2.builder().identifier(Constants.IDP_BACKEND_SECRET).build())
+                                    .build();
+    when(ngSecretService.create(eq(ACCOUNT_ID), eq(null), eq(null), eq(true), any()))
+        .thenThrow(new InvalidRequestException(ERROR_MESSAGE));
+    when(ngSecretService.updateSecret(eq(Constants.IDP_BACKEND_SECRET), eq(ACCOUNT_ID), eq(null), eq(null), any()))
+        .thenReturn(dto);
+    BackstageEnvSecretVariable backstageEnvSecretVariable = new BackstageEnvSecretVariable();
+    backstageEnvSecretVariable.setEnvName(Constants.BACKEND_SECRET);
+    backstageEnvSecretVariable.setHarnessSecretIdentifier(dto.getSecret().getIdentifier());
+    backstageEnvSecretVariable.setType(BackstageEnvVariable.TypeEnum.SECRET);
+    when(backstageEnvVariableService.create(backstageEnvSecretVariable, ACCOUNT_ID))
+        .thenThrow(new DuplicateKeyException(""));
+    provisionServiceImpl.createBackstageBackendSecret(ACCOUNT_ID);
+    verify(backstageEnvVariableService).update(backstageEnvSecretVariable, ACCOUNT_ID);
   }
 }

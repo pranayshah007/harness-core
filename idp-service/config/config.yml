@@ -91,7 +91,7 @@ managerClientConfig:
   readTimeOutSeconds: 15
 
 backstageHttpClientConfig:
-  baseUrl: http://localhost:7007/api/
+  baseUrl: https://localhost:7007
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
@@ -106,6 +106,9 @@ managerTarget: localhost:9880
 managerAuthority: localhost
 
 onboardingModuleConfig:
+  descriptionForEntitySelected: A YAML file will be created for each service inside your GitHub repository. An example of what the files will look like is shown below
+  descriptionForSampleEntity: Because you didn't choose any Harness services to import in the previous step, an example Harness service catalog-info.yaml will be created inside your GitHub repository as shown below
+  useGitServiceGrpcForSingleEntityPush: false
   tmpPathForCatalogInfoYamlStore: /tmp
   catalogInfoLocationDefaultPath: /.harness-idp-entities
   sampleEntities:
@@ -139,3 +142,6 @@ provisionModuleConfig:
 
 env: ""
 prEnvDefaultBackstageNamespace: ""
+
+backstageAppBaseUrl: https://localhost:3000
+backstagePostgresHost: ""

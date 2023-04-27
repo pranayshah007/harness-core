@@ -28,6 +28,7 @@ import io.harness.pms.contracts.advisers.MarkSuccessAdvise;
 import io.harness.pms.contracts.advisers.NextStepAdvise;
 import io.harness.pms.contracts.advisers.RetryAdvise;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -71,7 +72,7 @@ public class RetryAdviserWithRollback implements Adviser {
                   .build())
           .build();
     }
-    return handlePostRetry(parameters, advisingEvent.getAmbiance());
+    return handlePostRetry(parameters, advisingEvent.getAmbiance(), advisingEvent.getToStatus());
   }
 
   @Override
@@ -86,7 +87,8 @@ public class RetryAdviserWithRollback implements Adviser {
     return canAdvise;
   }
 
-  private AdviserResponse handlePostRetry(RetryAdviserRollbackParameters parameters, Ambiance ambiance) {
+  private AdviserResponse handlePostRetry(
+      RetryAdviserRollbackParameters parameters, Ambiance ambiance, Status toStatus) {
     AdviserResponse.Builder adviserResponseBuilder =
         AdviserResponse.newBuilder().setRepairActionCode(parameters.getRepairActionCodeAfterRetry());
     switch (parameters.getRepairActionCodeAfterRetry()) {
@@ -95,6 +97,7 @@ public class RetryAdviserWithRollback implements Adviser {
             .setInterventionWaitAdvise(
                 InterventionWaitAdvise.newBuilder()
                     .setTimeout(Duration.newBuilder().setSeconds(java.time.Duration.ofDays(1).toMinutes() * 60).build())
+                    .setFromStatus(toStatus)
                     .build())
             .setType(AdviseType.INTERVENTION_WAIT)
             .build();

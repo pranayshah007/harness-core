@@ -91,6 +91,7 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
         log.warn("Unexpected type of deploymentInfoDto, expected K8sDeploymentInfoDTO found {}",
             deploymentInfoDTO != null ? deploymentInfoDTO.getClass().getSimpleName() : null);
       } else {
+        // Todo: Add Cluster Name as well
         K8sDeploymentInfoDTO k8sDeploymentInfoDTO = (K8sDeploymentInfoDTO) deploymentInfoDTO;
         k8sDeploymentReleaseDetailsList.add(K8sDeploymentReleaseDetails.newBuilder()
                                                 .setReleaseName(k8sDeploymentInfoDTO.getReleaseName())

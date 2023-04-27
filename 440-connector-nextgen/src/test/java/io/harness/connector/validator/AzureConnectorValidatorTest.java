@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -67,8 +67,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -246,11 +246,13 @@ public class AzureConnectorValidatorTest extends CategoryTest {
     on(azureValidationHandler).set("azureNgConfigMapper", azureNgConfigMapper);
     on(azureValidationHandler).set("azureAuthorizationClient", azureAuthorizationClient);
     when(azureValidationHandler.validate(any(ConnectorValidationParams.class), any())).thenCallRealMethod();
-    when(connectorTypeToConnectorValidationHandlerMap.get(Matchers.eq("Azure"))).thenReturn(azureValidationHandler);
+    when(connectorTypeToConnectorValidationHandlerMap.get(ArgumentMatchers.eq("Azure")))
+        .thenReturn(azureValidationHandler);
 
     AzureValidationParamsProvider azureValidationParamsProvider = new AzureValidationParamsProvider();
     on(azureValidationParamsProvider).set("encryptionHelper", encryptionHelper);
-    when(connectorValidationParamsProviderMap.get(Matchers.eq("Azure"))).thenReturn(azureValidationParamsProvider);
+    when(connectorValidationParamsProviderMap.get(ArgumentMatchers.eq("Azure")))
+        .thenReturn(azureValidationParamsProvider);
     when(connectorService.get(any(), any(), any(), any()))
         .thenReturn(Optional.of(ConnectorResponseDTO.builder()
                                     .connector(ConnectorInfoDTO.builder()
@@ -290,11 +292,13 @@ public class AzureConnectorValidatorTest extends CategoryTest {
                     "Connector with credential type InheritFromDelegate does not support validation through harness")
                 .build());
     when(azureValidationHandler.validate(any(ConnectorValidationParams.class), any())).thenCallRealMethod();
-    when(connectorTypeToConnectorValidationHandlerMap.get(Matchers.eq("Azure"))).thenReturn(azureValidationHandler);
+    when(connectorTypeToConnectorValidationHandlerMap.get(ArgumentMatchers.eq("Azure")))
+        .thenReturn(azureValidationHandler);
 
     AzureValidationParamsProvider azureValidationParamsProvider = new AzureValidationParamsProvider();
     on(azureValidationParamsProvider).set("encryptionHelper", encryptionHelper);
-    when(connectorValidationParamsProviderMap.get(Matchers.eq("Azure"))).thenReturn(azureValidationParamsProvider);
+    when(connectorValidationParamsProviderMap.get(ArgumentMatchers.eq("Azure")))
+        .thenReturn(azureValidationParamsProvider);
     when(connectorService.get(any(), any(), any(), any()))
         .thenReturn(Optional.of(ConnectorResponseDTO.builder()
                                     .connector(ConnectorInfoDTO.builder()

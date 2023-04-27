@@ -21,6 +21,7 @@ import io.harness.app.beans.entities.BuildFailureInfo;
 import io.harness.app.beans.entities.BuildHealth;
 import io.harness.app.beans.entities.BuildInfo;
 import io.harness.app.beans.entities.BuildRepositoryCount;
+import io.harness.app.beans.entities.CIDashboardHelper;
 import io.harness.app.beans.entities.CIUsageResult;
 import io.harness.app.beans.entities.DashboardBuildExecutionInfo;
 import io.harness.app.beans.entities.DashboardBuildRepositoryInfo;
@@ -339,18 +340,22 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
 
     startInterval = getStartingDateEpochValue(startInterval, intervalInMs);
     endInterval = getStartingDateEpochValue(endInterval, intervalInMs);
+    long previousInterval = startInterval - (endInterval - startInterval);
 
     endInterval = endInterval + intervalInMs;
 
     List<BuildExecutionInfo> buildExecutionInfoList = new ArrayList<>();
 
     StatusAndTime statusAndTime =
-        queryCalculatorForStatusAndTime(accountId, orgProjectIdentifiers, groupBy, startInterval, endInterval);
+        queryCalculatorForStatusAndTime(accountId, orgProjectIdentifiers, groupBy, previousInterval, endInterval);
     List<String> status = statusAndTime.getStatus();
     List<Long> time = statusAndTime.getTime();
 
     long startDateCopy = startInterval;
     long endDateCopy = endInterval;
+    long currentBuildsCount = getCountForInterval(time, startInterval, endInterval);
+    long previousBuildsCount = getCountForInterval(time, previousInterval, startInterval);
+
     while (startDateCopy < endDateCopy) {
       long total = 0, success = 0, failed = 0, expired = 0, aborted = 0;
       for (int i = 0; i < time.size(); i++) {
@@ -373,7 +378,20 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       startDateCopy = startDateCopy + intervalInMs;
     }
 
-    return DashboardBuildExecutionInfo.builder().buildExecutionInfoList(buildExecutionInfoList).build();
+    double noOfBuckets = Math.ceil(((endInterval - startInterval) * 1.0) / intervalInMs);
+    double currentBuildRate = CIDashboardHelper.truncate(currentBuildsCount / noOfBuckets);
+    double previousBuildRate = CIDashboardHelper.truncate(previousBuildsCount / noOfBuckets);
+    double changeRate = getChangeRate(currentBuildRate, previousBuildRate);
+
+    return DashboardBuildExecutionInfo.builder()
+        .buildExecutionInfoList(buildExecutionInfoList)
+        .buildRate(currentBuildRate)
+        .buildRateChangeRate(changeRate)
+        .build();
+  }
+
+  private long getCountForInterval(List<Long> time, long startInterval, long endInterval) {
+    return time.stream().filter(timeEpoch -> timeEpoch >= startInterval && timeEpoch < endInterval).count();
   }
 
   public List<BuildFailureInfo> queryCalculatorBuildFailureInfo(
@@ -435,6 +453,15 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       }
       buildFailureInfos.get(i).setServiceInfoList(serviceDeploymentInfoList);
     }
+  }
+
+  private double getChangeRate(double previousValue, double newValue) {
+    double change = newValue - previousValue;
+    if (change == 0) {
+      return 0;
+    }
+    double rate = previousValue != 0 ? (change * 100.0) / previousValue : Double.MAX_VALUE;
+    return CIDashboardHelper.truncate(rate);
   }
 
   private void parseResultToBuildFailureInfo(

@@ -20,21 +20,26 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ipallowlist.IPAllowlistResourceUtils;
+import io.harness.ipallowlist.dto.IPAllowlistFilterDTO;
 import io.harness.ipallowlist.entity.IPAllowlistEntity;
 import io.harness.ipallowlist.service.IPAllowlistService;
 import io.harness.spec.server.ng.v1.IpAllowlistApi;
 import io.harness.spec.server.ng.v1.model.IPAllowlistConfigRequest;
+import io.harness.spec.server.ng.v1.model.IPAllowlistConfigResponse;
+import io.harness.utils.ApiUtils;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
-import java.util.List;
 import java.util.Objects;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -79,6 +84,17 @@ public class IpAllowlistApiImpl implements IpAllowlistApi {
   }
 
   @Override
+  public Response validateIpAddressAllowlistedOrNot(
+      @NotNull String ipAddress, String harnessAccount, String customIpAddressBlock) {
+    isIPAllowlistFFEnabled(harnessAccount);
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(harnessAccount, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
+    return Response.status(Response.Status.OK)
+        .entity(ipAllowlistService.validateIpAddressAllowlistedOrNot(ipAddress, harnessAccount, customIpAddressBlock))
+        .build();
+  }
+
+  @Override
   public Response deleteIpAllowlistConfig(String ipConfigIdentifier, String harnessAccount) {
     isIPAllowlistFFEnabled(harnessAccount);
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(harnessAccount, null, null),
@@ -101,20 +117,31 @@ public class IpAllowlistApiImpl implements IpAllowlistApi {
   }
 
   @Override
-  public Response getIpAllowlistConfigs(
-      List<String> identifier, String searchTerm, Integer page, @Max(1000L) Integer limit, String harnessAccount) {
-    return null;
-  }
+  public Response getIpAllowlistConfigs(String searchTerm, Integer page, @Max(1000L) Integer limit,
+      String harnessAccount, String sort, String order, String allowedSourceType) {
+    isIPAllowlistFFEnabled(harnessAccount);
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(harnessAccount, null, null), Resource.of(AUTHSETTING, null), VIEW_AUTHSETTING_PERMISSION);
+    IPAllowlistFilterDTO ipAllowlistFilterDTO =
+        ipAllowlistResourceUtil.getFilterProperties(searchTerm, allowedSourceType);
+    Pageable pageable = ipAllowlistResourceUtil.getPageRequest(page, limit, sort, order);
+    Page<IPAllowlistEntity> ipAllowlistEntityPage =
+        ipAllowlistService.list(harnessAccount, pageable, ipAllowlistFilterDTO);
+    Page<IPAllowlistConfigResponse> ipAllowlistConfigResponsePage =
+        ipAllowlistEntityPage.map(ipAllowlistResourceUtil::toIPAllowlistConfigResponse);
+    ResponseBuilder responseBuilder = Response.ok();
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, ipAllowlistConfigResponsePage.getTotalElements(), page, limit);
 
-  @Override
-  public Response validateIpAddressAllowlistedOrNot(
-      @NotNull String ipAddress, String harnessAccount, String ipAddressBlock) {
-    return null;
+    return responseBuilderWithLinks.entity(ipAllowlistConfigResponsePage.getContent()).build();
   }
 
   @Override
   public Response validateUniqueIpAllowlistConfigIdentifier(String ipConfigIdentifier, String harnessAccount) {
-    return null;
+    isIPAllowlistFFEnabled(harnessAccount);
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(harnessAccount, null, null),
+        Resource.of(AUTHSETTING, ipConfigIdentifier), EDIT_AUTHSETTING_PERMISSION);
+    return Response.ok().entity(ipAllowlistService.validateUniqueness(harnessAccount, ipConfigIdentifier)).build();
   }
 
   private void isIPAllowlistFFEnabled(String accountIdentifier) {

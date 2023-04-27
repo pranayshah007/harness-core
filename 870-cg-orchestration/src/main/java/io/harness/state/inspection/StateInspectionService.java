@@ -11,13 +11,14 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 
-import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
 
 @OwnedBy(CDC)
 public interface StateInspectionService {
   StateInspection get(String stateExecutionInstanceId);
-  List<StateInspection> listUsingSecondary(Collection<String> stateExecutionInstanceIds);
+  void search(Set<String> stateExecutionInstanceIds, Consumer<StateInspection> consumer);
   void append(String stateExecutionInstanceId, StateInspectionData data);
   void append(String stateExecutionInstanceId, List<StateInspectionData> data);
 }

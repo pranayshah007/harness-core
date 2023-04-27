@@ -13,10 +13,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 
 import com.mongodb.client.result.UpdateResult;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -40,5 +42,11 @@ public class ApprovalInstanceCustomRepositoryImpl implements ApprovalInstanceCus
   @Override
   public UpdateResult updateMulti(Query query, Update update) {
     return mongoTemplate.updateMulti(query, update, ApprovalInstance.class);
+  }
+
+  @Override
+  public List<ApprovalInstance> findAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.find(query, ApprovalInstance.class);
   }
 }

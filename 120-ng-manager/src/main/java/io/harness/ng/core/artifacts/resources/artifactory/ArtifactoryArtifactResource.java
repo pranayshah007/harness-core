@@ -50,6 +50,7 @@ import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 @Api("artifacts")
@@ -182,6 +183,27 @@ public class ArtifactoryArtifactResource {
     return ResponseDTO.newResponse(buildDetails);
   }
 
+  @POST
+  @Path("getLastSuccessfulBuildV2")
+  @ApiOperation(value = "Gets artifactory artifact last successful build with yaml input for expression resolution",
+      nickname = "getLastSuccessfulBuildArtifactoryArtifactWithYaml")
+  public ResponseDTO<ArtifactoryBuildDetailsDTO>
+  getLastSuccessfulBuildV2(@QueryParam("repository") String repository, @QueryParam("artifactPath") String artifactPath,
+      @QueryParam("repositoryFormat") String repositoryFormat,
+      @QueryParam("repositoryUrl") String artifactRepositoryUrl,
+      @QueryParam("connectorRef") String artifactoryConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @NotNull @QueryParam("fqnPath") String fqnPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef, ArtifactoryRequestDTO artifactoryRequestDTO) {
+    ArtifactoryBuildDetailsDTO buildDetails = artifactResourceUtils.getLastSuccessfulBuildV2Artifactory(repository,
+        artifactPath, repositoryFormat, artifactRepositoryUrl, artifactoryConnectorIdentifier, accountId, orgIdentifier,
+        projectIdentifier, pipelineIdentifier, fqnPath, gitEntityBasicInfo, serviceRef, artifactoryRequestDTO);
+    return ResponseDTO.newResponse(buildDetails);
+  }
+
   @GET
   @Path("validateArtifactServer")
   @ApiOperation(value = "Validate artifactory artifact server", nickname = "validateArtifactServerForArtifactory")
@@ -206,6 +228,8 @@ public class ArtifactoryArtifactResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @QueryParam("fqnPath") String fqnPath,
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    // If UI is not passing repository type as param,then we are assuming repositoryType as any
+
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
@@ -217,8 +241,11 @@ public class ArtifactoryArtifactResource {
             artifactoryRegistryArtifactConfig.getConnectorRef().fetchFinalValue().toString();
       }
 
-      if (isEmpty(repositoryType)) {
-        repositoryType = artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString();
+      if (isEmpty(repositoryType) || "any".equals(repositoryType)) {
+        if (!StringUtils.isBlank(
+                artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString())) {
+          repositoryType = artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString();
+        }
       }
     }
     if (artifactoryConnectorIdentifier != null && NGExpressionUtils.isRuntimeField(artifactoryConnectorIdentifier)) {
@@ -244,6 +271,8 @@ public class ArtifactoryArtifactResource {
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @QueryParam("fqnPath") String fqnPath, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
       @NotNull String runtimeInputYaml, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    // If UI is not passing repository type as param,then we are assuming repositoryType as any
+
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
@@ -255,8 +284,11 @@ public class ArtifactoryArtifactResource {
             artifactoryRegistryArtifactConfig.getConnectorRef().fetchFinalValue().toString();
       }
 
-      if (isEmpty(repositoryType)) {
-        repositoryType = artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString();
+      if (isEmpty(repositoryType) || "any".equals(repositoryType)) {
+        if (!StringUtils.isBlank(
+                artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString())) {
+          repositoryType = artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString();
+        }
       }
     }
 

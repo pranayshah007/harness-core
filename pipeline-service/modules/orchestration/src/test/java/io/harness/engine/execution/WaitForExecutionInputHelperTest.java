@@ -11,8 +11,8 @@ import static io.harness.rule.OwnerRule.BRIJESH;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -76,7 +76,8 @@ public class WaitForExecutionInputHelperTest extends CategoryTest {
     ArgumentCaptor<ExecutionInputInstance> inputInstanceArgumentCaptor =
         ArgumentCaptor.forClass(ExecutionInputInstance.class);
     String fieldYaml = "pipeline:\n  name: \"pipeline1\"\n  var: \"var/<+pipeline.name>\"\n";
-    String resolvedFieldYaml = "pipeline:\n  name: \"pipeline1\"\n  var: \"var/pipeline1\"\n";
+    String resolvedFieldYaml = "pipeline:\n  name: pipeline1\n"
+        + "  var: var/pipeline1\n";
     doReturn(Optional.of(PlanExecutionMetadata.builder().yaml(fieldYaml).build()))
         .when(planExecutionMetadataService)
         .findByPlanExecutionId(any());
@@ -86,7 +87,8 @@ public class WaitForExecutionInputHelperTest extends CategoryTest {
                             .build();
     doReturn(resolvedFieldYaml)
         .when(pmsEngineExpressionService)
-        .renderExpression(ambiance, fieldYaml, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+        .renderExpression(
+            ambiance, fieldYaml.replaceAll("\"", ""), ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
     waitForExecutionInputHelper.waitForExecutionInput(
         ambiance, nodeExecution.getUuid(), PlanNode.builder().executionInputTemplate(template).build());
     verify(waitNotifyEngine, times(1)).waitForAllOnInList(any(), callbackArgumentCaptor.capture(), any(), any());

@@ -64,4 +64,10 @@ public class EngineExpressionServiceImpl implements EngineExpressionService {
       Map<String, String> contextMap) {
     return pmsEngineExpressionService.resolve(ambiance, o, expressionMode, contextMap);
   }
+
+  @Override
+  public Object evaluateExpression(Ambiance ambiance, String expression,
+      io.harness.expression.common.ExpressionMode expressionMode, Map<String, String> contextMap) {
+    return pmsEngineExpressionService.evaluateExpression(ambiance, expression, expressionMode, contextMap);
+  }
 }

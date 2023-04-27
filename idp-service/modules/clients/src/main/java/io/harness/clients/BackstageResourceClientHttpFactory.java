@@ -15,13 +15,16 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.network.Http;
 import io.harness.network.NoopHostnameVerifier;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.protobuf.ExtensionRegistryLite;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.X509TrustManager;
@@ -40,12 +43,18 @@ import retrofit2.converter.protobuf.ProtoConverterFactory;
 public class BackstageResourceClientHttpFactory implements Provider<BackstageResourceClient> {
   private final ServiceHttpClientConfig backstageClientConfig;
   private final OkHttpClient httpClient;
+  private final SecretManagerClientService secretManagerClientService;
   private static final ObjectMapper mapper = new ObjectMapper()
                                                  .registerModule(new Jdk8Module())
                                                  .registerModule(new GuavaModule())
                                                  .registerModule(new JavaTimeModule());
-  public BackstageResourceClientHttpFactory(ServiceHttpClientConfig backstageClientConfig) {
+
+  @Inject
+  public BackstageResourceClientHttpFactory(
+      @Named("backstageHttpClientConfig") ServiceHttpClientConfig backstageClientConfig,
+      @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService) {
     this.backstageClientConfig = backstageClientConfig;
+    this.secretManagerClientService = secretManagerClientService;
     this.httpClient = this.getSafeOkHttpClient();
   }
   @Override
@@ -74,7 +83,7 @@ public class BackstageResourceClientHttpFactory implements Provider<BackstageRes
         .sslSocketFactory(getSslContext().getSocketFactory(), (X509TrustManager) getTrustManagers()[0])
         .connectTimeout(backstageClientConfig.getConnectTimeOutSeconds(), TimeUnit.SECONDS)
         .readTimeout(backstageClientConfig.getReadTimeOutSeconds(), TimeUnit.SECONDS)
-        .addInterceptor(new BackstageAuthInterceptor())
+        .addInterceptor(new BackstageAuthInterceptor(secretManagerClientService))
         .build();
   }
 }

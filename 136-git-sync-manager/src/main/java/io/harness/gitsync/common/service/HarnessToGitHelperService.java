@@ -33,6 +33,8 @@ import io.harness.gitsync.PushInfo;
 import io.harness.gitsync.RepoDetails;
 import io.harness.gitsync.UpdateFileRequest;
 import io.harness.gitsync.UpdateFileResponse;
+import io.harness.gitsync.UserDetailsRequest;
+import io.harness.gitsync.UserDetailsResponse;
 import io.harness.security.dto.UserPrincipal;
 
 @OwnedBy(DX)
@@ -66,4 +68,6 @@ public interface HarnessToGitHelperService {
   ListFilesResponse listFiles(ListFilesRequest listFilesRequest);
 
   GetBatchFilesResponse getBatchFiles(GetBatchFilesRequest getBatchFilesRequest);
+
+  UserDetailsResponse getUserDetails(UserDetailsRequest request);
 }

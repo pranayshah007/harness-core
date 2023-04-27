@@ -269,6 +269,9 @@
             "connectorRef": {
               "type": "string"
             },
+            "digest": {
+              "type": "string"
+            },
             "registry": {
               "type": "string"
             },
@@ -466,7 +469,6 @@
         },
         "type": {
           "type": "string",
-          "readOnly": true,
           "enum": [
             "DockerRegistry",
             "Gcr",
@@ -787,6 +789,9 @@
               "type": "string"
             },
             "connectorRef": {
+              "type": "string"
+            },
+            "digest": {
               "type": "string"
             },
             "repository": {
@@ -3297,8 +3302,7 @@
       ],
       "properties": {
         "identifier": {
-          "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
+          "type": "string"
         },
         "spec": {
           "$ref": "#/definitions/ConfigFileAttributes"
@@ -4468,6 +4472,9 @@
           ],
           "properties": {
             "connectorRef": {
+              "type": "string"
+            },
+            "digest": {
               "type": "string"
             },
             "imagePath": {
@@ -5808,6 +5815,9 @@
             "connectorRef": {
               "type": "string"
             },
+            "digest": {
+              "type": "string"
+            },
             "imagePath": {
               "type": "string"
             },
@@ -6061,6 +6071,9 @@
               "type": "string",
               "minLength": 1
             },
+            "digest": {
+              "type": "string"
+            },
             "org": {
               "type": "string"
             },
@@ -6202,6 +6215,9 @@
           ],
           "properties": {
             "connectorRef": {
+              "type": "string"
+            },
+            "digest": {
               "type": "string"
             },
             "metadata": {
@@ -8198,6 +8214,34 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "K8sBGStageScaleDownStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "K8sBGSwapServicesStepInfo": {
       "allOf": [
         {
@@ -8868,18 +8912,18 @@
     "KustomizeManifestCommandFlag": {
       "type": "object",
       "required": [
-        "kustomizeCommandFlagType"
+        "commandType"
       ],
       "properties": {
-        "flag": {
-          "type": "string",
-          "minLength": 1
-        },
-        "kustomizeCommandFlagType": {
+        "commandType": {
           "type": "string",
           "enum": [
             "Build"
           ]
+        },
+        "flag": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -8963,8 +9007,7 @@
       ],
       "properties": {
         "identifier": {
-          "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
+          "type": "string"
         },
         "type": {
           "type": "string",
@@ -9870,6 +9913,9 @@
               "type": "string"
             },
             "connectorRef": {
+              "type": "string"
+            },
+            "digest": {
               "type": "string"
             },
             "metadata": {
@@ -14191,6 +14237,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/K8sApplyStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "K8sBGStageScaleDown"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/K8sBGStageScaleDownStepInfo"
               }
             }
           }

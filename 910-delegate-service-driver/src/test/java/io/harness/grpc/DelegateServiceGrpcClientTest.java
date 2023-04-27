@@ -18,7 +18,7 @@ import io.harness.rule.Owner;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 import org.junit.Rule;
 import org.junit.Test;
@@ -33,14 +33,18 @@ import org.mockito.junit.MockitoRule;
 public class DelegateServiceGrpcClientTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-  @Parameterized.Parameter public LinkedHashMap<String, String> logStreamingAbstractions;
+  @Parameterized.Parameter public Map<String, String> logStreamingAbstractions;
 
   @Parameterized.Parameters
-  public static Collection<LinkedHashMap<String, String>> data() {
+  public static Collection<Map<String, String>> data() {
     return Arrays.asList(
-        new LinkedHashMap(Map.of("accountId", "accountIdValue", "orgId", "orgIdValue", "projectId", "projectIdValue")),
-        new LinkedHashMap(Map.of("accountId", "accountIdValue", "orgId", "orgIdValue", "projectId", "")),
-        new LinkedHashMap(Map.of("accountId", "accountIdValue", "orgId", "", "projectId", "")));
+        Map.of("accountId", "accountIdValue", "orgId", "orgIdValue", "projectId", "projectIdValue"), new HashMap<>() {
+          {
+            put("accountId", "accountIdValue");
+            put("orgId", null);
+            put("projectId", null);
+          }
+        });
   }
 
   @Test
@@ -48,6 +52,6 @@ public class DelegateServiceGrpcClientTest extends CategoryTest {
   @Category(UnitTests.class)
   public void getAbstractionsMapShouldNotContainEmptyValues() {
     Map<String, String> result = DelegateServiceGrpcClient.getAbstractionsMap(logStreamingAbstractions);
-    assertEquals(result.values().contains(""), false);
+    assertEquals(result.values().contains(null), false);
   }
 }

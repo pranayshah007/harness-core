@@ -9,13 +9,13 @@ package io.harness.perpetualtask.k8s.informer.handlers;
 
 import static io.harness.rule.OwnerRule.AVMOHAN;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -77,7 +77,7 @@ public class BaseHandlerTest extends CategoryTest {
                       .endOwnerReference()
                       .endMetadata()
                       .build());
-    verifyZeroInteractions(eventPublisher);
+    verifyNoInteractions(eventPublisher);
   }
 
   @Test
@@ -117,7 +117,7 @@ public class BaseHandlerTest extends CategoryTest {
                                                .setDescription("ReplicaSet created")
                                                .build())
                                 .build()),
-            any(), anyMapOf(String.class, String.class));
+            any(), anyMap());
     verifyNoMoreInteractions(eventPublisher);
   }
 
@@ -169,7 +169,7 @@ public class BaseHandlerTest extends CategoryTest {
                                        .endSpec()
                                        .build();
     handler.onUpdate(v1ReplicaSetOld, v1ReplicaSetNew);
-    verifyZeroInteractions(eventPublisher);
+    verifyNoInteractions(eventPublisher);
   }
 
   @Test
@@ -210,7 +210,7 @@ public class BaseHandlerTest extends CategoryTest {
                                        .endStatus()
                                        .build();
     handler.onUpdate(v1ReplicaSetOld, v1ReplicaSetNew);
-    verifyZeroInteractions(eventPublisher);
+    verifyNoInteractions(eventPublisher);
   }
 
   @Test
@@ -282,7 +282,7 @@ public class BaseHandlerTest extends CategoryTest {
                                                .setDescription("ReplicaSet updated")
                                                .build())
                                 .build()),
-            any(), anyMapOf(String.class, String.class));
+            any(), anyMap());
     verifyNoMoreInteractions(eventPublisher);
   }
 
@@ -310,7 +310,7 @@ public class BaseHandlerTest extends CategoryTest {
                          .endMetadata()
                          .build(),
         false);
-    verifyZeroInteractions(eventPublisher);
+    verifyNoInteractions(eventPublisher);
   }
 
   @Test
@@ -349,7 +349,7 @@ public class BaseHandlerTest extends CategoryTest {
                                                .setDescription("ReplicaSet deleted")
                                                .build())
                                 .build()),
-            any(), anyMapOf(String.class, String.class));
+            any(), anyMap());
     verifyNoMoreInteractions(eventPublisher);
   }
 }

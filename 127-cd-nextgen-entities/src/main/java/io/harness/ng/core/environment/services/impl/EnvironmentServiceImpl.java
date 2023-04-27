@@ -7,7 +7,6 @@
 
 package io.harness.ng.core.environment.services.impl;
 
-import static io.harness.beans.FeatureName.CDS_FORCE_DELETE_ENTITIES;
 import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -33,6 +32,7 @@ import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
+import io.harness.eraro.ErrorMessageConstants;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
@@ -311,9 +311,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   public boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String environmentIdentifier,
       Long version, boolean forceDelete) {
     if (forceDelete && !isForceDeleteEnabled(accountId)) {
-      throw new InvalidRequestException(
-          format("Parameter forcedDelete cannot be true. Force Delete is not enabled for account [%s]", accountId),
-          USER);
+      throw new InvalidRequestException(ErrorMessageConstants.FORCE_DELETE_SETTING_NOT_ENABLED, USER);
     }
     checkArgument(isNotEmpty(accountId), "accountId must be present");
     checkArgument(isNotEmpty(environmentIdentifier), "environment Identifier must be present");
@@ -843,15 +841,8 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     }
   }
 
-  public List<String> getEnvironmentIdentifiers(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    return environmentRepository.getEnvironmentIdentifiers(accountIdentifier, orgIdentifier, projectIdentifier);
-  }
   private boolean isForceDeleteEnabled(String accountIdentifier) {
-    boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
-    boolean isForceDeleteEnabledBySettings =
-        isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
-    return isForceDeleteFFEnabled && isForceDeleteEnabledBySettings;
+    return isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
   }
 
   protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
@@ -859,11 +850,6 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                             .getResponse(settingsClient.getSetting(
                                 SettingIdentifiers.ENABLE_FORCE_DELETE, accountIdentifier, null, null))
                             .getValue());
-  }
-
-  protected boolean isForceDeleteFFEnabled(String accountIdentifier) {
-    return CGRestUtils.getResponse(
-        accountClient.isFeatureFlagEnabled(CDS_FORCE_DELETE_ENTITIES.name(), accountIdentifier));
   }
 
   protected boolean isNgSettingsFFEnabled(String accountIdentifier) {

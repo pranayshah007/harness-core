@@ -36,16 +36,17 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.gitsync.common.dtos.AzureRepoSCMDTO;
+import io.harness.gitsync.common.dtos.BitbucketSCMDTO;
 import io.harness.gitsync.common.dtos.GithubSCMDTO;
 import io.harness.gitsync.common.dtos.GitlabSCMDTO;
+import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
 import io.harness.gitsync.common.dtos.UserSourceCodeManagerDTO;
-import io.harness.gitsync.common.service.UserSourceCodeManagerService;
+import io.harness.gitsync.common.dtos.gitAccess.GitAccessDTO;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.manage.GlobalContextManager;
-import io.harness.ng.userprofile.commons.SCMType;
 import io.harness.security.PrincipalContextData;
 import io.harness.tasks.DecryptGitApiAccessHelper;
 import io.harness.utils.IdentifierRefHelper;
@@ -65,16 +66,16 @@ public class GitSyncConnectorHelper {
   ConnectorService connectorService;
   DecryptGitApiAccessHelper decryptGitApiAccessHelper;
   YamlGitConfigService yamlGitConfigService;
-  UserSourceCodeManagerService userSourceCodeManagerService;
+  UserSourceCodeManagerHelper userSourceCodeManagerHelper;
 
   @Inject
   public GitSyncConnectorHelper(@Named("connectorDecoratorService") ConnectorService connectorService,
       DecryptGitApiAccessHelper decryptGitApiAccessHelper, YamlGitConfigService yamlGitConfigService,
-      UserSourceCodeManagerService userSourceCodeManagerService) {
+      UserSourceCodeManagerHelper userSourceCodeManagerHelper) {
     this.connectorService = connectorService;
     this.decryptGitApiAccessHelper = decryptGitApiAccessHelper;
     this.yamlGitConfigService = yamlGitConfigService;
-    this.userSourceCodeManagerService = userSourceCodeManagerService;
+    this.userSourceCodeManagerHelper = userSourceCodeManagerHelper;
   }
 
   public ScmConnector getDecryptedConnector(
@@ -126,7 +127,6 @@ public class GitSyncConnectorHelper {
   public ScmConnector getDecryptedConnectorForNewGitX(
       String accountId, String orgIdentifier, String projectIdentifier, ScmConnector connectorDTO) {
     PrincipalContextData currentPrincipal = GlobalContextManager.get(PrincipalContextData.PRINCIPAL_CONTEXT);
-    setUserGitCredsInConnector(accountId, connectorDTO);
     // setting service principal for connector decryption in case of Git Connector
     GitSyncUtils.setGitSyncServicePrincipal();
     ScmConnector scmConnector =
@@ -152,6 +152,10 @@ public class GitSyncConnectorHelper {
               gitSyncConfigDTO.getIdentifier(), accountId, gitSyncConfigDTO.getOrganizationIdentifier(),
               gitSyncConfigDTO.getProjectIdentifier()));
     }
+  }
+
+  public void decryptGitAccessDTO(GitAccessDTO gitAccessDTO) {
+    decryptGitApiAccessHelper.decryptGitAccessDTO(gitAccessDTO);
   }
 
   public void validateTheAPIAccessPresence(ScmConnector scmConnector) {
@@ -354,37 +358,42 @@ public class GitSyncConnectorHelper {
     });
   }
 
-  public void setUserGitCredsInConnector(String accountIdentifier, ScmConnector connectorDTO) {
-    Optional<String> userIdentifier = GitSyncUtils.getUserIdentifier();
-    if (userIdentifier.isPresent()) {
-      try {
-        SCMType scmType = SCMType.valueOf(connectorDTO.getConnectorType().name());
-        UserSourceCodeManagerDTO userSourceCodeManagerDTO =
-            userSourceCodeManagerService.getByType(accountIdentifier, userIdentifier.get(), scmType);
-        if (userSourceCodeManagerDTO != null) {
-          switch (connectorDTO.getConnectorType()) {
-            case GITHUB:
-              GithubSCMDTO githubSCMDTO = (GithubSCMDTO) userSourceCodeManagerDTO;
-              GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO;
-              githubConnectorDTO.setApiAccess(githubSCMDTO.getApiAccess());
-              break;
-            case GITLAB:
-              GitlabSCMDTO gitlabSCMDTO = (GitlabSCMDTO) userSourceCodeManagerDTO;
-              GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) connectorDTO;
-              gitlabConnectorDTO.setApiAccess(gitlabSCMDTO.getApiAccess());
-              break;
-            case AZURE_REPO:
-              AzureRepoSCMDTO azureRepoSCMDTO = (AzureRepoSCMDTO) userSourceCodeManagerDTO;
-              AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) connectorDTO;
-              azureRepoConnectorDTO.setApiAccess(azureRepoSCMDTO.getApiAccess());
-              break;
-            default:
-              log.info("OAUTH not supported for connector type: {}", connectorDTO.getConnectorType());
-          }
+  public void setUserGitCredsInConnectorIfPresent(String accountIdentifier, ScmConnector connectorDTO) {
+    try {
+      Optional<UserSourceCodeManagerDTO> userSourceCodeManagerDTO =
+          userSourceCodeManagerHelper.fetchUserSourceCodeManagerDTO(accountIdentifier, connectorDTO);
+      if (userSourceCodeManagerDTO.isPresent()) {
+        switch (connectorDTO.getConnectorType()) {
+          case GITHUB:
+            GithubSCMDTO githubSCMDTO = (GithubSCMDTO) userSourceCodeManagerDTO.get();
+            GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO;
+            githubConnectorDTO.setApiAccess(githubSCMDTO.getApiAccess());
+            break;
+          case GITLAB:
+            GitlabSCMDTO gitlabSCMDTO = (GitlabSCMDTO) userSourceCodeManagerDTO.get();
+            GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) connectorDTO;
+            gitlabConnectorDTO.setApiAccess(gitlabSCMDTO.getApiAccess());
+            break;
+          case AZURE_REPO:
+            AzureRepoSCMDTO azureRepoSCMDTO = (AzureRepoSCMDTO) userSourceCodeManagerDTO.get();
+            AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) connectorDTO;
+            azureRepoConnectorDTO.setApiAccess(azureRepoSCMDTO.getApiAccess());
+            break;
+          case BITBUCKET:
+            BitbucketSCMDTO bitbucketSCMDTO = (BitbucketSCMDTO) userSourceCodeManagerDTO.get();
+            BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) connectorDTO;
+            bitbucketConnectorDTO.setApiAccess(bitbucketSCMDTO.getApiAccess());
+            break;
+          default:
+            log.info("OAUTH not supported for connector type: {}", connectorDTO.getConnectorType());
         }
-      } catch (Exception ex) {
-        log.error("Invalid type of connector: {}", connectorDTO.getConnectorType(), ex);
       }
+    } catch (Exception ex) {
+      log.error("Invalid type of connector: {}", connectorDTO.getConnectorType(), ex);
     }
+  }
+
+  public Optional<UserDetailsResponseDTO> getUserDetails(String accountIdentifier, ScmConnector connectorDTO) {
+    return userSourceCodeManagerHelper.getUserDetails(accountIdentifier, connectorDTO);
   }
 }

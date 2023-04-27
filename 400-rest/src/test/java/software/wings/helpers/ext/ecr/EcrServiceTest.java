@@ -15,8 +15,7 @@ import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDeta
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.artifacts.beans.BuildDetailsInternal;
@@ -80,7 +79,7 @@ public class EcrServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldGetLabels() {
     when(awsApiHelperService.fetchLabels(eq(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig)), eq(IMAGE_NAME),
-             eq(Regions.US_EAST_1.getName()), anyListOf(String.class)))
+             eq(Regions.US_EAST_1.getName()), anyList()))
         .thenReturn(ImmutableMap.<String, String>builder().put("key1", "val1").build());
     assertThat(ecrService.getLabels(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), IMAGE_NAME,
                    Regions.US_EAST_1.getName(), Lists.newArrayList("tag1")))

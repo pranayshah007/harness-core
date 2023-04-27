@@ -8,15 +8,21 @@
 package io.harness.ccm.views.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.dao.RuleDAO;
+import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
 import io.harness.ccm.views.entities.Rule;
+import io.harness.ccm.views.entities.RuleExecution;
+import io.harness.ccm.views.helper.GovernanceJobDetailsAWS;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
+import io.harness.ccm.views.helper.RuleExecutionStatusType;
 import io.harness.ccm.views.helper.RuleList;
 import io.harness.ccm.views.service.GovernanceRuleService;
+import io.harness.ccm.views.service.RuleExecutionService;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
@@ -26,6 +32,7 @@ import io.harness.delegate.beans.connector.CcmConnectorFilter;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.faktory.FaktoryProducer;
 import io.harness.filter.FilterType;
 import io.harness.ng.beans.PageResponse;
 import io.harness.pms.yaml.YamlUtils;
@@ -34,9 +41,13 @@ import io.harness.yaml.validator.YamlSchemaValidator;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.reinert.jjschema.Nullable;
 import com.google.common.collect.Lists;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -59,6 +70,9 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
   @Inject private RuleDAO ruleDAO;
   @Inject private YamlSchemaValidator yamlSchemaValidator;
   @Inject private ConnectorResourceClient connectorResourceClient;
+  @Inject private RuleExecutionService ruleExecutionService;
+  @Nullable @Inject @Named("governanceConfig") io.harness.remote.GovernanceConfig governanceConfig;
+
   @Override
   public boolean save(Rule rules) {
     return ruleDAO.save(rules);
@@ -231,6 +245,70 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
     return responseDTO;
   }
 
+  @Override
+  public String enqueueAdhoc(String accountId, GovernanceJobEnqueueDTO governanceJobEnqueueDTO) {
+    // TO DO: Refactor and make this method smaller
+    // Step-1 Fetch from mongo
+    String ruleEnforcementUuid = governanceJobEnqueueDTO.getRuleEnforcementId();
+    String response = null;
+    // Call is from UI for adhoc evaluation. Directly enqueue in this case
+    // TO DO: See if UI adhoc requests can be sent to higher priority queue. This should also change in worker.
+    log.info("enqueuing for ad-hoc request");
+    if (isEmpty(accountId)) {
+      throw new InvalidRequestException("Missing accountId");
+    }
+    List<Rule> rulesList = list(accountId, Arrays.asList(governanceJobEnqueueDTO.getRuleId()));
+    if (rulesList == null) {
+      log.error("For rule id {}: no rules exists in mongo. Nothing to enqueue", governanceJobEnqueueDTO.getRuleId());
+      return null;
+    }
+    try {
+      GovernanceJobDetailsAWS governanceJobDetailsAWS = GovernanceJobDetailsAWS.builder()
+                                                            .accountId(accountId)
+                                                            .awsAccountId(governanceJobEnqueueDTO.getTargetAccountId())
+                                                            .externalId(governanceJobEnqueueDTO.getExternalId())
+                                                            .roleArn(governanceJobEnqueueDTO.getRoleArn())
+                                                            .isDryRun(governanceJobEnqueueDTO.getIsDryRun())
+                                                            .ruleId(governanceJobEnqueueDTO.getRuleId())
+                                                            .region(governanceJobEnqueueDTO.getTargetRegion())
+                                                            .ruleEnforcementId("") // This is adhoc run
+                                                            .policy(governanceJobEnqueueDTO.getPolicy())
+                                                            .isOOTB(governanceJobEnqueueDTO.getIsOOTB())
+                                                            .build();
+      Gson gson = new GsonBuilder().create();
+      String json = gson.toJson(governanceJobDetailsAWS);
+      log.info("Enqueuing job in Faktory {}", json);
+      // jobType, jobQueue, json
+      String jid = FaktoryProducer.push(
+          governanceConfig.getAwsFaktoryJobType(), governanceConfig.getAwsFaktoryQueueName(), json);
+      log.info("Pushed job in Faktory: {}", jid);
+      // Make a record in Mongo
+      RuleExecution ruleExecution = RuleExecution.builder()
+                                        .accountId(accountId)
+                                        .jobId(jid)
+                                        .cloudProvider(governanceJobEnqueueDTO.getRuleCloudProviderType())
+                                        .executionLogPath("") // Updated by worker when execution finishes
+                                        .isDryRun(governanceJobEnqueueDTO.getIsDryRun())
+                                        .ruleEnforcementIdentifier(ruleEnforcementUuid)
+                                        .executionCompletedAt(null) // Updated by worker when execution finishes
+                                        .ruleIdentifier(governanceJobEnqueueDTO.getRuleId())
+                                        .targetAccount(governanceJobEnqueueDTO.getTargetAccountId())
+                                        .targetRegions(Arrays.asList(governanceJobEnqueueDTO.getTargetRegion()))
+                                        .executionLogBucketType("")
+                                        .executionType(governanceJobEnqueueDTO.getExecutionType())
+                                        .resourceCount(0)
+                                        .ruleName(rulesList.get(0).getName())
+                                        .OOTB(rulesList.get(0).getIsOOTB())
+                                        .executionStatus(RuleExecutionStatusType.ENQUEUED)
+                                        .build();
+      response = ruleExecutionService.save(ruleExecution);
+    } catch (Exception e) {
+      log.warn("Exception enqueueing job for ruleEnforcementUuid: {} for targetAccount: {} for targetRegions: {}, {}",
+          ruleEnforcementUuid, governanceJobEnqueueDTO.getTargetAccountId(), governanceJobEnqueueDTO.getTargetRegion(),
+          e);
+    }
+    return response;
+  }
   @Value
   private static class CacheKey {
     String accountId;

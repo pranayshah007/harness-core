@@ -148,6 +148,18 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   @Override
+  public PlanExecution getWithFieldsIncluded(String planExecutionId, Set<String> fieldsToInclude) {
+    Query query = new Query(Criteria.where(PlanExecutionKeys.uuid).is(planExecutionId));
+    for (String field : fieldsToInclude) {
+      query.fields().include(field);
+    }
+    PlanExecution planExecution = mongoTemplate.findOne(query, PlanExecution.class);
+    if (planExecution == null) {
+      throw new EntityNotFoundException("Plan Execution not found for id: " + planExecutionId);
+    }
+    return planExecution;
+  }
+  @Override
   public PlanExecution getPlanExecutionMetadata(String planExecutionId) {
     PlanExecution planExecution = planExecutionRepository.getPlanExecutionWithProjections(planExecutionId,
         Lists.newArrayList(PlanExecutionKeys.metadata, PlanExecutionKeys.governanceMetadata,

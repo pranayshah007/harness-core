@@ -294,6 +294,7 @@ import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.Duration;
 import javax.validation.constraints.NotNull;
 import javax.validation.executable.ValidateOnExecution;
+import javax.ws.rs.core.UriInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -933,6 +934,15 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public void addUserToAccount(String userId, String accountId) {
+    UserSource userSource = MANUAL;
+    User user = get(userId);
+    if (user != null && userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, accountId, NG)) {
+      userSource = user.getUserAccountLevelDataMap().get(accountId).getSourceOfProvisioning().get(NG);
+    }
+    addUserToAccount(userId, accountId, userSource);
+  }
+  @Override
+  public void addUserToAccount(String userId, String accountId, UserSource userSource) {
     Account account = accountService.get(accountId);
     if (account == null) {
       throw new InvalidRequestException("No account exists with id " + accountId);
@@ -941,18 +951,28 @@ public class UserServiceImpl implements UserService {
     if (user == null) {
       throw new InvalidRequestException("No user exists with id " + userId);
     }
-    if (user.getAccountIds().contains(account.getUuid())) {
-      return;
-    }
-    List<Account> newAccounts = user.getAccounts();
-    newAccounts.add(account);
+    boolean shouldUpdateUserAccountLevelData = false;
     UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
-    updateOperations.set(UserKeys.accounts, newAccounts);
-    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
-        && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
-      userServiceHelper.populateAccountToUserMapping(user, accountId, NG, MANUAL);
+    if (user.getAccountIds().contains(account.getUuid())) {
+      if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
+          && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
+        shouldUpdateUserAccountLevelData = true;
+      } else {
+        return;
+      }
+    }
+
+    List<Account> newAccounts = user.getAccounts();
+    if (!shouldUpdateUserAccountLevelData) {
+      newAccounts.add(account);
+      updateOperations.set(UserKeys.accounts, newAccounts);
+    }
+
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      userServiceHelper.populateAccountToUserMapping(user, accountId, NG, userSource);
       updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
     }
+
     updateUser(user.getUuid(), updateOperations);
   }
 
@@ -2000,7 +2020,7 @@ public class UserServiceImpl implements UserService {
     if (userInvite == null) {
       throw new UnauthorizedException(EXC_MSG_USER_INVITE_INVALID, USER);
     }
-    return completeTrialSignupAndSignIn(userInvite);
+    return completeTrialSignupAndSignIn(userInvite, false);
   }
 
   @Override
@@ -2021,7 +2041,7 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public User completeTrialSignupAndSignIn(UserInvite userInvite) {
+  public User completeTrialSignupAndSignIn(UserInvite userInvite, boolean shouldCreateSampleApp) {
     String accountName = accountService.suggestAccountName(userInvite.getAccountName());
     String companyName = userInvite.getCompanyName();
 
@@ -2034,7 +2054,7 @@ public class UserServiceImpl implements UserService {
                     .utmInfo(userInvite.getUtmInfo())
                     .build();
 
-    completeSignup(user, userInvite, getTrialLicense(), false);
+    completeSignup(user, userInvite, getTrialLicense(), shouldCreateSampleApp);
 
     return authenticationManager.defaultLoginUsingPasswordHash(userInvite.getEmail(), userInvite.getPasswordHash());
   }
@@ -2467,6 +2487,15 @@ public class UserServiceImpl implements UserService {
     } catch (JWTDecodeException | SignatureVerificationException e) {
       throw new InvalidCredentialsException("Invalid JWTToken received, failed to decode the token", USER);
     }
+  }
+
+  @Override
+  public List<UserInvite> getInvitesFromAccountIdAndUserGroupId(String accountId, String userGroupId) {
+    Query<UserInvite> userInviteQuery = wingsPersistence.createQuery(UserInvite.class)
+                                            .filter(ACCOUNT_ID_KEY, accountId)
+                                            .field(UserInviteKeys.userGroups)
+                                            .hasThisOne(userGroupId);
+    return userInviteQuery.asList();
   }
 
   @Override
@@ -3044,14 +3073,12 @@ public class UserServiceImpl implements UserService {
     if (userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
       if (CG.equals(generation)) {
         removeAllUserGroupsFromUser(user, accountId);
-        updateUserAccountLevelData(accountId, userId, generation, user);
+        removeUserFromThisGenInAccount(accountId, userId, generation, user);
         if (!userServiceHelper.isUserProvisionedInThisAccount(user, accountId)) {
           delete(accountId, userId);
         }
-      } else if (NG.equals(generation) && isUserPresent(userId)
-          && userServiceHelper.isUserActiveInNG(user, accountId)) {
-        userServiceHelper.deleteUserFromNG(userId, accountId, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
-        updateUserAccountLevelData(accountId, userId, generation, user);
+      } else if (NG.equals(generation) && isUserPresent(userId)) {
+        removeUserFromThisGenInAccount(accountId, userId, generation, user);
         if (!userServiceHelper.isUserProvisionedInThisAccount(user, accountId)) {
           delete(accountId, userId);
         }
@@ -3063,7 +3090,7 @@ public class UserServiceImpl implements UserService {
     }
   }
 
-  private void updateUserAccountLevelData(String accountId, String userId, Generation generation, User user) {
+  private void removeUserFromThisGenInAccount(String accountId, String userId, Generation generation, User user) {
     UpdateOperations<User> updateOp = wingsPersistence.createUpdateOperations(User.class);
     userServiceHelper.removeUserProvisioningFromGenerationInAccount(accountId, user, updateOp, generation);
     updateUser(userId, updateOp);
@@ -3084,7 +3111,7 @@ public class UserServiceImpl implements UserService {
         log.warn("User is removed from all user groups in CG");
         removeAllUserGroupsFromUser(user, accountId);
         if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
-          updateUserAccountLevelData(accountId, userId, CG, user);
+          removeUserFromThisGenInAccount(accountId, userId, CG, user);
         }
         log.error(
             "User {} cannot be deleted in CG, since it is active on NG in account {}", user.getEmail(), accountId);
@@ -4058,14 +4085,17 @@ public class UserServiceImpl implements UserService {
   }
 
   private void applySortFilter(PageRequest pageRequest, Query<User> query) {
-    List<String> fieldToSort = pageRequest.getUriInfo().getQueryParameters(true).get("sort[0][field]");
-    if (fieldToSort == null) {
-      return;
-    }
-    if (pageRequest.getUriInfo().getQueryParameters(true).get("sort[0][direction]").get(0).equals("ASC")) {
-      query.order(Sort.ascending(fieldToSort.get(0)));
-    } else {
-      query.order(Sort.descending(fieldToSort.get(0)));
+    UriInfo uriInfo = pageRequest.getUriInfo();
+    if (null != uriInfo && isNotEmpty(uriInfo.getQueryParameters(true))) {
+      List<String> fieldToSort = uriInfo.getQueryParameters(true).get("sort[0][field]");
+      if (fieldToSort == null) {
+        return;
+      }
+      if (uriInfo.getQueryParameters(true).get("sort[0][direction]").get(0).equals("ASC")) {
+        query.order(Sort.ascending(fieldToSort.get(0)));
+      } else {
+        query.order(Sort.descending(fieldToSort.get(0)));
+      }
     }
   }
 
@@ -4427,5 +4457,17 @@ public class UserServiceImpl implements UserService {
         true, null, null);
     List<UserGroup> userGroupList = pageResponse.getResponse();
     removeUserFromUserGroups(user, userGroupList, false);
+  }
+
+  @Override
+  public void updateUserAccountLevelDataForThisGen(
+      String accountId, User user, Generation generation, UserSource userSource) {
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
+        && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
+      userServiceHelper.populateAccountToUserMapping(user, accountId, generation, userSource);
+      UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
+      updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
+      updateUser(user.getUuid(), updateOperations);
+    }
   }
 }

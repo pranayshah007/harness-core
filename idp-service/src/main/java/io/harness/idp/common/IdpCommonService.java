@@ -15,8 +15,11 @@ import io.harness.client.NgConnectorManagerClient;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.WingsException;
 import io.harness.security.SecurityContextBuilder;
+import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,5 +37,12 @@ public class IdpCommonService {
       log.error(errorMessage);
       throw new AccessDeniedException(errorMessage, WingsException.USER);
     }
+  }
+
+  public <T> Response buildPageResponse(int pageIndex, int pageLimit, long totalElements, T response) {
+    ResponseBuilder responseBuilder = Response.ok();
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, totalElements, pageIndex, pageLimit);
+    return responseBuilderWithLinks.entity(response).build();
   }
 }

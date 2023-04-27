@@ -15,8 +15,8 @@ import static software.wings.utils.WingsTestConstants.INFRA_MAPPING_ID;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.beans.DelegateTask;
@@ -70,7 +70,7 @@ public class AzureWebAppInstanceSyncPerpetualTaskClientTest extends WingsBaseTes
   @Category(UnitTests.class)
   public void testGetTaskParams() {
     AzureWebAppInstanceSyncPerpetualProtoTaskParams taskParams =
-        (AzureWebAppInstanceSyncPerpetualProtoTaskParams) client.getTaskParams(getPerpetualTaskClientContext());
+        (AzureWebAppInstanceSyncPerpetualProtoTaskParams) client.getTaskParams(getPerpetualTaskClientContext(), true);
     assertThat(taskParams).isNotNull();
     assertThat(taskParams.getAppName()).isEqualTo("appName");
     assertThat(taskParams.getSlotName()).isEqualTo("slotName");

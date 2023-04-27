@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.scm.gitlab;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.FilePathUtils.removeStartingAndEndingSlash;
 
@@ -140,12 +141,13 @@ public class GitlabConnectorDTO
 
   @Override
   public String getFileUrl(String branchName, String filePath, String commitId, GitRepositoryDTO gitRepositoryDTO) {
+    String pathIdentifier = isEmpty(branchName) ? commitId : branchName;
     final String FILE_URL_FORMAT = "%s/-/blob/%s/%s";
-    ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
+    ScmConnectorHelper.validateGetFileUrlParams(pathIdentifier, filePath);
     String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(gitRepositoryDTO));
     String httpRepoUrl = GitClientHelper.getCompleteHTTPUrlForGithub(repoUrl);
     filePath = removeStartingAndEndingSlash(filePath);
-    return String.format(FILE_URL_FORMAT, httpRepoUrl, branchName, filePath);
+    return String.format(FILE_URL_FORMAT, httpRepoUrl, pathIdentifier, filePath);
   }
 
   @Override

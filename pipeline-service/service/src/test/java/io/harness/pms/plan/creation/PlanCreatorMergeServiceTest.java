@@ -33,11 +33,11 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.serializer.kryo.NGCommonsKryoRegistrar;
 import io.harness.serializer.kryo.YamlKryoRegistrar;
 import io.harness.utils.PmsFeatureFlagService;
+import io.harness.yaml.clone.Ref;
+import io.harness.yaml.clone.RefType;
+import io.harness.yaml.options.Options;
 import io.harness.yaml.registry.Registry;
 import io.harness.yaml.registry.RegistryCredential;
-import io.harness.yaml.repository.Reference;
-import io.harness.yaml.repository.ReferenceType;
-import io.harness.yaml.repository.Repository;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -138,17 +138,16 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
     assertThat(planCreationContextValue.getGlobalDependency()).isNotNull();
     assertThat(planCreationContextValue.getIsExecutionInputEnabled()).isFalse();
     Dependency globalDependency = planCreationContextValue.getGlobalDependency();
-    assertThat(globalDependency.getMetadataMap()).containsKey(YAMLFieldNameConstants.REPOSITORY);
-    byte[] bytes = globalDependency.getMetadataMap().get(YAMLFieldNameConstants.REPOSITORY).toByteArray();
-    Repository repository = (Repository) kryoSerializer.asObject(bytes);
-    assertThat(repository).isNotNull();
-    assertThat(repository.getConnector().fetchFinalValue()).isEqualTo("connector");
-    assertThat(repository.getName().fetchFinalValue()).isEqualTo("harness-core");
-    assertThat(repository.getReference().fetchFinalValue()).isNull();
+    assertThat(globalDependency.getMetadataMap()).containsKey(YAMLFieldNameConstants.OPTIONS);
+    byte[] bytes = globalDependency.getMetadataMap().get(YAMLFieldNameConstants.OPTIONS).toByteArray();
+    Options options = (Options) kryoSerializer.asObject(bytes);
+    assertThat(options).isNotNull();
+    assertThat(options.getRepository()).isNotNull();
+    assertThat(options.getRepository().getConnector().fetchFinalValue()).isEqualTo("connector");
+    assertThat(options.getRepository().getName().fetchFinalValue()).isEqualTo("harness-core");
 
-    assertThat(globalDependency.getMetadataMap()).containsKey(YAMLFieldNameConstants.REGISTRY);
-    bytes = globalDependency.getMetadataMap().get(YAMLFieldNameConstants.REGISTRY).toByteArray();
-    Registry registry = (Registry) kryoSerializer.asObject(bytes);
+    assertThat(options.getRegistry()).isNotNull();
+    Registry registry = options.getRegistry();
     assertThat(registry).isNotNull();
     List<RegistryCredential> credentials = registry.getCredentials();
     assertThat(credentials).hasSize(4);
@@ -187,47 +186,18 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
     assertThat(planCreationContextValue.getGlobalDependency()).isNotNull();
     assertThat(planCreationContextValue.getIsExecutionInputEnabled()).isFalse();
     Dependency globalDependency = planCreationContextValue.getGlobalDependency();
-    assertThat(globalDependency.getMetadataMap()).containsKey(YAMLFieldNameConstants.REPOSITORY);
-    byte[] bytes = globalDependency.getMetadataMap().get(YAMLFieldNameConstants.REPOSITORY).toByteArray();
-    Repository repository = (Repository) kryoSerializer.asObject(bytes);
-    assertThat(repository).isNotNull();
-    assertThat(repository.getConnector().fetchFinalValue()).isEqualTo("connector");
-    assertThat(repository.getName().fetchFinalValue()).isEqualTo("harness-core");
-    assertThat(repository.getReference().fetchFinalValue()).isNotNull();
-    Reference reference = repository.getReference().getValue();
-    assertThat(reference.getValue()).isEqualTo("v1");
-    assertThat(reference.getType()).isEqualTo(ReferenceType.TAG);
-  }
-
-  @Test
-  @Owner(developers = RAGHAV_GUPTA)
-  @Category(UnitTests.class)
-  public void testCreateInitialPlanCreationContextWithInputsPayloadForV1Yaml() {
-    String inputsPayload = readFile("inputs-payload.json");
-    ExecutionMetadata executionMetadataLocal =
-        executionMetadata.toBuilder().setHarnessVersion(PipelineVersion.V1).build();
-    PlanExecutionMetadata planExecutionMetadata =
-        PlanExecutionMetadata.builder().processedYaml(pipelineYamlV1).inputSetYaml(inputsPayload).build();
-    PlanCreatorMergeService planCreatorMergeService = new PlanCreatorMergeService(
-        null, null, null, null, Executors.newSingleThreadExecutor(), 20, pmsFeatureFlagService, kryoSerializer);
-    Map<String, PlanCreationContextValue> initialPlanCreationContext =
-        planCreatorMergeService.createInitialPlanCreationContext(
-            accountId, orgId, projId, executionMetadataLocal, planExecutionMetadata);
-    assertThat(initialPlanCreationContext).containsKey("metadata");
-    PlanCreationContextValue planCreationContextValue = initialPlanCreationContext.get("metadata");
-    assertThat(planCreationContextValue.getGlobalDependency()).isNotNull();
-    assertThat(planCreationContextValue.getIsExecutionInputEnabled()).isFalse();
-    Dependency globalDependency = planCreationContextValue.getGlobalDependency();
-    assertThat(globalDependency.getMetadataMap()).containsKey(YAMLFieldNameConstants.REPOSITORY);
-    byte[] bytes = globalDependency.getMetadataMap().get(YAMLFieldNameConstants.REPOSITORY).toByteArray();
-    Repository repository = (Repository) kryoSerializer.asObject(bytes);
-    assertThat(repository).isNotNull();
-    assertThat(repository.getConnector().fetchFinalValue()).isEqualTo("connector");
-    assertThat(repository.getName().fetchFinalValue()).isEqualTo("harness-core");
-    assertThat(repository.getReference().fetchFinalValue()).isNotNull();
-    Reference reference = repository.getReference().getValue();
-    assertThat(reference.getValue()).isEqualTo("main");
-    assertThat(reference.getType()).isEqualTo(ReferenceType.BRANCH);
+    assertThat(globalDependency.getMetadataMap()).containsKey(YAMLFieldNameConstants.OPTIONS);
+    byte[] bytes = globalDependency.getMetadataMap().get(YAMLFieldNameConstants.OPTIONS).toByteArray();
+    Options options = (Options) kryoSerializer.asObject(bytes);
+    assertThat(options).isNotNull();
+    assertThat(options.getRepository()).isNotNull();
+    assertThat(options.getRepository().getConnector().fetchFinalValue()).isEqualTo("connector");
+    assertThat(options.getRepository().getName().fetchFinalValue()).isEqualTo("harness-core");
+    assertThat(options.getClone()).isNotNull();
+    assertThat(options.getClone().getRef().fetchFinalValue()).isNotNull();
+    Ref ref = options.getClone().getRef().getValue();
+    assertThat(ref.getName()).isEqualTo("v1");
+    assertThat(ref.getType()).isEqualTo(RefType.TAG);
   }
 
   private class NoOpPmsFeatureFlagService implements PmsFeatureFlagService {

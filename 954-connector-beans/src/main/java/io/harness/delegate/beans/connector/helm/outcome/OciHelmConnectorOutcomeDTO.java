@@ -7,15 +7,10 @@
 
 package io.harness.delegate.beans.connector.helm.outcome;
 
-import static io.harness.delegate.beans.connector.helm.OciHelmAuthType.ANONYMOUS;
-
-import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -39,12 +34,4 @@ public class OciHelmConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implem
   @NotNull @NotBlank String helmRepoUrl;
   @Valid OciHelmAuthenticationOutcomeDTO auth;
   Set<String> delegateSelectors;
-
-  @Override
-  public List<DecryptableEntity> getDecryptableEntities() {
-    if (auth.getType() == ANONYMOUS) {
-      return Collections.emptyList();
-    }
-    return Collections.singletonList(auth.getSpec());
-  }
 }

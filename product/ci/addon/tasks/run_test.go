@@ -8,7 +8,6 @@ package tasks
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 	"sync"
@@ -324,7 +323,7 @@ func TestExecuteSuccessWithOutput(t *testing.T) {
 
 	var buf bytes.Buffer
 	numRetries := int32(1)
-	filePath := "/tmp/idoutput.txt"
+	filePath := "/tmp/step1-output.env"
 	envVar := "abc"
 	envVal := "xyz"
 
@@ -338,11 +337,10 @@ func TestExecuteSuccessWithOutput(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	f.WriteString("abc xyz\n")
-	f.WriteString("abc1")
+	f.WriteString("abc=xyz\n")
+	f.WriteString("abc1=")
 	f.Close()
 
-	f1, err := os.Open(filePath)
 	e := runTask{
 		id:                "step1",
 		command:           "ls",
@@ -365,7 +363,6 @@ func TestExecuteSuccessWithOutput(t *testing.T) {
 	cmd.EXPECT().ProcessState().Return(pstate)
 	pstate.EXPECT().MaxRss().Return(int64(100), nil)
 	cmd.EXPECT().Wait().Return(nil)
-	fs.EXPECT().Open(gomock.Any()).Return(f1, nil)
 
 	o, retries, err := e.Run(ctx)
 	assert.Nil(t, err)
@@ -379,7 +376,7 @@ func TestExecuteErrorWithOutput(t *testing.T) {
 
 	var buf bytes.Buffer
 	numRetries := int32(1)
-	filePath := "/tmp/idoutput.txt"
+	filePath := "/tmp/step1-output.env"
 
 	fs := filesystem.NewMockFileSystem(ctrl)
 	cmdFactory := mexec.NewMockCmdContextFactory(ctrl)
@@ -391,10 +388,10 @@ func TestExecuteErrorWithOutput(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	f.WriteString("abc xyz\n")
-	f.WriteString("abc1")
+	f.WriteString("abc=xyz\n")
+	f.WriteString("abc1=")
 	f.Close()
-
+	os.Remove(filePath)
 	e := runTask{
 		id:                "step1",
 		command:           "ls",
@@ -417,8 +414,6 @@ func TestExecuteErrorWithOutput(t *testing.T) {
 	cmd.EXPECT().ProcessState().Return(pstate)
 	pstate.EXPECT().MaxRss().Return(int64(100), nil)
 	cmd.EXPECT().Wait().Return(nil)
-
-	fs.EXPECT().Open(gomock.Any()).Return(nil, fmt.Errorf("Error while opening file"))
 
 	o, retries, err := e.Run(ctx)
 	assert.NotNil(t, err)

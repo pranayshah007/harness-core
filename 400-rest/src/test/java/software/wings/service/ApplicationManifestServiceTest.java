@@ -32,9 +32,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
@@ -47,7 +47,6 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.manifest.CustomSourceConfig;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.testlib.RealMongo;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.DeploymentType;
@@ -203,7 +202,7 @@ public class ApplicationManifestServiceTest extends WingsBaseTest {
   @Test(expected = WingsException.class)
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void testDuplicateManifestFileNames() {
     when(serviceResourceService.exist(anyString(), anyString())).thenReturn(true);
 
@@ -690,7 +689,7 @@ public class ApplicationManifestServiceTest extends WingsBaseTest {
   @Test(expected = WingsException.class)
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void testDuplicateManifestFileName() {
     persistence.ensureIndexForTesting(ManifestFile.class);
     upsertManifestFile("abc/def", "abc/def");

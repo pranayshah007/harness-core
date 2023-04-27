@@ -25,6 +25,7 @@ import io.harness.exception.DelegateNotAvailableException;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
+import io.harness.gitsync.common.dtos.gitAccess.GitAccessDTO;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -61,6 +62,19 @@ public class DecryptGitApiAccessHelper {
         getEncryptedDataDetailsForAPIAccess(apiAccessDecryptableEntity, baseNGAccess);
     ngEncryptorService.decryptEncryptedDetails(apiAccessDecryptableEntity, encryptedDataDetailsForAPIAccess, accountId);
     return scmConnector;
+  }
+
+  public void decryptGitAccessDTO(GitAccessDTO gitAccessDTO) {
+    final BaseNGAccess baseNGAccess = BaseNGAccess.builder()
+                                          .accountIdentifier(gitAccessDTO.getTokenScope().getAccountIdentifier())
+                                          .orgIdentifier(gitAccessDTO.getTokenScope().getOrgIdentifier())
+                                          .projectIdentifier(gitAccessDTO.getTokenScope().getProjectIdentifier())
+                                          .build();
+
+    List<EncryptedDataDetail> encryptedDataDetailsForAPIAccess =
+        getEncryptedDataDetailsForAPIAccess(gitAccessDTO, baseNGAccess);
+    ngEncryptorService.decryptEncryptedDetails(
+        gitAccessDTO, encryptedDataDetailsForAPIAccess, gitAccessDTO.getTokenScope().getAccountIdentifier());
   }
 
   private ScmConnector executeDecryptionTask(ScmConnector scmConnector, String accountIdentifier, String orgIdentifier,

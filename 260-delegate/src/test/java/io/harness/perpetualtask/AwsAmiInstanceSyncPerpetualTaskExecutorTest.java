@@ -11,10 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -38,6 +38,7 @@ import software.wings.service.intfc.aws.delegate.AwsAsgHelperServiceDelegate;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -52,7 +53,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import retrofit2.Call;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -65,13 +66,13 @@ public class AwsAmiInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBas
   private ArgumentCaptor<AwsAsgListInstancesResponse> captor =
       ArgumentCaptor.forClass(AwsAsgListInstancesResponse.class);
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @InjectMocks private AwsAmiInstanceSyncPerpetualTaskExecutor executor;
 
   @Before
   public void setup() {
-    on(executor).set("kryoSerializer", kryoSerializer);
+    on(executor).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
   }
 
   @Test
@@ -84,14 +85,15 @@ public class AwsAmiInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBas
         .listAutoScalingGroupInstances(any(AwsConfig.class), anyList(), eq("us-east-1"), eq("asg-1"), eq(true));
     doReturn(call)
         .when(delegateAgentManagerClient)
-        .publishInstanceSyncResult(anyString(), anyString(), any(DelegateResponseData.class));
+        .publishInstanceSyncResultV2(anyString(), anyString(), any(DelegateResponseData.class));
     doReturn(retrofit2.Response.success("success")).when(call).execute();
 
     PerpetualTaskResponse perpetualTaskResponse;
     perpetualTaskResponse =
         executor.runOnce(PerpetualTaskId.newBuilder().setId("id").build(), getPerpetualTaskParams(), Instant.now());
 
-    verify(delegateAgentManagerClient, times(1)).publishInstanceSyncResult(eq("id"), eq("accountId"), captor.capture());
+    verify(delegateAgentManagerClient, times(1))
+        .publishInstanceSyncResultV2(eq("id"), eq("accountId"), captor.capture());
 
     final AwsAsgListInstancesResponse awsResponse = captor.getValue();
 
@@ -124,14 +126,15 @@ public class AwsAmiInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBas
         .listAutoScalingGroupInstances(any(AwsConfig.class), anyList(), eq("us-east-1"), eq("asg-1"), eq(true));
     doReturn(call)
         .when(delegateAgentManagerClient)
-        .publishInstanceSyncResult(anyString(), anyString(), any(DelegateResponseData.class));
+        .publishInstanceSyncResultV2(anyString(), anyString(), any(DelegateResponseData.class));
     doReturn(retrofit2.Response.success("success")).when(call).execute();
 
     PerpetualTaskResponse perpetualTaskResponse;
     perpetualTaskResponse =
         executor.runOnce(PerpetualTaskId.newBuilder().setId("id").build(), getPerpetualTaskParams(), Instant.now());
 
-    verify(delegateAgentManagerClient, times(1)).publishInstanceSyncResult(eq("id"), eq("accountId"), captor.capture());
+    verify(delegateAgentManagerClient, times(1))
+        .publishInstanceSyncResultV2(eq("id"), eq("accountId"), captor.capture());
 
     final AwsAsgListInstancesResponse awsResponse = captor.getValue();
 
@@ -164,8 +167,8 @@ public class AwsAmiInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBas
 
   private PerpetualTaskExecutionParams getPerpetualTaskParams() {
     ByteString configBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(AwsConfig.builder().accountId("accountId").build()));
-    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
+        ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(AwsConfig.builder().accountId("accountId").build()));
+    ByteString encryptionDetailsBytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(new ArrayList<>()));
 
     AwsAmiInstanceSyncPerpetualTaskParams params = AwsAmiInstanceSyncPerpetualTaskParams.newBuilder()
                                                        .setAwsConfig(configBytes)
@@ -173,6 +176,9 @@ public class AwsAmiInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBas
                                                        .setRegion("us-east-1")
                                                        .setAsgName("asg-1")
                                                        .build();
-    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(params)).build();
+    return PerpetualTaskExecutionParams.newBuilder()
+        .setCustomizedParams(Any.pack(params))
+        .setReferenceFalseKryoSerializer(true)
+        .build();
   }
 }

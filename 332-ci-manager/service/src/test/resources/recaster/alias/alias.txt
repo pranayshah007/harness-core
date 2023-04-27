@@ -262,6 +262,7 @@ io.harness.beans.steps.stepinfo.GCRStepInfo
 io.harness.beans.yaml.extended.infrastrucutre.UseFromStageInfraYaml
 io.harness.ci.beans.entities.CITelemetrySentStatus
 io.harness.beans.steps.stepinfo.UploadToGCSStepInfo
+io.harness.beans.sweepingoutputs.TaskSelectorSweepingOutput
 io.harness.beans.steps.stepinfo.GitCloneStepInfo
 io.harness.beans.build.BuildUpdateType
 io.harness.beans.execution.PublishedFileArtifact
@@ -308,7 +309,6 @@ io.harness.beans.steps.stepinfo.ActionStepInfo
 io.harness.beans.steps.nodes.ActionStepNode
 io.harness.beans.steps.stepinfo.BitriseStepInfo
 io.harness.beans.steps.nodes.BitriseStepNode
-io.harness.beans.Clone
 io.harness.beans.stages.V1.IntegrationStageNodeV1
 io.harness.cimanager.stages.V1.IntegrationStageConfigImplV1
 io.harness.beans.steps.nodes.V1.ScriptStepNode
@@ -349,3 +349,11 @@ io.harness.advisers.pipelinerollback.OnFailPipelineRollbackOutput
 io.harness.ci.config.ContainerlessPluginConfig
 io.harness.ci.config.VmContainerlessStepConfig
 io.harness.pms.sdk.core.steps.io.EmptyStepParameters
+io.harness.steps.plugin.ContainerStepOutcome
+io.harness.ci.config.CIDockerLayerCachingConfig
+io.harness.steps.plugin.infrastructure.ContainerInfraYamlSpec
+io.harness.steps.plugin.infrastructure.volumes.EmptyDirYaml
+io.harness.steps.plugin.infrastructure.volumes.PersistentVolumeClaimYaml
+io.harness.steps.container.execution.ContainerExecutionConfig
+io.harness.steps.plugin.infrastructure.ContainerK8sInfra
+io.harness.steps.plugin.infrastructure.volumes.HostPathYaml

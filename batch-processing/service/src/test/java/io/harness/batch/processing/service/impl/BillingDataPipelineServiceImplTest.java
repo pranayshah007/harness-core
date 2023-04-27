@@ -13,11 +13,12 @@ import static io.harness.rule.OwnerRule.HANTANG;
 import static io.harness.rule.OwnerRule.ROHIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.isA;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,6 +38,7 @@ import com.google.cloud.bigquery.datatransfer.v1.DataTransferServiceClient;
 import com.google.cloud.bigquery.datatransfer.v1.TransferConfig;
 import java.io.IOException;
 import java.util.HashMap;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,13 +46,11 @@ import org.junit.runner.RunWith;
 import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(GcpServiceAccountServiceImpl.class)
+@RunWith(MockitoJUnitRunner.class)
 public class BillingDataPipelineServiceImplTest extends CategoryTest {
   private static final String settingId = "settingId";
   private static final String accountId = "accountId";
@@ -70,6 +70,7 @@ public class BillingDataPipelineServiceImplTest extends CategoryTest {
   @Mock private static DataTransferServiceClient dataTransferServiceClient;
   @Mock private BatchMainConfig mainConfig;
   @Mock private BillingDataPipelineRecordDao billingDataPipelineRecordDao;
+  private MockedStatic<GcpServiceAccountServiceImpl> aStatic;
   @InjectMocks
   @Spy
   private BillingDataPipelineServiceImpl billingDataPipelineService =
@@ -77,6 +78,7 @@ public class BillingDataPipelineServiceImplTest extends CategoryTest {
 
   @Before
   public void setup() throws IOException {
+    aStatic = mockStatic(GcpServiceAccountServiceImpl.class);
     BillingDataPipelineConfig billingDataPipelineConfig = BillingDataPipelineConfig.builder()
                                                               .gcpProjectId(gcpProjectId)
                                                               .gcsBasePath(gcsBasePath)
@@ -85,7 +87,6 @@ public class BillingDataPipelineServiceImplTest extends CategoryTest {
     when(mainConfig.getBillingDataPipelineConfig()).thenReturn(billingDataPipelineConfig);
     when(billingDataPipelineRecordDao.getByAccountId(accountId)).thenReturn(null);
     mockCredential = mock(ServiceAccountCredentials.class);
-    PowerMockito.mockStatic(GcpServiceAccountServiceImpl.class);
     BDDMockito.given(GcpServiceAccountServiceImpl.getCredentials(anyString())).willReturn(mockCredential);
     BDDMockito.given(GcpServiceAccountServiceImpl.getImpersonatedCredentials(any(), any())).willReturn(mockCredential);
 
@@ -95,6 +96,11 @@ public class BillingDataPipelineServiceImplTest extends CategoryTest {
     doReturn(TransferConfig.newBuilder().setName(transferConfigName).build())
         .when(billingDataPipelineService)
         .executeDataTransferJobCreate(any(), any());
+  }
+
+  @After
+  public void cleanup() {
+    aStatic.close();
   }
 
   @Test

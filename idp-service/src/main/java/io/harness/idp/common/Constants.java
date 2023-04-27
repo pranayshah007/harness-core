@@ -19,8 +19,9 @@ public class Constants {
   public static final String IDP_PREFIX = "idp_";
   public static final String IDP_RESOURCE_TYPE = "IDP_SETTINGS";
   public static final String IDP_PERMISSION = "idp_idpsettings_manage";
-  public static final List<String> pluginIds = List.of(
-      "github-pull-requests-board", "harness-ci-cd", "kafka", "lighthouse", "pager-duty", "snyk-security", "todo");
+  public static final List<String> pluginIds =
+      List.of("circleci", "github-actions", "github-insights", "github-pull-requests-board", "gitlab", "harness-ci-cd",
+          "harness-feature-flags", "jenkins", "lighthouse", "pager-duty", "snyk-security", "todo");
   public static final String GITHUB_TOKEN = "HARNESS_GITHUB_TOKEN";
   public static final String GITHUB_APP_ID = "HARNESS_GITHUB_APP_APPLICATION_ID";
   public static final String GITHUB_APP_PRIVATE_KEY_REF = "HARNESS_GITHUB_APP_PRIVATE_KEY_REF";
@@ -29,4 +30,5 @@ public class Constants {
   public static final String AZURE_REPO_TOKEN = "HARNESS_AZURE_REPO_TOKEN";
   public static final String BACKEND_SECRET = "BACKEND_SECRET";
   public static final String IDP_BACKEND_SECRET = "IDP_BACKEND_SECRET";
+  public static final String PROXY_ENV_NAME = "HOST_PROXY_MAP";
 }

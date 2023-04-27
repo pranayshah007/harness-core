@@ -13,29 +13,36 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.http.HttpStepResponse;
 import io.harness.eraro.ResponseMessage;
 import io.harness.http.HttpHeaderConfig;
+import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsCache;
 import io.harness.idp.proxy.delegate.beans.BackstageProxyRequest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import javax.ws.rs.POST;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(IDP)
-@NoArgsConstructor
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class DelegateProxyApiImpl implements DelegateProxyApi {
-  DelegateProxyRequestForwarder delegateProxyRequestForwarder;
+  private final DelegateProxyRequestForwarder delegateProxyRequestForwarder;
+  private final DelegateSelectorsCache delegateSelectorsCache;
 
   @POST
   public Response forwardProxy(@Context UriInfo info, @Context javax.ws.rs.core.HttpHeaders headers,
-      @PathParam("url") String url, String body) throws JsonProcessingException {
-    var accountId = headers.getHeaderString("accountId");
+      @PathParam("url") String urlString, String body) throws JsonProcessingException, ExecutionException {
+    var accountIdentifier = headers.getHeaderString("accountId");
     BackstageProxyRequest backstageProxyRequest;
     try {
       ObjectMapper mapper = new ObjectMapper();
@@ -48,9 +55,11 @@ public class DelegateProxyApiImpl implements DelegateProxyApi {
 
     List<HttpHeaderConfig> headerList =
         delegateProxyRequestForwarder.createHeaderConfig(backstageProxyRequest.getHeaders());
+    Set<String> delegateSelectors = getDelegateSelectors(urlString, accountIdentifier);
 
-    HttpStepResponse httpResponse = delegateProxyRequestForwarder.forwardRequestToDelegate(accountId,
-        backstageProxyRequest.getUrl(), headerList, backstageProxyRequest.getBody(), backstageProxyRequest.getMethod());
+    HttpStepResponse httpResponse =
+        delegateProxyRequestForwarder.forwardRequestToDelegate(accountIdentifier, backstageProxyRequest.getUrl(),
+            headerList, backstageProxyRequest.getBody(), backstageProxyRequest.getMethod(), delegateSelectors);
 
     if (httpResponse == null) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -59,5 +68,22 @@ public class DelegateProxyApiImpl implements DelegateProxyApi {
     }
 
     return Response.status(httpResponse.getHttpResponseCode()).entity(httpResponse.getHttpResponseBody()).build();
+  }
+
+  private Set<String> getDelegateSelectors(String urlString, String accountIdentifier) throws ExecutionException {
+    URL url;
+    try {
+      url = new URL(urlString);
+    } catch (MalformedURLException e) {
+      throw new RuntimeException(e);
+    }
+    String host = url.getHost();
+
+    // Remove the api. prefix in api.github.com calls
+    if (url.getHost().startsWith("api.")) {
+      host = host.replace("api.", "");
+    }
+
+    return delegateSelectorsCache.get(accountIdentifier, host);
   }
 }

@@ -12,7 +12,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum BitbucketApiAccessType {
   @JsonProperty(BitbucketConnectorConstants.USERNAME_AND_TOKEN)
-  USERNAME_AND_TOKEN(BitbucketConnectorConstants.USERNAME_AND_TOKEN);
+  USERNAME_AND_TOKEN(BitbucketConnectorConstants.USERNAME_AND_TOKEN),
+  @JsonProperty(BitbucketConnectorConstants.OAUTH) OAUTH(BitbucketConnectorConstants.OAUTH);
 
   private final String displayName;
 

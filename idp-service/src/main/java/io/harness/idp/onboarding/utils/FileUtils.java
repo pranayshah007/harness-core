@@ -36,6 +36,15 @@ public class FileUtils {
     }
   }
 
+  public static void writeStringInFile(String str, String filePath) {
+    try {
+      Path file = Paths.get(filePath);
+      Files.write(file, Collections.singletonList(str), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new UnexpectedException("Error writing string in file");
+    }
+  }
+
   public static void writeObjectAsYamlInFile(Object object, String filePath) {
     try {
       String yaml = YamlPipelineUtils.writeString(object);

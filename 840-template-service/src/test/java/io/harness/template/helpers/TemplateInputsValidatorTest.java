@@ -12,9 +12,9 @@ import static io.harness.rule.OwnerRule.INDER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -22,7 +22,6 @@ import static org.mockito.Mockito.when;
 import io.harness.TemplateServiceTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.sdk.EntityGitDetails;
@@ -41,8 +40,6 @@ import io.harness.template.beans.yaml.NGTemplateInfoConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntityGetResponse;
 import io.harness.template.services.NGTemplateServiceHelper;
-import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
-import io.harness.template.yaml.TemplateYamlFacade;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.google.common.io.Resources;
@@ -68,24 +65,13 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
   @InjectMocks TemplateInputsValidator templateInputsValidator;
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
   @Mock NGTemplateServiceHelper templateServiceHelper;
-  @Mock NGTemplateFeatureFlagHelperService featureFlagHelperService;
   @Mock NgManagerReconcileClient ngManagerReconcileClient;
-  TemplateYamlFacade templateYamlFacade = new TemplateYamlFacade();
-
   @Before
   public void setup() throws IOException {
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
-    on(templateMergeServiceHelper).set("templateYamlFacade", templateYamlFacade);
     on(inputsValidator).set("templateMergeServiceHelper", templateMergeServiceHelper);
-    on(inputsValidator).set("featureFlagHelperService", featureFlagHelperService);
     on(inputsValidator).set("ngManagerReconcileClient", ngManagerReconcileClient);
     on(templateInputsValidator).set("inputsValidator", inputsValidator);
-    on(templateYamlFacade).set("featureFlagHelperService", featureFlagHelperService);
-    on(inputsValidator).set("templateYamlFacade", templateYamlFacade);
-
-    doReturn(true)
-        .when(featureFlagHelperService)
-        .isFeatureFlagEnabled("", FeatureName.CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS);
 
     // default behaviour of validation
     Call<ResponseDTO<InputsValidationResponse>> ngManagerReconcileCall = mock(Call.class);

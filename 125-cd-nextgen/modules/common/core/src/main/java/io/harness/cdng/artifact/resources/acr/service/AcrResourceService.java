@@ -12,6 +12,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.acr.dtos.AcrRegistriesDTO;
 import io.harness.cdng.artifact.resources.acr.dtos.AcrRepositoriesDTO;
+import io.harness.cdng.artifact.resources.acr.dtos.AcrRequestDTO;
+import io.harness.delegate.beans.azure.AcrBuildDetailsDTO;
 import io.harness.delegate.beans.azure.AcrResponseDTO;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -24,4 +26,7 @@ public interface AcrResourceService {
 
   AcrResponseDTO getBuildDetails(IdentifierRef connectorRef, String subscription, String registry, String repository,
       String orgIdentifier, String projectIdentifier);
+
+  AcrBuildDetailsDTO getLastSuccessfulBuild(IdentifierRef connectorRef, String subscription, String registry,
+      String repository, String orgIdentifier, String projectIdentifier, AcrRequestDTO acrRequestDTO);
 }

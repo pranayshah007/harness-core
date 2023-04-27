@@ -15,7 +15,7 @@ import static software.wings.service.impl.instance.InstanceSyncTestConstants.INF
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -74,7 +74,8 @@ public class AwsSshPerpetualTaskServiceClientTest extends WingsBaseTest {
             PerpetualTaskClientContext.builder()
                 .clientParams(ImmutableMap.of(InstanceSyncConstants.HARNESS_APPLICATION_ID, APP_ID,
                     InstanceSyncConstants.INFRASTRUCTURE_MAPPING_ID, INFRA_MAPPING_ID))
-                .build());
+                .build(),
+            true);
 
     assertThat(taskParams.getRegion()).isEqualTo("us-east-1");
     assertThat(taskParams.getAwsConfig()).isNotNull();

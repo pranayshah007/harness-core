@@ -14,7 +14,7 @@ import static software.wings.beans.Account.Builder.anAccount;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -22,7 +22,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.governance.pipeline.service.model.PipelineGovernanceConfig;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.testlib.RealMongo;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
@@ -90,7 +89,7 @@ public class PipelineGovernanceServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = ANKIT)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void testAddAndUpdate() {
     PipelineGovernanceConfig config = new PipelineGovernanceConfig(
         null, SOME_ACCOUNT_ID, "name", "description", Collections.emptyList(), Collections.emptyList(), true);

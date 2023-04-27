@@ -356,8 +356,8 @@ func GetTiSvcToken() (string, error) {
 	return token, nil
 }
 
-func GetStepStrategyIteration() (int, error) {
-	idxStr, ok := os.LookupEnv(harnessStepIndex)
+func GetStepStrategyIteration(envs map[string]string) (int, error) {
+	idxStr, ok := envs[harnessStepIndex]
 	if !ok {
 		return -1, fmt.Errorf("parallelism strategy iteration variable not set %s", harnessStepIndex)
 	}
@@ -368,8 +368,8 @@ func GetStepStrategyIteration() (int, error) {
 	return idx, nil
 }
 
-func GetStepStrategyIterations() (int, error) {
-	totalStr, ok := os.LookupEnv(harnessStepTotal)
+func GetStepStrategyIterations(envs map[string]string) (int, error) {
+	totalStr, ok := envs[harnessStepTotal]
 	if !ok {
 		return -1, fmt.Errorf("parallelism total iteration variable not set %s", harnessStepTotal)
 	}
@@ -380,8 +380,8 @@ func GetStepStrategyIterations() (int, error) {
 	return total, nil
 }
 
-func GetStageStrategyIteration() (int, error) {
-	idxStr, ok := os.LookupEnv(harnessStageIndex)
+func GetStageStrategyIteration(envs map[string]string) (int, error) {
+	idxStr, ok := envs[harnessStageIndex]
 	if !ok {
 		return -1, fmt.Errorf("parallelism strategy iteration variable not set %s", harnessStageIndex)
 	}
@@ -392,8 +392,8 @@ func GetStageStrategyIteration() (int, error) {
 	return idx, nil
 }
 
-func GetStageStrategyIterations() (int, error) {
-	totalStr, ok := os.LookupEnv(harnessStageTotal)
+func GetStageStrategyIterations(envs map[string]string) (int, error) {
+	totalStr, ok := envs[harnessStageTotal]
 	if !ok {
 		return -1, fmt.Errorf("parallelism total iteration variable not set %s", harnessStageTotal)
 	}
@@ -414,24 +414,48 @@ func IsManualExecution() bool {
 	return false
 }
 
-func IsStepParallelismEnabled() bool {
-	v1, err1 := GetStepStrategyIteration()
-	v2, err2 := GetStepStrategyIterations()
+func IsStepParallelismEnabled(envs map[string]string) bool {
+	v1, err1 := GetStepStrategyIteration(envs)
+	v2, err2 := GetStepStrategyIterations(envs)
 	if err1 != nil || err2 != nil || v1 >= v2 || v2 <= 1 {
 		return false
 	}
 	return true
 }
 
-func IsStageParallelismEnabled() bool {
-	v1, err1 := GetStageStrategyIteration()
-	v2, err2 := GetStageStrategyIterations()
+func IsStageParallelismEnabled(envs map[string]string) bool {
+	v1, err1 := GetStageStrategyIteration(envs)
+	v2, err2 := GetStageStrategyIterations(envs)
 	if err1 != nil || err2 != nil || v1 >= v2 || v2 <= 1 {
 		return false
 	}
 	return true
 }
 
-func IsParallelismEnabled() bool {
-	return IsStepParallelismEnabled() || IsStageParallelismEnabled()
+func IsParallelismEnabled(envs map[string]string) bool {
+	return IsStepParallelismEnabled(envs) || IsStageParallelismEnabled(envs)
+}
+
+func GetStepStrategyIterationFromEnv() (int, error) {
+	idxStr, ok := os.LookupEnv(harnessStepIndex)
+	if !ok {
+		return -1, fmt.Errorf("parallelism strategy iteration variable not set %s", harnessStepIndex)
+	}
+	idx, err := strconv.Atoi(idxStr)
+	if err != nil {
+		return -1, fmt.Errorf("unable to convert %s from string to int", harnessStepIndex)
+	}
+	return idx, nil
+}
+
+func GetStepStrategyIterationsFromEnv() (int, error) {
+	totalStr, ok := os.LookupEnv(harnessStepTotal)
+	if !ok {
+		return -1, fmt.Errorf("parallelism total iteration variable not set %s", harnessStepTotal)
+	}
+	total, err := strconv.Atoi(totalStr)
+	if err != nil {
+		return -1, fmt.Errorf("unable to convert %s from string to int", harnessStepTotal)
+	}
+	return total, nil
 }

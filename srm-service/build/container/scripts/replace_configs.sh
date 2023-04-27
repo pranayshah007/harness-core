@@ -55,6 +55,10 @@ if [[ "" != "$NG_MANAGER_CLIENT_BASEURL" ]]; then
   export NG_MANAGER_CLIENT_BASEURL; yq -i '.ngManagerClientConfig.baseUrl=env(NG_MANAGER_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$TICKET_SERVICE_REST_CLIENT_BASEURL" ]]; then
+  export TICKET_SERVICE_REST_CLIENT_BASEURL; yq -i '.ticketServiceRestClientConfig.baseUrl=env(TICKET_SERVICE_REST_CLIENT_BASEURL)' $CONFIG_FILE
+fi
+
   yq -i '.server.requestLog.appenders[0].type="console"' $CONFIG_FILE
   yq -i '.server.requestLog.appenders[0].threshold="TRACE"' $CONFIG_FILE
   yq -i '.server.requestLog.appenders[0].target="STDOUT"' $CONFIG_FILE

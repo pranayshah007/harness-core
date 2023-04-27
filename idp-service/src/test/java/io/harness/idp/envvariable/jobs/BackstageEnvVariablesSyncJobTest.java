@@ -57,13 +57,9 @@ public class BackstageEnvVariablesSyncJobTest extends CategoryTest {
   public void testEnvSecretSync() {
     List<String> accountIds = Arrays.asList(TEST_ACCOUNT1, TEST_ACCOUNT2);
     when(namespaceService.getAccountIds()).thenReturn(accountIds);
-    List<BackstageEnvVariable> envConfigVariables = Collections.singletonList(new BackstageEnvConfigVariable());
-    List<BackstageEnvVariable> envSecretVariables = Collections.singletonList(new BackstageEnvSecretVariable());
-    when(backstageEnvVariableService.findByAccountIdentifier(TEST_ACCOUNT1)).thenReturn(envConfigVariables);
-    when(backstageEnvVariableService.findByAccountIdentifier(TEST_ACCOUNT2)).thenReturn(envSecretVariables);
     job.run();
-    verify(backstageEnvVariableService).sync(envConfigVariables, TEST_ACCOUNT1);
-    verify(backstageEnvVariableService).sync(envSecretVariables, TEST_ACCOUNT2);
+    verify(backstageEnvVariableService).findAndSync(TEST_ACCOUNT1);
+    verify(backstageEnvVariableService).findAndSync(TEST_ACCOUNT2);
   }
 
   @Test
@@ -72,16 +68,12 @@ public class BackstageEnvVariablesSyncJobTest extends CategoryTest {
   public void testEnvSecretSyncErrorWithOneAccount() {
     List<String> accountIds = Arrays.asList(TEST_ACCOUNT1, TEST_ACCOUNT2);
     when(namespaceService.getAccountIds()).thenReturn(accountIds);
-    List<BackstageEnvVariable> secrets1 = Collections.singletonList(new BackstageEnvConfigVariable());
-    List<BackstageEnvVariable> secrets2 = Collections.singletonList(new BackstageEnvSecretVariable());
-    when(backstageEnvVariableService.findByAccountIdentifier(TEST_ACCOUNT1)).thenReturn(secrets1);
-    when(backstageEnvVariableService.findByAccountIdentifier(TEST_ACCOUNT2)).thenReturn(secrets2);
     doThrow(new InvalidRequestException("Failed to replace secret. Code: 403"))
         .when(backstageEnvVariableService)
-        .sync(secrets1, TEST_ACCOUNT1);
+        .findAndSync(TEST_ACCOUNT1);
     job.run();
     // Sync should happen for 2nd account even if there is an error in 1st account sync.
-    verify(backstageEnvVariableService).sync(secrets2, TEST_ACCOUNT2);
+    verify(backstageEnvVariableService).findAndSync(TEST_ACCOUNT2);
   }
 
   @After

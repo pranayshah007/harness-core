@@ -17,6 +17,7 @@ import io.harness.spec.server.idp.v1.model.ConnectorInfoResponse;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -25,18 +26,21 @@ public class ConnectorDetailsMapper {
   public ConnectorDetails toDTO(CatalogConnectorEntity catalogConnectorEntity) {
     ConnectorDetails connectorDetails = new ConnectorDetails();
     connectorDetails.setIdentifier(catalogConnectorEntity.getConnectorIdentifier());
-    connectorDetails.setType(catalogConnectorEntity.getConnectorProviderType());
+    connectorDetails.setType(
+        ConnectorDetails.TypeEnum.valueOf(catalogConnectorEntity.getConnectorProviderType().toUpperCase()));
     return connectorDetails;
   }
 
-  public CatalogConnectorEntity fromDTO(
-      ConnectorDetails connectorDetails, String accountIdentifier, String infraConnectorType) {
+  public CatalogConnectorEntity fromDTO(String identifier, String accountIdentifier, String connectorProviderType,
+      Set<String> delegateSelectors, String host, String infraConnectorType) {
     return CatalogConnectorEntity.builder()
-        .identifier(Constants.IDP_PREFIX + connectorDetails.getIdentifier())
+        .identifier(Constants.IDP_PREFIX + identifier)
         .accountIdentifier(accountIdentifier)
-        .connectorIdentifier(connectorDetails.getIdentifier())
-        .connectorProviderType(connectorDetails.getType())
+        .connectorIdentifier(identifier)
+        .connectorProviderType(connectorProviderType)
         .type(CatalogInfraConnectorType.valueOf(infraConnectorType))
+        .delegateSelectors(delegateSelectors)
+        .host(host)
         .build();
   }
 

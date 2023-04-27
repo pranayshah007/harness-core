@@ -45,6 +45,7 @@ import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
 import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.ng.core.environment.beans.EnvironmentType;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.repositories.instance.InstanceRepository;
 import io.harness.rule.Owner;
 import io.harness.service.instancedashboardservice.InstanceDashboardServiceImplTest;
@@ -83,14 +84,22 @@ public class InstanceServiceImplTest extends InstancesTestBase {
   private static final String INFRASTRUCTURE_ID = "infraId";
   private static final String CLUSTER_ID = "clusterId";
   private static final String AGENT_ID = "agentId";
+  private static final String instanceKey = "instanceKey";
+  private static final String infraMappingId = "infraMappingId";
+  private static final String lastPipelineExecutionName = "lastPipelineExecutionName";
+  private static final String lastPipelineExecutionId = "lastPipelineExecutionId";
+  private static final String stageNodeExecutionId = "stageNodeExecutionId";
+  private static final Status stageStatus = Status.SUCCEEDED;
 
   private AggregationResults<ActiveServiceInstanceInfoWithEnvType> aggregationResults;
 
   @Before
   public void setup() {
-    aggregationResults = new AggregationResults<>(Arrays.asList(new ActiveServiceInstanceInfoWithEnvType(ENVIRONMENT_ID,
-                                                      ENVIRONMENT_ID, EnvironmentType.PreProduction, INFRASTRUCTURE_ID,
-                                                      INFRASTRUCTURE_ID, CLUSTER_ID, AGENT_ID, 1l, DISPLAY_NAME, 1)),
+    aggregationResults = new AggregationResults<>(
+        Arrays.asList(new ActiveServiceInstanceInfoWithEnvType(instanceKey, infraMappingId, ENVIRONMENT_ID,
+            ENVIRONMENT_ID, EnvironmentType.PreProduction, INFRASTRUCTURE_ID, INFRASTRUCTURE_ID, CLUSTER_ID, AGENT_ID,
+            1l, DISPLAY_NAME, 1, lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId,
+            stageStatus)),
         new Document());
   }
 

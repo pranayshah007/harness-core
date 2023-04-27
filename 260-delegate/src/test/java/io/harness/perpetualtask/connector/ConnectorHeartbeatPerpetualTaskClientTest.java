@@ -14,8 +14,8 @@ import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -37,6 +37,7 @@ import software.wings.WingsBaseTest;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.Map;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -51,7 +52,7 @@ import retrofit2.Response;
 
 @OwnedBy(DX)
 public class ConnectorHeartbeatPerpetualTaskClientTest extends WingsBaseTest {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer kryoSerializer;
   @Mock private ConnectorResourceClient connectorResourceClient;
   @Mock private SecretManagerClientService ngSecretManagerService;
   @Mock private Call<ResponseDTO<ConnectorValidationParameterResponse>> call;
@@ -79,7 +80,7 @@ public class ConnectorHeartbeatPerpetualTaskClientTest extends WingsBaseTest {
             .isInvalid(false)
             .build();
     when(call.execute()).thenReturn(Response.success(ResponseDTO.newResponse(connectorValidationParameterResponse)));
-    FieldUtils.writeField(connectorHeartbeatPerpetualTaskClient, "kryoSerializer", kryoSerializer, true);
+    FieldUtils.writeField(connectorHeartbeatPerpetualTaskClient, "referenceFalseKryoSerializer", kryoSerializer, true);
     Map<String, String> connectorDetails = ImmutableMap.of(ACCOUNT_KEY, accountIdentifier, ORG_KEY, orgIdentifier,
         PROJECT_KEY, projectIdentifier, CONNECTOR_IDENTIFIER_KEY, identifier);
     perpetualTaskClientContext = PerpetualTaskClientContext.builder().clientParams(connectorDetails).build();
@@ -90,7 +91,8 @@ public class ConnectorHeartbeatPerpetualTaskClientTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void getTaskParams() {
     ConnectorHeartbeatTaskParams taskParams =
-        (ConnectorHeartbeatTaskParams) connectorHeartbeatPerpetualTaskClient.getTaskParams(perpetualTaskClientContext);
+        (ConnectorHeartbeatTaskParams) connectorHeartbeatPerpetualTaskClient.getTaskParams(
+            perpetualTaskClientContext, true);
     assertThat(taskParams).isNotNull();
     assertThat(taskParams.getAccountIdentifier()).isEqualTo(accountIdentifier);
   }

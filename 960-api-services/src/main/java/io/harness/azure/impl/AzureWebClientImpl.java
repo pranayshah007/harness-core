@@ -1051,7 +1051,8 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
   }
 
   protected WebSiteManagementClient getWebSiteManagementClient(AzureClientContext context) {
-    return getWebSiteManagementClient(context.getAzureConfig(), context.getSubscriptionId());
+    return getWebSiteManagementClient(
+        context.getAzureConfig(), context.getSubscriptionId(), context.isExtendedReadTimeout());
   }
 
   protected WebSiteManagementClient getWebSiteManagementClient(AzureConfig azureConfig) {
@@ -1062,6 +1063,16 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
     return new WebSiteManagementClientBuilder()
         .subscriptionId(subscriptionId)
         .pipeline(getAzureHttpPipeline(azureConfig, subscriptionId))
+        .endpoint(AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getResourceManagerEndpoint())
+        .environment(AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()))
+        .buildClient();
+  }
+
+  protected WebSiteManagementClient getWebSiteManagementClient(
+      AzureConfig azureConfig, String subscriptionId, boolean extendedReadTimeout) {
+    return new WebSiteManagementClientBuilder()
+        .subscriptionId(subscriptionId)
+        .pipeline(getAzureHttpPipeline(azureConfig, subscriptionId, extendedReadTimeout))
         .endpoint(AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getResourceManagerEndpoint())
         .environment(AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()))
         .buildClient();

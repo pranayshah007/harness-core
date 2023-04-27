@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.rule.OwnerRule.HANTANG;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 

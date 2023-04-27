@@ -30,11 +30,10 @@ import static software.wings.utils.WingsTestConstants.USER_NAME;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -76,7 +75,6 @@ import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.serializer.KryoSerializer;
 import io.harness.stream.BoundedInputStream;
-import io.harness.testlib.RealMongo;
 
 import software.wings.EncryptTestUtils;
 import software.wings.SecretManagementTestHelper;
@@ -253,7 +251,7 @@ public class KmsTest extends WingsBaseTest {
     workflowExecutionId =
         wingsPersistence.save(WorkflowExecution.builder().name(workflowName).appId(appId).envId(envId).build());
 
-    when(kmsEncryptor.encryptSecret(anyString(), anyObject(), any())).then(invocation -> {
+    when(kmsEncryptor.encryptSecret(anyString(), any(), any())).then(invocation -> {
       Object[] args = invocation.getArguments();
       if (args[2] instanceof KmsConfig) {
         return EncryptTestUtils.encrypt((String) args[0], ((String) args[1]).toCharArray(), (KmsConfig) args[2]);
@@ -262,7 +260,7 @@ public class KmsTest extends WingsBaseTest {
           (String) args[0], (String) args[1], localSecretManagerService.getEncryptionConfig((String) args[0]));
     });
 
-    when(kmsEncryptor.fetchSecretValue(anyString(), anyObject(), any())).then(invocation -> {
+    when(kmsEncryptor.fetchSecretValue(anyString(), any(), any())).then(invocation -> {
       Object[] args = invocation.getArguments();
       if (args[2] instanceof KmsConfig) {
         return EncryptTestUtils.decrypt((EncryptedRecord) args[1], (KmsConfig) args[2]);
@@ -279,7 +277,7 @@ public class KmsTest extends WingsBaseTest {
     when(delegateProxyFactory.getV2(eq(ContainerService.class), any(SyncTaskContext.class)))
         .thenReturn(containerService);
     when(containerService.validate(any(ContainerServiceParams.class), anyBoolean())).thenReturn(true);
-    doNothing().when(newRelicService).validateConfig(anyObject(), anyObject(), anyObject());
+    doNothing().when(newRelicService).validateConfig(any(), any(), any());
     FieldUtils.writeField(secretService, "kmsRegistry", kmsEncryptorsRegistry, true);
     FieldUtils.writeField(encryptionService, "kmsEncryptorsRegistry", kmsEncryptorsRegistry, true);
     FieldUtils.writeField(managerDecryptionService, "delegateProxyFactory", delegateProxyFactory, true);
@@ -323,7 +321,7 @@ public class KmsTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void getGetGlobalKmsConfig() {
     KmsConfig globalKmsConfig = secretManagementTestHelper.getKmsConfig();
     globalKmsConfig.setName("Global config");
@@ -343,7 +341,7 @@ public class KmsTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void updateFileWithGlobalKms() throws IOException {
     KmsConfig globalKmsConfig = secretManagementTestHelper.getKmsConfig();
     globalKmsConfig.setName("Global config");
@@ -1297,7 +1295,7 @@ public class KmsTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void kmsEncryptionSaveServiceVariable() throws IllegalAccessException {
     final KmsConfig kmsConfig = secretManagementTestHelper.getKmsConfig();
     kmsResource.saveKmsConfig(accountId, kmsConfig);
@@ -1434,7 +1432,7 @@ public class KmsTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void kmsEncryptionUpdateServiceVariable() {
     final KmsConfig kmsConfig = secretManagementTestHelper.getKmsConfig();
     kmsResource.saveKmsConfig(accountId, kmsConfig);
@@ -2131,7 +2129,7 @@ public class KmsTest extends WingsBaseTest {
   @Test
   @Owner(developers = ANKIT, intermittent = true)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void transitionKmsForConfigFile() throws IOException, InterruptedException, IllegalAccessException {
     Thread listenerThread = startTransitionListener();
     try {
@@ -2259,7 +2257,7 @@ public class KmsTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void saveUpdateConfigFileNoKms() throws IOException, IllegalAccessException {
     final long seed = System.currentTimeMillis();
     log.info("seed: " + seed);
@@ -2370,7 +2368,7 @@ public class KmsTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void saveConfigFileNoEncryption() throws IOException {
     final long seed = System.currentTimeMillis();
     log.info("seed: " + seed);
@@ -2424,7 +2422,7 @@ public class KmsTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void saveConfigFileWithEncryption() throws IOException, IllegalAccessException {
     final long seed = System.currentTimeMillis();
     log.info("seed: " + seed);
@@ -2566,7 +2564,7 @@ public class KmsTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void saveConfigFileTemplateWithEncryption() throws IOException {
     final long seed = System.currentTimeMillis();
     log.info("seed: " + seed);

@@ -42,6 +42,7 @@ import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.ThreadOperationContextHelper;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
@@ -202,9 +203,10 @@ public class PlanExecutionResourceTest extends CategoryTest {
   public void testRunPostExecutionRollback() {
     doReturn(PlanExecution.builder().planId("planId123").build())
         .when(pipelineExecutor)
-        .startPostExecutionRollback(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "originalPlanId");
+        .startPostExecutionRollback(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "originalPlanId",
+            Collections.singletonList("stageNodeExecutionId"));
     ResponseDTO<PlanExecutionResponseDto> response = planExecutionResource.runPostExecutionRollback(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, "originalPlanId");
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, "originalPlanId", "stageNodeExecutionId");
     PlanExecutionResponseDto data = response.getData();
     assertThat(data.getPlanExecution().getPlanId()).isEqualTo("planId123");
   }

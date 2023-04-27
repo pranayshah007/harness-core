@@ -155,12 +155,17 @@ public class SLIRecordServiceImpl implements SLIRecordService {
 
   @Override
   public List<SLIRecord> getSLIRecordsForLookBackDuration(String sliId, long lookBackDuration) {
-    Instant startTime = clock.instant().minusMillis(lookBackDuration);
-    Instant endTime = clock.instant().minusMillis(Duration.ofMinutes(1).toMillis());
+    SLIRecord latestSLIRecord = getLatestSLIRecord(sliId);
+    if (latestSLIRecord == null) {
+      return new ArrayList<>();
+    }
+    Instant endTime = latestSLIRecord.getTimestamp();
+    Instant startTime = endTime.minusMillis(lookBackDuration).plus(1, ChronoUnit.MINUTES);
     List<Instant> minutes = new ArrayList<>();
     minutes.add(startTime);
-    minutes.add(endTime);
-    return getSLIRecordsOfMinutes(sliId, minutes);
+    List<SLIRecord> sliRecords = getSLIRecordsOfMinutes(sliId, minutes);
+    sliRecords.add(latestSLIRecord);
+    return sliRecords;
   }
 
   @Override
@@ -258,6 +263,41 @@ public class SLIRecordServiceImpl implements SLIRecordService {
       }
     }
     return Pair.of(serviceLevelObjectivesDetailSLIRecordMap, objectivesDetailSLIMissingDataTypeMap);
+  }
+
+  @Override
+  public Map<String, SLIRecord> getLastCompositeSLOsSLIRecord(
+      List<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList,
+      Instant startTime) {
+    Map<String, SLIRecord> scopedIdentifierSLIRecordMap = new HashMap<>();
+    for (CompositeServiceLevelObjective.ServiceLevelObjectivesDetail objectivesDetail :
+        serviceLevelObjectivesDetailList) {
+      SimpleServiceLevelObjective simpleServiceLevelObjective =
+          (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(objectivesDetail);
+      Preconditions.checkState(simpleServiceLevelObjective.getServiceLevelIndicators().size() == 1,
+          "Only one service level indicator is supported");
+      ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+          ProjectParams.builder()
+              .accountIdentifier(simpleServiceLevelObjective.getAccountId())
+              .orgIdentifier(simpleServiceLevelObjective.getOrgIdentifier())
+              .projectIdentifier(simpleServiceLevelObjective.getProjectIdentifier())
+              .build(),
+          simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
+      String sliId = serviceLevelIndicator.getUuid();
+      int sliVersion = serviceLevelIndicator.getVersion();
+      SLIRecord sliRecord = getLastSLIRecord(sliId, startTime);
+      if (Objects.isNull(sliRecord)) {
+        sliRecord = SLIRecord.builder()
+                        .sliState(SLIRecord.SLIState.GOOD)
+                        .runningBadCount(0)
+                        .runningGoodCount(0)
+                        .sliVersion(sliVersion)
+                        .timestamp(startTime.minus(Duration.ofMinutes(1)))
+                        .build();
+      }
+      scopedIdentifierSLIRecordMap.put(serviceLevelObjectiveV2Service.getScopedIdentifier(objectivesDetail), sliRecord);
+    }
+    return scopedIdentifierSLIRecordMap;
   }
 
   private SLIRecord getLatestSLIRecordSLIVersion(String sliId, int sliVersion) {

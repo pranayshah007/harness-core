@@ -48,7 +48,6 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Credentials;
 import okhttp3.Headers;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
@@ -130,7 +129,6 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     }
 
     ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().build();
-    Exception exception = null;
     try {
       ArtifactMetaInfo artifactMetaInfoSchemaVersion1 =
           getArtifactMetaInfo(githubPackagesInternalConfig, packageName, version, org, true);
@@ -140,7 +138,6 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
       }
     } catch (Exception e) {
       log.error(COULD_NOT_FETCH_IMAGE_MANIFEST, e);
-      exception = e;
     }
 
     try {
@@ -151,21 +148,20 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
       }
     } catch (Exception e) {
       log.error(COULD_NOT_FETCH_IMAGE_MANIFEST, e);
-      exception = e;
     }
 
     if (EmptyPredicate.isEmpty(artifactMetaInfo.getShaV2()) && EmptyPredicate.isEmpty(artifactMetaInfo.getSha())) {
-      if (exception != null) {
-        if (exception instanceof GithubPackagesServerRuntimeException) {
-          throw(GithubPackagesServerRuntimeException) exception;
-        } else {
-          throw NestedExceptionUtils.hintWithExplanationException(COULD_NOT_FETCH_IMAGE_MANIFEST, ERROR_MESSAGE,
-              new ArtifactServerException(ExceptionUtils.getMessage(exception), exception, USER));
-        }
-      } else {
+      List<BuildDetails> builds = new ArrayList<>();
+      try {
+        builds = getBuildDetails(githubPackagesInternalConfig, packageName, packageType, org);
+      } catch (GithubPackagesServerRuntimeException ex) {
+        throw ex;
+      } catch (Exception e) {
         throw NestedExceptionUtils.hintWithExplanationException(
-            COULD_NOT_FETCH_IMAGE_MANIFEST, ERROR_MESSAGE, new ArtifactServerException(ERROR_MESSAGE));
+            COULD_NOT_FETCH_VERSION, ERROR_MESSAGE, new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
       }
+
+      return versionFiltering(version, builds, packageName);
     }
     return constructBuildDetails(
         version, packageName, artifactMetaInfo, org, githubPackagesInternalConfig.getUsername());
@@ -284,6 +280,22 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
         .withBuildFullDisplayName(artifactMetaInfo.getShaV2())
         .withArtifactPath(getArtifactPath(org, packageName, version, userName.toLowerCase()))
         .build();
+  }
+
+  private BuildDetails versionFiltering(String version, List<BuildDetails> builds, String packageName) {
+    for (BuildDetails build : builds) {
+      Map<String, String> map = build.getMetadata();
+
+      if (map.containsKey(version)) {
+        build.setBuildDisplayName(packageName + ": " + version);
+        build.setUiDisplayName("Tag# " + version);
+        build.setNumber(version);
+
+        return build;
+      }
+    }
+
+    throw new InvalidRequestException("Could not find version " + version + " in the package " + packageName);
   }
 
   private String getArtifactPath(String org, String packageName, String tag, String username) {
@@ -507,7 +519,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     Response<DockerImageManifestResponse> response;
     if (isV1) {
       response = githubPackagesDockerRestClient
-                     .getImageManifest(getBasicAuth(githubPackagesInternalConfig),
+                     .getImageManifest(getBearerAuth(githubPackagesInternalConfig.getToken()),
                          getFullPackageName(githubPackagesInternalConfig.getUsername(), packageName, org), version)
                      .execute();
       token = getToken.apply(response.headers());
@@ -517,7 +529,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
                      .execute();
     } else {
       response = githubPackagesDockerRestClient
-                     .getImageManifestV2(getBasicAuth(githubPackagesInternalConfig),
+                     .getImageManifestV2(getBearerAuth(githubPackagesInternalConfig.getToken()),
                          getFullPackageName(githubPackagesInternalConfig.getUsername(), packageName, org), version)
                      .execute();
       token = getToken.apply(response.headers());
@@ -544,10 +556,6 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
         .username(githubPackagesInternalConfig.getUsername())
         .password(githubPackagesInternalConfig.getToken())
         .build();
-  }
-
-  private String getBasicAuth(GithubPackagesInternalConfig githubPackagesInternalConfig) {
-    return Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken());
   }
 
   private String getBearerAuth(String token) {

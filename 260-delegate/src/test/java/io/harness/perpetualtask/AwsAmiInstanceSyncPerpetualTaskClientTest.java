@@ -16,7 +16,7 @@ import static software.wings.service.impl.instance.InstanceSyncTestConstants.INF
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -68,7 +68,7 @@ public class AwsAmiInstanceSyncPerpetualTaskClientTest extends WingsBaseTest {
     AwsConfig awsConfig = AwsConfig.builder().accountId(ACCOUNT_ID).tag("tag").build();
     prepareTaskData(awsConfig);
     final AwsAmiInstanceSyncPerpetualTaskParams taskParams =
-        (AwsAmiInstanceSyncPerpetualTaskParams) client.getTaskParams(getClientContext());
+        (AwsAmiInstanceSyncPerpetualTaskParams) client.getTaskParams(getClientContext(), true);
 
     assertThat(taskParams.getAsgName()).isEqualTo("asg");
     assertThat(taskParams.getAwsConfig()).isNotNull();

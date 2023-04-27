@@ -9,7 +9,7 @@ package io.harness.ng.authenticationsettings;
 
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.times;

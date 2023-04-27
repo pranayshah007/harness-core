@@ -95,15 +95,15 @@ public class ZendeskHelper {
     return String.format("**Details**\nEmail:\n%s\n\n**Account Id**:\n%s\n\n**Module** :\n%s\n\n**Category**:\n%s"
             + "\n\n**Subject**:\n%s\n\n**Message**:\n%s"
             + "\n\n**Priority**:"
-            + "\n%s\n\n**Website**:\n%s\n\n"
+            + "\n%s\n\n"
             + "**URL**:\n%s\n\n**Browser**:\n%s\n\n**Browser Size**:\n%s\n\n"
             + "**User OS**:\n%s\n\n",
         emailId, description.accountId, description.module, ticketType.name().toLowerCase(Locale.ROOT), subject,
-        description.message, priority.name().toLowerCase(Locale.ROOT), description.website, description.url,
-        description.userBrowser, description.browserResolution, description.userOS);
+        description.message, priority.name().toLowerCase(Locale.ROOT), description.url, description.userBrowser,
+        description.browserResolution, description.userOS);
   }
 
-  public ZendeskResponseDTO getToken() {
+  public CoveoResponseDTO getToken() {
     try {
       String json = "{\n"
           + "    \"userIds\": [\n{"
@@ -123,17 +123,21 @@ public class ZendeskHelper {
         if (!response.isSuccessful()) {
           String bodyString = (null != response.body()) ? response.body().string() : "null";
           log.error("Response not Successful. Response body: {}", bodyString);
-          return ZendeskResponseDTO.builder().message("Response not Successful").code(response.code()).build();
+          return CoveoResponseDTO.builder().message("Response not Successful").code(response.code()).build();
         }
         InputStream responseBodyStream = response.body().byteStream();
         String responseBodyString = new Scanner(responseBodyStream, "UTF-8").useDelimiter("\\A").next();
         ObjectMapper objectMapper = new ObjectMapper();
         HashMap<String, String> responseMap = objectMapper.readValue(responseBodyString, HashMap.class);
-        return ZendeskResponseDTO.builder().message(responseMap.get("token")).code(response.code()).build();
+        return CoveoResponseDTO.builder()
+            .token(responseMap.get("token"))
+            .code(response.code())
+            .message("Response Successful")
+            .build();
       }
     } catch (Exception e) {
       log.error("Exception occurred at getToken(). Returning 400", e);
-      return ZendeskResponseDTO.builder().message(ExceptionUtils.getMessage(e)).code(400).build();
+      return CoveoResponseDTO.builder().message(ExceptionUtils.getMessage(e)).code(400).build();
     }
   }
   private String uploadFile(InputStream inputStream, FormDataContentDisposition formDataContentDisposition)

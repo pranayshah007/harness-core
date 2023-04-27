@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyList;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doNothing;
 
 import io.harness.CategoryTest;

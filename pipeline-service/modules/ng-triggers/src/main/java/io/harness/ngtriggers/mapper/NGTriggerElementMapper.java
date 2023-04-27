@@ -298,7 +298,8 @@ public class NGTriggerElementMapper {
             .webhookId(config.getSource().getWebhookId())
             .withServiceV2(withServiceV2)
             .tags(TagMapper.convertToList(config.getTags()))
-            .encryptedWebhookSecretIdentifier(config.getEncryptedWebhookSecretIdentifier());
+            .encryptedWebhookSecretIdentifier(config.getEncryptedWebhookSecretIdentifier())
+            .stagesToExecute(config.getStagesToExecute());
 
     if (config.getSource().getType() == NGTriggerType.SCHEDULED) {
       entityBuilder.nextIterations(new ArrayList<>());
@@ -345,8 +346,9 @@ public class NGTriggerElementMapper {
       case SCHEDULED:
         ScheduledTriggerConfig scheduledTriggerConfig = (ScheduledTriggerConfig) triggerSource.getSpec();
         CronTriggerSpec cronTriggerSpec = (CronTriggerSpec) scheduledTriggerConfig.getSpec();
+        String cronExpressionType = StringUtils.isBlank(cronTriggerSpec.getType()) ? "UNIX" : cronTriggerSpec.getType();
         return NGTriggerMetadata.builder()
-            .cron(CronMetadata.builder().expression(cronTriggerSpec.getExpression()).build())
+            .cron(CronMetadata.builder().expression(cronTriggerSpec.getExpression()).type(cronExpressionType).build())
             .build();
       case ARTIFACT:
         ArtifactTypeSpec artifactTypeSpec = ((ArtifactTriggerConfig) triggerSource.getSpec()).getSpec();
@@ -424,6 +426,7 @@ public class NGTriggerElementMapper {
         .yaml(generateNgTriggerConfigV2Yaml(ngTriggerEntity, true))
         .enabled(ngTriggerEntity.getEnabled() == null || ngTriggerEntity.getEnabled())
         .errorResponse(false)
+        .stagesToExecute(ngTriggerEntity.getStagesToExecute())
         .build();
   }
 
@@ -442,6 +445,7 @@ public class NGTriggerElementMapper {
         .enabled(ngTriggerEntity.getEnabled() == null || ngTriggerEntity.getEnabled())
         .errors(e.getErrors())
         .errorResponse(true)
+        .stagesToExecute(ngTriggerEntity.getStagesToExecute())
         .build();
   }
 

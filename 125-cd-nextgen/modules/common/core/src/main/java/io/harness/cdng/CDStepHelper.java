@@ -1035,14 +1035,21 @@ public class CDStepHelper {
   }
 
   public List<TaskSelector> getDelegateSelectors(ConnectorInfoDTO connectorInfoDTO) {
+    Set<String> delegateSelectors;
     switch (connectorInfoDTO.getConnectorType()) {
       case GITHUB:
-        Set<String> delegateSelectors = CollectionUtils.emptyIfNull(
-            ((GithubConnectorDTO) connectorInfoDTO.getConnectorConfig()).getDelegateSelectors());
-        return TaskSelectorYaml.toTaskSelector(
-            delegateSelectors.stream().map(TaskSelectorYaml::new).collect(Collectors.toList()));
+        delegateSelectors = ((GithubConnectorDTO) connectorInfoDTO.getConnectorConfig()).getDelegateSelectors();
+        break;
+      case GIT:
+        delegateSelectors = ((GitConfigDTO) connectorInfoDTO.getConnectorConfig()).getDelegateSelectors();
+        break;
       default:
         throw new UnsupportedOperationException(format("Unknown Connector Config for delegate selectors"));
     }
+
+    return TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(delegateSelectors)
+                                               .stream()
+                                               .map(TaskSelectorYaml::new)
+                                               .collect(Collectors.toList()));
   }
 }

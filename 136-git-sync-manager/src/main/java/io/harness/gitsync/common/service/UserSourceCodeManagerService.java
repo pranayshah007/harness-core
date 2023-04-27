@@ -23,4 +23,6 @@ public interface UserSourceCodeManagerService {
   UserSourceCodeManagerDTO save(UserSourceCodeManagerDTO userSourceCodeManager);
 
   long delete(String accountIdentifier, String userIdentifier, SCMType type);
+
+  UserSourceCodeManagerDTO update(UserSourceCodeManagerDTO userSourceCodeManagerDTO);
 }

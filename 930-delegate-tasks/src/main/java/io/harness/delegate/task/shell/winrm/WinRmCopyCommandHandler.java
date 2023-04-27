@@ -11,6 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.shell.winrm.WinRmUtils.getWinRmSessionConfig;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_WINRM;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_WINRM_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.INVALID_STORE_DELEGATE_CONFIG_TYPE_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.INVALID_STORE_DELEGATE_CONFIG_TYPE_FAILED;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.INVALID_STORE_DELEGATE_CONFIG_TYPE_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_HINT;
@@ -26,7 +29,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.storeconfig.GitFetchedStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
 import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
@@ -40,6 +45,7 @@ import io.harness.delegate.task.winrm.WinRmExecutorFactoryNG;
 import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.WingsException;
 import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.exception.runtime.WinRmCommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
@@ -50,10 +56,10 @@ import io.harness.ssh.FileSourceType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -144,12 +150,33 @@ public class WinRmCopyCommandHandler extends WinRmDownloadArtifactCommandHandler
       return Collections.emptyList();
     }
 
-    return winrmTaskParameters.getFileDelegateConfig()
-        .getStores()
-        .stream()
-        .filter(storeDelegateConfig -> StoreDelegateConfigType.HARNESS.equals(storeDelegateConfig.getType()))
-        .map(storeDelegateConfig -> (HarnessStoreDelegateConfig) storeDelegateConfig)
-        .flatMap(harnessStoreDelegateConfig -> harnessStoreDelegateConfig.getConfigFiles().stream())
-        .collect(Collectors.toList());
+    List<ConfigFileParameters> configFiles = new ArrayList<>();
+    for (StoreDelegateConfig storeDelegateConfig : winrmTaskParameters.getFileDelegateConfig().getStores()) {
+      if (storeDelegateConfig.getType() == null) {
+        throw generateExceptionForInvalidStoreDelegateConfig(null);
+      }
+
+      switch (storeDelegateConfig.getType()) {
+        case HARNESS:
+          HarnessStoreDelegateConfig harnessStoreDelegateConfig = (HarnessStoreDelegateConfig) storeDelegateConfig;
+          configFiles.addAll(harnessStoreDelegateConfig.getConfigFiles());
+          break;
+        case GIT_FETCHED:
+          GitFetchedStoreDelegateConfig fetchedStoreDelegateConfig =
+              (GitFetchedStoreDelegateConfig) storeDelegateConfig;
+          configFiles.addAll(fetchedStoreDelegateConfig.getConfigFiles());
+          break;
+        default:
+          throw generateExceptionForInvalidStoreDelegateConfig(storeDelegateConfig.getType());
+      }
+    }
+
+    return configFiles;
+  }
+
+  private WingsException generateExceptionForInvalidStoreDelegateConfig(StoreDelegateConfigType type) {
+    return NestedExceptionUtils.hintWithExplanationException(INVALID_STORE_DELEGATE_CONFIG_TYPE_HINT,
+        format(INVALID_STORE_DELEGATE_CONFIG_TYPE_EXPLANATION, type),
+        new SshCommandExecutionException(INVALID_STORE_DELEGATE_CONFIG_TYPE_FAILED));
   }
 }

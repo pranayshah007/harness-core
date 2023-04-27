@@ -43,10 +43,10 @@ import io.harness.ng.core.template.ListingScope;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.persistence.gitaware.GitAware;
 import io.harness.repositories.NGTemplateRepository;
-import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.springdata.SpringDataMongoUtils;
 import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.TemplateFilterProperties;
+import io.harness.template.beans.UpdateGitDetailsParams;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
@@ -101,7 +101,6 @@ public class NGTemplateServiceHelper {
   public Optional<TemplateEntity> getOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
       boolean getMetadataOnly, boolean loadFromCache) {
-    log.info("Principal in getOrThrowExceptionIfInvalid is {}", SourcePrincipalContextBuilder.getSourcePrincipal());
     try {
       Optional<TemplateEntity> optionalTemplate = getTemplate(accountId, orgIdentifier, projectIdentifier,
           templateIdentifier, versionLabel, deleted, getMetadataOnly, loadFromCache, false);
@@ -618,6 +617,17 @@ public class NGTemplateServiceHelper {
     update.set(TemplateEntityKeys.repoURL,
         gitAwareEntityHelper.getRepoUrl(accountIdentifier, orgIdentifier, projectIdentifier));
     update.set(TemplateEntityKeys.fallBackBranch, moveConfigOperationDTO.getBranch());
+    return update;
+  }
+
+  public Update getGitDetailsUpdate(UpdateGitDetailsParams updateGitDetailsParams) {
+    Update update = new Update();
+    if (isNotEmpty(updateGitDetailsParams.getRepoName())) {
+      update.set(TemplateEntityKeys.repo, updateGitDetailsParams.getRepoName());
+    }
+    if (isNotEmpty(updateGitDetailsParams.getFilepath())) {
+      update.set(TemplateEntityKeys.filePath, updateGitDetailsParams.getFilepath());
+    }
     return update;
   }
 }

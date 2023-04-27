@@ -10,6 +10,8 @@ package io.harness.accesscontrol.roleassignments.privileged.persistence;
 import static io.harness.accesscontrol.roleassignments.privileged.persistence.PrivilegedRoleAssignmentDBO.COLLECTION_NAME;
 import static io.harness.ng.DbAliases.ACCESS_CONTROL;
 
+import static java.util.Optional.empty;
+
 import io.harness.accesscontrol.AccessControlEntity;
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.annotations.StoreIn;
@@ -23,6 +25,7 @@ import io.harness.persistence.PersistentEntity;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import java.util.List;
+import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -94,5 +97,10 @@ public class PrivilegedRoleAssignmentDBO implements PersistentEntity, AccessCont
                  .field(PrivilegedRoleAssignmentDBOKeys.principalIdentifier)
                  .build())
         .build();
+  }
+
+  @Override
+  public Optional<String> getAccountId() {
+    return empty();
   }
 }

@@ -15,6 +15,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.expression.Expression;
 
+import software.wings.beans.ServiceHookDelegateConfig;
+
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
@@ -45,4 +47,5 @@ public class K8sBGDeployRequest implements K8sDeployRequest {
   boolean useK8sApiForSteadyStateCheck;
   boolean useDeclarativeRollback;
   @Expression(ALLOW_SECRETS) Map<String, String> k8sCommandFlags;
+  @Expression(ALLOW_SECRETS) List<ServiceHookDelegateConfig> serviceHooks;
 }
