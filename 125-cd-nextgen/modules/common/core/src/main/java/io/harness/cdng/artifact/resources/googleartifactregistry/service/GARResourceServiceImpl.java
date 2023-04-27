@@ -16,7 +16,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GarRequestDTO;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
@@ -109,6 +111,36 @@ public class GARResourceServiceImpl implements GARResourceService {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(googleArtifactDelegateRequest,
           ArtifactTaskType.GET_BUILDS, baseNGAccess, "Google Artifact Registry Get Builds task failure due to error");
       return getGarResponseDTO(artifactTaskExecutionResponse);
+    } catch (DelegateServiceDriverException ex) {
+      throw new HintException(
+          String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
+          new DelegateNotAvailableException(ex.getCause().getMessage(), WingsException.USER));
+    } catch (ExplanationException e) {
+      throw new HintException(HintException.HINT_GCP_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
+    }
+  }
+
+  @Override
+  public GARBuildDetailsDTO getLastSuccessfulBuild(IdentifierRef googleArtifactRegistryRef, String region,
+      String repositoryName, String project, String pkg, GarRequestDTO garRequestDTO, String orgIdentifier,
+      String projectIdentifier) {
+    GcpConnectorDTO connector = getConnector(googleArtifactRegistryRef);
+    BaseNGAccess baseNGAccess =
+        getBaseNGAccess(googleArtifactRegistryRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+    List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
+    GarDelegateRequest googleArtifactDelegateRequest = ArtifactDelegateRequestUtils.getGoogleArtifactDelegateRequest(
+        region, repositoryName, project, pkg, garRequestDTO.getTag(), garRequestDTO.getTagRegex(), connector,
+        encryptionDetails, ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY, MAXBUILDS);
+
+    try {
+      ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
+          executeSyncTask(googleArtifactDelegateRequest, ArtifactTaskType.GET_LAST_SUCCESSFUL_BUILD, baseNGAccess,
+              "Google Artifact Registry Get last successful build task failure due to error");
+      GARResponseDTO garResponseDTO = getGarResponseDTO(artifactTaskExecutionResponse);
+      if (garResponseDTO.getBuildDetailsList().size() != 1) {
+        throw new ArtifactServerException("Google Artifact Registry get last successful build task failure.");
+      }
+      return garResponseDTO.getBuildDetailsList().get(0);
     } catch (DelegateServiceDriverException ex) {
       throw new HintException(
           String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),

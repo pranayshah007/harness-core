@@ -263,7 +263,7 @@ if [[ "" != "$PMS_API_BASE_URL" ]]; then
 fi
 
 if [[ "" != "$SSCA_SERVICE_ENDPOINT" ]]; then
-  export SSCA_SERVICE_ENDPOINT; yq -i '.sscaServiceConfig.baseUrl=env(SSCA_SERVICE_ENDPOINT)' $CONFIG_FILE
+  export SSCA_SERVICE_ENDPOINT; yq -i '.sscaServiceConfig.httpClientConfig.baseUrl=env(SSCA_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$SSCA_SERVICE_GLOBAL_TOKEN" ]]; then

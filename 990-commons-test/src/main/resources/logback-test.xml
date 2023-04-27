@@ -17,8 +17,6 @@
     <logger name="org.hibernate.validator" level="ERROR"/>
     <logger name="ro.fortsoft" level="ERROR"/>
     <logger name="software.wings.rules.WingsRule" level="ERROR"/>
-    <logger name="io.harness.testlib.RealMongo" level="ERROR"/>
-
 
     <root level="INFO">
         <appender-ref ref="stdout"/>

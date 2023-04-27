@@ -10,10 +10,8 @@ package io.harness.cdng.creator.plan.steps.aws.sam;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.aws.sam.AwsSamDeployStepNode;
-import io.harness.cdng.aws.sam.AwsSamDeployStepParameters;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
 import io.harness.executions.steps.StepSpecTypeConstants;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
@@ -40,10 +38,6 @@ public class AwsSamDeployStepPlanCreator extends CDPMSStepPlanCreatorV2<AwsSamDe
 
   @Override
   protected StepParameters getStepParameters(PlanCreationContext ctx, AwsSamDeployStepNode stepNode) {
-    final StepParameters stepParameters = super.getStepParameters(ctx, stepNode);
-    AwsSamDeployStepParameters awsSamDeployStepParameters =
-        (AwsSamDeployStepParameters) ((StepElementParameters) stepParameters).getSpec();
-    awsSamDeployStepParameters.setDelegateSelectors(stepNode.getAwsSamDeployStepInfo().getDelegateSelectors());
-    return stepParameters;
+    return super.getStepParameters(ctx, stepNode);
   }
 }

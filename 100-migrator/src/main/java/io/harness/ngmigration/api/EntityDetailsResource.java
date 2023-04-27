@@ -15,6 +15,8 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EncryptedData;
+import io.harness.beans.EncryptedData.EncryptedDataKeys;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.dto.BaseEntityDetailsDTO;
 import io.harness.persistence.HPersistence;
@@ -22,8 +24,14 @@ import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import software.wings.beans.Application;
+import software.wings.beans.Environment;
+import software.wings.beans.Environment.EnvironmentKeys;
 import software.wings.beans.Pipeline;
 import software.wings.beans.Pipeline.PipelineKeys;
+import software.wings.beans.Service;
+import software.wings.beans.Service.ServiceKeys;
+import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttribute.SettingAttributeKeys;
 import software.wings.beans.Workflow;
 import software.wings.beans.Workflow.WorkflowKeys;
 import software.wings.beans.trigger.Trigger;
@@ -140,6 +148,96 @@ public class EntityDetailsResource {
 
     if (EmptyPredicate.isNotEmpty(triggers)) {
       entities = triggers.stream()
+                     .map(entity -> BaseEntityDetailsDTO.builder().id(entity.getUuid()).name(entity.getName()).build())
+                     .collect(Collectors.toList());
+    }
+    return new RestResponse<>(entities);
+  }
+
+  @GET
+  @Path("/connectors")
+  @Timed
+  @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
+  public RestResponse<List<BaseEntityDetailsDTO>> listConnectors(
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId) {
+    List<BaseEntityDetailsDTO> entities = new ArrayList<>();
+    List<SettingAttribute> triggers = hPersistence.createQuery(SettingAttribute.class)
+                                          .filter(SettingAttribute.ACCOUNT_ID_KEY, accountId)
+                                          .project(SettingAttributeKeys.uuid, true)
+                                          .project(SettingAttributeKeys.name, true)
+                                          .asList();
+
+    if (EmptyPredicate.isNotEmpty(triggers)) {
+      entities = triggers.stream()
+                     .map(entity -> BaseEntityDetailsDTO.builder().id(entity.getUuid()).name(entity.getName()).build())
+                     .collect(Collectors.toList());
+    }
+    return new RestResponse<>(entities);
+  }
+
+  @GET
+  @Path("/services")
+  @Timed
+  @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
+  public RestResponse<List<BaseEntityDetailsDTO>> listServices(
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, @QueryParam("appId") String appId) {
+    List<BaseEntityDetailsDTO> entities = new ArrayList<>();
+    List<Service> services = hPersistence.createQuery(Service.class)
+                                 .filter(Service.ACCOUNT_ID_KEY, accountId)
+                                 .filter(ServiceKeys.appId, appId)
+                                 .project(ServiceKeys.uuid, true)
+                                 .project(ServiceKeys.name, true)
+                                 .asList();
+
+    if (EmptyPredicate.isNotEmpty(services)) {
+      entities = services.stream()
+                     .map(entity -> BaseEntityDetailsDTO.builder().id(entity.getUuid()).name(entity.getName()).build())
+                     .collect(Collectors.toList());
+    }
+    return new RestResponse<>(entities);
+  }
+
+  @GET
+  @Path("/environments")
+  @Timed
+  @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
+  public RestResponse<List<BaseEntityDetailsDTO>> listEnvironments(
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, @QueryParam("appId") String appId) {
+    List<BaseEntityDetailsDTO> entities = new ArrayList<>();
+    List<Environment> environments = hPersistence.createQuery(Environment.class)
+                                         .filter(Environment.ACCOUNT_ID_KEY, accountId)
+                                         .filter(EnvironmentKeys.appId, appId)
+                                         .project(EnvironmentKeys.uuid, true)
+                                         .project(EnvironmentKeys.name, true)
+                                         .asList();
+
+    if (EmptyPredicate.isNotEmpty(environments)) {
+      entities = environments.stream()
+                     .map(entity -> BaseEntityDetailsDTO.builder().id(entity.getUuid()).name(entity.getName()).build())
+                     .collect(Collectors.toList());
+    }
+    return new RestResponse<>(entities);
+  }
+
+  @GET
+  @Path("/secrets")
+  @Timed
+  @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
+  public RestResponse<List<BaseEntityDetailsDTO>> listSecrets(
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId) {
+    List<BaseEntityDetailsDTO> entities = new ArrayList<>();
+    List<EncryptedData> secrets = hPersistence.createQuery(EncryptedData.class)
+                                      .filter(EncryptedData.ACCOUNT_ID_KEY, accountId)
+                                      .project(EncryptedDataKeys.uuid, true)
+                                      .project(EncryptedDataKeys.name, true)
+                                      .asList();
+
+    if (EmptyPredicate.isNotEmpty(secrets)) {
+      entities = secrets.stream()
                      .map(entity -> BaseEntityDetailsDTO.builder().id(entity.getUuid()).name(entity.getName()).build())
                      .collect(Collectors.toList());
     }

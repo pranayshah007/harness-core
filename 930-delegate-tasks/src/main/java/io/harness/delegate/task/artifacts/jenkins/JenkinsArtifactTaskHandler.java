@@ -177,6 +177,16 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
           return getSuccessTaskExecutionResponse(Collections.singletonList(jenkinsArtifactDelegateResponse),
               Collections.singletonList(buildDetails.get(0)));
         } else {
+          // If provided build is not older than the ARTIFACT_RETENTION_SIZE builds.
+          BuildDetails buildDetail = jenkinsRegistryService.verifyBuildForJob(
+              JenkinsRequestResponseMapper.toJenkinsInternalConfig(attributesRequest), jobName,
+              attributesRequest.getArtifactPaths(), attributesRequest.getBuildNumber());
+          if (buildDetail != null) {
+            JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
+                JenkinsRequestResponseMapper.toJenkinsArtifactDelegateResponse(buildDetail, attributesRequest);
+            return getSuccessTaskExecutionResponse(
+                Collections.singletonList(jenkinsArtifactDelegateResponse), Collections.singletonList(buildDetail));
+          }
           throw NestedExceptionUtils.hintWithExplanationException(
               "Check if the version exist & check if the right connector chosen for fetching the build.",
               "Version didn't matched ", new InvalidRequestException("Version didn't matched"));

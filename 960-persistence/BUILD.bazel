@@ -94,8 +94,6 @@ java_library(
         "@maven//:com_google_inject_guice",
         "@maven//:de_bwaldvogel_mongo_java_server_core",
         "@maven//:de_bwaldvogel_mongo_java_server_memory_backend",
-        "@maven//:de_flapdoodle_embed_de_flapdoodle_embed_mongo",
-        "@maven//:de_flapdoodle_embed_de_flapdoodle_embed_process",
         "@maven//:dev_morphia_morphia_core",
         "@maven//:org_mongodb_mongodb_driver_core",
         "@maven//:org_slf4j_slf4j_api",

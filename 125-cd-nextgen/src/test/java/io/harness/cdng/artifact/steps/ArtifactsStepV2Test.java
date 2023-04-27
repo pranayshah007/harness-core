@@ -115,6 +115,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import software.wings.beans.SerializationFormat;
 
@@ -168,6 +169,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
   @Mock private SecretManagerClientService ngSecretService;
   @Mock ExceptionManager exceptionManager;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   private final EmptyStepParameters stepParameters = new EmptyStepParameters();
   private final StepInputPackage inputPackage = StepInputPackage.builder().build();
@@ -184,7 +186,9 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     Reflect.on(stepHelper).set("connectorService", connectorService);
     Reflect.on(stepHelper).set("secretManagerClientService", secretManagerClientService);
     Reflect.on(stepHelper).set("cdExpressionResolver", expressionResolver);
+    Reflect.on(stepHelper).set("ngFeatureFlagHelperService", ngFeatureFlagHelperService);
     Reflect.on(step).set("artifactStepHelper", stepHelper);
+    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
 
     // setup mock for connector
     doReturn(Optional.of(

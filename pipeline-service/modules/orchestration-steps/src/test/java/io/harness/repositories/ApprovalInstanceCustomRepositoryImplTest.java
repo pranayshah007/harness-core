@@ -8,6 +8,7 @@
 package io.harness.repositories;
 
 import static io.harness.rule.OwnerRule.SHALINI;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -71,5 +72,19 @@ public class ApprovalInstanceCustomRepositoryImplTest extends OrchestrationSteps
     doReturn(null).when(mongoTemplate).updateMulti(any(), any(), anyString());
     approvalInstanceCustomRepository.updateMulti(query, update);
     verify(mongoTemplate, times(1)).updateMulti(query, update, ApprovalInstance.class);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testFindAll() {
+    approvalInstanceCustomRepository = new ApprovalInstanceCustomRepositoryImpl(mongoTemplate);
+    Criteria criteria = new Criteria();
+    doReturn(null).when(mongoTemplate).find(any(), any());
+    Query query = new Query(criteria);
+    ArgumentCaptor<Query> queryArgumentCaptor = ArgumentCaptor.forClass(Query.class);
+    approvalInstanceCustomRepository.findAll(criteria);
+    verify(mongoTemplate, times(1)).find(queryArgumentCaptor.capture(), any());
+    assertEquals(queryArgumentCaptor.getValue(), query);
   }
 }

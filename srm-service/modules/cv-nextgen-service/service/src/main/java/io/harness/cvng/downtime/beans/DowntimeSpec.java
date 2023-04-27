@@ -33,7 +33,8 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode()
 public abstract class DowntimeSpec {
   @ApiModelProperty(required = true) @NotNull String timezone;
-  @ApiModelProperty(required = true) @NotNull long startTime;
+  @Deprecated long startTime;
+  String startDateTime;
 
   @JsonIgnore public abstract DowntimeType getType();
 }

@@ -189,6 +189,7 @@ public class GcpSyncTasklet implements Tasklet {
     BigQuery bigQuery = BigQueryOptions.newBuilder().setCredentials(credentials).build().getService();
     DatasetId datasetIdFullyQualified = DatasetId.of(projectId, datasetId);
     Dataset dataset = bigQuery.getDataset(datasetIdFullyQualified);
+    log.info("dataset.getLocation(): {}", dataset.getLocation());
     if (isEmpty(tableName)) {
       // Older way to get the tableName
       Page<Table> tableList = dataset.list(BigQuery.TableListOption.pageSize(1000));

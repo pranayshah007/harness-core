@@ -35,4 +35,5 @@ public class HarnessApprovalInstanceDetailsDTO implements ApprovalInstanceDetail
   List<HarnessApprovalActivity> approvalActivities;
   List<ApproverInputInfoDTO> approverInputs;
   List<ApprovalUserGroupDTO> validatedApprovalUserGroups;
+  boolean isAutoRejectEnabled;
 }

@@ -14,5 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(CDC)
 public enum CDAdviserTypes {
   // Rollback Custom
-  ROLLBACK_CUSTOM
+  ROLLBACK_CUSTOM,
+  CD_STEPS_ROLLBACK_MODE
 }

@@ -104,7 +104,7 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
   public void deleteConfigEnvVariables(String accountIdentifier, String configId) {
     List<PluginConfigEnvVariablesEntity> pluginsEnvVariablesEntity =
         configEnvVariablesRepository.findAllByAccountIdentifierAndPluginId(accountIdentifier, configId);
-    configEnvVariablesRepository.deleteAllByPluginId(configId);
+    configEnvVariablesRepository.deleteAllByAccountIdentifierAndPluginId(accountIdentifier, configId);
     backstageEnvVariableService.deleteMultiUsingEnvNames(
         getEnvVariablesFromEntities(pluginsEnvVariablesEntity), accountIdentifier);
   }

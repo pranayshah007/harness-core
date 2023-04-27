@@ -16,7 +16,6 @@ import io.harness.PersistenceTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.testlib.RealMongo;
 
 import com.google.inject.Inject;
 import org.junit.Test;
@@ -26,7 +25,7 @@ public class ObjectArrayConverterTest extends PersistenceTestBase {
   @Inject private HPersistence persistence;
 
   @Test
-  @RealMongo
+
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void testConverter() {
@@ -43,7 +42,7 @@ public class ObjectArrayConverterTest extends PersistenceTestBase {
   }
 
   @Test
-  @RealMongo
+
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void testConverterForNull() {
@@ -57,7 +56,7 @@ public class ObjectArrayConverterTest extends PersistenceTestBase {
   }
 
   @Test
-  @RealMongo
+
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void testConverterForEmpty() {

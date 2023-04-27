@@ -8,6 +8,7 @@
 package io.harness.cdng.artifact.resources.googleartifactregistry.dtos;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -19,4 +20,5 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GARBuildDetailsDTO {
   String version;
+  Map<String, String> metadata;
 }

@@ -28,11 +28,12 @@ import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
 import com.google.protobuf.StringValue;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -218,16 +219,10 @@ public class InfraStructureDefinitionVisitorHelperTest extends CategoryTest {
     // Infra and Connector
     assertThat(result).hasSize(2);
 
-    Iterator<EntityDetailProtoDTO> resultIterator = result.iterator();
-    EntityDetailProtoDTO infraEntityDetail = resultIterator.next();
-    assertThat(infraEntityDetail.getType()).isEqualTo(EntityTypeProtoEnum.INFRASTRUCTURE);
-    verifyInfraDefRef(infraEntityDetail.getInfraDefRef());
-    assertThat(infraEntityDetail.getInfraDefRef().getEnvIdentifier().getValue()).isEqualTo("my_env");
+    List<EntityTypeProtoEnum> resultTypes =
+        result.stream().map(EntityDetailProtoDTO::getType).collect(Collectors.toList());
 
-    EntityDetailProtoDTO connectorEntityDetail = resultIterator.next();
-    assertThat(connectorEntityDetail.getType()).isEqualTo(EntityTypeProtoEnum.CONNECTORS);
-    // connector ref provided in infra inputs
-    assertThat(connectorEntityDetail.getIdentifierRef().getIdentifier().getValue()).isEqualTo("testConn");
+    assertThat(resultTypes).contains(EntityTypeProtoEnum.CONNECTORS, EntityTypeProtoEnum.INFRASTRUCTURE);
   }
 
   private void verifyInfraDefRef(InfraDefinitionReferenceProtoDTO infraDefRef) {

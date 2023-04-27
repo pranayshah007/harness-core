@@ -225,9 +225,7 @@ public class ServiceResourceV2 {
           NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted) {
     Optional<ServiceEntity> serviceEntity =
         serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, deleted);
-    String version = "0";
     if (serviceEntity.isPresent()) {
-      version = serviceEntity.get().getVersion().toString();
       if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {
         NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity.get());
         serviceEntity.get().setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
@@ -241,11 +239,10 @@ public class ServiceResourceV2 {
       ServiceEntity service =
           updateArtifactoryRegistryUrlIfEmpty(serviceEntity.get(), accountId, orgIdentifier, projectIdentifier);
       Optional<ServiceEntity> serviceResponse = Optional.ofNullable(service);
-      return ResponseDTO.newResponse(
-          version, serviceResponse.map(ServiceElementMapper::toResponseWrapper).orElse(null));
+      return ResponseDTO.newResponse(serviceResponse.map(ServiceElementMapper::toResponseWrapper).orElse(null));
     }
 
-    return ResponseDTO.newResponse(version, serviceEntity.map(ServiceElementMapper::toResponseWrapper).orElse(null));
+    return ResponseDTO.newResponse(serviceEntity.map(ServiceElementMapper::toResponseWrapper).orElse(null));
   }
 
   @POST
@@ -276,8 +273,7 @@ public class ServiceResourceV2 {
         serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId());
     ServiceEntity createdService = serviceEntityService.create(serviceEntity);
 
-    return ResponseDTO.newResponse(
-        createdService.getVersion().toString(), ServiceElementMapper.toResponseWrapper(createdService));
+    return ResponseDTO.newResponse(ServiceElementMapper.toResponseWrapper(createdService));
   }
 
   @POST
@@ -365,8 +361,7 @@ public class ServiceResourceV2 {
     }
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     ServiceEntity updatedService = serviceEntityService.update(requestService);
-    return ResponseDTO.newResponse(
-        updatedService.getVersion().toString(), ServiceElementMapper.toResponseWrapper(updatedService));
+    return ResponseDTO.newResponse(ServiceElementMapper.toResponseWrapper(updatedService));
   }
 
   @PUT
@@ -395,8 +390,7 @@ public class ServiceResourceV2 {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         requestService.getOrgIdentifier(), requestService.getProjectIdentifier(), requestService.getAccountId());
     ServiceEntity upsertService = serviceEntityService.upsert(requestService, UpsertOptions.DEFAULT);
-    return ResponseDTO.newResponse(
-        upsertService.getVersion().toString(), ServiceElementMapper.toResponseWrapper(upsertService));
+    return ResponseDTO.newResponse(ServiceElementMapper.toResponseWrapper(upsertService));
   }
 
   @GET

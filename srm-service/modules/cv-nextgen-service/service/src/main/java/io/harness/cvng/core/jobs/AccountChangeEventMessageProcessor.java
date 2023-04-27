@@ -50,9 +50,18 @@ public class AccountChangeEventMessageProcessor extends EntityChangeEventMessage
 
   @VisibleForTesting
   void processDeleteAction(AccountEntityChangeDTO accountEntityChangeDTO) {
-    ENTITIES_MAP.forEach(
-        (entity, handler)
-            -> injector.getInstance(handler).deleteByAccountIdentifier(entity, accountEntityChangeDTO.getAccountId()));
+    ENTITIES_MAP.forEach((entity, handler) -> {
+      log.info("Deleting all records of entity {} for accountId {}", entity.getSimpleName(),
+          accountEntityChangeDTO.getAccountId());
+      try {
+        injector.getInstance(handler).deleteByAccountIdentifier(entity, accountEntityChangeDTO.getAccountId());
+        log.info("Deleted all records of entity {} for accountId {}", entity.getSimpleName(),
+            accountEntityChangeDTO.getAccountId());
+      } catch (Exception exception) {
+        log.error("Error while deleting all records of entity {} for accountId {}", entity.getSimpleName(),
+            accountEntityChangeDTO.getAccountId(), exception);
+      }
+    });
   }
 
   private boolean validateMessage(Message message) {

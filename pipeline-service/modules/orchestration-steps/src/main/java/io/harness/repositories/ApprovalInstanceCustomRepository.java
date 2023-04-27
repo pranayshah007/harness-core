@@ -12,6 +12,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 
 import com.mongodb.client.result.UpdateResult;
+import java.util.List;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -19,4 +21,6 @@ import org.springframework.data.mongodb.core.query.Update;
 public interface ApprovalInstanceCustomRepository {
   ApprovalInstance updateFirst(Query query, Update update);
   UpdateResult updateMulti(Query query, Update update);
+
+  List<ApprovalInstance> findAll(Criteria criteria);
 }

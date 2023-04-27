@@ -22,6 +22,7 @@ import static io.harness.rule.OwnerRule.ARPIT;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.BRETT;
+import static io.harness.rule.OwnerRule.GAURAV_NANDA;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.MARKO;
@@ -168,12 +169,12 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
   @Inject private Clock clock;
 
   private static final String WRONG_INFRA_MAPPING_ID = "WRONG_INFRA_MAPPING_ID";
-
   private static final String VERSION = "1.0.0";
+  private static final String UNREACHABLE_URL = "http://unreachableUrl.com";
 
   private static final List<String> supportedTasks = Arrays.stream(TaskType.values()).map(Enum::name).collect(toList());
   private static final String expectedErrorMessage =
-      "None of the active delegates were eligible to complete the task.\n\n ===> hostname: In scope and no tag mismatch\n";
+      "None of the active delegates were eligible to complete the task.\n\n ===> hostname: Unknown error\n";
 
   @Before
   public void setUp() throws IllegalAccessException, ExecutionException {
@@ -1667,6 +1668,114 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
 
     assertThat(errorMessage).isNotNull();
     assertThat(errorMessage).isEqualTo(expectedErrorMessage);
+  }
+
+  @Test
+  @Owner(developers = GAURAV_NANDA)
+  @Category(UnitTests.class)
+  public void testGetActiveDelegateAssignmentErrorMessageWithOneDelegateFailingCapabilityCheck()
+      throws ExecutionException {
+    // Arrange
+    final String accountId = generateUuid();
+    final String eligibleDelegateId = generateUuid();
+    final String eligibleDelegateHostName = "eligibleDelegateHostName";
+
+    Delegate eligibleDelegate = Delegate.builder()
+                                    .uuid(eligibleDelegateId)
+                                    .hostName(eligibleDelegateHostName)
+                                    .status(ENABLED)
+                                    .lastHeartBeat(clock.millis())
+                                    .supportedTaskTypes(Arrays.asList(TaskType.HTTP.name()))
+                                    .build();
+    when(accountDelegatesCache.get(accountId)).thenReturn(Arrays.asList(eligibleDelegate));
+    when(delegateCache.get(accountId, eligibleDelegateId, false)).thenReturn(eligibleDelegate);
+
+    DelegateTask taskWithCapability = DelegateTask.builder()
+                                          .accountId(accountId)
+                                          .description("HTTP task")
+                                          .data(TaskData.builder().taskType(TaskType.HTTP.name()).build())
+                                          .build();
+    taskWithCapability.setExecutionCapabilities(
+        Arrays.asList(HttpConnectionExecutionCapability.builder().url(UNREACHABLE_URL).build()));
+    taskWithCapability.setEligibleToExecuteDelegateIds(new LinkedList<>(Arrays.asList(eligibleDelegateId)));
+
+    DelegateConnectionResult connectionResult =
+        DelegateConnectionResult.builder().accountId(accountId).criteria(UNREACHABLE_URL).build();
+    connectionResult.setDelegateId(eligibleDelegateId);
+    connectionResult.setValidated(false);
+    persistence.save(connectionResult);
+
+    // Act
+    String errorMessage = assignDelegateService.getActiveDelegateAssignmentErrorMessage(EXPIRED, taskWithCapability);
+
+    // Assert
+    assertThat(errorMessage).isNotNull();
+    assertThat(errorMessage)
+        .isEqualTo("None of the active delegates were eligible to complete the task.\n\n ===> "
+            + eligibleDelegateHostName + ": \"Missing Capabilities: [" + UNREACHABLE_URL + "]\"\n");
+  }
+
+  @Test
+  @Owner(developers = GAURAV_NANDA)
+  @Category(UnitTests.class)
+  public void testGetActiveDelegateAssignmentErrorMessageWithTwoDelegatesFailingCapabilityCheck()
+      throws ExecutionException {
+    // Arrange
+    final String accountId = generateUuid();
+
+    final String delegate1Id = generateUuid();
+    final String delegate1HostName = "DelegateOne";
+    final String delegate2Id = generateUuid();
+    final String delegate2HostName = "DelegateTwo";
+
+    Delegate delegate1 = Delegate.builder()
+                             .uuid(delegate1Id)
+                             .hostName(delegate1HostName)
+                             .status(ENABLED)
+                             .lastHeartBeat(clock.millis())
+                             .supportedTaskTypes(Arrays.asList(TaskType.HTTP.name()))
+                             .build();
+    Delegate delegate2 = Delegate.builder()
+                             .uuid(delegate2Id)
+                             .hostName(delegate2HostName)
+                             .status(ENABLED)
+                             .lastHeartBeat(clock.millis())
+                             .supportedTaskTypes(Arrays.asList(TaskType.HTTP.name()))
+                             .build();
+    when(accountDelegatesCache.get(accountId)).thenReturn(Arrays.asList(delegate1, delegate2));
+    when(delegateCache.get(accountId, delegate1Id, false)).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2Id, false)).thenReturn(delegate2);
+
+    DelegateTask taskWithCapability = DelegateTask.builder()
+                                          .accountId(accountId)
+                                          .description("HTTP task")
+                                          .data(TaskData.builder().taskType(TaskType.HTTP.name()).build())
+                                          .build();
+    taskWithCapability.setExecutionCapabilities(
+        Arrays.asList(HttpConnectionExecutionCapability.builder().url(UNREACHABLE_URL).build()));
+    taskWithCapability.setEligibleToExecuteDelegateIds(new LinkedList<>(Arrays.asList(delegate1Id, delegate2Id)));
+
+    DelegateConnectionResult delegate1ConnectionResult =
+        DelegateConnectionResult.builder().accountId(accountId).criteria(UNREACHABLE_URL).build();
+    delegate1ConnectionResult.setDelegateId(delegate1Id);
+    delegate1ConnectionResult.setValidated(false);
+    persistence.save(delegate1ConnectionResult);
+
+    DelegateConnectionResult delegate2ConnectionResult =
+        DelegateConnectionResult.builder().accountId(accountId).criteria(UNREACHABLE_URL).build();
+    delegate2ConnectionResult.setDelegateId(delegate2Id);
+    delegate2ConnectionResult.setValidated(false);
+    persistence.save(delegate2ConnectionResult);
+
+    // Act
+    String errorMessage = assignDelegateService.getActiveDelegateAssignmentErrorMessage(EXPIRED, taskWithCapability);
+
+    // Assert
+    assertThat(errorMessage).isNotNull();
+    assertThat(errorMessage)
+        .isEqualTo("None of the active delegates were eligible to complete the task.\n\n"
+            + " ===> " + delegate1HostName + ": \"Missing Capabilities: [" + UNREACHABLE_URL + "]\"\n"
+            + " ===> " + delegate2HostName + ": \"Missing Capabilities: [" + UNREACHABLE_URL + "]\"\n");
   }
 
   @Test

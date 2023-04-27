@@ -512,7 +512,6 @@ java_library(
         "@maven//:commons_logging_commons_logging",
         "@maven//:commons_pool_commons_pool",
         "@maven//:commons_validator_commons_validator",
-        "@maven//:de_flapdoodle_embed_de_flapdoodle_embed_process",
         "@maven//:de_javakaffee_kryo_serializers",
         "@maven//:dev_morphia_morphia_core",
         "@maven//:dk_brics_automaton_automaton",

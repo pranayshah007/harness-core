@@ -6,6 +6,8 @@
  */
 package io.harness.idp.configmanager.service;
 
+import static io.harness.idp.common.CommonUtils.readFileFromClassPath;
+
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -92,11 +94,10 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   @Override
   public AppConfig saveConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType)
       throws Exception {
-    validateSchemaForPlugin(appConfig.getConfigs(), appConfig.getConfigId());
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setConfigType(configType);
     appConfigEntity.setEnabledDisabledAt(System.currentTimeMillis());
-    appConfigEntity.setEnabled(false);
+    appConfigEntity.setEnabled(getEnabledFlagBasedOnConfigType(configType));
     List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
         configEnvVariablesService.insertConfigEnvVariables(appConfig, accountIdentifier);
     AppConfigEntity insertedData = appConfigRepository.save(appConfigEntity);
@@ -108,7 +109,6 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   @Override
   public AppConfig updateConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType)
       throws Exception {
-    validateSchemaForPlugin(appConfig.getConfigs(), appConfig.getConfigId());
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setConfigType(configType);
     List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
@@ -174,8 +174,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   @Override
   public MergedAppConfigEntity mergeAndSaveAppConfig(String accountIdentifier) throws Exception {
     String mergedAppConfig = mergeAllAppConfigsForAccount(accountIdentifier);
-    if (!ConfigManagerUtils.isValidSchema(
-            mergedAppConfig, ConfigManagerUtils.readFile(MERGED_APP_CONFIG_JSON_SCHEMA_PATH))) {
+    if (!ConfigManagerUtils.isValidSchema(mergedAppConfig, readFileFromClassPath(MERGED_APP_CONFIG_JSON_SCHEMA_PATH))) {
       throw new InvalidRequestException(String.format(INVALID_MERGED_APP_CONFIG_SCHEMA, accountIdentifier));
     }
     updateConfigMap(accountIdentifier, mergedAppConfig, CONFIG_NAME);
@@ -219,7 +218,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   }
 
   private String mergeAppConfigs(List<String> configs) throws Exception {
-    String baseAppConfig = ConfigManagerUtils.readFile(BASE_APP_CONFIG_PATH);
+    String baseAppConfig = readFileFromClassPath(BASE_APP_CONFIG_PATH);
     JsonNode baseConfig = ConfigManagerUtils.asJsonNode(baseAppConfig);
     Iterator<String> itr = configs.iterator();
     while (itr.hasNext()) {
@@ -258,7 +257,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
         "Config map successfully created/updated for account - {} in namespace - {}", accountIdentifier, namespace);
   }
 
-  private void validateSchemaForPlugin(String config, String configId) throws Exception {
+  public void validateSchemaForPlugin(String config, String configId) throws Exception {
     String pluginSchema = ConfigManagerUtils.getPluginConfigSchema(configId);
     if (pluginSchema == null) {
       throw new UnsupportedOperationException(INVALID_CONFIG_ID_PROVIDED);
@@ -295,5 +294,12 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   private List<String> getAllEnvVariablesForMultiplePluginIds(String accountIdentifier, List<String> pluginIds) {
     return configEnvVariablesService.getAllEnvVariablesForAccountIdentifierAndMultiplePluginIds(
         accountIdentifier, pluginIds);
+  }
+
+  private Boolean getEnabledFlagBasedOnConfigType(ConfigType configType) {
+    if (configType.equals(ConfigType.PLUGIN)) {
+      return false;
+    }
+    return true;
   }
 }

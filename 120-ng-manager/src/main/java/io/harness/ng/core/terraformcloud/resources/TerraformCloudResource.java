@@ -59,8 +59,8 @@ public class TerraformCloudResource {
   public ResponseDTO<OrganizationsDTO> getOrganizations(
       @NotNull @QueryParam("connectorRef") String terraformCloudConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(orgIdentifier, projectIdentifier, accountId);
     IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
         terraformCloudConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
@@ -73,8 +73,8 @@ public class TerraformCloudResource {
   @ApiOperation(value = "Gets terraform cloud workspaces", nickname = "getTerraformCloudWorkspaces")
   public ResponseDTO<WorkspacesDTO> getWorkspaces(@QueryParam("connectorRef") String terraformCloudConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotEmpty @NotNull @QueryParam("organization") String organization) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(orgIdentifier, projectIdentifier, accountId);
     IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(

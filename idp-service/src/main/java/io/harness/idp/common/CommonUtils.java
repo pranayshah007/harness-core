@@ -9,7 +9,12 @@ package io.harness.idp.common;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 
+import com.google.common.io.Resources;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,5 +28,14 @@ public class CommonUtils {
       return arrOfStr[1];
     }
     return arrOfStr[0];
+  }
+
+  public static String readFileFromClassPath(String filename) {
+    ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+    try {
+      return Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Could not read resource file: " + filename, e);
+    }
   }
 }

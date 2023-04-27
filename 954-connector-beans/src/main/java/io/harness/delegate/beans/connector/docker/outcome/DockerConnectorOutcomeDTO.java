@@ -8,19 +8,14 @@
 package io.harness.delegate.beans.connector.docker.outcome;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.delegate.beans.connector.docker.DockerAuthType.ANONYMOUS;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
 import io.harness.delegate.beans.connector.docker.DockerRegistryProviderType;
-import io.harness.exception.InvalidRequestException;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -49,15 +44,4 @@ public class DockerConnectorOutcomeDTO
   @Valid DockerAuthenticationOutcomeDTO auth;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
-
-  @Override
-  public List<DecryptableEntity> getDecryptableEntities() {
-    if (auth == null) {
-      throw new InvalidRequestException("Auth Field is Null");
-    }
-    if (auth.getType() == ANONYMOUS) {
-      return null;
-    }
-    return Collections.singletonList(auth.getSpec());
-  }
 }

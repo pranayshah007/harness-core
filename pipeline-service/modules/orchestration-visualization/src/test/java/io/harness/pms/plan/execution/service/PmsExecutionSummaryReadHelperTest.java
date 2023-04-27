@@ -22,7 +22,6 @@ import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.rule.Owner;
-import io.harness.testlib.RealMongo;
 
 import com.google.inject.Inject;
 import java.util.LinkedList;
@@ -96,7 +95,7 @@ public class PmsExecutionSummaryReadHelperTest extends OrchestrationVisualizatio
   }
 
   @Test
-  @RealMongo
+
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testFindCount() {

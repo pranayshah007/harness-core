@@ -27,9 +27,11 @@ import java.util.Optional;
 public interface PersistentNGCronIterable extends PersistentIrregularIterable {
   int INVENTORY_MINIMUM = 2;
 
-  CronParser parser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.UNIX));
+  CronParser unixParser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.UNIX));
+  CronParser quartzParser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ));
 
-  default boolean expandNextIterations(boolean skipMissing, long throttled, String cronExpression, List<Long> times) {
+  default boolean expandNextIterations(
+      boolean skipMissing, long throttled, String cronExpression, List<Long> times, String cronType) {
     final ZonedDateTime now = ZonedDateTime.now();
 
     // Take this item here, before we cleanup the list and potentially make it empty. We would like to align the items
@@ -45,7 +47,12 @@ public interface PersistentNGCronIterable extends PersistentIrregularIterable {
       return removed;
     }
 
-    final Cron cron = parser.parse(cronExpression);
+    final Cron cron;
+    if (cronType.equalsIgnoreCase("UNIX")) {
+      cron = unixParser.parse(cronExpression);
+    } else {
+      cron = quartzParser.parse(cronExpression);
+    }
     ExecutionTime executionTime = ExecutionTime.forCron(cron);
 
     while (times.size() < 10) {

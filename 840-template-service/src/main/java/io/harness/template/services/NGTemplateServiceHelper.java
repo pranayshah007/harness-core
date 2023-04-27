@@ -46,6 +46,7 @@ import io.harness.repositories.NGTemplateRepository;
 import io.harness.springdata.SpringDataMongoUtils;
 import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.TemplateFilterProperties;
+import io.harness.template.beans.UpdateGitDetailsParams;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
@@ -616,6 +617,17 @@ public class NGTemplateServiceHelper {
     update.set(TemplateEntityKeys.repoURL,
         gitAwareEntityHelper.getRepoUrl(accountIdentifier, orgIdentifier, projectIdentifier));
     update.set(TemplateEntityKeys.fallBackBranch, moveConfigOperationDTO.getBranch());
+    return update;
+  }
+
+  public Update getGitDetailsUpdate(UpdateGitDetailsParams updateGitDetailsParams) {
+    Update update = new Update();
+    if (isNotEmpty(updateGitDetailsParams.getRepoName())) {
+      update.set(TemplateEntityKeys.repo, updateGitDetailsParams.getRepoName());
+    }
+    if (isNotEmpty(updateGitDetailsParams.getFilepath())) {
+      update.set(TemplateEntityKeys.filePath, updateGitDetailsParams.getFilepath());
+    }
     return update;
   }
 }

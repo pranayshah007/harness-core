@@ -143,7 +143,7 @@ public interface PlanExecutionResource {
           description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @Parameter(
           description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @ProjectIdentifier String projectIdentifier,
-      @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) @Parameter(
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) @Parameter(
           description = PlanExecutionResourceConstants.PIPELINE_IDENTIFIER_PARAM_MESSAGE) @ResourceIdentifier
       @NotNull String pipelineIdentifier,
       @PathParam(NGCommonEntityConstants.PLAN_KEY)

@@ -33,7 +33,7 @@ public class EksV2ClientImpl extends AwsClientHelper implements EksV2Client {
     return EksClient.builder()
         .credentialsProvider(getAwsCredentialsProvider(awsConfig))
         .region(Region.of(region))
-        .overrideConfiguration(getClientOverrideConfiguration(awsConfig))
+        .overrideConfiguration(getClientOverrideFromBackoffOverride(awsConfig))
         .build();
   }
 

@@ -116,6 +116,7 @@ java_library(
         "//445-gitops:module",
         "//867-polling-contracts:module",
         "//878-ng-common-utilities:module",
+        "//879-pipeline-ci-commons:module",
         "//880-pipeline-cd-commons:module",
         "//884-pms-commons:module",
         "//890-sm-core:module",

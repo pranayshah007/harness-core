@@ -31,7 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("kustomizeManifestCommandFlag")
 @OwnedBy(CDP)
 public class KustomizeManifestCommandFlag {
-  @NotNull KustomizeCommandFlagType kustomizeCommandFlagType;
+  @NotNull KustomizeCommandFlagType commandType;
   @NotEmpty
   @SkipAutoEvaluation
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)

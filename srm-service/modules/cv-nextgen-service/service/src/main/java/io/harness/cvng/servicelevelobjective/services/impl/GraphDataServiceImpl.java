@@ -31,6 +31,7 @@ import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordServ
 import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.persistence.HPersistence;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -42,6 +43,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
@@ -50,6 +52,8 @@ public class GraphDataServiceImpl implements GraphDataService {
   @Inject SLIRecordService sliRecordService;
   @Inject CompositeSLORecordService compositeSLORecordService;
   @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
+
+  @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject MonitoredServiceService monitoredServiceService;
   @Inject EntityDisabledTimeService entityDisabledTimeService;
   @Inject HPersistence hPersistence;
@@ -105,7 +109,7 @@ public class GraphDataServiceImpl implements GraphDataService {
     }
     List<CompositeSLORecord> sloRecords = getCompositeSLORecords(
         compositeServiceLevelObjective.getUuid(), startTime, endTime, filter, numOfDataPointsInBetween);
-
+    SLIEvaluationType evaluationType = compositeServiceLevelObjective.getSliEvaluationType();
     List<SLODashboardWidget.Point> sloTrend = new ArrayList<>();
     List<SLODashboardWidget.Point> errorBudgetBurndown = new ArrayList<>();
     double errorBudgetRemainingPercentage = 100;
@@ -118,10 +122,21 @@ public class GraphDataServiceImpl implements GraphDataService {
       double prevRecordBadCount = 0;
       CompositeSLORecord lastCompositeSLORecord =
           compositeSLORecordService.getLastCompositeSLORecord(compositeServiceLevelObjective.getUuid(), startTime);
-      if (Objects.nonNull(lastCompositeSLORecord)) {
-        prevRecordGoodCount = lastCompositeSLORecord.getRunningGoodCount();
-        prevRecordBadCount = lastCompositeSLORecord.getRunningBadCount();
+      if (Objects.isNull(lastCompositeSLORecord)) {
+        Map<String, SLIRecord> scopedIdentifierSLIRecordMap = sliRecordService.getLastCompositeSLOsSLIRecord(
+            compositeServiceLevelObjective.getServiceLevelObjectivesDetails(), startTime);
+        lastCompositeSLORecord = CompositeSLORecord.builder()
+                                     .runningGoodCount(0)
+                                     .runningBadCount(0)
+                                     .sloId(compositeServiceLevelObjective.getUuid())
+                                     .scopedIdentifierSLIRecordMap(scopedIdentifierSLIRecordMap)
+                                     .timestamp(startTime.minus(Duration.ofMinutes(1)))
+                                     .sloVersion(compositeServiceLevelObjective.getVersion())
+                                     .build();
       }
+      prevRecordGoodCount = lastCompositeSLORecord.getRunningGoodCount();
+      prevRecordBadCount = lastCompositeSLORecord.getRunningBadCount();
+
       for (CompositeSLORecord sloRecord : sloRecords) {
         double goodCountFromStart = sloRecord.getRunningGoodCount() - prevRecordGoodCount;
         double badCountFromStart = sloRecord.getRunningBadCount() - prevRecordBadCount;
@@ -134,18 +149,22 @@ public class GraphDataServiceImpl implements GraphDataService {
         sloValue = SLOValue.builder().goodCount(goodCountFromStart).badCount(badCountFromStart).build();
         sloTrend.add(SLODashboardWidget.Point.builder()
                          .timestamp(sloRecord.getTimestamp().toEpochMilli())
-                         .value(sloValue.sloPercentage())
+                         .value(getSLOValue(sloValue, compositeServiceLevelObjective, sloRecord, lastCompositeSLORecord,
+                             evaluationType))
                          .enabled(enabled)
                          .build());
+
         errorBudgetBurndown.add(
             SLODashboardWidget.Point.builder()
                 .timestamp(sloRecord.getTimestamp().toEpochMilli())
-                .value(((totalErrorBudgetMinutes - sloValue.getBadCount()) * 100.0) / totalErrorBudgetMinutes)
+                .value(getBudgetBurnDown(sloValue, totalErrorBudgetMinutes, compositeServiceLevelObjective, sloRecord,
+                    lastCompositeSLORecord, evaluationType))
                 .enabled(enabled)
                 .build());
       }
       errorBudgetRemainingPercentage = errorBudgetBurndown.get(errorBudgetBurndown.size() - 1).getValue();
-      errorBudgetRemaining = totalErrorBudgetMinutes - (int) sloValue.getBadCount();
+      errorBudgetRemaining =
+          evaluationType == SLIEvaluationType.WINDOW ? totalErrorBudgetMinutes - (int) sloValue.getBadCount() : 0;
     } else if (Instant.ofEpochMilli(compositeServiceLevelObjective.getStartedAt())
                    .isBefore(clock.instant().minus(Duration.ofMinutes(10)))) {
       isCalculatingSLI = true;
@@ -163,11 +182,55 @@ public class GraphDataServiceImpl implements GraphDataService {
                               .filter(e -> e.getTimestamp() <= endFilter)
                               .collect(Collectors.toList());
 
+    int totalErrorBudget = evaluationType == SLIEvaluationType.WINDOW ? totalErrorBudgetMinutes : 0;
+
     return SLODashboardWidget.SLOGraphData
         .getSloGraphDataBuilder(errorBudgetRemainingPercentage, errorBudgetRemaining, errorBudgetBurndown, sloTrend,
-            false, isCalculatingSLI, totalErrorBudgetMinutes)
+            false, isCalculatingSLI, totalErrorBudget)
+        .evaluationType(evaluationType)
         .build();
   }
+
+  private double getSLOValue(SLOValue sloValue, CompositeServiceLevelObjective compositeServiceLevelObjective,
+      CompositeSLORecord sloRecord, CompositeSLORecord prevSLORecord, SLIEvaluationType evaluationType) {
+    if (evaluationType == SLIEvaluationType.WINDOW) {
+      return sloValue.sloPercentage();
+    }
+    double sloPercentage = 0.0;
+    for (CompositeServiceLevelObjective.ServiceLevelObjectivesDetail serviceLevelObjectivesDetail :
+        compositeServiceLevelObjective.getServiceLevelObjectivesDetails()) {
+      Double weightage = serviceLevelObjectivesDetail.getWeightagePercentage() / 100;
+      SLIRecord sliRecord = sloRecord.getScopedIdentifierSLIRecordMap().get(
+          serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjectivesDetail));
+      SLIRecord prevSLIRecord = prevSLORecord.getScopedIdentifierSLIRecordMap().get(
+          serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjectivesDetail));
+      sloPercentage += weightage * (SLIValue.getRunningCountDifference(sliRecord, prevSLIRecord).sliPercentage());
+    }
+    return sloPercentage;
+  }
+
+  private double getBudgetBurnDown(SLOValue sloValue, int totalErrorBudgetMinutes,
+      CompositeServiceLevelObjective compositeServiceLevelObjective, CompositeSLORecord sloRecord,
+      CompositeSLORecord prevSLORecord, SLIEvaluationType evaluationType) {
+    if (evaluationType == SLIEvaluationType.WINDOW) {
+      return ((totalErrorBudgetMinutes - sloValue.getBadCount()) * 100.0) / totalErrorBudgetMinutes;
+    }
+    double sloErrorBudgetBurnDown = 0.0;
+    for (CompositeServiceLevelObjective.ServiceLevelObjectivesDetail serviceLevelObjectivesDetail :
+        compositeServiceLevelObjective.getServiceLevelObjectivesDetails()) {
+      Double weightage = serviceLevelObjectivesDetail.getWeightagePercentage() / 100;
+      SLIRecord sliRecord = sloRecord.getScopedIdentifierSLIRecordMap().get(
+          serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjectivesDetail));
+      SLIRecord prevSLIRecord = prevSLORecord.getScopedIdentifierSLIRecordMap().get(
+          serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjectivesDetail));
+      SLIValue sliValue = SLIValue.getRunningCountDifference(sliRecord, prevSLIRecord);
+      double totalErrorBudget =
+          (sliValue.getTotal() * (100 - compositeServiceLevelObjective.getSloTargetPercentage())) / 100;
+      sloErrorBudgetBurnDown += weightage * ((totalErrorBudget - sliValue.getBadCount()) * 100) / totalErrorBudget;
+    }
+    return sloErrorBudgetBurnDown;
+  }
+
   public SLODashboardWidget.SLOGraphData getGraphDataForSimpleSLO(ServiceLevelIndicator serviceLevelIndicator,
       Instant startTime, Instant endTime, int totalErrorBudgetMinutes, SLIMissingDataType sliMissingDataType,
       int sliVersion, TimeRangeParams filter, AbstractServiceLevelObjective serviceLevelObjective,
@@ -423,10 +486,20 @@ public class GraphDataServiceImpl implements GraphDataService {
       startTime = firstRecordInRange.getTimestamp();
       endTime = lastRecordInRange.getTimestamp();
     }
-    List<Instant> minutes = getMinutes(startTime, endTime, numOfPoints);
-    minutes.add(firstRecord.getTimestamp());
-    minutes.add(lastRecord.getTimestamp());
-    return compositeSLORecordService.getSLORecordsOfMinutes(sloId, minutes);
+    List<Instant> minutes = getMinutesExclusiveOfStartAndEndTime(startTime, endTime, numOfPoints);
+    List<CompositeSLORecord> compositeSLORecords = new ArrayList<>();
+    compositeSLORecords.add(firstRecord);
+    if (!firstRecordInRange.getTimestamp().equals(firstRecord.getTimestamp())) {
+      compositeSLORecords.add(firstRecordInRange);
+    }
+    if (!minutes.isEmpty()) {
+      compositeSLORecords.addAll(compositeSLORecordService.getSLORecordsOfMinutes(sloId, minutes));
+    }
+    if (!lastRecordInRange.getTimestamp().equals(lastRecord.getTimestamp())) {
+      compositeSLORecords.add(lastRecordInRange);
+    }
+    compositeSLORecords.add(lastRecord);
+    return compositeSLORecords;
   }
 
   private List<SLIRecord> getSLIRecords(
@@ -447,14 +520,24 @@ public class GraphDataServiceImpl implements GraphDataService {
       startTime = firstRecordInRange.getTimestamp();
       endTime = lastRecordInRange.getTimestamp();
     }
-    List<Instant> minutes = getMinutes(startTime, endTime, numOfPoints);
-    minutes.add(firstRecord.getTimestamp());
-    minutes.add(lastRecord.getTimestamp()); // always include start and end minute.
-    return sliRecordService.getSLIRecordsOfMinutes(sliId, minutes);
+    List<Instant> minutes = getMinutesExclusiveOfStartAndEndTime(startTime, endTime, numOfPoints);
+    List<SLIRecord> sliRecords = new ArrayList<>();
+    sliRecords.add(firstRecord);
+    if (!firstRecordInRange.getTimestamp().equals(firstRecord.getTimestamp())) {
+      sliRecords.add(firstRecordInRange);
+    }
+    if (!minutes.isEmpty()) {
+      sliRecords.addAll(sliRecordService.getSLIRecordsOfMinutes(sliId, minutes));
+    }
+    if (!lastRecordInRange.getTimestamp().equals(lastRecord.getTimestamp())) {
+      sliRecords.add(lastRecordInRange);
+    }
+    sliRecords.add(lastRecord);
+    return sliRecords;
   }
 
   @VisibleForTesting
-  List<Instant> getMinutes(Instant startTime, Instant endTime, long numOfPointsInBetween) {
+  List<Instant> getMinutesExclusiveOfStartAndEndTime(Instant startTime, Instant endTime, long numOfPointsInBetween) {
     List<Instant> minutes = new ArrayList<>();
     long totalMinutes = Duration.between(startTime, endTime).toMinutes();
     long diff = totalMinutes;
@@ -466,10 +549,10 @@ public class GraphDataServiceImpl implements GraphDataService {
     }
     // long reminder = totalMinutes % maxNumberOfPoints;
     Duration diffDuration = Duration.ofMinutes(diff);
-    for (Instant current = startTime; current.isBefore(endTime); current = current.plus(diffDuration)) {
+    for (Instant current = startTime.plus(diffDuration); current.isBefore(endTime);
+         current = current.plus(diffDuration)) {
       minutes.add(current);
     }
-    minutes.add(endTime);
     return minutes;
   }
 }

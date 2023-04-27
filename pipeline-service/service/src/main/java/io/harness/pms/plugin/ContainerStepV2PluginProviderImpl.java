@@ -25,6 +25,7 @@ import io.harness.pms.contracts.plan.PluginInfoProviderServiceGrpc;
 import io.harness.pms.contracts.steps.SdkStep;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.PmsSdkInstanceService;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
@@ -32,6 +33,7 @@ import io.harness.steps.container.execution.ContainerExecutionConfig;
 import io.harness.steps.container.utils.K8sPodInitUtils;
 import io.harness.steps.plugin.InitContainerV2StepInfo;
 import io.harness.steps.plugin.StepInfo;
+import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -76,13 +78,12 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
             throw new ContainerStepExecutionException(pluginInfo.getError().getMessagesList().toString());
           }
           if (isEmpty(pluginInfo.getPluginDetails().getImageDetails().getConnectorDetails().getConnectorRef())) {
-            ConnectorDetails connectorDetails =
-                pluginInfo.getPluginDetails()
-                    .getImageDetails()
-                    .getConnectorDetails()
-                    .toBuilder()
-                    .setConnectorRef(containerExecutionConfig.getDefaultInternalImageConnector())
-                    .build();
+            ConnectorDetails connectorDetails = pluginInfo.getPluginDetails()
+                                                    .getImageDetails()
+                                                    .getConnectorDetails()
+                                                    .toBuilder()
+                                                    .setConnectorRef(getConnectorRef(initContainerV2StepInfo))
+                                                    .build();
             ImageDetails imageDetails = pluginInfo.toBuilder()
                                             .getPluginDetails()
                                             .getImageDetails()
@@ -97,6 +98,21 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
           return Pair.of(stepInfo, pluginInfo);
         })
         .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
+  }
+
+  private String getConnectorRef(InitContainerV2StepInfo initContainerV2StepInfo) {
+    if (initContainerV2StepInfo.getInfrastructure() instanceof ContainerK8sInfra) {
+      ParameterField<String> harnessImageConnectorRef =
+          ((ContainerK8sInfra) initContainerV2StepInfo.getInfrastructure()).getSpec().getHarnessImageConnectorRef();
+      String value = null;
+      if (harnessImageConnectorRef != null) {
+        value = harnessImageConnectorRef.getValue();
+      }
+      if (isNotEmpty(value)) {
+        return value;
+      }
+    }
+    return containerExecutionConfig.getDefaultInternalImageConnector();
   }
 
   private ParallelStepElementConfig getParallelStepElementConfig(ExecutionWrapperConfig executionWrapperConfig) {

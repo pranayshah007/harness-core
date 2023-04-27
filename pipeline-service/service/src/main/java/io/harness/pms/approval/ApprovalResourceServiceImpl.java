@@ -8,6 +8,7 @@
 package io.harness.pms.approval;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.security.dto.PrincipalType.USER;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -17,6 +18,8 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO.UserGroupFilterDTOBuilder;
 import io.harness.ng.core.user.UserInfo;
@@ -31,6 +34,7 @@ import io.harness.steps.approval.step.ApprovalInstanceResponseMapper;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalInstanceResponseDTO;
 import io.harness.steps.approval.step.beans.ApprovalType;
+import io.harness.steps.approval.step.harness.beans.HarnessApprovalAction;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivityRequestDTO;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalInstanceAuthorizationDTO;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
@@ -62,18 +66,21 @@ public class ApprovalResourceServiceImpl implements ApprovalResourceService {
   private final PlanExecutionService planExecutionService;
   private final UserGroupClient userGroupClient;
   private final CurrentUserHelper currentUserHelper;
+  private final LogStreamingStepClientFactory logStreamingStepClientFactory;
   private final UserClient userClient;
 
   @Inject
   public ApprovalResourceServiceImpl(ApprovalInstanceService approvalInstanceService,
       ApprovalInstanceResponseMapper approvalInstanceResponseMapper, PlanExecutionService planExecutionService,
-      UserGroupClient userGroupClient, CurrentUserHelper currentUserHelper, UserClient userClient) {
+      UserGroupClient userGroupClient, CurrentUserHelper currentUserHelper, UserClient userClient,
+      LogStreamingStepClientFactory logStreamingStepClientFactory) {
     this.approvalInstanceService = approvalInstanceService;
     this.approvalInstanceResponseMapper = approvalInstanceResponseMapper;
     this.planExecutionService = planExecutionService;
     this.userGroupClient = userGroupClient;
     this.currentUserHelper = currentUserHelper;
     this.userClient = userClient;
+    this.logStreamingStepClientFactory = logStreamingStepClientFactory;
   }
 
   @Override
@@ -85,13 +92,43 @@ public class ApprovalResourceServiceImpl implements ApprovalResourceService {
   @Override
   public ApprovalInstanceResponseDTO addHarnessApprovalActivity(
       @NotNull String approvalInstanceId, @NotNull @Valid HarnessApprovalActivityRequestDTO request) {
-    if (!getHarnessApprovalInstanceAuthorization(approvalInstanceId).isAuthorized()) {
+    if (!getHarnessApprovalInstanceAuthorization(approvalInstanceId, false).isAuthorized()) {
       throw new InvalidRequestException("User not authorized to approve/reject");
     }
 
     HarnessApprovalInstance instance =
         approvalInstanceService.addHarnessApprovalActivity(approvalInstanceId, getEmbeddedUser(), request);
+    if (request.getAction() == HarnessApprovalAction.APPROVE) {
+      rejectPreviousExecutions(instance);
+    }
+    approvalInstanceService.closeHarnessApprovalStep(instance);
     return approvalInstanceResponseMapper.toApprovalInstanceResponseDTO(instance);
+  }
+
+  public void rejectPreviousExecutions(HarnessApprovalInstance instance) {
+    if (instance.getIsAutoRejectEnabled() == null || !instance.getIsAutoRejectEnabled()) {
+      return;
+    }
+    Ambiance ambiance = instance.getAmbiance();
+    String accountId = instance.getAccountId();
+    String orgId = instance.getOrgIdentifier();
+    String projectId = instance.getProjectIdentifier();
+    String pipelineId = instance.getPipelineIdentifier();
+    String approvalKey = instance.getApprovalKey();
+    List<String> rejectedApprovalIds = approvalInstanceService.findAllPreviousWaitingApprovals(
+        accountId, orgId, projectId, pipelineId, approvalKey, ambiance);
+    final long[] cnt = {0};
+    rejectedApprovalIds.forEach(id -> {
+      boolean unauthorized = !getHarnessApprovalInstanceAuthorization(id, true).isAuthorized();
+      if (!unauthorized) {
+        cnt[0]++;
+      }
+      approvalInstanceService.rejectPreviousExecutions(id, getEmbeddedUser(), unauthorized, ambiance);
+    });
+    NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
+    logCallback.saveExecutionLog(String.format(
+        "Successfully rejected %s previous executions waiting for approval on this step that the user was authorized to reject",
+        cnt[0]));
   }
 
   private EmbeddedUser getEmbeddedUser() {
@@ -112,12 +149,12 @@ public class ApprovalResourceServiceImpl implements ApprovalResourceService {
 
   @Override
   public HarnessApprovalInstanceAuthorizationDTO getHarnessApprovalInstanceAuthorization(
-      @NotNull String approvalInstanceId) {
+      @NotNull String approvalInstanceId, boolean skipHasAlreadyApprovedValidation) {
     EmbeddedUser user = getEmbeddedUser();
     HarnessApprovalInstance instance = approvalInstanceService.getHarnessApprovalInstance(approvalInstanceId);
 
     // Check if the user has already approved/rejected.
-    if (alreadyHasApprovalActivity(instance, user)) {
+    if (alreadyHasApprovalActivity(instance, user) && !skipHasAlreadyApprovedValidation) {
       return HarnessApprovalInstanceAuthorizationDTO.builder()
           .authorized(false)
           .reason("You have already approved/rejected the pipeline")

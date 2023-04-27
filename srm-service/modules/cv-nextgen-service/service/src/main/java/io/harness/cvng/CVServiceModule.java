@@ -348,6 +348,7 @@ import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.AbstractServiceLevelObjectiveUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.CompositeServiceLevelObjectiveUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator.RatioServiceLevelIndicatorUpdatableEntity;
@@ -369,6 +370,7 @@ import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOTimeScaleService;
+import io.harness.cvng.servicelevelobjective.services.api.SecondaryEventDetailsService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.services.api.UserJourneyService;
@@ -972,6 +974,21 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     changeSourceTypeChangeSourceSpecTransformerMapBinder.addBinding(ChangeSourceType.CUSTOM_FF)
         .to(CustomChangeSourceSpecTransformer.class)
+        .in(Scopes.SINGLETON);
+
+    MapBinder<SecondaryEventsType, SecondaryEventDetailsService> secondaryEventsTypeToDetailsMapBinder =
+        MapBinder.newMapBinder(binder(), SecondaryEventsType.class, SecondaryEventDetailsService.class);
+    secondaryEventsTypeToDetailsMapBinder.addBinding(SecondaryEventsType.ANNOTATION)
+        .to(AnnotationServiceImpl.class)
+        .in(Scopes.SINGLETON);
+    secondaryEventsTypeToDetailsMapBinder.addBinding(SecondaryEventsType.DOWNTIME)
+        .to(EntityUnavailabilityStatusesServiceImpl.class)
+        .in(Scopes.SINGLETON);
+    secondaryEventsTypeToDetailsMapBinder.addBinding(SecondaryEventsType.DATA_COLLECTION_FAILURE)
+        .to(EntityUnavailabilityStatusesServiceImpl.class)
+        .in(Scopes.SINGLETON);
+    secondaryEventsTypeToDetailsMapBinder.addBinding(SecondaryEventsType.ERROR_BUDGET_RESET)
+        .to(SLOErrorBudgetResetServiceImpl.class)
         .in(Scopes.SINGLETON);
 
     bindAnalysisStateExecutor();

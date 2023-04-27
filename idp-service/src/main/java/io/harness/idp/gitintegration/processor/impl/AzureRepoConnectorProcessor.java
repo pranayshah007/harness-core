@@ -72,15 +72,15 @@ public class AzureRepoConnectorProcessor extends ConnectorProcessor {
 
   @Override
   public void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
-      String locationParentPath, List<String> filesToPush) {
+      String locationParentPath, List<String> filesToPush, boolean throughGrpc) {
     ConnectorInfoDTO connectorInfoDTO =
-        getConnectorInfo(accountIdentifier, catalogConnectorInfo.getInfraConnector().getIdentifier());
+        getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier());
     Map<String, BackstageEnvVariable> connectorSecretsInfo =
         getConnectorAndSecretsInfo(accountIdentifier, connectorInfoDTO);
     BackstageEnvSecretVariable envSecretVariable =
         (BackstageEnvSecretVariable) connectorSecretsInfo.get(Constants.AZURE_REPO_TOKEN);
     String azureRepoConnectorSecret = GitIntegrationUtils.decryptSecret(ngSecretService, accountIdentifier, null, null,
-        envSecretVariable.getHarnessSecretIdentifier(), catalogConnectorInfo.getSourceConnector().getIdentifier());
+        envSecretVariable.getHarnessSecretIdentifier(), catalogConnectorInfo.getConnector().getIdentifier());
 
     AzureRepoConnectorDTO config = (AzureRepoConnectorDTO) connectorInfoDTO.getConnectorConfig();
     AzureRepoHttpCredentialsOutcomeDTO outcome =
@@ -88,6 +88,6 @@ public class AzureRepoConnectorProcessor extends ConnectorProcessor {
     AzureRepoUsernameTokenDTO spec = (AzureRepoUsernameTokenDTO) outcome.getSpec();
 
     performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, filesToPush,
-        spec.getUsername(), azureRepoConnectorSecret);
+        spec.getUsername(), azureRepoConnectorSecret, throughGrpc);
   }
 }

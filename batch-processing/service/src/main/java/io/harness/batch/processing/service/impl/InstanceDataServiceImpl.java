@@ -125,6 +125,7 @@ public class InstanceDataServiceImpl extends CacheUtils implements InstanceDataS
           .instanceId(instanceData.getInstanceId())
           .cloudProviderInstanceId(instanceData.getCloudProviderInstanceId())
           .totalResource(instanceData.getTotalResource())
+          .limitResource(instanceData.getLimitResource())
           .metaData(instanceData.getMetaData())
           .build();
     } else {

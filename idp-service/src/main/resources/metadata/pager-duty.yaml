@@ -10,6 +10,8 @@ config: |-
   proxy:
     '/pagerduty':
       target: https://api.pagerduty.com
+      pathRewrite:
+        'api/proxy/pagerduty/?': '/'
       headers:
         Authorization: Token token=${PAGERDUTY_TOKEN}
 environmentVariables:
@@ -22,5 +24,7 @@ exports:
       name: EntityPagerDutyCard
       addByDefault: true
       layoutSchemaSpecs:
-        gridProps:
-          md: 6
+        component: EntityPagerDutyCard
+        specs:
+          gridProps:
+            md: 6

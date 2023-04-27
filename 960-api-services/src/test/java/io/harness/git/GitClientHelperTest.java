@@ -473,22 +473,25 @@ public class GitClientHelperTest extends CategoryTest {
   @Owner(developers = DEV_MITTAL)
   @Category(UnitTests.class)
   public void testGetGitlabApiURL() {
-    assertThat(GitClientHelper.getGitlabApiURL("https://gitlab.com/devki.mittal/test.git"))
+    assertThat(GitClientHelper.getGitlabApiURL("https://gitlab.com/devki.mittal/test.git", ""))
         .isEqualTo("https://gitlab.com/");
-    assertThat(GitClientHelper.getGitlabApiURL("https://www.gitlab.com/devki.mittal/test.git"))
+    assertThat(GitClientHelper.getGitlabApiURL("https://www.gitlab.com/devki.mittal/test.git", ""))
         .isEqualTo("https://gitlab.com/");
-    assertThat(GitClientHelper.getGitlabApiURL("https://gitlab.com/devki.mittal/test"))
+    assertThat(GitClientHelper.getGitlabApiURL("https://gitlab.com/devki.mittal/test", ""))
         .isEqualTo("https://gitlab.com/");
-    assertThat(GitClientHelper.getGitlabApiURL("https://paypal.gitlab.com/devki.mittal/test.git"))
+    assertThat(GitClientHelper.getGitlabApiURL("https://paypal.gitlab.com/devki.mittal/test.git", ""))
         .isEqualTo("https://paypal.gitlab.com/");
-    assertThat(GitClientHelper.getGitlabApiURL("https://gitlab.paypal.com/devki.mittal/test.git"))
+    assertThat(GitClientHelper.getGitlabApiURL("https://gitlab.paypal.com/devki.mittal/test.git", ""))
         .isEqualTo("https://gitlab.paypal.com/");
-    assertThat(GitClientHelper.getGitlabApiURL("git@gitlab.com:devki.mittal/test.git"))
+    assertThat(GitClientHelper.getGitlabApiURL("git@gitlab.com:devki.mittal/test.git", ""))
         .isEqualTo("https://gitlab.com/");
-    assertThat(GitClientHelper.getGitlabApiURL("git@www.gitlab.com:devki.mittal/test.git"))
+    assertThat(GitClientHelper.getGitlabApiURL("git@www.gitlab.com:devki.mittal/test.git", ""))
         .isEqualTo("https://gitlab.com/");
-    assertThat(GitClientHelper.getGitlabApiURL("http://10.67.0.1/devkimittal/harness-core"))
+    assertThat(GitClientHelper.getGitlabApiURL("http://10.67.0.1/devkimittal/harness-core", ""))
         .isEqualTo("http://10.67.0.1/");
+    assertThat(GitClientHelper.getGitlabApiURL(
+                   "https://harness.io/gitlab/devki.mittal/test.git", "https://harness.io/gitlab/"))
+        .isEqualTo("https://harness.io/gitlab/");
   }
 
   @Test

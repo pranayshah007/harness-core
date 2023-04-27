@@ -87,6 +87,7 @@ public class ScimUserServiceImpl implements ScimUserService {
       userQuery.setActive(true);
       if (shouldUpdateUser(userQuery, user)) {
         updateUser(user.getUuid(), accountId, userQuery);
+        userService.updateUserAccountLevelDataForThisGen(accountId, user, CG, SCIM);
         log.info("SCIM: Creating user call for accountId {} with updation {}", accountId, userQuery);
       } else {
         log.info("SCIM: Creating user call for accountId {} with conflict {}", accountId, userQuery);
@@ -312,8 +313,7 @@ public class ScimUserServiceImpl implements ScimUserService {
           patchOperation.getValue(String.class));
     }
 
-    if (featureFlagService.isEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM, accountId)
-        && "userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
+    if ("userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
         && !user.getEmail().equalsIgnoreCase(patchOperation.getValue(String.class))) {
       updateUser(patchOperation, user, UserKeys.email);
       log.info("SCIM: Updated user's {}, email from {} to email id: {}", userId, user.getEmail(),
@@ -454,8 +454,7 @@ public class ScimUserServiceImpl implements ScimUserService {
       final String userPrimaryEmail =
           isEmpty(userResource.getUserName()) ? null : userResource.getUserName().toLowerCase();
 
-      if (featureFlagService.isEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM, accountId) && userPrimaryEmail != null
-          && !userPrimaryEmail.equals(user.getEmail())) {
+      if (userPrimaryEmail != null && !userPrimaryEmail.equals(user.getEmail())) {
         updateOperations.set(UserKeys.email, userPrimaryEmail);
         userUpdate = true;
         log.info(
@@ -464,13 +463,6 @@ public class ScimUserServiceImpl implements ScimUserService {
 
       if (userUpdate) {
         updateOperations.set(UserKeys.imported, true);
-
-        if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
-            && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
-          userServiceHelper.populateAccountToUserMapping(user, accountId, CG, SCIM);
-          updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
-        }
-
         userService.updateUser(user.getUuid(), updateOperations);
       }
       log.info("SCIM: user {} was updated {} with updateOperations {} in account: {}", user.getUuid(), userUpdate,
