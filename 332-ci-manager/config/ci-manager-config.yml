@@ -163,6 +163,10 @@ ciExecutionServiceConfig:
   defaultCPULimit: 400
   defaultInternalImageConnector: ''
   executionLimits:
+    freeNewUser:
+      dailyMaxBuildsCount: 5
+    freeBasicUser:
+      dailyMaxBuildsCount: 25
     free:
       defaultTotalExecutionCount: 20
       defaultMacExecutionCount: 5
@@ -176,13 +180,18 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.7
-  liteEngineImage: harness/ci-lite-engine:1.16.7
+  addonImage: harness/ci-addon:1.16.11
+  liteEngineImage: harness/ci-lite-engine:1.16.11
   isLocal: false
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
     bucket: "gcp_bucket"
     serviceKey: "gcp_service_key"
+  dockerLayerCachingConfig:
+    endpoint: "endpoint"
+    bucket: "bucket"
+    accessKey: "access_key"
+    secretKey: "secret_key"
   hostedVmConfig:
     splitLinuxAmd64Pool: false
     splitLinuxArm64Pool: false
@@ -265,19 +274,19 @@ ciExecutionServiceConfig:
         - "pwsh"
         - "C:\\bin\\clone.ps1"
     buildAndPushDockerRegistryConfig:
-      image: plugins/kaniko:1.7.1
+      image: plugins/kaniko:1.7.2
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.7.1
+      image: plugins/kaniko-ecr:1.7.2
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:
-      image: plugins/kaniko-gcr:1.7.1
+      image: plugins/kaniko-gcr:1.7.2
       entrypoint:
         - /kaniko/kaniko-gcr
     buildAndPushACRConfig:
-      image: plugins/kaniko-acr:1.7.1
+      image: plugins/kaniko-acr:1.7.2
       entrypoint:
         - /kaniko/kaniko-acr
     gcsUploadConfig:
@@ -305,13 +314,13 @@ ciExecutionServiceConfig:
       windowsEntrypoint:
         - "C:\\bin\\drone-artifactory.exe"
     cacheGCSConfig:
-      image: plugins/cache:1.5.2
+      image: plugins/cache:1.5.7
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.5.2
+      image: plugins/cache:1.5.7
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
@@ -331,8 +340,8 @@ ciExecutionServiceConfig:
       s3Upload: plugins/s3:1.2.0
       security: harness/sto-plugin:dev
       artifactoryUpload: plugins/artifactory:1.2.0
-      cacheGCS: plugins/cache:1.5.2
-      cacheS3: plugins/cache:1.5.2
+      cacheGCS: plugins/cache:1.5.7
+      cacheS3: plugins/cache:1.5.7
       sscaOrchestration: harness/ssca-plugin:latest
     vmContainerlessStepConfig:
       s3UploadConfig:
@@ -345,6 +354,8 @@ ciExecutionServiceConfig:
         name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.5.6
       gitCloneConfig:
         name: github.com/wings-software/drone-git@refs/tags/v1.3.2
+      dockerBuildxConfig:
+        name: github.com/drone-plugins/drone-buildx@refs/tags/v1.0.0
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}

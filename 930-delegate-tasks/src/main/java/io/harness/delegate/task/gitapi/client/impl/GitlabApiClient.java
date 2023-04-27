@@ -74,8 +74,8 @@ public class GitlabApiClient implements GitApiClient {
       }
       GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
       String token = retrieveAuthToken(gitConnector);
-      String gitApiURL = GitClientHelper.getGitlabApiURL(gitConfigDTO.getUrl(), gitConfigDTO) String slug =
-          gitApiTaskParams.getSlug();
+      String gitApiURL = GitClientHelper.getGitlabApiURL(gitConfigDTO.getUrl(), gitConfigDTO);
+      String slug = gitApiTaskParams.getSlug();
       String prNumber = gitApiTaskParams.getPrNumber();
       boolean deleteSourceBranch = gitApiTaskParams.isDeleteSourceBranch();
       JSONObject mergePRResponse = gitlabService.mergePR(gitApiURL, slug, token, prNumber, deleteSourceBranch);
