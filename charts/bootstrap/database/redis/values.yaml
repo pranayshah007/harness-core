@@ -1,0 +1,113 @@
+# Default values for redis
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  storageClassName: ""
+  imagePullSecrets: []
+
+replicaCount: 3
+
+# -- Enable Hard pod anti-affinity during scheduling
+useAntiAffinity: true
+
+redis:
+  resources:
+    limits:
+      cpu: 0.1
+      memory: 200Mi
+    requests:
+      cpu: 0.1
+      memory: 200Mi
+  image:
+    registry: docker.io
+    tag: 6.2.7-alpine
+    repository: harness/redis
+    pullPolicy: IfNotPresent
+    digest: ""
+    pullSecrets: []
+
+sentinel:
+  resources:
+    limits:
+      cpu: 100m
+      memory: 200Mi
+    requests:
+      cpu: 100m
+      memory: 200Mi
+  image:
+    registry: docker.io
+    tag: 6.2.7-alpine
+    repository: harness/redis
+    pullPolicy: IfNotPresent
+    digest: ""
+    pullSecrets: []
+
+metrics:
+  enabled: false
+  serviceMonitor:
+    enabled: false 
+  resources: {}
+  image:
+    registry: docker.io
+    tag: latest
+    repository: oliver006/redis_exporter
+    pullPolicy: IfNotPresent
+    digest: ""
+
+initContainers:
+  config_init:
+    image:
+      registry: docker.io
+      tag: 6.2.7-alpine
+      repository: harness/redis
+      pullPolicy: IfNotPresent
+      digest: ""
+      pullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "harness-default"
+
+podAnnotations: {}
+
+imagePullSecrets: {}
+
+podSecurityContext:
+  fsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+
+securityContext:
+  runAsUser: 65534
+  runAsNonRoot: true
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+volumeClaimTemplate:
+  resources:
+    requests:
+      storage: 10Gi
+
+service:
+  type: ClusterIP
+  sentinelport: 26379
+  serverport: 6379
+  metricsPort: 9121
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

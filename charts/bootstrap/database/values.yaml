@@ -1,0 +1,74 @@
+# Default values for databases.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  database:
+    minio:
+      installed: true
+    mongodb:
+      installed: true
+    postgresql:
+      installed: true
+    timescaledb:
+      installed: true
+    redis:
+      installed: true
+minio:
+  fullnameOverride: "minio"
+  mode: standalone
+  defaultBuckets: "logs"
+  persistence:
+    size: 200Gi
+  auth:
+    existingSecret: "minio"
+# -- configurations for mongodb
+mongodb:
+  architecture: replicaset
+  fullnameOverride: "mongodb-replicaset-chart"
+  image:
+    registry: docker.io
+    repository: bitnami/mongodb
+    tag: 4.4.15
+  replicaCount: 3
+  arbiter:
+    enabled: true
+  service:
+    nameOverride: "mongodb-replicaset-chart"
+  auth:
+    rootUser: "admin"
+    existingSecret: "mongodb-replicaset-chart"
+  podLabels: { app: mongodb-replicaset }
+  resources:
+    limits:
+      cpu: 4
+      memory: 8192Mi
+    requests:
+      cpu: 4
+      memory: 8192Mi
+  persistence:
+    size: 200Gi
+postgresql:
+  image:
+    registry: docker.io
+    repository: bitnami/postgresql
+    tag: 14.7.0-debian-11-r26
+    digest: ""
+  fullnameOverride: "postgres"
+  auth:
+    # Create the additional ET Database during deployment.
+    # Additional init can be added using a configmap
+    # primary.initdb.scriptsConfigMap
+    database: overops
+    existingSecret: "postgres"
+  commonLabels:
+    app: postgres
+  primary:
+    persistence:
+      size: 200Gi
+    resources:
+      limits:
+        cpu: 4
+        memory: 8192Mi
+      requests:
+        cpu: 4
+        memory: 8192Mi
