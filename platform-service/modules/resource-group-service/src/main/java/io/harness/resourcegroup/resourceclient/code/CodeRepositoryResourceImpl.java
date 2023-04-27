@@ -69,7 +69,7 @@ public class CodeRepositoryResourceImpl implements Resource {
   public ImmutableMap<ScopeLevel, EnumSet<ValidatorType>> getSelectorKind() {
     return ImmutableMap.of(ScopeLevel.ACCOUNT, EnumSet.of(BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES),
         ScopeLevel.ORGANIZATION, EnumSet.of(BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES), ScopeLevel.PROJECT,
-        EnumSet.of(BY_RESOURCE_IDENTIFIER, BY_RESOURCE_TYPE));
+        EnumSet.of(BY_RESOURCE_TYPE));
   }
 
   @Override
