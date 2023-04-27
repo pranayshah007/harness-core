@@ -192,6 +192,7 @@ isClickHouseEnabled: false
 recommendationConfig:
   regionsLimit: 5
   accountLimit: 15
+  governanceRecommendationEnabled: false
 
 governanceConfig:
   useDkron: true

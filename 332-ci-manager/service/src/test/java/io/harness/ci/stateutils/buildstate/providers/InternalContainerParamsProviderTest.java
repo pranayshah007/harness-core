@@ -113,7 +113,7 @@ public class InternalContainerParamsProviderTest extends CIExecutionTestBase {
 
     CIK8ContainerParams containerParams = internalContainerParamsProvider.getLiteEngineContainerParams(connectorDetails,
         publishArtifactConnectorDetailsMap, k8PodDetails, stageCpuRequest, stageMemoryRequest, logEnvVars, tiEnvVars,
-        stoEnvVars, volumeToMountPath, "/step-exec/workspace", null, "test", ambiance);
+        stoEnvVars, volumeToMountPath, "/step-exec/workspace", null, "test", ambiance, null);
 
     assertThat(containerParams.getName()).isEqualTo(LITE_ENGINE_CONTAINER_NAME);
     assertThat(containerParams.getContainerType()).isEqualTo(CIContainerType.LITE_ENGINE);

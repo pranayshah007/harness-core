@@ -56,6 +56,7 @@ import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
 import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.ResolveInputYamlType;
 import io.harness.pms.plan.execution.ModuleInfoOperators;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -418,7 +419,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
 
   @Override
   public InputSetYamlWithTemplateDTO getInputSetYamlWithTemplate(String accountId, String orgId, String projectId,
-      String planExecutionId, boolean pipelineDeleted, boolean resolveExpressions) {
+      String planExecutionId, boolean pipelineDeleted, boolean resolveExpressions,
+      ResolveInputYamlType resolveExpressionsType) {
     // ToDo: Use Mongo Projections
     Optional<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntityOptional =
         pmsExecutionSummaryRespository
@@ -430,9 +432,19 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       // InputSet yaml used during execution
       String yaml = executionSummaryEntity.getInputSetYaml();
       if (resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
-        yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(yaml, planExecutionId);
+        yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
+            yaml, planExecutionId, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);
       }
 
+      if (!resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
+        if (resolveExpressionsType.equals(ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS)) {
+          yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
+              yaml, planExecutionId, ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS);
+        } else if (resolveExpressionsType.equals(ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS)) {
+          yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
+              yaml, planExecutionId, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);
+        }
+      }
       StagesExecutionMetadata stagesExecutionMetadata = executionSummaryEntity.getStagesExecutionMetadata();
       return InputSetYamlWithTemplateDTO
           .builder()
@@ -633,16 +645,11 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
           String.format("Execution with id [%s] is not present or deleted", planExecutionId));
     }
     PlanExecutionMetadata metadata = planExecutionMetadata.get();
-    String resolvedYaml = "";
-    if (EmptyPredicate.isNotEmpty(metadata.getInputSetYaml())) {
-      resolvedYaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(metadata.getInputSetYaml(), planExecutionId);
-    }
     return ExecutionMetaDataResponseDetailsDTO.builder()
         .executionYaml(metadata.getYaml())
         .planExecutionId(planExecutionId)
         .inputYaml(metadata.getInputSetYaml())
         .triggerPayload(metadata.getTriggerPayload())
-        .resolvedYaml(resolvedYaml)
         .build();
   }
 

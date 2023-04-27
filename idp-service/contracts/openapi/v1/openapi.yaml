@@ -1101,14 +1101,7 @@ components:
         category:
           type: string
           x-stoplight:
-            id: ql3oqpkls4fft
-          enum:
-            - Monitoring
-            - CI/CD
-            - Discovery
-            - Quality
-            - Security
-            - Source Control Mgmt
+            id: 8rqc7h1vyq7sh
         source:
           type: string
           x-stoplight:
@@ -1539,17 +1532,25 @@ components:
       type: object
       description: Response contianing entity yaml definition and description about the entity
       properties:
-        yaml_def:
-          type: string
+        generated_yaml:
+          type: object
           x-stoplight:
-            id: b9a1z1ixle6e0
-        description:
-          type: string
-          x-stoplight:
-            id: n4cd9raohifd2
+            id: qlgqwff9xljw9
+          required:
+            - yaml_def
+            - description
+          properties:
+            yaml_def:
+              type: string
+              x-stoplight:
+                id: 06z2bq0czhdmr
+            description:
+              type: string
+              x-stoplight:
+                id: ywrkefgdppyrp
       required:
-        - yaml_def
-        - description
+        - generated_yaml
+      x-examples: {}
     AllEntitiesImport:
       title: AllEntitiesImport
       x-stoplight:
@@ -1705,14 +1706,6 @@ components:
       required: true
       schema:
         type: string
-        enum:
-          - pager-duty
-          - snyk-security
-          - harness-ci-cd
-          - github-pull-requests-board
-          - kafka
-          - lighthouse
-          - todo
     PluginName:
       name: PluginId
       in: query
@@ -2051,14 +2044,7 @@ components:
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              generated_yaml:
-                $ref: '#/components/schemas/GenerateYamlResponse'
-                x-stoplight:
-                  id: bphw0sqlu2jkj
-            required:
-              - generated_yaml
+            $ref: '#/components/schemas/GenerateYamlResponse'
   securitySchemes:
     x-api-key:
       name: x-api-key

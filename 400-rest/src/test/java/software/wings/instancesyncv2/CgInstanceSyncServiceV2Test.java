@@ -359,7 +359,7 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
     doReturn(k8sHandler).when(handlerFactory).getHelper(any(SettingVariableTypes.class));
     doReturn(Status.builder().success(true).build()).when(containerInstanceHandler).getStatus(any(), any());
     ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-    cgInstanceSyncServiceV2.processInstanceSyncResult("perpetualTaskId", builder.build());
+    cgInstanceSyncServiceV2.processInstanceSyncResult("perpetualTaskId", builder.build(), true);
     verify(taskDetailsService, times(1)).updateLastRun(captor.capture(), any(), any());
     assertThat(captor.getValue()).isEqualTo("taskId");
   }
@@ -387,7 +387,7 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
     doReturn(infraMapping).when(infrastructureMappingService).get(anyString(), anyString());
     doReturn(k8sHandler).when(handlerFactory).getHelper(any(SettingVariableTypes.class));
     ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-    cgInstanceSyncServiceV2.processInstanceSyncResult("perpetualTaskId", builder.build());
+    cgInstanceSyncServiceV2.processInstanceSyncResult("perpetualTaskId", builder.build(), true);
     verify(perpetualTaskService, times(1)).deleteTask(any(String.class), captor.capture());
     assertThat(captor.getValue()).isEqualTo("perpetualTaskId");
   }

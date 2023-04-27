@@ -24,22 +24,34 @@ import okhttp3.RequestBody;
 @Slf4j
 public class PollingResponsePublisher {
   private final KryoSerializer kryoSerializer;
+  private final KryoSerializer referenceFalseKryoSerializer;
   private final DelegateAgentManagerClient delegateAgentManagerClient;
 
   @Inject
-  public PollingResponsePublisher(
-      KryoSerializer kryoSerializer, DelegateAgentManagerClient delegateAgentManagerClient) {
+  public PollingResponsePublisher(KryoSerializer kryoSerializer, KryoSerializer referenceFalseKryoSerializer,
+      DelegateAgentManagerClient delegateAgentManagerClient) {
     this.kryoSerializer = kryoSerializer;
+    this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
     this.delegateAgentManagerClient = delegateAgentManagerClient;
   }
 
-  public boolean publishToManger(String taskId, PollingDelegateResponse pollingDelegateResponse) {
+  public boolean publishToManger(
+      String taskId, PollingDelegateResponse pollingDelegateResponse, boolean useReferenceFalseKryoSerializer) {
     try {
-      byte[] responseSerialized = kryoSerializer.asBytes(pollingDelegateResponse);
+      if (useReferenceFalseKryoSerializer) {
+        byte[] referenceFalseResponseSerialized = referenceFalseKryoSerializer.asBytes(pollingDelegateResponse);
 
-      executeWithExceptions(
-          delegateAgentManagerClient.publishPollingResult(taskId, pollingDelegateResponse.getAccountId(),
-              RequestBody.create(MediaType.parse("application/octet-stream"), responseSerialized)));
+        executeWithExceptions(
+            delegateAgentManagerClient.publishPollingResultV2(taskId, pollingDelegateResponse.getAccountId(),
+                RequestBody.create(MediaType.parse("application/octet-stream"), referenceFalseResponseSerialized)));
+      } else {
+        byte[] responseSerialized = kryoSerializer.asBytes(pollingDelegateResponse);
+
+        executeWithExceptions(
+            delegateAgentManagerClient.publishPollingResult(taskId, pollingDelegateResponse.getAccountId(),
+                RequestBody.create(MediaType.parse("application/octet-stream"), responseSerialized)));
+      }
+
       return true;
     } catch (Exception ex) {
       log.error("Failed to publish polling response with status: {}",

@@ -13,7 +13,6 @@ import static software.wings.security.AuthenticationFilter.API_KEY_HEADER;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -40,7 +39,6 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.language.OperationDefinition;
-import java.io.InputStream;
 import java.util.Collections;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.Before;
@@ -82,9 +80,6 @@ public class QLAuditInstrumentationTest extends CategoryTest {
     doReturn("Bearer 12njdjksbkn").when(mockHttpServletRequest).getHeader("Authorization");
     final AuditHeader auditHeader = AuditHeader.Builder.anAuditHeader().build();
     doReturn(auditHeader).when(auditHelper).create(any(AuditHeader.class));
-    doReturn("fileid")
-        .when(auditHelper)
-        .create(any(AuditHeader.class), eq(AuditHeader.RequestType.REQUEST), any(InputStream.class));
 
     final GraphQLContext graphQLContext = mockParams.mockGraphQLContext;
 
@@ -99,8 +94,6 @@ public class QLAuditInstrumentationTest extends CategoryTest {
     final InstrumentationContext<ExecutionResult> executionResultInstrumentationContext =
         qlAuditInstrumentation.beginExecuteOperation(mockParams.mockOperationParameters);
 
-    verify(auditHelper, times(1))
-        .create(any(AuditHeader.class), eq(AuditHeader.RequestType.REQUEST), any(InputStream.class));
     assertThat(executionResultInstrumentationContext).isNotNull();
     verify(apiKeyService, times(1)).getByKey("api_key_value", "accountid1");
 

@@ -18,8 +18,10 @@ import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
+import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -57,8 +59,12 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
+import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
+import io.harness.gitsync.common.dtos.gitAccess.GithubAccessTokenDTO;
 import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
@@ -66,9 +72,12 @@ import io.harness.product.ci.scm.proto.CreatePRResponse;
 import io.harness.product.ci.scm.proto.CreateWebhookRequest;
 import io.harness.product.ci.scm.proto.CreateWebhookResponse;
 import io.harness.product.ci.scm.proto.FileContent;
+import io.harness.product.ci.scm.proto.GetAuthenticatedUserRequest;
+import io.harness.product.ci.scm.proto.GetAuthenticatedUserResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
+import io.harness.product.ci.scm.proto.GithubProvider;
 import io.harness.product.ci.scm.proto.ListBranchesResponse;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultRequest;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
@@ -102,6 +111,7 @@ public class ScmServiceClientImplTest extends CategoryTest {
   @InjectMocks ScmServiceClientImpl scmServiceClient;
   @Mock ScmGitProviderHelper scmGitProviderHelper;
   @Mock ScmGitProviderMapper scmGitProviderMapper;
+  @Mock SCMGitAccessToProviderMapper scmGitAccessToProviderMapper;
   @Mock SCMGrpc.SCMBlockingStub scmBlockingStub;
   @Mock Provider gitProvider;
   @Mock ScmConnector scmConnector;
@@ -511,6 +521,35 @@ public class ScmServiceClientImplTest extends CategoryTest {
     assertThat(gitFileResponse.getContent()).isEqualTo(fileContent);
     assertThat(gitFileResponse.getBranch()).isEqualTo(branch);
     assertThat(gitFileResponse.getObjectId()).isEqualTo(objectId);
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetUserDetails() {
+    char[] tokenValue = randomAlphabetic(5).toCharArray();
+    UserDetailsRequestDTO userDetailsRequestDTO =
+        UserDetailsRequestDTO.builder()
+            .gitAccessDTO(GithubAccessTokenDTO.builder()
+                              .tokenRef(SecretRefData.builder()
+                                            .scope(io.harness.encryption.Scope.ACCOUNT)
+                                            .identifier("tokenRef")
+                                            .decryptedValue(tokenValue)
+                                            .build())
+                              .tokenScope(Scope.builder().accountIdentifier("accountId").build())
+                              .build())
+            .build();
+    Provider provider = Provider.newBuilder()
+                            .setGithub(GithubProvider.newBuilder().setAccessToken(String.valueOf(tokenValue)).build())
+                            .build();
+    when(scmGitAccessToProviderMapper.mapToSCMGitProvider(userDetailsRequestDTO.getGitAccessDTO()))
+        .thenReturn(provider);
+    when(scmBlockingStub.getAuthenticatedUser(GetAuthenticatedUserRequest.newBuilder().setProvider(provider).build()))
+        .thenReturn(GetAuthenticatedUserResponse.newBuilder().setUserLogin("user1").setEmail("email1").build());
+    UserDetailsResponseDTO userDetailsResponseDTO =
+        scmServiceClient.getUserDetails(userDetailsRequestDTO, scmBlockingStub);
+    assertEquals(userDetailsResponseDTO.getUserEmail(), "email1");
+    assertEquals(userDetailsResponseDTO.getUserName(), "user1");
   }
 
   private GitFileDetails getGitFileDetailsDefault() {

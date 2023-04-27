@@ -22,7 +22,6 @@ import io.harness.serializer.JsonUtils;
 import software.wings.audit.ApiKeyAuditDetails;
 import software.wings.audit.AuditHeader;
 import software.wings.audit.AuditHeader.Builder;
-import software.wings.audit.AuditHeader.RequestType;
 import software.wings.beans.ApiKeyEntry;
 import software.wings.beans.HttpMethod;
 import software.wings.common.AuditHelper;
@@ -40,14 +39,11 @@ import graphql.execution.instrumentation.SimpleInstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.language.OperationDefinition;
 import graphql.language.OperationDefinition.Operation;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 
 @Singleton
 @Slf4j
@@ -78,16 +74,7 @@ public class QLAuditInstrumentation extends SimpleInstrumentation {
                                       () -> new InvalidRequestException("httpservlet request object missing")));
     final Builder auditHeaderBuilder =
         populateAuditHeaderDetails(httpServletRequest, Builder.anAuditHeader(), accountId);
-    final AuditHeader auditHeader = auditHelper.create(auditHeaderBuilder.build());
-
-    getGraphqlQueryString(graphQLContext).filter(EmptyPredicate::isNotEmpty).ifPresent(queryStr -> {
-      uploadRequestPayload(auditHeader, IOUtils.toInputStream(queryStr, StandardCharsets.UTF_8));
-    });
-    return auditHeader;
-  }
-
-  private Optional<String> getGraphqlQueryString(GraphQLContext graphQLContext) {
-    return graphQLContext.getOrEmpty(GraphQLConstants.GRAPHQL_QUERY_STRING).map(obj -> (String) obj);
+    return auditHelper.create(auditHeaderBuilder.build());
   }
 
   private Builder populateAuditHeaderDetails(
@@ -107,10 +94,6 @@ public class QLAuditInstrumentation extends SimpleInstrumentation {
 
   private String getQueryParams(HttpServletRequest httpServletRequest) {
     return httpServletRequest.getQueryString();
-  }
-
-  private String uploadRequestPayload(AuditHeader auditHeader, InputStream payloadInputStream) {
-    return auditHelper.create(auditHeader, RequestType.REQUEST, payloadInputStream);
   }
 
   @VisibleForTesting

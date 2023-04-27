@@ -15,7 +15,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.StepSpecTypeConstants;
-import io.harness.beans.yaml.extended.clone.Clone;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
 import io.harness.ci.plan.creator.codebase.CodebasePlanCreator;
@@ -48,7 +47,9 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.when.utils.RunInfoUtils;
+import io.harness.yaml.clone.Clone;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
+import io.harness.yaml.options.Options;
 import io.harness.yaml.registry.Registry;
 
 import com.google.common.base.Preconditions;
@@ -83,9 +84,10 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
     Infrastructure infrastructure =
         ciPlanCreatorUtils.getInfrastructure(stageConfig.getRuntime(), stageConfig.getPlatform());
     CodeBase codeBase = ciPlanCreatorUtils.getCodebase(ctx, stageConfig.getClone()).orElse(null);
-    Optional<Object> optionalRegistry = ciPlanCreatorUtils.getDeserializedObjectFromDependency(
-        ctx.getMetadata().getGlobalDependency(), YAMLFieldNameConstants.REGISTRY);
-    Registry registry = (Registry) optionalRegistry.orElse(Registry.builder().build());
+    Optional<Options> optionalOptions =
+        ciPlanCreatorUtils.getDeserializedOptions(ctx.getMetadata().getGlobalDependency());
+    Options options = optionalOptions.orElse(Options.builder().build());
+    Registry registry = options.getRegistry() == null ? Registry.builder().build() : options.getRegistry();
 
     YamlField specField = Preconditions.checkNotNull(field.getNode().getField(YAMLFieldNameConstants.SPEC));
     YamlField stepsField = Preconditions.checkNotNull(specField.getNode().getField(YAMLFieldNameConstants.STEPS));
@@ -201,10 +203,10 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
     return planCreationResponseMap;
   }
 
-  private void createPlanForCodebase(PlanCreationContext ctx, Clone clone,
+  private void createPlanForCodebase(PlanCreationContext ctx, Clone stageClone,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, Map<String, ByteString> metadataMap,
       String childNodeID) {
-    Optional<CodeBase> optionalCodeBase = ciPlanCreatorUtils.getCodebase(ctx, clone);
+    Optional<CodeBase> optionalCodeBase = ciPlanCreatorUtils.getCodebase(ctx, stageClone);
     if (optionalCodeBase.isPresent()) {
       CodeBase codeBase = optionalCodeBase.get();
       List<PlanNode> codebasePlanNodes =

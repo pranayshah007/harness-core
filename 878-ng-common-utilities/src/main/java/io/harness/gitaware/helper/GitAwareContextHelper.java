@@ -8,10 +8,13 @@
 package io.harness.gitaware.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.context.GlobalContext;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -19,9 +22,12 @@ import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.gitsync.scm.beans.ScmGitMetaDataContext;
 import io.harness.gitsync.sdk.CacheResponse;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.logging.AutoLogContext;
 import io.harness.manage.GlobalContextManager;
 import io.harness.persistence.gitaware.GitAware;
 
+import java.util.HashMap;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -134,5 +140,50 @@ public class GitAwareContextHelper {
       return null;
     }
     return scmGitMetaData.getBranchName();
+  }
+
+  public void setIsDefaultBranchInGitEntityInfo() {
+    GitEntityInfo gitEntityInfo = getGitRequestParamsInfo();
+
+    if (gitEntityInfo != null) {
+      gitEntityInfo.setIsDefaultBranch(isEmpty(gitEntityInfo.getBranch()));
+    }
+  }
+
+  public boolean getIsDefaultBranchFromGitEntityInfo() {
+    GitEntityInfo gitEntityInfo = getGitRequestParamsInfo();
+
+    if (gitEntityInfo != null) {
+      return gitEntityInfo.getIsDefaultBranch();
+    }
+
+    return false;
+  }
+
+  public static void setIsDefaultBranchInGitEntityInfoWithParameter(String branch) {
+    GitEntityInfo gitEntityInfo = getGitRequestParamsInfo();
+
+    if (gitEntityInfo != null) {
+      gitEntityInfo.setIsDefaultBranch(isEmpty(branch));
+    }
+  }
+
+  public AutoLogContext autoLogContext() {
+    Map<String, String> contextMap = new HashMap<>();
+    final GitSyncBranchContext gitSyncBranchContext =
+        GlobalContextManager.get(GitSyncBranchContext.NG_GIT_SYNC_CONTEXT);
+    if (gitSyncBranchContext != null && gitSyncBranchContext.getGitBranchInfo() != null) {
+      GitEntityInfo gitBranchInfo = gitSyncBranchContext.getGitBranchInfo();
+      contextMap.put("GitBranchName", gitBranchInfo.getBranch());
+      contextMap.put("GitConnectorRef", gitBranchInfo.getConnectorRef());
+      contextMap.put("GitRepoName", gitBranchInfo.getRepoName());
+      contextMap.put("GitParentConnectorRef", gitBranchInfo.getParentEntityConnectorRef());
+      contextMap.put("GitParentRepoName", gitBranchInfo.getParentEntityRepoName());
+    }
+    return new AutoLogContext(contextMap, OVERRIDE_NESTS);
+  }
+
+  public boolean isRemoteEntity(GitEntityInfo gitEntityInfo) {
+    return gitEntityInfo != null && StoreType.REMOTE.equals(gitEntityInfo.getStoreType());
   }
 }

@@ -235,7 +235,10 @@ public class GitClientHelper {
     return "https://";
   }
 
-  public static String getGitlabApiURL(String url) {
+  public static String getGitlabApiURL(String url, String apiUrl) {
+    if (!StringUtils.isBlank(apiUrl)) {
+      return StringUtils.stripEnd(apiUrl, "/") + "/";
+    }
     if (GitClientHelper.isGitlabSAAS(url)) {
       return "https://gitlab.com/";
     } else {

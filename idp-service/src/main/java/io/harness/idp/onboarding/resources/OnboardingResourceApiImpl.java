@@ -71,7 +71,8 @@ public class OnboardingResourceApiImpl implements OnboardingResourceApi {
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response onboardingGenerateYaml(@Valid GenerateYamlRequest generateYamlRequest, String harnessAccount) {
+  public Response onboardingGenerateYaml(
+      @Valid GenerateYamlRequest generateYamlRequest, @AccountIdentifier String harnessAccount) {
     log.info("Request received to generate entity yaml definition. Account = {}, Request = {}", harnessAccount,
         generateYamlRequest);
     GenerateYamlResponse generateYamlResponse = onboardingService.generateYaml(harnessAccount, generateYamlRequest);

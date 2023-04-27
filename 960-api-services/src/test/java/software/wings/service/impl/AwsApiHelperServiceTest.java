@@ -7,7 +7,10 @@
 
 package software.wings.service.impl;
 
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
+
+import static software.wings.service.impl.aws.model.AwsConstants.DEFAULT_BACKOFF_MAX_ERROR_RETRIES;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,6 +22,8 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.AwsSdkClientEqualJitterBackoffStrategy;
+import io.harness.aws.AwsSdkClientFullJitterBackoffStrategy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.util.AwsCallTracker;
 import io.harness.category.element.UnitTests;
@@ -27,6 +32,8 @@ import io.harness.serializer.KryoSerializer;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
+import com.amazonaws.retry.PredefinedBackoffStrategies;
+import com.amazonaws.retry.RetryPolicy;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -126,5 +133,50 @@ public class AwsApiHelperServiceTest extends CategoryTest {
     assertThat(details.getNumber()).isEqualTo("file.jar:abcd");
     assertThat(details.getRevision()).isEqualTo("file.jar:abcd");
     assertThat(details.getArtifactPath()).isEqualTo("file.jar");
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testRetryPolicyWithFullJitterBackoff() {
+    AwsInternalConfig awsInternalConfig =
+        AwsInternalConfig.builder()
+            .awsSdkClientBackoffStrategyOverride(
+                AwsSdkClientFullJitterBackoffStrategy.builder().baseDelay(1).retryCount(1).maxBackoffTime(30).build())
+            .build();
+
+    RetryPolicy expected = awsApiHelperService.getRetryPolicy(awsInternalConfig);
+
+    assertThat(expected.getBackoffStrategy()).isInstanceOf(PredefinedBackoffStrategies.FullJitterBackoffStrategy.class);
+    assertThat(expected.getMaxErrorRetry()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testRetryPolicyWithEqualJitterBackoff() {
+    AwsInternalConfig awsInternalConfig =
+        AwsInternalConfig.builder()
+            .awsSdkClientBackoffStrategyOverride(
+                AwsSdkClientEqualJitterBackoffStrategy.builder().maxBackoffTime(100).baseDelay(1).retryCount(1).build())
+            .build();
+
+    RetryPolicy expected = awsApiHelperService.getRetryPolicy(awsInternalConfig);
+
+    assertThat(expected.getBackoffStrategy())
+        .isInstanceOf(PredefinedBackoffStrategies.EqualJitterBackoffStrategy.class);
+    assertThat(expected.getMaxErrorRetry()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testRetryPolicyWithDefaultBackoffStrategy() {
+    AwsInternalConfig awsInternalConfig = AwsInternalConfig.builder().build();
+
+    RetryPolicy expected = awsApiHelperService.getRetryPolicy(awsInternalConfig);
+
+    assertThat(expected.getBackoffStrategy()).isInstanceOf(PredefinedBackoffStrategies.SDKDefaultBackoffStrategy.class);
+    assertThat(expected.getMaxErrorRetry()).isEqualTo(DEFAULT_BACKOFF_MAX_ERROR_RETRIES);
   }
 }

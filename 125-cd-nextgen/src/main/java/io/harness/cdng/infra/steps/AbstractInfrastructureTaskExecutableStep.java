@@ -366,8 +366,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
 
     StepResponseBuilder stepResponseBuilder = StepResponse.builder().status(Status.SUCCEEDED);
     String infrastructureKind = infrastructureOutcome.getKind();
-    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(
-        ambiance, executionInfoKey, infrastructureKind);
+    stageExecutionHelper.saveStageExecutionInfo(ambiance, executionInfoKey, infrastructureKind);
     stageExecutionHelper.addRollbackArtifactToStageOutcomeIfPresent(
         ambiance, stepResponseBuilder, executionInfoKey, infrastructureKind);
 

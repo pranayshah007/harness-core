@@ -45,7 +45,8 @@ public class CustomDeploymentInstanceSyncPerpetualTaskHandler extends InstanceSy
     List<ExecutionCapability> executionCapabilities = getExecutionCapability(deploymentInfoDTOList);
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier());
+        infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier(),
+        infrastructureMappingDTO.getAccountIdentifier());
   }
   private Any packCustomDeploymentInstanceSyncPerpetualTaskParams(InfrastructureMappingDTO infrastructureMappingDTO,
       InfrastructureOutcome infrastructureOutcome,

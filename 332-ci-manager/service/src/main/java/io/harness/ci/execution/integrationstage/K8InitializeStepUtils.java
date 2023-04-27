@@ -277,7 +277,7 @@ public class K8InitializeStepUtils {
     return containerDefinitionInfos;
   }
 
-  private ContainerDefinitionInfo createStepContainerDefinition(CIAbstractStepNode stepElement,
+  public ContainerDefinitionInfo createStepContainerDefinition(CIAbstractStepNode stepElement,
       IntegrationStageNode stageNode, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
       String accountId, OSType os, Ambiance ambiance, Integer extraMemoryPerStep, Integer extraCPUPerStep) {
     if (!(stepElement.getStepSpecType() instanceof CIStepInfo)) {
@@ -530,8 +530,10 @@ public class K8InitializeStepUtils {
 
     String containerName = format("%s%d", STEP_PREFIX, stepIndex);
     Map<String, String> stepEnvVars = new HashMap<>();
-    stepEnvVars.putAll(getVariablesMap(stageNode.getPipelineVariables(), stageNode.getIdentifier()));
-    stepEnvVars.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
+    if (stageNode != null) {
+      stepEnvVars.putAll(getVariablesMap(stageNode.getPipelineVariables(), stageNode.getIdentifier()));
+      stepEnvVars.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
+    }
     stepEnvVars.putAll(BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs));
     Map<String, String> envVars =
         resolveMapParameterV2("envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false);
@@ -541,8 +543,10 @@ public class K8InitializeStepUtils {
     Integer runAsUser = resolveIntegerParameter(backgroundStepInfo.getRunAsUser(), null);
 
     Map<String, SecretNGVariable> secretVarMap = new HashMap<>();
-    secretVarMap.putAll(getSecretVariablesMap(stageNode.getPipelineVariables()));
-    secretVarMap.putAll(getSecretVariablesMap(stageNode.getVariables()));
+    if (stageNode != null) {
+      secretVarMap.putAll(getSecretVariablesMap(stageNode.getPipelineVariables()));
+      secretVarMap.putAll(getSecretVariablesMap(stageNode.getVariables()));
+    }
 
     return ContainerDefinitionInfo.builder()
         .name(containerName)

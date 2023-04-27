@@ -48,6 +48,12 @@ public class InstanceSyncHelper {
         instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier(), instanceSyncPerpetualTaskInfoDTO.getId());
   }
 
+  public void cleanUpOnlyInstanceSyncPerpetualTaskInfo(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO) {
+    instanceSyncPerpetualTaskInfoService.deleteById(
+        instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier(), instanceSyncPerpetualTaskInfoDTO.getId());
+  }
+
   public ServiceEntity fetchService(InfrastructureMappingDTO infrastructureMappingDTO) {
     Optional<ServiceEntity> serviceEntityOptional = serviceEntityService.get(
         infrastructureMappingDTO.getAccountIdentifier(), infrastructureMappingDTO.getOrgIdentifier(),

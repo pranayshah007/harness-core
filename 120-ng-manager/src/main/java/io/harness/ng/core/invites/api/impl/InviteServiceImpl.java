@@ -626,7 +626,7 @@ public class InviteServiceImpl implements InviteService {
         updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
       } else if (scimLdapArray[1] || isAutoInviteAcceptanceEnabled || isPLNoEmailForSamlAccountInvitesEnabled) {
         createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false, false, invite.getGivenName(),
-            invite.getFamilyName(), invite.getExternalId(), LDAP);
+            invite.getFamilyName(), invite.getExternalId(), scimLdapArray[1] ? LDAP : MANUAL);
         updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
       }
 
@@ -834,6 +834,7 @@ public class InviteServiceImpl implements InviteService {
     markInviteApprovedAndDeleted(invite);
     // telemetry for adding user to an account
     sendInviteAcceptTelemetryEvents(user, invite);
+    ngUserService.waitForRbacSetup(scope, user.getUuid(), email);
     return true;
   }
 

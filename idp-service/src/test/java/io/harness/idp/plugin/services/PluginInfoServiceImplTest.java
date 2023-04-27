@@ -87,7 +87,7 @@ public class PluginInfoServiceImplTest {
     List<PluginInfoEntity> pluginInfoEntityList = new ArrayList<>();
     pluginInfoEntityList.add(getPagerDutyInfoEntity());
     pluginInfoEntityList.add(getHarnessCICDInfoEntity());
-    when(pluginInfoRepository.findAll()).thenReturn(pluginInfoEntityList);
+    when(pluginInfoRepository.findByIdentifierIn(any())).thenReturn(pluginInfoEntityList);
     Map<String, Boolean> map = new HashMap<>();
     map.put(PAGER_DUTY_ID, false);
     map.put(HARNESS_CI_CD_ID, true);
@@ -136,7 +136,7 @@ public class PluginInfoServiceImplTest {
     when(FileUtils.readFile(any(), any(), any())).thenReturn(schema);
     when(pluginInfoRepository.saveOrUpdate(any(PluginInfoEntity.class))).thenReturn(pluginInfoEntity);
     pluginInfoServiceImpl.saveAllPluginInfo();
-    verify(pluginInfoRepository, times(7)).saveOrUpdate(any(PluginInfoEntity.class));
+    verify(pluginInfoRepository, times(12)).saveOrUpdate(any(PluginInfoEntity.class));
   }
 
   @Test

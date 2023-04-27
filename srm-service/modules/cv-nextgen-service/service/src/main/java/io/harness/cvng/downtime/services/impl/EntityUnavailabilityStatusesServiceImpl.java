@@ -7,8 +7,9 @@
 package io.harness.cvng.downtime.services.impl;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
-import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.downtime.beans.DataCollectionFailureInstanceDetails;
 import io.harness.cvng.downtime.beans.DowntimeDTO;
+import io.harness.cvng.downtime.beans.DowntimeInstanceDetails;
 import io.harness.cvng.downtime.beans.EntityType;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
@@ -16,6 +17,10 @@ import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses.EntityUnavailabilityStatusesKeys;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.downtime.transformer.EntityUnavailabilityStatusesEntityAndDTOTransformer;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetails;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
+import io.harness.cvng.servicelevelobjective.services.api.SecondaryEventDetailsService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -29,12 +34,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 
-public class EntityUnavailabilityStatusesServiceImpl implements EntityUnavailabilityStatusesService {
+public class EntityUnavailabilityStatusesServiceImpl
+    implements EntityUnavailabilityStatusesService, SecondaryEventDetailsService {
   @Inject private HPersistence hPersistence;
 
   @Inject private Clock clock;
-
-  @Inject private MonitoredServiceService monitoredServiceService;
 
   @Inject private EntityUnavailabilityStatusesEntityAndDTOTransformer statusesEntityAndDTOTransformer;
 
@@ -105,7 +109,7 @@ public class EntityUnavailabilityStatusesServiceImpl implements EntityUnavailabi
   }
 
   @Override
-  public EntityUnavailabilityStatuses getInstanceById(EntityType entityType, String uuid) {
+  public EntityUnavailabilityStatuses getInstanceByUuid(String uuid) {
     return hPersistence.get(EntityUnavailabilityStatuses.class, uuid);
   }
 
@@ -186,6 +190,23 @@ public class EntityUnavailabilityStatusesServiceImpl implements EntityUnavailabi
         .stream()
         .map(status -> statusesEntityAndDTOTransformer.getDto(status))
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public SecondaryEventDetailsResponse getInstanceByUuids(List<String> uuids, SecondaryEventsType eventType) {
+    EntityUnavailabilityStatuses instance = getInstanceByUuid(uuids.get(0));
+    SecondaryEventDetails details = null;
+    if (eventType == SecondaryEventsType.DOWNTIME) {
+      details = DowntimeInstanceDetails.builder().build();
+    } else if (eventType == SecondaryEventsType.DATA_COLLECTION_FAILURE) {
+      details = DataCollectionFailureInstanceDetails.builder().build();
+    }
+    return SecondaryEventDetailsResponse.builder()
+        .type(eventType)
+        .startTime(instance.getStartTime())
+        .endTime(instance.getEndTime())
+        .details(details)
+        .build();
   }
 
   @Override

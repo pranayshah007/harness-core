@@ -95,6 +95,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -310,7 +311,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
           yamlField.getName(), Arrays.asList(YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.PARALLEL));
       EdgeLayoutList edgeLayoutList;
       String planNodeId = MultiDeploymentSpawnerUtils.getUuidForMultiDeployment(config);
-      if (siblingField == null) {
+      String pipelineRollbackStageId = StrategyUtils.getPipelineRollbackStageId(context.getCurrentField());
+      if (siblingField == null || Objects.equals(siblingField.getUuid(), pipelineRollbackStageId)) {
         edgeLayoutList = EdgeLayoutList.newBuilder().addCurrentNodeChildren(planNodeId).build();
       } else {
         edgeLayoutList = EdgeLayoutList.newBuilder()

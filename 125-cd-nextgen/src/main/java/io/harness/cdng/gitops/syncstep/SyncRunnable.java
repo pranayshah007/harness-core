@@ -15,6 +15,7 @@ import static java.lang.String.format;
 
 import io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
+import io.harness.cdng.gitops.steps.GitopsClustersOutcome.ClusterData;
 import io.harness.cdng.gitops.syncstep.EnvironmentClusterListing.EnvironmentClusterListingBuilder;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.common.NGTimeConversionHelper;
@@ -26,6 +27,7 @@ import io.harness.gitops.models.ApplicationSyncRequest;
 import io.harness.gitops.remote.GitopsResourceClient;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -47,8 +49,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -73,6 +77,7 @@ public class SyncRunnable implements Runnable {
   public static final String GITOPS_LINKED_APPS_OUTCOME = "GITOPS_LINKED_APPS_OUTCOME";
   public static final String SERVICE = "service";
   private static final String LOG_SUFFIX = "Execute";
+  private static final String PROJECT_SCOPE = "project";
 
   private final String taskId;
   private final Ambiance ambiance;
@@ -114,8 +119,8 @@ public class SyncRunnable implements Runnable {
       EnvironmentClusterListing envClusterIds = getEnvAndClusterIdsInPipelineExecution(ambiance);
       Set<String> envIdsInPipelineExecution =
           (Set<String>) CollectionUtils.emptyIfNull(envClusterIds.getEnvironmentIds());
-      Set<String> clusterIdsInPipelineExecution =
-          (Set<String>) CollectionUtils.emptyIfNull(envClusterIds.getClusterIds());
+      Map<String, Set<String>> clusterIdsInPipelineExecution =
+          envClusterIds.getClusterIds() != null ? envClusterIds.getClusterIds() : new HashMap<>();
 
       Set<Application> applicationsFailedToSync = new HashSet<>();
 
@@ -170,6 +175,8 @@ public class SyncRunnable implements Runnable {
       waitNotifyEngine.doneWith(taskId,
           ErrorNotifyResponseData.builder().errorMessage(format("Failed to execute Sync step. Error:%s", ex)).build());
       throw new RuntimeException("Failed to execute Sync step ", ex);
+    } finally {
+      closeLogStream(ambiance);
     }
   }
 
@@ -180,24 +187,27 @@ public class SyncRunnable implements Runnable {
     EnvironmentClusterListingBuilder environmentClusterListing = EnvironmentClusterListing.builder();
     if (optionalSweepingOutputForEnv != null && optionalSweepingOutputForEnv.isFound()) {
       GitopsClustersOutcome outcome = (GitopsClustersOutcome) optionalSweepingOutputForEnv.getOutput();
-      environmentClusterListing.clusterIds(getClusterIdsInPipelineExecution(outcome))
+      environmentClusterListing.clusterIds(getScopedClusterIdsInPipelineExecution(outcome))
           .environmentIds(getEnvIdsInPipelineExecution(outcome));
     }
     return environmentClusterListing.build();
   }
 
   private Set<String> getEnvIdsInPipelineExecution(GitopsClustersOutcome outcome) {
-    return outcome.getClustersData()
-        .stream()
-        .map(GitopsClustersOutcome.ClusterData::getEnvId)
-        .collect(Collectors.toSet());
+    return outcome.getClustersData().stream().map(ClusterData::getEnvId).collect(Collectors.toSet());
   }
 
-  private Set<String> getClusterIdsInPipelineExecution(GitopsClustersOutcome outcome) {
-    return outcome.getClustersData()
-        .stream()
-        .map(GitopsClustersOutcome.ClusterData::getClusterId)
-        .collect(Collectors.toSet());
+  private Map<String, Set<String>> getScopedClusterIdsInPipelineExecution(GitopsClustersOutcome outcome) {
+    return outcome.getClustersData().stream().collect(
+        Collectors.groupingBy(ClusterData::getAgentId, Collectors.mapping(cluster -> {
+          String scope = cluster.getScope().toLowerCase();
+          String clusterId = cluster.getClusterId();
+          if (PROJECT_SCOPE.equals(scope)) {
+            return clusterId;
+          } else {
+            return scope + "." + clusterId;
+          }
+        }, Collectors.toSet())));
   }
 
   private Set<String> getServiceIdsInPipelineExecution(Ambiance ambiance) {
@@ -248,7 +258,7 @@ public class SyncRunnable implements Runnable {
   private void prepareApplicationForSync(List<Application> applicationsToBeSynced,
       Set<Application> failedToSyncApplications, String accountId, String orgId, String projectId,
       Set<String> serviceIdsInPipelineExecution, Set<String> envIdsInPipelineExecution,
-      Set<String> clusterIdsInPipelineExecution, LogCallback logger) {
+      Map<String, Set<String>> clusterIdsInPipelineExecution, LogCallback logger) {
     for (Application application : applicationsToBeSynced) {
       if (failedToSyncApplications.contains(application)) {
         continue;
@@ -436,7 +446,7 @@ public class SyncRunnable implements Runnable {
 
   private boolean isApplicationEligibleForSync(ApplicationResource latestApplicationState, Application application,
       Set<String> serviceIdsInPipelineExecution, Set<String> envIdsInPipelineExecution,
-      Set<String> clusterIdsInPipelineExecution) {
+      Map<String, Set<String>> clusterIdsInPipelineExecution) {
     if (!isApplicationCorrespondsToServiceInExecution(latestApplicationState, serviceIdsInPipelineExecution)) {
       application.setSyncMessage(
           "Application does not correspond to the service(s) selected in the pipeline execution.");
@@ -475,8 +485,10 @@ public class SyncRunnable implements Runnable {
   }
 
   private boolean isApplicationCorrespondsToClusterInExecution(
-      ApplicationResource latestApplicationState, Set<String> clusterIdsInPipelineExecution) {
-    return clusterIdsInPipelineExecution.contains(latestApplicationState.getClusterIdentifier());
+      ApplicationResource latestApplicationState, Map<String, Set<String>> clusterIdsInPipelineExecution) {
+    String agentIdentifier = latestApplicationState.getAgentIdentifier();
+    Set<String> clustersForAgent = clusterIdsInPipelineExecution.get(agentIdentifier);
+    return clustersForAgent != null && clustersForAgent.contains(latestApplicationState.getClusterIdentifier());
   }
 
   private boolean isApplicationCorrespondsToServiceInExecution(
@@ -556,5 +568,10 @@ public class SyncRunnable implements Runnable {
     return RetryUtils.getRetryPolicy(failedAttemptMessage, failureMessage, Collections.singletonList(IOException.class),
         Duration.ofMillis(SyncStepHelper.NETWORK_CALL_RETRY_SLEEP_DURATION_MILLIS),
         SyncStepHelper.NETWORK_CALL_MAX_RETRY_ATTEMPTS, log);
+  }
+
+  private void closeLogStream(Ambiance ambiance) {
+    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+    logStreamingStepClient.closeStream(LOG_SUFFIX);
   }
 }

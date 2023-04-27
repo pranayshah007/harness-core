@@ -8,10 +8,12 @@
 package io.harness.cdng.artifact.utils;
 
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
@@ -32,7 +34,13 @@ import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.BambooArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.artifact.mappers.ArtifactConfigToDelegateReqMapper;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters;
+import io.harness.cdng.execution.ServiceExecutionSummaryDetails;
+import io.harness.cdng.execution.ServiceExecutionSummaryDetails.ArtifactsSummary.ArtifactsSummaryBuilder;
+import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
@@ -87,6 +95,7 @@ import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import software.wings.beans.TaskType;
 
@@ -98,11 +107,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
+@Slf4j
 public class ArtifactStepHelper {
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
@@ -111,6 +123,46 @@ public class ArtifactStepHelper {
   @Inject @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
 
   @Inject private CDExpressionResolver cdExpressionResolver;
+  @Inject private StageExecutionInfoService stageExecutionInfoService;
+  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+
+  public void saveArtifactExecutionDataToStageInfo(Ambiance ambiance, ArtifactsOutcome artifactsOutcome) {
+    if (ngFeatureFlagHelperService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)
+        && artifactsOutcome != null) {
+      stageExecutionInfoService.updateStageExecutionInfo(ambiance,
+          StageExecutionInfoUpdateDTO.builder()
+              .artifactsSummary(mapArtifactsOutcomeToSummary(artifactsOutcome))
+              .build());
+    }
+  }
+
+  private ServiceExecutionSummaryDetails.ArtifactsSummary mapArtifactsOutcomeToSummary(
+      ArtifactsOutcome artifactsOutcome) {
+    ArtifactsSummaryBuilder artifactsSummaryBuilder = ServiceExecutionSummaryDetails.ArtifactsSummary.builder();
+    if (artifactsOutcome == null) {
+      return artifactsSummaryBuilder.build();
+    }
+
+    if (artifactsOutcome.getPrimary() != null) {
+      artifactsSummaryBuilder.primary(artifactsOutcome.getPrimary().getArtifactSummary());
+      if (artifactsOutcome.getPrimary().getArtifactSummary() != null) {
+        artifactsSummaryBuilder.artifactDisplayName(
+            artifactsOutcome.getPrimary().getArtifactSummary().getDisplayName());
+      }
+    }
+
+    if (isNotEmpty(artifactsOutcome.getSidecars())) {
+      artifactsSummaryBuilder.sidecars(artifactsOutcome.getSidecars()
+                                           .values()
+                                           .stream()
+                                           .filter(Objects::nonNull)
+                                           .map(ArtifactOutcome::getArtifactSummary)
+                                           .collect(Collectors.toList()));
+    }
+
+    return artifactsSummaryBuilder.build();
+  }
 
   public ArtifactSourceDelegateRequest toSourceDelegateRequest(ArtifactConfig artifactConfig, Ambiance ambiance) {
     List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();

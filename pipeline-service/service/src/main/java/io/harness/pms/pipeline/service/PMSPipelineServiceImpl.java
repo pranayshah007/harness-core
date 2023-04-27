@@ -173,15 +173,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       log.info("Creating Draft Pipeline with identifier: {}", pipelineEntity.getIdentifier());
       return createPipeline(pipelineEntity);
     }
+
     PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
         pipelineEntity.getIdentifier());
-
-    gitXSettingsHelper.enforceGitExperienceIfApplicable(pipelineEntity.getAccountIdentifier(),
-        pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
-    gitXSettingsHelper.setConnectorRefForRemoteEntity(pipelineEntity.getAccountIdentifier(),
-        pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
-
+    applyGitXSettingsIfApplicable(pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
+        pipelineEntity.getProjectIdentifier());
     checkProjectExists(
         pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
 
@@ -973,5 +970,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       throw new HintException(format(
           "Invalid module type [%s]. Please select the correct module type %s", module, ModuleType.getModules()));
     }
+  }
+
+  private void applyGitXSettingsIfApplicable(String accountIdentifier, String orgIdentifier, String projIdentifier) {
+    gitXSettingsHelper.enforceGitExperienceIfApplicable(accountIdentifier, orgIdentifier, projIdentifier);
+    gitXSettingsHelper.setConnectorRefForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
+    gitXSettingsHelper.setDefaultStoreTypeForEntities(accountIdentifier, orgIdentifier, projIdentifier);
   }
 }

@@ -205,6 +205,10 @@ if [[ "" != "$GOVERNANCE_RECOMMENDATION_JOB_CRON" ]]; then
   export GOVERNANCE_RECOMMENDATION_JOB_CRON; yq -i '.scheduler-jobs-config.governanceRecommendationJobCron=env(GOVERNANCE_RECOMMENDATION_JOB_CRON)' $CONFIG_FILE
 fi
 
+if [[ "" != "$GOVERNANCE_RECOMMENDATION_JOB_ENABLED" ]]; then
+  export GOVERNANCE_RECOMMENDATION_JOB_ENABLED; yq -i '.recommendationConfig.governanceRecommendationEnabled=env(GOVERNANCE_RECOMMENDATION_JOB_ENABLED)' $CONFIG_FILE
+fi
+
 if [[ "" != "$HARNESS_CE_AZURE_CLIENTID" ]]; then
   export HARNESS_CE_AZURE_CLIENTID; yq -i '.azureStorageSyncConfig.azureAppClientId=env(HARNESS_CE_AZURE_CLIENTID)' $CONFIG_FILE
 fi

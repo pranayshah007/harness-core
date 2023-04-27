@@ -123,7 +123,8 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
     GetFileResponse getFileResponse;
     Map<String, String> contextMap = GitSyncLogContextHelper.setContextMap(
         ScopeIdentifierMapper.getScopeFromScopeIdentifiers(request.getScopeIdentifiers()), request.getRepoName(),
-        request.getBranchName(), request.getFilePath(), GitOperation.GET_FILE, request.getContextMapMap());
+        request.getBranchName(), request.getCommitId(), request.getFilePath(), GitOperation.GET_FILE,
+        request.getContextMapMap());
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
       log.info(String.format("%s Grpc request received for getFile ops %s", GIT_SERVICE, request));
@@ -152,7 +153,7 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
     CreateFileResponse createFileResponse;
     Map<String, String> contextMap = GitSyncLogContextHelper.setContextMap(
         ScopeIdentifierMapper.getScopeFromScopeIdentifiers(request.getScopeIdentifiers()), request.getRepoName(),
-        request.getBranchName(), request.getFilePath(), GitOperation.CREATE_FILE, request.getContextMapMap());
+        request.getBranchName(), "", request.getFilePath(), GitOperation.CREATE_FILE, request.getContextMapMap());
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
       log.info(String.format("%s Grpc request received for createFile ops %s", GIT_SERVICE, request));
@@ -182,7 +183,7 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
     UserDetailsResponse userDetailsResponse;
     Map<String, String> contextMap =
         GitSyncLogContextHelper.setContextMap(Scope.builder().accountIdentifier(request.getAccountIdentifier()).build(),
-            EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, GitOperation.GET_USER_DETAILS, null);
+            EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, GitOperation.GET_USER_DETAILS, null);
 
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
@@ -212,7 +213,7 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
     UpdateFileResponse updateFileResponse;
     Map<String, String> contextMap = GitSyncLogContextHelper.setContextMap(
         ScopeIdentifierMapper.getScopeFromScopeIdentifiers(request.getScopeIdentifiers()), request.getRepoName(),
-        request.getBranchName(), request.getFilePath(), GitOperation.UPDATE_FILE, request.getContextMapMap());
+        request.getBranchName(), "", request.getFilePath(), GitOperation.UPDATE_FILE, request.getContextMapMap());
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
       log.info(String.format("%s Grpc request received for updateFile ops %s", GIT_SERVICE, request));
@@ -260,7 +261,7 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
     GetRepoUrlResponse getRepoUrlResponse;
     Map<String, String> contextMap = GitSyncLogContextHelper.setContextMap(
         ScopeIdentifierMapper.getScopeFromScopeIdentifiers(request.getScopeIdentifiers()), request.getRepoName(), "",
-        "", GitOperation.GET_REPO_URL, request.getContextMapMap());
+        "", "", GitOperation.GET_REPO_URL, request.getContextMapMap());
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
       log.info(String.format("%s Grpc request received for getRepoUrl ops %s", GIT_SERVICE, request));
@@ -326,7 +327,7 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
     GetBranchHeadCommitResponse showBranchResponse;
     Map<String, String> contextMap = GitSyncLogContextHelper.setContextMap(
         ScopeIdentifierMapper.getScopeFromScopeIdentifiers(request.getScopeIdentifiers()), request.getRepoName(),
-        request.getBranchName(), "", GitOperation.GET_BRANCH_HEAD_COMMIT, request.getContextMapMap());
+        request.getBranchName(), "", "", GitOperation.GET_BRANCH_HEAD_COMMIT, request.getContextMapMap());
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
       showBranchResponse = harnessToGitHelperService.getBranchHeadCommitDetails(request);
@@ -421,7 +422,8 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
     getBatchFilesRequest.getGetFileRequestMapMap().forEach((requestIdentifier, request) -> {
       Map<String, String> contextMap = GitSyncLogContextHelper.setContextMap(
           ScopeIdentifierMapper.getScopeFromScopeIdentifiers(request.getScopeIdentifiers()), request.getRepoName(),
-          request.getBranchName(), request.getFilePath(), GitOperation.GET_BATCH_FILES, request.getContextMapMap());
+          request.getBranchName(), request.getCommitId(), request.getFilePath(), GitOperation.GET_BATCH_FILES,
+          request.getContextMapMap());
       globalContextMap.put(requestIdentifier, contextMap.toString());
     });
     return globalContextMap;

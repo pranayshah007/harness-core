@@ -28,6 +28,7 @@ import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.mappers.AccountMapper;
+import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.dto.UserInviteDTO;
 import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.PasswordChangeDTO;
@@ -422,6 +423,14 @@ public class UserResourceNG {
   public RestResponse<Boolean> addUserToAccount(
       @QueryParam("userId") String userId, @QueryParam("accountId") String accountId) {
     userService.addUserToAccount(userId, accountId);
+    return new RestResponse<>(true);
+  }
+
+  @POST
+  @Path("/user-account-with-source")
+  public RestResponse<Boolean> updateNGUserToCGWithSource(
+      @QueryParam("userId") String userId, @QueryParam("accountId") String accountId, @Body UserSource userSource) {
+    userService.addUserToAccount(userId, accountId, userSource);
     return new RestResponse<>(true);
   }
 

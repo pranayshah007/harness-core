@@ -18,7 +18,6 @@ import io.harness.grpc.utils.AnyUtils;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AwsAmiInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AwsConfig;
 import software.wings.service.impl.aws.model.AwsAsgListInstancesResponse;
@@ -34,10 +33,10 @@ import org.eclipse.jetty.server.Response;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
-public class AwsAmiInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
+public class AwsAmiInstanceSyncPerpetualTaskExecutor
+    extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   @Inject private AwsAsgHelperServiceDelegate awsAsgHelperServiceDelegate;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject private KryoSerializer kryoSerializer;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -49,17 +48,19 @@ public class AwsAmiInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExe
     final AwsAmiInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), AwsAmiInstanceSyncPerpetualTaskParams.class);
 
-    final AwsConfig awsConfig = (AwsConfig) kryoSerializer.asObject(taskParams.getAwsConfig().toByteArray());
+    final AwsConfig awsConfig = (AwsConfig) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+                                    .asObject(taskParams.getAwsConfig().toByteArray());
 
     @SuppressWarnings("unchecked")
     final List<EncryptedDataDetail> encryptedDataDetails =
-        (List<EncryptedDataDetail>) kryoSerializer.asObject(taskParams.getEncryptedData().toByteArray());
+        (List<EncryptedDataDetail>) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+            .asObject(taskParams.getEncryptedData().toByteArray());
 
     final AwsAsgListInstancesResponse awsResponse = getAwsResponse(taskParams, awsConfig, encryptedDataDetails);
 
     try {
-      execute(
-          delegateAgentManagerClient.publishInstanceSyncResult(taskId.getId(), awsConfig.getAccountId(), awsResponse));
+      execute(delegateAgentManagerClient.publishInstanceSyncResultV2(
+          taskId.getId(), awsConfig.getAccountId(), awsResponse));
     } catch (Exception e) {
       log.error(
           String.format("Failed to publish instance sync result for aws ami. asgName [%s] and PerpetualTaskId [%s]",

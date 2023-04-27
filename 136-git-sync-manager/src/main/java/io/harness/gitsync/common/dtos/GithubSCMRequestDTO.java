@@ -9,20 +9,21 @@ package io.harness.gitsync.common.dtos;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.ng.userprofile.commons.SCMType;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import lombok.Value;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-@Value
+@Data
+@NoArgsConstructor
 @JsonTypeName("GITHUB")
 @SuperBuilder
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GithubSCMRequestDTO extends UserSourceCodeManagerRequestDTO {
-  @JsonProperty("apiAccess") GithubApiAccessDTO apiAccess;
+  @JsonProperty("authentication") GithubAuthenticationDTO authentication;
 
   @Override
   public SCMType getType() {

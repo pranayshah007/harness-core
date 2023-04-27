@@ -6,10 +6,10 @@
  */
 package io.harness.cvng.downtime.beans;
 
-import static io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventsType.DATA_COLLECTION_FAILURE;
-import static io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventsType.DOWNTIME;
+import static io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType.DATA_COLLECTION_FAILURE;
+import static io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType.DOWNTIME;
 
-import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventsType;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

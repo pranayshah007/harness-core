@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.MATT;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VINICIUS;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.USE_NATIVE_TYPE_ID;
 import static junit.framework.TestCase.assertTrue;
@@ -286,6 +287,79 @@ public class NGTriggerServiceImplTest extends CategoryTest {
             .build();
 
     ngTriggerServiceImpl.validateTriggerConfig(triggerDetails);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testCronTriggerWithValidQuartz() {
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder()
+            .ngTriggerEntity(NGTriggerEntity.builder().identifier("id").name("name").build())
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(
+                        NGTriggerSourceV2.builder()
+                            .type(NGTriggerType.SCHEDULED)
+                            .spec(
+                                ScheduledTriggerConfig.builder()
+                                    .type("Cron")
+                                    .spec(
+                                        CronTriggerSpec.builder().type("QUARTZ").expression("0 0 3 ? * 3#2 *").build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    ngTriggerServiceImpl.validateTriggerConfig(triggerDetails);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testCronTriggerWithInvalidQuartz() {
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder()
+            .ngTriggerEntity(NGTriggerEntity.builder().identifier("id").name("name").build())
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(
+                        NGTriggerSourceV2.builder()
+                            .type(NGTriggerType.SCHEDULED)
+                            .spec(ScheduledTriggerConfig.builder()
+                                      .type("Cron")
+                                      .spec(CronTriggerSpec.builder().type("QUARTZ").expression("0 3 ? * 3#2").build())
+                                      .build())
+                            .build())
+                    .build())
+            .build();
+    assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Cron expression contains 5 parts but we expect one of [6, 7]");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testCronTriggerWithInvalidUnix() {
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder()
+            .ngTriggerEntity(NGTriggerEntity.builder().identifier("id").name("name").build())
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(
+                        NGTriggerSourceV2.builder()
+                            .type(NGTriggerType.SCHEDULED)
+                            .spec(ScheduledTriggerConfig.builder()
+                                      .type("Cron")
+                                      .spec(CronTriggerSpec.builder().type("UNIX").expression("0 3 * * 3 *").build())
+                                      .build())
+                            .build())
+                    .build())
+            .build();
+    assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Cron expression contains 6 parts but we expect one of [5]");
   }
 
   @Test

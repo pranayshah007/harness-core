@@ -372,25 +372,28 @@ public class InputSetMergeHelperTest extends CategoryTest {
         + "  image: alpine\n"
         + "  repo: harness-core\n"
         + "  count: 0\n"
-        + "repository:\n"
-        + "  reference:\n"
-        + "    type: commit\n"
-        + "    value: asdf");
+        + "options:\n"
+        + "  clone:\n"
+        + "    ref:\n"
+        + "      type: commit\n"
+        + "      name: asdf");
 
     inputSetYamlList.add("version: 1\n"
         + "name: partialset2\n"
         + "inputs:\n"
         + "  count: 1\n"
         + "  tag: latest\n"
-        + "repository:\n"
-        + "  reference:\n"
-        + "    type: tag\n"
-        + "    value: main");
+        + "options:\n"
+        + "  clone:\n"
+        + "    ref:\n"
+        + "      type: tag\n"
+        + "      name: main");
 
-    Set<String> possibleResponses = Set.of("repository:\n"
-            + "  reference:\n"
-            + "    type: \"tag\"\n"
-            + "    value: \"main\"\n"
+    Set<String> possibleResponses = Set.of("options:\n"
+            + "  clone:\n"
+            + "    ref:\n"
+            + "      type: \"tag\"\n"
+            + "      name: \"main\"\n"
             + "inputs:\n"
             + "  image: \"alpine\"\n"
             + "  repo: \"harness-core\"\n"
@@ -401,10 +404,11 @@ public class InputSetMergeHelperTest extends CategoryTest {
             + "  repo: \"harness-core\"\n"
             + "  count: 1\n"
             + "  tag: \"latest\"\n"
-            + "repository:\n"
-            + "  reference:\n"
-            + "    type: \"tag\"\n"
-            + "    value: \"main\"\n");
+            + "options:\n"
+            + "  clone:\n"
+            + "    ref:\n"
+            + "      type: \"tag\"\n"
+            + "      name: \"main\"\n");
     String mergedInputSetYaml = InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList);
     assertThat(possibleResponses.contains(mergedInputSetYaml)).isTrue();
 
@@ -415,12 +419,13 @@ public class InputSetMergeHelperTest extends CategoryTest {
             + "  b: \"b\"\n"
             + "  c: \"c\"\n");
 
-    inputSetYamlList = Arrays.asList("repository:\n  references:\n    type: branch\n    value: harness-core",
-        "repository:\n  references:\n    type: tag");
+    inputSetYamlList = Arrays.asList("options:\n  clone:\n    ref:\n      type: branch\n      name: harness-core",
+        "options:\n  clone:\n    ref:\n      type: tag");
     assertThat(InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList))
-        .isEqualTo("repository:\n"
-            + "  references:\n"
-            + "    type: \"tag\"\n"
-            + "    value: \"harness-core\"\n");
+        .isEqualTo("options:\n"
+            + "  clone:\n"
+            + "    ref:\n"
+            + "      type: \"tag\"\n"
+            + "      name: \"harness-core\"\n");
   }
 }

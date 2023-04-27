@@ -92,21 +92,22 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
       nodeExecutionInfoService.addConcurrentChildInformation(
           ConcurrentChildInstance.builder().childrenNodeExecutionIds(childrenIds).cursor(maxConcurrency).build(),
           nodeExecutionId);
+      List<PostExecutionRollbackInfo> postExecutionRollbackInfos =
+          ambiance.getMetadata().getPostExecutionRollbackInfoList();
+      Map<String, StrategyMetadata> strategyMetadataMap = new HashMap<>();
+      postExecutionRollbackInfos.forEach(
+          o -> strategyMetadataMap.put(o.getPostExecutionRollbackStageId(), o.getRollbackStageStrategyMetadata()));
+      String parentNodeId = AmbianceUtils.obtainCurrentSetupId(ambiance);
 
       for (Child child : request.getChildren().getChildrenList()) {
         String uuid = childrenIds.get(currentChild);
         StrategyMetadata strategyMetadata = child.hasStrategyMetadata() ? child.getStrategyMetadata() : null;
 
-        List<PostExecutionRollbackInfo> postExecutionRollbackInfos =
-            ambiance.getMetadata().getPostExecutionRollbackInfoList();
-        Map<String, StrategyMetadata> strategyMetadataMap = new HashMap<>();
-        postExecutionRollbackInfos.forEach(
-            o -> strategyMetadataMap.put(o.getPostExecutionRollbackStageId(), o.getRollbackStageStrategyMetadata()));
         if (ambiance.getMetadata().getExecutionMode() == ExecutionMode.POST_EXECUTION_ROLLBACK) {
-          // If the stageId is same as the stage that is being rolledBack. Then initiate the child only if its
+          // If the parentNodeId is present in the list of stages being rolledBack. Then initiate the child only if its
           // strategyMetadata matches the strategyMetadata of stage being rolledBack.
-          if (strategyMetadataMap.containsKey(child.getChildNodeId())
-              && !strategyMetadataMap.get(child.getChildNodeId()).equals(child.getStrategyMetadata())) {
+          if (strategyMetadataMap.containsKey(parentNodeId)
+              && !strategyMetadataMap.get(parentNodeId).equals(child.getStrategyMetadata())) {
             continue;
           }
         }
@@ -133,6 +134,12 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
         log.info("SpawnChildrenRequestProcessor registered a waitInstance for maxConcurrency with waitInstanceId: {}",
             waitInstanceId);
         currentChild++;
+      }
+      // If some children were skipped due to rollback mode. Then update the concurrent children info.
+      if (callbackIds.size() < childrenIds.size()) {
+        nodeExecutionInfoService.addConcurrentChildInformation(
+            ConcurrentChildInstance.builder().childrenNodeExecutionIds(callbackIds).cursor(maxConcurrency).build(),
+            nodeExecutionId);
       }
 
       // Attach a Callback to the parent for the child

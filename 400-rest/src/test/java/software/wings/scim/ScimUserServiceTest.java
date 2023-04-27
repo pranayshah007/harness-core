@@ -9,10 +9,9 @@ package software.wings.scim;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.ng.core.common.beans.Generation.CG;
-import static io.harness.ng.core.common.beans.UserSource.SCIM;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.PRATEEK;
+import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
@@ -53,7 +52,6 @@ import com.google.gson.JsonObject;
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
-import dev.morphia.query.UpdateOpsImpl;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -173,7 +171,7 @@ public class ScimUserServiceTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = UJJAWAL)
+  @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
   public void TC0_testCreateUserWhichIsAlreadyPresent() {
     ScimUser scimUser = new ScimUser();
@@ -186,16 +184,29 @@ public class ScimUserServiceTest extends WingsBaseTest {
 
     User user = new User();
     user.setEmail("username@harness.io");
-    user.setName("display_name");
+    user.setName("display_name_old");
 
     UserInvite userInvite = new UserInvite();
     userInvite.setEmail("username@harness.io");
 
     when(userService.getUserByEmail(anyString(), anyString())).thenReturn(user);
+    when(userService.get(account.getUuid(), user.getUuid())).thenReturn(user);
+    when(wingsPersistence.createUpdateOperations(User.class)).thenReturn(updateOperations);
+
+    when(featureFlagService.isEnabled(eq(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW), any())).thenReturn(false);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
     assertThat(response).isNotNull();
     assertThat(response.getStatus()).isEqualTo(201);
+    verify(userService, times(1)).updateUserAccountLevelDataForThisGen(any(), any(), any(), any());
+    verify(userService, times(1)).updateUser(any(), any());
+
+    when(featureFlagService.isEnabled(eq(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW), any())).thenReturn(true);
+    response = scimUserService.createUser(scimUser, account.getUuid());
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(201);
+    verify(userService, times(2)).updateUserAccountLevelDataForThisGen(any(), any(), any(), any());
+    verify(userService, times(2)).updateUser(any(), any());
   }
 
   @Test
@@ -408,19 +419,10 @@ public class ScimUserServiceTest extends WingsBaseTest {
     UserInvite userInvite = new UserInvite();
     userInvite.setUuid(generateUuid());
 
-    userServiceHelper.populateAccountToUserMapping(user, account.getUuid(), CG, SCIM);
     when(userService.get(account.getUuid(), user.getUuid())).thenReturn(user);
     when(wingsPersistence.createUpdateOperations(User.class)).thenReturn(updateOperations);
-
     Response response = scimUserService.updateUser(user.getUuid(), account.getUuid(), scimUser);
     verify(userService, times(1)).updateUser(user.getUuid(), updateOperations);
-    assertThat(((UpdateOpsImpl) updateOperations).getOps().toString().contains("userAccountLevelDataMap")).isFalse();
-    assertThat(response.getStatus()).isNotNull();
-
-    when(featureFlagService.isEnabled(eq(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW), any())).thenReturn(true);
-    response = scimUserService.updateUser(user.getUuid(), account.getUuid(), scimUser);
-    verify(userService, times(2)).updateUser(user.getUuid(), updateOperations);
-    assertThat(((UpdateOpsImpl) updateOperations).getOps().toString().contains("userAccountLevelDataMap")).isTrue();
     assertThat(response.getStatus()).isNotNull();
   }
 

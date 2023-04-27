@@ -9,21 +9,14 @@ package io.harness.delegate.beans.connector.scm.bitbucket.outcome;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
-import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
-import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpCredentialsDTO;
-import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpCredentialsSpecDTO;
-import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketSshCredentialsDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -65,26 +58,5 @@ public class BitbucketConnectorOutcomeDTO
     this.apiAccess = apiAccess;
     this.delegateSelectors = delegateSelectors;
     this.executeOnDelegate = executeOnDelegate;
-  }
-
-  @Override
-  public List<DecryptableEntity> getDecryptableEntities() {
-    List<DecryptableEntity> decryptableEntities = new ArrayList<>();
-    if (authentication.getType() == GitAuthType.HTTP) {
-      BitbucketHttpCredentialsSpecDTO httpCredentialsSpec =
-          ((BitbucketHttpCredentialsDTO) authentication.getSpec()).getHttpCredentialsSpec();
-      if (httpCredentialsSpec != null) {
-        decryptableEntities.add(httpCredentialsSpec);
-      }
-    } else {
-      BitbucketSshCredentialsDTO sshCredential = (BitbucketSshCredentialsDTO) authentication.getSpec();
-      if (sshCredential != null) {
-        decryptableEntities.add(sshCredential);
-      }
-    }
-    if (apiAccess != null && apiAccess.getSpec() != null) {
-      decryptableEntities.add(apiAccess.getSpec());
-    }
-    return decryptableEntities;
   }
 }

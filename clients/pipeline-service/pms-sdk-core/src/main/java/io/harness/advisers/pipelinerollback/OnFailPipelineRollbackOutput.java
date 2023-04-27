@@ -10,9 +10,11 @@ package io.harness.advisers.pipelinerollback;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -25,4 +27,5 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.advisers.pipelinerollback.OnFailPipelineRollbackOutput")
 public class OnFailPipelineRollbackOutput implements ExecutionSweepingOutput {
   boolean shouldStartPipelineRollback;
+  List<Level> levelsAtFailurePoint;
 }

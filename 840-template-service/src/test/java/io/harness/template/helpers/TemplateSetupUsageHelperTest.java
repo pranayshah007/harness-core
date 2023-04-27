@@ -104,7 +104,7 @@ public class TemplateSetupUsageHelperTest extends TemplateServiceTestBase {
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testPublishSetupUsageEvent_EmptyReferredEntities() throws IOException {
-    templateSetupUsageHelper.publishSetupUsageEvent(templateEntity, new ArrayList<>());
+    templateSetupUsageHelper.publishSetupUsageEvent(templateEntity, new ArrayList<>(), new HashMap<>());
     assertDeleteExistingSetupUsagesIsCalled();
   }
 
@@ -152,7 +152,7 @@ public class TemplateSetupUsageHelperTest extends TemplateServiceTestBase {
                                                                   .setDeleteOldReferredByRecords(true)
                                                                   .build();
 
-    templateSetupUsageHelper.publishSetupUsageEvent(templateEntity, referredEntities);
+    templateSetupUsageHelper.publishSetupUsageEvent(templateEntity, referredEntities, new HashMap<>());
 
     verify(eventProducer)
         .send(Message.newBuilder()

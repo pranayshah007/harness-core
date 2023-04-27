@@ -193,8 +193,14 @@ func GetGitClient(p pb.Provider, log *zap.SugaredLogger) (client *scm.Client, er
 		}
 	case *pb.Provider_BitbucketCloud:
 		client = bitbucket.NewDefault()
-		client.Client = &http.Client{
-			Transport: bitbucketTransport(p.GetBitbucketCloud().GetUsername(), p.GetBitbucketCloud().GetAppPassword(), p.GetSkipVerify(), p.GetAdditionalCertsPath(), log),
+		if p.GetBitbucketCloud().GetAuthType() == pb.AuthType_OAUTH {
+            client.Client = &http.Client{
+        		Transport: oauthTransport(p.GetBitbucketCloud().GetOauthToken(), p.GetSkipVerify(), p.GetAdditionalCertsPath(), log),
+        	}
+		} else {
+		    client.Client = &http.Client{
+                Transport: bitbucketTransport(p.GetBitbucketCloud().GetUsername(), p.GetBitbucketCloud().GetAppPassword(), p.GetSkipVerify(), p.GetAdditionalCertsPath(), log),
+            }
 		}
 	case *pb.Provider_BitbucketServer:
 		if p.GetEndpoint() == "" {

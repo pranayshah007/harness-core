@@ -296,11 +296,20 @@ public class EnvironmentInfraFilterHelper {
       ServiceDefinitionType deploymentType) {
     List<EnvironmentYamlV2> finalyamlV2List;
     Set<EnvironmentYamlV2> envsLevelEnvironmentYamlV2 = new LinkedHashSet<>();
+
     if (ParameterField.isNotNull(filters) && isNotEmpty(filters.getValue())) {
-      List<EnvironmentYamlV2> filteredEnvList = processEnvironmentInfraFilters(
-          accountIdentifier, orgIdentifier, projectIdentifier, filters.getValue(), allPossibleEnvs, deploymentType);
-      envsLevelEnvironmentYamlV2.addAll(filteredEnvList);
-      return new ArrayList<>(envsLevelEnvironmentYamlV2);
+      // Move filters to the values if both are provided
+      if (ParameterField.isNotNull(envYamls) && isNotEmpty(envYamls.getValue())) {
+        List<EnvironmentYamlV2> environmentYamlV2List = envYamls.getValue();
+        for (EnvironmentYamlV2 environmentYamlV2 : environmentYamlV2List) {
+          environmentYamlV2.setFilters(filters);
+        }
+      } else {
+        List<EnvironmentYamlV2> filteredEnvList = processEnvironmentInfraFilters(
+            accountIdentifier, orgIdentifier, projectIdentifier, filters.getValue(), allPossibleEnvs, deploymentType);
+        envsLevelEnvironmentYamlV2.addAll(filteredEnvList);
+        return new ArrayList<>(envsLevelEnvironmentYamlV2);
+      }
     }
 
     // Process filtering at individual Environment level

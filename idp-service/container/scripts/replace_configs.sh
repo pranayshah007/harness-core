@@ -217,3 +217,4 @@ replace_key_value env "$ENV"
 replace_key_value prEnvDefaultBackstageNamespace "$DEFAULT_BACKSTAGE_NAMESPACE"
 replace_key_value backstageAppBaseUrl "$BACKSTAGE_APP_BASE_URL"
 replace_key_value backstagePostgresHost "$BACKSTAGE_POSTGRES_HOST"
+replace_key_value onboardingModuleConfig.useGitServiceGrpcForSingleEntityPush $ONBOARDING_MODULE_CONFIG_USE_GIT_SERVICE_GRPC_FOR_SINGLE_ENTITY_PUSH

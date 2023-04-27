@@ -16,11 +16,8 @@ import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
-import io.harness.delegate.beans.ci.k8s.CiK8sTaskResponse;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
-import io.harness.delegate.beans.ci.k8s.PodStatus;
 import io.harness.encryption.Scope;
-import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -40,7 +37,6 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
-import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerRunStepHelper;
 import io.harness.steps.container.execution.ContainerStepCleanupHelper;
 import io.harness.steps.container.execution.ContainerStepRbacHelper;
@@ -49,6 +45,7 @@ import io.harness.steps.plugin.ContainerStepInfo;
 import io.harness.steps.plugin.ContainerStepPassThroughData;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.InitialiseTaskUtils;
 import io.harness.yaml.core.timeout.Timeout;
 
 import software.wings.beans.SerializationFormat;
@@ -72,6 +69,8 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
   private final ContainerStepCleanupHelper containerStepCleanupHelper;
   private final ContainerStepRbacHelper containerStepRbacHelper;
   private final ContainerStepExecutionResponseHelper executionResponseHelper;
+
+  private final InitialiseTaskUtils initialiseTaskUtils;
 
   public static final StepType STEP_TYPE = StepSpecTypeConstants.CONTAINER_STEP_TYPE;
 
@@ -152,13 +151,13 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
     ResponseData response = responseSupplier.get();
     K8sTaskExecutionResponse k8sTaskExecutionResponse = (K8sTaskExecutionResponse) response;
 
-    checkIfEverythingIsHealthy(k8sTaskExecutionResponse);
+    initialiseTaskUtils.checkIfEverythingIsHealthy(k8sTaskExecutionResponse);
 
     long timeoutForDelegateTask =
         getTimeoutForDelegateTask(stepParameters, (ContainerStepPassThroughData) passThroughData);
 
     LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome =
-        getPodDetailsOutcome(k8sTaskExecutionResponse.getK8sTaskResponse());
+        initialiseTaskUtils.getPodDetailsOutcome(k8sTaskExecutionResponse.getK8sTaskResponse());
 
     outcomeService.consume(ambiance, POD_DETAILS_OUTCOME, liteEnginePodDetailsOutcome, StepCategory.STEP.name());
 
@@ -184,25 +183,5 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
         Timeout.fromString((String) stepParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis();
     // adding buffer of 5 secs so that delegate task times out before step times out.
     return timeoutInConfig - (currentTime - lastStepStartTime - 5000);
-  }
-
-  private void checkIfEverythingIsHealthy(K8sTaskExecutionResponse k8sTaskExecutionResponse) {
-    if (!k8sTaskExecutionResponse.getCommandExecutionStatus().equals(CommandExecutionStatus.SUCCESS)) {
-      throw new ContainerStepExecutionException(
-          String.format("Container creation ran into error: %s", k8sTaskExecutionResponse.getErrorMessage()));
-    }
-    if (!k8sTaskExecutionResponse.getK8sTaskResponse().getPodStatus().getStatus().equals(PodStatus.Status.RUNNING)) {
-      throw new ContainerStepExecutionException(String.format("Container creation ran into error: %s",
-          k8sTaskExecutionResponse.getK8sTaskResponse().getPodStatus().getErrorMessage()));
-    }
-  }
-
-  private LiteEnginePodDetailsOutcome getPodDetailsOutcome(CiK8sTaskResponse ciK8sTaskResponse) {
-    if (ciK8sTaskResponse != null) {
-      String ip = ciK8sTaskResponse.getPodStatus().getIp();
-      String namespace = ciK8sTaskResponse.getPodNamespace();
-      return LiteEnginePodDetailsOutcome.builder().ipAddress(ip).namespace(namespace).build();
-    }
-    return null;
   }
 }

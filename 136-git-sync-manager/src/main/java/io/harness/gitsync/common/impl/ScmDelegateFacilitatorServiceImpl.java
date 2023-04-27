@@ -774,7 +774,8 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     setUserGitCredsInConnector(scope.getAccountIdentifier(), connectorDTO);
     final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetailsForNewGitX(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorDTO);
-    GitFileDetails gitFileDetails = getGitFileDetails(createGitFileRequestDTO);
+    GitFileDetails gitFileDetails = getGitFileDetails(
+        createGitFileRequestDTO, gitSyncConnectorHelper.getUserDetails(scope.getAccountIdentifier(), connectorDTO));
     ScmPushTaskParams scmPushTaskParams = ScmPushTaskParams.builder()
                                               .useGitClient(createGitFileRequestDTO.isUseGitClient())
                                               .changeType(ChangeType.ADD_V2)
@@ -805,7 +806,8 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     setUserGitCredsInConnector(scope.getAccountIdentifier(), connectorDTO);
     final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetailsForNewGitX(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorDTO);
-    GitFileDetails gitFileDetails = getGitFileDetails(updateGitFileRequestDTO);
+    GitFileDetails gitFileDetails = getGitFileDetails(
+        updateGitFileRequestDTO, gitSyncConnectorHelper.getUserDetails(scope.getAccountIdentifier(), connectorDTO));
     ScmPushTaskParams scmPushTaskParams = ScmPushTaskParams.builder()
                                               .useGitClient(updateGitFileRequestDTO.isUseGitClient())
                                               .changeType(ChangeType.UPDATE_V2)

@@ -11,6 +11,7 @@ import io.harness.ChangeHandler;
 import io.harness.beans.FeatureName;
 import io.harness.cf.client.api.CfClient;
 import io.harness.cf.client.dto.Target;
+import io.harness.changehandlers.ApprovalStageExecutionDataHandler;
 import io.harness.changehandlers.PlanExecutionSummaryCIStageChangeDataHandler;
 import io.harness.changehandlers.PlanExecutionSummaryCdChangeDataHandler;
 import io.harness.changehandlers.PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew;
@@ -31,6 +32,7 @@ public class PipelineExecutionSummaryEntityCDCEntityWithDebeziumEnabled
   @Inject private PlanExecutionSummaryCIStageChangeDataHandler planExecutionSummaryCIStageChangeDataHandler;
   @Inject private PlanExecutionSummaryChangeDataHandlerAllStages planExecutionSummaryChangeDataHandlerAllStages;
   @Inject private TagsInfoNGCDChangeDataHandler tagsInfoNGCDChangeDataHandler;
+  @Inject private ApprovalStageExecutionDataHandler approvalStageExecutionDataHandler;
   @Inject
   private PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew
       planExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew;
@@ -61,6 +63,8 @@ public class PipelineExecutionSummaryEntityCDCEntityWithDebeziumEnabled
       return planExecutionSummaryCIStageChangeDataHandler;
     } else if (handlerClass.contentEquals("TagsInfoNGCD")) {
       return tagsInfoNGCDChangeDataHandler;
+    } else if (handlerClass.contentEquals("ApprovalStage")) {
+      return approvalStageExecutionDataHandler;
     }
 
     return null;

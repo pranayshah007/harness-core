@@ -50,6 +50,11 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
 
     GithubConnectorDTO config = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
     GithubApiAccessDTO apiAccess = config.getApiAccess();
+    String authType = String.valueOf(config.getAuthentication().getAuthType());
+    if (authType.equals("Ssh")) {
+      throw new InvalidRequestException(
+          String.format("Connector type Ssh not allowed for Github connector with Id - : [%s] ", connectorIdentifier));
+    }
 
     Map<String, BackstageEnvVariable> secrets = new HashMap<>();
 
@@ -94,7 +99,7 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
   }
 
   public void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
-      String locationParentPath, List<String> filesToPush) {
+      String locationParentPath, List<String> filesToPush, boolean throughGrpc) {
     ConnectorInfoDTO connectorInfoDTO =
         getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier());
     Map<String, BackstageEnvVariable> connectorSecretsInfo =
@@ -110,6 +115,6 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
     GithubUsernameTokenDTO spec = (GithubUsernameTokenDTO) outcome.getSpec();
 
     performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, filesToPush,
-        spec.getUsername(), githubConnectorSecret);
+        spec.getUsername(), githubConnectorSecret, throughGrpc);
   }
 }

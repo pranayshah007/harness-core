@@ -6,7 +6,9 @@
  */
 
 package io.harness.idp.gitintegration.service;
+import static io.harness.idp.common.Constants.PROXY_ENV_NAME;
 import static io.harness.rule.OwnerRule.VIGNESWARA;
+import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
@@ -72,6 +74,8 @@ import org.mockito.MockitoAnnotations;
 public class GitIntegrationServiceImplTest {
   private static final String DELEGATE_SELECTOR1 = "ds1";
   private static final String DELEGATE_SELECTOR2 = "ds2";
+  private static final String PROXY_MAP1 = "{\"github.com\":true, \"gitlab.com\": false}";
+  private static final String PROXY_MAP2 = "{\"github.com\":false, \"gitlab.com\": false}";
   @InjectMocks GithubConnectorProcessor githubConnectorProcessor;
   @InjectMocks GitlabConnectorProcessor gitlabConnectorProcessor;
   @InjectMocks BitbucketConnectorProcessor bitbucketConnectorProcessor;
@@ -431,7 +435,7 @@ public class GitIntegrationServiceImplTest {
     ConnectorInfoDTO connectorInfoDTO = getConnectorInfoDTO(delegateSelectors);
     when(processor.getConnectorInfo(any(), any())).thenReturn(connectorInfoDTO);
     when(processor.getConnectorAndSecretsInfo(any(), any())).thenReturn(secrets);
-    doNothing().when(backstageEnvVariableService).sync(anyList(), any());
+    doNothing().when(backstageEnvVariableService).findAndSync(any());
     MockedStatic<GitIntegrationUtils> gitIntegrationUtilsMockedStatic = Mockito.mockStatic(GitIntegrationUtils.class);
     MockedStatic<ConfigManagerUtils> configManagerUtilsMockedStatic = Mockito.mockStatic(ConfigManagerUtils.class);
     when(GitIntegrationUtils.getHostForConnector(any(), any())).thenReturn("dummyUrl");
@@ -459,6 +463,22 @@ public class GitIntegrationServiceImplTest {
     when(catalogConnectorRepository.findLastUpdated(ACCOUNT_IDENTIFIER)).thenReturn(catalogConnectorEntity);
     CatalogConnectorEntity result = gitIntegrationServiceImpl.findDefaultConnectorDetails(ACCOUNT_IDENTIFIER);
     assertEquals(catalogConnectorEntity, result);
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testCreateOrUpdateConnectorConfigEnvVariable() {
+    BackstageEnvConfigVariable variable = new BackstageEnvConfigVariable();
+    variable.type(BackstageEnvVariable.TypeEnum.CONFIG);
+    variable.envName(PROXY_ENV_NAME);
+    variable.value(PROXY_MAP1);
+    when(backstageEnvVariableService.findByEnvNameAndAccountIdentifier(PROXY_ENV_NAME, ACCOUNT_IDENTIFIER))
+        .thenReturn(Optional.of(variable));
+    gitIntegrationServiceImpl.createOrUpdateConnectorConfigEnvVariable(
+        ACCOUNT_IDENTIFIER, ConnectorType.GITHUB, CatalogInfraConnectorType.DIRECT);
+    variable.setValue(PROXY_MAP2);
+    verify(backstageEnvVariableService).update(variable, ACCOUNT_IDENTIFIER);
   }
 
   @After

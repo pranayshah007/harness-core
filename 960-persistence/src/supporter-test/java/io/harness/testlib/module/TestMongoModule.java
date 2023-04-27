@@ -64,26 +64,10 @@ public class TestMongoModule extends AbstractModule implements MongoRuleMixin {
   }
 
   @Provides
-  @Named("realLegacyMongoClient")
-  @Singleton
-  public MongoClient realLegacyMongoClientProvider(
-      @Named("databaseName") String databaseName, ClosingFactory closingFactory) throws Exception {
-    return realLegacyMongoClient(closingFactory, databaseName);
-  }
-
-  @Provides
   @Named("fakeLegacyMongoClient")
   @Singleton
   public MongoClient fakeLegacyMongoClientProvider(ClosingFactory closingFactory) throws Exception {
     return fakeLegacyMongoClient(closingFactory);
-  }
-
-  @Provides
-  @Named("realMongoClient")
-  @Singleton
-  public com.mongodb.client.MongoClient realMongoClientProvider(
-      @Named("databaseName") String databaseName, ClosingFactory closingFactory) throws Exception {
-    return realMongoClient(closingFactory, databaseName);
   }
 
   @Provides
@@ -96,14 +80,10 @@ public class TestMongoModule extends AbstractModule implements MongoRuleMixin {
   @Provides
   @Named("primaryMongoClient")
   @Singleton
-  public com.mongodb.client.MongoClient mongoClient(MongoType type,
-      @Named("realMongoClient") Provider<com.mongodb.client.MongoClient> realMongoClient,
-      @Named("fakeMongoClient") Provider<com.mongodb.client.MongoClient> fakeMongoClient) {
+  public com.mongodb.client.MongoClient mongoClient(
+      MongoType type, @Named("fakeMongoClient") Provider<com.mongodb.client.MongoClient> fakeMongoClient) {
     com.mongodb.client.MongoClient mongoClient = null;
     switch (type) {
-      case REAL:
-        mongoClient = realMongoClient.get();
-        break;
       case FAKE:
         mongoClient = fakeMongoClient.get();
         break;
@@ -117,7 +97,7 @@ public class TestMongoModule extends AbstractModule implements MongoRuleMixin {
   @Provides
   @Named("locksMongoClient")
   @Singleton
-  public MongoClient locksMongoClient(@Named("realLegacyMongoClient") MongoClient mongoClient) throws Exception {
+  public MongoClient locksMongoClient(@Named("fakeLegacyMongoClient") MongoClient mongoClient) throws Exception {
     return mongoClient;
   }
 
@@ -125,14 +105,10 @@ public class TestMongoModule extends AbstractModule implements MongoRuleMixin {
   @Named("primaryDatastore")
   @Singleton
   AdvancedDatastore datastore(@Named("databaseName") String databaseName, MongoType type,
-      @Named("realLegacyMongoClient") Provider<MongoClient> realLegacyMongoClient,
       @Named("fakeLegacyMongoClient") Provider<MongoClient> fakeLegacyMongoClient, Morphia morphia,
       ObjectFactory objectFactory) {
     MongoClient mongoClient = null;
     switch (type) {
-      case REAL:
-        mongoClient = realLegacyMongoClient.get();
-        break;
       case FAKE:
         mongoClient = fakeLegacyMongoClient.get();
         break;

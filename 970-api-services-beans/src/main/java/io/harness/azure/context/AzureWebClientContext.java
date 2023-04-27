@@ -24,8 +24,9 @@ public class AzureWebClientContext extends AzureClientContext {
 
   @Builder
   AzureWebClientContext(@NonNull AzureConfig azureConfig, @NonNull String subscriptionId,
-      @NonNull String resourceGroupName, @NotBlank(message = WEB_APP_NAME_BLANK_ERROR_MSG) String appName) {
-    super(azureConfig, subscriptionId, resourceGroupName);
+      @NonNull String resourceGroupName, @NotBlank(message = WEB_APP_NAME_BLANK_ERROR_MSG) String appName,
+      boolean extendedReadTimeout) {
+    super(azureConfig, subscriptionId, resourceGroupName, extendedReadTimeout);
     this.appName = appName;
   }
 }

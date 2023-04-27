@@ -14,4 +14,5 @@ public interface ContainerStepConstants {
   int MAX_RETRY = 5;
   long DEFAULT_TIMEOUT = Duration.ofHours(2).toMillis();
   String CONTAINER_STEP_OUTCOME = "containerStepOutcome";
+  String CONTAINER_EXECUTION_CONFIG = "ContainerExecutionConfig";
 }

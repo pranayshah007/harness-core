@@ -28,7 +28,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.entities.ArtifactDetails;
 import io.harness.entities.Instance;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
-import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.service.services.exception.ActiveServiceInstancesPresentException;
 import io.harness.repositories.instance.InstanceRepository;
@@ -49,7 +48,6 @@ import org.mockito.Spy;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ServiceEntityManagementServiceTest extends CategoryTest {
   @Mock ServiceEntityService serviceEntityService;
-
   @Mock InstanceService instanceService;
   @Mock InstanceRepository instanceRepository;
   @Spy @Inject @InjectMocks ServiceEntityManagementServiceImpl serviceEntityManagementService;
@@ -99,7 +97,6 @@ public class ServiceEntityManagementServiceTest extends CategoryTest {
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
   public void shouldForceDeleteServiceInstances() {
-    doReturn(true).when(serviceEntityManagementService).isForceDeleteFFEnabled(accountIdentifier);
     doReturn(true).when(serviceEntityManagementService).isNgSettingsFFEnabled(accountIdentifier);
     doReturn(true).when(serviceEntityManagementService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
     List<Instance> instanceDTOList = new ArrayList<>();
@@ -113,29 +110,6 @@ public class ServiceEntityManagementServiceTest extends CategoryTest {
     serviceEntityManagementService.deleteService(
         accountIdentifier, orgIdentifier, projectIdentifier, identifier, "", true);
     verify(instanceService, times(1)).deleteAll(any());
-  }
-  @Test
-  @Owner(developers = vivekveman)
-  @Category(UnitTests.class)
-  public void shouldForceDeleteServiceInstanceFalse() {
-    doReturn(false).when(serviceEntityManagementService).isForceDeleteFFEnabled(accountIdentifier);
-    doReturn(true).when(serviceEntityManagementService).isNgSettingsFFEnabled(accountIdentifier);
-    doReturn(true).when(serviceEntityManagementService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
-    List<Instance> instanceDTOList = new ArrayList<>();
-    instanceDTOList.add(getInstance());
-    instanceDTOList.add(getInstance());
-    when(instanceRepository.getInstancesCreatedBefore(
-             eq(accountIdentifier), eq(orgIdentifier), eq(projectIdentifier), eq(identifier), anyLong()))
-        .thenReturn(instanceDTOList);
-    when(serviceEntityService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, null, true))
-        .thenReturn(true);
-    assertThatThrownBy(()
-                           -> serviceEntityManagementService.deleteService(
-                               accountIdentifier, orgIdentifier, projectIdentifier, identifier, "", true))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(
-            "Force Delete is not enabled for this account. Please go to Account Resources > Default Settings > Enable Force Delete of Harness Resources to enable this.");
-    verify(instanceService, never()).deleteAll(any());
   }
 
   private Instance getInstance() {

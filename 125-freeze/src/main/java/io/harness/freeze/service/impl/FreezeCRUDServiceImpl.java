@@ -447,7 +447,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
       }
       return NGFreezeDtoMapper.prepareFreezeResponseDto(freezeConfigEntity);
     } else {
-      String globalFreezeYaml = createGlobalFreezeConfigYaml();
+      String globalFreezeYaml = createGlobalFreezeConfigYaml(orgId, projectId);
       try {
         freezeSchemaService.validateYamlSchema(globalFreezeYaml);
       } catch (IOException e) {
@@ -466,7 +466,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
       FreezeConfigEntity freezeConfigEntity = freezeConfigEntityOptional.get();
       return NGFreezeDtoMapper.prepareFreezeResponseSummaryDto(freezeConfigEntity);
     } else {
-      String globalFreezeYaml = createGlobalFreezeConfigYaml();
+      String globalFreezeYaml = createGlobalFreezeConfigYaml(orgId, projectId);
       try {
         freezeSchemaService.validateYamlSchema(globalFreezeYaml);
       } catch (IOException e) {
@@ -535,12 +535,14 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
     }
   }
 
-  private String createGlobalFreezeConfigYaml() {
+  private String createGlobalFreezeConfigYaml(String orgId, String projectId) {
     FreezeConfig freezeConfig =
         FreezeConfig.builder()
             .freezeInfoConfig(FreezeInfoConfig.builder()
                                   .identifier("_GLOBAL_")
                                   .name("Global Freeze")
+                                  .projectIdentifier(projectId)
+                                  .orgIdentifier(orgId)
                                   .description(ParameterField.<String>builder().value("Global Freeze").build())
                                   .status(FreezeStatus.DISABLED)
                                   .build())

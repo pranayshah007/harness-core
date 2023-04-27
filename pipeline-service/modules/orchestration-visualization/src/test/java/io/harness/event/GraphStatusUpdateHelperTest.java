@@ -59,7 +59,6 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.rule.Owner;
 import io.harness.service.GraphGenerationService;
-import io.harness.testlib.RealMongo;
 import io.harness.utils.DummyVisualizationOutcome;
 
 import com.google.common.collect.Lists;
@@ -102,7 +101,7 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void shouldDoNothingIfRuntimeIdIsNull() {
     String planExecutionId = generateUuid();
     eventHandlerV2.handleEvent(planExecutionId, null, OrchestrationGraph.builder().build());
@@ -113,7 +112,7 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+
   @Ignore("Using event sourcing now, will remove/update")
   public void shouldAddRootNodeIdToTheGraphAndAddVertex() {
     when(planExecutionMetadataService.findByPlanExecutionId(any()))
@@ -178,7 +177,7 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void shouldUpdateExistingVertexInGraphAndAddOutcomes() {
     when(planExecutionMetadataService.findByPlanExecutionId(any()))
         .thenReturn(Optional.of(PlanExecutionMetadata.builder().build()));

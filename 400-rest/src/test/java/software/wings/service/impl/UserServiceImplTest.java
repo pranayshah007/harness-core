@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.beans.SearchFilter.Operator.HAS;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.ACCOUNT_INVITE_ACCEPTED;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.ACCOUNT_INVITE_ACCEPTED_NEED_PASSWORD;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.FAIL;
@@ -42,6 +43,7 @@ import static software.wings.utils.WingsTestConstants.USER_EMAIL;
 import static software.wings.utils.WingsTestConstants.USER_NAME;
 import static software.wings.utils.WingsTestConstants.UUID;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -816,6 +818,26 @@ public class UserServiceImplTest extends WingsBaseTest {
 
     List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 1, 30, false, true, false);
     assertThat(userList.size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void shouldReturnPendingInvitesForMatchingGroup() {
+    String uuidString = generateUuid();
+    UserInvite userInvite = anUserInvite()
+                                .withUuid(UUIDGenerator.generateUuid())
+                                .withAccountId(ACCOUNT_ID)
+                                .withEmail(USER_EMAIL)
+                                .withName(USER_NAME)
+                                .withCompleted(Boolean.FALSE)
+                                .withUserGroups(asList(UserGroup.builder().uuid(uuidString).build()))
+                                .build();
+    wingsPersistence.save(userInvite);
+
+    List<UserInvite> inviteList = userServiceImpl.getInvitesFromAccountIdAndUserGroupId(ACCOUNT_ID, uuidString);
+    assertThat(inviteList).isNotNull();
+    assertThat(inviteList.size()).isEqualTo(1);
   }
 
   @Test

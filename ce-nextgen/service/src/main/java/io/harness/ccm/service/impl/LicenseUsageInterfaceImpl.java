@@ -77,11 +77,12 @@ public class LicenseUsageInterfaceImpl implements LicenseUsageInterface<CELicens
       return cachedCELicenseUsageDTO;
     }
 
-    Long activeSpend = isClickHouseEnabled ? getActiveSpendClickHouse(timestamp, accountIdentifier)
-                                           : getActiveSpend(timestamp, accountIdentifier);
+    Double activeSpend = isClickHouseEnabled ? getActiveSpendClickHouse(timestamp, accountIdentifier)
+                                             : getActiveSpend(timestamp, accountIdentifier);
+
     CELicenseUsageDTO ceLicenseUsageDTO =
         CELicenseUsageDTO.builder()
-            .activeSpend(UsageDataDTO.builder().count(activeSpend).displayName("").build())
+            .activeSpend(UsageDataDTO.builder().count(Math.round(activeSpend)).displayName("").build())
             .timestamp(timestamp)
             .accountIdentifier(accountIdentifier)
             .build();
@@ -100,7 +101,7 @@ public class LicenseUsageInterfaceImpl implements LicenseUsageInterface<CELicens
     throw new NotImplementedException("Get license usage CSV report is not implemented yet for CE module");
   }
 
-  private Long getActiveSpend(long timestamp, String accountIdentifier) {
+  private Double getActiveSpend(long timestamp, String accountIdentifier) {
     long endOfDay = Instant.now().plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS).toEpochMilli();
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountIdentifier, UNIFIED_TABLE);
     String query = format(CCMLicenseUsageHelper.QUERY_TEMPLATE_BIGQUERY, cloudProviderTableName,
@@ -114,13 +115,13 @@ public class LicenseUsageInterfaceImpl implements LicenseUsageInterface<CELicens
     } catch (InterruptedException e) {
       log.error("Failed to getActiveSpend for Account:{}, {}", accountIdentifier, e);
       Thread.currentThread().interrupt();
-      return null;
+      return 0.0D;
     }
     return CCMLicenseUsageHelper.computeDeduplicatedActiveSpend(
         CCMLicenseUsageHelper.getActiveSpendResultSetDTOs(result));
   }
 
-  private Long getActiveSpendClickHouse(long timestamp, String accountIdentifier) {
+  private Double getActiveSpendClickHouse(long timestamp, String accountIdentifier) {
     String cloudProviderTableName = format("%s.%s", "ccm", TABLE_NAME);
     long endOfDay = Instant.now().plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS).toEpochMilli();
     String query = format(
@@ -137,6 +138,6 @@ public class LicenseUsageInterfaceImpl implements LicenseUsageInterface<CELicens
     } finally {
       DBUtils.close(resultSet);
     }
-    return 0L;
+    return 0.0D;
   }
 }

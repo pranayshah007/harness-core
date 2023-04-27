@@ -10,8 +10,8 @@ package io.harness.cvng.servicelevelobjective.services.api;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationDTO;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationResponse;
-import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventDetailsResponse;
-import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsResponse;
 import io.harness.cvng.servicelevelobjective.entities.Annotation;
 
 import java.util.List;

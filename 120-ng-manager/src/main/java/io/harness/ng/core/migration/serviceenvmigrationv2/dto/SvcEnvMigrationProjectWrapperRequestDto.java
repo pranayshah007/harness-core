@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.DefaultValue;
 import lombok.Builder;
 import lombok.Value;
 
@@ -31,4 +32,5 @@ public class SvcEnvMigrationProjectWrapperRequestDto {
   List<String> skipInfras;
   List<String> skipPipelines;
   String branch;
+  @DefaultValue("false") boolean isNewBranch;
 }

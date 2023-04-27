@@ -14,7 +14,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.dao.RuleDAO;
-import io.harness.ccm.views.dto.GovernanceEnqueueResponseDTO;
 import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.entities.RuleExecution;
@@ -36,7 +35,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.faktory.FaktoryProducer;
 import io.harness.filter.FilterType;
 import io.harness.ng.beans.PageResponse;
-import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.yaml.validator.YamlSchemaValidator;
@@ -248,12 +246,11 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
   }
 
   @Override
-  public ResponseDTO<GovernanceEnqueueResponseDTO> enqueueAdhoc(
-      String accountId, GovernanceJobEnqueueDTO governanceJobEnqueueDTO) {
+  public String enqueueAdhoc(String accountId, GovernanceJobEnqueueDTO governanceJobEnqueueDTO) {
     // TO DO: Refactor and make this method smaller
     // Step-1 Fetch from mongo
     String ruleEnforcementUuid = governanceJobEnqueueDTO.getRuleEnforcementId();
-    List<String> enqueuedRuleExecutionIds = new ArrayList<>();
+    String response = null;
     // Call is from UI for adhoc evaluation. Directly enqueue in this case
     // TO DO: See if UI adhoc requests can be sent to higher priority queue. This should also change in worker.
     log.info("enqueuing for ad-hoc request");
@@ -263,7 +260,7 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
     List<Rule> rulesList = list(accountId, Arrays.asList(governanceJobEnqueueDTO.getRuleId()));
     if (rulesList == null) {
       log.error("For rule id {}: no rules exists in mongo. Nothing to enqueue", governanceJobEnqueueDTO.getRuleId());
-      return ResponseDTO.newResponse(GovernanceEnqueueResponseDTO.builder().ruleExecutionId(null).build());
+      return null;
     }
     try {
       GovernanceJobDetailsAWS governanceJobDetailsAWS = GovernanceJobDetailsAWS.builder()
@@ -304,14 +301,13 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
                                         .OOTB(rulesList.get(0).getIsOOTB())
                                         .executionStatus(RuleExecutionStatusType.ENQUEUED)
                                         .build();
-      enqueuedRuleExecutionIds.add(ruleExecutionService.save(ruleExecution));
+      response = ruleExecutionService.save(ruleExecution);
     } catch (Exception e) {
       log.warn("Exception enqueueing job for ruleEnforcementUuid: {} for targetAccount: {} for targetRegions: {}, {}",
           ruleEnforcementUuid, governanceJobEnqueueDTO.getTargetAccountId(), governanceJobEnqueueDTO.getTargetRegion(),
           e);
     }
-    return ResponseDTO.newResponse(
-        GovernanceEnqueueResponseDTO.builder().ruleExecutionId(enqueuedRuleExecutionIds).build());
+    return response;
   }
   @Value
   private static class CacheKey {

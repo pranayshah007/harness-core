@@ -87,6 +87,7 @@ public class ScimUserServiceImpl implements ScimUserService {
       userQuery.setActive(true);
       if (shouldUpdateUser(userQuery, user)) {
         updateUser(user.getUuid(), accountId, userQuery);
+        userService.updateUserAccountLevelDataForThisGen(accountId, user, CG, SCIM);
         log.info("SCIM: Creating user call for accountId {} with updation {}", accountId, userQuery);
       } else {
         log.info("SCIM: Creating user call for accountId {} with conflict {}", accountId, userQuery);
@@ -462,13 +463,6 @@ public class ScimUserServiceImpl implements ScimUserService {
 
       if (userUpdate) {
         updateOperations.set(UserKeys.imported, true);
-
-        if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
-            && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
-          userServiceHelper.populateAccountToUserMapping(user, accountId, CG, SCIM);
-          updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
-        }
-
         userService.updateUser(user.getUuid(), updateOperations);
       }
       log.info("SCIM: user {} was updated {} with updateOperations {} in account: {}", user.getUuid(), userUpdate,

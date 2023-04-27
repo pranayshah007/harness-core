@@ -10,7 +10,6 @@ package io.harness.ci.serializer.vm;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
 import static io.harness.beans.steps.CIStepInfoType.GIT_CLONE;
-import static io.harness.beans.steps.CIStepInfoType.PLUGIN;
 import static io.harness.beans.steps.CIStepInfoType.SAVE_CACHE_GCS;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_ARCHIVE_FORMAT;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BACKEND;
@@ -144,10 +143,9 @@ public class VmPluginStepSerializer {
         List<String> entrypoint = Arrays.asList("plugin", "-kind", "harness", "-name", name);
         return convertContainerlessStep(identifier, entrypoint, envVars, timeout, pluginStepInfo);
       }
-      if (identifier.equals(SAVE_CACHE_STEP_ID)
-          || identifier.equals(RESTORE_CACHE_STEP_ID)
-              && CIStepInfoUtils.canRunVmStepOnHost(
-                  PLUGIN, stageInfraDetails, accountID, ciExecutionConfigService, featureFlagService)) {
+      if ((identifier.equals(SAVE_CACHE_STEP_ID) || identifier.equals(RESTORE_CACHE_STEP_ID))
+          && CIStepInfoUtils.canRunVmStepOnHost(
+              SAVE_CACHE_GCS, stageInfraDetails, accountID, ciExecutionConfigService, featureFlagService)) {
         // save and restore have some entry point, use save works for both
         String name = ciExecutionConfigService.getContainerlessPluginNameForVM(SAVE_CACHE_GCS);
         List<String> entrypoint = Arrays.asList("plugin", "-kind", "harness", "-name", name);
