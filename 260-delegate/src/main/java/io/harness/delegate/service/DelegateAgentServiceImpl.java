@@ -753,9 +753,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
     log.info("Process info CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
         currentRSSMB, maxProcessRSSThresholdMB, currentPodRSSMB, maxPodRSSThresholdMB);
-
-    if (getCPULoadAverage() > 90) {
-      log.warn("CPU Average load is above 90%");
+    final double cpuLoad = getCPULoadAverage();
+    if (cpuLoad > 90) {
+      log.warn("CPU Average load is above 90%, {}", cpuLoad);
       rejectRequest.compareAndSet(false, true);
       metricRegistry.recordGaugeInc(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME});
       return;
