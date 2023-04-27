@@ -488,7 +488,8 @@ public enum TaskType {
   TERRAFORM_TASK_NG_V6(TaskGroup.TERRAFORM_NG, "Terraform Task NG V6"),
   K8S_COMMAND_TASK_NG_V2(TaskGroup.K8S_NG, "K8s Task with service Hooks"),
   HELM_COMMAND_TASK_NG_V2(TaskGroup.HELM, "Helm Command Task with service Hooks"),
-  INSTANCE_SYNC_V2_CG_SUPPORT(TaskGroup.K8S, "Instance sync V2 support for CG");
+  INSTANCE_SYNC_V2_CG_SUPPORT(TaskGroup.K8S, "Instance sync V2 support for CG"),
+  COMMAND_TASK_NG_WITH_GIT_CONFIGS(TaskGroup.COMMAND_TASK_NG, "Command Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;
