@@ -358,3 +358,4 @@ io.harness.beans.yaml.extended.runtime.CloudRuntime
 io.harness.beans.steps.nodes.SecurityNode
 io.harness.beans.steps.nodes.GCSUploadNode
 io.harness.ci.beans.entities.PluginMetadataConfig
+io.harness.ci.config.CICacheIntelligenceS3Config

@@ -187,6 +187,12 @@ ciExecutionServiceConfig:
   cacheIntelligenceConfig:
     bucket: "gcp_bucket"
     serviceKey: "gcp_service_key"
+  cacheIntelligenceS3Config:
+    bucket: "s3_bucket"
+    accessKey: "s3_access_key"
+    accessSecret: "s3_access_secret"
+    region: "s3_bucket_region"
+    endpoint: "s3_endpoint"
   dockerLayerCachingConfig:
     endpoint: "endpoint"
     bucket: "bucket"
