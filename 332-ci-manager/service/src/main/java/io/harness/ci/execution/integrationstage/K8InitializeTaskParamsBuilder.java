@@ -75,6 +75,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.ssca.client.SSCAServiceUtils;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
@@ -104,6 +105,7 @@ public class K8InitializeTaskParamsBuilder {
   @Inject private SecretUtils secretUtils;
   @Inject private CILicenseService ciLicenseService;
   @Inject CodebaseUtils codebaseUtils;
+  @Inject SSCAServiceUtils sscaServiceUtils;
 
   private static String RUNTIME_CLASS_NAME = "gvisor";
 
@@ -317,7 +319,7 @@ public class K8InitializeTaskParamsBuilder {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
-    Map<String, String> sscaEnvVars = k8InitializeTaskUtils.getSSCAServiceEnvVariables(accountId, orgId, projectId);
+    Map<String, String> sscaEnvVars = sscaServiceUtils.getSSCAServiceEnvVariables(accountId, orgId, projectId);
     return SecretEnvVars.builder().sscaEnvVars(sscaEnvVars).build();
   }
 
