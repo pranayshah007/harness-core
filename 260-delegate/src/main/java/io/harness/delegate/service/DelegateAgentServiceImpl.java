@@ -47,7 +47,16 @@ import static io.harness.delegate.message.MessageConstants.WATCHER_PROCESS;
 import static io.harness.delegate.message.MessageConstants.WATCHER_VERSION;
 import static io.harness.delegate.message.MessengerType.DELEGATE;
 import static io.harness.delegate.message.MessengerType.WATCHER;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.*;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_CONNECTED;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_DISCONNECTED;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_USAGE_ABOVE_THRESHOLD;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.MEMORY_USAGE_ABOVE_THRESHOLD;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_CURRENTLY_EXECUTING;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_IN_QUEUE;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_COMPLETED;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_EXECUTION_TIME;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_FAILED;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_TIMEOUT;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
 import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
 import static io.harness.eraro.ErrorCode.REVOKED_TOKEN;
@@ -620,9 +629,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       DelegateAgentCommonVariables.setDelegateId(delegateId);
       log.info("[New] Delegate registered in {} ms", clock.millis() - start);
       DelegateStackdriverLogAppender.setDelegateId(delegateId);
-      if (delegateConfiguration.isDynamicHandlingOfRequestEnabled()
-          && DeployMode.KUBERNETES.name().equals(System.getenv().get(DeployMode.DEPLOY_MODE))) {
-        // Enable dynamic throttling of requests only for kubernetes pod(s)
+      if (delegateConfiguration.isDynamicHandlingOfRequestEnabled() && isImmutableDelegate) {
+        // Enable dynamic throttling of requests only for immutable and FF enabled
         startDynamicHandlingOfTasks();
       }
 

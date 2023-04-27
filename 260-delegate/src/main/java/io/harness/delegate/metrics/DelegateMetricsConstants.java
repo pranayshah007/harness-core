@@ -42,7 +42,7 @@ public class DelegateMetricsConstants {
     put(DELEGATE_DISCONNECTED, create("Delegate disconnected.", DELEGATE_NAME_LABEL));
     put(DELEGATE_CONNECTED, create("Delegate connected.", DELEGATE_NAME_LABEL));
     put(DELEGATE_CONNECTED, create("Delegate connected.", DELEGATE_NAME_LABEL));
-    put(MEMORY_USAGE_ABOVE_THRESHOLD, create("Delegate consuming more than 70% of memory.", DELEGATE_NAME_LABEL));
+    put(MEMORY_USAGE_ABOVE_THRESHOLD, create("Delegate consuming more than 90% of memory.", DELEGATE_NAME_LABEL));
     put(DELEGATE_USAGE_ABOVE_THRESHOLD,
         create("Delegate pod resource consumption above threshold.", DELEGATE_NAME_LABEL));
   }
