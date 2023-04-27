@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: learning-engine
+  namespace: {{ .Release.Namespace }}
+data:
+  https_port: "10800"
+  learning_env: on_prem
+  server_url: http://verification-svc:7070
+  service_secret: 59MR5RlVARcdH7zb7pNx6GzqiglBmXR8
