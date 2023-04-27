@@ -42,6 +42,12 @@ import static org.eclipse.jgit.diff.DiffEntry.ChangeType.RENAME;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
+import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.GitClientException;
 import io.harness.exception.GitConnectionDelegateException;
 import io.harness.exception.InvalidRequestException;
@@ -473,24 +479,32 @@ public class GitClientHelperTest extends CategoryTest {
   @Owner(developers = DEV_MITTAL)
   @Category(UnitTests.class)
   public void testGetGitlabApiURL() {
-    assertThat(GitClientHelper.getGitlabApiURL("https://gitlab.com/devki.mittal/test.git", ""))
+    assertThat(GitClientHelper.getGitlabApiURL("https://gitlab.com/devki.mittal/test.git", null))
         .isEqualTo("https://gitlab.com/");
-    assertThat(GitClientHelper.getGitlabApiURL("https://www.gitlab.com/devki.mittal/test.git", ""))
+    assertThat(GitClientHelper.getGitlabApiURL("https://www.gitlab.com/devki.mittal/test.git", null))
         .isEqualTo("https://gitlab.com/");
-    assertThat(GitClientHelper.getGitlabApiURL("https://gitlab.com/devki.mittal/test", ""))
+    assertThat(GitClientHelper.getGitlabApiURL("https://gitlab.com/devki.mittal/test", null))
         .isEqualTo("https://gitlab.com/");
-    assertThat(GitClientHelper.getGitlabApiURL("https://paypal.gitlab.com/devki.mittal/test.git", ""))
+    assertThat(GitClientHelper.getGitlabApiURL("https://paypal.gitlab.com/devki.mittal/test.git", null))
         .isEqualTo("https://paypal.gitlab.com/");
-    assertThat(GitClientHelper.getGitlabApiURL("https://gitlab.paypal.com/devki.mittal/test.git", ""))
+    assertThat(GitClientHelper.getGitlabApiURL("https://gitlab.paypal.com/devki.mittal/test.git", null))
         .isEqualTo("https://gitlab.paypal.com/");
-    assertThat(GitClientHelper.getGitlabApiURL("git@gitlab.com:devki.mittal/test.git", ""))
+    assertThat(GitClientHelper.getGitlabApiURL("git@gitlab.com:devki.mittal/test.git", null))
         .isEqualTo("https://gitlab.com/");
-    assertThat(GitClientHelper.getGitlabApiURL("git@www.gitlab.com:devki.mittal/test.git", ""))
+    assertThat(GitClientHelper.getGitlabApiURL("git@www.gitlab.com:devki.mittal/test.git", null))
         .isEqualTo("https://gitlab.com/");
-    assertThat(GitClientHelper.getGitlabApiURL("http://10.67.0.1/devkimittal/harness-core", ""))
+    assertThat(GitClientHelper.getGitlabApiURL("http://10.67.0.1/devkimittal/harness-core", null))
         .isEqualTo("http://10.67.0.1/");
-    assertThat(GitClientHelper.getGitlabApiURL(
-                   "https://harness.io/gitlab/devki.mittal/test.git", "https://harness.io/gitlab/"))
+    final GitlabApiAccessDTO gitlabApiAccessDTO =
+        GitlabApiAccessDTO.builder().type(GitlabApiAccessType.OAUTH).spec(null).build();
+    final GitlabConnectorDTO gitlabConnectorDTO = GitlabConnectorDTO.builder()
+                                                      .url("https://harness.io/gitlab/devki.mittal/test.git")
+                                                      .connectionType(GitConnectionType.REPO)
+                                                      .authentication(null)
+                                                      .apiAccess(gitlabApiAccessDTO)
+                                                      .build();
+
+    assertThat(GitClientHelper.getGitlabApiURL("https://harness.io/gitlab/devki.mittal/test.git", gitlabConnectorDTO))
         .isEqualTo("https://harness.io/gitlab/");
   }
 

@@ -171,7 +171,7 @@ public class ScmGitProviderMapper {
     return Provider.newBuilder()
         .setGitlab(createGitLabProvider(gitlabConnector))
         .setDebug(debug)
-        .setEndpoint(GitClientHelper.getGitlabApiURL(gitlabConnector.getUrl(), getGitlabApiUrl(gitlabConnector)))
+        .setEndpoint(GitClientHelper.getGitlabApiURL(gitlabConnector.getUrl(), gitlabConnector))
         .setSkipVerify(skipVerify)
         .setAdditionalCertsPath(getAdditionalCertsPath())
         .build();

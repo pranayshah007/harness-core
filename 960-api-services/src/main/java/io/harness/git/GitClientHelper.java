@@ -252,7 +252,8 @@ public class GitClientHelper {
   }
 
   private static String getGitlabApiUrl(GitlabConnectorDTO gitlabConnector) {
-    if (gitlabConnector.getApiAccess() == null || gitlabConnector.getApiAccess().getSpec() == null) {
+    if (gitlabConnector == null || gitlabConnector.getApiAccess() == null
+        || gitlabConnector.getApiAccess().getSpec() == null) {
       // not expected
       return null;
     }
