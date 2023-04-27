@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ng-manager
+  namespace: {{ .Release.Namespace }}
+data:
+  GITOPS_SERVICE_CLIENT_BASEURL: http://gitops:7908/api/v1/
+  GITOPS_SERVICE_SECRET: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU=
+  CACHE_BACKEND: "REDIS"
+  DEPLOY_MODE: KUBERNETES_ONPREM
+  MANAGER_TARGET: harness-manager:9879
+  MANAGER_AUTHORITY: harness-manager:9879
+  NG_MANAGER_TARGET: ng-manager:13002
+  NG_MANAGER_AUTHORITY: ng-manager:13002
+  EVENTS_FRAMEWORK_REDIS_URL: 'redis://localhost:6379'
+  EVENTS_FRAMEWORK_USE_SENTINEL: "true"
+  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace }}:26379'
+  GRPC_SERVER_PORT: "9979"
+  SHOULD_CONFIGURE_WITH_PMS: "true"
+  PMS_GITSYNC_TARGET:  pipeline-service:14002
+  PMS_GITSYNC_AUTHORITY:  pipeline-service:14002
+  TEMPLATE_GITSYNC_TARGET:  template-service:16002
+  TEMPLATE_GITSYNC_AUTHORITY:  template-service:16002
+  PMS_TARGET:  pipeline-service:12011
+  PMS_AUTHORITY:  pipeline-service:12011
+  MEMORY: {{ .Values.java.memory | quote }}
+  LOGGING_LEVEL: {{ .Values.appLogLevel }}
+  LOCK_CONFIG_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace }}:26379'
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
+  LOCK_CONFIG_USE_SENTINEL: "true"
+  LOG_STREAMING_SERVICE_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
+  USE_REDIS_FOR_SDK_RESPONSE_EVENTS: "true"
+  MOCK_ACCESS_CONTROL_SERVICE: "false"
+  ACCESS_CONTROL_ENABLED: "true"
+  ENABLE_DEFAULT_RESOURCE_GROUP_CREATION: "true"
+  ENABLE_DASHBOARD_TIMESCALE: "true"
+  AUDIT_ENABLED: "true"
+  SCM_SERVICE_URI: "scm-service:8091"
+  MANAGER_CLIENT_BASEURL: http://harness-manager.{{ .Release.Namespace }}.svc.cluster.local:9090/api/
+  NG_MANAGER_CLIENT_BASEURL: 'http://ng-manager:7090/'
+  MANAGER_UI_URL:  '{{ .Values.global.loadbalancerURL }}'
+  NG_MANAGER_API_URL: 'http://ng-manager:7090/'
+  NG_MANAGER_UI_URL: '{{ .Values.global.loadbalancerURL }}/ng/#/'
+  LOG_STREAMING_SERVICE_BASEURL: 'http://log-service.{{ .Release.Namespace }}.svc.cluster.local:8079/'
+  ACCESS_CONTROL_BASE_URL: 'http://access-control.{{ .Release.Namespace }}.svc.cluster.local:9006/api/'
+  RESOURCE_GROUP_BASE_URL: 'http://platform-service.{{ .Release.Namespace }}.svc.cluster.local:9005/api/'
+  AUDIT_CLIENT_BASEURL: 'http://platform-service.{{ .Release.Namespace }}.svc.cluster.local:9005/api/'
+  {{- if .Values.global.chaos.enabled }}
+  CHAOS_SERVICE_BASE_URL: http://chaos-web-service.{{ .Release.Namespace }}.svc.cluster.local:8184/
+  {{- end }}
+  CENG_CLIENT_BASEURL: 'http://nextgen-ce.{{ .Release.Namespace }}.svc.cluster.local:6340/ccm/api/'
+  CE_NG_CLIENT_BASEURL: 'http://nextgen-ce.{{ .Release.Namespace }}.svc.cluster.local:6340/ccm/api/'
+  CE_SETUP_CONFIG_GCP_PROJECT_ID: {{ .Values.ceGcpSetupConfigGcpProjectId | quote }}
+  CURRENT_GEN_UI_URL: '{{ .Values.global.loadbalancerURL }}/#/'
+  HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER: "true"
+  WEBHOOK_BASE_URL: '{{ .Values.global.loadbalancerURL }}/gateway/ng/api/'
+  MONGO_TRANSACTIONS_ALLOWED: "false"
+  {{ $length := len .Values.global.license.ng }}
+  {{- if gt $length 0}}
+  ENABLE_SMP_LICENSING: 'true'
+  SMP_LICENSE: '{{ .Values.global.license.ng }}'
+  {{- end}}
+  {{- if .Values.global.opa.enabled }}
+  OPA_SERVER_BASEURL: 'http://policy-mgmt.{{ .Release.Namespace }}.svc.cluster.local:3000/'
+  OPA_SERVER_SECRET: 'dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq'
+  OPA_CONNECTIVITY_ENABLED: 'true'
+  {{- end }}
+  NOTIFICATION_BASE_URL: http://platform-service:9005/api/
+  TEMPLATE_SERVICE_ENDPOINT: http://template-service:15002/api/
+  PIPELINE_SERVICE_CLIENT_BASEURL: http://pipeline-service:12001/api/
+  CI_MANAGER_SERVICE_CLIENT_BASEURL: http://ci-manager:7090/
+  CVNG_SERVICE_CLIENT_BASEURL: http://cv-nextgen:6060/cv/api/
