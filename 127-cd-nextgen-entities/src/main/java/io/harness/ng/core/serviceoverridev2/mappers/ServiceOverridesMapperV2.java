@@ -5,11 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ng.core.serviceoverridev2.beans.mappers;
+package io.harness.ng.core.serviceoverridev2.mappers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesResponseDTOV2;
 
 import javax.validation.constraints.NotNull;
@@ -19,17 +20,18 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
 public class ServiceOverridesMapperV2 {
-  public NGServiceOverridesEntity toEntity(@NotNull String accountId, @NonNull ServiceOverridesResponseDTOV2 dto) {
+  public NGServiceOverridesEntity toEntity(
+      @NotNull String accountId, @NonNull ServiceOverrideRequestDTOV2 requestDTOV2) {
     return NGServiceOverridesEntity.builder()
-        .identifier(dto.getIdentifier())
+        .identifier(requestDTOV2.getIdentifier())
         .accountId(accountId)
-        .orgIdentifier(dto.getOrgIdentifier())
-        .projectIdentifier(dto.getProjectIdentifier())
-        .environmentRef(dto.getEnvironmentRef())
-        .serviceRef(dto.getServiceRef())
-        .infraIdentifier(dto.getInfraIdentifier())
-        .spec(dto.getSpec())
-        .type(dto.getType())
+        .orgIdentifier(requestDTOV2.getOrgIdentifier())
+        .projectIdentifier(requestDTOV2.getProjectIdentifier())
+        .environmentRef(requestDTOV2.getEnvironmentRef())
+        .serviceRef(requestDTOV2.getServiceRef())
+        .infraIdentifier(requestDTOV2.getInfraIdentifier())
+        .spec(requestDTOV2.getSpec())
+        .type(requestDTOV2.getType())
         .build();
   }
 
