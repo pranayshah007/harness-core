@@ -73,56 +73,72 @@ public class SignupResource {
   }
 
   /**
-   * Follows the "free trial sign up" path
-   * Module type can be optional but by default we will always redirect to NG
+   * Follows the "complete marketplace sign up" path
    *
    * @param dto
    * @return
    */
+  // ! Added new endpoint because we may need to sign up w/o verification (Existing process)
+  // ! We also want to complete process for inviteId and marketPlace
   @POST
-  @Path("/community")
+  @Path("/marketplace")
   @PublicApi
-  public RestResponse<UserInfo> communitySignup(SignupDTO dto) {
-    return new RestResponse<>(signupService.communitySignup(dto));
-  }
+  public RestResponse<UserInfo> marketplaceSignup(@Body SignupDTO dto, @QueryParam("inviteId") String inviteId,
+      @QueryParam("marketPlaceToken") String marketPlaceToken) {
+    return new RestResponse<>(signupService.marketplaceSignup(dto, inviteId, marketPlaceToken));
+    // }
 
-  @PUT
-  @Path("/complete/{token}")
-  @PublicApi
-  public RestResponse<UserInfo> completeSignupInvite(@PathParam("token") String token,
-      @QueryParam("referer") String referer, @QueryParam(NGLicensingEntityConstants.GA_CLIENT_ID) String gaClientId,
-      @QueryParam(NGLicensingEntityConstants.VISITOR_TOKEN) String visitorToken) {
-    return new RestResponse<>(signupService.completeSignupInvite(token, referer, gaClientId, visitorToken));
-  }
+    /**
+     * Follows the "free trial sign up" path
+     * Module type can be optional but by default we will always redirect to NG
+     *
+     * @param dto
+     * @return
+     */
+    @POST
+    @Path("/community")
+    @PublicApi
+    public RestResponse<UserInfo> communitySignup(SignupDTO dto) {
+      return new RestResponse<>(signupService.communitySignup(dto));
+    }
 
-  /**
-   * Follows the "oauth" path
-   *
-   * @param dto
-   * @return
-   */
-  @POST
-  @Path("/oauth")
-  @PublicApi
-  public RestResponse<UserInfo> signupOAuth(OAuthSignupDTO dto) {
-    return new RestResponse<>(signupService.oAuthSignup(dto));
-  }
+    @PUT
+    @Path("/complete/{token}")
+    @PublicApi
+    public RestResponse<UserInfo> completeSignupInvite(@PathParam("token") String token,
+        @QueryParam("referer") String referer, @QueryParam(NGLicensingEntityConstants.GA_CLIENT_ID) String gaClientId,
+        @QueryParam(NGLicensingEntityConstants.VISITOR_TOKEN) String visitorToken) {
+      return new RestResponse<>(signupService.completeSignupInvite(token, referer, gaClientId, visitorToken));
+    }
 
-  @POST
-  @Path("/verify/{token}")
-  @PublicApi
-  public RestResponse<VerifyTokenResponseDTO> verifyToken(@PathParam("token") String token) {
-    return new RestResponse<>(signupService.verifyToken(token));
-  }
+    /**
+     * Follows the "oauth" path
+     *
+     * @param dto
+     * @return
+     */
+    @POST
+    @Path("/oauth")
+    @PublicApi
+    public RestResponse<UserInfo> signupOAuth(OAuthSignupDTO dto) {
+      return new RestResponse<>(signupService.oAuthSignup(dto));
+    }
 
-  @POST
-  @Path("verify-notification")
-  @Produces("application/json")
-  @Consumes("application/json")
-  @ApiOperation(value = "Resend user verification email", nickname = "resendVerifyEmail")
-  @PublicApi
-  public ResponseDTO<Boolean> resendVerifyEmail(@NotNull @QueryParam("email") String email) {
-    signupService.resendVerificationEmail(email);
-    return ResponseDTO.newResponse(TRUE);
+    @POST
+    @Path("/verify/{token}")
+    @PublicApi
+    public RestResponse<VerifyTokenResponseDTO> verifyToken(@PathParam("token") String token) {
+      return new RestResponse<>(signupService.verifyToken(token));
+    }
+
+    @POST
+    @Path("verify-notification")
+    @Produces("application/json")
+    @Consumes("application/json")
+    @ApiOperation(value = "Resend user verification email", nickname = "resendVerifyEmail")
+    @PublicApi
+    public ResponseDTO<Boolean> resendVerifyEmail(@NotNull @QueryParam("email") String email) {
+      signupService.resendVerificationEmail(email);
+      return ResponseDTO.newResponse(TRUE);
+    }
   }
-}
