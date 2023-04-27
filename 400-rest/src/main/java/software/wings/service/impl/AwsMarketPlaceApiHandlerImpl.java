@@ -229,7 +229,8 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
       URI redirectUrl = null;
       try {
         redirectUrl = new URI(authenticationUtils.getBaseUrl()
-            + ("auth/#/invite?inviteId=" + userInvite.getUuid() + "&marketPlaceToken=" + marketPlaceToken));
+            + ("auth/#/invite?inviteId=" + userInvite.getUuid() + "&marketPlaceToken=" + marketPlaceToken)
+            + getUTMUrlParams(marketPlaceConfig, productCode));
       } catch (URISyntaxException e) {
         throw new WingsException(e);
       }
@@ -329,5 +330,32 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     }
 
     return quantity;
+  }
+
+  private String getUTMUrlParams(MarketPlaceConfig marketPlaceConfig, String productCode) {
+    // TODO: Add for CE (Chaos)
+    String UTMUrlParam = "";
+
+    if (marketPlaceConfig.getAwsMarketPlaceCdProductCode().equals(productCode)) {
+      UTMUrlParam =
+          "&module=cd&utm_campaign=23-4-6-cd-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
+    } else if (marketPlaceConfig.getAwsMarketPlaceCiProductCode().equals(productCode)) {
+      UTMUrlParam =
+          "&module=ci&utm_campaign=23-4-6-ci-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
+    } else if (marketPlaceConfig.getAwsMarketPlaceFfProductCode().equals(productCode)) {
+      UTMUrlParam =
+          "&module=ff&utm_campaign=23-4-6-ff-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
+    } else if (marketPlaceConfig.getAwsMarketPlaceCcmProductCode().equals(productCode)) {
+      UTMUrlParam =
+          "&module=ce&utm_campaign=23-4-6-ccm-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
+    } else if (marketPlaceConfig.getAwsMarketPlaceStoProductCode().equals(productCode)) {
+      UTMUrlParam =
+          "&module=sto&utm_campaign=23-4-6-srm-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
+    } else if (marketPlaceConfig.getAwsMarketPlaceSrmProductCode().equals(productCode)) {
+      UTMUrlParam =
+          "&module=sto&utm_campaign=23-4-6-srm-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
+    }
+
+    return UTMUrlParam;
   }
 }
