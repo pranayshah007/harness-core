@@ -37,7 +37,7 @@ import lombok.experimental.SuperBuilder;
 @JsonSubTypes(value = { @JsonSubTypes.Type(value = CICreditDTO.class, name = "CI")
                         , })
 @Schema(name = "Credit", description = "This contains details of the Credit defined in Harness")
-public abstract class CreditDTO {
+public class CreditDTO {
   String id;
   String accountIdentifier;
   CreditStatus creditStatus;

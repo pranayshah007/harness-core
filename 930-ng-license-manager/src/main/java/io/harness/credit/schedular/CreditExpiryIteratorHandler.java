@@ -8,7 +8,6 @@ package io.harness.credit.schedular;
 
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
-import static java.time.Duration.ofHours;
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
@@ -56,7 +55,7 @@ public class CreditExpiryIteratorHandler implements Handler<Credit> {
         PersistenceIteratorFactory.PumpExecutorOptions.builder()
             .name(this.getClass().getName())
             .poolSize(threadPoolSize)
-            .interval(ofHours(8))
+            .interval(ofMinutes(2))
             .build(),
         Credit.class,
         MongoPersistenceIterator.<Credit, MorphiaFilterExpander<Credit>>builder()

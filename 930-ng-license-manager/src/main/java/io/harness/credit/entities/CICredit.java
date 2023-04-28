@@ -10,7 +10,6 @@ import static io.harness.annotations.dev.HarnessTeam.GTM;
 
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.iterator.PersistentRegularIterable;
 import io.harness.ng.DbAliases;
 
 import dev.morphia.annotations.Entity;
@@ -29,4 +28,4 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Persistent
 @TypeAlias("io.harness.credit.entities.CICredit")
-public class CICredit extends Credit implements PersistentRegularIterable {}
+public class CICredit extends Credit {}
