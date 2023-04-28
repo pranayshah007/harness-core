@@ -346,7 +346,7 @@ go_repository(
     sum = "h1:5IcZpTvzydCQeHzK4Ef/D5rrSqwxob0t8PQPMybUNFM=",
     version = "v1.1.2",
 )
-
+#testing
 go_repository(
     name = "com_github_labstack_echo_contrib",
     importpath = "github.com/labstack/echo-contrib",
