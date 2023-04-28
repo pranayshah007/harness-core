@@ -29,7 +29,7 @@ COPY immutable-scripts /opt/harness-delegate/
 
 WORKDIR /opt/harness-delegate
 
-COPY --from=adoptopenjdk/openjdk11:jre-11.0.14_9-ubi-minimal /opt/java/openjdk/ /opt/java/openjdk/
+COPY --from=adoptopenjdk/openjdk11:jre-11.0.15_10-ubi-minimal /opt/java/openjdk/ /opt/java/openjdk/
 
 ENV LANG=en_US.UTF-8
 ENV HOME=/opt/harness-delegate
