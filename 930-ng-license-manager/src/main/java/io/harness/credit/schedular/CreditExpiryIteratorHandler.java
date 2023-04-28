@@ -8,11 +8,13 @@ package io.harness.credit.schedular;
 
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
+import static java.time.Duration.ofHours;
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.credit.entities.CICredit;
 import io.harness.credit.entities.Credit;
 import io.harness.credit.entities.Credit.CreditsKeys;
 import io.harness.credit.services.CreditService;
@@ -34,17 +36,17 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.GTM)
-public class CreditExpiryIteratorHandler implements Handler<Credit> {
+public class CreditExpiryIteratorHandler implements Handler<CICredit> {
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(60);
   private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(15);
 
   private final PersistenceIteratorFactory persistenceIteratorFactory;
-  private final MorphiaPersistenceProvider<Credit> persistenceProvider;
+  private final MorphiaPersistenceProvider<CICredit> persistenceProvider;
   private CreditService creditService;
 
   @Inject
   public CreditExpiryIteratorHandler(PersistenceIteratorFactory persistenceIteratorFactory,
-      MorphiaPersistenceProvider<Credit> persistenceProvider, CreditService creditService) {
+      MorphiaPersistenceProvider<CICredit> persistenceProvider, CreditService creditService) {
     this.persistenceIteratorFactory = persistenceIteratorFactory;
     this.persistenceProvider = persistenceProvider;
     this.creditService = creditService;
@@ -55,11 +57,11 @@ public class CreditExpiryIteratorHandler implements Handler<Credit> {
         PersistenceIteratorFactory.PumpExecutorOptions.builder()
             .name(this.getClass().getName())
             .poolSize(threadPoolSize)
-            .interval(ofMinutes(2))
+            .interval(ofHours(6))
             .build(),
         Credit.class,
-        MongoPersistenceIterator.<Credit, MorphiaFilterExpander<Credit>>builder()
-            .clazz(Credit.class)
+        MongoPersistenceIterator.<CICredit, MorphiaFilterExpander<CICredit>>builder()
+            .clazz(CICredit.class)
             .fieldName(CreditsKeys.creditExpiryCheckIteration)
             .targetInterval(ofSeconds(31))
             .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
@@ -78,7 +80,7 @@ public class CreditExpiryIteratorHandler implements Handler<Credit> {
   }
 
   @Override
-  public void handle(Credit entity) {
+  public void handle(CICredit entity) {
     if (entity == null) {
       log.warn("Credit entity is null for credit expiry check");
       return;

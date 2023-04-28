@@ -14,7 +14,6 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.credit.utils.CreditStatus;
 import io.harness.data.validator.Trimmed;
-import io.harness.iterator.PersistentRegularIterable;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.NGAccountAccess;
 import io.harness.persistence.PersistentEntity;
@@ -36,7 +35,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Document("credits")
 @Persistent
-public class Credit implements PersistentEntity, NGAccountAccess, PersistentRegularIterable {
+public abstract class Credit implements PersistentEntity, NGAccountAccess {
   @Id protected String id;
   @Trimmed @NotEmpty protected String accountIdentifier;
   @NotEmpty protected CreditStatus creditStatus;
@@ -47,22 +46,4 @@ public class Credit implements PersistentEntity, NGAccountAccess, PersistentRegu
   @NotEmpty protected ModuleType moduleType;
 
   protected Long creditExpiryCheckIteration;
-
-  @Override
-  public Long obtainNextIteration(String fieldName) {
-    if (CreditsKeys.creditExpiryCheckIteration.equals(fieldName)) {
-      return creditExpiryCheckIteration;
-    }
-    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
-  }
-
-  @Override
-  public String getUuid() {
-    return this.id;
-  }
-
-  @Override
-  public void updateNextIteration(String fieldName, long nextIteration) {
-    this.creditExpiryCheckIteration = nextIteration;
-  }
 }
