@@ -132,6 +132,7 @@ public class SignupServiceImpl implements SignupService {
   private static final String VERIFY_URL_GENERATION_FAILED = "Failed to generate verify url";
   private static final String EMAIL = "email";
   private static final String VISITOR_TOKEN_KEY = "visitor_token";
+  private static final String EXC_USER_ALREADY_REGISTERED = "User is already registered";
 
   private static final String GA_CLIENT_ID_KEY = "ga_client_id";
   private static final String REFERER_URL_KEY = "refererURL";
@@ -186,6 +187,31 @@ public class SignupServiceImpl implements SignupService {
       }
     });
     return user;
+  }
+  /**
+   * Signup in non email verification blocking flow
+   */
+  @Override
+  public UserInfo marketplaceSignup(SignupDTO dto, String inviteId, String marketPlaceToken) throws WingsException {
+    AccountDTO account = createAccount(dto);
+
+    UserInfo userInfo = null;
+    String email = dto.getEmail().toLowerCase();
+    String password = dto.getPassword();
+    try {
+      userInfo = getResponse(
+          userClient.createMarketplaceUserAndCompleteSignup(inviteId, marketPlaceToken, email, password, account),
+          getRetryPolicy("SignupServiceImpl-Request failed", INITIAL_DELAY, MAX_DELAY, ChronoUnit.SECONDS));
+    } catch (InvalidRequestException e) {
+      if (e.getMessage().contains("User with this email is already registered")) {
+        throw new InvalidRequestException("Email is already signed up", ErrorCode.USER_ALREADY_REGISTERED, USER);
+      }
+      throw e;
+    } catch (Exception e) {
+      log.error("Unable to finish community provision flow", e);
+      throw e;
+    }
+    return userInfo;
   }
 
   /**
