@@ -25,7 +25,7 @@ RUN microdnf update \
 COPY ci-addon_/ci-addon /usr/local/bin/ci-addon-linux
 COPY java-agent.jar /usr/local/bin/
 COPY split_tests /usr/local/bin/
-COPY tmate-2.4.0-static-linux-arm64v8/tmate /usr/local/bin/
+COPY tmate-client/tmate /usr/local/bin/
 RUN chmod +x /usr/local/bin/ci-addon-linux \
     && chmod +x /usr/local/bin/split_tests \
     && chmod +x /usr/local/bin/tmate

@@ -8,6 +8,7 @@
 package io.harness.pms.approval.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.exception.WingsException.USER_SRE;
 
 import static java.util.Objects.isNull;
@@ -75,12 +76,12 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
     JiraApprovalInstance instance = (JiraApprovalInstance) approvalInstanceService.get(approvalInstanceId);
     log.info("Jira Approval Instance callback for instance id - {}", instance.getId());
     Ambiance ambiance = instance.getAmbiance();
-    NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, null, false);
+    NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
 
     if (instance.hasExpired()) {
       log.warn("Jira Approval Instance expired for instance id - {}", instance.getId());
       updateApprovalInstanceAndLog(logCallback, "Approval instance has expired", LogColor.Red,
-          CommandExecutionStatus.FAILURE, ApprovalStatus.EXPIRED, instance.getId());
+          CommandExecutionStatus.RUNNING, ApprovalStatus.EXPIRED, instance.getId());
     }
 
     JiraTaskNGResponse jiraTaskNGResponse;
@@ -97,16 +98,17 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
       }
 
       jiraTaskNGResponse = (JiraTaskNGResponse) responseData;
-      if (!validateProject(instance, jiraTaskNGResponse)) {
-        return;
-      }
 
+      // this is checked first to prevent NPE in following validations
       if (isNull(jiraTaskNGResponse.getIssue())) {
         log.info("Invalid issue key");
         String errorMessage = String.format("Invalid issue key: %s", instance.getIssueKey());
-        logCallback.saveExecutionLog(
-            LogHelper.color(errorMessage, LogColor.Red), LogLevel.INFO, CommandExecutionStatus.FAILURE);
+        logCallback.saveExecutionLog(LogHelper.color(errorMessage, LogColor.Red), LogLevel.ERROR);
         approvalInstanceService.finalizeStatus(instance.getId(), ApprovalStatus.FAILED, errorMessage);
+        return;
+      }
+
+      if (!validateProject(instance, jiraTaskNGResponse)) {
         return;
       }
 
@@ -119,7 +121,8 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
       logCallback.saveExecutionLog(
           LogHelper.color(String.format("Error fetching jira issue response: %s. Retrying in sometime...",
                               ExceptionUtils.getMessage(ex)),
-              LogColor.Red));
+              LogColor.Red),
+          LogLevel.ERROR);
       log.error("Failed to fetch jira issue", ex);
       return;
     }
@@ -144,10 +147,10 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
         return;
       }
 
-      logCallback.saveExecutionLog(
-          LogHelper.color(String.format("Error evaluating approval/rejection criteria: %s. Retrying in sometime...",
-                              ExceptionUtils.getMessage(ex)),
-              LogColor.Red));
+      logCallback.saveExecutionLog(LogHelper.color(String.format("Error evaluating approval/rejection criteria: %s.",
+                                                       ExceptionUtils.getMessage(ex)),
+                                       LogColor.Red),
+          LogLevel.ERROR);
       throw new HarnessJiraException("Error while evaluating approval/rejection criteria", ex, USER_SRE);
     }
   }

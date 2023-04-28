@@ -21,9 +21,7 @@ import static io.harness.rule.OwnerRule.SOWMYA;
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
@@ -41,7 +39,6 @@ import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
-import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
@@ -617,11 +614,8 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = NAVEEN)
   @Category(UnitTests.class)
-  public void testCreateStateMachine_forDeployment_withHostSamplingFFOn() throws IllegalAccessException {
+  public void testCreateStateMachine_forDeployment_withHostSampling() throws IllegalAccessException {
     FeatureFlagService featureFlagService = mock(FeatureFlagService.class);
-    when(featureFlagService.isFeatureFlagEnabled(
-             eq(builderFactory.getContext().getAccountId()), eq(FeatureFlagNames.SRM_HOST_SAMPLING_ENABLE)))
-        .thenReturn(true);
     FieldUtils.writeField(taskTypeAnalysisStateMachineServiceMap.get(VerificationTask.TaskType.DEPLOYMENT),
         "featureFlagService", featureFlagService, true);
     String verificationTaskId = generateUuid();

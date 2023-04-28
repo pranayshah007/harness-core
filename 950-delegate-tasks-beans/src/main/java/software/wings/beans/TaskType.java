@@ -490,7 +490,8 @@ public enum TaskType {
   HELM_COMMAND_TASK_NG_V2(TaskGroup.HELM, "Helm Command Task with service Hooks"),
   INSTANCE_SYNC_V2_CG_SUPPORT(TaskGroup.K8S, "Instance sync V2 support for CG"),
   // Dummy Task type to support referenceFalseSerialization
-  PT_SERIALIZATION_SUPPORT(TaskGroup.CAPABILITY_VALIDATION);
+  PT_SERIALIZATION_SUPPORT(TaskGroup.CAPABILITY_VALIDATION),
+  COMMAND_TASK_NG_WITH_GIT_CONFIGS(TaskGroup.COMMAND_TASK_NG, "Command Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;

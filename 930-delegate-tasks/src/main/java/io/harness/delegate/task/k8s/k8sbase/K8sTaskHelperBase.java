@@ -2516,13 +2516,21 @@ public class K8sTaskHelperBase {
   public boolean fetchManifestFilesAndWriteToDirectory(ManifestDelegateConfig manifestDelegateConfig,
       String manifestFilesDirectory, LogCallback executionLogCallback, long timeoutInMillis, String accountId)
       throws Exception {
+    return fetchManifestFilesAndWriteToDirectory(
+        manifestDelegateConfig, manifestFilesDirectory, executionLogCallback, timeoutInMillis, accountId, true);
+  }
+
+  public boolean fetchManifestFilesAndWriteToDirectory(ManifestDelegateConfig manifestDelegateConfig,
+      String manifestFilesDirectory, LogCallback executionLogCallback, long timeoutInMillis, String accountId,
+      boolean denoteOverallSuccess) throws Exception {
     StoreDelegateConfig storeDelegateConfig = manifestDelegateConfig.getStoreDelegateConfig();
     switch (storeDelegateConfig.getType()) {
       case HARNESS:
-        return writeManifestFilesToDirectory(storeDelegateConfig, manifestFilesDirectory, executionLogCallback);
+        return writeManifestFilesToDirectory(
+            storeDelegateConfig, manifestFilesDirectory, executionLogCallback, denoteOverallSuccess);
       case CUSTOM_REMOTE:
         return downloadZippedManifestFilesFormCustomSource(
-            storeDelegateConfig, manifestFilesDirectory, executionLogCallback);
+            storeDelegateConfig, manifestFilesDirectory, executionLogCallback, denoteOverallSuccess);
       case GIT:
         if (manifestDelegateConfig instanceof KustomizeManifestDelegateConfig) {
           KustomizeManifestDelegateConfig kustomizeManifestDelegateConfig =
@@ -2534,13 +2542,13 @@ public class K8sTaskHelperBase {
           }
         }
         return downloadManifestFilesFromGit(
-            storeDelegateConfig, manifestFilesDirectory, executionLogCallback, accountId);
+            storeDelegateConfig, manifestFilesDirectory, executionLogCallback, accountId, denoteOverallSuccess);
       case HTTP_HELM:
       case S3_HELM:
       case GCS_HELM:
       case OCI_HELM:
-        return downloadFilesFromChartRepo(
-            manifestDelegateConfig, manifestFilesDirectory, executionLogCallback, timeoutInMillis);
+        return downloadFilesFromChartRepo(manifestDelegateConfig, manifestFilesDirectory, executionLogCallback,
+            timeoutInMillis, denoteOverallSuccess);
 
       default:
         throw new UnsupportedOperationException(
@@ -2548,8 +2556,8 @@ public class K8sTaskHelperBase {
     }
   }
 
-  private boolean downloadZippedManifestFilesFormCustomSource(
-      StoreDelegateConfig delegateManifestConfig, String manifestFilesDirectory, LogCallback executionLogCallback) {
+  private boolean downloadZippedManifestFilesFormCustomSource(StoreDelegateConfig delegateManifestConfig,
+      String manifestFilesDirectory, LogCallback executionLogCallback, Boolean denoteOverallSuccess) {
     String tempWorkingDir = null;
     try {
       tempWorkingDir = customManifestService.getWorkingDirectory();
@@ -2571,7 +2579,9 @@ public class K8sTaskHelperBase {
 
       executionLogCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
       executionLogCallback.saveExecutionLog(getManifestFileNamesInLogFormat(manifestFilesDirectory));
-      executionLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
+      if (denoteOverallSuccess) {
+        executionLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
+      }
       return true;
     } catch (IOException e) {
       log.error("Failed to get files from manifest directory", ExceptionMessageSanitizer.sanitizeException(e));
@@ -2599,7 +2609,7 @@ public class K8sTaskHelperBase {
   }
 
   private boolean downloadManifestFilesFromGit(StoreDelegateConfig storeDelegateConfig, String manifestFilesDirectory,
-      LogCallback executionLogCallback, String accountId) throws Exception {
+      LogCallback executionLogCallback, String accountId, Boolean denoteOverallSuccess) throws Exception {
     if (!(storeDelegateConfig instanceof GitStoreDelegateConfig)) {
       throw new InvalidArgumentsException(Pair.of("storeDelegateConfig", "Must be instance of GitStoreDelegateConfig"));
     }
@@ -2635,8 +2645,9 @@ public class K8sTaskHelperBase {
 
       executionLogCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
       executionLogCallback.saveExecutionLog(getManifestFileNamesInLogFormat(manifestFilesDirectory));
-      executionLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
-
+      if (denoteOverallSuccess) {
+        executionLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
+      }
       return true;
     } catch (YamlException e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
@@ -2698,7 +2709,7 @@ public class K8sTaskHelperBase {
   }
 
   public boolean downloadFilesFromChartRepo(ManifestDelegateConfig manifestDelegateConfig, String destinationDirectory,
-      LogCallback logCallback, long timeoutInMillis) {
+      LogCallback logCallback, long timeoutInMillis, Boolean denoteOverallSuccess) {
     if (!(manifestDelegateConfig instanceof HelmChartManifestDelegateConfig)) {
       throw new InvalidArgumentsException(
           Pair.of("manifestDelegateConfig", "Must be instance of HelmChartManifestDelegateConfig"));
@@ -2724,7 +2735,9 @@ public class K8sTaskHelperBase {
         copyHelmChartFolderToWorkingDir(localChartDirectory, workingDirectory);
         logCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
         logCallback.saveExecutionLog(getManifestFileNamesInLogFormat(destinationDirectory));
-        logCallback.saveExecutionLog("Done.", INFO, SUCCESS);
+        if (denoteOverallSuccess) {
+          logCallback.saveExecutionLog("Done.", INFO, SUCCESS);
+        }
         return true;
       }
       HelmChartManifestDelegateConfig helmChartManifestConfig =
@@ -2747,8 +2760,9 @@ public class K8sTaskHelperBase {
           destinationDirectory, helmChartManifestConfig, logCallback);
       logCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
       logCallback.saveExecutionLog(getManifestFileNamesInLogFormat(destinationDirectory));
-      logCallback.saveExecutionLog("Done.", INFO, SUCCESS);
-
+      if (denoteOverallSuccess) {
+        logCallback.saveExecutionLog("Done.", INFO, SUCCESS);
+      }
     } catch (HelmClientException e) {
       String errorMsg = format("Failed to download manifest files from %s repo. ",
           manifestDelegateConfig.getStoreDelegateConfig().getType());
@@ -3166,8 +3180,8 @@ public class K8sTaskHelperBase {
     return kubernetesCliClient;
   }
 
-  private boolean writeManifestFilesToDirectory(
-      StoreDelegateConfig storeDelegateConfig, String manifestFilesDirectory, LogCallback executionLogCallback) {
+  private boolean writeManifestFilesToDirectory(StoreDelegateConfig storeDelegateConfig, String manifestFilesDirectory,
+      LogCallback executionLogCallback, Boolean denoteOverallSuccess) {
     LocalFileStoreDelegateConfig localFileStoreDelegateConfig = (LocalFileStoreDelegateConfig) storeDelegateConfig;
     if (isNotEmpty(localFileStoreDelegateConfig.getManifestType())
         && isNotEmpty(localFileStoreDelegateConfig.getManifestIdentifier())) {
@@ -3206,7 +3220,9 @@ public class K8sTaskHelperBase {
           executionLogCallback.saveExecutionLog(color(format("- %s is empty", manifestFile.getFilePath()), Yellow));
         }
       }
-      executionLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
+      if (denoteOverallSuccess) {
+        executionLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
+      }
       return true;
     } catch (Exception ex) {
       executionLogCallback.saveExecutionLog(ExceptionUtils.getMessage(ExceptionMessageSanitizer.sanitizeException(ex)),

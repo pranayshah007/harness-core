@@ -40,6 +40,7 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.rule.Owner;
+import io.harness.ssca.client.SSCAServiceUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,6 +65,7 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
   @Mock private SecretUtils secretUtils;
   @Mock private CodebaseUtils codebaseUtils;
   @Mock private K8InitializeTaskUtils k8InitializeTaskUtils;
+  @Mock private SSCAServiceUtils sscaServiceUtils;
 
   private Ambiance ambiance;
   private static final String accountId = "test";

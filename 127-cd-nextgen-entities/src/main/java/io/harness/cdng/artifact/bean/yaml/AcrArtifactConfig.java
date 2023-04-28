@@ -154,4 +154,9 @@ public class AcrArtifactConfig implements ArtifactConfig, Visitable, WithConnect
   public List<ParameterField<String>> getStringParameterFields() {
     return Arrays.asList(connectorRef, subscriptionId, registry, repository, tag, tagRegex);
   }
+
+  @Override
+  public void validate() {
+    ArtifactConfigHelper.checkTagAndTagRegex(tag, tagRegex);
+  }
 }

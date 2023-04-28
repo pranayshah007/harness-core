@@ -13,15 +13,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.NotExpression;
 import io.harness.plancreator.execution.StepsExecutionConfig;
 import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
-import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.container.ContainerStepSpecTypeConstants;
 import io.harness.steps.matrix.StrategyExpansionData;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
-import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.core.StepSpecType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Map;
@@ -37,11 +36,10 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@SimpleVisitorHelper(helperClass = ContainerStepInfoVisitorHelper.class)
 @TypeAlias("InitContainerV2StepInfo")
 @OwnedBy(HarnessTeam.PIPELINE)
 @RecasterAlias("io.harness.steps.plugin.InitContainerV2StepInfo")
-public class InitContainerV2StepInfo implements PMSStepInfo, Visitable, SpecParameters, ContainerStepSpec {
+public class InitContainerV2StepInfo implements Visitable, SpecParameters, ContainerStepSpec, StepSpecType {
   private String stepGroupIdentifier;
   private String stepGroupName;
 
@@ -53,7 +51,7 @@ public class InitContainerV2StepInfo implements PMSStepInfo, Visitable, SpecPara
   @Override
   @JsonIgnore
   public StepType getStepType() {
-    return StepSpecTypeConstants.CONTAINER_STEP_TYPE;
+    return ContainerStepSpecTypeConstants.CONTAINER_STEP_TYPE;
   }
 
   @Override
@@ -62,7 +60,6 @@ public class InitContainerV2StepInfo implements PMSStepInfo, Visitable, SpecPara
     return OrchestrationFacilitatorType.TASK;
   }
 
-  @Override
   public SpecParameters getSpecParameters() {
     return this;
   }
