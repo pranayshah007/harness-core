@@ -76,13 +76,18 @@ import io.harness.polling.bean.artifact.Nexus2RegistryArtifactInfo;
 import io.harness.polling.bean.artifact.NexusRegistryArtifactInfo;
 import io.harness.polling.bean.artifact.S3ArtifactInfo;
 import io.harness.polling.contracts.BuildInfo;
+import io.harness.polling.contracts.Metadata;
 import io.harness.polling.contracts.PollingResponse;
 import io.harness.polling.service.intfc.PollingPerpetualTaskService;
 import io.harness.polling.service.intfc.PollingService;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -173,15 +178,27 @@ public class PollingResponseHandler {
     // find if there are any new keys which are not in db. This is required because of delegate rebalancing,
     // delegate can loose context of latest keys.
     Set<String> savedArtifactKeys = savedResponse.getAllPolledKeys();
-    List<String> newArtifactKeys = unpublishedArtifactKeys.stream()
-                                       .filter(artifact -> !savedArtifactKeys.contains(artifact))
-                                       .collect(Collectors.toList());
+    List<String> newArtifactKeys = new ArrayList<>();
+    List<Metadata> newArtifactsMetadata = new ArrayList<>();
+    for (ArtifactDelegateResponse artifactDelegateResponse : unpublishedArtifacts) {
+      String key = ArtifactCollectionUtilsNg.getArtifactKey(artifactDelegateResponse);
+      if (!savedArtifactKeys.contains(key)) {
+        newArtifactKeys.add(key);
+        Map<String, String> metadata = new HashMap<>();
+        if (artifactDelegateResponse.getBuildDetails() != null
+            && artifactDelegateResponse.getBuildDetails().getMetadata() != null) {
+          metadata = artifactDelegateResponse.getBuildDetails().getMetadata();
+          metadata.values().removeAll(Collections.singleton(null));
+        }
+        newArtifactsMetadata.add(Metadata.newBuilder().putAllMetadata(metadata).build());
+      }
+    }
 
     if (isNotEmpty(newArtifactKeys)) {
       log.info("Publishing artifact versions {} to topic.", newArtifactKeys);
       PolledResponseResult polledResponseResult =
           getPolledResponseResultForArtifact((ArtifactInfo) pollingDocument.getPollingInfo());
-      publishPolledItemToTopic(pollingDocument, newArtifactKeys, polledResponseResult);
+      publishPolledItemToTopic(pollingDocument, newArtifactKeys, polledResponseResult, newArtifactsMetadata);
     }
 
     // after publishing event, update database as well.
@@ -201,16 +218,18 @@ public class PollingResponseHandler {
     pollingService.updatePolledResponse(accountId, pollDocId, artifactPolledResponse);
   }
 
-  private void publishPolledItemToTopic(
-      PollingDocument pollingDocument, List<String> newVersions, PolledResponseResult polledResponseResult) {
-    polledItemPublisher.publishPolledItems(
-        PollingResponse.newBuilder()
-            .setAccountId(pollingDocument.getAccountId())
-            .setBuildInfo(
-                BuildInfo.newBuilder().setName(polledResponseResult.getName()).addAllVersions(newVersions).build())
-            .setType(polledResponseResult.getType())
-            .addAllSignatures(pollingDocument.getSignatures())
-            .build());
+  private void publishPolledItemToTopic(PollingDocument pollingDocument, List<String> newVersions,
+      PolledResponseResult polledResponseResult, List<Metadata> newArtifactsMetadata) {
+    polledItemPublisher.publishPolledItems(PollingResponse.newBuilder()
+                                               .setAccountId(pollingDocument.getAccountId())
+                                               .setBuildInfo(BuildInfo.newBuilder()
+                                                                 .setName(polledResponseResult.getName())
+                                                                 .addAllMetadata(newArtifactsMetadata)
+                                                                 .addAllVersions(newVersions)
+                                                                 .build())
+                                               .setType(polledResponseResult.getType())
+                                               .addAllSignatures(pollingDocument.getSignatures())
+                                               .build());
   }
   private void handleGitPollingResponse(PollingDocument pollingDocument, PollingResponseInfc pollingResponseInfc) {
     GitPollingDelegateResponse response = (GitPollingDelegateResponse) pollingResponseInfc;
@@ -312,7 +331,7 @@ public class PollingResponseHandler {
       log.info("Publishing manifest versions {} to topic.", newVersions);
       PolledResponseResult polledResponseResult =
           getPolledResponseResultForManifest((ManifestInfo) pollingDocument.getPollingInfo());
-      publishPolledItemToTopic(pollingDocument, newVersions, polledResponseResult);
+      publishPolledItemToTopic(pollingDocument, newVersions, polledResponseResult, new ArrayList<>());
     }
 
     // after publishing event, update database as well.

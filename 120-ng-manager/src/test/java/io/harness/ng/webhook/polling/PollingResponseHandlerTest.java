@@ -350,6 +350,9 @@ public class PollingResponseHandlerTest extends CategoryTest {
       assertThat(pollingResponse.getBuildInfo().getName())
           .isEqualTo(pollingType == PollingType.MANIFEST ? "chartName" : "imagePath");
       assertThat(pollingResponse.getBuildInfo().getVersionsCount()).isEqualTo(publishedSize);
+      if (pollingType == PollingType.ARTIFACT) {
+        assertThat(pollingResponse.getBuildInfo().getMetadataCount()).isEqualTo(publishedSize);
+      }
     } else {
       ArgumentCaptor<List<GitPollingWebhookData>> listCaptor = ArgumentCaptor.forClass((Class) List.class);
       verify(polledItemPublisher, times(noOfTimePublished)).sendWebhookRequest(any(), listCaptor.capture());

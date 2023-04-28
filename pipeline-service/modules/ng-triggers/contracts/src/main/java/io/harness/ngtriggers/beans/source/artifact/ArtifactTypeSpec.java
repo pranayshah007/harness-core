@@ -60,4 +60,6 @@ public interface ArtifactTypeSpec {
   String fetchConnectorRef();
   String fetchBuildType();
   List<TriggerEventDataCondition> fetchEventDataConditions();
+  List<TriggerEventDataCondition> fetchMetaDataConditions();
+  String fetchJexlArtifactConditions();
 }
