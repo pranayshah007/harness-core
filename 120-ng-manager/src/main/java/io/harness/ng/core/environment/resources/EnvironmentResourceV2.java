@@ -734,6 +734,12 @@ public class EnvironmentResourceV2 {
     validateServiceOverrides(serviceOverridesEntity);
 
     NGServiceOverridesEntity createdServiceOverride = serviceOverrideService.upsert(serviceOverridesEntity);
+
+    // This is to support terraform request, as we are altering yaml and environmentIdentifier to have qualified ref.
+    // With our current flow there is no other change in environmentIdentifier and yaml fields except the above
+    // mentioned, so it's safe now to set mentioned field in response using the request data.
+    createdServiceOverride.setEnvironmentRef(serviceOverrideRequestDTO.getEnvironmentIdentifier());
+    createdServiceOverride.setYaml(serviceOverrideRequestDTO.getYaml());
     return ResponseDTO.newResponse(ServiceOverridesMapper.toResponseWrapper(createdServiceOverride));
   }
 

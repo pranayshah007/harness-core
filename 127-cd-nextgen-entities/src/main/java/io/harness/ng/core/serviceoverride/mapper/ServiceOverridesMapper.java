@@ -53,12 +53,10 @@ public class ServiceOverridesMapper {
     NGServiceOverrideConfig ngServiceOverrideConfig =
         NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig(serviceOverridesEntity);
 
-    if (isOverrideV2) {
-      String updatedYaml =
-          getUpdatedYamlIfEnvRefIsNotQualifiedRef(accountId, serviceOverrideRequestDTO, ngServiceOverrideConfig);
-      if (isNotBlank(updatedYaml)) {
-        serviceOverridesEntity.setYaml(updatedYaml);
-      }
+    String updatedYaml =
+        getUpdatedYamlIfEnvRefIsNotQualifiedRef(accountId, serviceOverrideRequestDTO, ngServiceOverrideConfig);
+    if (isNotBlank(updatedYaml)) {
+      serviceOverridesEntity.setYaml(updatedYaml);
     }
 
     return serviceOverridesEntity;
