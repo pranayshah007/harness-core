@@ -18,6 +18,7 @@ import io.harness.dtos.rollback.PostProdRollbackCheckDTO.PostProdRollbackCheckDT
 import io.harness.dtos.rollback.PostProdRollbackResponseDTO;
 import io.harness.entities.Instance;
 import io.harness.entities.InstanceType;
+import io.harness.entities.RollbackStatus;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.contracts.execution.Status;
@@ -90,6 +91,9 @@ public class PostProdRollbackServiceImpl implements PostProdRollbackService {
           ex);
     }
     String planExecutionId = (String) (((Map<String, Map>) response).get("planExecution")).get("uuid");
+    // since rollback execution is triggered then mark the rollbackStatus as STARTED.
+    instance.setRollbackStatus(RollbackStatus.STARTED);
+    instanceRepository.save(instance);
     return PostProdRollbackResponseDTO.builder()
         .isRollbackTriggered(true)
         .instanceKey(instanceKey)

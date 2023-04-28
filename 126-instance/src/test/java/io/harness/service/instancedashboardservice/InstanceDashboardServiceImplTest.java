@@ -25,6 +25,7 @@ import io.harness.entities.ArtifactDetails;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceBuilder;
 import io.harness.entities.InstanceType;
+import io.harness.entities.RollbackStatus;
 import io.harness.entities.instanceinfo.GitopsInstanceInfo;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
 import io.harness.mappers.InstanceDetailsMapper;
@@ -85,6 +86,8 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   private static final String lastPipelineExecutionId = "lastPipelineExecutionId";
   private static final String stageNodeExecutionId = "stageNodeExecutionId";
   private static final Status stageStatus = Status.SUCCEEDED;
+  private static final String stageSetupId = "stageSetupId";
+  private static final RollbackStatus rollbackStatus = RollbackStatus.NOT_STARTED;
   private static final List<String> BUILD_IDS = Arrays.asList("id1", "id2");
   private static final List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels =
       Arrays.asList(new ArtifactDeploymentDetailModel(ENV_1, DISPLAY_NAME, 2l, null, null),
@@ -107,7 +110,8 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   private static final List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList =
       Arrays.asList(new ActiveServiceInstanceInfoWithEnvType(instanceKey, infraMappingId, ENV_IDENTIFIER,
           ENV_IDENTIFIER, EnvironmentType.PreProduction, INFRASTRUCTURE_ID, INFRASTRUCTURE_ID, CLUSTER_ID, AGENT_ID, 1l,
-          DISPLAY_NAME, 1, lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
+          DISPLAY_NAME, 1, lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus,
+          stageSetupId, rollbackStatus));
   private AggregationResults<ArtifactDeploymentDetailModel> artifactDeploymentDetailModelAggregationResults;
   private AggregationResults<EnvironmentInstanceCountModel> environmentInstanceCountModelAggregationResults;
   private AggregationResults<InstanceGroupedByPipelineExecution>

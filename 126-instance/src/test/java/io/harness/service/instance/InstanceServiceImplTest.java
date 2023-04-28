@@ -36,6 +36,7 @@ import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
+import io.harness.entities.RollbackStatus;
 import io.harness.entities.instanceinfo.GitopsInstanceInfo;
 import io.harness.entities.instanceinfo.InstanceInfo;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
@@ -90,6 +91,8 @@ public class InstanceServiceImplTest extends InstancesTestBase {
   private static final String lastPipelineExecutionId = "lastPipelineExecutionId";
   private static final String stageNodeExecutionId = "stageNodeExecutionId";
   private static final Status stageStatus = Status.SUCCEEDED;
+  private static final String stageSetupId = "stageSetupId";
+  private static final RollbackStatus rollbackStatus = RollbackStatus.NOT_STARTED;
 
   private AggregationResults<ActiveServiceInstanceInfoWithEnvType> aggregationResults;
 
@@ -98,8 +101,8 @@ public class InstanceServiceImplTest extends InstancesTestBase {
     aggregationResults = new AggregationResults<>(
         Arrays.asList(new ActiveServiceInstanceInfoWithEnvType(instanceKey, infraMappingId, ENVIRONMENT_ID,
             ENVIRONMENT_ID, EnvironmentType.PreProduction, INFRASTRUCTURE_ID, INFRASTRUCTURE_ID, CLUSTER_ID, AGENT_ID,
-            1l, DISPLAY_NAME, 1, lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId,
-            stageStatus)),
+            1l, DISPLAY_NAME, 1, lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus,
+            stageSetupId, rollbackStatus)),
         new Document());
   }
 
