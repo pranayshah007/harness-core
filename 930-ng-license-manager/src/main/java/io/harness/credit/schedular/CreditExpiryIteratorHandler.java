@@ -27,6 +27,7 @@ import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 
 import com.google.inject.Inject;
 import java.time.Duration;
+import java.time.Instant;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -73,7 +74,7 @@ public class CreditExpiryIteratorHandler implements Handler<CICredit> {
                        .field(CreditsKeys.expiryTime)
                        .greaterThan(0)
                        .field(CreditsKeys.expiryTime)
-                       .lessThan(System.currentTimeMillis()))
+                       .lessThan(Instant.now().toEpochMilli()))
             .schedulingType(REGULAR)
             .persistenceProvider(persistenceProvider)
             .redistribute(true));
