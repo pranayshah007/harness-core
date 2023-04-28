@@ -74,6 +74,7 @@ import io.grpc.StatusRuntimeException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -545,6 +546,6 @@ public class DelegateServiceGrpcClient {
         .entrySet()
         .stream()
         .filter(entry -> !Objects.isNull(entry.getValue()))
-        .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+        .collect(Collectors.toMap(Entry::getKey, Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
   }
 }
