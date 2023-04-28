@@ -41,7 +41,6 @@ import com.google.inject.Injector;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -71,18 +70,6 @@ public class DelegateApplication {
   public static void main(String... args) throws IOException {
     try {
       String proxyUser = System.getenv("PROXY_USER");
-//      Map<String, String> env = System.getenv();
-//      Class<?> cl = env.getClass();
-//      Field field = null;
-//      try {
-//        field = cl.getDeclaredField("m");
-//      } catch (NoSuchFieldException e) {
-//        throw new RuntimeException(e);
-//      }
-//      field.setAccessible(true);
-//      Map<String, String> writableEnv = (Map<String, String>) field.get(env);
-//      writableEnv.put("GOOGLE_APPLICATION_CREDENTIALS", "/Users/richajajoo/Downloads/piyush-secretadmin-qa.json");
-//      System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
       if (isNotBlank(proxyUser)) {
         System.setProperty("http.proxyUser", proxyUser);
         System.setProperty("https.proxyUser", proxyUser);
@@ -119,8 +106,6 @@ public class DelegateApplication {
     } catch (RuntimeException | IOException exception) {
       log.error("Delegate process initialization failed", exception);
       throw exception;
-//    } catch (IllegalAccessException e) {
-//      throw new RuntimeException(e);
     }
   }
 
