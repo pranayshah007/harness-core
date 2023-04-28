@@ -89,7 +89,7 @@ public class GcpSecretManagerConnectorDTOTest extends CategoryTest {
     GcpSecretManagerConnectorDTO connectorDTO =
         GcpSecretManagerConnectorDTO.builder().credentialsRef(secretRefData).isDefault(false).build();
     Field[] fields = GcpSecretManagerConnectorDTO.class.getDeclaredFields();
-    assertThat(fields.length).isEqualTo(3);
+    assertThat(fields.length).isEqualTo(4);
     assertThat(connectorDTO).isNotNull();
     assertThat(SecretRefHelper.getSecretConfigString(connectorDTO.getCredentialsRef())).isEqualTo(secretRef);
     assertThat(connectorDTO.getDelegateSelectors()).isNull();
