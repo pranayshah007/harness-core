@@ -394,7 +394,6 @@ import software.wings.licensing.LicenseService;
 import software.wings.licensing.LicenseServiceImpl;
 import software.wings.provider.NoopDelegateConfigurationServiceProviderImpl;
 import software.wings.provider.NoopDelegatePropertiesServiceProviderImpl;
-import software.wings.ratelimit.DelegateRequestRateLimiter;
 import software.wings.resources.graphql.GraphQLRateLimiter;
 import software.wings.resources.graphql.GraphQLUtils;
 import software.wings.scheduler.BackgroundJobScheduler;
@@ -1233,7 +1232,6 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
     bind(GraphQLRateLimiter.class);
     bind(GraphQLUtils.class);
-    bind(DelegateRequestRateLimiter.class);
     bind(SamlUserGroupSync.class);
     bind(ScimUserService.class).to(ScimUserServiceImpl.class);
     bind(ScimGroupService.class).to(ScimGroupServiceImpl.class);

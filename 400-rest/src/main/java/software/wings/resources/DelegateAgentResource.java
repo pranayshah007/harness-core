@@ -75,7 +75,6 @@ import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse;
 import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
-import software.wings.ratelimit.DelegateRequestRateLimiter;
 import software.wings.security.annotations.Scope;
 import software.wings.service.impl.instance.InstanceHelper;
 import software.wings.service.intfc.AccountService;
@@ -122,7 +121,6 @@ public class DelegateAgentResource {
   private DelegateService delegateService;
   private AccountService accountService;
   private HPersistence persistence;
-  private DelegateRequestRateLimiter delegateRequestRateLimiter;
   private SubdomainUrlHelperIntfc subdomainUrlHelper;
   private ArtifactCollectionResponseHandler artifactCollectionResponseHandler;
   private InstanceHelper instanceHelper;
@@ -140,9 +138,8 @@ public class DelegateAgentResource {
 
   @Inject
   public DelegateAgentResource(DelegateService delegateService, AccountService accountService, HPersistence persistence,
-      DelegateRequestRateLimiter delegateRequestRateLimiter, SubdomainUrlHelperIntfc subdomainUrlHelper,
-      ArtifactCollectionResponseHandler artifactCollectionResponseHandler, InstanceHelper instanceHelper,
-      ManifestCollectionResponseHandler manifestCollectionResponseHandler,
+      SubdomainUrlHelperIntfc subdomainUrlHelper, ArtifactCollectionResponseHandler artifactCollectionResponseHandler,
+      InstanceHelper instanceHelper, ManifestCollectionResponseHandler manifestCollectionResponseHandler,
       ConnectorHearbeatPublisher connectorHearbeatPublisher, KryoSerializer kryoSerializer,
       ConfigurationController configurationController, FeatureFlagService featureFlagService,
       DelegateTaskServiceClassic delegateTaskServiceClassic, PollingResourceClient pollingResourceClient,
@@ -154,7 +151,6 @@ public class DelegateAgentResource {
     this.delegateService = delegateService;
     this.accountService = accountService;
     this.persistence = persistence;
-    this.delegateRequestRateLimiter = delegateRequestRateLimiter;
     this.subdomainUrlHelper = subdomainUrlHelper;
     this.artifactCollectionResponseHandler = artifactCollectionResponseHandler;
     this.manifestCollectionResponseHandler = manifestCollectionResponseHandler;
@@ -322,9 +318,6 @@ public class DelegateAgentResource {
     try (AutoLogContext ignore1 = new TaskLogContext(taskId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore3 = new DelegateLogContext(accountId, delegateId, delegateInstanceId, OVERRIDE_ERROR)) {
-      if (delegateRequestRateLimiter.isOverRateLimit(accountId, delegateId)) {
-        return null;
-      }
       return delegateTaskServiceClassic.acquireDelegateTask(accountId, delegateId, taskId, delegateInstanceId);
     }
   }
