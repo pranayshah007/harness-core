@@ -951,6 +951,12 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
   @Provides
   @Singleton
+  public int maxDocumentsToBeFetchedByMongoQueries() {
+    return configuration.getMongoConnectionFactory().getMaxDocumentsToBeFetched();
+  }
+
+  @Provides
+  @Singleton
   @Named("gcpConfig")
   public io.harness.ccm.commons.beans.config.GcpConfig noOpDummyConfig() {
     return io.harness.ccm.commons.beans.config.GcpConfig.builder().build();
