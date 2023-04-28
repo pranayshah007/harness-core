@@ -55,12 +55,15 @@
           value: "${grpcServiceEnabled}"
         - name: GRPC_SERVICE_CONNECTOR_PORT
           value: "${grpcServiceConnectorPort}"
+        - name:
 </#macro>
 <#macro immutable>
         - name: CLIENT_TOOLS_DOWNLOAD_DISABLED
           value: "true"
         - name: LOG_STREAMING_SERVICE_URL
           value: "${logStreamingServiceBaseUrl}"
+        - name: dynamicHandlingOfRequestEnabled
+          value: "${dynamicHandlingOfRequestEnabled}"
 </#macro>
 <#macro cgSpecific>
         - name: DELEGATE_PROFILE
