@@ -47,7 +47,7 @@ import software.wings.beans.sso.OauthSettings;
 import software.wings.dl.GenericDbCache;
 import software.wings.dl.WingsPersistence;
 import software.wings.licensing.LicenseService;
-import software.wings.security.saml.SSORequest;
+import io.harness.authenticationservice.beans.SSORequest;
 import software.wings.security.saml.SamlClientService;
 import software.wings.service.intfc.AuthService;
 

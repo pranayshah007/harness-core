@@ -19,7 +19,7 @@ import io.harness.ng.core.account.OauthProviderType;
 
 import software.wings.beans.sso.OauthSettings;
 import software.wings.security.authentication.AuthenticationUtils;
-import software.wings.security.saml.SSORequest;
+import io.harness.authenticationservice.beans.SSORequest;
 import software.wings.service.impl.SSOSettingServiceImpl;
 
 import com.google.common.collect.Lists;

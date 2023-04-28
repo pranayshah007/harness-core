@@ -60,7 +60,7 @@ import software.wings.beans.User;
 import software.wings.security.UserPermissionInfo;
 import software.wings.security.authentication.recaptcha.FailedLoginAttemptCountChecker;
 import software.wings.security.authentication.recaptcha.MaxLoginAttemptExceededException;
-import software.wings.security.saml.SSORequest;
+import io.harness.authenticationservice.beans.SSORequest;
 import software.wings.security.saml.SamlClientService;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AuthService;

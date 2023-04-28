@@ -58,7 +58,7 @@ import software.wings.security.authentication.oauth.OauthBasedAuthHandler;
 import software.wings.security.authentication.oauth.OauthOptions;
 import software.wings.security.authentication.recaptcha.FailedLoginAttemptCountChecker;
 import software.wings.security.authentication.recaptcha.MaxLoginAttemptExceededException;
-import software.wings.security.saml.SSORequest;
+import io.harness.authenticationservice.beans.SSORequest;
 import software.wings.security.saml.SamlClientService;
 import software.wings.service.impl.AuditServiceHelper;
 import software.wings.service.intfc.AccountService;
@@ -71,6 +71,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -170,6 +171,66 @@ public class AuthenticationManager {
     return getLoginTypeResponse(userName, null);
   }
 
+  public LoginTypeResponseV2 getLoginTypeResponseV2(String userName, String accountId) {
+    final LoginTypeResponseV2.LoginTypeResponseV2Builder builder = LoginTypeResponseV2.builder();
+    User user = null;
+    ArrayList<SSORequest> ssoRequests = new ArrayList<>();
+    try {
+      user = authenticationUtils.getUser(userName, USER);
+    } catch (WingsException ex) {
+      if (ex.getCode() == ErrorCode.USER_DOES_NOT_EXIST && mainConfiguration.getDeployMode() != null
+          && DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
+        return builder.authenticationMechanism(AuthenticationMechanism.USER_PASSWORD).build();
+      }
+      throw ex;
+    }
+
+    if (!DeployVariant.COMMUNITY.equals(deployVariant)) {
+      boolean showCaptcha = false;
+      try {
+        failedLoginAttemptCountChecker.check(user);
+      } catch (MaxLoginAttemptExceededException e) {
+        log.info("User exceeded max failed login attemts. {}", e.getMessage());
+        showCaptcha = true;
+      }
+
+      builder.showCaptcha(showCaptcha);
+    }
+
+    if (user.getAccounts().isEmpty()) {
+      return builder.authenticationMechanism(AuthenticationMechanism.USER_PASSWORD).build();
+    }
+
+    Account account = userService.getAccountByIdIfExistsElseGetDefaultAccount(
+        user, isEmpty(accountId) ? Optional.empty() : Optional.of(accountId));
+    io.harness.ng.core.account.AuthenticationMechanism authenticationMechanism = account.getAuthenticationMechanism();
+    if (null == authenticationMechanism) {
+      authenticationMechanism = AuthenticationMechanism.USER_PASSWORD;
+    }
+    builder.isOauthEnabled(account.isOauthEnabled());
+    if (account.isOauthEnabled()) {
+      ssoRequests.add(oauthOptions.createOauthSSORequest(account.getUuid()));
+    }
+
+    switch (authenticationMechanism) {
+      case USER_PASSWORD:
+        if (!user.isEmailVerified() && !DeployMode.isOnPrem(mainConfiguration.getDeployMode().getDeployedAs())) {
+          // HAR-7984: Return 401 http code if user email not verified yet.
+          throw new WingsException(EMAIL_NOT_VERIFIED, USER);
+        }
+        break;
+      case SAML:
+        ssoRequests.addAll(samlClientService.generateSamlRequestListFromAccount(account, false));
+        break;
+      case OAUTH:
+      case LDAP: // No need to build anything extra for the response.
+      default:
+        // Nothing to do by default
+    }
+    builder.ssoRequests(ssoRequests);
+    return builder.authenticationMechanism(authenticationMechanism).build();
+  }
+
   public LoginTypeResponse getLoginTypeResponseForOnPrem() {
     if (mainConfiguration.getDeployMode() != null && !DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
       throw new InvalidRequestException("This API should only be called for on-prem deployments.");
@@ -184,6 +245,22 @@ public class AuthenticationManager {
         () -> new InvalidRequestException("No Account found in the database"));
     User user = userService.getUsersOfAccount(account.getUuid()).get(0);
     return getLoginTypeResponse(urlDecode(user.getEmail()), account.getUuid());
+  }
+
+  public LoginTypeResponseV2 getLoginTypeResponseForOnPremV2() {
+    if (mainConfiguration.getDeployMode() != null && !DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
+      throw new InvalidRequestException("This API should only be called for on-prem deployments.");
+    }
+    if (accountService.doMultipleAccountsExist()) {
+      log.warn(
+          "On-prem deployments are expected to have exactly 1 account. Returning response for the primary account");
+    }
+    // It is assumed that an on-prem deployment has exactly 1 account
+    // as discussed with Vikas and Jesse
+    Account account = accountService.getOnPremAccount().orElseThrow(
+        () -> new InvalidRequestException("No Account found in the database"));
+    User user = userService.getUsersOfAccount(account.getUuid()).get(0);
+    return getLoginTypeResponseV2(urlDecode(user.getEmail()), account.getUuid());
   }
 
   public LoginTypeResponse getLoginTypeResponse(String userName, String accountId) {
