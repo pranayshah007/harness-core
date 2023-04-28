@@ -19,7 +19,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.entities.embedded.gcpsecretmanager.GcpSecretManagerConnector;
 import io.harness.connector.mappers.secretmanagermapper.GcpSecretManagerEntityToDTO;
 import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSecretManagerConnectorDTO;
-import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.rule.Owner;
 
