@@ -8,6 +8,7 @@
 package io.harness.delegate.task.artifacts.jenkins;
 
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
@@ -164,6 +165,43 @@ public class JenkinsRegistryServiceTest extends CategoryTest {
 
     verify(jenkinsRegistryUtils)
         .getBuildsForJob(jenkinsInternalConfig, jobName, Collections.singletonList("artifactPath"), 25);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testVerifyBuild() throws IOException {
+    String jobName = "FIS_Cleared_Derivatives_Core/NextGen/Build Custom Branch Images/keepbranch%2Fbo-development";
+    JenkinsConnectorDTO jenkinsConnectorDTO =
+        JenkinsConnectorDTO.builder()
+            .jenkinsUrl("https://Jenkins.com")
+            .auth(JenkinsAuthenticationDTO.builder()
+                      .authType(JenkinsAuthType.USER_PASSWORD)
+                      .credentials(JenkinsUserNamePasswordDTO.builder()
+                                       .username("CDC")
+                                       .passwordRef(SecretRefData.builder()
+                                                        .identifier("secret-ref")
+                                                        .decryptedValue("This is a secret".toCharArray())
+                                                        .build())
+                                       .build())
+                      .build())
+            .build();
+    JenkinsArtifactDelegateRequest jenkinsArtifactDelegateRequest =
+        JenkinsArtifactDelegateRequest.builder()
+            .artifactPaths(Collections.singletonList("artifactPath"))
+            .jobName(jobName)
+            .jenkinsConnectorDTO(jenkinsConnectorDTO)
+            .buildNumber("tag")
+            .build();
+    JenkinsInternalConfig jenkinsInternalConfig =
+        JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
+    when(jenkinsRegistryUtils.verifyBuildForJob(
+             jenkinsInternalConfig, jobName, Collections.singletonList("artifactPath"), "tag"))
+        .thenReturn(BuildDetails.Builder.aBuildDetails().build());
+    BuildDetails buildDetails = jenkinsRegistryService.verifyBuildForJob(
+        jenkinsInternalConfig, jobName, Collections.singletonList("artifactPath"), "tag");
+    assertThat(buildDetails).isNotNull();
+    verify(jenkinsRegistryUtils)
+        .verifyBuildForJob(jenkinsInternalConfig, jobName, Collections.singletonList("artifactPath"), "tag");
   }
 
   @Test

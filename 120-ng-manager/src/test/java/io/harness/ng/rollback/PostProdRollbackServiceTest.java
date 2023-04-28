@@ -52,9 +52,10 @@ public class PostProdRollbackServiceTest extends CategoryTest {
   @Mock private InstanceRepository instanceRepository;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock private PipelineServiceClient pipelineServiceClient;
-  ;
+
   @InjectMocks @Spy private PostProdRollbackServiceImpl postProdRollbackService;
-  String instanceUuid = "instanceUuid";
+  String instanceKey = "instanceUuid";
+  String infraMappingId = "instanceUuid";
   String accountId = "accountId";
   String planExecutionId = "planExecutionId";
   String orgId = "orgId";
@@ -71,36 +72,43 @@ public class PostProdRollbackServiceTest extends CategoryTest {
   public void testCheckIfRollbackAllowed() {
     doReturn(false).when(cdFeatureFlagHelper).isEnabled(accountId, FeatureName.POST_PROD_ROLLBACK);
 
-    assertThatThrownBy(() -> postProdRollbackService.checkIfRollbackAllowed(accountId, instanceUuid))
+    assertThatThrownBy(() -> postProdRollbackService.checkIfRollbackAllowed(accountId, instanceKey, infraMappingId))
         .isInstanceOf(InvalidRequestException.class);
 
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(accountId, FeatureName.POST_PROD_ROLLBACK);
-    doReturn(
-        Instance.builder().lastPipelineExecutionId(planExecutionId).stageStatus(Status.FAILED).id(instanceUuid).build())
+    doReturn(Instance.builder()
+                 .lastPipelineExecutionId(planExecutionId)
+                 .stageStatus(Status.FAILED)
+                 .infrastructureMappingId(infraMappingId)
+                 .id(instanceKey)
+                 .build())
         .when(instanceRepository)
-        .getById(instanceUuid);
+        .getInstanceByInstanceKeyAndInfrastructureMappingId(instanceKey, infraMappingId);
 
-    PostProdRollbackCheckDTO response = postProdRollbackService.checkIfRollbackAllowed(accountId, instanceUuid);
+    PostProdRollbackCheckDTO response =
+        postProdRollbackService.checkIfRollbackAllowed(accountId, instanceKey, infraMappingId);
     assertThat(response.isRollbackAllowed()).isFalse();
 
     doReturn(Instance.builder()
                  .stageStatus(Status.SUCCEEDED)
                  .instanceType(InstanceType.ASG_INSTANCE)
-                 .id(instanceUuid)
+                 .instanceKey(instanceKey)
+                 .infrastructureMappingId(infraMappingId)
                  .build())
         .when(instanceRepository)
-        .getById(instanceUuid);
-    response = postProdRollbackService.checkIfRollbackAllowed(accountId, instanceUuid);
+        .getInstanceByInstanceKeyAndInfrastructureMappingId(instanceKey, infraMappingId);
+    response = postProdRollbackService.checkIfRollbackAllowed(accountId, instanceKey, infraMappingId);
     assertThat(response.isRollbackAllowed()).isFalse();
 
     doReturn(Instance.builder()
                  .stageStatus(Status.SUCCEEDED)
                  .instanceType(InstanceType.K8S_INSTANCE)
-                 .id(instanceUuid)
+                 .instanceKey(instanceKey)
+                 .infrastructureMappingId(infraMappingId)
                  .build())
         .when(instanceRepository)
-        .getById(instanceUuid);
-    response = postProdRollbackService.checkIfRollbackAllowed(accountId, instanceUuid);
+        .getInstanceByInstanceKeyAndInfrastructureMappingId(instanceKey, infraMappingId);
+    response = postProdRollbackService.checkIfRollbackAllowed(accountId, instanceKey, infraMappingId);
     assertThat(response.isRollbackAllowed()).isTrue();
   }
 
@@ -118,7 +126,7 @@ public class PostProdRollbackServiceTest extends CategoryTest {
     mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(responseMap);
 
     doReturn(false).when(cdFeatureFlagHelper).isEnabled(accountId, FeatureName.POST_PROD_ROLLBACK);
-    assertThatThrownBy(() -> postProdRollbackService.checkIfRollbackAllowed(accountId, instanceUuid))
+    assertThatThrownBy(() -> postProdRollbackService.checkIfRollbackAllowed(accountId, instanceKey, infraMappingId))
         .isInstanceOf(InvalidRequestException.class);
 
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(accountId, FeatureName.POST_PROD_ROLLBACK);
@@ -126,7 +134,7 @@ public class PostProdRollbackServiceTest extends CategoryTest {
     doThrow(new InvalidRequestException("invalid request"))
         .when(pipelineServiceClient)
         .triggerPostExecutionRollback(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
-    assertThatThrownBy(() -> postProdRollbackService.triggerRollback(accountId, instanceUuid))
+    assertThatThrownBy(() -> postProdRollbackService.triggerRollback(accountId, instanceKey, infraMappingId))
         .isInstanceOf(InvalidRequestException.class);
 
     doReturn(null)
@@ -140,11 +148,13 @@ public class PostProdRollbackServiceTest extends CategoryTest {
                  .lastPipelineExecutionId(planExecutionId)
                  .stageStatus(Status.SUCCEEDED)
                  .instanceType(InstanceType.K8S_INSTANCE)
-                 .id(instanceUuid)
+                 .instanceKey(instanceKey)
+                 .infrastructureMappingId(infraMappingId)
                  .build())
         .when(instanceRepository)
-        .getById(instanceUuid);
-    PostProdRollbackResponseDTO response = postProdRollbackService.triggerRollback(accountId, instanceUuid);
+        .getInstanceByInstanceKeyAndInfrastructureMappingId(instanceKey, infraMappingId);
+    PostProdRollbackResponseDTO response =
+        postProdRollbackService.triggerRollback(accountId, instanceKey, infraMappingId);
 
     verify(pipelineServiceClient, times(1))
         .triggerPostExecutionRollback(

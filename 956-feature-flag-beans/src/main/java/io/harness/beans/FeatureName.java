@@ -463,8 +463,6 @@ public enum FeatureName {
   SPG_OPTIMIZE_ENVIRONMENT_VIEW_BUILDER(
       "Optimizes environment view builder queries for workflowExecutions", HarnessTeam.SPG),
   CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC),
-  SRM_HOST_SAMPLING_ENABLE("Enables Host Sampling feature for Learning Engine.", HarnessTeam.CV),
-  SRM_LOG_HOST_SAMPLING_ENABLE("Enables Host Sampling for log for Learning Engine.", HarnessTeam.CV),
   CDS_SHOW_CREATE_PR("Start showing CreatePR step on the plan creator if enabled", HarnessTeam.GITOPS),
   SPG_PIPELINE_ROLLBACK("Enables pipeline rollback on failure option", HarnessTeam.SPG),
   PL_FORCE_DELETE_CONNECTOR_SECRET(
@@ -573,7 +571,6 @@ public enum FeatureName {
   NG_K8_COMMAND_FLAGS("Added Support for adding Command flags to K8s commands. PM Rohan", HarnessTeam.CDP),
   CD_NG_DOCKER_ARTIFACT_DIGEST(
       "Use SHA256 digest as optional parameter for docker image artifact config", HarnessTeam.SPG),
-  CDS_FORCE_DELETE_ENTITIES("Enables force delete of entities irrespective of existing references.", HarnessTeam.CDC),
   CDP_PUBLISH_INSTANCE_STATS_FOR_ENV_NG(
       "Publish instance stats at environment granularity in NG. PM Rohan", HarnessTeam.CDP),
   DEPLOYMENT_RECONCILIATION_LOGIC_QUERY_OPTIMIZATIONS(
@@ -729,9 +726,13 @@ public enum FeatureName {
   CDS_STAGE_EXECUTION_DATA_SYNC(
       "This flag controls if you want CD Stage execution data saved in cd service and eventually synced to timescale",
       HarnessTeam.CDC),
+  CHAOS_DASHBOARD_ENABLED("Enables chaos dashboards in CHAOS module", HarnessTeam.CHAOS),
   PL_NEW_PAGE_SIZE(
       "Enables new default page size for several listing pages like pipelines, access control, executions, connectors, etc.",
-      HarnessTeam.PL);
+      HarnessTeam.PL),
+  CDS_SUPPORT_TICKET_DEFLECTION("Enable api to create zendesk ticket and for generating coveo token", HarnessTeam.CDP),
+  SRM_SPLUNK_SIGNALFX("Will enable SignalFX metric health source in SRM", HarnessTeam.CV),
+  CI_USE_S3_FOR_CACHE("Use S3 bucket for cache intelligence instead of GCP", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {

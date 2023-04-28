@@ -114,6 +114,27 @@ public class RuntimeInputFormHelper {
 
     return new YamlConfig(templateMap, yamlConfig.getYamlMap());
   }
+  public Map<FQN, Object> getRuntimeInputFormYamlConfig(YamlConfig pipelineTemplate, YamlConfig inputSet) {
+    Map<FQN, Object> fullMap = pipelineTemplate.getFqnToValueMap();
+    Map<FQN, Object> templateMap = new LinkedHashMap<>();
+    fullMap.keySet().forEach(key -> {
+      String value = HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(fullMap.get(key).toString());
+      if (NGExpressionUtils.matchesExecutionInputPattern(value)
+          || NGExpressionUtils.matchesInputSetPattern(value) && !key.isType()) {
+        templateMap.put(key, fullMap.get(key));
+      }
+    });
+    Map<FQN, Object> inputValueMap = inputSet.getFqnToValueMap();
+    Map<FQN, Object> inputKeyValueMap = new LinkedHashMap<>();
+    inputValueMap.keySet().forEach(key -> {
+      if (templateMap.containsKey(key)) {
+        String value = HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(inputValueMap.get(key).toString());
+        inputKeyValueMap.put(key, value);
+      }
+    });
+
+    return inputKeyValueMap;
+  }
 
   public YamlConfig createRuntimeInputFormYamlConfig(YamlConfig pipeline, YamlConfig inputsConfig, boolean keepInput) {
     Map<FQN, Object> inputsFqnToValueMap = inputsConfig.getFqnToValueMap();

@@ -188,4 +188,9 @@ public class AzureArtifactsConfig implements ArtifactConfig, Visitable, WithConn
 
     return connectorRefMap;
   }
+
+  @Override
+  public void validate() {
+    ArtifactConfigHelper.checkVersionAndVersionRegex(version, versionRegex);
+  }
 }

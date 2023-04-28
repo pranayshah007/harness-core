@@ -7,6 +7,7 @@
 
 package io.harness.pms.approval.servicenow;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.exception.WingsException.USER_SRE;
 
@@ -72,7 +73,7 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
 
     if (instance.hasExpired()) {
       updateApprovalInstanceAndLog(logCallback, "Approval instance has expired", LogColor.Red,
-          CommandExecutionStatus.FAILURE, ApprovalStatus.EXPIRED, instance.getId());
+          CommandExecutionStatus.RUNNING, ApprovalStatus.EXPIRED, instance.getId());
     }
 
     ServiceNowTaskNGResponse serviceNowTaskNGResponse;
@@ -88,11 +89,11 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
         return;
       }
       serviceNowTaskNGResponse = (ServiceNowTaskNGResponse) responseData;
-      if (isNull(serviceNowTaskNGResponse.getTicket())) {
-        log.info("Invalid ticket number");
-        String errorMessage = String.format("Invalid ticket number: %s", instance.getTicketNumber());
-        logCallback.saveExecutionLog(
-            LogHelper.color(errorMessage, LogColor.Red), LogLevel.INFO, CommandExecutionStatus.FAILURE);
+      if (isNull(serviceNowTaskNGResponse.getTicket()) || isEmpty(serviceNowTaskNGResponse.getTicket().getFields())) {
+        log.info("Failed to fetch ticket. Ticket number might be invalid.");
+        String errorMessage =
+            String.format("Failed to fetch ticket. Ticket number might be invalid: %s", instance.getTicketNumber());
+        logCallback.saveExecutionLog(LogHelper.color(errorMessage, LogColor.Red), LogLevel.ERROR);
         approvalInstanceService.finalizeStatus(instance.getId(), ApprovalStatus.FAILED, errorMessage);
         return;
       }
@@ -101,7 +102,8 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
       logCallback.saveExecutionLog(
           LogHelper.color(String.format("Error fetching serviceNow ticket response: %s. Retrying in sometime...",
                               ExceptionUtils.getMessage(ex)),
-              LogColor.Red));
+              LogColor.Red),
+          LogLevel.ERROR);
       log.error("Failed to fetch serviceNow ticket", ex);
       return;
     }
@@ -127,10 +129,10 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
         return;
       }
 
-      logCallback.saveExecutionLog(
-          LogHelper.color(String.format("Error evaluating approval/rejection criteria: %s. Retrying in sometime...",
-                              ngErrorHelper.getErrorSummary(ex.getMessage())),
-              LogColor.Red));
+      logCallback.saveExecutionLog(LogHelper.color(String.format("Error evaluating approval/rejection criteria: %s.",
+                                                       ngErrorHelper.getErrorSummary(ex.getMessage())),
+                                       LogColor.Red),
+          LogLevel.ERROR);
       throw new ServiceNowException(
           "Error while evaluating approval/rejection criteria", ErrorCode.SERVICENOW_ERROR, USER_SRE, ex);
     }
@@ -159,8 +161,7 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
     log.error("Error while evaluating approval/rejection/change window criteria", ex);
     String errorMessage = String.format("Fatal error evaluating approval/rejection/change window criteria: %s",
         ngErrorHelper.getErrorSummary(ex.getMessage()));
-    logCallback.saveExecutionLog(
-        LogHelper.color(errorMessage, LogColor.Red), LogLevel.INFO, CommandExecutionStatus.FAILURE);
+    logCallback.saveExecutionLog(LogHelper.color(errorMessage, LogColor.Red), LogLevel.ERROR);
     approvalInstanceService.finalizeStatus(instance.getId(), ApprovalStatus.FAILED, errorMessage);
   }
 }

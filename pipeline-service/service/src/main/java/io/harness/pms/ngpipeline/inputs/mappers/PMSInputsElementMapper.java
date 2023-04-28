@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.ngpipeline.inputs.beans.entity.InputEntity;
-import io.harness.pms.ngpipeline.inputs.beans.entity.RepositoryInput;
+import io.harness.pms.ngpipeline.inputs.beans.entity.OptionsInput;
 import io.harness.spec.server.pipeline.v1.model.InputsResponseBody;
 
 import java.util.Map;
@@ -20,11 +20,10 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class PMSInputsElementMapper {
-  public InputsResponseBody inputsResponseDTOPMS(
-      Map<String, InputEntity> inputEntityMap, RepositoryInput repositoryInput) {
+  public InputsResponseBody inputsResponseDTOPMS(Map<String, InputEntity> inputEntityMap, OptionsInput optionsInput) {
     InputsResponseBody inputsResponseBody = new InputsResponseBody();
     inputsResponseBody.setInputs(inputEntityMap);
-    inputsResponseBody.setRepository(repositoryInput);
+    inputsResponseBody.setOptions(optionsInput);
     return inputsResponseBody;
   }
 }

@@ -26,7 +26,6 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntityGetResponse;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.template.yaml.TemplateRefHelper;
-import io.harness.template.yaml.TemplateYamlFacade;
 import io.harness.template.yaml.TemplateYamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -51,8 +50,6 @@ public class TemplateInputsRefreshHelper {
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
   @Inject private NGTemplateFeatureFlagHelperService featureFlagHelperService;
   @Inject private NgManagerReconcileClient ngManagerReconcileClient;
-  @Inject private TemplateYamlFacade templateYamlFacade;
-
   // Returns the refreshed YAML when a YAML String is passed.
   public String refreshTemplates(String accountId, String orgId, String projectId, String yaml, boolean loadFromCache) {
     // Case -> empty YAML, cannot refresh
@@ -77,12 +74,12 @@ public class TemplateInputsRefreshHelper {
         getRefreshedTemplateInputsMap(accountId, orgId, projectId, yamlNode, templateCacheMap, loadFromCache);
 
     // Returning the Refreshed YAML corresponding to the ResMap
-    String inputsRefreshYaml = templateYamlFacade.writeYamlString(refreshedTemplateInputsMap);
+    String inputsRefreshYaml = TemplateYamlUtils.writeYamlString(refreshedTemplateInputsMap);
     String resolvedTemplatesYaml = inputsRefreshYaml;
     if (TemplateRefHelper.hasTemplateRef(yaml)) {
       Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
           accountId, orgId, projectId, yamlNode, templateCacheMap, 0, loadFromCache, false);
-      resolvedTemplatesYaml = templateYamlFacade.writeYamlString(resolvedTemplatesMap);
+      resolvedTemplatesYaml = TemplateYamlUtils.writeYamlString(resolvedTemplatesMap);
     }
     RefreshResponseDTO ngManagerRefreshResponseDto =
         NGRestUtils.getResponse(ngManagerReconcileClient.refreshYaml(accountId, orgId, projectId,

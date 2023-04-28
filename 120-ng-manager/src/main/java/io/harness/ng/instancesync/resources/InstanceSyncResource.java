@@ -15,6 +15,7 @@ import io.harness.delegate.beans.instancesync.InstanceSyncPerpetualTaskResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.perpetualtask.instancesync.InstanceSyncResponseV2;
 import io.harness.perpetualtask.instancesync.InstanceSyncTaskDetails;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.service.instancesync.InstanceSyncService;
@@ -51,6 +52,8 @@ import retrofit2.http.GET;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class InstanceSyncResource {
+  private static final String LOG_ERROR_TEMPLATE =
+      "Received instance sync perpetual task response for accountId : {} and perpetualTaskId : {} : {}";
   private final InstanceSyncService instanceSyncService;
 
   @POST
@@ -62,10 +65,24 @@ public class InstanceSyncResource {
       @Body DelegateResponseData delegateResponseData) {
     InstanceSyncPerpetualTaskResponse instanceSyncPerpetualTaskResponse =
         (InstanceSyncPerpetualTaskResponse) delegateResponseData;
-    log.info("Received instance sync perpetual task response for accountId : {} and perpetualTaskId : {} : {}",
-        accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse.toString());
+    log.info(LOG_ERROR_TEMPLATE, accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse.toString());
     instanceSyncService.processInstanceSyncByPerpetualTask(
         accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse);
+    return ResponseDTO.newResponse(Boolean.TRUE);
+  }
+
+  @POST
+  @Path("/v3/response")
+  @ApiOperation(
+      value = "Get instance sync perpetual task v2 response", nickname = "getInstanceSyncPerpetualTaskV2Response")
+  public ResponseDTO<Boolean>
+  processInstanceSyncPerpetualTaskV2Response(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PERPETUAL_TASK_ID) String perpetualTaskId,
+      @Body InstanceSyncResponseV2 instanceSyncResponseV2) {
+    log.info(LOG_ERROR_TEMPLATE, accountIdentifier, perpetualTaskId, instanceSyncResponseV2.toString());
+    instanceSyncService.processInstanceSyncByPerpetualTaskV2(
+        accountIdentifier, perpetualTaskId, instanceSyncResponseV2);
     return ResponseDTO.newResponse(Boolean.TRUE);
   }
 
@@ -93,8 +110,7 @@ public class InstanceSyncResource {
       @Body DelegateResponseData delegateResponseData) {
     InstanceSyncPerpetualTaskResponse instanceSyncPerpetualTaskResponse =
         (InstanceSyncPerpetualTaskResponse) delegateResponseData;
-    log.info("Received instance sync perpetual task response for accountId : {} and perpetualTaskId : {} : {}",
-        accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse.toString());
+    log.info(LOG_ERROR_TEMPLATE, accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse.toString());
     instanceSyncService.processInstanceSyncByPerpetualTask(
         accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse);
     return ResponseDTO.newResponse(Boolean.TRUE);

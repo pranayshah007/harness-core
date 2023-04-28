@@ -13,6 +13,12 @@ import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIF
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_ARTIFACT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_ARTIFACT_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_ARTIFACT_HINT_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_CONFIG_FILE;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_CONFIG_FILE_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_SSH_CONFIG_FILE_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.INVALID_STORE_DELEGATE_CONFIG_TYPE_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.INVALID_STORE_DELEGATE_CONFIG_TYPE_FAILED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.INVALID_STORE_DELEGATE_CONFIG_TYPE_HINT;
@@ -134,8 +140,11 @@ public class SshCopyCommandHandler implements CommandHandler {
       result = executor.copyFiles(context);
       executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);
       if (result == CommandExecutionStatus.FAILURE) {
-        log.error(
-            "Failed to copy artifact with id: " + sshCommandTaskParameters.getArtifactDelegateConfig().getIdentifier());
+        String artifactId = sshCommandTaskParameters.getArtifactDelegateConfig().getIdentifier();
+        log.error("Failed to copy artifact with id: " + artifactId);
+        throw NestedExceptionUtils.hintWithExplanationException(FAILED_TO_COPY_ARTIFACT_HINT,
+            format(FAILED_TO_COPY_ARTIFACT_HINT_EXPLANATION, artifactId, copyCommandUnit.getDestinationPath()),
+            new SshCommandExecutionException(format(FAILED_TO_COPY_ARTIFACT, artifactId)));
       }
       return ExecuteCommandResponse.builder().status(result).build();
     }
@@ -169,7 +178,10 @@ public class SshCopyCommandHandler implements CommandHandler {
         result = executor.copyConfigFiles(context.getEvaluatedDestinationPath(), configFile);
         if (result == CommandExecutionStatus.FAILURE) {
           log.error("Failed to copy config file: " + configFile.getFileName());
-          break;
+          executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);
+          throw NestedExceptionUtils.hintWithExplanationException(FAILED_TO_COPY_SSH_CONFIG_FILE_HINT,
+              format(FAILED_TO_COPY_CONFIG_FILE_EXPLANATION, configFile.getFileName(), configFile.getDestinationPath()),
+              new SshCommandExecutionException(format(FAILED_TO_COPY_CONFIG_FILE, configFile.getFileName())));
         }
       }
       executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);

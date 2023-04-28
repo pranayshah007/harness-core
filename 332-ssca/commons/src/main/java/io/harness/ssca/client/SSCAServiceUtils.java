@@ -10,12 +10,15 @@ package io.harness.ssca.client;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
+import io.harness.ssca.beans.SscaExecutionConstants;
 import io.harness.ssca.beans.entities.SSCAServiceConfig;
 import io.harness.ssca.client.beans.SscaAuthToken;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -63,5 +66,24 @@ public class SSCAServiceUtils {
     }
 
     return response.body().getToken();
+  }
+
+  public Map<String, String> getSSCAServiceEnvVariables(String accountId, String orgId, String projectId) {
+    Map<String, String> envVars = new HashMap<>();
+    final String sscaServiceBaseUrl = sscaServiceConfig.getHttpClientConfig().getBaseUrl();
+
+    String sscaServiceToken = "token";
+
+    // Make a call to the SSCA service and get back the token.
+    try {
+      sscaServiceToken = getSscaServiceToken(accountId, orgId, projectId);
+    } catch (Exception e) {
+      log.error("Could not call token endpoint for SSCA service", e);
+    }
+
+    envVars.put(SscaExecutionConstants.SSCA_SERVICE_TOKEN_VARIABLE, sscaServiceToken);
+    envVars.put(SscaExecutionConstants.SSCA_SERVICE_ENDPOINT_VARIABLE, sscaServiceBaseUrl);
+
+    return envVars;
   }
 }

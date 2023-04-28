@@ -1913,6 +1913,9 @@ public class AccountServiceImpl implements AccountService {
   public Account updateAccountName(String accountId, String accountName, String companyName) {
     notNullCheck("Account name can not be set to null!", accountName);
     validateName(accountName);
+    if (null != getByAccountName(accountName)) {
+      throw new InvalidRequestException("An account with same name already exists. Please use a different name.");
+    }
     UpdateOperations<Account> updateOperations = wingsPersistence.createUpdateOperations(Account.class);
     updateOperations.set(AccountKeys.accountName, accountName);
     if (isNotEmpty(companyName)) {

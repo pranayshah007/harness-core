@@ -31,5 +31,5 @@ public class SLOConsumptionBreakdown {
   String orgName;
   String projectName;
 
-  boolean failedState;
+  SLOError sloError;
 }

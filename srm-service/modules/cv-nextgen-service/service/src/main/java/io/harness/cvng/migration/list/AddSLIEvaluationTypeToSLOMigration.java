@@ -37,9 +37,14 @@ public class AddSLIEvaluationTypeToSLOMigration implements CVNGMigration {
         AbstractServiceLevelObjective serviceLevelObjective = iterator.next();
         UpdateOperations<AbstractServiceLevelObjective> updateOperations =
             hPersistence.createUpdateOperations(AbstractServiceLevelObjective.class);
-        updateOperations.set(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.sliEvaluationType,
-            serviceLevelObjectiveV2Service.getEvaluationType(serviceLevelObjective));
-        hPersistence.update(serviceLevelObjective, updateOperations);
+        try {
+          updateOperations.set(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.sliEvaluationType,
+              serviceLevelObjectiveV2Service.getEvaluationType(serviceLevelObjective));
+          hPersistence.update(serviceLevelObjective, updateOperations);
+        } catch (Exception e) {
+          log.error("Couldn't update SLIEvaluationType for SLO with sloId {}. Exception Caused: {}",
+              serviceLevelObjective.getUuid(), e.getMessage());
+        }
       }
     }
     log.info("Updated SLOs to SLIEvaluationType from null");

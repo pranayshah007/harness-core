@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import lombok.Builder;
 import lombok.Getter;
 
-@OwnedBy(HarnessTeam.DX)
+@OwnedBy(HarnessTeam.CDP)
 @Getter
 @Builder
 public class PostProdRollbackCheckDTO {

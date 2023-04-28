@@ -758,7 +758,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return fetchStageDetailFromNodeExecution(fetchStageExecutions(planExecutionId));
   }
 
-  private List<NodeExecution> fetchStageExecutions(String planExecutionId) {
+  @Override
+  public List<NodeExecution> fetchStageExecutions(String planExecutionId) {
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
                       .addCriteria(where(NodeExecutionKeys.status).ne(Status.SKIPPED))
                       .addCriteria(where(NodeExecutionKeys.stepCategory).in(StepCategory.STAGE, StepCategory.STRATEGY));

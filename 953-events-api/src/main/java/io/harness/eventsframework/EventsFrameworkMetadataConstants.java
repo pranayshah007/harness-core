@@ -98,4 +98,7 @@ public final class EventsFrameworkMetadataConstants {
   // CCM
   public static final String CCM_FOLDER = "ccmFolder";
   public static final String CCM_RULE = "ccmRule";
+
+  // IDP
+  public static final String ASYNC_CATALOG_IMPORT_ENTITY = "asyncCatalogImport";
 }

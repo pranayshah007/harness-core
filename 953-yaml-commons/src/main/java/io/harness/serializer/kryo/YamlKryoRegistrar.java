@@ -13,6 +13,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.customDeployment.StepTemplateRef;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.yaml.clone.Clone;
+import io.harness.yaml.clone.Ref;
+import io.harness.yaml.clone.RefType;
+import io.harness.yaml.clone.Strategy;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.NumberNGVariable;
 import io.harness.yaml.core.variables.SecretNGVariable;
@@ -26,12 +30,10 @@ import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.PRBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 import io.harness.yaml.extended.ci.container.ContainerResource;
+import io.harness.yaml.options.Options;
 import io.harness.yaml.registry.Registry;
 import io.harness.yaml.registry.RegistryCredential;
-import io.harness.yaml.repository.Reference;
-import io.harness.yaml.repository.ReferenceType;
 import io.harness.yaml.repository.Repository;
-import io.harness.yaml.repository.Strategy;
 
 import com.esotericsoftware.kryo.Kryo;
 
@@ -56,10 +58,12 @@ public class YamlKryoRegistrar implements KryoRegistrar {
     kryo.register(BuildType.class, 88509);
     kryo.register(PRCloneStrategy.class, 88510);
     kryo.register(Repository.class, 88511);
-    kryo.register(Reference.class, 88512);
-    kryo.register(ReferenceType.class, 88513);
+    kryo.register(Ref.class, 88512);
+    kryo.register(RefType.class, 88513);
     kryo.register(Strategy.class, 88514);
     kryo.register(Registry.class, 88515);
     kryo.register(RegistryCredential.class, 88516);
+    kryo.register(Options.class, 88517);
+    kryo.register(Clone.class, 88518);
   }
 }

@@ -109,12 +109,13 @@ public class RollbackModeExecutionHelper {
   }
 
   public PlanExecutionMetadata transformPlanExecutionMetadata(PlanExecutionMetadata planExecutionMetadata,
-      String planExecutionID, ExecutionMode executionMode, List<String> stageNodeExecutionIds) {
+      String planExecutionID, ExecutionMode executionMode, List<String> stageNodeExecutionIds, String updatedNotes) {
     String originalPlanExecutionId = planExecutionMetadata.getPlanExecutionId();
     PlanExecutionMetadata metadata =
         planExecutionMetadata.withPlanExecutionId(planExecutionID)
             .withProcessedYaml(transformProcessedYaml(
                 planExecutionMetadata.getProcessedYaml(), executionMode, originalPlanExecutionId))
+            .withNotes(updatedNotes) // these are updated notes given for a pipelineRollback.
             .withUuid(null); // this uuid is the mongo uuid. It is being set as null so that when this Plan Execution
                              // Metadata is saved later on in the execution, a new object is stored rather than
                              // replacing the Metadata for the original execution

@@ -96,7 +96,7 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /900-git-sync-sdk/src/main/ mohit.garg@harness.io adithya.viswanathan@harness.io archit.singla@harness.io
 /952-scm-java-client/src/main/ mohit.garg@harness.io adithya.viswanathan@harness.io archit.singla@harness.io
 /953-git-sync-commons/src/main/ mohit.garg@harness.io adithya.viswanathan@harness.io archit.singla@harness.io
-/idp-service/ deep.sengupta@harness.io prashant.pal@harness.io vikyath.harekal@harness.io
+/idp-service/ deep.sengupta@harness.io sandeepa.kv@harness.io vikyath.harekal@harness.io
 
 **/contracts/openapi/v1/ mankrit.singh@harness.io vaibhav.si@harness.io ashish.sanodia@harness.io deepak.bolangady@harness.io rashmi.nandasahoo@harness.io
 /scripts/api mankrit.singh@harness.io vaibhav.si@harness.io ashish.sanodia@harness.io

@@ -52,7 +52,7 @@ public class GitlabSCMMapper
         .build();
   }
 
-  GitlabApiAccess toApiAccess(GitlabApiAccessSpecDTO spec, GitlabApiAccessType apiAccessType) {
+  public GitlabApiAccess toApiAccess(GitlabApiAccessSpecDTO spec, GitlabApiAccessType apiAccessType) {
     switch (apiAccessType) {
       case OAUTH:
         final GitlabOauthDTO oauthDTO = (GitlabOauthDTO) spec;

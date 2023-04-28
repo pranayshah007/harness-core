@@ -187,8 +187,8 @@ public class PlanCreatorMergeService {
       if (planExecutionMetadata.getTriggerPayload() != null) {
         builder.setTriggerPayload(planExecutionMetadata.getTriggerPayload());
       }
-      Dependency globalDependency = PlanCreatorUtils.createGlobalDependency(kryoSerializer, pipelineVersion,
-          planExecutionMetadata.getProcessedYaml(), planExecutionMetadata.getInputSetYaml());
+      Dependency globalDependency = PlanCreatorUtils.createGlobalDependency(
+          kryoSerializer, pipelineVersion, planExecutionMetadata.getProcessedYaml());
       if (globalDependency != null) {
         builder.setGlobalDependency(globalDependency);
       }

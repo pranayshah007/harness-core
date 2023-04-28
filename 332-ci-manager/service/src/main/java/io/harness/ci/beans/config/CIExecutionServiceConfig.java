@@ -27,6 +27,7 @@ public class CIExecutionServiceConfig extends ExecutionServiceConfig {
   String ciImageTag;
   CIStepConfig stepConfig;
   CICacheIntelligenceConfig cacheIntelligenceConfig;
+  CICacheIntelligenceS3Config cacheIntelligenceS3Config;
   ExecutionLimits executionLimits;
   QueueServiceClientConfig queueServiceClientConfig;
   HostedVmConfig hostedVmConfig;
@@ -40,7 +41,8 @@ public class CIExecutionServiceConfig extends ExecutionServiceConfig {
   public CIExecutionServiceConfig(String addonImageTag, String liteEngineImageTag, String defaultInternalImageConnector,
       String delegateServiceEndpointVariableValue, Integer defaultMemoryLimit, Integer defaultCPULimit,
       Integer pvcDefaultStorageSize, String addonImage, String liteEngineImage, boolean isLocal, String ciImageTag,
-      CIStepConfig stepConfig, CICacheIntelligenceConfig cacheIntelligenceConfig, ExecutionLimits executionLimits,
+      CIStepConfig stepConfig, CICacheIntelligenceConfig cacheIntelligenceConfig,
+      CICacheIntelligenceS3Config cacheIntelligenceS3Config, ExecutionLimits executionLimits,
       QueueServiceClientConfig queueServiceClientConfig, HostedVmConfig hostedVmConfig, STOStepConfig stoStepConfig,
       Integer remoteDebugTimeout, CIDockerLayerCachingConfig dockerLayerCachingConfig) {
     super(addonImageTag, liteEngineImageTag, defaultInternalImageConnector, delegateServiceEndpointVariableValue,
@@ -48,6 +50,7 @@ public class CIExecutionServiceConfig extends ExecutionServiceConfig {
     this.ciImageTag = ciImageTag;
     this.stepConfig = stepConfig;
     this.cacheIntelligenceConfig = cacheIntelligenceConfig;
+    this.cacheIntelligenceS3Config = cacheIntelligenceS3Config;
     this.executionLimits = executionLimits;
     this.stoStepConfig = stoStepConfig;
     this.queueServiceClientConfig = queueServiceClientConfig;

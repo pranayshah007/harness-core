@@ -13,6 +13,7 @@ import static io.harness.pms.contracts.execution.Status.INTERVENTION_WAITING;
 import static io.harness.pms.execution.utils.StatusUtils.retryableStatuses;
 
 import io.harness.advisers.CommonAdviserTypes;
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackAdviser;
 import io.harness.advisers.rollback.OnFailRollbackOutput;
 import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,6 +29,7 @@ import io.harness.pms.contracts.advisers.MarkSuccessAdvise;
 import io.harness.pms.contracts.advisers.NextStepAdvise;
 import io.harness.pms.contracts.advisers.RetryAdvise;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -51,6 +53,7 @@ import lombok.extern.slf4j.Slf4j;
 public class RetryAdviserWithRollback implements Adviser {
   @Inject private KryoSerializer kryoSerializer;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject OnFailPipelineRollbackAdviser onFailPipelineRollbackAdviser;
 
   public static final AdviserType ADVISER_TYPE =
       AdviserType.newBuilder().setType(CommonAdviserTypes.RETRY_WITH_ROLLBACK.name()).build();
@@ -71,7 +74,7 @@ public class RetryAdviserWithRollback implements Adviser {
                   .build())
           .build();
     }
-    return handlePostRetry(parameters, advisingEvent.getAmbiance());
+    return handlePostRetry(parameters, advisingEvent.getAmbiance(), advisingEvent.getToStatus());
   }
 
   @Override
@@ -86,7 +89,8 @@ public class RetryAdviserWithRollback implements Adviser {
     return canAdvise;
   }
 
-  private AdviserResponse handlePostRetry(RetryAdviserRollbackParameters parameters, Ambiance ambiance) {
+  private AdviserResponse handlePostRetry(
+      RetryAdviserRollbackParameters parameters, Ambiance ambiance, Status toStatus) {
     AdviserResponse.Builder adviserResponseBuilder =
         AdviserResponse.newBuilder().setRepairActionCode(parameters.getRepairActionCodeAfterRetry());
     switch (parameters.getRepairActionCodeAfterRetry()) {
@@ -95,6 +99,7 @@ public class RetryAdviserWithRollback implements Adviser {
             .setInterventionWaitAdvise(
                 InterventionWaitAdvise.newBuilder()
                     .setTimeout(Duration.newBuilder().setSeconds(java.time.Duration.ofDays(1).toMinutes() * 60).build())
+                    .setFromStatus(toStatus)
                     .build())
             .setType(AdviseType.INTERVENTION_WAIT)
             .build();
@@ -140,6 +145,8 @@ public class RetryAdviserWithRollback implements Adviser {
             .setMarkAsFailureAdvise(builder.build())
             .setType(AdviseType.MARK_AS_FAILURE)
             .build();
+      case PIPELINE_ROLLBACK:
+        return onFailPipelineRollbackAdviser.onAdviseEvent(AdvisingEvent.builder().ambiance(ambiance).build());
       default:
         throw new IllegalStateException("Unexpected value: " + parameters.getRepairActionCodeAfterRetry());
     }

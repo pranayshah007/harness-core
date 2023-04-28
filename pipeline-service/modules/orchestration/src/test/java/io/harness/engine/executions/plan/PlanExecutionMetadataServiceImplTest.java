@@ -20,7 +20,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.repositories.PlanExecutionMetadataRepository;
 import io.harness.rule.Owner;
-import io.harness.testlib.RealMongo;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -34,7 +33,7 @@ public class PlanExecutionMetadataServiceImplTest extends OrchestrationTestBase 
   @Inject private PlanExecutionMetadataService planExecutionMetadataService;
 
   @Test
-  @RealMongo
+
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void findByPlanExecutionId() {
@@ -49,7 +48,7 @@ public class PlanExecutionMetadataServiceImplTest extends OrchestrationTestBase 
   }
 
   @Test
-  @RealMongo
+
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void save() {

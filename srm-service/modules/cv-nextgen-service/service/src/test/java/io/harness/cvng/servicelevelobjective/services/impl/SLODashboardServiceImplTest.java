@@ -1541,7 +1541,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(sloGraphData1.getErrorBudgetBurned());
     assertThat(sloBreakdown.getSliStatusPercentage()).isEqualTo(sloGraphData1.getSliStatusPercentage());
     assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(1);
-    assertThat(sloBreakdown.isFailedState()).isEqualTo(false);
+    assertThat(sloBreakdown.getSloError().isFailedState()).isEqualTo(false);
 
     sloBreakdown = sloConsumptionBreakdownList.get(1);
     assertThat(sloBreakdown.getSloIdentifier()).isEqualTo(serviceLevelObjectiveV2DTO2.getIdentifier());
@@ -1555,7 +1555,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloBreakdown.getSliStatusPercentage()).isEqualTo(sloGraphData2.getSliStatusPercentage());
     assertThat(sloBreakdown.getProjectParams()).isEqualTo(builderFactory.getProjectParams());
     assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(2);
-    assertThat(sloBreakdown.isFailedState()).isEqualTo(false);
+    assertThat(sloBreakdown.getSloError().isFailedState()).isEqualTo(false);
   }
 
   @Test

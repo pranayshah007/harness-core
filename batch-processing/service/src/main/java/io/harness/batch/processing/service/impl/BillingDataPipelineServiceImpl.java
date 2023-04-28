@@ -19,6 +19,8 @@ import io.harness.ccm.commons.entities.billing.BillingDataPipelineRecord;
 import software.wings.beans.Account;
 
 import com.google.api.gax.core.FixedCredentialsProvider;
+import com.google.api.gax.rpc.FixedHeaderProvider;
+import com.google.api.gax.rpc.HeaderProvider;
 import com.google.auth.Credentials;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
@@ -43,6 +45,7 @@ import com.google.cloud.bigquery.datatransfer.v1.StartManualTransferRunsRequest;
 import com.google.cloud.bigquery.datatransfer.v1.TransferConfig;
 import com.google.cloud.bigquery.datatransfer.v1.TransferRun;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Timestamp;
 import com.google.protobuf.Value;
@@ -52,6 +55,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -62,6 +66,9 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class BillingDataPipelineServiceImpl implements BillingDataPipelineService {
+  private static final String USER_AGENT_HEADER = "user-agent";
+  private static final String USER_AGENT_HEADER_ENVIRONMENT_VARIABLE = "USER_AGENT_HEADER";
+  private static final String DEFAULT_USER_AGENT = "default-user-agent";
   private static final String GOOGLE_CREDENTIALS_PATH = "GOOGLE_CREDENTIALS_PATH";
 
   private static final String DATA_SET_DESCRIPTION_TEMPLATE = "Data set for [ AccountId: %s ], [ AccountName: %s ]";
@@ -202,7 +209,11 @@ public class BillingDataPipelineServiceImpl implements BillingDataPipelineServic
         BillingDataPipelineUtils.getLabelMap(accountName, BillingDataPipelineUtils.getAccountType(account));
 
     ServiceAccountCredentials credentials = getCredentials(GOOGLE_CREDENTIALS_PATH);
-    BigQuery bigquery = BigQueryOptions.newBuilder().setCredentials(credentials).build().getService();
+    BigQuery bigquery = BigQueryOptions.newBuilder()
+                            .setCredentials(credentials)
+                            .setHeaderProvider(getHeaderProvider())
+                            .build()
+                            .getService();
     try {
       DatasetInfo datasetInfo =
           DatasetInfo.newBuilder(dataSetName).setDescription(description).setLabels(labelMap).build();
@@ -221,6 +232,12 @@ public class BillingDataPipelineServiceImpl implements BillingDataPipelineServic
       log.error("BQ Data Set was not created {} " + bigQueryEx);
     }
     return null;
+  }
+
+  private HeaderProvider getHeaderProvider() {
+    String userAgent = System.getenv(USER_AGENT_HEADER_ENVIRONMENT_VARIABLE);
+    return FixedHeaderProvider.create(
+        ImmutableMap.of(USER_AGENT_HEADER, Objects.nonNull(userAgent) ? userAgent : DEFAULT_USER_AGENT));
   }
 
   @Override

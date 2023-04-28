@@ -13,6 +13,8 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.encryption.Scope;
+import io.harness.plancreator.execution.ExecutionWrapperConfig;
+import io.harness.plancreator.execution.StepsExecutionConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -28,6 +30,9 @@ import io.harness.steps.container.ContainerStepInitHelper;
 import io.harness.steps.container.execution.ContainerExecutionConfig;
 import io.harness.steps.container.execution.ContainerStepRbacHelper;
 import io.harness.steps.executable.TaskExecutableWithRbac;
+import io.harness.steps.matrix.ExpandedExecutionWrapperInfo;
+import io.harness.steps.matrix.StrategyExpansionData;
+import io.harness.steps.matrix.StrategyHelper;
 import io.harness.steps.plugin.ContainerStepConstants;
 import io.harness.steps.plugin.InitContainerV2StepInfo;
 import io.harness.steps.plugin.StepInfo;
@@ -38,8 +43,10 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class InitContainerV2Step implements TaskExecutableWithRbac<InitContainerV2StepInfo, K8sTaskExecutionResponse> {
   @Inject KryoSerializer kryoSerializer;
@@ -49,6 +56,8 @@ public class InitContainerV2Step implements TaskExecutableWithRbac<InitContainer
   @Inject ContainerExecutionConfig containerExecutionConfig;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject InitialiseTaskUtils initialiseTaskUtils;
+
+  @Inject StrategyHelper strategyHelper;
 
   @Override
   public Class<InitContainerV2StepInfo> getStepParametersClass() {
@@ -70,10 +79,22 @@ public class InitContainerV2Step implements TaskExecutableWithRbac<InitContainer
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, InitContainerV2StepInfo stepParameters, StepInputPackage inputPackage) {
     String logPrefix = initialiseTaskUtils.getLogPrefix(ambiance, "STEP");
+    Map<String, StrategyExpansionData> strategyExpansionMap = new HashMap<>();
+    List<ExecutionWrapperConfig> expandedExecutionElement = new ArrayList<>();
 
+    for (ExecutionWrapperConfig config : stepParameters.getStepsExecutionConfig().getSteps()) {
+      ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
+          strategyHelper.expandExecutionWrapperConfig(config, Optional.empty());
+      expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
+      strategyExpansionMap.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());
+    }
+
+    stepParameters.setStepsExecutionConfig(StepsExecutionConfig.builder().steps(expandedExecutionElement).build());
+    stepParameters.setStrategyExpansionMap(strategyExpansionMap);
     Map<StepInfo, PluginCreationResponse> pluginsData =
         containerStepV2PluginProvider.getPluginsData(stepParameters, ambiance);
     stepParameters.setPluginsData(pluginsData);
+
     CIInitializeTaskParams buildSetupTaskParams = containerStepInitHelper.getK8InitializeTaskParams(
         stepParameters, ambiance, logPrefix, stepParameters.getStepGroupIdentifier());
 

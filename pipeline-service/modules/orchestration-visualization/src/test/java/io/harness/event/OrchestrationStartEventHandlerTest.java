@@ -27,7 +27,6 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.rule.Owner;
 import io.harness.service.GraphGenerationService;
-import io.harness.testlib.RealMongo;
 
 import com.google.inject.Inject;
 import java.util.concurrent.TimeUnit;
@@ -46,7 +45,7 @@ public class OrchestrationStartEventHandlerTest extends OrchestrationVisualizati
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void shouldThrowInvalidRequestException() {
     String planExecutionId = generateUuid();
     PlanExecutionMetadata planExecutionMetadata =
@@ -67,7 +66,7 @@ public class OrchestrationStartEventHandlerTest extends OrchestrationVisualizati
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void shouldSaveCachedGraph() {
     PlanExecution planExecution =
         PlanExecution.builder().uuid(generateUuid()).startTs(System.currentTimeMillis()).status(Status.RUNNING).build();
