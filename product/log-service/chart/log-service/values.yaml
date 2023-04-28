@@ -1,0 +1,91 @@
+# Default values for log-service
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  loadbalancerURL: ""
+  ingress:
+    enabled: false
+    className: harness
+    hosts:
+      - my-host.example.org
+    tls:
+      enabled: true
+      secretName: ''
+  istio:
+    enabled: false
+    gateway:
+      create: false
+    virtualService:
+      gateways: []
+      hosts: []
+  imagePullSecrets: []
+
+s3:
+  ### Default values are configured to work with Minio, override if you are using own s3 buckets
+  endpoint: ""
+  bucketName: "logs"
+  region: "us-east-1"
+  accessKeyId: ""
+  secretAccessKey: ""
+
+replicaCount: 1
+maxSurge: 1
+maxUnavailable: 0
+
+image:
+  registry: docker.io
+  repository: harness/log-service-signed
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "release-18"
+  digest: ""
+  imagePullSecrets: []
+
+logServiceS3AccessKeyID:
+  name: minio
+  key: root-user
+
+logServiceS3SecretAccessKey:
+  name: minio
+  key: root-password
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "harness-default"
+
+podAnnotations: {}
+
+imagePullSecrets: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext:
+  runAsUser: 65534
+  runAsNonRoot: true
+
+resources:
+  limits:
+    cpu: 1
+    memory: 3072Mi
+  requests:
+    cpu: 1
+    memory: 3072Mi
+
+service:
+  type: ClusterIP
+  port: 8079
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

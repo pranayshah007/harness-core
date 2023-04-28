@@ -43,6 +43,14 @@ A Helm chart for Kubernetes
 | global.database.timescaledb.secretName | string | `""` |  |
 | global.database.timescaledb.userKey | string | `""` |  |
 | global.imagePullSecrets | list | `[]` |  |
+| global.ingress.className | string | `"harness"` | set ingress object classname |
+| global.ingress.enabled | bool | `false` | create ingress objects |
+| global.ingress.hosts | list | `["my-host.example.org"]` | set host of ingressObjects |
+| global.ingress.objects | object | `{"annotations":{}}` | add annotations to ingress objects |
+| global.ingress.tls | object | `{"enabled":true,"secretName":""}` | set tls for ingress objects |
+| global.istio.enabled | bool | `false` | create virtualServices objects |
+| global.istio.gateway | object | `{"create":false}` | create gateway and use in virtualservice |
+| global.istio.virtualService | object | `{"gateways":null,"hosts":null}` | if gateway not created, use specified gateway and host |
 | global.loadbalancerURL | string | `""` |  |
 | image.digest | string | `""` |  |
 | image.imagePullSecrets | list | `[]` |  |

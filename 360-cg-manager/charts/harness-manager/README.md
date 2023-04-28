@@ -1,6 +1,6 @@
 # harness-manager
 
-![Version: 0.3.2](https://img.shields.io/badge/Version-0.3.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
+![Version: 0.3.3](https://img.shields.io/badge/Version-0.3.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -71,6 +71,14 @@ A Helm chart for Kubernetes
 | global.database.timescaledb.userKey | string | `""` |  |
 | global.ff.enabled | bool | `false` |  |
 | global.gitops.enabled | bool | `false` |  |
+| global.ingress.className | string | `"harness"` | set ingress object classname |
+| global.ingress.enabled | bool | `false` | create ingress objects |
+| global.ingress.hosts | list | `["my-host.example.org"]` | set host of ingressObjects |
+| global.ingress.objects | object | `{"annotations":{}}` | add annotations to ingress objects |
+| global.ingress.tls | object | `{"enabled":true,"secretName":""}` | set tls for ingress objects |
+| global.istio.enabled | bool | `false` | create virtualServices objects |
+| global.istio.gateway | object | `{"create":false}` | create gateway and use in virtualservice |
+| global.istio.virtualService | object | `{"gateways":null,"hosts":null}` | if gateway not created, use specified gateway and host |
 | global.license.cg | string | `""` |  |
 | global.license.ng | string | `""` |  |
 | global.loadbalancerURL | string | `""` |  |
