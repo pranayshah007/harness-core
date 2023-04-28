@@ -8,6 +8,7 @@
 package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.manifest.ManifestStoreType.BITBUCKET;
 import static io.harness.cdng.manifest.ManifestStoreType.GIT;
 import static io.harness.cdng.manifest.ManifestStoreType.GITHUB;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
@@ -98,6 +99,7 @@ public class SshWinRmConfigFileHelper {
             break;
           case GITHUB:
           case GIT:
+          case BITBUCKET:
             stores.add(buildGitFetchedStoreDelegateConfig(ambiance, configFileOutcome));
             break;
           default:

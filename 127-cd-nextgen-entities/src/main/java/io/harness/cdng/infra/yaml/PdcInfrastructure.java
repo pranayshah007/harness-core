@@ -175,7 +175,7 @@ public class PdcInfrastructure extends InfrastructureDetailsAbstract implements 
   @Override
   public Map<String, ParameterField<String>> extractConnectorRefs() {
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
-    if (connectorRef != null) {
+    if (!ParameterField.isBlank(connectorRef)) {
       connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     }
     return connectorRefMap;

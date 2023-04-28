@@ -31,6 +31,7 @@ import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.SLODashboardWidgetBuilder;
+import io.harness.cvng.servicelevelobjective.beans.SLOError;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsRefDTO;
@@ -281,7 +282,10 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         .projectParams(simpleSLOProjectParams)
         .projectName(projectName)
         .orgName(orgName)
-        .failedState(sloHealthIndicatorService.getFailedState(simpleSLOProjectParams, serviceLevelObjective))
+        .sloError(
+            SLOError.builder()
+                .failedState(sloHealthIndicatorService.getFailedState(simpleSLOProjectParams, serviceLevelObjective))
+                .build())
         .build();
   }
 

@@ -19,7 +19,8 @@ import org.springframework.data.repository.CrudRepository;
 
 @OwnedBy(PIPELINE)
 @HarnessRepo
-public interface PlanExecutionMetadataRepository extends CrudRepository<PlanExecutionMetadata, String> {
+public interface PlanExecutionMetadataRepository
+    extends CrudRepository<PlanExecutionMetadata, String>, PlanExecutionMetadataRepositoryCustom {
   Optional<PlanExecutionMetadata> findByPlanExecutionId(String planExecutionId);
 
   /**

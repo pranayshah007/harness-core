@@ -29,6 +29,7 @@ import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
 import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
+import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsCache;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.BackstageEnvConfigVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
@@ -41,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
@@ -51,10 +53,9 @@ import org.json.JSONObject;
 public class GitIntegrationServiceImpl implements GitIntegrationService {
   ConnectorProcessorFactory connectorProcessorFactory;
   BackstageEnvVariableService backstageEnvVariableService;
-
   CatalogConnectorRepository catalogConnectorRepository;
-
   ConfigManagerService configManagerService;
+  DelegateSelectorsCache delegateSelectorsCache;
 
   private static final String TARGET_TO_REPLACE_IN_CONFIG = "HOST_VALUE";
 
@@ -73,7 +74,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   }
 
   @Override
-  public void processConnectorUpdate(Message message, EntityChangeDTO entityChangeDTO) {
+  public void processConnectorUpdate(Message message, EntityChangeDTO entityChangeDTO) throws ExecutionException {
     String accountIdentifier = entityChangeDTO.getAccountIdentifier().getValue();
     String connectorIdentifier = entityChangeDTO.getIdentifier().getValue();
     Optional<CatalogConnectorEntity> catalogConnector =
@@ -90,9 +91,8 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
       ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(connectorType);
       ConnectorInfoDTO connectorInfoDTO = connectorProcessor.getConnectorInfo(accountIdentifier, connectorIdentifier);
       String catalogInfraConnectorType = connectorProcessor.getInfraConnectorType(connectorInfoDTO);
-      createConnectorSecretsEnvVariable(accountIdentifier, connectorInfoDTO);
-      createOrUpdateConnectorConfigEnvVariable(
-          accountIdentifier, connectorType, CatalogInfraConnectorType.valueOf(catalogInfraConnectorType));
+
+      saveOrUpdateConnector(connectorInfoDTO, accountIdentifier, catalogInfraConnectorType);
     }
   }
 
@@ -144,7 +144,8 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   }
 
   @Override
-  public CatalogConnectorEntity saveConnectorDetails(String accountIdentifier, ConnectorDetails connectorDetails) {
+  public CatalogConnectorEntity saveConnectorDetails(String accountIdentifier, ConnectorDetails connectorDetails)
+      throws ExecutionException {
     connectorDetails.setIdentifier(
         GitIntegrationUtils.replaceAccountScopeFromConnectorId(connectorDetails.getIdentifier()));
     ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(
@@ -153,19 +154,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
         connectorProcessor.getConnectorInfo(accountIdentifier, connectorDetails.getIdentifier());
     String infraConnectorType = connectorProcessor.getInfraConnectorType(connectorInfoDTO);
 
-    Set<String> delegateSelectors = new HashSet<>();
-    ConnectorConfigDTO connectorConfig = connectorInfoDTO.getConnectorConfig();
-    if (connectorConfig instanceof DelegateSelectable) {
-      delegateSelectors = ((DelegateSelectable) connectorConfig).getDelegateSelectors();
-    }
-
-    CatalogConnectorEntity catalogConnectorEntity =
-        ConnectorDetailsMapper.fromDTO(connectorDetails, accountIdentifier, infraConnectorType, delegateSelectors);
-    CatalogConnectorEntity savedCatalogConnectorEntity =
-        catalogConnectorRepository.saveOrUpdate(catalogConnectorEntity);
-    createConnectorInBackstage(accountIdentifier, connectorInfoDTO, catalogConnectorEntity.getType(),
-        catalogConnectorEntity.getConnectorIdentifier());
-    return savedCatalogConnectorEntity;
+    return saveOrUpdateConnector(connectorInfoDTO, accountIdentifier, infraConnectorType);
   }
 
   @Override
@@ -182,7 +171,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   public void createAppConfigForGitIntegrations(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO)
       throws Exception {
     ConnectorType connectorType = connectorInfoDTO.getConnectorType();
-    String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO, connectorType);
+    String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
     String connectorTypeAsString = connectorType.toString();
     if (connectorType == ConnectorType.GITHUB && GitIntegrationUtils.checkIfGithubAppConnector(connectorInfoDTO)) {
       connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_GITHUB_APP_CONNECTOR;
@@ -209,5 +198,20 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
       log.error(e.getMessage());
     }
     log.info("Merging for git integration completed for connector - {}", connectorTypeAsString);
+  }
+
+  private CatalogConnectorEntity saveOrUpdateConnector(ConnectorInfoDTO connectorInfoDTO, String accountIdentifier,
+      String catalogInfraConnectorType) throws ExecutionException {
+    Set<String> delegateSelectors = GitIntegrationUtils.extractDelegateSelectors(connectorInfoDTO);
+    String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
+    CatalogConnectorEntity catalogConnectorEntity =
+        ConnectorDetailsMapper.fromDTO(connectorInfoDTO.getIdentifier(), accountIdentifier,
+            connectorInfoDTO.getConnectorType().toString(), delegateSelectors, host, catalogInfraConnectorType);
+    CatalogConnectorEntity savedCatalogConnectorEntity =
+        catalogConnectorRepository.saveOrUpdate(catalogConnectorEntity);
+    delegateSelectorsCache.put(accountIdentifier, host, delegateSelectors);
+    createConnectorInBackstage(accountIdentifier, connectorInfoDTO, catalogConnectorEntity.getType(),
+        catalogConnectorEntity.getConnectorIdentifier());
+    return savedCatalogConnectorEntity;
   }
 }

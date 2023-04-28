@@ -52,6 +52,7 @@ import io.harness.exception.HelmClientRuntimeException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.filesystem.FileIo;
 import io.harness.helm.HelmCliCommandType;
 import io.harness.k8s.model.HelmVersion;
 
@@ -346,7 +347,7 @@ public class HelmTaskHelper {
       helmTaskHelperBase.fetchChartFromRepo(helmChartConfigParams.getRepoName(),
           helmChartConfigParams.getRepoDisplayName(), helmChartConfigParams.getChartName(),
           helmChartConfigParams.getChartVersion(), chartDirectory, helmChartConfigParams.getHelmVersion(),
-          helmCommandFlag, timeoutInMillis, cacheDir);
+          helmCommandFlag, timeoutInMillis, cacheDir, "");
     } finally {
       if (chartmuseumClient != null && chartMuseumServer != null) {
         chartmuseumClient.stop(chartMuseumServer);
@@ -453,14 +454,14 @@ public class HelmTaskHelper {
         timeoutInMillis, "", helmCommandFlag);
   }
 
-  public void loginOciRegistry(
-      OciHelmRepoConfig repoConfig, HelmVersion helmVersion, long timeoutInMillis, String destinationDirectory) {
+  public void loginOciRegistry(OciHelmRepoConfig repoConfig, HelmVersion helmVersion, long timeoutInMillis,
+      String destinationDirectory, String regConfigFilePath) {
     helmTaskHelperBase.loginOciRegistry(repoConfig.getChartRepoUrl(), repoConfig.getUsername(),
-        repoConfig.getPassword(), helmVersion, timeoutInMillis, destinationDirectory);
+        repoConfig.getPassword(), helmVersion, timeoutInMillis, destinationDirectory, regConfigFilePath);
   }
 
   private void fetchChartFromOciRegistry(HelmChartConfigParams helmChartConfigParams, String chartDirectory,
-      long timeoutInMillis, HelmCommandFlag helmCommandFlag) {
+      long timeoutInMillis, HelmCommandFlag helmCommandFlag) throws IOException {
     String cacheDir = getCacheDir(helmChartConfigParams.getRepoName(), helmChartConfigParams.isUseCache(),
         helmChartConfigParams.getHelmVersion());
 
@@ -469,13 +470,14 @@ public class HelmTaskHelper {
       throw new HelmClientException("Invalid config for OCI Registry based Helm Repo", USER, HelmCliCommandType.FETCH);
     }
     OciHelmRepoConfig repoConfig = (OciHelmRepoConfig) helmChartConfigParams.getHelmRepoConfig();
+    String registryConfigFilePath = helmTaskHelperBase.getRegFileConfigPath();
     try {
-      loginOciRegistry(repoConfig, HelmVersion.V380, timeoutInMillis, chartDirectory);
+      loginOciRegistry(repoConfig, HelmVersion.V380, timeoutInMillis, chartDirectory, registryConfigFilePath);
       String repoName =
           String.format(HelmConstants.REGISTRY_URL_PREFIX, Paths.get(repoConfig.getChartRepoUrl()).normalize());
       helmTaskHelperBase.fetchChartFromRepo(repoName, helmChartConfigParams.getRepoDisplayName(),
           helmChartConfigParams.getChartName(), helmChartConfigParams.getChartVersion(), chartDirectory,
-          helmChartConfigParams.getHelmVersion(), helmCommandFlag, timeoutInMillis, cacheDir);
+          helmChartConfigParams.getHelmVersion(), helmCommandFlag, timeoutInMillis, cacheDir, registryConfigFilePath);
     } finally {
       if (!helmChartConfigParams.isUseCache()) {
         try {
@@ -485,6 +487,7 @@ public class HelmTaskHelper {
               "Deletion of folder failed due to : {}", ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
         }
       }
+      FileIo.deleteFileIfExists(registryConfigFilePath);
     }
   }
 
@@ -515,7 +518,7 @@ public class HelmTaskHelper {
       helmTaskHelperBase.fetchChartFromRepo(helmChartConfigParams.getRepoName(),
           helmChartConfigParams.getRepoDisplayName(), helmChartConfigParams.getChartName(),
           helmChartConfigParams.getChartVersion(), chartDirectory, helmChartConfigParams.getHelmVersion(),
-          helmCommandFlag, timeoutInMillis, cacheDir);
+          helmCommandFlag, timeoutInMillis, cacheDir, "");
     } finally {
       if (isNotEmpty(cacheDir) && !helmChartConfigParams.isUseCache()) {
         try {
@@ -579,11 +582,11 @@ public class HelmTaskHelper {
             chartDirectory, helmChartConfigParams.getHelmVersion(), timeoutInMillis, helmCommandFlag);
         helmFetchCommand = helmTaskHelperBase.getHelmFetchCommand(helmChartConfigParams.getChartName(),
             helmChartConfigParams.getChartVersion(), helmChartConfigParams.getRepoName(), chartDirectory,
-            helmChartConfigParams.getHelmVersion(), helmCommandFlag);
+            helmChartConfigParams.getHelmVersion(), helmCommandFlag, "");
       } else {
         helmFetchCommand = helmTaskHelperBase.getHelmFetchCommand(helmChartConfigParams.getChartName(),
             helmChartConfigParams.getChartVersion(), helmChartConfigParams.getRepoName(), null,
-            helmChartConfigParams.getHelmVersion(), helmCommandFlag);
+            helmChartConfigParams.getHelmVersion(), helmCommandFlag, "");
       }
       helmTaskHelperBase.executeFetchChartFromRepo(helmChartConfigParams.getChartName(), chartDirectory,
           helmChartConfigParams.getRepoDisplayName(), helmFetchCommand, timeoutInMillis, "");

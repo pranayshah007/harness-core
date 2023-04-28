@@ -36,6 +36,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.gitsync.common.dtos.AzureRepoSCMDTO;
+import io.harness.gitsync.common.dtos.BitbucketSCMDTO;
 import io.harness.gitsync.common.dtos.GithubSCMDTO;
 import io.harness.gitsync.common.dtos.GitlabSCMDTO;
 import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
@@ -377,6 +378,11 @@ public class GitSyncConnectorHelper {
             AzureRepoSCMDTO azureRepoSCMDTO = (AzureRepoSCMDTO) userSourceCodeManagerDTO.get();
             AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) connectorDTO;
             azureRepoConnectorDTO.setApiAccess(azureRepoSCMDTO.getApiAccess());
+            break;
+          case BITBUCKET:
+            BitbucketSCMDTO bitbucketSCMDTO = (BitbucketSCMDTO) userSourceCodeManagerDTO.get();
+            BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) connectorDTO;
+            bitbucketConnectorDTO.setApiAccess(bitbucketSCMDTO.getApiAccess());
             break;
           default:
             log.info("OAUTH not supported for connector type: {}", connectorDTO.getConnectorType());

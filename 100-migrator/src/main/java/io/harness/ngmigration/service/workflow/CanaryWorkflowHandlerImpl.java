@@ -34,10 +34,6 @@ public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
 
   @Override
   public TemplateEntityType getTemplateType(Workflow workflow) {
-    OrchestrationWorkflowType workflowType = workflow.getOrchestration().getOrchestrationWorkflowType();
-    if (workflowType != OrchestrationWorkflowType.MULTI_SERVICE) {
-      return STAGE_TEMPLATE;
-    }
     return shouldCreateStageTemplate(workflow) ? STAGE_TEMPLATE : PIPELINE_TEMPLATE;
   }
 

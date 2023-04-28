@@ -138,8 +138,8 @@ public class EncryptionServiceImpl implements EncryptionService {
         encryptableSettingWithEncryptionDetailsList.get(i).setEncryptableSetting(encryptableSetting);
       } catch (ExecutionException e) {
         log.error("Failed to batch process decryption request of encrypted settings.", e.getCause());
-        throw new SecretManagementException(
-            ENCRYPT_DECRYPT_ERROR, "Failed to batch process decryption request of encrypted settings", USER);
+        throw new SecretManagementException(ENCRYPT_DECRYPT_ERROR,
+            "Failed to batch process decryption request of encrypted settings. Cause: " + e.getCause(), USER);
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
         log.error("Thread was interrupted during execution", e);

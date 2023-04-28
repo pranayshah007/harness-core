@@ -16,6 +16,7 @@ import io.harness.ng.core.dto.FailureDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import java.util.concurrent.ExecutionException;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
@@ -33,5 +34,5 @@ import javax.ws.rs.core.UriInfo;
 public interface DelegateProxyApi {
   @POST
   Response forwardProxy(@Context UriInfo info, @Context javax.ws.rs.core.HttpHeaders headers,
-      @PathParam("url") String url, String body) throws JsonProcessingException;
+      @PathParam("url") String url, String body) throws JsonProcessingException, ExecutionException;
 }

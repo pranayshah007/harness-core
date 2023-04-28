@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service.workflow;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_INPUT;
 import static io.harness.ngmigration.utils.MigratorUtility.getRollbackPhases;
@@ -72,6 +73,7 @@ import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.FailureStrategy;
 import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
+import software.wings.beans.TemplateExpression;
 import software.wings.beans.Variable;
 import software.wings.beans.VariableType;
 import software.wings.beans.Workflow;
@@ -92,6 +94,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -960,46 +963,66 @@ public abstract class WorkflowHandler {
   // Note: If this is called it means we want to create a stage template
   // If the number of stages we get is more than 1 then we throw error
   JsonNode buildMultiStagePipelineTemplate(MigrationContext migrationContext, WorkflowMigrationContext context) {
-    List<AbstractStageNode> stages = getStagesForMultiServiceWorkflow(migrationContext, context);
-    if (stages.size() > 1) {
-      throw new IllegalStateException("More than one stages found for multi-service workflow as stage template");
-    }
-    AbstractStageNode abstractStageNode = stages.get(0);
-    String type = abstractStageNode instanceof DeploymentStageNode ? "Deployment" : "Custom";
-    return JsonPipelineUtils.asTree(
-        ImmutableMap.<String, Object>builder()
-            .put("type", type)
-            .put("spec", abstractStageNode.getStageInfoConfig())
-            .put("variables",
-                getVariables(migrationContext, context.getWorkflow(), abstractStageNode.getStageInfoConfig()))
-            .put("failureStrategies", getDefaultFailureStrategy(context))
-            .put("when", getSkipCondition())
-            .build());
+    return buildCanaryStageTemplate(migrationContext, context);
   }
 
   // For multi-service WF
   boolean shouldCreateStageTemplate(Workflow workflow) {
-    PhaseStep prePhaseStep = getPreDeploymentPhase(workflow);
+    OrchestrationWorkflowType workflowType = workflow.getOrchestration().getOrchestrationWorkflowType();
+    if (workflowType != OrchestrationWorkflowType.MULTI_SERVICE) {
+      return true;
+    }
     List<WorkflowPhase> phases = getPhases(workflow);
-    PhaseStep postPhaseStep = getPostDeploymentPhase(workflow);
 
-    int stageCount = 0;
-    if (EmptyPredicate.isNotEmpty(prePhaseStep.getSteps())) {
-      stageCount += 1;
+    if (isEmpty(phases)) {
+      return true;
     }
 
-    if (EmptyPredicate.isNotEmpty(postPhaseStep.getSteps())) {
-      stageCount += 1;
-    }
+    return areAllPhasesNonTemplatizedAndHaveSameSvcInfra(phases) || areAllPhasesTemplatizedAndHaveSameSvcInfra(phases);
+  }
 
-    if (EmptyPredicate.isNotEmpty(phases)) {
-      stageCount += phases.stream()
-                        .filter(phase -> EmptyPredicate.isNotEmpty(phase.getPhaseSteps()))
-                        .flatMap(phase -> phase.getPhaseSteps().stream())
-                        .filter(phaseStep -> EmptyPredicate.isNotEmpty(phaseStep.getSteps()))
-                        .count();
-    }
+  private boolean areAllPhasesNonTemplatizedAndHaveSameSvcInfra(List<WorkflowPhase> phases) {
+    Set<String> serviceIds = new HashSet<>();
+    Set<String> infraDefIds = new HashSet<>();
 
-    return stageCount <= 1;
+    for (WorkflowPhase workflowPhase : phases) {
+      if (workflowPhase.checkServiceTemplatized() || workflowPhase.checkInfraDefinitionTemplatized()) {
+        return false;
+      }
+      String serviceId = workflowPhase.getServiceId();
+      String infraDefinitionId = workflowPhase.getInfraDefinitionId();
+      serviceIds.add(serviceId);
+      infraDefIds.add(infraDefinitionId);
+      if (serviceIds.size() > 1 || infraDefIds.size() > 1) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private boolean areAllPhasesTemplatizedAndHaveSameSvcInfra(List<WorkflowPhase> phases) {
+    Set<String> serviceExpressions = new HashSet<>();
+    Set<String> infraDefExpressions = new HashSet<>();
+
+    for (WorkflowPhase workflowPhase : phases) {
+      if (!workflowPhase.checkServiceTemplatized() || !workflowPhase.checkInfraDefinitionTemplatized()) {
+        return false;
+      }
+      List<TemplateExpression> templateExpressions =
+          CollectionUtils.emptyIfNull(workflowPhase.getTemplateExpressions());
+
+      for (TemplateExpression templateExpression : templateExpressions) {
+        if ("serviceId".equals(templateExpression.getFieldName())) {
+          serviceExpressions.add(templateExpression.getExpression());
+        }
+        if ("infraDefinitionId".equals(templateExpression.getFieldName())) {
+          infraDefExpressions.add(templateExpression.getExpression());
+        }
+      }
+      if (serviceExpressions.size() > 1 || infraDefExpressions.size() > 1) {
+        return false;
+      }
+    }
+    return true;
   }
 }

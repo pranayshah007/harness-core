@@ -37,6 +37,7 @@ public class CIExecutionConstants extends ContainerExecutionConstants {
   public static final String SAVE_CACHE_STEP_NAME = "Save Cache to Harness";
   public static final String CACHE_ARCHIVE_TYPE_TAR = "tar";
   public static final String CACHE_GCS_BACKEND = "gcs";
+  public static final String CACHE_S3_BACKEND = "s3";
 
   // Constant for
 

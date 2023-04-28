@@ -85,7 +85,7 @@ public class BusinessMappingResource {
   @ExceptionMetered
   @ApiOperation(value = "Create Business Mapping", nickname = "createBusinessMapping")
   public RestResponse<BusinessMapping> save(
-      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, BusinessMapping businessMapping) {
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, @Valid BusinessMapping businessMapping) {
     rbacHelper.checkCostCategoryEditPermission(accountId, null, null);
     BusinessMapping costCategory = businessMappingService.save(businessMapping);
     Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {

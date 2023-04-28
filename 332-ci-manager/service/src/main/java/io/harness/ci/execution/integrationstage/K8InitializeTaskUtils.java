@@ -7,6 +7,7 @@
 
 package io.harness.ci.integrationstage;
 
+import static io.harness.beans.FeatureName.CIE_ENABLED_RBAC;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
@@ -111,8 +112,6 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.ssca.beans.SscaExecutionConstants;
-import io.harness.ssca.client.SSCAServiceUtils;
 import io.harness.stoserviceclient.STOServiceUtils;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.core.timeout.Timeout;
@@ -145,7 +144,6 @@ public class K8InitializeTaskUtils {
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject private SecretUtils secretUtils;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
-  @Inject private SSCAServiceUtils sscaServiceUtils;
 
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
@@ -533,25 +531,6 @@ public class K8InitializeTaskUtils {
     return envVars;
   }
 
-  public Map<String, String> getSSCAServiceEnvVariables(String accountId, String orgId, String projectId) {
-    Map<String, String> envVars = new HashMap<>();
-    final String sscaServiceBaseUrl = sscaServiceUtils.getSscaServiceConfig().getHttpClientConfig().getBaseUrl();
-
-    String sscaServiceToken = "token";
-
-    // Make a call to the STO service and get back the token.
-    try {
-      sscaServiceToken = sscaServiceUtils.getSscaServiceToken(accountId, orgId, projectId);
-    } catch (Exception e) {
-      log.error("Could not call token endpoint for STO service", e);
-    }
-
-    envVars.put(SscaExecutionConstants.SSCA_SERVICE_TOKEN_VARIABLE, sscaServiceToken);
-    envVars.put(SscaExecutionConstants.SSCA_SERVICE_ENDPOINT_VARIABLE, sscaServiceBaseUrl);
-
-    return envVars;
-  }
-
   @NotNull
   public Map<String, String> getCommonStepEnvVariables(K8PodDetails k8PodDetails, Map<String, String> gitEnvVars,
       Map<String, String> runtimeCodebaseVars, String workDirPath, String logPrefix, Ambiance ambiance) {
@@ -640,7 +619,7 @@ public class K8InitializeTaskUtils {
             })
             .collect(Collectors.toList());
 
-    if (isNotEmpty(entityDetails)) {
+    if (isNotEmpty(entityDetails) && featureFlagService.isEnabled(CIE_ENABLED_RBAC, accountIdentifier)) {
       pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, false);
     }
   }

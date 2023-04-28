@@ -104,6 +104,7 @@ Official steps to install docker on mac: [docker.com](https://docs.docker.com/de
 
    `git config --global core.filemode false`
 
+
 ### Build
 
 #### Some Bazel Best Practices you can follow before building harness-core locally.

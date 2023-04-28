@@ -171,7 +171,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
     if (EmptyPredicate.isEmpty(configFiles)) {
       logCallback.saveExecutionLog(
           "No config files configured in the service. configFiles expressions will not work", LogLevel.WARN);
-      return AsyncExecutableResponse.newBuilder().setStatus(Status.SKIPPED).build();
+      return AsyncExecutableResponse.newBuilder().build();
     }
     cdExpressionResolver.updateExpressions(ambiance, configFiles);
     JavaxValidator.validateBeanOrThrow(new ConfigFileValidatorDTO(configFiles));
@@ -221,7 +221,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
 
     serviceStepsHelper.publishTaskIdsStepDetailsForServiceStep(ambiance, taskIds, CONFIG_FILES_STEP_DETAIL_KEY);
 
-    return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).setStatus(Status.SUCCEEDED).build();
+    return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
   }
 
   private String createGitDelegateTask(

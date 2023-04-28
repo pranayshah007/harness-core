@@ -18,6 +18,8 @@ import io.harness.spec.server.idp.v1.model.ImportEntitiesBase;
 import io.harness.spec.server.idp.v1.model.ImportEntitiesResponse;
 import io.harness.spec.server.idp.v1.model.ManualImportEntityRequest;
 
+import java.util.concurrent.ExecutionException;
+
 @OwnedBy(HarnessTeam.IDP)
 public interface OnboardingService {
   HarnessEntitiesCountResponse getHarnessEntitiesCount(String accountIdentifier);
@@ -28,7 +30,7 @@ public interface OnboardingService {
   GenerateYamlResponse generateYaml(String harnessAccount, GenerateYamlRequest generateYamlRequest);
 
   ImportEntitiesResponse importHarnessEntities(
-      String accountIdentifier, ImportEntitiesBase importHarnessEntitiesRequest);
+      String accountIdentifier, ImportEntitiesBase importHarnessEntitiesRequest) throws ExecutionException;
 
   ImportEntitiesResponse manualImportEntity(String harnessAccount, ManualImportEntityRequest manualImportEntityRequest);
 }

@@ -32,6 +32,15 @@ tags:
   - name: Project Services
     description: This contains APIs for project-scoped services.
     x-displayName: 'Project Services [Beta]'
+  - name: Account Favorites
+    description: This contains APIs for account-scoped Favorites.
+    x-displayName: 'Account Favorites [Beta]'
+  - name: Org Favorites
+    description: This contains APIs for organization-scoped Favorites.
+    x-displayName: 'Organization Favorites [Beta]'
+  - name: Project Favorites
+    description: This contains APIs for project-scoped Favorites.
+    x-displayName: 'Project Favorites [Beta]'
 paths:
   '/v1/orgs/{org}/projects/{project}/services/{service}':
     get:
@@ -1090,6 +1099,170 @@ paths:
         - Project Secret
       security:
         - x-api-key: []
+  /v1/favorites:
+    post:
+      summary: Create a favorite at account level
+      operationId: create-account-favorite
+      description: Creates favorite resource of a user at account level
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/UserIdQueryParam'
+        - $ref: '#/components/parameters/ResourceType'
+        - $ref: '#/components/parameters/ResourceId'
+      security:
+        - x-api-key: []
+      responses:
+        '201':
+          $ref: '#/components/responses/FavoriteResponse'
+      tags:
+        - Account Favorites
+      x-internal: true
+  '/v1/favorites/{user-id}':
+    parameters:
+      - $ref: '#/components/parameters/UserIdPathParam'
+    get:
+      summary: Retrieve a favorite resource of a user at account level
+      operationId: get-account-favorite
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ResourceType'
+      description: Retrieves the favorite resource of a user at account level
+      security:
+        - x-api-key: []
+      responses:
+        '200':
+          $ref: '#/components/responses/FavoriteListResponse'
+      tags:
+        - Account Favorites
+      x-internal: true
+    delete:
+      summary: Delete a account level favorite
+      operationId: delete-account-favorite
+      responses:
+        '204':
+          description: No Content
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ResourceType'
+        - $ref: '#/components/parameters/ResourceId'
+      security:
+        - x-api-key: []
+      tags:
+        - Account Favorites
+      description: Deletes the requested favorite at account level.
+      x-internal: true
+  '/v1/orgs/{org}/favorites':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+    post:
+      summary: Create a favorite at org level
+      operationId: create-org-favorite
+      description: Creates favorite resource of a user at organisation level
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/UserIdQueryParam'
+        - $ref: '#/components/parameters/ResourceType'
+        - $ref: '#/components/parameters/ResourceId'
+      security:
+        - x-api-key: []
+      responses:
+        '201':
+          $ref: '#/components/responses/FavoriteResponse'
+      tags:
+        - Org Favorites
+      x-internal: true
+  '/v1/orgs/{org}/favorites/{user-id}':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/UserIdPathParam'
+    get:
+      summary: Retrieve a favorite resource of a user at organization level
+      operationId: get-org-favorite
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ResourceType'
+      description: Retrieves the favorite resource of a user at organization level
+      security:
+        - x-api-key: []
+      responses:
+        '200':
+          $ref: '#/components/responses/FavoriteListResponse'
+      tags:
+        - Org Favorites
+      x-internal: true
+    delete:
+      summary: Delete a org level favorite
+      operationId: delete-org-favorite
+      responses:
+        '204':
+          description: No Content
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ResourceType'
+        - $ref: '#/components/parameters/ResourceId'
+      description: Deletes the requested favorite at organization level.
+      security:
+        - x-api-key: []
+      tags:
+        - Org Favorites
+      x-internal: true
+  '/v1/orgs/{org}/projects/{project}/Favorites':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+    post:
+      summary: Create a favorite at project level
+      operationId: create-project-favorite
+      description: Creates favorite resource of a user at project level
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/UserIdQueryParam'
+        - $ref: '#/components/parameters/ResourceType'
+        - $ref: '#/components/parameters/ResourceId'
+      security:
+        - x-api-key: []
+      responses:
+        '201':
+          $ref: '#/components/responses/FavoriteResponse'
+      tags:
+        - Project Favorites
+      x-internal: true
+  '/v1/orgs/{org}/projects/{project}/Favorites/{user-id}':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+      - $ref: '#/components/parameters/UserIdPathParam'
+    get:
+      summary: Retrieve a favorite resource of a user at project level
+      operationId: get-project-favorite
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ResourceType'
+      description: Retrieves the favorite resource of a user at project level
+      security:
+        - x-api-key: []
+      responses:
+        '200':
+          $ref: '#/components/responses/FavoriteListResponse'
+      tags:
+        - Project Favorites
+      x-internal: true
+    delete:
+      summary: Delete a project level favorite
+      operationId: delete-project-favorite
+      responses:
+        '204':
+          description: No Content
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ResourceType'
+        - $ref: '#/components/parameters/ResourceId'
+      description: Deletes the requested favorite at project level.
+      security:
+        - x-api-key: []
+      tags:
+        - Project Favorites
+      x-internal: true
   /v1/module-versions:
     get:
       summary: List Module Versions
@@ -1175,6 +1348,82 @@ components:
       required:
         - identifier
         - name
+    Favorite:
+      type: object
+      x-examples:
+        example-1:
+          account: sample_account
+          org: sample_organization
+          project: sample_project
+          user_id: example_userId
+          module: example_module
+          resource_type: example_resourceType
+          resource_id: example_resourceId
+      description: This is the favorite entity defined in Harness
+      title: Favorite
+      properties:
+        account:
+          type: string
+          description: Account Identifier
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_]{0,127}$'
+          minLength: 1
+          maxLength: 128
+        org:
+          type: string
+          description: Organization Identifier for the Entity.
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+        project:
+          type: string
+          description: Project Identifier for the Entity.
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+        user_id:
+          type: string
+          description: Identifier of the user.
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+        module:
+          type: string
+          description: Harness module
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+        resource_type:
+          type: string
+          description: Type of resource
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+        resource_id:
+          type: string
+          description: Resource Identifier of the Entity.
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+    FavoriteResponse:
+      type: object
+      x-examples:
+        example-1:
+          Favorite:
+            account: sample_account
+            user_id: example_userId
+            org: sample_organization
+            project: sample_project
+            resource_type: Example_resourceType
+            resource_id: This is a example resource
+          created: 1234567890
+      title: FavoriteResponse
+      properties:
+        Favorite:
+          $ref: '#/components/schemas/Favorite'
+        created:
+          type: integer
+          format: int64
+          description: Creation timestamp for favorite.
     ServiceResponse:
       type: object
       x-examples:
@@ -2198,6 +2447,85 @@ components:
                     property2: value2
                 created: 1234567890
                 updated: 1234567890
+    FavoriteResponse:
+      description: Favorite response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/FavoriteResponse'
+          examples:
+            example-Favorite-response-json:
+              value:
+                Favorite:
+                  account: sample_account
+                  org: sample_organization
+                  project: sample_project
+                  user_id: example_userId
+                  resource_type: Example_resourceType
+                  resource_id: Example_resourceId
+                created: 1234567890
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/FavoriteResponse'
+          examples:
+            example-Favorite-response-yaml:
+              value: |
+                - Favorite:
+                    account: sample_account
+                    org: sample_organization
+                    project: sample_project
+                    user_id: example_userId
+                    resource_type: Example_resourceType
+                    resource_id: Example_resourceId
+                  created: 1234567890
+    FavoriteListResponse:
+      description: Favorite list response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/FavoriteResponse'
+          examples:
+            example-Favorite-list-response-json:
+              value:
+                - Favorite:
+                    account: sample_account
+                    org: sample_organization
+                    project: sample_project
+                    user_id: example_userId
+                    resource_type: Example_resourceType
+                    resource_id: Example_resourceId
+                  created: 1234567890
+        application/yaml:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/FavoriteResponse'
+          examples:
+            example-project-list-response-yaml:
+              value: |
+                - Favorite:
+                    account: sample_account
+                    org: sample_organization
+                    project: sample_project
+                    user_id: example_userId
+                    resource_type: Example_resourceType
+                    resource_id: This is a example resource
+                  created: 1234567890
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
     ProjectListResponse:
       description: Project list response
       content:
@@ -3051,6 +3379,13 @@ components:
       schema:
         type: string
       description: This would be used to filter resources having attributes matching with search term.
+    ResourceId:
+      name: resource_id
+      in: query
+      required: false
+      schema:
+        type: string
+      description: This would be used to do operations on the favorite entity.
     AccountHeader:
       name: Harness-Account
       in: header
@@ -3090,6 +3425,20 @@ components:
       schema:
         type: string
       description: Identifier field of the organization the resource is scoped to
+    UserIdPathParam:
+      name: user-id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: This would be used to fetch the Favorites of the user.
+    UserIdQueryParam:
+      name: user_id
+      in: query
+      required: true
+      schema:
+        type: string
+      description: This would be used to fetch the Favorites of the user.
     PrivateSecret:
       name: private_secret
       in: query
@@ -3143,3 +3492,16 @@ components:
           - ASC
           - DESC
       description: Order on the basis of which sorting is done.
+    ResourceType:
+      name: resource_type
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - CONNECTOR
+          - DELEGATE
+          - PIPELINE
+          - SECRET
+          - PROJECT
+      description: Determines the type of favorite entity requested.

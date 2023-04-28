@@ -60,6 +60,7 @@ import io.harness.network.SafeHttpCall;
 import io.harness.perpetualtask.PerpetualTaskLogContext;
 import io.harness.perpetualtask.connector.ConnectorHearbeatPublisher;
 import io.harness.perpetualtask.instancesync.InstanceSyncResponsePublisher;
+import io.harness.perpetualtask.instancesync.InstanceSyncResponseV2;
 import io.harness.persistence.HPersistence;
 import io.harness.polling.client.PollingResourceClient;
 import io.harness.queueservice.infc.DelegateCapacityManagementService;
@@ -564,6 +565,22 @@ public class DelegateAgentResource {
           accountId, perpetualTaskId.replaceAll("[\r\n]", ""), response, false);
     } catch (Exception e) {
       log.error("Failed to process results for perpetual task: [{}]", perpetualTaskId.replaceAll("[\r\n]", ""), e);
+    }
+    return new RestResponse<>(true);
+  }
+
+  @DelegateAuth
+  @POST
+  @Path("instance-sync-ng-v2/{perpetualTaskId}")
+  public RestResponse<Boolean> processInstanceSyncNGResultV2(
+      @PathParam("perpetualTaskId") @NotEmpty String perpetualTaskId,
+      @QueryParam("accountId") @NotEmpty String accountId, InstanceSyncResponseV2 instanceSyncResponseV2) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
+      instanceSyncResponsePublisher.publishInstanceSyncResponseV2ToNG(
+          accountId, perpetualTaskId.replaceAll("[\r\n]", ""), instanceSyncResponseV2);
+    } catch (Exception e) {
+      log.error("Failed to process results for v2 perpetual task: [{}]", perpetualTaskId.replaceAll("[\r\n]", ""), e);
     }
     return new RestResponse<>(true);
   }

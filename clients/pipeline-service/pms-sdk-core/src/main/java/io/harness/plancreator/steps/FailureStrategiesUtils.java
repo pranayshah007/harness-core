@@ -159,13 +159,11 @@ public class FailureStrategiesUtils {
     if (actionUnderManualIntervention.getType().equals(NGFailureActionType.MANUAL_INTERVENTION)) {
       throw new InvalidRequestException("Manual Action cannot be applied as PostTimeOut Action");
     }
-    // validating Manual Intervention -> Retry -> Manual Intervention
+
+    // validating Manual Intervention -> Retry
     if (actionUnderManualIntervention.getType().equals(NGFailureActionType.RETRY)) {
-      if (FailureStrategiesUtils.validateManualActionUnderRetryAction(
-              ((RetryFailureActionConfig) actionUnderManualIntervention).getSpecConfig())) {
-        throw new InvalidRequestException(
-            "Manual Action cannot be applied under Retry Action which itself is in Manual Action");
-      }
+      throw new InvalidRequestException(
+          "Retry is not allowed as post timeout action in Manual intervention as it can lead to an infinite loop");
     }
   }
 

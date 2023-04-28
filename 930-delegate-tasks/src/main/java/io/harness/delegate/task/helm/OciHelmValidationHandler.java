@@ -73,7 +73,7 @@ public class OciHelmValidationHandler implements ConnectorValidationHandler {
         helmTaskHelperBase.loginOciRegistry(helmTaskHelperBase.getParsedUrlForUserNamePwd(ociUrl),
             helmTaskHelperBase.getOciHelmUsername(ociHelmConnectorDTO),
             helmTaskHelperBase.getOciHelmPassword(ociHelmConnectorDTO), HelmVersion.V380, DEFAULT_TIMEOUT_IN_MILLIS,
-            workingDirectory);
+            workingDirectory, "");
         helmTaskHelperBase.cleanup(workingDirectory);
       } else {
         throw new InvalidRequestException(

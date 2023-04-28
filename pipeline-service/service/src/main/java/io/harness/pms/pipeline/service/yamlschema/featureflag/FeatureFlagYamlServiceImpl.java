@@ -77,12 +77,15 @@ public class FeatureFlagYamlServiceImpl implements FeatureFlagYamlService {
         pmsYamlSchemaHelper.getEnabledFeatureFlags(accountIdentifier, yamlSchemaWithDetailsList);
     Map<String, Boolean> featureRestrictionsMap =
         featureRestrictionsGetter.getFeatureRestrictionsAvailability(yamlSchemaWithDetailsList, accountIdentifier);
+
+    // This should be above the if condition - CDS-68202
+    yamlSchemaGenerator.modifyRefsNamespace(featureFlagStageSchema, FEATURE_FLAG_NAMESPACE);
+
     if (yamlSchemaWithDetailsList != null) {
       YamlSchemaUtils.addOneOfInExecutionWrapperConfig(featureFlagStageSchema.get(DEFINITIONS_NODE),
           yamlSchemaWithDetailsList, ModuleType.PMS, enabledFeatureFlags, featureRestrictionsMap);
     }
 
-    yamlSchemaGenerator.modifyRefsNamespace(featureFlagStageSchema, FEATURE_FLAG_NAMESPACE);
     ObjectMapper mapper = SchemaGeneratorUtils.getObjectMapperForSchemaGeneration();
     JsonNode node = mapper.createObjectNode().set(FEATURE_FLAG_NAMESPACE, definitions);
 

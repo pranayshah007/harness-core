@@ -135,4 +135,9 @@ public class GcrArtifactConfig implements ArtifactConfig, Visitable, WithConnect
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return connectorRefMap;
   }
+
+  @Override
+  public void validate() {
+    ArtifactConfigHelper.checkTagAndTagRegex(tag, tagRegex);
+  }
 }

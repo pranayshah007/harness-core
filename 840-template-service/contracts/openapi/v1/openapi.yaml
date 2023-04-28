@@ -128,6 +128,24 @@ paths:
       responses:
         '204':
           description: No Content
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { }
+              examples:
+                example-resp:
+                  value: { }
+            application/yaml:
+              schema:
+                type: object
+                properties: { }
+              examples:
+                example-resp:
+                  value: |
+                    {}
   '/v1/templates/{template}/versions/{version}/stable':
     parameters:
       - $ref: '#/components/parameters/Template'
@@ -255,6 +273,24 @@ paths:
       responses:
         '204':
           description: No Content
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { }
+              examples:
+                example-resp:
+                  value: { }
+            application/yaml:
+              schema:
+                type: object
+                properties: { }
+              examples:
+                example-resp:
+                  value: |
+                    {}
   '/v1/orgs/{org}/templates/{template}/versions/{version}/stable':
     parameters:
       - $ref: '#/components/parameters/Org'
@@ -386,6 +422,24 @@ paths:
       responses:
         '204':
           description: No Content
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { }
+              examples:
+                example-resp:
+                  value: { }
+            application/yaml:
+              schema:
+                type: object
+                properties: { }
+              examples:
+                example-resp:
+                  value: |
+                    {}
   '/v1/orgs/{org}/projects/{project}/templates/{template}/versions/{version}/stable':
     parameters:
       - $ref: '#/components/parameters/Org'

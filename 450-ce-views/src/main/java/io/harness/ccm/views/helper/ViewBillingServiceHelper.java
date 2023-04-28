@@ -193,10 +193,13 @@ public class ViewBillingServiceHelper {
             final SelectQuery selectQuery =
                 viewsQueryBuilder.getSharedCostQuery(modifiedGroupBy, modifiedAggregateFunction, entityCosts, totalCost,
                     costTarget, sharedCost, businessMapping, cloudProviderTableName, isClusterPerspective);
-            final SelectQuery subQuery = getQuery(filters, groupBy, Collections.emptyList(), aggregateFunction,
-                Collections.emptyList(), cloudProviderTableName, queryParams, businessMapping, Collections.emptyList());
-            selectQuery.addCustomFromTable(String.format("(%s)", subQuery.toString()));
-            unionQuery.addQueries(String.format("(%s)", selectQuery));
+            if (Objects.nonNull(selectQuery)) {
+              final SelectQuery subQuery =
+                  getQuery(filters, groupBy, Collections.emptyList(), aggregateFunction, Collections.emptyList(),
+                      cloudProviderTableName, queryParams, businessMapping, Collections.emptyList());
+              selectQuery.addCustomFromTable(String.format("(%s)", subQuery.toString()));
+              unionQuery.addQueries(String.format("(%s)", selectQuery));
+            }
           }
         }
       }

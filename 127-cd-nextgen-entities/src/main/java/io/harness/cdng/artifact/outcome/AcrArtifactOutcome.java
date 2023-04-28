@@ -78,6 +78,8 @@ public class AcrArtifactOutcome implements ArtifactOutcome {
    */
   String dockerConfigJsonSecret;
 
+  String digest;
+
   Map<String, String> metadata;
 
   Map<String, String> label;
