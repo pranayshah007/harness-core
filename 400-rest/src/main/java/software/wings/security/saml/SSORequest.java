@@ -30,4 +30,6 @@ public class SSORequest {
   private OauthProviderType oauthProviderType;
   private String idpRedirectUrl;
   private List<OauthProviderType> oauthProviderTypes;
+  private String ssoId;
+  private String friendlySamlName;
 }

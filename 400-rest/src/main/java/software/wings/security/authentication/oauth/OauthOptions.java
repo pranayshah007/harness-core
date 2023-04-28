@@ -76,6 +76,10 @@ public class OauthOptions {
     OauthProviderType defaultOAuthProviderType = oauthProviderTypes.get(0);
     log.info("Default OAuth provider: {}", defaultOAuthProviderType);
 
-    return new SSORequest(defaultOAuthProviderType, getRedirectURI(defaultOAuthProviderType), oauthProviderTypes);
+    return SSORequest.builder()
+        .oauthProviderType(defaultOAuthProviderType)
+        .idpRedirectUrl(getRedirectURI(defaultOAuthProviderType))
+        .oauthProviderTypes(oauthProviderTypes)
+        .build();
   }
 }

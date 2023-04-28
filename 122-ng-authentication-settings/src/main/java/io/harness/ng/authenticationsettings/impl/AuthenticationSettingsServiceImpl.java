@@ -158,6 +158,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
                                              .authorizationEnabled(samlSettings.isAuthorizationEnabled())
                                              .entityIdentifier(samlSettings.getEntityIdentifier())
                                              .friendlySamlName(samlSettings.getFriendlySamlName())
+                                             .authenticationEnabled(samlSettings.isAuthenticationEnabled())
                                              .build();
 
         if (null != samlSettings.getSamlProviderType()) {
@@ -244,6 +245,26 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   }
 
   @Override
+  @FeatureRestrictionCheck(FeatureRestrictionName.SAML_SUPPORT)
+  public SSOConfig updateSAMLMetadata(@NotNull @AccountIdentifier String accountId, @NotNull String samlSSOId,
+      MultipartBody.Part inputStream, String displayName, String groupMembershipAttr,
+      @NotNull Boolean authorizationEnabled, String logoutUrl, String entityIdentifier, String samlProviderType,
+      String clientId, String clientSecret, String friendlySamlName) {
+    RequestBody displayNamePart = createPartFromString(displayName);
+    RequestBody groupMembershipAttrPart = createPartFromString(groupMembershipAttr);
+    RequestBody authorizationEnabledPart = createPartFromString(String.valueOf(authorizationEnabled));
+    RequestBody logoutUrlPart = createPartFromString(logoutUrl);
+    RequestBody entityIdentifierPart = createPartFromString(entityIdentifier);
+    RequestBody samlProviderTypePart = createPartFromString(samlProviderType);
+    RequestBody clientIdPart = createPartFromString(clientId);
+    RequestBody clientSecretPart = createPartFromString(clientSecret);
+    RequestBody friendlySamlNamePart = createPartFromString(friendlySamlName);
+    return getResponse(managerClient.updateSAMLMetadata(accountId, samlSSOId, inputStream, displayNamePart,
+        groupMembershipAttrPart, authorizationEnabledPart, logoutUrlPart, entityIdentifierPart, samlProviderTypePart,
+        clientIdPart, clientSecretPart, friendlySamlNamePart));
+  }
+
+  @Override
   public SSOConfig deleteSAMLMetadata(@NotNull @AccountIdentifier String accountIdentifier) {
     SamlSettings samlSettings = getResponse(managerClient.getSAMLMetadata(accountIdentifier));
     if (samlSettings == null) {
@@ -257,9 +278,31 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   }
 
   @Override
+  public SSOConfig deleteSAMLMetadata(@NotNull @AccountIdentifier String accountIdentifier, @NotNull String samlSSOId) {
+    SamlSettings samlSettings = getResponse(managerClient.getSAMLMetadata(accountIdentifier, samlSSOId));
+    if (samlSettings == null) {
+      throw new InvalidRequestException(
+          String.format("No Saml Metadata found for account %s and saml sso id %s", accountIdentifier, samlSSOId));
+    }
+    if (isNotEmpty(userGroupService.getUserGroupsBySsoId(accountIdentifier, samlSSOId))) {
+      throw new InvalidRequestException(String.format(
+          "Deleting Saml setting having id %s with linked user groups is not allowed in account %s. Unlink the user groups first",
+          samlSSOId, accountIdentifier));
+    }
+    return getResponse(managerClient.deleteSAMLMetadata(accountIdentifier, samlSSOId));
+  }
+
+  @Override
   @FeatureRestrictionCheck(FeatureRestrictionName.SAML_SUPPORT)
   public LoginTypeResponse getSAMLLoginTest(@NotNull @AccountIdentifier String accountIdentifier) {
     return getResponse(managerClient.getSAMLLoginTest(accountIdentifier));
+  }
+
+  @Override
+  @FeatureRestrictionCheck(FeatureRestrictionName.SAML_SUPPORT)
+  public LoginTypeResponse getSAMLLoginTestV2(
+      @NotNull @AccountIdentifier String accountIdentifier, @NotNull String samlSSOId) {
+    return getResponse(managerClient.getSAMLLoginTestV2(accountIdentifier, samlSSOId));
   }
 
   @Override
@@ -316,6 +359,11 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
           "Deleting Ldap provider with linked user groups is not allowed. Unlink the user groups first");
     }
     getResponse(managerClient.deleteLdapSettings(accountIdentifier));
+  }
+
+  @Override
+  public void updateAuthenticationForSAMLSetting(String accountId, String samlSSOId, Boolean enable) {
+    managerClient.updateLoginEnabledForSAMLSetting(accountId, samlSSOId, enable);
   }
 
   private LDAPSettings fromCGLdapSettings(LdapSettings ldapSettings) {

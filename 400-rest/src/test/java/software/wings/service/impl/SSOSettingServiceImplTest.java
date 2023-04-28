@@ -377,7 +377,8 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
                                     .build();
     MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
     mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(new ArrayList<>());
-    SamlSettings savedSamlSettings = ssoSettingService.saveSamlSettingsWithoutCGLicenseCheck(samlSettings);
+    SamlSettings savedSamlSettings =
+        ssoSettingService.saveSamlSettingsWithoutCGLicenseCheck(samlSettings, false, false);
     List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
     OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
 
@@ -396,7 +397,8 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
                                        .displayName("Azure 1")
                                        .origin("login.microsoftonline.com")
                                        .build();
-    SamlSettings newSavedSamlSettings = ssoSettingService.saveSamlSettingsWithoutCGLicenseCheck(newSamlSettings);
+    SamlSettings newSavedSamlSettings =
+        ssoSettingService.saveSamlSettingsWithoutCGLicenseCheck(newSamlSettings, false, false);
     outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
     outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
 

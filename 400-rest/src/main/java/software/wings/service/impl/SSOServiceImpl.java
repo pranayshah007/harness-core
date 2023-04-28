@@ -8,6 +8,7 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessModule._950_NG_AUTHENTICATION_SERVICE;
+import static io.harness.beans.FeatureName.PL_ENABLE_MULTIPLE_IDP_SUPPORT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
@@ -125,7 +126,7 @@ public class SSOServiceImpl implements SSOService {
       String fileAsString = IOUtils.toString(inputStream, Charset.defaultCharset());
       groupMembershipAttr = authorizationEnabled ? groupMembershipAttr : null;
       buildAndUploadSamlSettings(accountId, fileAsString, displayName, groupMembershipAttr, logoutUrl, entityIdentifier,
-          samlProviderType, clientId, clientSecret, friendlySamlName, isNGSSO);
+          samlProviderType, clientId, clientSecret, friendlySamlName, isNGSSO, false);
       return getAccountAccessManagementSettings(accountId);
     } catch (SamlException | IOException | URISyntaxException e) {
       throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION, e);
@@ -146,30 +147,27 @@ public class SSOServiceImpl implements SSOService {
       String groupMembershipAttr, Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
       String samlProviderType, String clientId, char[] clientSecret, String friendlySamlName, boolean isNGSSO) {
     try {
-      SamlSettings settings = ssoSettingService.getSamlSettingsByAccountId(accountId);
-      String fileAsString;
+      SamlSettings settings = featureFlagService.isEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountId)
+          ? ssoSettingService.getSamlSettingsByAccountIdNotConfiguredFromNG(accountId)
+          : ssoSettingService.getSamlSettingsByAccountId(accountId);
+      return updateAndGetSamlSsoConfigInternal(groupMembershipAttr, authorizationEnabled, inputStream, settings,
+          displayName, clientId, clientSecret, accountId, logoutUrl, entityIdentifier, samlProviderType,
+          friendlySamlName, isNGSSO);
+    } catch (SamlException | IOException | URISyntaxException e) {
+      throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION, e);
+    }
+  }
 
-      groupMembershipAttr = authorizationEnabled ? groupMembershipAttr : null;
-
-      if (null != inputStream) {
-        fileAsString = IOUtils.toString(inputStream, Charset.defaultCharset());
-      } else {
-        fileAsString = settings.getMetaDataFile();
-      }
-
-      if (isEmpty(displayName)) {
-        displayName = settings.getDisplayName();
-      }
-      if (isNotEmpty(clientId) && isNotEmpty(clientSecret)
-          && SECRET_MASK.equals(String.valueOf(clientSecret))) { // suggests only clientId updated
-        // set the old cg secret ref
-        final String oldClientSecretRef = settings.getEncryptedClientSecret();
-        clientSecret = isNotEmpty(oldClientSecretRef) ? oldClientSecretRef.toCharArray() : clientSecret;
-      }
-
-      buildAndUploadSamlSettings(accountId, fileAsString, displayName, groupMembershipAttr, logoutUrl, entityIdentifier,
-          samlProviderType, clientId, clientSecret, friendlySamlName, isNGSSO);
-      return getAccountAccessManagementSettings(accountId);
+  @Override
+  public SSOConfig updateSamlConfiguration(String accountId, String samlSSOId, InputStream inputStream,
+      String displayName, String groupMembershipAttr, Boolean authorizationEnabled, String logoutUrl,
+      String entityIdentifier, String samlProviderType, String clientId, char[] clientSecret, String friendlySamlName,
+      boolean isNGSSO) {
+    try {
+      SamlSettings settings = ssoSettingService.getSamlSettingsByAccountIdAndUuid(accountId, samlSSOId);
+      return updateAndGetSamlSsoConfigInternal(groupMembershipAttr, authorizationEnabled, inputStream, settings,
+          displayName, clientId, clientSecret, accountId, logoutUrl, entityIdentifier, samlProviderType,
+          friendlySamlName, isNGSSO);
     } catch (SamlException | IOException | URISyntaxException e) {
       throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION, e);
     }
@@ -181,7 +179,7 @@ public class SSOServiceImpl implements SSOService {
     SamlSettings samlSettings = ssoSettingService.getSamlSettingsByAccountId(accountId);
     if (samlSettings != null) {
       samlSettings.setLogoutUrl(logoutUrl);
-      ssoSettingService.saveSamlSettings(samlSettings);
+      ssoSettingService.saveSamlSettings(samlSettings, false, false);
     } else {
       throw new InvalidRequestException("Cannot update Logout URL as no SAML Config exists for your account");
     }
@@ -191,9 +189,25 @@ public class SSOServiceImpl implements SSOService {
   @Override
   public SSOConfig deleteSamlConfiguration(String accountId) {
     ssoSettingService.deleteSamlSettings(accountId);
+    return setToAuthMechanismAndReturnSsoConfig(accountId);
+  }
+
+  @Override
+  public SSOConfig deleteSamlConfiguration(String accountId, String samlSSOId) {
+    SamlSettings settings = ssoSettingService.getSamlSettingsByAccountIdAndUuid(accountId, samlSSOId);
+    ssoSettingService.deleteSamlSettingsWithAudits(settings);
+    return setToAuthMechanismAndReturnSsoConfig(accountId);
+  }
+
+  private SSOConfig setToAuthMechanismAndReturnSsoConfig(String accountId) {
     SSOConfig ssoConfig = setAuthenticationMechanism(accountId, USER_PASSWORD);
     setOauthIfSetAfterSSODelete(accountId);
     return ssoConfig;
+  }
+
+  @Override
+  public void updateAuthenticationEnabledForSAMLSetting(String accountId, String samlSSOId, Boolean enable) {
+    ssoSettingService.updateAuthenticationEnabledForSAMLSetting(accountId, samlSSOId, enable);
   }
 
   private void cgAuditLoginSettings(
@@ -363,7 +377,8 @@ public class SSOServiceImpl implements SSOService {
 
   private SamlSettings buildAndUploadSamlSettings(String accountId, String fileAsString, String displayName,
       String groupMembershipAttr, String logoutUrl, String entityIdentifier, String samlProviderType, String clientId,
-      char[] clientSecret, String friendlySamlName, boolean isNGSSOSetting) throws SamlException, URISyntaxException {
+      char[] clientSecret, String friendlySamlName, boolean isNGSSOSetting, boolean isUpdateCase)
+      throws SamlException, URISyntaxException {
     SamlClient samlClient = samlClientService.getSamlClient(entityIdentifier, fileAsString);
 
     SamlSettings samlSettings = SamlSettings.builder()
@@ -378,6 +393,7 @@ public class SSOServiceImpl implements SSOService {
                                     .build();
 
     samlSettings.setSamlProviderType(getSAMLProviderType(samlProviderType));
+    samlSettings.setConfiguredFromNG(isNGSSOSetting);
     if (isNotEmpty(clientId) && isNotEmpty(clientSecret)) {
       samlSettings.setClientId(clientId);
       samlSettings.setEncryptedClientSecret(String.valueOf(clientSecret));
@@ -390,9 +406,9 @@ public class SSOServiceImpl implements SSOService {
       samlSettings.setLogoutUrl(logoutUrl);
     }
     if (isNGSSOSetting) {
-      return ssoSettingService.saveSamlSettingsWithoutCGLicenseCheck(samlSettings);
+      return ssoSettingService.saveSamlSettingsWithoutCGLicenseCheck(samlSettings, isUpdateCase, isNGSSOSetting);
     } else {
-      return ssoSettingService.saveSamlSettings(samlSettings);
+      return ssoSettingService.saveSamlSettings(samlSettings, isUpdateCase, isNGSSOSetting);
     }
   }
 
@@ -470,6 +486,11 @@ public class SSOServiceImpl implements SSOService {
   @Override
   public SamlSettings getSamlSettings(@NotBlank String accountId) {
     return ssoSettingService.getSamlSettingsByAccountId(accountId);
+  }
+
+  @Override
+  public SamlSettings getSamlSettings(@NotBlank String accountId, @NotNull String samlSSOId) {
+    return ssoSettingService.getSamlSettingsByAccountIdAndUuid(accountId, samlSSOId);
   }
 
   @Override
@@ -721,5 +742,28 @@ public class SSOServiceImpl implements SSOService {
     if (temporaryEncryption) {
       secretManager.deleteSecret(accountId, encryptedDataDetail.getEncryptedData().getUuid(), new HashMap<>(), false);
     }
+  }
+
+  private SSOConfig updateAndGetSamlSsoConfigInternal(String groupMembershipAttr, Boolean authorizationEnabled,
+      InputStream inputStream, SamlSettings settings, String displayName, String clientId, char[] clientSecret,
+      String accountId, String logoutUrl, String entityIdentifier, String samlProviderType, String friendlySamlName,
+      boolean isNGSSO) throws IOException, SamlException, URISyntaxException {
+    String fileAsString =
+        null != inputStream ? IOUtils.toString(inputStream, Charset.defaultCharset()) : settings.getMetaDataFile();
+    groupMembershipAttr = authorizationEnabled ? groupMembershipAttr : null;
+
+    if (isEmpty(displayName)) {
+      displayName = settings.getDisplayName();
+    }
+    if (isNotEmpty(clientId) && isNotEmpty(clientSecret)
+        && SECRET_MASK.equals(String.valueOf(clientSecret))) { // suggests only clientId updated
+      // set the old cg secret ref
+      final String oldClientSecretRef = settings.getEncryptedClientSecret();
+      clientSecret = isNotEmpty(oldClientSecretRef) ? oldClientSecretRef.toCharArray() : clientSecret;
+    }
+
+    buildAndUploadSamlSettings(accountId, fileAsString, displayName, groupMembershipAttr, logoutUrl, entityIdentifier,
+        samlProviderType, clientId, clientSecret, friendlySamlName, isNGSSO, true);
+    return getAccountAccessManagementSettings(accountId);
   }
 }

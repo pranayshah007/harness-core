@@ -51,6 +51,8 @@ public class SamlSettings extends SSOSettings implements EncryptableSetting {
   @Encrypted(fieldName = "clientSecret") private char[] clientSecret;
   @SchemaIgnore private String encryptedClientSecret;
   private String friendlySamlName;
+  private boolean configuredFromNG;
+  private boolean authenticationEnabled;
 
   @JsonCreator
   @Builder

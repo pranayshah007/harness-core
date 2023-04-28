@@ -428,7 +428,7 @@ mutation{
                        .origin("TestOrigin")
                        .build();
 
-    samlSettings = ssoSettingService.saveSamlSettings(samlSettings);
+    samlSettings = ssoSettingService.saveSamlSettings(samlSettings, false, false);
     UserGroup userGroup = userGroupHelper.createUserGroup(accountId, name, description);
 
     {

@@ -55,6 +55,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -141,6 +142,15 @@ public class SSOResourceNG {
     return new RestResponse<>(ssoService.getSamlSettings(accountId));
   }
 
+  @GET
+  @Path("get-saml-settings-sso-id")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<SamlSettings> getSamlSetting(
+      @QueryParam("accountId") String accountId, @QueryParam("samlSSOId") String samlSSOId) {
+    return new RestResponse<>(ssoService.getSamlSettings(accountId));
+  }
+
   @POST
   @Path("saml-idp-metadata-upload")
   @Timed
@@ -177,6 +187,39 @@ public class SSOResourceNG {
         isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), null, true));
   }
 
+  @PUT
+  @Path("saml-idp-metadata-upload-sso-id")
+  @Timed
+  @AuthRule(permissionType = LOGGED_IN)
+  @ExceptionMetered
+  @InternalApi
+  public RestResponse<SSOConfig> updateSamlMetaData(@QueryParam("accountId") String accountId,
+      @QueryParam("samlSSOId") String samlSSOId, @FormDataParam("file") InputStream uploadedInputStream,
+      @FormDataParam("displayName") String displayName,
+      @FormDataParam("groupMembershipAttr") String groupMembershipAttr,
+      @FormDataParam("authorizationEnabled") Boolean authorizationEnabled, @FormDataParam("logoutUrl") String logoutUrl,
+      @FormDataParam("entityIdentifier") String entityIdentifier,
+      @FormDataParam("samlProviderType") String samlProviderType, @FormDataParam("clientId") String clientId,
+      @FormDataParam("clientSecret") String clientSecret,
+      @FormDataParam("friendlySamlName") String friendlySamlAppName) {
+    final String clientSecretRef = getCGSecretManagerRefForClientSecret(accountId, false, clientId, clientSecret);
+    return new RestResponse<>(ssoService.updateSamlConfiguration(accountId, samlSSOId, uploadedInputStream, displayName,
+        groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
+        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), friendlySamlAppName, true));
+  }
+
+  @PUT
+  @Path("update-authentication-enabled-saml-setting")
+  @Timed
+  @AuthRule(permissionType = LOGGED_IN)
+  @ExceptionMetered
+  @InternalApi
+  public RestResponse<Boolean> updateLoginEnabledForSAMLSetting(@QueryParam("accountId") String accountId,
+      @QueryParam("samlSSOId") String samlSSOId, @QueryParam("enable") @DefaultValue("true") Boolean enable) {
+    ssoService.updateAuthenticationEnabledForSAMLSetting(accountId, samlSSOId, enable);
+    return new RestResponse<>(true);
+  }
+
   @DELETE
   @Path("delete-saml-idp-metadata")
   @Timed
@@ -186,12 +229,35 @@ public class SSOResourceNG {
     return new RestResponse<SSOConfig>(ssoService.deleteSamlConfiguration(accountId));
   }
 
+  @DELETE
+  @Path("delete-saml-idp-metadata-sso-id")
+  @Timed
+  @AuthRule(permissionType = LOGGED_IN)
+  @ExceptionMetered
+  public RestResponse<SSOConfig> deleteSamlMetaData(
+      @QueryParam("accountId") String accountId, @QueryParam("samlSSOId") String samlSSOId) {
+    return new RestResponse<>(ssoService.deleteSamlConfiguration(accountId, samlSSOId));
+  }
+
   @GET
   @Path("saml-login-test")
   public RestResponse<LoginTypeResponse> getSamlLoginTest(@QueryParam("accountId") @NotBlank String accountId) {
     LoginTypeResponseBuilder builder = LoginTypeResponse.builder();
     try {
       builder.SSORequest(samlClientService.generateTestSamlRequest(accountId));
+      return new RestResponse<>(builder.authenticationMechanism(AuthenticationMechanism.SAML).build());
+    } catch (Exception e) {
+      throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION);
+    }
+  }
+
+  @GET
+  @Path("v2/saml-login-test")
+  public RestResponse<LoginTypeResponse> getSamlLoginTest(
+      @QueryParam("accountId") @NotBlank String accountId, @QueryParam("samlSSOId") @NotNull String samlSSOId) {
+    LoginTypeResponseBuilder builder = LoginTypeResponse.builder();
+    try {
+      builder.SSORequest(samlClientService.generateTestSamlRequest(accountId, samlSSOId));
       return new RestResponse<>(builder.authenticationMechanism(AuthenticationMechanism.SAML).build());
     } catch (Exception e) {
       throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION);

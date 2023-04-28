@@ -65,7 +65,7 @@ public class SSOProviderTest extends GraphQLTest {
                        .origin("TestOrigin")
                        .build();
 
-    samlSettings = ssoSettingService.saveSamlSettings(samlSettings);
+    samlSettings = ssoSettingService.saveSamlSettings(samlSettings, false, false);
     ldapSettings = createLDAOSSOProvider();
   }
 
