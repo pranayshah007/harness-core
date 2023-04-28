@@ -5141,7 +5141,7 @@ plain_artifacts = [
     "org.atmosphere:atmosphere-runtime:2.7.6",
     "org.atmosphere:wasync:3.0.0",
     "org.atteo:evo-inflector:1.2.2",
-    "org.bitbucket.b_c:jose4j:0.7.0",
+    "org.bitbucket.b_c:jose4j:0.9.3",
     "org.bouncycastle:bcpg-jdk15on:1.70",
     "org.bouncycastle:bcpkix-jdk15on:1.70",
     "org.bouncycastle:bcprov-ext-jdk15on:1.70",
