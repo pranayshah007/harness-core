@@ -115,11 +115,12 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
     bcFileEntityDetails.ifPresent(entityDetailList::add);
 
     String secretManagerRef = stepParametersSpec.getConfiguration().getSecretManagerRef().getValue();
-    identifierRef = IdentifierRefHelper.getIdentifierRef(secretManagerRef, accountId, orgIdentifier, projectIdentifier);
-    entityDetail = EntityDetail.builder().type(EntityType.CONNECTORS).entityRef(identifierRef).build();
+    IdentifierRef secretManagerIdentifierRef =
+        IdentifierRefHelper.getIdentifierRef(secretManagerRef, accountId, orgIdentifier, projectIdentifier);
+    entityDetail = EntityDetail.builder().type(EntityType.CONNECTORS).entityRef(secretManagerIdentifierRef).build();
     entityDetailList.add(entityDetail);
 
-    terraformStepHelper.validateSecretManager(ambiance, accountId, orgIdentifier, projectIdentifier, secretManagerRef);
+    terraformStepHelper.validateSecretManager(ambiance, secretManagerIdentifierRef);
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetailList, true);
   }
 

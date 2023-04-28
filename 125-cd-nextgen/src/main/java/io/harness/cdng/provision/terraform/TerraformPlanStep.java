@@ -126,12 +126,11 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
     // Secret Manager Connector
     if (!stepParametersSpec.getConfiguration().getIsTerraformCloudCli().getValue()) {
       String secretManagerRef = stepParametersSpec.getConfiguration().getSecretManagerRef().getValue();
-      identifierRef =
+      IdentifierRef secretManagerIdentifierRef =
           IdentifierRefHelper.getIdentifierRef(secretManagerRef, accountId, orgIdentifier, projectIdentifier);
-      entityDetail = EntityDetail.builder().type(EntityType.CONNECTORS).entityRef(identifierRef).build();
+      entityDetail = EntityDetail.builder().type(EntityType.CONNECTORS).entityRef(secretManagerIdentifierRef).build();
       entityDetailList.add(entityDetail);
-
-      helper.validateSecretManager(ambiance, accountId, orgIdentifier, projectIdentifier, secretManagerRef);
+      helper.validateSecretManager(ambiance, secretManagerIdentifierRef);
     }
 
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetailList, true);
