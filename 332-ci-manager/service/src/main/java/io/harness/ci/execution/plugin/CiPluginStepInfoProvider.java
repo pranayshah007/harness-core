@@ -65,7 +65,8 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
                                                .collect(Collectors.toList());
     HashSet<Integer> ports = new HashSet<>(portFinder.getUsedPorts());
     ports.addAll(containerDefinitionInfo.getPorts());
-    ciAbstractStepNode.getType() return PluginCreationResponse.newBuilder()
+
+    return PluginCreationResponse.newBuilder()
         .setPluginDetails(
             PluginDetails.newBuilder()
                 .putAllEnvVariables(containerDefinitionInfo.getEnvVars())
