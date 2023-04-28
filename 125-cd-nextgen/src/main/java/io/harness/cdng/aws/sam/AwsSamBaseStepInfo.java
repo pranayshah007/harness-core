@@ -40,9 +40,9 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@TypeAlias("awsSamBuildBaseStepInfo")
-@FieldNameConstants(innerTypeName = "AwsSamBuildBaseStepInfoKeys")
-public class AwsSamBuildBaseStepInfo {
+@TypeAlias("awsSamBaseStepInfo")
+@FieldNameConstants(innerTypeName = "AwsSamBaseStepInfoKeys")
+public class AwsSamBaseStepInfo {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
@@ -70,10 +70,4 @@ public class AwsSamBuildBaseStepInfo {
   @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.ImagePullPolicy")
   private ParameterField<ImagePullPolicy> imagePullPolicy;
-
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  ParameterField<List<String>> buildCommandOptions;
-
-  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> samBuildDockerRegistryConnectorRef;
 }

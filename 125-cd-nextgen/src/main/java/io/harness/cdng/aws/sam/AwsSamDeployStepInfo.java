@@ -7,9 +7,12 @@
 
 package io.harness.cdng.aws.sam;
 
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.aws.sam.AwsSamDeployStepInfoVisitorHelper;
@@ -22,6 +25,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -45,7 +49,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.AWS_SAM_DEPLOY)
 @TypeAlias("awsSamDeployStepInfo")
 @RecasterAlias("io.harness.cdng.aws.sam.AwsSamDeployStepInfo")
-public class AwsSamDeployStepInfo extends AwsSamDeployBaseStepInfo implements CDAbstractStepInfo, Visitable {
+public class AwsSamDeployStepInfo extends AwsSamBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -53,14 +57,17 @@ public class AwsSamDeployStepInfo extends AwsSamDeployBaseStepInfo implements CD
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  ParameterField<List<String>> deployCommandOptions;
+
   @Builder(builderMethodName = "infoBuilder")
   public AwsSamDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
       ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
-      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
-      ParameterField<List<String>> deployCommandOptions) {
+      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy) {
     super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
-        imagePullPolicy, deployCommandOptions);
+        imagePullPolicy);
   }
   @Override
   public StepType getStepType() {

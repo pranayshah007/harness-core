@@ -7,9 +7,13 @@
 
 package io.harness.cdng.aws.sam;
 
+import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.aws.sam.AwsSamBuildStepInfoVisitorHelper;
@@ -22,6 +26,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -45,13 +50,19 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.AWS_SAM_BUILD)
 @TypeAlias("awsSamBuildStepInfo")
 @RecasterAlias("io.harness.cdng.aws.sam.AwsSamBuildStepInfo")
-public class AwsSamBuildStepInfo extends AwsSamBuildBaseStepInfo implements CDAbstractStepInfo, Visitable {
+public class AwsSamBuildStepInfo extends AwsSamBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   private String uuid;
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
+
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  ParameterField<List<String>> buildCommandOptions;
+
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> samBuildDockerRegistryConnectorRef;
 
   @Builder(builderMethodName = "infoBuilder")
   public AwsSamBuildStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
@@ -60,7 +71,9 @@ public class AwsSamBuildStepInfo extends AwsSamBuildBaseStepInfo implements CDAb
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
       ParameterField<List<String>> buildCommandOptions, ParameterField<String> samBuildDockerRegistryConnectorRef) {
     super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
-        imagePullPolicy, buildCommandOptions, samBuildDockerRegistryConnectorRef);
+        imagePullPolicy);
+    this.buildCommandOptions = buildCommandOptions;
+    this.samBuildDockerRegistryConnectorRef = samBuildDockerRegistryConnectorRef;
   }
   @Override
   public StepType getStepType() {

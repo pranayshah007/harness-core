@@ -117,8 +117,8 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
     AwsSamInfrastructureOutcome awsSamInfrastructureOutcome = (AwsSamInfrastructureOutcome) infrastructureOutcome;
 
     deployCommandOptionsMap.put("PLUGIN_REGION", awsSamInfrastructureOutcome.getRegion());
-    deployCommandOptionsMap.put("PLUGIN_AWS_ACCESS_KEY", "");
-    deployCommandOptionsMap.put("PLUGIN_AWS_SECRET_KEY", "");
+    deployCommandOptionsMap.put("PLUGIN_AWS_ACCESS_KEY", "AKIA3XTXJV7YFGEEUCNO");
+    deployCommandOptionsMap.put("PLUGIN_AWS_SECRET_KEY", "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");
 
     return deployCommandOptionsMap;
   }
