@@ -48,7 +48,6 @@ import static io.harness.delegate.message.MessageConstants.WATCHER_VERSION;
 import static io.harness.delegate.message.MessengerType.DELEGATE;
 import static io.harness.delegate.message.MessengerType.WATCHER;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_CONNECTED;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_DISCONNECTED;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.RESOURCE_CONSUMPTION_ABOVE_THRESHOLD;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_CURRENTLY_EXECUTING;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_IN_QUEUE;
@@ -738,7 +737,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           "Reached resource threshold, temporarily reject incoming task request. CurrentProcessRSSMB {} ThresholdMB {}",
           currentRSSMB, maxProcessRSSThresholdMB);
       rejectRequest.compareAndSet(false, true);
-      metricRegistry.recordGaugeInc(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME});
+      metricRegistry.recordGaugeValue(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME}, 1.0);
       return;
     }
 
@@ -748,7 +747,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           "Reached resource threshold, temporarily reject incoming task request. CurrentPodRSSMB {} ThresholdMB {}",
           currentPodRSSMB, maxPodRSSThresholdMB);
       rejectRequest.compareAndSet(false, true);
-      metricRegistry.recordGaugeInc(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME});
+      metricRegistry.recordGaugeValue(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME}, 1.0);
       return;
     }
     log.info("Process info CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
@@ -757,7 +756,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     if (cpuLoad > 90) {
       log.warn("CPU Average load is above 90%, {}", cpuLoad);
       rejectRequest.compareAndSet(false, true);
-      metricRegistry.recordGaugeInc(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME});
+      metricRegistry.recordGaugeValue(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME}, 1.0);
       return;
     }
 
@@ -765,6 +764,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       log.info(
           "Accepting incoming task request. CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
           currentRSSMB, maxProcessRSSThresholdMB, currentPodRSSMB, maxPodRSSThresholdMB);
+      metricRegistry.recordGaugeValue(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME}, 0.0);
     }
   }
 
@@ -852,17 +852,17 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void handleOpen(Object o) {
     log.info("Event:{}, message:[{}]", Event.OPEN.name(), o.toString());
-    metricRegistry.recordGaugeInc(DELEGATE_CONNECTED, new String[] {DELEGATE_NAME});
+    metricRegistry.recordGaugeValue(DELEGATE_CONNECTED, new String[] {DELEGATE_NAME}, 1.0);
   }
 
   private void handleClose(Object o) {
     log.info("Event:{}, trying to reconnect, message:[{}]", Event.CLOSE.name(), o);
-    metricRegistry.recordGaugeInc(DELEGATE_DISCONNECTED, new String[] {DELEGATE_NAME});
+    metricRegistry.recordGaugeValue(DELEGATE_CONNECTED, new String[] {DELEGATE_NAME}, 0.0);
   }
 
   private void handleError(final Exception e) {
     log.info("Event:{}", Event.ERROR.name(), e);
-    metricRegistry.recordGaugeInc(DELEGATE_DISCONNECTED, new String[] {DELEGATE_NAME});
+    metricRegistry.recordGaugeValue(DELEGATE_CONNECTED, new String[] {DELEGATE_NAME}, 0.0);
   }
 
   private void finalizeSocket() {
