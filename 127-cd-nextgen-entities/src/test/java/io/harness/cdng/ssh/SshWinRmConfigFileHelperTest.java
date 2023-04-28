@@ -28,7 +28,9 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.configfile.ConfigGitFile;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.manifest.yaml.BitbucketStore;
 import io.harness.cdng.manifest.yaml.GitStore;
+import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.delegate.beans.storeconfig.GitFetchedStoreDelegateConfig;
@@ -48,7 +50,6 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -125,55 +126,38 @@ public class SshWinRmConfigFileHelperTest extends CategoryTest {
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testGetFileDelegateConfigFromGithub() {
-    Ambiance ambiance = getAmbiance();
-    Map<String, ConfigFileOutcome> configFilesOutcome = new HashMap<>();
     GithubStore githubStore = GithubStore.builder().build();
-
-    configFilesOutcome.put("validConfigFile",
-        ConfigFileOutcome.builder()
-            .identifier("validConfigFile")
-            .gitFiles(Arrays.asList(
-                ConfigGitFile.builder().filePath("/path/" + CONFIG_FILE_NAME).fileContent(CONFIG_FILE_CONTENT).build()))
-            .store(githubStore)
-            .build());
-    when(cdExpressionResolver.updateExpressions(ambiance, githubStore)).thenReturn(githubStore);
-    when(cdExpressionResolver.renderExpression(any(), anyString(), anyBoolean())).thenReturn(CONFIG_FILE_CONTENT);
-
-    when(fileStoreService.getWithChildrenByPath(ACCOUNT_ID, ORG_ID, PROJECT_ID, CONFIG_FILE_VALID_PATH, true))
-        .thenReturn(Optional.of(getFileNodeDTO()));
-    when(ngEncryptedDataService.getEncryptionDetails(any(), any()))
-        .thenReturn(List.of(EncryptedDataDetail.builder().fieldName(ENCRYPTED_FILE_NAME).build()));
-
-    FileDelegateConfig fileDelegateConfig =
-        sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance, false);
-
-    assertThat(fileDelegateConfig.getStores()).isNotEmpty();
-    List<StoreDelegateConfig> stores = fileDelegateConfig.getStores();
-    GitFetchedStoreDelegateConfig storeDelegateConfig = (GitFetchedStoreDelegateConfig) stores.get(0);
-    assertThat(storeDelegateConfig.getConfigFiles()).isNotEmpty();
-    assertThat(storeDelegateConfig.getConfigFiles().size()).isEqualTo(1);
-
-    ConfigFileParameters configFile = storeDelegateConfig.getConfigFiles().get(0);
-    assertThat(configFile.getFileName()).isEqualTo(CONFIG_FILE_NAME);
-    assertThat(configFile.getFileContent()).isEqualTo(CONFIG_FILE_CONTENT);
+    verifyGetFileDelegateConfig(githubStore);
   }
 
   @Test
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testGetFileDelegateConfigFromGit() {
+    GitStore gitStore = GitStore.builder().build();
+    verifyGetFileDelegateConfig(gitStore);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetFileDelegateConfigFromBitBucket() {
+    BitbucketStore bitbucketStore = BitbucketStore.builder().build();
+    verifyGetFileDelegateConfig(bitbucketStore);
+  }
+
+  private void verifyGetFileDelegateConfig(GitStoreConfig githubStore) {
     Ambiance ambiance = getAmbiance();
     Map<String, ConfigFileOutcome> configFilesOutcome = new HashMap<>();
-    GitStore gitStore = GitStore.builder().build();
 
     configFilesOutcome.put("validConfigFile",
         ConfigFileOutcome.builder()
             .identifier("validConfigFile")
-            .gitFiles(Arrays.asList(
+            .gitFiles(List.of(
                 ConfigGitFile.builder().filePath("/path/" + CONFIG_FILE_NAME).fileContent(CONFIG_FILE_CONTENT).build()))
-            .store(gitStore)
+            .store(githubStore)
             .build());
-    when(cdExpressionResolver.updateExpressions(ambiance, gitStore)).thenReturn(gitStore);
+    when(cdExpressionResolver.updateExpressions(ambiance, githubStore)).thenReturn(githubStore);
     when(cdExpressionResolver.renderExpression(any(), anyString(), anyBoolean())).thenReturn(CONFIG_FILE_CONTENT);
 
     when(fileStoreService.getWithChildrenByPath(ACCOUNT_ID, ORG_ID, PROJECT_ID, CONFIG_FILE_VALID_PATH, true))

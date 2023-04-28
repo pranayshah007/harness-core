@@ -1043,8 +1043,11 @@ public class CDStepHelper {
       case GIT:
         delegateSelectors = ((GitConfigDTO) connectorInfoDTO.getConnectorConfig()).getDelegateSelectors();
         break;
+      case BITBUCKET:
+        delegateSelectors = ((BitbucketConnectorDTO) connectorInfoDTO.getConnectorConfig()).getDelegateSelectors();
+        break;
       default:
-        throw new UnsupportedOperationException(format("Unknown Connector Config for delegate selectors"));
+        throw new UnsupportedOperationException("Unknown Connector Config for delegate selectors");
     }
 
     return TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(delegateSelectors)
