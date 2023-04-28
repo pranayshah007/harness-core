@@ -34,6 +34,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
@@ -42,6 +43,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("environmentGroupYaml")
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml")
+@FieldNameConstants(innerTypeName = "environmentGroupYamlKeys")
 public class EnvironmentGroupYaml implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME) @ApiModelProperty(hidden = true) private String uuid;
 
