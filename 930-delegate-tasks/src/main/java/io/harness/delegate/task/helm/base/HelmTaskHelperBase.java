@@ -37,6 +37,8 @@ import static io.harness.helm.HelmConstants.V3Commands.HELM_CACHE_HOME;
 import static io.harness.helm.HelmConstants.V3Commands.HELM_CACHE_HOME_PATH;
 import static io.harness.helm.HelmConstants.V3Commands.HELM_REPO_ADD_FORCE_UPDATE;
 import static io.harness.helm.HelmConstants.V3Commands.HELM_REPO_FLAGS;
+import static io.harness.helm.HelmConstants.V3Commands.REGISTRY_CONFIG;
+import static io.harness.helm.HelmConstants.V3Commands.REGISTRY_CONFIG_SUFFIX;
 import static io.harness.k8s.kubectl.Utils.encloseWithQuotesIfNeeded;
 import static io.harness.logging.LogLevel.WARN;
 
@@ -76,6 +78,7 @@ import io.harness.exception.HelmClientRuntimeException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.filesystem.FileIo;
 import io.harness.helm.HelmCliCommandType;
 import io.harness.helm.HelmCommandFlagsUtils;
 import io.harness.helm.HelmCommandTemplateFactory;
@@ -145,6 +148,8 @@ public class HelmTaskHelperBase {
   private static final String PROCESS_RESULT_OUTPUT_FORMAT = "Output: [%s]";
 
   private static final String OCI_PREFIX = "oci://";
+  private static final String REGISTRY_CONFIG_DIR = "registry-config-files";
+  private static final String REGISTRY_CONFIG_JSON = "reg-config.json";
 
   @Inject private K8sGlobalConfigService k8sGlobalConfigService;
   @Inject private NgChartmuseumClientFactory ngChartmuseumClientFactory;
@@ -285,7 +290,7 @@ public class HelmTaskHelperBase {
   }
 
   public void loginOciRegistry(String repoUrl, String userName, char[] password, HelmVersion helmVersion,
-      long timeoutInMillis, String destinationDirectory) {
+      long timeoutInMillis, String destinationDirectory, String registryConfigFilePath) {
     if (!HelmVersion.isHelmV3(helmVersion)) {
       throw new HelmClientException(
           "OCI Registry is supported only for Helm V3", USER, HelmCliCommandType.OCI_REGISTRY_LOGIN);
@@ -299,6 +304,10 @@ public class HelmTaskHelperBase {
             .replace(USERNAME, getUsername(userName))
             .replace(PASSWORD, getPassword(password));
 
+    if (isNotEmpty(registryConfigFilePath)) {
+      registryLoginCmd = addRegistryConfig(registryLoginCmd, registryConfigFilePath);
+    }
+
     String evaluatedPassword = isEmpty(getPassword(password)) ? StringUtils.EMPTY : "--password *******";
     String registryLoginCmdForLogging =
         HelmCommandTemplateFactory.getHelmCommandTemplate(HelmCliCommandType.OCI_REGISTRY_LOGIN, helmVersion)
@@ -306,6 +315,10 @@ public class HelmTaskHelperBase {
             .replace(REGISTRY_URL, repoUrl)
             .replace(USERNAME, getUsername(userName))
             .replace(PASSWORD, evaluatedPassword);
+
+    if (isNotEmpty(registryConfigFilePath)) {
+      registryLoginCmdForLogging = addRegistryConfig(registryLoginCmdForLogging, registryConfigFilePath);
+    }
 
     ProcessResult processResult = executeCommand(environment, registryLoginCmd, destinationDirectory,
         "Attempt Login to OCI Registry. Command Executed: " + registryLoginCmdForLogging, timeoutInMillis,
@@ -319,6 +332,11 @@ public class HelmTaskHelperBase {
               exitCode, registryLoginCmdForLogging, processOutput);
       throw new HelmClientException(exceptionMessage, USER, HelmCliCommandType.OCI_REGISTRY_LOGIN);
     }
+  }
+
+  public String addRegistryConfig(String cmd, String regConfigFilePath) {
+    String cmdWithRegConfig = cmd + " " + REGISTRY_CONFIG_SUFFIX;
+    return cmdWithRegConfig.replace(REGISTRY_CONFIG, regConfigFilePath);
   }
 
   public void addRepoInternal(String repoName, String repoDisplayName, String chartRepoUrl, String username,
@@ -551,12 +569,16 @@ public class HelmTaskHelperBase {
   }
 
   public String getHelmFetchCommand(String chartName, String chartVersion, String repoName, String workingDirectory,
-      HelmVersion helmVersion, HelmCommandFlag helmCommandFlag) {
+      HelmVersion helmVersion, HelmCommandFlag helmCommandFlag, String regFileConfig) {
     HelmCliCommandType commandType = HelmCliCommandType.FETCH;
     String helmFetchCommand = HelmCommandTemplateFactory.getHelmCommandTemplate(commandType, helmVersion)
                                   .replace(HELM_PATH_PLACEHOLDER, getHelmPath(helmVersion))
                                   .replace("${CHART_NAME}", chartName)
                                   .replace("${CHART_VERSION}", getChartVersion(chartVersion));
+
+    if (isNotEmpty(regFileConfig)) {
+      helmFetchCommand = addRegistryConfig(helmFetchCommand, regFileConfig);
+    }
 
     if (isNotBlank(repoName)) {
       helmFetchCommand = helmFetchCommand.replace(REPO_NAME, repoName);
@@ -573,9 +595,9 @@ public class HelmTaskHelperBase {
 
   public void fetchChartFromRepo(String repoName, String repoDisplayName, String chartName, String chartVersion,
       String chartDirectory, HelmVersion helmVersion, HelmCommandFlag helmCommandFlag, long timeoutInMillis,
-      String cacheDir) {
-    String helmFetchCommand =
-        getHelmFetchCommand(chartName, chartVersion, repoName, chartDirectory, helmVersion, helmCommandFlag);
+      String cacheDir, String registryFileConfig) {
+    String helmFetchCommand = getHelmFetchCommand(
+        chartName, chartVersion, repoName, chartDirectory, helmVersion, helmCommandFlag, registryFileConfig);
     if (isEmpty(cacheDir)) {
       executeFetchChartFromRepo(
           chartName, chartDirectory, repoDisplayName, helmFetchCommand, timeoutInMillis, chartVersion);
@@ -690,7 +712,7 @@ public class HelmTaskHelperBase {
           timeoutInMillis, cacheDir, manifest.getHelmCommandFlag());
       fetchChartFromRepo(storeDelegateConfig.getRepoName(), storeDelegateConfig.getRepoDisplayName(),
           manifest.getChartName(), manifest.getChartVersion(), destinationDirectory, manifest.getHelmVersion(),
-          manifest.getHelmCommandFlag(), timeoutInMillis, cacheDir);
+          manifest.getHelmCommandFlag(), timeoutInMillis, cacheDir, "");
     } finally {
       if (isNotEmpty(cacheDir) && !manifest.isUseCache()) {
         try {
@@ -715,12 +737,15 @@ public class HelmTaskHelperBase {
 
     String cacheDir = getCacheDir(manifest, storeDelegateConfig.getRepoName(), HelmVersion.V380);
 
+    // create registry-config per deployment and pass this along to getRepoName
+    String registryConfigFilePath = getRegFileConfigPath();
+
     try {
-      String repoName =
-          getRepoName(ociHelmConnector, storeDelegateConfig.getBasePath(), timeoutInMillis, destinationDirectory);
+      String repoName = getRepoName(ociHelmConnector, storeDelegateConfig.getBasePath(), timeoutInMillis,
+          destinationDirectory, registryConfigFilePath);
       fetchChartFromRepo(repoName, storeDelegateConfig.getRepoDisplayName(), manifest.getChartName(),
           manifest.getChartVersion(), destinationDirectory, HelmVersion.V380, manifest.getHelmCommandFlag(),
-          timeoutInMillis, cacheDir);
+          timeoutInMillis, cacheDir, registryConfigFilePath);
     } finally {
       if (!manifest.isUseCache()) {
         try {
@@ -730,16 +755,27 @@ public class HelmTaskHelperBase {
               "Deletion of folder failed due to : {}", ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
         }
       }
+      // delete registry-config file
+      FileIo.deleteFileIfExists(registryConfigFilePath);
     }
   }
 
+  public String getRegFileConfigPath() {
+    return Paths
+        .get(RESOURCE_DIR_BASE, REGISTRY_CONFIG_DIR,
+            RandomStringUtils.randomAlphabetic(5).toLowerCase(Locale.ROOT) + "-" + REGISTRY_CONFIG_JSON)
+        .toAbsolutePath()
+        .normalize()
+        .toString();
+  }
+
   private String getRepoName(OciHelmConnectorDTO ociHelmConnectorDTO, String basePath, long timeoutInMillis,
-      String destinationDirectory) throws Exception {
+      String destinationDirectory, String registryConfigFilePath) throws Exception {
     String repoName;
     if (OciHelmAuthType.USER_PASSWORD.equals(ociHelmConnectorDTO.getAuth().getAuthType())) {
       String repoUrl = getParsedUrlForUserNamePwd(ociHelmConnectorDTO.getHelmRepoUrl());
       loginOciRegistry(repoUrl, getOciHelmUsername(ociHelmConnectorDTO), getOciHelmPassword(ociHelmConnectorDTO),
-          HelmVersion.V380, timeoutInMillis, destinationDirectory);
+          HelmVersion.V380, timeoutInMillis, destinationDirectory, registryConfigFilePath);
       repoName = format(REGISTRY_URL_PREFIX, Paths.get(repoUrl, basePath).normalize());
     } else if (OciHelmAuthType.ANONYMOUS.equals(ociHelmConnectorDTO.getAuth().getAuthType())) {
       String ociUrl = getParsedURI(ociHelmConnectorDTO.getHelmRepoUrl()).toString();
@@ -798,7 +834,8 @@ public class HelmTaskHelperBase {
       addChartMuseumRepo(repoName, repoDisplayName, chartMuseumServer.getPort(), destinationDirectory,
           manifest.getHelmVersion(), timeoutInMillis, cacheDir, manifest.getHelmCommandFlag());
       fetchChartFromRepo(repoName, repoDisplayName, manifest.getChartName(), manifest.getChartVersion(),
-          destinationDirectory, manifest.getHelmVersion(), manifest.getHelmCommandFlag(), timeoutInMillis, cacheDir);
+          destinationDirectory, manifest.getHelmVersion(), manifest.getHelmCommandFlag(), timeoutInMillis, cacheDir,
+          "");
 
     } finally {
       if (chartmuseumClient != null && chartMuseumServer != null) {
