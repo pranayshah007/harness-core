@@ -40,6 +40,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotBlank;
 
 @Data
@@ -116,7 +117,18 @@ public class GitlabConnectorDTO
 
   @Override
   public GitRepositoryDTO getGitRepositoryDetails() {
-    return GitRepositoryDTO.builder().build();
+    if (GitConnectionType.REPO.equals(connectionType)) {
+      GitRepositoryDTO gitRepositoryDTO = getRepositoryFromApiUrl();
+      if (gitRepositoryDTO != null) {
+        return gitRepositoryDTO;
+      }
+
+      return GitRepositoryDTO.builder()
+          .name(GitClientHelper.getGitRepo(url))
+          .org(GitClientHelper.getGitOwner(url, false))
+          .build();
+    }
+    return GitRepositoryDTO.builder().org(GitClientHelper.getGitOwner(url, true)).build();
   }
 
   @Override
@@ -140,5 +152,30 @@ public class GitlabConnectorDTO
         .delegateSelectors(this.delegateSelectors)
         .executeOnDelegate(this.executeOnDelegate)
         .build();
+  }
+
+  private GitRepositoryDTO getRepositoryFromApiUrl() {
+    if (!GitConnectionType.REPO.equals(connectionType) || !GitAuthType.HTTP.equals(authentication.getAuthType())) {
+      return null;
+    }
+    if (apiAccess == null || !(apiAccess.getSpec() instanceof GitlabTokenSpecDTO)) {
+      return null;
+    }
+    GitlabTokenSpecDTO gitlabTokenSpecDTO = (GitlabTokenSpecDTO) apiAccess.getSpec();
+    String apiUrl = gitlabTokenSpecDTO.getApiUrl();
+    if (StringUtils.isBlank(apiUrl)) {
+      return null;
+    }
+    apiUrl = StringUtils.removeEnd(apiUrl, "/") + "/";
+    String ownerAndRepo = StringUtils.removeStart(url, apiUrl);
+    ownerAndRepo = StringUtils.removeEnd(ownerAndRepo, ".git");
+    if (ownerAndRepo.contains("/")) {
+      String[] parts = ownerAndRepo.split("/");
+      String repo = parts[parts.length - 1];
+      String owner = StringUtils.removeEnd(ownerAndRepo, "/" + repo);
+      return GitRepositoryDTO.builder().name(repo).org(owner).build();
+    }
+
+    return null;
   }
 }
