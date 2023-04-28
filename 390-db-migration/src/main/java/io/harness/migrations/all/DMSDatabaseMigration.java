@@ -144,13 +144,13 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
     try (HIterator<PersistentEntity> records = new HIterator<>(query.fetch())) {
       for (PersistentEntity record : records) {
         insertDocCount++;
-        bulkWriteOperation.insert(morphia.toDBObject(record));
-        if (insertDocCount % 1000 == 0) {
-          try {
+        try {
+          bulkWriteOperation.insert(morphia.toDBObject(record));
+          if (insertDocCount % 1000 == 0) {
             bulkWriteOperation.execute();
-          } catch (Exception ex) {
-            log.warn("Exception occured while copying data", ex);
           }
+        } catch (Exception ex) {
+          log.warn("Exception occured while copying data", ex);
         }
       }
     }
