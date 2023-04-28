@@ -22,7 +22,9 @@ public class GcpSecretManagerEntityToDTO
   public GcpSecretManagerConnectorDTO createConnectorDTO(GcpSecretManagerConnector connector) {
     return GcpSecretManagerConnectorDTO.builder()
         .isDefault(connector.getIsDefault())
-        .credentialsRef(connector.getCredentialsRef() != null ? SecretRefHelper.createSecretRef(connector.getCredentialsRef()) : null)
+        .credentialsRef(connector.getCredentialsRef() != null
+                ? SecretRefHelper.createSecretRef(connector.getCredentialsRef())
+                : null)
         .assumeCredentialsOnDelegate(connector.getAssumeCredentialsOnDelegate())
         .build();
   }

@@ -134,10 +134,8 @@ public class GcpSecretManagerDTOToEntityTest extends CategoryTest {
   @Owner(developers = RICHA)
   @Category(UnitTests.class)
   public void testAllFieldsHaveCorrectValueWithCredentialsOnDelegate() throws IllegalAccessException {
-    GcpSecretManagerConnectorDTO connectorDTO = GcpSecretManagerConnectorDTO.builder()
-                                                    .assumeCredentialsOnDelegate(true)
-                                                    .isDefault(false)
-                                                    .build();
+    GcpSecretManagerConnectorDTO connectorDTO =
+        GcpSecretManagerConnectorDTO.builder().assumeCredentialsOnDelegate(true).isDefault(false).build();
     GcpSecretManagerConnector connector = gcpSecretManagerDTOToEntity.toConnectorEntity(connectorDTO);
     assertNotNull(connector);
     assertThat(connector.getIsDefault()).isEqualTo(false);

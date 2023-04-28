@@ -66,8 +66,7 @@ public class GcpSecretsManagerConfig extends SecretManagerConfig {
   @Encrypted(fieldName = "gcp_service_account_credentials")
   private char[] credentials;
 
-  @Attributes(title = "Assume Credentials On Delegate")
-  private Boolean assumeCredentialsOnDelegate;
+  @Attributes(title = "Assume Credentials On Delegate") private Boolean assumeCredentialsOnDelegate;
 
   @Attributes(title = "delegateSelectors") private Set<String> delegateSelectors;
 
@@ -120,11 +119,10 @@ public class GcpSecretsManagerConfig extends SecretManagerConfig {
 
   @Override
   public SecretManagerConfigDTO toDTO(boolean maskSecrets) {
-    GcpSecretManagerConfigDTO configDTO =
-        GcpSecretManagerConfigDTO.builder()
-                .delegateSelectors(getDelegateSelectors())
-                .assumeCredentialsOnDelegate(getAssumeCredentialsOnDelegate())
-                .build();
+    GcpSecretManagerConfigDTO configDTO = GcpSecretManagerConfigDTO.builder()
+                                              .delegateSelectors(getDelegateSelectors())
+                                              .assumeCredentialsOnDelegate(getAssumeCredentialsOnDelegate())
+                                              .build();
     if (!maskSecrets) {
       configDTO.setCredentials(getCredentials());
     }

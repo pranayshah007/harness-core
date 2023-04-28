@@ -41,7 +41,6 @@ public class GcpSecretManagerEntityToDTOTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     defaultFieldNamesToValue = new HashMap<>();
     defaultFieldNamesToValue.put("isDefault", false);
-    defaultFieldNamesToValue.put("credentialsRef", SecretRefData.builder().build());
   }
 
   @Test
@@ -113,7 +112,7 @@ public class GcpSecretManagerEntityToDTOTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testEntityToDTOWithValuesWithCredentialsOnDelegate() throws IllegalAccessException {
     GcpSecretManagerConnector connector =
-            GcpSecretManagerConnector.builder().assumeCredentialsOnDelegate(true).isDefault(false).build();
+        GcpSecretManagerConnector.builder().assumeCredentialsOnDelegate(true).isDefault(false).build();
     GcpSecretManagerConnectorDTO connectorDTO = gcpSecretManagerEntityToDTO.createConnectorDTO(connector);
     Field[] fields = GcpSecretManagerConnectorDTO.class.getDeclaredFields();
     assertThat(fields.length).isEqualTo(4);

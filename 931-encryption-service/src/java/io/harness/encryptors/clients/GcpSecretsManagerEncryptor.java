@@ -27,7 +27,6 @@ import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 
-import org.apache.commons.lang3.BooleanUtils;
 import software.wings.beans.GcpSecretsManagerConfig;
 
 import com.google.api.gax.core.FixedCredentialsProvider;
@@ -56,6 +55,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.jetbrains.annotations.NotNull;
 import org.threeten.bp.Duration;
 
@@ -321,12 +321,12 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
   public GoogleCredentials getGoogleCredentials(GcpSecretsManagerConfig gcpSecretsManagerConfig) {
     try {
       if (BooleanUtils.isTrue(gcpSecretsManagerConfig.getAssumeCredentialsOnDelegate())) {
-          return GoogleCredentials.getApplicationDefault();
+        return GoogleCredentials.getApplicationDefault();
       }
-    if (gcpSecretsManagerConfig.getCredentials() == null) {
-      throw new SecretManagementException(GCP_SECRET_OPERATION_ERROR,
-          "GCP Secret Manager credentials are missing. Please check if the credentials secret exists.", USER);
-    }
+      if (gcpSecretsManagerConfig.getCredentials() == null) {
+        throw new SecretManagementException(GCP_SECRET_OPERATION_ERROR,
+            "GCP Secret Manager credentials are missing. Please check if the credentials secret exists.", USER);
+      }
       return GoogleCredentials
           .fromStream(new ByteArrayInputStream(String.valueOf(gcpSecretsManagerConfig.getCredentials()).getBytes()))
           .createScoped(Lists.newArrayList("https://www.googleapis.com/auth/cloud-platform"));
