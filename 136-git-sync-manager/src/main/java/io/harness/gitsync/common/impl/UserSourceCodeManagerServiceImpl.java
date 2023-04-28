@@ -78,9 +78,11 @@ public class UserSourceCodeManagerServiceImpl implements UserSourceCodeManagerSe
     String userIdentifier = userSourceCodeManager.getUserIdentifier();
     if (userIdentifier != null) {
       UserSourceCodeManager savedUserSourceCodeManager;
-      UserDetailsResponseDTO userResponse = getUserDetails(userSourceCodeManager);
-      userSourceCodeManager.setUserName(userResponse.getUserName());
-      userSourceCodeManager.setUserEmail(userResponse.getUserEmail());
+      if (userSourceCodeManager.getType() != SCMType.AZURE_REPO) {
+        UserDetailsResponseDTO userResponse = getUserDetails(userSourceCodeManager);
+        userSourceCodeManager.setUserName(userResponse.getUserName());
+        userSourceCodeManager.setUserEmail(userResponse.getUserEmail());
+      }
       try {
         savedUserSourceCodeManager =
             userSourceCodeManagerRepository.save(scmMapperHelper.toEntity(userSourceCodeManager));

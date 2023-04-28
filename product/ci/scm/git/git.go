@@ -583,6 +583,15 @@ func GetAuthenticatedUser(ctx context.Context, request *pb.GetAuthenticatedUserR
 		log.Errorw("GetAuthenticatedUser failure", "provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 		return nil, err
 	}
+
+	if response.Email == "" {
+	    email, _, err := client.Users.FindEmail(ctx)
+	    if err != nil {
+	        log.Errorw("GetAuthenticatedUser email failure", "provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+	        return nil, err
+	    }
+	    response.Email = email
+	}
 	log.Infow("GetAuthenticatedUser success", "elapsed_time_ms", utils.TimeSince(start))
 
 	out = &pb.GetAuthenticatedUserResponse{
