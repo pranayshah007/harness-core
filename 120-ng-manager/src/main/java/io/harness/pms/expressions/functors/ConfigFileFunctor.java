@@ -32,18 +32,22 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.execution.expression.SdkFunctor;
+import io.harness.utils.FilePathUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.CDP)
 public class ConfigFileFunctor implements SdkFunctor {
   public static final int MAX_CONFIG_FILE_SIZE = 4 * ExpressionEvaluatorUtils.EXPANSION_LIMIT;
   private static final int NUMBER_OF_EXPECTED_ARGS = 2;
   private static final int METHOD_NAME_ARG = 0;
-  private static final int CONFIG_FILE_IDENTIFIER = 1;
+  private static final int CONFIG_FILE_IDENTIFIER_WITH_REFERENCE = 1;
+  private static final String CONFIG_FILE_IDENTIFIER_REFERENCE_DELIMITER = ":";
 
   @Inject private CDStepHelper cdStepHelper;
   @Inject private CDExpressionResolver cdExpressionResolver;
@@ -55,10 +59,35 @@ public class ConfigFileFunctor implements SdkFunctor {
     }
 
     String methodName = args[METHOD_NAME_ARG];
-    String configFileIdentifier = args[CONFIG_FILE_IDENTIFIER];
+    String configFileIdentifierWithReference = args[CONFIG_FILE_IDENTIFIER_WITH_REFERENCE];
+
+    Pair<String, String> configFileIdentifierAndReference =
+        getConfigFileIdentifierAndReference(configFileIdentifierWithReference);
+    String configFileIdentifier = configFileIdentifierAndReference.getLeft();
+    String reference = configFileIdentifierAndReference.getRight();
 
     ConfigFileOutcome configFileOutcome = getConfigFileOutcome(ambiance, configFileIdentifier);
-    return getConfigFileContent(ambiance, configFileOutcome, methodName);
+    return getConfigFileContent(ambiance, configFileOutcome, reference, methodName);
+  }
+
+  @VisibleForTesting
+  Pair<String, String> getConfigFileIdentifierAndReference(String configFileIdentifierWithReference) {
+    if (isEmpty(configFileIdentifierWithReference)) {
+      throw new InvalidArgumentsException("Config file identifier cannot be null or empty");
+    }
+    if (configFileIdentifierWithReference.startsWith(CONFIG_FILE_IDENTIFIER_REFERENCE_DELIMITER)
+        || configFileIdentifierWithReference.endsWith(CONFIG_FILE_IDENTIFIER_REFERENCE_DELIMITER)) {
+      throw new InvalidArgumentsException(
+          format("Found invalid config file identifier, %s", configFileIdentifierWithReference));
+    }
+
+    if (!configFileIdentifierWithReference.contains(CONFIG_FILE_IDENTIFIER_REFERENCE_DELIMITER)) {
+      return Pair.of(configFileIdentifierWithReference, null);
+    }
+
+    String[] configFileIdentifierAndReference =
+        configFileIdentifierWithReference.split(CONFIG_FILE_IDENTIFIER_REFERENCE_DELIMITER, 2);
+    return Pair.of(configFileIdentifierAndReference[0], configFileIdentifierAndReference[1]);
   }
 
   private ConfigFileOutcome getConfigFileOutcome(Ambiance ambiance, String configFileIdentifier) {
@@ -75,61 +104,59 @@ public class ConfigFileFunctor implements SdkFunctor {
     return configFilesOutcome.get(configFileIdentifier);
   }
 
-  private String getConfigFileContent(Ambiance ambiance, ConfigFileOutcome configFileOutcome, final String methodName) {
+  private String getConfigFileContent(
+      Ambiance ambiance, ConfigFileOutcome configFileOutcome, String reference, final String methodName) {
     String configFileIdentifier = configFileOutcome.getIdentifier();
     StoreConfig storeConfig = configFileOutcome.getStore();
-    if (storeConfig == null) {
-      throw new InvalidRequestException(
-          format("Not added Harness file source to config file, configFileIdentifier: %s, store kind: %s",
-              configFileIdentifier, storeConfig.getKind()));
-    }
+    validateStoreConfig(configFileIdentifier, storeConfig);
 
-    if (HARNESS_STORE_TYPE.equals(storeConfig.getKind())) {
+    String storeConfigKind = storeConfig.getKind();
+    if (HARNESS_STORE_TYPE.equals(storeConfigKind)) {
       List<String> files = ParameterFieldHelper.getParameterFieldValue(((HarnessStore) storeConfig).getFiles());
       List<String> secretFiles =
           ParameterFieldHelper.getParameterFieldValue(((HarnessStore) storeConfig).getSecretFiles());
-      validateConfigFileAttachedFilesAndEncryptedFiles(configFileIdentifier, files, secretFiles);
+      validateHarnessStoreConfigFiles(configFileIdentifier, reference, files, secretFiles);
+      if (isEmpty(reference)) {
+        return isNotEmpty(files) ? getFileStoreFileContent(ambiance, methodName, files.get(0))
+                                 : getSecretFileContent(ambiance, methodName, secretFiles.get(0));
+      }
 
-      return isNotEmpty(files) ? getFileStoreFileContent(ambiance, methodName, files.get(0))
-                               : getSecretFileContent(ambiance, methodName, secretFiles.get(0));
-    } else if (ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
-      validateConfigGitFiles(configFileOutcome.getIdentifier(), configFileOutcome.getGitFiles());
-      return getGitFileContent(ambiance, methodName, configFileOutcome.getGitFiles().get(0).getFileContent());
+      return FilePathUtils.isScopedFilePath(reference) ? getFileStoreFileContent(ambiance, methodName, reference)
+                                                       : getSecretFileContent(ambiance, methodName, reference);
+    } else if (ManifestStoreType.isInGitSubset(storeConfigKind)) {
+      validateGitStoreConfigFiles(configFileOutcome.getIdentifier(), reference, configFileOutcome.getGitFiles());
+      String gitFileContent =
+          getGitFileContentOrThrow(configFileIdentifier, reference, configFileOutcome.getGitFiles());
+      return updateGitFileContentByMethodAndRenderExpressions(ambiance, methodName, gitFileContent);
     } else {
       throw new InvalidRequestException(
-          format("Invalid store kind for config file, configFileIdentifier: %s", configFileIdentifier));
+          format("Invalid store kind for config file, configFileIdentifier: %s, storeConfigKind: %s",
+              configFileIdentifier, storeConfigKind));
     }
   }
 
-  private String getGitFileContent(Ambiance ambiance, final String methodName, String content) {
-    content = cdExpressionResolver.renderExpression(ambiance, content);
-    if (FUNCTOR_STRING_METHOD_NAME.equals(methodName)) {
-      return content;
-    } else if (FUNCTOR_BASE64_METHOD_NAME.equals(methodName)) {
-      return EncodingUtils.encodeBase64(content);
-    } else {
-      throw new InvalidArgumentsException(format("Unsupported configFile functor method: %s", methodName));
+  private void validateStoreConfig(String configFileIdentifier, StoreConfig storeConfig) {
+    if (storeConfig == null) {
+      throw new InvalidRequestException(
+          format("Not added store config to config file, configFileIdentifier: %s", configFileIdentifier));
     }
   }
 
-  private void validateConfigGitFiles(String configFileIdentifier, List<ConfigGitFile> configGitFileList) {
-    if (isEmpty(configGitFileList)) {
-      throw new InvalidArgumentsException(
-          format("Not added file to config file, configFileIdentifier: %s", configFileIdentifier));
-    }
-    if (configGitFileList.size() > 1) {
-      throw new InvalidArgumentsException(
-          format("Found more files attached to config file, configFileIdentifier: %s", configFileIdentifier));
-    }
-  }
-
-  private void validateConfigFileAttachedFilesAndEncryptedFiles(
-      String configFileIdentifier, List<String> files, List<String> secretFiles) {
+  private void validateHarnessStoreConfigFiles(
+      String configFileIdentifier, String reference, List<String> files, List<String> secretFiles) {
     if (isEmpty(files) && isEmpty(secretFiles)) {
       throw new InvalidArgumentsException(
-          format("Not added file or encrypted file to config file, configFileIdentifier: %s", configFileIdentifier));
+          format("Not added Harness Store file or encrypted file to config file, configFileIdentifier: %s",
+              configFileIdentifier));
     }
 
+    if (isEmpty(reference)) {
+      validateHarnessStoreConfigFilesWithoutReference(configFileIdentifier, files, secretFiles);
+    }
+  }
+
+  private void validateHarnessStoreConfigFilesWithoutReference(
+      String configFileIdentifier, List<String> files, List<String> secretFiles) {
     if (isNotEmpty(files) && isNotEmpty(secretFiles)) {
       throw new InvalidArgumentsException(
           format("Found file and encrypted file both attached to config file, configFileIdentifier: %s",
@@ -175,5 +202,50 @@ public class ConfigFileFunctor implements SdkFunctor {
 
   private String getSecretFileContentAsBase64(Ambiance ambiance, final String ref) {
     return "${ngSecretManager.obtainSecretFileAsBase64(\"" + ref + "\", " + ambiance.getExpressionFunctorToken() + ")}";
+  }
+
+  private void validateGitStoreConfigFiles(
+      String configFileIdentifier, String reference, List<ConfigGitFile> configGitFileList) {
+    if (isEmpty(configGitFileList)) {
+      throw new InvalidArgumentsException(
+          format("Not added Git file to config file, configFileIdentifier: %s", configFileIdentifier));
+    }
+
+    if (isEmpty(reference)) {
+      validateGitStoreConfigFilesWithoutReference(configFileIdentifier, configGitFileList);
+    }
+  }
+
+  private void validateGitStoreConfigFilesWithoutReference(
+      String configFileIdentifier, List<ConfigGitFile> configGitFileList) {
+    if (isNotEmpty(configGitFileList) && configGitFileList.size() > 1) {
+      throw new InvalidArgumentsException(
+          format("Found more git files attached to config file, configFileIdentifier: %s", configFileIdentifier));
+    }
+  }
+
+  private String getGitFileContentOrThrow(String configFileIdentifier, String reference, List<ConfigGitFile> gitFiles) {
+    return isEmpty(reference)
+        ? gitFiles.get(0).getFileContent()
+        : gitFiles.stream()
+              .filter(configGitFile -> configGitFile != null && reference.equals(configGitFile.getFilePath()))
+              .map(ConfigGitFile::getFileContent)
+              .findFirst()
+              .orElseThrow(()
+                               -> new InvalidArgumentsException(
+                                   format("Not found Git file with reference: [%s], configFileIdentifier: %s",
+                                       reference, configFileIdentifier)));
+  }
+
+  private String updateGitFileContentByMethodAndRenderExpressions(
+      Ambiance ambiance, final String methodName, String content) {
+    content = cdExpressionResolver.renderExpression(ambiance, content);
+    if (FUNCTOR_STRING_METHOD_NAME.equals(methodName)) {
+      return content;
+    } else if (FUNCTOR_BASE64_METHOD_NAME.equals(methodName)) {
+      return EncodingUtils.encodeBase64(content);
+    } else {
+      throw new InvalidArgumentsException(format("Unsupported configFile functor method: %s", methodName));
+    }
   }
 }
