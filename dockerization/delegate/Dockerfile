@@ -19,6 +19,7 @@ RUN microdnf update --nodocs \
     gzip \
     git \
     shadow-utils \
+    glibc-langpack-en \
   && useradd -u 1001 -g 0 harness \
   && microdnf remove shadow-utils \
   && microdnf clean all \
