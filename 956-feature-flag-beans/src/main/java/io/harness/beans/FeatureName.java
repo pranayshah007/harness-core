@@ -733,7 +733,10 @@ public enum FeatureName {
       HarnessTeam.PL),
   CDS_SUPPORT_TICKET_DEFLECTION("Enable api to create zendesk ticket and for generating coveo token", HarnessTeam.CDP),
   SRM_SPLUNK_SIGNALFX("Will enable SignalFX metric health source in SRM", HarnessTeam.CV),
-  CI_USE_S3_FOR_CACHE("Use S3 bucket for cache intelligence instead of GCP", HarnessTeam.CI);
+  CI_USE_S3_FOR_CACHE("Use S3 bucket for cache intelligence instead of GCP", HarnessTeam.CI),
+  BUILD_CREDITS_VIEW(
+      "Enable build credit dashboard in UI, FF will be removed once the Free credits allocation for all users are introduced",
+      HarnessTeam.GTM);
 
   @Deprecated
   FeatureName() {
