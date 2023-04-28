@@ -24,6 +24,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -73,12 +74,17 @@ public class PMSPipelineServiceStepHelper {
 
   public StepCategory addStepsToStepCategory(StepCategory stepCategory, List<StepInfo> stepInfoList, String accountId) {
     List<StepInfo> ffEnabledStepInfoList = filterStepsBasedOnFeatureFlag(stepInfoList, accountId);
-    Map<FeatureRestrictionName, Boolean> featureRestrictionNameBooleanMap =
-        pipelineEnforcementService.getFeatureRestrictionMap(accountId,
-            ffEnabledStepInfoList.stream()
-                .filter(stepInfo -> EmptyPredicate.isNotEmpty(stepInfo.getFeatureRestrictionName()))
-                .map(StepInfo::getFeatureRestrictionName)
-                .collect(Collectors.toSet()));
+    Map<FeatureRestrictionName, Boolean> featureRestrictionNameBooleanMap = new HashMap<>();
+
+    try {
+      featureRestrictionNameBooleanMap = pipelineEnforcementService.getFeatureRestrictionMap(accountId,
+          ffEnabledStepInfoList.stream()
+              .filter(stepInfo -> EmptyPredicate.isNotEmpty(stepInfo.getFeatureRestrictionName()))
+              .map(StepInfo::getFeatureRestrictionName)
+              .collect(Collectors.toSet()));
+    } catch (Exception e) {
+      log.error("Failed to get feature restriction map for the step category.", e);
+    }
     for (StepInfo stepType : ffEnabledStepInfoList) {
       addToTopLevel(stepCategory, stepType, featureRestrictionNameBooleanMap);
     }
