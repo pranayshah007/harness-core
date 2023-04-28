@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.manifest.ManifestStoreType.BITBUCKET;
 import static io.harness.cdng.manifest.ManifestStoreType.GIT;
 import static io.harness.cdng.manifest.ManifestStoreType.GITHUB;
+import static io.harness.cdng.manifest.ManifestStoreType.GITLAB;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -100,6 +101,7 @@ public class SshWinRmConfigFileHelper {
           case GITHUB:
           case GIT:
           case BITBUCKET:
+          case GITLAB:
             stores.add(buildGitFetchedStoreDelegateConfig(ambiance, configFileOutcome));
             break;
           default:
