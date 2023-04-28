@@ -282,6 +282,7 @@ public class PipelineMigrationService extends NgMigrationService {
     List<StageElementWrapperConfig> ngStages = new ArrayList<>();
     List<StageElementWrapperConfig> parallelStages = null;
     List<NGVariable> pipelineVariables = getPipelineVariables(migrationContext, pipeline);
+    Map<String, String> serviceToStageMap = new HashMap<>();
     for (int i = 0; i < pipeline.getPipelineStages().size(); ++i) {
       PipelineStage pipelineStage = pipeline.getPipelineStages().get(i);
       if (!isPartOfParallelStage(pipeline.getPipelineStages(), i)) {
@@ -301,7 +302,8 @@ public class PipelineMigrationService extends NgMigrationService {
             if (skipDetail != null) {
               return YamlGenerationDetails.builder().skipDetails(Collections.singletonList(skipDetail)).build();
             }
-            stage = buildWorkflowStage(migrationContext, stageElement, inputDTO.getIdentifierCaseFormat());
+            stage = buildWorkflowStage(
+                migrationContext, stageElement, inputDTO.getIdentifierCaseFormat(), serviceToStageMap);
           }
         } else {
           stage = buildApprovalStage(migrationContext, stageElement, inputDTO.getIdentifierCaseFormat());
@@ -505,8 +507,8 @@ public class PipelineMigrationService extends NgMigrationService {
     return Lists.newArrayList(pipelineVariables.values());
   }
 
-  private StageElementWrapperConfig buildWorkflowStage(
-      MigrationContext migrationContext, PipelineStageElement stageElement, CaseFormat caseFormat) {
+  private StageElementWrapperConfig buildWorkflowStage(MigrationContext migrationContext,
+      PipelineStageElement stageElement, CaseFormat caseFormat, Map<String, String> serviceToStageMap) {
     Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
     Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     // TODO: Handle Skip condition
@@ -607,13 +609,7 @@ public class PipelineMigrationService extends NgMigrationService {
     if (templateInputs != null && "Deployment".equals(templateInputs.get("type").asText())) {
       String serviceRef = templateInputs.at("/spec/service/serviceRef").asText();
       if (RUNTIME_INPUT.equals(serviceRef) && !RUNTIME_INPUT.equals(stageServiceRef)) {
-        ObjectNode service = (ObjectNode) templateInputs.get("spec").get("service");
-        service.put("serviceRef", stageServiceRef);
-        if (serviceInputs == null) {
-          service.remove(SERVICE_INPUTS);
-        } else {
-          service.set(SERVICE_INPUTS, serviceInputs);
-        }
+        fixServiceInTemplateInputs(serviceToStageMap, stageServiceRef, serviceInputs, templateInputs);
       }
       String envRef = templateInputs.at("/spec/environment/environmentRef").asText();
       if (RUNTIME_INPUT.equals(envRef)) {
@@ -634,11 +630,37 @@ public class PipelineMigrationService extends NgMigrationService {
 
     TemplateStageNode templateStageNode = new TemplateStageNode();
     templateStageNode.setName(MigratorUtility.generateName(stageElement.getName()));
-    templateStageNode.setIdentifier(MigratorUtility.generateIdentifier(stageElement.getName(), caseFormat));
+    String stageIdentifier = MigratorUtility.generateIdentifier(stageElement.getName(), caseFormat);
+    templateStageNode.setIdentifier(stageIdentifier);
     templateStageNode.setDescription("");
     templateStageNode.setTemplate(templateLinkConfig);
 
+    // This is needed to propagate services from one stage to another
+    if (isNotEmpty(stageServiceRef) && !serviceToStageMap.containsKey(stageServiceRef)) {
+      serviceToStageMap.put(stageServiceRef, stageIdentifier);
+    }
+
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(templateStageNode)).build();
+  }
+
+  private void fixServiceInTemplateInputs(
+      Map<String, String> serviceToStageMap, String stageServiceRef, JsonNode serviceInputs, JsonNode templateInputs) {
+    ObjectNode service = (ObjectNode) templateInputs.get("spec").get("service");
+    // serviceRef or use from stage
+    if (serviceToStageMap.containsKey(stageServiceRef)) {
+      ObjectNode stageNode = JsonPipelineUtils.getMapper().createObjectNode();
+      stageNode.put("stage", serviceToStageMap.get(stageServiceRef));
+      service.set("useFromStage", stageNode);
+      service.remove(SERVICE_INPUTS);
+      service.remove("serviceRef");
+    } else {
+      service.put("serviceRef", stageServiceRef);
+      if (serviceInputs == null) {
+        service.remove(SERVICE_INPUTS);
+      } else {
+        service.set(SERVICE_INPUTS, serviceInputs);
+      }
+    }
   }
 
   private StageElementWrapperConfig getChainedPipeline(MigrationContext migrationContext,
