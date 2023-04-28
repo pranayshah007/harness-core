@@ -31,7 +31,9 @@ import io.harness.delegate.task.gitapi.client.GitApiClient;
 import io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest;
 import io.harness.exception.GitClientException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.git.GitClientHelper;
 import io.harness.gitpolling.github.GitPollingWebhookData;
+import io.harness.impl.scm.ScmGitProviderMapper;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.SecretDecryptionService;
 
@@ -73,7 +75,8 @@ public class GitlabApiClient implements GitApiClient {
       }
       GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
       String token = retrieveAuthToken(gitConnector);
-      String gitApiURL = getGitApiURL(gitConfigDTO.getUrl());
+      String gitApiURL =
+          GitClientHelper.getGitlabApiURL(gitConfigDTO.getUrl(), ScmGitProviderMapper.getGitlabApiUrl(gitConfigDTO));
       String slug = gitApiTaskParams.getSlug();
       String prNumber = gitApiTaskParams.getPrNumber();
       boolean deleteSourceBranch = gitApiTaskParams.isDeleteSourceBranch();
