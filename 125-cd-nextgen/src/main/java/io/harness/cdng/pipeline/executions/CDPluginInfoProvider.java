@@ -12,4 +12,4 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.plugin.PluginInfoProvider;
 
 @OwnedBy(HarnessTeam.CDP)
-public abstract class CDPluginInfoProvider implements PluginInfoProvider {}
+public interface CDPluginInfoProvider extends PluginInfoProvider {}

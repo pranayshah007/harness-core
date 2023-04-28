@@ -7,21 +7,16 @@
 
 package io.harness.cdng.aws.sam;
 
-import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.pms.sdk.core.steps.io.PassThroughData;
+import io.harness.exception.InvalidRequestException;
+import io.harness.pms.yaml.ParameterField;
 
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Data;
-import lombok.experimental.FieldDefaults;
-
-@Data
-@Builder
 @OwnedBy(HarnessTeam.CDP)
-@RecasterAlias("io.harness.cdng.aws.sam.AwsSamDeployStepPassThroughData")
-@FieldDefaults(level = AccessLevel.PRIVATE)
-public class AwsSamDeployStepPassThroughData implements PassThroughData {
-  long initStepStartTime;
+public class AwsSamStepHelper {
+  public void verifyPluginImageIsProvider(ParameterField<String> image) {
+    if (ParameterField.isNull(image) || image.getValue() == null) {
+      throw new InvalidRequestException("Plugin Image must be provided");
+    }
+  }
 }

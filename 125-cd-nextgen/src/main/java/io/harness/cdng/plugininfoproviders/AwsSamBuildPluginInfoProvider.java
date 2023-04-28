@@ -7,39 +7,35 @@
 
 package io.harness.cdng.plugininfoproviders;
 
-import static io.harness.ci.commonconstants.ContainerExecutionConstants.PORT_STARTING_RANGE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.aws.sam.AwsSamBuildStepInfo;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
-import io.harness.ci.utils.PortFinder;
+import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.plan.ConnectorDetails;
 import io.harness.pms.contracts.plan.ImageDetails;
-import io.harness.pms.contracts.plan.ImageInformation;
-import io.harness.pms.contracts.plan.PluginContainerResources;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.plan.PluginDetails;
-import io.harness.pms.contracts.plan.PortDetails;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 
 import com.google.inject.Inject;
-import com.google.protobuf.StringValue;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import org.jooq.tools.StringUtils;
 
-public class AwsSamBuildPluginInfoProvider extends CDPluginInfoProvider {
+@OwnedBy(HarnessTeam.CDP)
+public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
   @Inject private CDExpressionResolver cdExpressionResolver;
+  @Inject PluginExecutionConfig pluginExecutionConfig;
   @Override
   public PluginCreationResponse getPluginInfo(PluginCreationRequest request) {
     String stepJsonNode = request.getStepJsonNode();
@@ -54,42 +50,27 @@ public class AwsSamBuildPluginInfoProvider extends CDPluginInfoProvider {
 
     AwsSamBuildStepInfo awsSamBuildStepInfo = (AwsSamBuildStepInfo) cdAbstractStepNode.getStepSpecType();
 
-    PluginContainerResources pluginContainerResources =
-        PluginContainerResources.newBuilder()
-            .setCpu(PluginInfoProviderHelper.getCPU(awsSamBuildStepInfo.getResources()))
-            .setMemory(PluginInfoProviderHelper.getMemory(awsSamBuildStepInfo.getResources()))
-            .build();
+    PluginDetails.Builder pluginDetailsBuilder = PluginInfoProviderHelper.buildPluginDetails(
+        request, awsSamBuildStepInfo.getResources(), awsSamBuildStepInfo.getRunAsUser());
 
-    ImageDetails imageDetails =
-        ImageDetails.newBuilder()
-            .setConnectorDetails(
-                ConnectorDetails.newBuilder().setConnectorRef(awsSamBuildStepInfo.getConnectorRef().getValue()).build())
-            .setImageInformation(
-                ImageInformation.newBuilder()
-                    .setImageName(StringValue.of(awsSamBuildStepInfo.getImage().getValue()))
-                    .setImagePullPolicy(StringValue.of(awsSamBuildStepInfo.getImagePullPolicy().getValue().toString()))
-                    .build())
+    ImageDetails imageDetails = null;
 
-            .build();
-    Integer runAsUser =
-        awsSamBuildStepInfo.getRunAsUser() != null ? awsSamBuildStepInfo.getRunAsUser().getValue() : 1000;
+    if (ParameterField.isNotNull(awsSamBuildStepInfo.getConnectorRef())
+        || isNotEmpty(awsSamBuildStepInfo.getConnectorRef().getValue())) {
+      imageDetails = PluginInfoProviderHelper.getImageDetails(awsSamBuildStepInfo.getConnectorRef(),
+          awsSamBuildStepInfo.getImage(), awsSamBuildStepInfo.getImagePullPolicy());
 
-    Set<Integer> usedPorts = new HashSet<>(request.getUsedPortDetails().getUsedPortsList());
-    PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
-    Integer nextPort = portFinder.getNextPort();
-    HashSet<Integer> ports = new HashSet<>(portFinder.getUsedPorts());
+    } else {
+      // todo: If image is not provided by user, default to an harness provided image
+      // StepImageConfig stepImageConfig = pluginExecutionConfig.getSamBuildStepImageConfig();
+    }
 
-    return PluginCreationResponse.newBuilder()
-        .setPluginDetails(PluginDetails.newBuilder()
-                              .setResource(pluginContainerResources)
-                              .setRunAsUser(runAsUser)
-                              .putAllEnvVariables(getEnvironmentVariables(
-                                  request.getAmbiance(), awsSamBuildStepInfo.getBuildCommandOptions()))
-                              .setImageDetails(imageDetails)
-                              .addPortUsed(nextPort)
-                              .setTotalPortUsedDetails(PortDetails.newBuilder().addAllUsedPorts(ports).build())
-                              .build())
-        .build();
+    pluginDetailsBuilder.setImageDetails(imageDetails);
+
+    pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(
+        request.getAmbiance(), awsSamBuildStepInfo.getBuildCommandOptions(), awsSamBuildStepInfo.getEnvVariables()));
+
+    return PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();
   }
 
   @Override
@@ -100,14 +81,31 @@ public class AwsSamBuildPluginInfoProvider extends CDPluginInfoProvider {
     return false;
   }
 
-  private Map<String, String> getEnvironmentVariables(
-      Ambiance ambiance, ParameterField<List<String>> buildCommandOptions) {
+  private Map<String, String> getEnvironmentVariables(Ambiance ambiance,
+      ParameterField<List<String>> buildCommandOptions, ParameterField<Map<String, String>> envVariables) {
     // Resolve Expressions
     cdExpressionResolver.updateExpressions(ambiance, buildCommandOptions);
+    HashMap<String, String> buildCommandOptionsMap = new HashMap<>();
 
-    HashMap<String, String> deployCommandOptionsMap = new HashMap<>();
-    deployCommandOptionsMap.put("BUILD_COMMAND_OPTIONS", StringUtils.join(buildCommandOptions.getValue(), " "));
+    if (ParameterField.isNotNull(envVariables)) {
+      Map<String, String> envVariablesValue = envVariables.getValue();
+      buildCommandOptionsMap.put("PLUGIN_SAM_DIR", envVariablesValue.get("sam_dir"));
+    } else {
+      throw new InvalidRequestException("SAM Directory must be provided");
+    }
 
-    return deployCommandOptionsMap;
+    if (ParameterField.isNotNull(buildCommandOptions)) {
+      buildCommandOptionsMap.put("PLUGIN_BUILD_COMMAND_OPTIONS", String.join(" ", buildCommandOptions.getValue()));
+    } else {
+      buildCommandOptionsMap.put("PLUGIN_BUILD_COMMAND_OPTIONS", "--use-container");
+    }
+
+    // todo: Fetch from private registry variable once connectordetails is available.
+    buildCommandOptionsMap.put("PLUGIN_PRIVATE_REGISTRY_URL", "");
+    buildCommandOptionsMap.put("PLUGIN_PRIVATE_REGISTRY_USERNAME", "");
+    buildCommandOptionsMap.put("PLUGIN_PRIVATE_REGISTRY_PASSWORD", "");
+    buildCommandOptionsMap.put("DRONE_OUTPUT", "/harness/output.json");
+
+    return buildCommandOptionsMap;
   }
 }

@@ -74,7 +74,11 @@ public class AwsSamBuildStepInfo extends AwsSamBuildBaseStepInfo implements CDAb
 
   @Override
   public SpecParameters getSpecParameters() {
-    return AwsSamBuildStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
+    return AwsSamBuildStepParameters.infoBuilder()
+        .image(getImage())
+        .envVariables(getEnvVariables())
+        .delegateSelectors(this.getDelegateSelectors())
+        .build();
   }
 
   @Override

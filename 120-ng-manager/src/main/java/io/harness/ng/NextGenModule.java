@@ -81,6 +81,7 @@ import io.harness.cdng.fileservice.FileServiceClient;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperService;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperServiceImpl;
+import io.harness.cdng.plugininfoproviders.PluginExecutionConfig;
 import io.harness.client.NgConnectorManagerClientModule;
 import io.harness.connector.ConnectorModule;
 import io.harness.connector.ConnectorResourceClientModule;
@@ -312,7 +313,6 @@ import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.InstanceModule;
 import io.harness.service.stats.usagemetrics.eventconsumer.InstanceStatsEventListener;
 import io.harness.signup.SignupModule;
-import io.harness.steps.container.execution.ContainerExecutionConfig;
 import io.harness.subscription.SubscriptionModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.CdTelemetryEventListener;
@@ -399,18 +399,6 @@ public class NextGenModule extends AbstractModule {
         .put(DelegateAsyncTaskResponse.class, "ngManager_delegateAsyncTaskResponses")
         .put(DelegateTaskProgressResponse.class, "ngManager_delegateTaskProgressResponses")
         .build();
-  }
-
-  @Provides
-  @Singleton
-  io.harness.ssca.beans.entities.SSCAServiceConfig fakeConfig() {
-    return io.harness.ssca.beans.entities.SSCAServiceConfig.builder().build();
-  }
-
-  @Provides
-  @Singleton
-  ContainerExecutionConfig fakeConfig1() {
-    return ContainerExecutionConfig.builder().build();
   }
 
   @Provides
@@ -530,6 +518,12 @@ public class NextGenModule extends AbstractModule {
   @Singleton
   CEGcpSetupConfig ceGcpSetupConfig() {
     return this.appConfig.getCeGcpSetupConfig();
+  }
+
+  @Provides
+  @Singleton
+  PluginExecutionConfig pluginExecutionConfig() {
+    return this.appConfig.getPluginExecutionConfig();
   }
 
   @Provides

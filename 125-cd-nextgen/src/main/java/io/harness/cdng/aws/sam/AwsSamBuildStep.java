@@ -24,12 +24,14 @@ import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
 @OwnedBy(HarnessTeam.CDP)
 public class AwsSamBuildStep extends AbstractContainerStepV2<StepElementParameters> {
   @Inject Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
+  @Inject AwsSamStepHelper awsSamStepHelper;
 
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.AWS_SAM_BUILD.getYamlType())
@@ -51,11 +53,15 @@ public class AwsSamBuildStep extends AbstractContainerStepV2<StepElementParamete
       String logKey, long timeout, String parkedTaskId) {
     // todo: add env variable and image and entrypoint
     AwsSamBuildStepParameters awsSamBuildStepParameters = (AwsSamBuildStepParameters) stepElementParameters.getSpec();
+
+    // Check if image exists
+    awsSamStepHelper.verifyPluginImageIsProvider(awsSamBuildStepParameters.getImage());
+
     return ContainerUnitStepUtils.serializeStepWithStepParameters(
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
         stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
-        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, Collections.emptyMap(),
-        "harnessdev/sambuild:sainathtest", Collections.EMPTY_LIST);
+        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, new HashMap<>(),
+        awsSamBuildStepParameters.getImage().getValue(), Collections.EMPTY_LIST);
   }
 
   @Override

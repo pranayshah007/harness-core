@@ -7,42 +7,42 @@
 
 package io.harness.cdng.plugininfoproviders;
 
-import static io.harness.ci.commonconstants.ContainerExecutionConstants.PORT_STARTING_RANGE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.aws.sam.AwsSamDeployStepInfo;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.infra.beans.AwsSamInfrastructureOutcome;
+import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
-import io.harness.ci.utils.PortFinder;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.plan.ConnectorDetails;
 import io.harness.pms.contracts.plan.ImageDetails;
-import io.harness.pms.contracts.plan.ImageInformation;
-import io.harness.pms.contracts.plan.PluginContainerResources;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.plan.PluginDetails;
-import io.harness.pms.contracts.plan.PortDetails;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 
 import com.google.inject.Inject;
-import com.google.protobuf.StringValue;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import org.jooq.tools.StringUtils;
 
 @OwnedBy(HarnessTeam.CDP)
-public class AwsSamDeployPluginInfoProvider extends CDPluginInfoProvider {
+public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
   @Inject private CDExpressionResolver cdExpressionResolver;
+  @Inject private OutcomeService outcomeService;
+
+  @Inject PluginExecutionConfig pluginExecutionConfig;
   @Override
   public PluginCreationResponse getPluginInfo(PluginCreationRequest request) {
     String stepJsonNode = request.getStepJsonNode();
@@ -57,43 +57,27 @@ public class AwsSamDeployPluginInfoProvider extends CDPluginInfoProvider {
 
     AwsSamDeployStepInfo awsSamDeployStepInfo = (AwsSamDeployStepInfo) cdAbstractStepNode.getStepSpecType();
 
-    PluginContainerResources pluginContainerResources =
-        PluginContainerResources.newBuilder()
-            .setCpu(PluginInfoProviderHelper.getCPU(awsSamDeployStepInfo.getResources()))
-            .setMemory(PluginInfoProviderHelper.getMemory(awsSamDeployStepInfo.getResources()))
-            .build();
+    PluginDetails.Builder pluginDetailsBuilder = PluginInfoProviderHelper.buildPluginDetails(
+        request, awsSamDeployStepInfo.getResources(), awsSamDeployStepInfo.getRunAsUser());
 
-    ImageDetails imageDetails =
-        ImageDetails.newBuilder()
-            .setConnectorDetails(ConnectorDetails.newBuilder()
-                                     .setConnectorRef(awsSamDeployStepInfo.getConnectorRef().getValue())
-                                     .build())
-            .setImageInformation(
-                ImageInformation.newBuilder()
-                    .setImageName(StringValue.of(awsSamDeployStepInfo.getImage().getValue()))
-                    .setImagePullPolicy(StringValue.of(awsSamDeployStepInfo.getImagePullPolicy().getValue().toString()))
-                    .build())
+    ImageDetails imageDetails = null;
 
-            .build();
-    Integer runAsUser =
-        awsSamDeployStepInfo.getRunAsUser() != null ? awsSamDeployStepInfo.getRunAsUser().getValue() : 1000;
+    if (ParameterField.isNotNull(awsSamDeployStepInfo.getConnectorRef())
+        || isNotEmpty(awsSamDeployStepInfo.getConnectorRef().getValue())) {
+      imageDetails = PluginInfoProviderHelper.getImageDetails(awsSamDeployStepInfo.getConnectorRef(),
+          awsSamDeployStepInfo.getImage(), awsSamDeployStepInfo.getImagePullPolicy());
 
-    Set<Integer> usedPorts = new HashSet<>(request.getUsedPortDetails().getUsedPortsList());
-    PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
-    Integer nextPort = portFinder.getNextPort();
-    HashSet<Integer> ports = new HashSet<>(portFinder.getUsedPorts());
+    } else {
+      // todo: If image is not provided by user, default to an harness provided image
+      // StepImageConfig stepImageConfig = pluginExecutionConfig.getSamDeployStepImageConfig();
+    }
 
-    return PluginCreationResponse.newBuilder()
-        .setPluginDetails(PluginDetails.newBuilder()
-                              .setResource(pluginContainerResources)
-                              .setRunAsUser(runAsUser)
-                              .putAllEnvVariables(getEnvironmentVariables(
-                                  request.getAmbiance(), awsSamDeployStepInfo.getDeployCommandOptions()))
-                              .setImageDetails(imageDetails)
-                              .addPortUsed(nextPort)
-                              .setTotalPortUsedDetails(PortDetails.newBuilder().addAllUsedPorts(ports).build())
-                              .build())
-        .build();
+    pluginDetailsBuilder.setImageDetails(imageDetails);
+
+    pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(
+        request.getAmbiance(), awsSamDeployStepInfo.getDeployCommandOptions(), awsSamDeployStepInfo.getEnvVariables()));
+
+    return PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();
   }
 
   @Override
@@ -104,13 +88,37 @@ public class AwsSamDeployPluginInfoProvider extends CDPluginInfoProvider {
     return false;
   }
 
-  private Map<String, String> getEnvironmentVariables(
-      Ambiance ambiance, ParameterField<List<String>> deployCommandOptions) {
+  private Map<String, String> getEnvironmentVariables(Ambiance ambiance,
+      ParameterField<List<String>> deployCommandOptions, ParameterField<Map<String, String>> envVariables) {
     // Resolve Expressions
     cdExpressionResolver.updateExpressions(ambiance, deployCommandOptions);
 
     HashMap<String, String> deployCommandOptionsMap = new HashMap<>();
-    deployCommandOptionsMap.put("DEPLOY_COMMAND_OPTIONS", StringUtils.join(deployCommandOptions.getValue(), " "));
+
+    if (ParameterField.isNotNull(envVariables)) {
+      Map<String, String> envVariablesValue = envVariables.getValue();
+      deployCommandOptionsMap.put("PLUGIN_SAM_DIR", envVariablesValue.get("sam_dir"));
+    } else {
+      throw new InvalidRequestException("SAM Directory must be provided");
+    }
+
+    if (ParameterField.isNotNull(deployCommandOptions)) {
+      deployCommandOptionsMap.put("PLUGIN_DEPLOY_COMMAND_OPTIONS", String.join(" ", deployCommandOptions.getValue()));
+    } else {
+      deployCommandOptionsMap.put("PLUGIN_DEPLOY_COMMAND_OPTIONS", "");
+    }
+
+    deployCommandOptionsMap.put("PLUGIN_STACK_NAME", "sainath-test-sam-pr-env-nodejs-zip-multistep");
+
+    // todo: Fetch from infrastructure outcome
+    InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+
+    AwsSamInfrastructureOutcome awsSamInfrastructureOutcome = (AwsSamInfrastructureOutcome) infrastructureOutcome;
+
+    deployCommandOptionsMap.put("PLUGIN_REGION", awsSamInfrastructureOutcome.getRegion());
+    deployCommandOptionsMap.put("PLUGIN_AWS_ACCESS_KEY", "");
+    deployCommandOptionsMap.put("PLUGIN_AWS_SECRET_KEY", "");
 
     return deployCommandOptionsMap;
   }

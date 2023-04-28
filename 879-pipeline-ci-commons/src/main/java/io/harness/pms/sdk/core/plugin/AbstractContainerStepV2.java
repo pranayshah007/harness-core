@@ -22,7 +22,6 @@ import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -84,8 +83,7 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
     TaskData runStepTaskData = getStepTask(ambiance, stepElementParameters, AmbianceUtils.getAccountId(ambiance),
         getLogPrefix(ambiance), timeout, parkedTaskId);
     String liteEngineTaskId = containerDelegateTaskHelper.queueTask(ambiance, runStepTaskData, accountId);
-    //    log.info("Created parked task {} and lite engine task {} for  step {}", parkedTaskId, liteEngineTaskId,
-    //        stepElementParameters.getIdentifier());
+    log.info("Created parked task {} and lite engine task {}", parkedTaskId, liteEngineTaskId);
 
     return AsyncExecutableResponse.newBuilder()
         .addCallbackIds(parkedTaskId)
@@ -93,8 +91,6 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
         .addAllLogKeys(CollectionUtils.emptyIfNull(Collections.singletonList(getLogPrefix(ambiance))))
         .build();
   }
-
-  @Override public abstract Class<T> getStepParametersClass();
 
   @Override
   public void handleAbort(Ambiance ambiance, T stepParameters, AsyncExecutableResponse executableResponse) {
@@ -141,23 +137,20 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
   }
 
   public TaskData getStepTask(
-          Ambiance ambiance, T containerStepInfo, String accountId, String logKey, long timeout, String parkedTaskId) {
+      Ambiance ambiance, T containerStepInfo, String accountId, String logKey, long timeout, String parkedTaskId) {
     UnitStep unitStep = getSerialisedStep(ambiance, containerStepInfo, accountId, logKey, timeout, parkedTaskId);
     LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome = (LiteEnginePodDetailsOutcome) outcomeService.resolve(
-            ambiance, RefObjectUtils.getOutcomeRefObject(LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME));
+        ambiance, RefObjectUtils.getOutcomeRefObject(LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME));
     String ip = liteEnginePodDetailsOutcome.getIpAddress();
     String runtimeId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
 
-    ExecuteStepRequest executeStepRequest = ExecuteStepRequest.newBuilder()
-            .setExecutionId(runtimeId)
-            .setStep(unitStep)
-            .setTmpFilePath(TMP_PATH)
-            .build();
+    ExecuteStepRequest executeStepRequest =
+        ExecuteStepRequest.newBuilder().setExecutionId(runtimeId).setStep(unitStep).setTmpFilePath(TMP_PATH).build();
 
     boolean isLocal = false;
     String delegateSvcEndpoint = DELEGATE_SVC_ENDPOINT;
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
-            ambiance, RefObjectUtils.getSweepingOutputRefObject(ContainerStepConstants.CONTAINER_EXECUTION_CONFIG));
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(ContainerStepConstants.CONTAINER_EXECUTION_CONFIG));
     if (optionalSweepingOutput.isFound()) {
       ContainerExecutionConfig output = (ContainerExecutionConfig) optionalSweepingOutput.getOutput();
       isLocal = output.isLocal();
@@ -165,12 +158,12 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
     }
 
     CIK8ExecuteStepTaskParams params = CIK8ExecuteStepTaskParams.builder()
-            .ip(ip)
-            .port(LITE_ENGINE_PORT)
-            .serializedStep(executeStepRequest.toByteArray())
-            .isLocal(isLocal)
-            .delegateSvcEndpoint(delegateSvcEndpoint)
-            .build();
+                                           .ip(ip)
+                                           .port(LITE_ENGINE_PORT)
+                                           .serializedStep(executeStepRequest.toByteArray())
+                                           .isLocal(isLocal)
+                                           .delegateSvcEndpoint(delegateSvcEndpoint)
+                                           .build();
     return containerDelegateTaskHelper.getDelegateTaskDataForExecuteStep(ambiance, timeout, params);
   }
 
@@ -185,4 +178,6 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
 
   public abstract StepResponse.StepOutcome getAnyOutComeForStep(
       Ambiance ambiance, T stepParameters, Map<String, ResponseData> responseDataMap);
+
+  @Override public abstract Class<T> getStepParametersClass();
 }
