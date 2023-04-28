@@ -628,7 +628,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       DelegateAgentCommonVariables.setDelegateId(delegateId);
       log.info("[New] Delegate registered in {} ms", clock.millis() - start);
       DelegateStackdriverLogAppender.setDelegateId(delegateId);
-      if (delegateConfiguration.isDynamicHandlingOfRequestEnabled() && isImmutableDelegate) {
+      log.info("for test {}, {}", delegateConfiguration.isDynamicHandlingOfRequestEnabled(), isImmutableDelegate);
+      if (delegateConfiguration.isDynamicHandlingOfRequestEnabled()) {
         // Enable dynamic throttling of requests only for immutable and FF enabled
         startDynamicHandlingOfTasks();
       }
