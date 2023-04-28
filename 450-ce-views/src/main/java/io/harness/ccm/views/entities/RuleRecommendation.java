@@ -44,10 +44,9 @@ public final class RuleRecommendation implements PersistentEntity, UuidAware, Cr
                                                  AccountAccess, CreatedByAware, UpdatedByAware {
   @Id @Schema(description = "unique id") String uuid;
   @Schema(description = "name") String name;
-  @Schema(description = "monthlySavings") double monthlySavings;
   @Schema(description = "resourceType") String resourceType;
   @Schema(description = "actionType") String actionType;
-  @Schema(description = "account id") String accountId;
+  @Schema(description = "accountId") String accountId;
   @Schema(description = "isValid") Boolean isValid;
   @Schema(description = "executions") List<ExecutionSummary> executions;
   @Schema(description = NGCommonEntityConstants.CREATED_AT_MESSAGE) long createdAt;
@@ -58,7 +57,6 @@ public final class RuleRecommendation implements PersistentEntity, UuidAware, Cr
     return RuleRecommendation.builder()
         .uuid(getUuid())
         .name(getName())
-        .monthlySavings(getMonthlySavings())
         .resourceType(getResourceType())
         .accountId(getAccountId())
         .isValid(getIsValid())
