@@ -187,7 +187,7 @@ public class ProjectOrgBasicRoleCreationJob implements Runnable {
             try {
               roleAssignmentRepository.save(newRoleAssignmentDBO);
             } catch (DuplicateKeyException e) {
-              log.error("[ProjectOrgBasicRoleCreationJob]: Corresponding basic role assigment was already created {}",
+              log.warn("[ProjectOrgBasicRoleCreationJob]: Corresponding basic role assigment was already created {}",
                   newRoleAssignmentDBO.toString(), e);
             }
             roleAssignmentRepository.updateById(roleAssignment.getId(), update(RoleAssignmentDBOKeys.managed, false));
