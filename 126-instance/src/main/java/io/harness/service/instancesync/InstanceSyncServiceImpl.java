@@ -52,6 +52,7 @@ import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesync.InstanceSyncData;
 import io.harness.perpetualtask.instancesync.InstanceSyncResponseV2;
 import io.harness.perpetualtask.instancesync.InstanceSyncTaskDetails;
+import io.harness.perpetualtask.instancesync.ResponseBatchConfig;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.deploymentsummary.DeploymentSummaryService;
 import io.harness.service.infrastructuremapping.InfrastructureMappingService;
@@ -100,6 +101,11 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
   private AccountClient accountClient;
   private static final int NEW_DEPLOYMENT_EVENT_RETRY = 3;
   private static final long TWO_WEEKS_IN_MILLIS = (long) 14 * 24 * 60 * 60 * 1000;
+
+  private static final int INSTANCE_COUNT_LIMIT =
+      Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_INSTANCE_COUNT", "100"));
+  private static final int RELEASE_COUNT_LIMIT =
+      Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_RELEASE_COUNT", "5"));
 
   @Inject
   public InstanceSyncServiceImpl(PersistentLocker persistentLocker,
@@ -482,7 +488,13 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
           instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList()));
     }
 
-    return InstanceSyncTaskDetails.newBuilder().addAllDetails(deploymentReleaseDetailsList).build();
+    return InstanceSyncTaskDetails.newBuilder()
+        .addAllDetails(deploymentReleaseDetailsList)
+        .setResponseBatchConfig(ResponseBatchConfig.newBuilder()
+                                    .setReleaseCount(RELEASE_COUNT_LIMIT)
+                                    .setInstanceCount(INSTANCE_COUNT_LIMIT)
+                                    .build())
+        .build();
   }
 
   // ------------------------------- PRIVATE METHODS --------------------------------------
