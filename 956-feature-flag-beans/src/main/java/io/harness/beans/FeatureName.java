@@ -723,6 +723,7 @@ public enum FeatureName {
       HarnessTeam.CDP),
   CDS_K8S_SERVICE_HOOKS_NG("Enables Service hooks support for K8s/Native Helm Services", HarnessTeam.CDP),
   CIE_USE_DOCKER_BUILDX("Enable docker build and push step to use buildx", HarnessTeam.CI),
+  CIE_ENABLED_RBAC("Enable rbac validationa at CI level", HarnessTeam.CI),
   CDS_STAGE_EXECUTION_DATA_SYNC(
       "This flag controls if you want CD Stage execution data saved in cd service and eventually synced to timescale",
       HarnessTeam.CDC),

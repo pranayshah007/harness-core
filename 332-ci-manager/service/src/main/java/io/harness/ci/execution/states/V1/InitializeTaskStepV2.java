@@ -8,6 +8,7 @@
 package io.harness.ci.states.V1;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.beans.FeatureName.CIE_ENABLED_RBAC;
 import static io.harness.beans.FeatureName.CIE_HOSTED_VMS;
 import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS_CONCURRENCY;
 import static io.harness.beans.outcomes.LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME;
@@ -402,7 +403,8 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     List<EntityDetail> connectorsEntityDetails =
         getConnectorIdentifiers(initializeStepInfo, accountIdentifier, projectIdentifier, orgIdentifier);
 
-    if (isNotEmpty(connectorsEntityDetails)) {
+    if (isNotEmpty(connectorsEntityDetails) && ciFeatureFlagService.isEnabled(CIE_ENABLED_RBAC, accountIdentifier)) {
+      log.info("validating rbac for account id: {}", accountIdentifier);
       pipelineRbacHelper.checkRuntimePermissions(ambiance, connectorsEntityDetails, true);
     }
 
