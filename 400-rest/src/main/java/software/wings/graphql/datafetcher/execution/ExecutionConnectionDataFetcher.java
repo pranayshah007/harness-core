@@ -8,7 +8,9 @@
 package software.wings.graphql.datafetcher.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.SPG_AUTH_OPTIMIZE_WFE_GQL;
 import static io.harness.beans.FeatureName.SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING;
+import static io.harness.beans.FeatureName.USE_ANALYTIC_MONGO_FOR_GRAPHQL_QUERY;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -17,12 +19,16 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.WorkflowType;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnauthorizedException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 
+import software.wings.beans.SettingAttribute;
+import software.wings.beans.User;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
+import software.wings.dl.WingsPersistence;
 import software.wings.graphql.datafetcher.AbstractConnectionV2DataFetcher;
 import software.wings.graphql.schema.query.QLPageQueryParameters;
 import software.wings.graphql.schema.type.QLExecutionConnection;
@@ -36,6 +42,9 @@ import software.wings.graphql.schema.type.aggregation.QLIdOperator;
 import software.wings.graphql.schema.type.aggregation.QLNoOpSortCriteria;
 import software.wings.graphql.utils.nameservice.NameService;
 import software.wings.security.PermissionAttribute.PermissionType;
+import software.wings.security.UserPermissionInfo;
+import software.wings.security.UserRequestContext;
+import software.wings.security.UserThreadLocal;
 import software.wings.security.annotations.AuthRule;
 import software.wings.service.intfc.AppService;
 
@@ -45,8 +54,10 @@ import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 
 @Slf4j
 @OwnedBy(CDC)
@@ -65,7 +76,7 @@ public class ExecutionConnectionDataFetcher
   @AuthRule(permissionType = PermissionType.LOGGED_IN)
   protected QLExecutionConnection fetchConnection(List<QLExecutionFilter> filters,
       QLPageQueryParameters pageQueryParameters, List<QLNoOpSortCriteria> sortCriteria) {
-    Query<WorkflowExecution> query = populateFilters(wingsPersistence, filters, WorkflowExecution.class, true)
+    Query<WorkflowExecution> query = populateFilters(wingsPersistence, filters, getAccountId())
                                          .order(Sort.descending(WorkflowExecutionKeys.createdAt));
 
     Boolean includeIndirectExecutions =
@@ -113,6 +124,58 @@ public class ExecutionConnectionDataFetcher
     }));
 
     return connectionBuilder.build();
+  }
+
+  public Query populateFilters(WingsPersistence wingsPersistence, List<QLExecutionFilter> filters, String accountId) {
+    if (featureFlagService.isEnabled(SPG_AUTH_OPTIMIZE_WFE_GQL, accountId)) {
+    }
+    return populateFilters(wingsPersistence, filters, WorkflowExecution.class, true);
+  }
+
+  public Query populateFiltersV2(WingsPersistence wingsPersistence, List<QLExecutionFilter> filters, String accountId) {
+    Query<WorkflowExecution> query = wingsPersistence.createQuery(WorkflowExecution.class)
+                                         .filter(SettingAttribute.SettingAttributeKeys.accountId, accountId);
+    List<String> appIds = new ArrayList<>();
+    boolean appIdFilterFound = false;
+    if (isNotEmpty(filters)) {
+      for (QLExecutionFilter filter : filters) {
+        if (filter.getApplication() != null) {
+          appIds = Arrays.asList(filter.getApplication().getValues());
+          appIdFilterFound = true;
+          break;
+        }
+      }
+    }
+
+    if (featureFlagService.isEnabled(USE_ANALYTIC_MONGO_FOR_GRAPHQL_QUERY, accountId)) {
+      User user = UserThreadLocal.get();
+      if (user == null) {
+        return query;
+      }
+      UserRequestContext userRequestContext = user.getUserRequestContext();
+      if (userRequestContext == null) {
+        return query;
+      }
+
+      if (CollectionUtils.isNotEmpty(userRequestContext.getAppIds())) {
+        UserPermissionInfo userPermissionInfo = userRequestContext.getUserPermissionInfo();
+        if (userPermissionInfo.isHasAllAppAccess()) {
+          return query;
+        } else {
+          if (appIdFilterFound) {
+            appIds.forEach(appId -> {
+              if (!userRequestContext.getAppIds().contains(appId)) {
+                throw new UnauthorizedException(
+                    String.format("User not authorized to access app %s", appId), WingsException.USER);
+              }
+            });
+          } else {
+            return populateFilters(wingsPersistence, filters, WorkflowExecution.class, true);
+          }
+        }
+      }
+    }
+    return query;
   }
 
   @Override
