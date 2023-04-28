@@ -196,7 +196,7 @@ public class RESTToGraphQLHelper {
         .build();
   }
 
-  private static QLCEViewFieldInput getViewFieldInputFromCCMField(CCMField field) throws Exception {
+  public static QLCEViewFieldInput getViewFieldInputFromCCMField(CCMField field) throws Exception {
     HashMap<String, QLCEViewFieldInput> viewFieldsHashMap = getViewFieldsHashMap();
     QLCEViewFieldInput viewField = viewFieldsHashMap.get(field.toString());
     if (viewField == null) {
