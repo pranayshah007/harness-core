@@ -59,6 +59,7 @@ metadata:
   namespace: test-namespace
 spec:
   replicas: 8
+  minReadySeconds: 120
   selector:
     matchLabels:
       harness.io/name: harness-delegate
