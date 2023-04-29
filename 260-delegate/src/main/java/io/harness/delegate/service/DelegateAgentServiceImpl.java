@@ -54,6 +54,7 @@ import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_IN_QUEU
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_COMPLETED;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_EXECUTION_TIME;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_FAILED;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_REJECTED;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_TIMEOUT;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
 import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
@@ -742,6 +743,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           currentRSSMB, maxProcessRSSThresholdMB);
       rejectRequest.compareAndSet(false, true);
       metricRegistry.recordGaugeValue(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME}, 1.0);
+      metricRegistry.recordGaugeInc(TASK_REJECTED, new String[] {DELEGATE_NAME});
       return;
     }
 
@@ -752,6 +754,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           currentPodRSSMB, maxPodRSSThresholdMB);
       rejectRequest.compareAndSet(false, true);
       metricRegistry.recordGaugeValue(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME}, 1.0);
+      metricRegistry.recordGaugeInc(TASK_REJECTED, new String[] {DELEGATE_NAME});
       return;
     }
     log.info("Process info CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
@@ -761,6 +764,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       log.warn("CPU consumption above threshold, {}", BigDecimal.valueOf(cpuLoad / 100));
       rejectRequest.compareAndSet(false, true);
       metricRegistry.recordGaugeValue(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME}, 1.0);
+      metricRegistry.recordGaugeInc(TASK_REJECTED, new String[] {DELEGATE_NAME});
       return;
     }
 
