@@ -743,7 +743,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           currentRSSMB, maxProcessRSSThresholdMB);
       rejectRequest.compareAndSet(false, true);
       metricRegistry.recordGaugeValue(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME}, 1.0);
-      metricRegistry.recordGaugeInc(TASK_REJECTED, new String[] {DELEGATE_NAME});
+      metricRegistry.recordCounterInc(TASK_REJECTED, new String[] {DELEGATE_NAME});
       return;
     }
 
@@ -754,17 +754,17 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           currentPodRSSMB, maxPodRSSThresholdMB);
       rejectRequest.compareAndSet(false, true);
       metricRegistry.recordGaugeValue(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME}, 1.0);
-      metricRegistry.recordGaugeInc(TASK_REJECTED, new String[] {DELEGATE_NAME});
+      metricRegistry.recordCounterInc(TASK_REJECTED, new String[] {DELEGATE_NAME});
       return;
     }
     log.info("Process info CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
         currentRSSMB, maxProcessRSSThresholdMB, currentPodRSSMB, maxPodRSSThresholdMB);
     final double cpuLoad = getCPULoadAverage();
     if (cpuLoad > RESOURCE_USAGE_THRESHOLD) {
-      log.warn("CPU consumption above threshold, {}", BigDecimal.valueOf(cpuLoad / 100));
+      log.warn("CPU consumption above threshold, {}%", BigDecimal.valueOf(cpuLoad));
       rejectRequest.compareAndSet(false, true);
       metricRegistry.recordGaugeValue(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME}, 1.0);
-      metricRegistry.recordGaugeInc(TASK_REJECTED, new String[] {DELEGATE_NAME});
+      metricRegistry.recordCounterInc(TASK_REJECTED, new String[] {DELEGATE_NAME});
       return;
     }
 
