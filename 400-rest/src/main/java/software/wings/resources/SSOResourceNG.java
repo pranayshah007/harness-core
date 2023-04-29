@@ -94,7 +94,7 @@ public class SSOResourceNG {
   @AuthRule(permissionType = LOGGED_IN)
   @ExceptionMetered
   public RestResponse<SSOConfig> getAccountAccessManagementSettings(@QueryParam("accountId") String accountId) {
-    return new RestResponse<>(ssoService.getAccountAccessManagementSettings(accountId));
+    return new RestResponse<>(ssoService.getAccountAccessManagementSettings(accountId, true));
   }
 
   @GET
@@ -184,7 +184,7 @@ public class SSOResourceNG {
     final String clientSecretRef = getCGSecretManagerRefForClientSecret(accountId, false, clientId, clientSecret);
     return new RestResponse<>(ssoService.updateSamlConfiguration(accountId, uploadedInputStream, displayName,
         groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), null, true));
+        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), true));
   }
 
   @PUT

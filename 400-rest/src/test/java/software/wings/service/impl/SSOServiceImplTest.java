@@ -292,12 +292,12 @@ public class SSOServiceImplTest extends WingsBaseTest {
                           .build();
     accountService.save(account, false);
     doNothing().when(authHandler).authorizeAccountPermission(anyList());
-    SSOConfig accountAccessManagementSettings = ssoService.getAccountAccessManagementSettings(account.getUuid());
+    SSOConfig accountAccessManagementSettings = ssoService.getAccountAccessManagementSettings(account.getUuid(), false);
     assertThat(accountAccessManagementSettings).isNotNull();
 
     doThrow(new InvalidRequestException("INVALID")).when(authHandler).authorizeAccountPermission(anyList());
     try {
-      ssoService.getAccountAccessManagementSettings(account.getUuid());
+      ssoService.getAccountAccessManagementSettings(account.getUuid(), false);
     } catch (InvalidRequestException ex) {
       assertThat(ex.getCode()).isEqualTo(ErrorCode.USER_NOT_AUTHORIZED);
     }

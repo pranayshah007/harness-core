@@ -211,6 +211,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   private SamlSettings saveSSOSettingsInternal(@GetAccountId(SamlSettingsAccountIdExtractor.class)
                                                SamlSettings settings, boolean isUpdateCase, boolean isNGSsoSetting) {
     SamlSettings savedSettings = null;
+    SamlSettings currentSamlSettings = null;
     if (!isUpdateCase) {
       if (isNGSsoSetting && isEmpty(settings.getFriendlySamlName())) {
         settings.setFriendlySamlName(settings.getDisplayName());
@@ -239,7 +240,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
         if (isNotEmpty(settings.getFriendlySamlName())) {
           queriedSettings.setFriendlySamlName(settings.getFriendlySamlName());
         }
-        SamlSettings currentSamlSettings =
+        currentSamlSettings =
             isNGSsoSetting && featureFlagService.isEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, settings.getAccountId())
             ? getSamlSettingsByAccountIdAndUuid(settings.getAccountId(), settings.getUuid())
             : getSamlSettingsByAccountId(settings.getAccountId());
@@ -248,8 +249,16 @@ public class SSOSettingServiceImpl implements SSOSettingService {
         ngAuditLoginSettingsForSAMLUpdate(currentSamlSettings, savedSettings);
       }
     }
-    auditServiceHelper.reportForAuditingUsingAccountId(settings.getAccountId(), null, settings, Event.Type.CREATE);
-    log.info("Auditing creation of SAML Settings for account={}", settings.getAccountId());
+    if (!isUpdateCase) {
+      log.info("Auditing creation of SAML Settings for account={}", settings.getAccountId());
+      auditServiceHelper.reportForAuditingUsingAccountId(
+          settings.getAccountId(), null, savedSettings, Event.Type.CREATE);
+    } else {
+      log.info("Auditing updation of SAML Settings for account={} and saml setting id={}", settings.getAccountId(),
+          settings.getUuid());
+      auditServiceHelper.reportForAuditingUsingAccountId(
+          settings.getAccountId(), currentSamlSettings, savedSettings, Event.Type.UPDATE);
+    }
 
     return savedSettings;
   }

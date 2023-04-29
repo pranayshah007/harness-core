@@ -130,8 +130,9 @@ public interface AuthSettingsManagerClient {
       @Query("accountId") String accountIdentifier, @Query("samlSSOId") String samlSSOId);
 
   @PUT(API_PREFIX + "sso/update-authentication-enabled-saml-setting")
-  Call<RestResponse<SSOConfig>> updateLoginEnabledForSAMLSetting(@Query("accountId") @NotEmpty String accountId,
-      @Query("samlSSOId") @NotEmpty String samlSSOId, @Query("enable") @NotNull Boolean enable);
+  Call<RestResponse<SSOConfig>> updateAuthenticationEnabledForSAMLSetting(
+      @Query("accountId") @NotEmpty String accountId, @Query("samlSSOId") @NotEmpty String samlSSOId,
+      @Query("enable") @NotNull Boolean enable);
 
   @GET(API_PREFIX + "sso/saml-login-test")
   Call<RestResponse<LoginTypeResponse>> getSAMLLoginTest(@Query("accountId") @NotEmpty String accountIdentifier);

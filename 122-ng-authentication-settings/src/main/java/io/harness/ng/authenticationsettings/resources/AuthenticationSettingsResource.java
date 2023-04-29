@@ -459,8 +459,7 @@ public class AuthenticationSettingsResource {
       @Parameter(description = "Saml Settings Identifier") @PathParam("samlSSOId") String samlSSOId) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountIdentifier, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
-    authenticationSettingsService.updateAuthenticationForSAMLSetting(
-        accountIdentifier, samlSSOId, Boolean.TRUE.equals(enable));
+    authenticationSettingsService.updateAuthenticationForSAMLSetting(accountIdentifier, samlSSOId, enable);
     return new RestResponse<>(true);
   }
 

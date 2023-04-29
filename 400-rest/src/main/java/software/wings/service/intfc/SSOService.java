@@ -43,7 +43,7 @@ public interface SSOService {
 
   SSOConfig updateSamlConfiguration(@NotNull String accountId, InputStream inputStream, String displayName,
       String groupMembershipAttr, @NotNull Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
-      String samlProviderType, String clientId, char[] clientSecret, String friendlySamlName, boolean isNGSSO);
+      String samlProviderType, String clientId, char[] clientSecret, boolean isNGSSO);
 
   // this overloading is for updating a SAML setting (samlSSOId) among list of saml settings in account
   SSOConfig updateSamlConfiguration(@NotNull String accountId, @NotNull String samlSSOId, InputStream inputStream,
@@ -61,7 +61,7 @@ public interface SSOService {
   SSOConfig setAuthenticationMechanism(
       @NotNull String accountId, @NotNull AuthenticationMechanism authenticationMechanism);
 
-  SSOConfig getAccountAccessManagementSettings(@NotNull String accountId);
+  SSOConfig getAccountAccessManagementSettings(@NotNull String accountId, boolean isNGSSO);
 
   SSOConfig getAccountAccessManagementSettingsV2(@NotNull String accountId);
 

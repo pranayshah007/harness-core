@@ -126,8 +126,8 @@ public class SSOServiceImpl implements SSOService {
       String fileAsString = IOUtils.toString(inputStream, Charset.defaultCharset());
       groupMembershipAttr = authorizationEnabled ? groupMembershipAttr : null;
       buildAndUploadSamlSettings(accountId, fileAsString, displayName, groupMembershipAttr, logoutUrl, entityIdentifier,
-          samlProviderType, clientId, clientSecret, friendlySamlName, isNGSSO, false);
-      return getAccountAccessManagementSettings(accountId);
+          samlProviderType, clientId, clientSecret, friendlySamlName, isNGSSO, false, null);
+      return getAccountAccessManagementSettings(accountId, false);
     } catch (SamlException | IOException | URISyntaxException e) {
       throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION, e);
     }
@@ -139,20 +139,19 @@ public class SSOServiceImpl implements SSOService {
       throw new InvalidRequestException("At least one OAuth provider must be selected.");
     }
     buildAndUploadOauthSettings(accountId, filter, allowedProviders);
-    return getAccountAccessManagementSettings(accountId);
+    return getAccountAccessManagementSettings(accountId, false);
   }
 
   @Override
   public SSOConfig updateSamlConfiguration(String accountId, InputStream inputStream, String displayName,
       String groupMembershipAttr, Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
-      String samlProviderType, String clientId, char[] clientSecret, String friendlySamlName, boolean isNGSSO) {
+      String samlProviderType, String clientId, char[] clientSecret, boolean isNGSSO) {
     try {
-      SamlSettings settings = featureFlagService.isEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountId)
-          ? ssoSettingService.getSamlSettingsByAccountIdNotConfiguredFromNG(accountId)
-          : ssoSettingService.getSamlSettingsByAccountId(accountId);
+      SamlSettings settings = isNGSSO && featureFlagService.isEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountId)
+          ? ssoSettingService.getSamlSettingsByAccountId(accountId)
+          : ssoSettingService.getSamlSettingsByAccountIdNotConfiguredFromNG(accountId);
       return updateAndGetSamlSsoConfigInternal(groupMembershipAttr, authorizationEnabled, inputStream, settings,
-          displayName, clientId, clientSecret, accountId, logoutUrl, entityIdentifier, samlProviderType,
-          friendlySamlName, isNGSSO);
+          displayName, clientId, clientSecret, accountId, logoutUrl, entityIdentifier, samlProviderType, null, isNGSSO);
     } catch (SamlException | IOException | URISyntaxException e) {
       throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION, e);
     }
@@ -183,7 +182,7 @@ public class SSOServiceImpl implements SSOService {
     } else {
       throw new InvalidRequestException("Cannot update Logout URL as no SAML Config exists for your account");
     }
-    return getAccountAccessManagementSettings(accountId);
+    return getAccountAccessManagementSettings(accountId, false);
   }
 
   @Override
@@ -293,11 +292,11 @@ public class SSOServiceImpl implements SSOService {
       account.setAuthenticationMechanism(mechanism);
     }
     accountService.update(account);
-    return getAccountAccessManagementSettings(accountId);
+    return getAccountAccessManagementSettings(accountId, false);
   }
 
   @Override
-  public SSOConfig getAccountAccessManagementSettings(String accountId) {
+  public SSOConfig getAccountAccessManagementSettings(String accountId, boolean isNGSSO) {
     // We are handling the check programmatically for now, since we don't have enough info in the query / path
     // parameters
     authorizeAccessManagementCall();
@@ -305,7 +304,7 @@ public class SSOServiceImpl implements SSOService {
     return SSOConfig.builder()
         .accountId(accountId)
         .authenticationMechanism(account.getAuthenticationMechanism())
-        .ssoSettings(getSSOSettings(account))
+        .ssoSettings(getSSOSettings(account, isNGSSO))
         .build();
   }
 
@@ -341,9 +340,11 @@ public class SSOServiceImpl implements SSOService {
     }
   }
 
-  private List<SSOSettings> getSSOSettings(Account account) {
+  private List<SSOSettings> getSSOSettings(Account account, boolean isNGSSO) {
     List<SSOSettings> settings = new ArrayList<>();
-    SamlSettings samlSettings = ssoSettingService.getSamlSettingsByAccountId(account.getUuid());
+    SamlSettings samlSettings = isNGSSO
+        ? ssoSettingService.getSamlSettingsByAccountId(account.getUuid())
+        : ssoSettingService.getSamlSettingsByAccountIdNotConfiguredFromNG(account.getUuid());
     if (samlSettings != null) {
       settings.add(samlSettings.getPublicSSOSettings());
     }
@@ -377,7 +378,7 @@ public class SSOServiceImpl implements SSOService {
 
   private SamlSettings buildAndUploadSamlSettings(String accountId, String fileAsString, String displayName,
       String groupMembershipAttr, String logoutUrl, String entityIdentifier, String samlProviderType, String clientId,
-      char[] clientSecret, String friendlySamlName, boolean isNGSSOSetting, boolean isUpdateCase)
+      char[] clientSecret, String friendlySamlName, boolean isNGSSOSetting, boolean isUpdateCase, String samlSSOId)
       throws SamlException, URISyntaxException {
     SamlClient samlClient = samlClientService.getSamlClient(entityIdentifier, fileAsString);
 
@@ -394,6 +395,9 @@ public class SSOServiceImpl implements SSOService {
 
     samlSettings.setSamlProviderType(getSAMLProviderType(samlProviderType));
     samlSettings.setConfiguredFromNG(isNGSSOSetting);
+    if (isNotEmpty(samlSSOId)) {
+      samlSettings.setUuid(samlSSOId);
+    }
     if (isNotEmpty(clientId) && isNotEmpty(clientSecret)) {
       samlSettings.setClientId(clientId);
       samlSettings.setEncryptedClientSecret(String.valueOf(clientSecret));
@@ -763,7 +767,7 @@ public class SSOServiceImpl implements SSOService {
     }
 
     buildAndUploadSamlSettings(accountId, fileAsString, displayName, groupMembershipAttr, logoutUrl, entityIdentifier,
-        samlProviderType, clientId, clientSecret, friendlySamlName, isNGSSO, true);
-    return getAccountAccessManagementSettings(accountId);
+        samlProviderType, clientId, clientSecret, friendlySamlName, isNGSSO, true, settings.getUuid());
+    return getAccountAccessManagementSettings(accountId, false);
   }
 }

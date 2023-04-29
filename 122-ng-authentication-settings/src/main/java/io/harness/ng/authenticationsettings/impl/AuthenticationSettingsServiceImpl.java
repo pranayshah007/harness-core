@@ -7,6 +7,7 @@
 
 package io.harness.ng.authenticationsettings.impl;
 
+import static io.harness.beans.FeatureName.PL_ENABLE_MULTIPLE_IDP_SUPPORT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.SecretString.SECRET_MASK;
@@ -32,6 +33,7 @@ import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.user.SessionTimeoutSettings;
 import io.harness.ng.core.user.TwoFactorAdminOverrideSettings;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import software.wings.beans.loginSettings.LoginSettings;
 import software.wings.beans.loginSettings.PasswordStrengthPolicy;
@@ -63,6 +65,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   private final AuthSettingsManagerClient managerClient;
   private final EnforcementClientService enforcementClientService;
   private final UserGroupService userGroupService;
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Override
   public AuthenticationSettingsResponse getAuthenticationSettings(String accountIdentifier) {
@@ -212,6 +215,13 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
       @NotNull MultipartBody.Part inputStream, @NotNull String displayName, String groupMembershipAttr,
       @NotNull Boolean authorizationEnabled, String logoutUrl, String entityIdentifier, String samlProviderType,
       String clientId, String clientSecret, String friendlySamlName) {
+    SamlSettings samlSettings = getResponse(managerClient.getSAMLMetadata(accountId));
+    if (samlSettings != null && !ngFeatureFlagHelperService.isEnabled(accountId, PL_ENABLE_MULTIPLE_IDP_SUPPORT)) {
+      throw new InvalidRequestException(String.format(
+          "Multiple Saml settings cannot be created for account %s. Please enable feature flag PL_ENABLE_MULTIPLE_IDP_SUPPORT on account for Multiple IdP support",
+          accountId));
+    }
+
     RequestBody displayNamePart = createPartFromString(displayName);
     RequestBody groupMembershipAttrPart = createPartFromString(groupMembershipAttr);
     RequestBody authorizationEnabledPart = createPartFromString(String.valueOf(authorizationEnabled));
@@ -363,7 +373,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
 
   @Override
   public void updateAuthenticationForSAMLSetting(String accountId, String samlSSOId, Boolean enable) {
-    managerClient.updateLoginEnabledForSAMLSetting(accountId, samlSSOId, enable);
+    managerClient.updateAuthenticationEnabledForSAMLSetting(accountId, samlSSOId, enable);
   }
 
   private LDAPSettings fromCGLdapSettings(LdapSettings ldapSettings) {
