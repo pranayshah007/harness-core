@@ -36,6 +36,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.HttpStoreConfig;
@@ -83,6 +84,7 @@ import io.harness.polling.service.intfc.PollingPerpetualTaskService;
 import io.harness.polling.service.intfc.PollingService;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import java.util.Collections;
 import java.util.List;
@@ -107,11 +109,13 @@ public class PollingResponseHandlerTest extends CategoryTest {
   @InjectMocks private PollingResponseHandler pollingResponseHandler;
   @Mock PollingPerpetualTaskService pollingPerpetualTaskService;
   @Mock PollingService pollingService;
+  @Mock NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock PolledItemPublisher polledItemPublisher;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+    when(ngFeatureFlagHelperService.isEnabled(anyString(), any())).thenReturn(false);
   }
 
   @Test
@@ -184,6 +188,15 @@ public class PollingResponseHandlerTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = OwnerRule.YUVRAJ)
+  @Category(UnitTests.class)
+  public void testSuccessS3HelmPollingResponseWithDelegateRebalanceWithEnabledForAllManifests() {
+    when(ngFeatureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG))
+        .thenReturn(true);
+    testSuccessResponse(S3_HELM, PollingType.MANIFEST);
+  }
+
+  @Test
   @Owner(developers = OwnerRule.INDER)
   @Category(UnitTests.class)
   public void testSuccessGcsHelmPollingResponseWithDelegateRebalance() {
@@ -194,6 +207,15 @@ public class PollingResponseHandlerTest extends CategoryTest {
   @Owner(developers = OwnerRule.INDER)
   @Category(UnitTests.class)
   public void testSuccessDockerHubPollingResponseWithDelegateRebalance() {
+    testSuccessResponse(DOCKER_HUB, PollingType.ARTIFACT);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YUVRAJ)
+  @Category(UnitTests.class)
+  public void testSuccessDockerHubPollingResponseWithDelegateRebalanceWithEnabledForAllArtifacts() {
+    when(ngFeatureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG))
+        .thenReturn(true);
     testSuccessResponse(DOCKER_HUB, PollingType.ARTIFACT);
   }
 
@@ -285,7 +307,11 @@ public class PollingResponseHandlerTest extends CategoryTest {
       newPolledResponse = assertAndGetGitPolledResponse(2, 1006);
     }
 
-    assertPublishedItem(type, 5, 1, pollingType);
+    if (ngFeatureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG)) {
+      assertPublishedItem(type, 1, 5, pollingType);
+    } else {
+      assertPublishedItem(type, 5, 1, pollingType);
+    }
 
     PollingDocument savedPollingDocument1 = getPollingDocumentFromType(type, newPolledResponse);
     PollingDelegateResponse newDelegateResponse1 = getPollingDelegateResponse(type, pollingType, true, 3, 1011, 2);
@@ -302,7 +328,11 @@ public class PollingResponseHandlerTest extends CategoryTest {
     } else if (pollingType.equals(PollingType.WEBHOOK_POLLING)) {
       assertAndGetGitPolledResponse(3, 1009);
     }
-    assertPublishedItem(type, 6, 2, pollingType);
+    if (ngFeatureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG)) {
+      assertPublishedItem(type, 1, 11, pollingType);
+    } else {
+      assertPublishedItem(type, 6, 2, pollingType);
+    }
   }
 
   private ArtifactPolledResponse assertAndGetArtifactPolledResponse(int nofOfTimes, int expectedSize) {
