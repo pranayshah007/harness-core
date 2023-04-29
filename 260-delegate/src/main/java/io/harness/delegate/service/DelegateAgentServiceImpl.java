@@ -2081,6 +2081,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             Optional.ofNullable(delegateConnectionResults).orElse(emptyList());
         boolean validated = results.stream().allMatch(DelegateConnectionResultDetail::isValidated);
         log.info("Validation {} for task", validated ? "succeeded" : "failed");
+        if (!validated) {
+          metricRegistry.recordGaugeInc(TASK_FAILED, new String[] {DELEGATE_NAME, delegateTaskEvent.getTaskType()});
+        }
         try {
           DelegateTaskPackage delegateTaskPackage = execute(
               delegateAgentManagerClient.reportConnectionResults(delegateId, delegateTaskEvent.getDelegateTaskId(),
