@@ -157,6 +157,7 @@ spec:
           value: "true"
         - name: GRPC_SERVICE_CONNECTOR_PORT
           value: "8080"
+        - name:
       restartPolicy: Always
 
 ---
