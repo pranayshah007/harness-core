@@ -311,7 +311,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private boolean delegateNg = isNotBlank(System.getenv().get("DELEGATE_SESSION_IDENTIFIER"))
       || (isNotBlank(System.getenv().get("NEXT_GEN")) && Boolean.parseBoolean(System.getenv().get("NEXT_GEN")));
   public static final String JAVA_VERSION = "java.version";
-  private final double RESOURCE_USAGE_THRESHOLD = 0.90;
+  private final double RESOURCE_USAGE_THRESHOLD = isNotBlank(System.getenv().get("DELEGATE_RESOURCE_THRESHOLD"))
+      ? (Integer.parseInt(System.getenv().get("DELEGATE_RESOURCE_THRESHOLD")))
+      : 90;
+  private final boolean dynamicRequestHandling = isNotBlank(System.getenv().get("DYNAMIC_REQUEST_HANDLING"))
+      && Boolean.parseBoolean(System.getenv().get("DYNAMIC_REQUEST_HANDLING"));
   private String MANAGER_PROXY_CURL = System.getenv().get("MANAGER_PROXY_CURL");
   private String MANAGER_HOST_AND_PORT = System.getenv().get("MANAGER_HOST_AND_PORT");
   private static final String DEFAULT_PATCH_VERSION = "000";
@@ -627,7 +631,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       DelegateAgentCommonVariables.setDelegateId(delegateId);
       log.info("[New] Delegate registered in {} ms", clock.millis() - start);
       DelegateStackdriverLogAppender.setDelegateId(delegateId);
-      if (isImmutableDelegate) {
+      if (isImmutableDelegate && dynamicRequestHandling) {
         // Enable dynamic throttling of requests only for immutable and FF enabled
         startDynamicHandlingOfTasks();
       }
@@ -753,8 +757,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     log.info("Process info CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
         currentRSSMB, maxProcessRSSThresholdMB, currentPodRSSMB, maxPodRSSThresholdMB);
     final double cpuLoad = getCPULoadAverage();
-    if (cpuLoad > 90) {
-      log.warn("CPU Average load is above 90%, {}", cpuLoad);
+    if (cpuLoad > RESOURCE_USAGE_THRESHOLD) {
+      log.warn("CPU consumption above threshold, {}", BigDecimal.valueOf(cpuLoad / 100));
       rejectRequest.compareAndSet(false, true);
       metricRegistry.recordGaugeValue(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME}, 1.0);
       return;
@@ -1448,8 +1452,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private void startDynamicHandlingOfTasks() {
     log.info("Starting dynamic handling of tasks tp {} ms", 1000);
     try {
-      maxProcessRSSThresholdMB = MemoryHelper.getProcessMaxMemoryMB() * RESOURCE_USAGE_THRESHOLD;
-      maxPodRSSThresholdMB = MemoryHelper.getPodMaxMemoryMB() * RESOURCE_USAGE_THRESHOLD;
+      maxProcessRSSThresholdMB = MemoryHelper.getProcessMaxMemoryMB() * RESOURCE_USAGE_THRESHOLD * 100;
+      maxPodRSSThresholdMB = MemoryHelper.getPodMaxMemoryMB() * RESOURCE_USAGE_THRESHOLD * 100;
 
       if (maxPodRSSThresholdMB < 1 || maxProcessRSSThresholdMB < 1) {
         log.error("Error while fetching memory information, will not enable dynamic handling of tasks");
