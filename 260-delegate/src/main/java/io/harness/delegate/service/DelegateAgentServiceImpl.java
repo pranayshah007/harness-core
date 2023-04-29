@@ -2746,8 +2746,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         response = delegateAgentManagerClient.sendTaskStatus(delegateId, taskId, accountId, taskResponse).execute();
         if (response != null && response.code() >= 200 && response.code() <= 299) {
           log.info("Task {} type {},  response sent to manager", taskId, taskResponse.getTaskTypeName());
-          metricRegistry.recordHistogram(
-              TASK_COMPLETED, new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()}, 1.0);
+          metricRegistry.registerCounterMetric(
+              TASK_COMPLETED, new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()}, "");
           break;
         }
         log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId,
