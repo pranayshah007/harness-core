@@ -294,6 +294,9 @@ public class StripeHelperImpl implements StripeHelper {
   public SubscriptionDetailDTO updateSubscription(StripeSubscriptionRequest stripeSubscriptionRequest) {
     Subscription subscription = stripeHandler.retrieveSubscription(stripeSubscriptionRequest.getSubscriptionId());
 
+    stripeHandler.putInvoiceMetadata(
+        subscription.getLatestInvoice(), ACCOUNT_IDENTIFIER_KEY, stripeSubscriptionRequest.getAccountIdentifier());
+
     // Collect item information in new subscription
     Map<String, StripeItemRequest> newItems = new HashMap<>();
     stripeSubscriptionRequest.getItems().forEach(item -> newItems.put(item.getPriceId(), item));
