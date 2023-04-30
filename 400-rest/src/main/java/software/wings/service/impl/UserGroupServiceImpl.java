@@ -1359,9 +1359,10 @@ public class UserGroupServiceImpl implements UserGroupService {
     deletedIds.add(appId);
 
     String accountId = appService.getAccountIdByAppId(appId);
-    log.info("[USERGROUP-DEBUG]: deleted appId {} for account {}", appId, accountId);
+    log.info("[USERGROUP-DEBUG]: deleted appId {} with app {} for account {}", deletedIds, appId, accountId);
     Query<UserGroup> query;
     if (isNotEmpty(accountId)) {
+      log.info("[USERGROUP-DEBUG]: appId {}", appId);
       query = wingsPersistence.createQuery(UserGroup.class)
                   .filter(UserGroupKeys.accountId, accountId)
                   .project(UserGroup.ID_KEY2, true)
@@ -1369,6 +1370,7 @@ public class UserGroupServiceImpl implements UserGroupService {
                   .project(UserGroupKeys.appPermissions, true)
                   .project(UserGroupKeys.memberIds, true);
     } else {
+      log.info("[USERGROUP-DEBUG]: appId {}", appId);
       query = wingsPersistence.createQuery(UserGroup.class)
                   .field(UserGroupKeys.appIds)
                   .in(deletedIds)
@@ -1377,10 +1379,13 @@ public class UserGroupServiceImpl implements UserGroupService {
                   .project(UserGroupKeys.appPermissions, true)
                   .project(UserGroupKeys.memberIds, true);
     }
-
+    log.info("[USERGROUP-DEBUG]: appId {} query {}", appId, query);
     try (HIterator<UserGroup> userGroupIterator = new HIterator<>(query.fetch())) {
+      log.info("[USERGROUP-DEBUG]: userGroupIterator {} appId {}", userGroupIterator, appId);
+      log.info("[USERGROUP-DEBUG]: userGroupIterator.hasNext {} appId {}", userGroupIterator.hasNext(), appId);
       while (userGroupIterator.hasNext()) {
         final UserGroup userGroup = userGroupIterator.next();
+        log.info("[USERGROUP-DEBUG]: userGroup {} appId {}", userGroup, appId);
         removeAppIdsFromAppPermissions(userGroup, deletedIds);
       }
     }
