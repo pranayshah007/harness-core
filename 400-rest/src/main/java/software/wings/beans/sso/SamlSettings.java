@@ -74,7 +74,7 @@ public class SamlSettings extends SSOSettings implements EncryptableSetting {
     this.samlProviderType = samlProviderType;
     this.clientId = clientId;
     this.clientSecret = clientSecret == null ? null : clientSecret.clone();
-    this.friendlySamlName = isEmpty(friendlySamlName) ? displayName : friendlySamlName;
+    this.friendlySamlName = friendlySamlName;
   }
 
   @Override

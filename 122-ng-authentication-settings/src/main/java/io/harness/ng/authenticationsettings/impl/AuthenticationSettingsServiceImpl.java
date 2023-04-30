@@ -241,6 +241,13 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   public SSOConfig updateSAMLMetadata(@NotNull @AccountIdentifier String accountId, MultipartBody.Part inputStream,
       String displayName, String groupMembershipAttr, @NotNull Boolean authorizationEnabled, String logoutUrl,
       String entityIdentifier, String samlProviderType, String clientId, String clientSecret) {
+    // when FF PL_ENABLE_MULTIPLE_IDP_SUPPORT is enabled, avoid using this API to result in discrepancy of SAML update
+    if (ngFeatureFlagHelperService.isEnabled(accountId, PL_ENABLE_MULTIPLE_IDP_SUPPORT)) {
+      throw new InvalidRequestException(String.format(
+          "Multiple IdP support FF 'PL_ENABLE_MULTIPLE_IDP_SUPPORT' enabled on account %s. Please update on a samlSSOId API endpoint: "
+              + "'saml-metadata-upload/{samlSSOId}' to update a SAML setting when Multiple IdP support is enabled on account",
+          accountId));
+    }
     RequestBody displayNamePart = createPartFromString(displayName);
     RequestBody groupMembershipAttrPart = createPartFromString(groupMembershipAttr);
     RequestBody authorizationEnabledPart = createPartFromString(String.valueOf(authorizationEnabled));
@@ -373,7 +380,8 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
 
   @Override
   public void updateAuthenticationForSAMLSetting(String accountId, String samlSSOId, Boolean enable) {
-    managerClient.updateAuthenticationEnabledForSAMLSetting(accountId, samlSSOId, enable);
+    getResponse(
+        managerClient.updateAuthenticationEnabledForSAMLSetting(accountId, samlSSOId, Boolean.TRUE.equals(enable)));
   }
 
   private LDAPSettings fromCGLdapSettings(LdapSettings ldapSettings) {

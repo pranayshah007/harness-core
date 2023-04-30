@@ -211,7 +211,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   private SamlSettings saveSSOSettingsInternal(@GetAccountId(SamlSettingsAccountIdExtractor.class)
                                                SamlSettings settings, boolean isUpdateCase, boolean isNGSsoSetting) {
     SamlSettings savedSettings = null;
-    SamlSettings currentSamlSettings = null;
+    SamlSettings currentSamlSettings;
     if (!isUpdateCase) {
       if (isNGSsoSetting && isEmpty(settings.getFriendlySamlName())) {
         settings.setFriendlySamlName(settings.getDisplayName());
@@ -220,6 +220,11 @@ public class SSOSettingServiceImpl implements SSOSettingService {
       savedSettings = wingsPersistence.get(SamlSettings.class, ssoSettingUuid);
       eventPublishHelper.publishSSOEvent(settings.getAccountId());
       ngAuditLoginSettingsForSAMLUpload(savedSettings);
+      if (!isNGSsoSetting) {
+        log.info("Auditing creation of SAML Settings for account={}", settings.getAccountId());
+        auditServiceHelper.reportForAuditingUsingAccountId(
+            settings.getAccountId(), null, savedSettings, Event.Type.CREATE);
+      }
     } else {
       SamlSettings queriedSettings =
           isNGSsoSetting && featureFlagService.isEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, settings.getAccountId())
@@ -247,19 +252,14 @@ public class SSOSettingServiceImpl implements SSOSettingService {
         String ssoSettingUuid = wingsPersistence.save(queriedSettings);
         savedSettings = wingsPersistence.get(SamlSettings.class, ssoSettingUuid);
         ngAuditLoginSettingsForSAMLUpdate(currentSamlSettings, savedSettings);
+        if (!isNGSsoSetting) {
+          log.info("Auditing updation of SAML Settings for account={} and saml setting id={}", settings.getAccountId(),
+              settings.getUuid());
+          auditServiceHelper.reportForAuditingUsingAccountId(
+              settings.getAccountId(), currentSamlSettings, savedSettings, Event.Type.UPDATE);
+        }
       }
     }
-    if (!isUpdateCase) {
-      log.info("Auditing creation of SAML Settings for account={}", settings.getAccountId());
-      auditServiceHelper.reportForAuditingUsingAccountId(
-          settings.getAccountId(), null, savedSettings, Event.Type.CREATE);
-    } else {
-      log.info("Auditing updation of SAML Settings for account={} and saml setting id={}", settings.getAccountId(),
-          settings.getUuid());
-      auditServiceHelper.reportForAuditingUsingAccountId(
-          settings.getAccountId(), currentSamlSettings, savedSettings, Event.Type.UPDATE);
-    }
-
     return savedSettings;
   }
 
@@ -429,9 +429,9 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   }
 
   @Override
-  public void updateAuthenticationEnabledForSAMLSetting(String accountId, String samlSSOId, Boolean enable) {
+  public void updateAuthenticationEnabledForSAMLSetting(String accountId, String samlSSOId, boolean enable) {
     SamlSettings samlSettings = getSamlSettingsByAccountIdAndUuid(accountId, samlSSOId);
-    samlSettings.setAuthenticationEnabled(Boolean.TRUE.equals(enable));
+    samlSettings.setAuthenticationEnabled(enable);
     wingsPersistence.save(samlSettings);
   }
 

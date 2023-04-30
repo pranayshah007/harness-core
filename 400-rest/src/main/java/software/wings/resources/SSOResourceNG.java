@@ -209,13 +209,13 @@ public class SSOResourceNG {
   }
 
   @PUT
-  @Path("update-authentication-enabled-saml-setting")
+  @Path("update-saml-setting-authentication")
   @Timed
   @AuthRule(permissionType = LOGGED_IN)
   @ExceptionMetered
   @InternalApi
   public RestResponse<Boolean> updateLoginEnabledForSAMLSetting(@QueryParam("accountId") String accountId,
-      @QueryParam("samlSSOId") String samlSSOId, @QueryParam("enable") @DefaultValue("true") Boolean enable) {
+      @QueryParam("samlSSOId") String samlSSOId, @QueryParam("enable") @DefaultValue("true") boolean enable) {
     ssoService.updateAuthenticationEnabledForSAMLSetting(accountId, samlSSOId, enable);
     return new RestResponse<>(true);
   }

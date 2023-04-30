@@ -397,7 +397,7 @@ public class AuthenticationSettingsResource {
           clientSecret, friendlySamlName);
       return new RestResponse<>(response);
     } catch (Exception e) {
-      throw new GeneralException("Error while editing saml-config", e);
+      throw new GeneralException("Error while editing saml-config " + samlSSOId, e);
     }
   }
 

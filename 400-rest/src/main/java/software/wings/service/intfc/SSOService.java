@@ -101,5 +101,5 @@ public interface SSOService {
   LdapSettingsWithEncryptedDataAndPasswordDetail getLdapSettingsWithEncryptedDataAndPasswordDetail(
       @NotBlank String accountId, @NotBlank String password);
 
-  void updateAuthenticationEnabledForSAMLSetting(@NotBlank String accountId, @NotNull String samlSSOId, Boolean enable);
+  void updateAuthenticationEnabledForSAMLSetting(@NotBlank String accountId, @NotNull String samlSSOId, boolean enable);
 }

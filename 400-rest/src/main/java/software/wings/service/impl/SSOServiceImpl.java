@@ -147,9 +147,15 @@ public class SSOServiceImpl implements SSOService {
       String groupMembershipAttr, Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
       String samlProviderType, String clientId, char[] clientSecret, boolean isNGSSO) {
     try {
-      SamlSettings settings = isNGSSO && featureFlagService.isEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountId)
+      SamlSettings settings = featureFlagService.isNotEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountId)
           ? ssoSettingService.getSamlSettingsByAccountId(accountId)
           : ssoSettingService.getSamlSettingsByAccountIdNotConfiguredFromNG(accountId);
+      if (null == settings) {
+        throw new InvalidRequestException(String.format(
+            "Multiple IdP support FF 'PL_ENABLE_MULTIPLE_IDP_SUPPORT' enabled on account %s, and SAML setting not created from CG. "
+                + "Please update on a samlSSOId API endpoint of NG: 'saml-metadata-upload/{samlSSOId}' to update a SAML setting.",
+            accountId));
+      }
       return updateAndGetSamlSsoConfigInternal(groupMembershipAttr, authorizationEnabled, inputStream, settings,
           displayName, clientId, clientSecret, accountId, logoutUrl, entityIdentifier, samlProviderType, null, isNGSSO);
     } catch (SamlException | IOException | URISyntaxException e) {
@@ -178,7 +184,7 @@ public class SSOServiceImpl implements SSOService {
     SamlSettings samlSettings = ssoSettingService.getSamlSettingsByAccountId(accountId);
     if (samlSettings != null) {
       samlSettings.setLogoutUrl(logoutUrl);
-      ssoSettingService.saveSamlSettings(samlSettings, false, false);
+      ssoSettingService.saveSamlSettings(samlSettings, true, false);
     } else {
       throw new InvalidRequestException("Cannot update Logout URL as no SAML Config exists for your account");
     }
@@ -205,7 +211,7 @@ public class SSOServiceImpl implements SSOService {
   }
 
   @Override
-  public void updateAuthenticationEnabledForSAMLSetting(String accountId, String samlSSOId, Boolean enable) {
+  public void updateAuthenticationEnabledForSAMLSetting(String accountId, String samlSSOId, boolean enable) {
     ssoSettingService.updateAuthenticationEnabledForSAMLSetting(accountId, samlSSOId, enable);
   }
 
