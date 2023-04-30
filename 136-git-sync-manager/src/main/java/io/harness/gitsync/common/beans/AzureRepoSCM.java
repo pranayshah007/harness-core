@@ -13,6 +13,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoApiAccess;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType;
+import io.harness.iterator.PersistentRegularIterable;
 import io.harness.ng.DbAliases;
 import io.harness.ng.userprofile.commons.SCMType;
 
@@ -24,6 +25,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.NonFinal;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
@@ -40,9 +42,32 @@ import org.springframework.data.annotation.TypeAlias;
 @Entity(value = "userSourceCodeManagers", noClassnameStored = true)
 @TypeAlias("io.harness.gitsync.common.beans.AzureRepoSCM")
 @Persistent
-public class AzureRepoSCM extends UserSourceCodeManager {
+public class AzureRepoSCM extends UserSourceCodeManager implements PersistentRegularIterable {
   AzureRepoApiAccess azureRepoApiAccess;
   AzureRepoApiAccessType apiAccessType;
+  @NonFinal Long nextTokenRenewIteration;
+
+  @Override
+  public Long obtainNextIteration(String fieldName) {
+    if (AzureRepoSCM.AzureRepoSCMKeys.nextTokenRenewIteration.equals(fieldName)) {
+      return nextTokenRenewIteration;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
+  }
+
+  @Override
+  public void updateNextIteration(String fieldName, long nextIteration) {
+    if (AzureRepoSCM.AzureRepoSCMKeys.nextTokenRenewIteration.equals(fieldName)) {
+      this.nextTokenRenewIteration = nextIteration;
+      return;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
+  }
+
+  @Override
+  public String getUuid() {
+    return getId();
+  }
 
   @Override
   public SCMType getType() {

@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -32,7 +33,7 @@ import java.util.List;
 public class OAuthTokenRefresherHelper {
   @Inject private SecretManagerClientService ngSecretService;
   List<EncryptedDataDetail> getEncryptionDetails(
-      GitlabOauthDTO gitlabOauthDTO, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+      DecryptableEntity gitlabOauthDTO, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     NGAccess ngAccess = BaseNGAccess.builder()
                             .accountIdentifier(accountIdentifier)
                             .orgIdentifier(orgIdentifier)

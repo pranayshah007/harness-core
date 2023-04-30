@@ -142,6 +142,7 @@ import io.harness.ng.migration.SourceCodeManagerMigrationProvider;
 import io.harness.ng.migration.UserMembershipMigrationProvider;
 import io.harness.ng.migration.UserMetadataMigrationProvider;
 import io.harness.ng.moduleversioninfo.runnable.ModuleVersionsMaintenanceTask;
+import io.harness.ng.oauth.AzureRepoSCMOAuthTokenRefresher;
 import io.harness.ng.oauth.GitlabConnectorOAuthTokenRefresher;
 import io.harness.ng.oauth.GitlabSCMOAuthTokenRefresher;
 import io.harness.ng.overview.eventGenerator.DeploymentEventGenerator;
@@ -642,6 +643,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     injector.getInstance(GitlabConnectorOAuthTokenRefresher.class)
         .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
     injector.getInstance(GitlabSCMOAuthTokenRefresher.class)
+        .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
+    injector.getInstance(AzureRepoSCMOAuthTokenRefresher.class)
         .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
     injector.getInstance(NGVaultUnsetRenewalHandler.class).registerIterators(5);
   }

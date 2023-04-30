@@ -64,7 +64,8 @@ public class AzureRepoSCMMapper extends UserSourceCodeManagerMapper<AzureRepoSCM
     }
   }
 
-  AzureRepoApiAccessDTO toApiAccessDTO(AzureRepoApiAccessType apiAccessType, AzureRepoApiAccess azureRepoApiAccess) {
+  public static AzureRepoApiAccessDTO toApiAccessDTO(
+      AzureRepoApiAccessType apiAccessType, AzureRepoApiAccess azureRepoApiAccess) {
     AzureRepoApiAccessSpecDTO apiAccessSpecDTO = null;
     switch (apiAccessType) {
       case OAUTH:

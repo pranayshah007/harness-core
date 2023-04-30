@@ -448,6 +448,11 @@ gitlabConfig:
   clientSecret: "1234"
   callbackUrl: "https://gitlab.com/oauth/token"
 
+azureRepoConfig:
+  clientId: "1234"
+  clientSecret: ""
+  callbackUrl: "https://dev.azure.com/oauth/token"
+
 basePathPrefix: ${BASE_PATH_PREFIX:-""}
 
 enforcementClientConfiguration:
