@@ -16,5 +16,6 @@ import lombok.Getter;
 @Builder
 public class IPAllowlistFilterDTO {
   String searchTerm;
+  Boolean enabled;
   AllowedSourceType allowedSourceType;
 }
