@@ -48,4 +48,6 @@ public interface DelegateCache {
   void addToAbortedTaskList(String accountId, Set<String> abortedTaskList);
 
   void removeFromAbortedTaskList(String accountId, String delegateTaskId);
+
+  List<Delegate> getAllDelegatesFromRedisCache();
 }

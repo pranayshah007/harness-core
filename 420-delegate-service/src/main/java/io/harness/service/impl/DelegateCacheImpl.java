@@ -50,12 +50,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.redisson.api.RLocalCachedMap;
+import org.redisson.api.RMap;
 
 @Singleton
 @ValidateOnExecution
@@ -330,6 +332,12 @@ public class DelegateCacheImpl implements DelegateCache {
     if (abortedTaskListCache.get(accountId) != null) {
       abortedTaskListCache.get(accountId).remove(delegateTaskId);
     }
+  }
+
+  @Override
+  public List<Delegate> getAllDelegatesFromRedisCache() {
+    RMap<Integer, RLocalCachedMap<String, Object>> delegates = delegateRedissonCacheManager.getMapFromCache(DELEGATE_CACHE);
+   return delegates.values().stream().map(ent -> (Delegate) ent.values()).collect(Collectors.toList());
   }
 
   private Set<String> getIntersectionOfSupportedTaskTypes(@NotNull String accountId) {
