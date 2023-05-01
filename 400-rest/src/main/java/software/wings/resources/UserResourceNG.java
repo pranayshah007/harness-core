@@ -51,7 +51,6 @@ import io.harness.scim.service.ScimUserService;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.dto.UserPrincipal;
-import io.harness.signup.dto.SignupDTO;
 import io.harness.signup.dto.SignupInviteDTO;
 import io.harness.user.remote.UserFilterNG;
 
