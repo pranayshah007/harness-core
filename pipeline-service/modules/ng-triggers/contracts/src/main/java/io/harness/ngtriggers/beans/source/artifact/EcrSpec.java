@@ -25,6 +25,8 @@ import lombok.Data;
 public class EcrSpec implements ArtifactTypeSpec {
   String connectorRef;
   List<TriggerEventDataCondition> eventConditions;
+  List<TriggerEventDataCondition> metaDataConditions;
+  String jexlCondition;
   String imagePath;
   String region;
   String tag;
@@ -42,5 +44,15 @@ public class EcrSpec implements ArtifactTypeSpec {
   @Override
   public List<TriggerEventDataCondition> fetchEventDataConditions() {
     return eventConditions;
+  }
+
+  @Override
+  public List<TriggerEventDataCondition> fetchMetaDataConditions() {
+    return metaDataConditions;
+  }
+
+  @Override
+  public String fetchJexlArtifactConditions() {
+    return jexlCondition;
   }
 }

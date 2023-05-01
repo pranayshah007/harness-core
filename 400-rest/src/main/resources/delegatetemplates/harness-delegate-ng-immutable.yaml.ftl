@@ -47,6 +47,7 @@ metadata:
   namespace: ${delegateNamespace}
 spec:
   replicas: ${delegateReplicas}
+  minReadySeconds: 120
   selector:
     matchLabels:
       harness.io/name: ${delegateName}

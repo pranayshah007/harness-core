@@ -34,6 +34,8 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.api.core.ApiFuture;
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.api.gax.paging.Page;
+import com.google.api.gax.rpc.FixedHeaderProvider;
+import com.google.api.gax.rpc.HeaderProvider;
 import com.google.auth.Credentials;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ImpersonatedCredentials;
@@ -58,6 +60,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -70,6 +73,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Slf4j
 @Singleton
 public class GcpSyncTasklet implements Tasklet {
+  private static final String USER_AGENT_HEADER = "user-agent";
+  private static final String USER_AGENT_HEADER_ENVIRONMENT_VARIABLE = "USER_AGENT_HEADER";
+  private static final String DEFAULT_USER_AGENT = "default-user-agent";
   public static final String SERVICE_ACCOUNT = "serviceAccount";
   public static final String SOURCE_DATA_SET_ID = "sourceDataSetId";
   public static final String SOURCE_GCP_PROJECT_ID = "sourceGcpProjectId";
@@ -186,7 +192,11 @@ public class GcpSyncTasklet implements Tasklet {
       sourceCredentials = GoogleCredentials.getApplicationDefault();
     }
     Credentials credentials = getImpersonatedCredentials(sourceCredentials, serviceAccountEmail);
-    BigQuery bigQuery = BigQueryOptions.newBuilder().setCredentials(credentials).build().getService();
+    BigQuery bigQuery = BigQueryOptions.newBuilder()
+                            .setCredentials(credentials)
+                            .setHeaderProvider(getHeaderProvider())
+                            .build()
+                            .getService();
     DatasetId datasetIdFullyQualified = DatasetId.of(projectId, datasetId);
     Dataset dataset = bigQuery.getDataset(datasetIdFullyQualified);
     log.info("dataset.getLocation(): {}", dataset.getLocation());
@@ -229,6 +239,12 @@ public class GcpSyncTasklet implements Tasklet {
                 usingWorkloadIdentity));
       }
     }
+  }
+
+  private HeaderProvider getHeaderProvider() {
+    String userAgent = System.getenv(USER_AGENT_HEADER_ENVIRONMENT_VARIABLE);
+    return FixedHeaderProvider.create(
+        ImmutableMap.of(USER_AGENT_HEADER, Objects.nonNull(userAgent) ? userAgent : DEFAULT_USER_AGENT));
   }
 
   public List<ConnectorResponseDTO> getNextGenGCPConnectorResponses(String accountId) {

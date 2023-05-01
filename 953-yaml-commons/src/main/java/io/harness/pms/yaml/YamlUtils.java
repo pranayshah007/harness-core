@@ -47,6 +47,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -732,5 +733,23 @@ public class YamlUtils {
     YamlNode yamlNode = yamlField.getNode();
     ObjectNode currJsonNode = (ObjectNode) yamlNode.getCurrJsonNode();
     currJsonNode.set(fieldName, new TextNode(value));
+  }
+
+  public List<YamlField> extractStageFieldsFromPipeline(String yaml) throws IOException {
+    List<YamlNode> stages = extractPipelineField(yaml).fromYamlPath("stages").getNode().asArray();
+    List<YamlField> stageFields = new LinkedList<>();
+
+    stages.forEach(yamlNode -> {
+      YamlField stageField = yamlNode.getField("stage");
+      YamlField parallelStageField = yamlNode.getField("parallel");
+      if (stageField != null) {
+        stageFields.add(stageField);
+      } else if (parallelStageField != null) {
+        // in case of parallel, we fetch the stage node array again
+        List<YamlNode> parallelStages = parallelStageField.getNode().asArray();
+        parallelStages.forEach(parallelStage -> { stageFields.add(parallelStage.getField("stage")); });
+      }
+    });
+    return stageFields;
   }
 }

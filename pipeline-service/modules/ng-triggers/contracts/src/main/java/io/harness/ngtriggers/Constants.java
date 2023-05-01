@@ -82,6 +82,7 @@ public interface Constants {
   String MANIFEST_EXPR = "manifest";
   String MANIFEST_VERSION_EXPR = "version";
   String ARTIFACT_BUILD_EXPR = "build";
+  String ARTIFACT_METADATA_EXPR = "metadata";
 
   String WEBHOOK_TYPE = "Webhook";
   String SCHEDULED_TYPE = "Scheduled";

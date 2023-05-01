@@ -60,6 +60,7 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
+import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
@@ -500,7 +501,7 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
                 .getSpec())
             .getConsiderAllConsecutiveMinutesFromStartAsBad())
         .isEqualTo(false);
-    verify(orchestrationService, times(1)).queueAnalysis(any(), any(), any());
+    verify(orchestrationService, times(1)).queueAnalysis(any());
   }
 
   @Test
@@ -557,12 +558,14 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     createSLIRecords(sliId, sliStateList);
     updateSLI(projectParams, serviceLevelIndicatorDTO, serviceLevelObjectiveIdentifier,
         serviceLevelIndicatorIdentifiers, healthSourceIdentifier);
-    verify(orchestrationService, times(1)).queueAnalysis(sliId, startTime, endTime);
+    verify(orchestrationService, times(1))
+        .queueAnalysis(AnalysisInput.builder().verificationTaskId(sliId).startTime(startTime).endTime(endTime).build());
     ((RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec())
         .setEventType(RatioSLIMetricEventType.BAD);
     updateSLI(projectParams, serviceLevelIndicatorDTO, serviceLevelObjectiveIdentifier,
         serviceLevelIndicatorIdentifiers, healthSourceIdentifier);
-    verify(orchestrationService, times(2)).queueAnalysis(sliId, startTime, endTime);
+    verify(orchestrationService, times(2))
+        .queueAnalysis(AnalysisInput.builder().verificationTaskId(sliId).startTime(startTime).endTime(endTime).build());
   }
 
   private void updateSLI(ProjectParams projectParams, ServiceLevelIndicatorDTO serviceLevelIndicatorDTO,

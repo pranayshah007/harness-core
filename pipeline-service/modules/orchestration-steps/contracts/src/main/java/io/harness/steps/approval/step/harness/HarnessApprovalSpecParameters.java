@@ -36,4 +36,5 @@ public class HarnessApprovalSpecParameters implements SpecParameters {
 
   @NotNull Approvers approvers;
   List<ApproverInputInfo> approverInputs;
+  ParameterField<Boolean> isAutoRejectEnabled;
 }

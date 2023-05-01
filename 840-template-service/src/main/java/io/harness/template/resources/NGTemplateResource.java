@@ -991,6 +991,8 @@ public class NGTemplateResource {
       @Parameter(description = TEMPLATE_PARAM_MESSAGE) @PathParam(
           "templateIdentifier") @ResourceIdentifier String templateIdentifier,
       @BeanParam TemplateMoveConfigRequestDTO templateMoveConfigRequestDTO) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+        Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
     TemplateMoveConfigResponse templateMoveConfigResponse = templateService.moveTemplateStoreTypeConfig(
         accountId, orgId, projectId, templateIdentifier, templateMoveConfigRequestDTO);
     return ResponseDTO.newResponse(templateMoveConfigResponse);

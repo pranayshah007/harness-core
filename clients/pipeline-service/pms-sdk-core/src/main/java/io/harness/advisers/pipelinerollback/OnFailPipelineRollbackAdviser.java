@@ -48,6 +48,13 @@ public class OnFailPipelineRollbackAdviser implements Adviser {
         YAMLFieldNameConstants.USE_PIPELINE_ROLLBACK_STRATEGY,
         OnFailPipelineRollbackOutput.builder().shouldStartPipelineRollback(true).build(),
         StepOutcomeGroup.PIPELINE.name());
+    executionSweepingOutputService.consumeOptional(advisingEvent.getAmbiance(),
+        YAMLFieldNameConstants.PIPELINE_ROLLBACK_FAILURE_INFO,
+        OnFailPipelineRollbackOutput.builder()
+            .shouldStartPipelineRollback(true)
+            .levelsAtFailurePoint(advisingEvent.getAmbiance().getLevelsList())
+            .build(),
+        StepOutcomeGroup.STAGE.name());
     return AdviserResponse.newBuilder()
         .setNextStepAdvise(NextStepAdvise.newBuilder().build())
         .setType(AdviseType.NEXT_STEP)

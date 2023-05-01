@@ -19,6 +19,7 @@ import io.harness.gitsync.GitAccessRequest;
 import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc;
 import io.harness.gitsync.UserDetailsRequest;
 import io.harness.gitsync.common.beans.UserSourceCodeManager;
+import io.harness.gitsync.common.beans.UserSourceCodeManager.UserSourceCodeManagerKeys;
 import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
 import io.harness.gitsync.common.dtos.UserSourceCodeManagerDTO;
 import io.harness.gitsync.common.helper.GitSyncGrpcClientUtils;
@@ -29,6 +30,9 @@ import io.harness.gitsync.common.service.UserSourceCodeManagerService;
 import io.harness.gitsync.scm.beans.ScmErrorDetails;
 import io.harness.ng.userprofile.commons.SCMType;
 import io.harness.repositories.userSourceCodeManager.UserSourceCodeManagerRepository;
+import io.harness.security.PrincipalProtoMapper;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.SourcePrincipalContextBuilder;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -37,6 +41,8 @@ import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 
 @OwnedBy(PIPELINE)
 @NoArgsConstructor
@@ -103,11 +109,28 @@ public class UserSourceCodeManagerServiceImpl implements UserSourceCodeManagerSe
     }
   }
 
+  @Override
+  public UserSourceCodeManagerDTO update(UserSourceCodeManagerDTO userSourceCodeManagerDTO) {
+    Criteria criteria = Criteria.where(UserSourceCodeManagerKeys.accountIdentifier)
+                            .is(userSourceCodeManagerDTO.getAccountIdentifier())
+                            .and(UserSourceCodeManagerKeys.userIdentifier)
+                            .is(userSourceCodeManagerDTO.getUserIdentifier())
+                            .and(UserSourceCodeManagerKeys.type)
+                            .is(userSourceCodeManagerDTO.getType());
+    return scmMapperHelper.toDTO(userSourceCodeManagerRepository.update(
+        new Query(criteria), scmMapperHelper.getUpdateOperationForApiAccess(userSourceCodeManagerDTO)));
+  }
+
   private UserDetailsResponseDTO getUserDetails(UserSourceCodeManagerDTO userSourceCodeManagerDTO) {
     GitAccessRequest gitAccessRequest = GitAccessRequestMapper.buildGitAccessRequest(userSourceCodeManagerDTO);
+    io.harness.security.dto.Principal currentPrincipal = SourcePrincipalContextBuilder.getSourcePrincipal();
+    if (currentPrincipal == null) {
+      currentPrincipal = SecurityContextBuilder.getPrincipal();
+    }
     UserDetailsRequest userDetailsRequest = UserDetailsRequest.newBuilder()
                                                 .setGitAccessRequest(gitAccessRequest)
                                                 .setAccountIdentifier(userSourceCodeManagerDTO.getAccountIdentifier())
+                                                .setPrincipal(PrincipalProtoMapper.toPrincipalProto(currentPrincipal))
                                                 .build();
     final io.harness.gitsync.UserDetailsResponse userDetailsResponse = GitSyncGrpcClientUtils.retryAndProcessException(
         harnessToGitPushInfoServiceBlockingStub::getUserDetails, userDetailsRequest);

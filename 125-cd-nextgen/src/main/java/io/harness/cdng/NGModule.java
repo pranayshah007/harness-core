@@ -94,7 +94,9 @@ import io.harness.ng.core.event.MessageListener;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.infrastructure.services.impl.InfrastructureEntityServiceImpl;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.services.ServiceSequenceService;
 import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
+import io.harness.ng.core.service.services.impl.ServiceSequenceServiceImpl;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.services.impl.ServiceOverrideServiceImpl;
 import io.harness.service.instance.InstanceService;
@@ -176,6 +178,7 @@ public class NGModule extends AbstractModule {
     bind(GARResourceService.class).to(GARResourceServiceImpl.class);
     bind(HelmChartService.class).to(HelmChartServiceImpl.class);
     bind(TerraformCloudResourceService.class).to(TerraformCloudResourceServiceImpl.class);
+    bind(ServiceSequenceService.class).to(ServiceSequenceServiceImpl.class);
     bind(TerraformCloudPlanExecutionDetailsService.class).to(TerraformCloudPlanExecutionDetailsServiceImpl.class);
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);

@@ -25,6 +25,7 @@ import io.harness.entities.ArtifactDetails;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceBuilder;
 import io.harness.entities.InstanceType;
+import io.harness.entities.RollbackStatus;
 import io.harness.entities.instanceinfo.GitopsInstanceInfo;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
 import io.harness.mappers.InstanceDetailsMapper;
@@ -45,6 +46,7 @@ import io.harness.models.dashboard.InstanceCountDetails;
 import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeAndServiceId;
 import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeBase;
 import io.harness.ng.core.environment.beans.EnvironmentType;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.repositories.instance.InstanceRepository;
 import io.harness.rule.Owner;
 import io.harness.service.instance.InstanceService;
@@ -62,7 +64,6 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
-
 public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   private static final String ACCOUNT_IDENTIFIER = "acc";
   private static final String PROJECT_IDENTIFIER = "proj";
@@ -79,11 +80,18 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   private static final String INFRASTRUCTURE_ID = "infraId";
   private static final String CLUSTER_ID = "clusterId";
   private static final String AGENT_ID = "agentId";
-
+  private static final String instanceKey = "instanceKey";
+  private static final String infraMappingId = "infraMappingId";
+  private static final String lastPipelineExecutionName = "lastPipelineExecutionName";
+  private static final String lastPipelineExecutionId = "lastPipelineExecutionId";
+  private static final String stageNodeExecutionId = "stageNodeExecutionId";
+  private static final Status stageStatus = Status.SUCCEEDED;
+  private static final String stageSetupId = "stageSetupId";
+  private static final RollbackStatus rollbackStatus = RollbackStatus.NOT_STARTED;
   private static final List<String> BUILD_IDS = Arrays.asList("id1", "id2");
   private static final List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels =
-      Arrays.asList(new ArtifactDeploymentDetailModel(ENV_1, DISPLAY_NAME, 2l),
-          new ArtifactDeploymentDetailModel(ENV_2, DISPLAY_NAME, 1l));
+      Arrays.asList(new ArtifactDeploymentDetailModel(ENV_1, DISPLAY_NAME, 2l, null, null),
+          new ArtifactDeploymentDetailModel(ENV_2, DISPLAY_NAME, 1l, null, null));
   private static final List<EnvironmentInstanceCountModel> environmentInstanceCountModels =
       Arrays.asList(new EnvironmentInstanceCountModel(ENV_1, 2), new EnvironmentInstanceCountModel(ENV_2, 1));
   private final List<Instance> instanceList = Arrays.asList(Instance.builder()
@@ -100,9 +108,10 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
           .build());
 
   private static final List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList =
-      Arrays.asList(
-          new ActiveServiceInstanceInfoWithEnvType(ENV_IDENTIFIER, ENV_IDENTIFIER, EnvironmentType.PreProduction,
-              INFRASTRUCTURE_ID, INFRASTRUCTURE_ID, CLUSTER_ID, AGENT_ID, 1l, DISPLAY_NAME, 1));
+      Arrays.asList(new ActiveServiceInstanceInfoWithEnvType(instanceKey, infraMappingId, ENV_IDENTIFIER,
+          ENV_IDENTIFIER, EnvironmentType.PreProduction, INFRASTRUCTURE_ID, INFRASTRUCTURE_ID, CLUSTER_ID, AGENT_ID, 1l,
+          DISPLAY_NAME, 1, lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus,
+          stageSetupId, rollbackStatus));
   private AggregationResults<ArtifactDeploymentDetailModel> artifactDeploymentDetailModelAggregationResults;
   private AggregationResults<EnvironmentInstanceCountModel> environmentInstanceCountModelAggregationResults;
   private AggregationResults<InstanceGroupedByPipelineExecution>

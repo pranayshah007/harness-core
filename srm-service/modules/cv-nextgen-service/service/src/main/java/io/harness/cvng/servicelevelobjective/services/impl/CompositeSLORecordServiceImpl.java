@@ -9,17 +9,20 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.persistence.HQuery.excludeAuthorityCount;
 
+import io.harness.SRMPersistence;
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord.CompositeSLORecordKeys;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
+import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
+import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.persistence.HPersistence;
 
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.inject.Inject;
@@ -35,39 +38,59 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
+@Slf4j
 public class CompositeSLORecordServiceImpl implements CompositeSLORecordService {
   private static final int RETRY_COUNT = 3;
-  @Inject private HPersistence hPersistence;
+  @Inject private SRMPersistence hPersistence;
 
   @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
 
+  @Inject SLIRecordService sliRecordService;
+
+  @Inject SLOHealthIndicatorService sloHealthIndicatorService;
+
   @Override
-  public void create(
-      Map<ServiceLevelObjectivesDetail, List<SLIRecord>> serviceLevelObjectivesDetailCompositeSLORecordMap,
-      Map<ServiceLevelObjectivesDetail, SLIMissingDataType> objectivesDetailSLIMissingDataTypeMap, int sloVersion,
-      String verificationTaskId, Instant startTime, Instant endTime, SLIEvaluationType sliEvaluationType) {
-    if (isEmpty(serviceLevelObjectivesDetailCompositeSLORecordMap)) {
-      return;
-    }
-    double runningGoodCount = 0;
-    double runningBadCount = 0;
-    CompositeSLORecord lastCompositeSLORecord = getLastCompositeSLORecord(verificationTaskId, startTime);
-    CompositeSLORecord latestCompositeSLORecord = getLatestCompositeSLORecord(verificationTaskId);
-    if (Objects.nonNull(lastCompositeSLORecord)) {
-      runningGoodCount = lastCompositeSLORecord.getRunningGoodCount();
-      runningBadCount = lastCompositeSLORecord.getRunningBadCount();
-    }
-    if (Objects.nonNull(latestCompositeSLORecord) && latestCompositeSLORecord.getTimestamp().isAfter(startTime)) {
-      // Update flow: fetch CompositeSLO Records to be updated
-      updateCompositeSLORecords(serviceLevelObjectivesDetailCompositeSLORecordMap,
-          objectivesDetailSLIMissingDataTypeMap, sloVersion, runningGoodCount, runningBadCount, verificationTaskId,
-          startTime, endTime, sliEvaluationType);
-    } else {
-      List<CompositeSLORecord> compositeSLORecords = getCompositeSLORecordsFromSLIsDetails(
-          serviceLevelObjectivesDetailCompositeSLORecordMap, objectivesDetailSLIMissingDataTypeMap, sloVersion,
-          runningGoodCount, runningBadCount, verificationTaskId, sliEvaluationType);
-      hPersistence.save(compositeSLORecords);
+  public void create(CompositeServiceLevelObjective compositeServiceLevelObjective, Instant startTime, Instant endTime,
+      String verificationTaskId) {
+    Pair<Map<ServiceLevelObjectivesDetail, List<SLIRecord>>, Map<ServiceLevelObjectivesDetail, SLIMissingDataType>>
+        sloDetailsSLIRecordsAndSLIMissingDataType = sliRecordService.getSLODetailsSLIRecordsAndSLIMissingDataType(
+            compositeServiceLevelObjective.getServiceLevelObjectivesDetails(), startTime, endTime);
+    if (sloDetailsSLIRecordsAndSLIMissingDataType.getKey().size()
+        == compositeServiceLevelObjective.getServiceLevelObjectivesDetails().size()) {
+      Map<ServiceLevelObjectivesDetail, List<SLIRecord>> serviceLevelObjectivesDetailCompositeSLORecordMap =
+          sloDetailsSLIRecordsAndSLIMissingDataType.getKey();
+      Map<ServiceLevelObjectivesDetail, SLIMissingDataType> objectivesDetailSLIMissingDataTypeMap =
+          sloDetailsSLIRecordsAndSLIMissingDataType.getValue();
+      String compositeSLOId = compositeServiceLevelObjective.getUuid();
+      int sloVersion = compositeServiceLevelObjective.getVersion();
+      SLIEvaluationType sliEvaluationType = compositeServiceLevelObjective.getSliEvaluationType();
+      if (isEmpty(serviceLevelObjectivesDetailCompositeSLORecordMap)) {
+        return;
+      }
+
+      double runningGoodCount = 0;
+      double runningBadCount = 0;
+      CompositeSLORecord lastCompositeSLORecord = getLastCompositeSLORecord(compositeSLOId, startTime);
+      CompositeSLORecord latestCompositeSLORecord = getLatestCompositeSLORecord(compositeSLOId);
+      if (Objects.nonNull(lastCompositeSLORecord)) {
+        runningGoodCount = lastCompositeSLORecord.getRunningGoodCount();
+        runningBadCount = lastCompositeSLORecord.getRunningBadCount();
+      }
+      if (Objects.nonNull(latestCompositeSLORecord) && latestCompositeSLORecord.getTimestamp().isAfter(startTime)) {
+        // Update flow: fetch CompositeSLO Records to be updated
+        updateCompositeSLORecords(serviceLevelObjectivesDetailCompositeSLORecordMap,
+            objectivesDetailSLIMissingDataTypeMap, sloVersion, runningGoodCount, runningBadCount, compositeSLOId,
+            startTime, endTime, sliEvaluationType);
+      } else {
+        List<CompositeSLORecord> compositeSLORecords = getCompositeSLORecordsFromSLIsDetails(
+            serviceLevelObjectivesDetailCompositeSLORecordMap, objectivesDetailSLIMissingDataTypeMap, sloVersion,
+            runningGoodCount, runningBadCount, compositeSLOId, sliEvaluationType);
+        hPersistence.saveBatch(compositeSLORecords);
+      }
+      sloHealthIndicatorService.upsert(compositeServiceLevelObjective);
     }
   }
 
@@ -202,13 +225,17 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
           sloRecordMap);
     } else if (sliEvaluationType == SLIEvaluationType.REQUEST) {
       updateOrCreateSLORecords = updateRequestCompositeSLORecords(serviceLevelObjectivesDetailCompositeSLORecordMap,
-          objectivesDetailSLIMissingDataTypeMap, sloVersion, runningGoodCount, runningBadCount, verificationTaskId,
-          sloRecordMap);
+          sloVersion, runningGoodCount, runningBadCount, verificationTaskId, sloRecordMap);
     } else {
       throw new InvalidArgumentsException("Invalid Evaluation Type");
     }
 
-    hPersistence.save(updateOrCreateSLORecords);
+    try {
+      hPersistence.upsertBatch(CompositeSLORecord.class, updateOrCreateSLORecords, new ArrayList<>());
+    } catch (IllegalAccessException exception) {
+      log.error("SLO Records update failed through Bulk update {}", exception.getLocalizedMessage());
+      hPersistence.save(updateOrCreateSLORecords);
+    }
   }
 
   private List<CompositeSLORecord> updateWindowCompositeSLORecords(
@@ -250,8 +277,7 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
 
   private List<CompositeSLORecord> updateRequestCompositeSLORecords(
       Map<ServiceLevelObjectivesDetail, List<SLIRecord>> serviceLevelObjectivesDetailCompositeSLORecordMap,
-      Map<ServiceLevelObjectivesDetail, SLIMissingDataType> objectivesDetailSLIMissingDataTypeMap, int sloVersion,
-      double runningGoodCount, double runningBadCount, String verificationTaskId,
+      int sloVersion, double runningGoodCount, double runningBadCount, String verificationTaskId,
       Map<Instant, CompositeSLORecord> sloRecordMap) {
     List<CompositeSLORecord> updateOrCreateSLORecords = new ArrayList<>();
     Map<Instant, Map<String, SLIRecord>> timeStampToSLIRecordsMap =

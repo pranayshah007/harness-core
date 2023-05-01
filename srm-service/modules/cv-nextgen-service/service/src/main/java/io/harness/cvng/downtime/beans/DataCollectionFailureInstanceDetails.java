@@ -9,12 +9,15 @@ package io.harness.cvng.downtime.beans;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetails;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
 
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
 public class DataCollectionFailureInstanceDetails extends SecondaryEventDetails {
+  @NotNull @Builder.Default String message = "Failed to collect data";
+
   @Override
   public SecondaryEventsType getType() {
     return SecondaryEventsType.DATA_COLLECTION_FAILURE;

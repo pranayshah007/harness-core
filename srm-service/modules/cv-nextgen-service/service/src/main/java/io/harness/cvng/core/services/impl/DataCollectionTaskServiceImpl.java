@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.services.impl;
 
+import static io.harness.cvng.core.entities.DataCollectionTask.Type.DEPLOYMENT;
 import static io.harness.cvng.core.entities.DataCollectionTask.Type.SERVICE_GUARD;
 import static io.harness.cvng.core.entities.DataCollectionTask.Type.SLI;
 import static io.harness.cvng.core.services.CVNextGenConstants.CVNG_MAX_PARALLEL_THREADS;
@@ -32,14 +33,8 @@ import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.ExecutionLogger;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
-import io.harness.cvng.core.services.api.VerificationTaskService;
-import io.harness.cvng.metrics.services.impl.MetricContextBuilder;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
+import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
-import io.harness.cvng.verificationjob.entities.VerificationJobInstance.DataCollectionProgressLog;
-import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
-import io.harness.metrics.service.api.MetricService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -65,21 +60,11 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
   @Inject private Clock clock;
   @Inject private MetricPackService metricPackService;
   @Inject private OrchestrationService orchestrationService;
-  @Inject private MetricService metricService;
-  @Inject private MetricContextBuilder metricContextBuilder;
   @Inject private MonitoringSourcePerpetualTaskService monitoringSourcePerpetualTaskService;
   @Inject
   private Map<DataCollectionTask.Type, DataCollectionTaskManagementService>
       dataCollectionTaskManagementServiceMapBinder;
   @Inject private ExecutionLogService executionLogService;
-
-  @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
-
-  // TODO: this is creating reverse dependency. Find a way to get rid of this dependency.
-  // Probabally by moving ProgressLog concept to a separate service and model.
-  @Inject private VerificationJobInstanceService verificationJobInstanceService;
-
-  @Inject private VerificationTaskService verificationTaskService;
 
   @Override
   public void save(DataCollectionTask dataCollectionTask) {
@@ -100,7 +85,9 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
     query.or(query.criteria(DataCollectionTaskKeys.type).equal(SERVICE_GUARD),
         query.and(query.criteria(DataCollectionTaskKeys.type).equal(SLI),
             query.criteria(DataCollectionTaskKeys.retryCount).lessThanOrEq(SLIDataCollectionTask.MAX_RETRY_COUNT)),
-        query.criteria(DataCollectionTaskKeys.retryCount).lessThanOrEq(DeploymentDataCollectionTask.MAX_RETRY_COUNT));
+        query.and(query.criteria(DataCollectionTaskKeys.type).equal(DEPLOYMENT),
+            query.criteria(DataCollectionTaskKeys.retryCount)
+                .lessThanOrEq(DeploymentDataCollectionTask.MAX_RETRY_COUNT)));
     UpdateOperations<DataCollectionTask> updateOperations =
         hPersistence.createUpdateOperations(DataCollectionTask.class)
             .set(DataCollectionTaskKeys.status, DataCollectionExecutionStatus.RUNNING)
@@ -146,6 +133,17 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
   @Override
   public DataCollectionTask getDataCollectionTask(String dataCollectionTaskId) {
     return hPersistence.get(DataCollectionTask.class, dataCollectionTaskId);
+  }
+
+  @Override
+  public DataCollectionTask getFirstDataCollectionTaskWithStatusAfterStartTime(
+      String verificationTaskId, DataCollectionExecutionStatus status, Instant startTime) {
+    return hPersistence.createQuery(DataCollectionTask.class)
+        .filter(DataCollectionTaskKeys.verificationTaskId, verificationTaskId)
+        .filter(DataCollectionTaskKeys.status, status)
+        .field(DataCollectionTaskKeys.startTime)
+        .greaterThanOrEq(startTime)
+        .get();
   }
 
   @Override
@@ -201,26 +199,20 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
       executionLogger.log(executionLog.getLogLevel(), executionLog.getLog());
     }
     if (result.getStatus() == DataCollectionExecutionStatus.SUCCESS) {
-      // TODO: make this an atomic operation
+      dataCollectionTaskManagementServiceMapBinder.get(dataCollectionTask.getType())
+          .processDataCollectionSuccess(dataCollectionTask);
       if (dataCollectionTask.shouldCreateNextTask()) {
         dataCollectionTaskManagementServiceMapBinder.get(dataCollectionTask.getType())
             .createNextTask(dataCollectionTask);
       } else {
         enqueueNextTask(dataCollectionTask);
-        if (dataCollectionTask instanceof DeploymentDataCollectionTask) {
-          verificationJobInstanceService.logProgress(DataCollectionProgressLog.builder()
-                                                         .executionStatus(dataCollectionTask.getStatus())
-                                                         .isFinalState(false)
-                                                         .startTime(dataCollectionTask.getStartTime())
-                                                         .endTime(dataCollectionTask.getEndTime())
-                                                         .verificationTaskId(dataCollectionTask.getVerificationTaskId())
-                                                         .log("Data collection task successful")
-                                                         .build());
-        }
       }
       if (dataCollectionTask.shouldQueueAnalysis()) {
-        orchestrationService.queueAnalysis(dataCollectionTask.getVerificationTaskId(),
-            dataCollectionTask.getStartTime(), dataCollectionTask.getEndTime());
+        orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                               .verificationTaskId(dataCollectionTask.getVerificationTaskId())
+                                               .startTime(dataCollectionTask.getStartTime())
+                                               .endTime(dataCollectionTask.getEndTime())
+                                               .build());
       }
     } else {
       retry(dataCollectionTask);
@@ -266,23 +258,7 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
   }
 
   private void markDependentTasksFailed(DataCollectionTask task) {
-    if (task instanceof SLIDataCollectionTask) {
-      ServiceLevelIndicator serviceLevelIndicator =
-          serviceLevelIndicatorService.get(verificationTaskService.getSliId(task.getVerificationTaskId()));
-      serviceLevelIndicatorService.enqueueDataCollectionFailureInstanceAndTriggerAnalysis(
-          task.getVerificationTaskId(), task.getStartTime(), task.getEndTime(), serviceLevelIndicator);
-    }
-    if (task instanceof DeploymentDataCollectionTask) {
-      verificationJobInstanceService.logProgress(
-          DataCollectionProgressLog.builder()
-              .executionStatus(task.getStatus())
-              .isFinalState(false)
-              .startTime(task.getStartTime())
-              .endTime(task.getEndTime())
-              .verificationTaskId(task.getVerificationTaskId())
-              .log("Data collection failed with exception: " + task.getException())
-              .build());
-    }
+    dataCollectionTaskManagementServiceMapBinder.get(task.getType()).processDataCollectionFailure(task);
     String exceptionMsg =
         task.getStatus() == DataCollectionExecutionStatus.EXPIRED ? "Previous task timed out" : "Previous task failed";
     log.info("Marking queued task failed for verificationTaskId {}", task.getVerificationTaskId());

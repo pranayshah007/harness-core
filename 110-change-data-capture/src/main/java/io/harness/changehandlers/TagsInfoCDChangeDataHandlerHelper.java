@@ -7,6 +7,8 @@
 
 package io.harness.changehandlers;
 
+import io.harness.cdng.execution.StageExecutionInfo;
+import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.changestreamsframework.ChangeEvent;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.entities.Organization;
@@ -40,6 +42,9 @@ public class TagsInfoCDChangeDataHandlerHelper {
     } else if (changeEvent.getEntityType() == PipelineExecutionSummaryEntity.class
         && dbObject.get(PlanExecutionSummaryKeys.planExecutionId) != null) {
       return dbObject.get(PlanExecutionSummaryKeys.planExecutionId).toString();
+    } else if (changeEvent.getEntityType() == StageExecutionInfo.class
+        && dbObject.get(StageExecutionInfoKeys.stageExecutionId) != null) {
+      return dbObject.get(StageExecutionInfoKeys.stageExecutionId).toString();
     }
     return null;
   }
@@ -58,6 +63,9 @@ public class TagsInfoCDChangeDataHandlerHelper {
     } else if (changeEvent.getEntityType() == PipelineExecutionSummaryEntity.class
         && dbObject.get(PlanExecutionSummaryKeys.accountId) != null) {
       return dbObject.get(PlanExecutionSummaryKeys.accountId).toString();
+    } else if (changeEvent.getEntityType() == StageExecutionInfo.class
+        && dbObject.get(StageExecutionInfoKeys.accountIdentifier) != null) {
+      return dbObject.get(StageExecutionInfoKeys.accountIdentifier).toString();
     }
     return null;
   }
@@ -75,6 +83,9 @@ public class TagsInfoCDChangeDataHandlerHelper {
     } else if (changeEvent.getEntityType() == PipelineExecutionSummaryEntity.class
         && dbObject.get(PlanExecutionSummaryKeys.orgIdentifier) != null) {
       return dbObject.get(PlanExecutionSummaryKeys.orgIdentifier).toString();
+    } else if (changeEvent.getEntityType() == StageExecutionInfo.class
+        && dbObject.get(StageExecutionInfoKeys.orgIdentifier) != null) {
+      return dbObject.get(StageExecutionInfoKeys.orgIdentifier).toString();
     }
     return null;
   }
@@ -91,6 +102,9 @@ public class TagsInfoCDChangeDataHandlerHelper {
     } else if (changeEvent.getEntityType() == PipelineExecutionSummaryEntity.class
         && dbObject.get(PlanExecutionSummaryKeys.projectIdentifier) != null) {
       return dbObject.get(PlanExecutionSummaryKeys.projectIdentifier).toString();
+    } else if (changeEvent.getEntityType() == StageExecutionInfo.class
+        && dbObject.get(StageExecutionInfoKeys.projectIdentifier) != null) {
+      return dbObject.get(StageExecutionInfoKeys.projectIdentifier).toString();
     }
     return null;
   }
@@ -108,6 +122,8 @@ public class TagsInfoCDChangeDataHandlerHelper {
       return "SERVICE";
     } else if (changeEvent.getEntityType() == PipelineExecutionSummaryEntity.class) {
       return "EXECUTION";
+    } else if (changeEvent.getEntityType() == StageExecutionInfo.class) {
+      return "STAGE_EXECUTION";
     }
     return null;
   }
@@ -142,8 +158,25 @@ public class TagsInfoCDChangeDataHandlerHelper {
       if (dbObject.get(PlanExecutionSummaryKeys.tags) != null) {
         return (BasicDBList) dbObject.get(PlanExecutionSummaryKeys.tags);
       }
+    } else if (changeEvent.getEntityType() == StageExecutionInfo.class
+        && dbObject.get(StageExecutionInfoKeys.stageExecutionId) != null) {
+      if (dbObject.get(StageExecutionInfoKeys.tags) != null) {
+        return (BasicDBList) dbObject.get(StageExecutionInfoKeys.tags);
+      }
     }
     return null;
+  }
+
+  public String getStageExecutionTags(BasicDBList tagsList) {
+    String[] tagArray = tagsList.toArray(new String[tagsList.size()]);
+    StringBuilder tagString = new StringBuilder("{");
+    for (String tag : tagArray) {
+      tagString.append(tag);
+      tagString.append(',');
+    }
+    tagString = new StringBuilder(tagString.subSequence(0, tagString.length() - 1));
+    tagString.append('}');
+    return tagString.toString();
   }
 
   /*

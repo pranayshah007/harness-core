@@ -19,6 +19,7 @@ import io.harness.ngtriggers.beans.scm.WebhookPayloadData;
 import io.harness.ngtriggers.eventmapper.filters.TriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.AccountCustomTriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.AccountTriggerFilter;
+import io.harness.ngtriggers.eventmapper.filters.impl.ArtifactJexlConditionsTriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.BitbucketPRCommentTriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.EventActionTriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.FilepathTriggerFilter;
@@ -28,6 +29,7 @@ import io.harness.ngtriggers.eventmapper.filters.impl.GitlabMRCommentTriggerFilt
 import io.harness.ngtriggers.eventmapper.filters.impl.HeaderTriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.IssueCommentTriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.JexlConditionsTriggerFilter;
+import io.harness.ngtriggers.eventmapper.filters.impl.MetadataConditionsTriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.PayloadConditionsTriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.SourceRepoTypeTriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.buildtrigger.BuildTriggerEventConditionsFilter;
@@ -62,6 +64,8 @@ public class TriggerFilterStore {
   private final BuildTriggerEventConditionsFilter buildConditionsTriggerFilter;
   private final BuildTriggerValidationFilter buildTriggerValidationFilter;
   private final BuildTriggerSignatureFilter buildTriggerSignatureFilter;
+  private final MetadataConditionsTriggerFilter metadataConditionsTriggerFilter;
+  private final ArtifactJexlConditionsTriggerFilter artifactJexlConditionsTriggerFilter;
 
   public List<TriggerFilter> getWebhookTriggerFilters(WebhookPayloadData webhookPayloadData) {
     if (CUSTOM.name().equals(webhookPayloadData.getOriginalEvent().getSourceRepoType())) {
@@ -93,7 +97,8 @@ public class TriggerFilterStore {
   }
 
   public List<TriggerFilter> getBuildTriggerFiltersDefaultList() {
-    return Arrays.asList(buildTriggerSignatureFilter, buildConditionsTriggerFilter, buildTriggerValidationFilter);
+    return Arrays.asList(buildTriggerSignatureFilter, buildConditionsTriggerFilter, buildTriggerValidationFilter,
+        metadataConditionsTriggerFilter, artifactJexlConditionsTriggerFilter);
   }
 
   List<TriggerFilter> getWebhookGitTriggerFiltersDefaultList() {

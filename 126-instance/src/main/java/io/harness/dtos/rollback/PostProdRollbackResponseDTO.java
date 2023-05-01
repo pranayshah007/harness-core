@@ -13,11 +13,13 @@ import io.harness.annotations.dev.OwnedBy;
 import lombok.Builder;
 import lombok.Getter;
 
-@OwnedBy(HarnessTeam.DX)
+@OwnedBy(HarnessTeam.CDP)
 @Getter
 @Builder
 public class PostProdRollbackResponseDTO {
   boolean isRollbackTriggered;
-  String instanceUuid;
+  String instanceKey;
+  String infraMappingId;
   String planExecutionId;
+  String message;
 }

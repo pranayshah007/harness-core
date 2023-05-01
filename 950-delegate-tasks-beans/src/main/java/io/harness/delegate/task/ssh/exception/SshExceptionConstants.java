@@ -115,4 +115,16 @@ public class SshExceptionConstants {
   public final String INVALID_STORE_DELEGATE_CONFIG_TYPE_HINT = "Please provide a valid config store type.";
   public final String INVALID_STORE_DELEGATE_CONFIG_TYPE_EXPLANATION =
       "Provided store type `%s` is not supported for Ssh/WinRm.";
+  public final String FAILED_TO_COPY_WINRM_CONFIG_FILE_HINT =
+      "Possible reasons for failure: \n1. Destination path is not a valid path. \n2. Missing permissions to perform operation on destination path. \n3. Invalid file content, file might contain invalid characters which are causing failures to translate via PowerShell. \n4. Disk volume might not be mounted.\n5. Please check console execution logs for detailed PowerShell error.";
+  public final String FAILED_TO_COPY_CONFIG_FILE_EXPLANATION =
+      "Failed to copy config file: %s to the destination path: %s";
+  public final String FAILED_TO_COPY_CONFIG_FILE = "Failed to copy config file: %s.";
+  public final String FAILED_TO_COPY_SSH_CONFIG_FILE_HINT =
+      "Possible reasons for failure: \n1. Destination path is not a valid path. \n2. Missing permissions to perform operation on destination path. \n3. Disk volume might not be mounted.\n4. Please check console execution logs for detailed scp error.";
+  public final String FAILED_TO_COPY_ARTIFACT_HINT =
+      "Possible reasons for failure: \n1. Destination path is not a valid path. \n2. Missing permissions to perform operation on destination path. \n3. File is corrupted and integrity check fails over scp. \n4. Disk volume might not be mounted.\n5. Please check console execution logs for detailed scp error.";
+  public final String FAILED_TO_COPY_ARTIFACT_HINT_EXPLANATION =
+      "Failed to copy artifact file: %s to the destination path: %s";
+  public final String FAILED_TO_COPY_ARTIFACT = "Failed to copy artifact file: %s.";
 }

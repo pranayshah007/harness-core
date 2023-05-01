@@ -9,25 +9,27 @@ package io.harness.idp.gitintegration.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
+import io.harness.idp.gitintegration.beans.CatalogInfraConnectorType;
 import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
 import io.harness.spec.server.idp.v1.model.ConnectorDetails;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface GitIntegrationService {
-  void createConnectorSecretsEnvVariable(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String connectorIdentifier, ConnectorType connectorType);
-  void processConnectorUpdate(Message message, EntityChangeDTO entityChangeDTO);
-
-  void createConnectorInBackstage(String accountIdentifier, String connectorIdentifier, String type);
-
+  void createConnectorSecretsEnvVariable(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO);
+  void processConnectorUpdate(Message message, EntityChangeDTO entityChangeDTO) throws ExecutionException;
+  void createConnectorInBackstage(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO,
+      CatalogInfraConnectorType catalogConnectorEntityType, String connectorIdentifier);
   List<CatalogConnectorEntity> getAllConnectorDetails(String accountIdentifier);
   Optional<CatalogConnectorEntity> findByAccountIdAndProviderType(String accountIdentifier, String providerType);
-  CatalogConnectorEntity saveConnectorDetails(String accountIdentifier, ConnectorDetails connectorDetails);
+  CatalogConnectorEntity saveConnectorDetails(String accountIdentifier, ConnectorDetails connectorDetails)
+      throws ExecutionException;
   CatalogConnectorEntity findDefaultConnectorDetails(String accountIdentifier);
 }

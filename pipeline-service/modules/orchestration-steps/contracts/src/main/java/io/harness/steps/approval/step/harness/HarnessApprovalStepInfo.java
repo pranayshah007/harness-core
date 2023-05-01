@@ -59,6 +59,10 @@ public class HarnessApprovalStepInfo implements PMSStepInfo {
   @NotNull @VariableExpression(skipVariableExpression = true) Approvers approvers;
   @VariableExpression(skipVariableExpression = true) List<ApproverInputInfo> approverInputs;
 
+  @YamlSchemaTypes(value = {string})
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  ParameterField<Boolean> isAutoRejectEnabled;
+
   @Override
   public StepType getStepType() {
     return StepSpecTypeConstants.HARNESS_APPROVAL_STEP_TYPE;
@@ -76,6 +80,7 @@ public class HarnessApprovalStepInfo implements PMSStepInfo {
         .includePipelineExecutionHistory(includePipelineExecutionHistory)
         .approvers(approvers)
         .approverInputs(approverInputs)
+        .isAutoRejectEnabled(isAutoRejectEnabled)
         .build();
   }
 }

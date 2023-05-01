@@ -73,8 +73,11 @@ public class BackstageEnvVariableRepositoryCustomImpl implements BackstageEnvVar
   }
 
   @Override
-  public void deleteAllByEnvName(List<String> envName) {
-    Criteria criteria = Criteria.where(BackstageEnvVariableKeys.envName).in(envName);
+  public void deleteAllByAccountIdentifierAndEnvNames(String accountIdentifier, List<String> envName) {
+    Criteria criteria = Criteria.where(BackstageEnvVariableKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(BackstageEnvVariableKeys.envName)
+                            .in(envName);
     Query query = new Query(criteria);
     mongoTemplate.findAllAndRemove(query, BackstageEnvVariableEntity.class);
   }

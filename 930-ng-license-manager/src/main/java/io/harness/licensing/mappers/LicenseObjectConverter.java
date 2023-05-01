@@ -34,6 +34,7 @@ public class LicenseObjectConverter {
     moduleLicenseDTO.setStatus(moduleLicense.getStatus());
     moduleLicenseDTO.setStartTime(moduleLicense.getStartTime());
     moduleLicenseDTO.setExpiryTime(moduleLicense.getExpiryTime());
+    moduleLicenseDTO.setPremiumSupport(moduleLicense.isPremiumSupport());
     moduleLicenseDTO.setCreatedAt(moduleLicense.getCreatedAt());
     moduleLicenseDTO.setLastModifiedAt(moduleLicense.getLastUpdatedAt());
     moduleLicenseDTO.setTrialExtended(moduleLicense.getTrialExtended());

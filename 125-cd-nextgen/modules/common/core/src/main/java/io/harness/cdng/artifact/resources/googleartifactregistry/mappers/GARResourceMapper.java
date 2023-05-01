@@ -25,6 +25,9 @@ public class GARResourceMapper {
     return GARResponseDTO.builder().buildDetailsList(detailsDTOList).build();
   }
   public static GARBuildDetailsDTO toGarBuildDetailsDTO(ArtifactBuildDetailsNG artifactBuildDetailsNG) {
-    return GARBuildDetailsDTO.builder().version(artifactBuildDetailsNG.getNumber()).build();
+    return GARBuildDetailsDTO.builder()
+        .version(artifactBuildDetailsNG.getNumber())
+        .metadata(artifactBuildDetailsNG.getMetadata())
+        .build();
   }
 }

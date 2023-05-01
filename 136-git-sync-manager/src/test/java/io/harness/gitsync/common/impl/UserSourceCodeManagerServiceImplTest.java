@@ -13,6 +13,7 @@ import static junit.framework.TestCase.assertEquals;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mockStatic;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -32,6 +33,8 @@ import io.harness.gitsync.common.helper.SCMMapperHelper;
 import io.harness.ng.userprofile.commons.SCMType;
 import io.harness.repositories.userSourceCodeManager.UserSourceCodeManagerRepository;
 import io.harness.rule.Owner;
+import io.harness.security.SourcePrincipalContextBuilder;
+import io.harness.security.dto.UserPrincipal;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -40,6 +43,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class UserSourceCodeManagerServiceImplTest extends GitSyncTestBase {
@@ -105,6 +109,9 @@ public class UserSourceCodeManagerServiceImplTest extends GitSyncTestBase {
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testSave() {
+    MockedStatic<SourcePrincipalContextBuilder> mockedStatic = mockStatic(SourcePrincipalContextBuilder.class);
+    mockedStatic.when(() -> SourcePrincipalContextBuilder.getSourcePrincipal())
+        .thenReturn(new UserPrincipal("name", "email", "username", "ac"));
     assertEquals(userSourceCodeManagerService.save(userSourceCodeManagerDTO), userSourceCodeManagerDTO);
   }
 

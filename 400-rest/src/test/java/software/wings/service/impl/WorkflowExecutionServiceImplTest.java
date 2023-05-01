@@ -2247,6 +2247,71 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = RAFAEL)
   @Category(UnitTests.class)
+  public void shouldPopulateDuplicatesArtifactsAndServicesWithFF() {
+    String serviceId1 = SERVICE_ID + "_1";
+    String artifactId1 = ARTIFACT_ID + "_1";
+    String artifactStreamId1 = ARTIFACT_STREAM_ID + "_1";
+    String buildNo = BUILD_NO;
+    ArtifactMetadata artifactMetadata = new ArtifactMetadata() {
+      { put("buildNo", buildNo); }
+    };
+    ExecutionArgs executionArgs =
+        ExecutionArgs.builder()
+            .artifactVariables(List.of(
+                ArtifactVariable.builder()
+                    .artifactInput(ArtifactInput.builder().artifactStreamId(artifactStreamId1).buildNo(buildNo).build())
+                    .build()))
+            .build();
+    when(artifactService.listArtifactsByArtifactStreamId(ACCOUNT_ID, artifactStreamId1, buildNo))
+        .thenReturn(asList(
+            anArtifact().withUuid(ARTIFACT_ID).withArtifactStreamId(ARTIFACT_STREAM_ID).withDisplayName("art").build(),
+            anArtifact()
+                .withUuid(artifactId1)
+                .withArtifactStreamId(artifactStreamId1)
+                .withAccountId(ACCOUNT_ID)
+                .withBuildNo(buildNo)
+                .withMetadata(artifactMetadata)
+                .withDisplayName("art1")
+                .build(),
+            anArtifact().withUuid(ARTIFACT_ID).withArtifactStreamId(ARTIFACT_STREAM_ID).withDisplayName("art").build(),
+            anArtifact()
+                .withUuid(artifactId1)
+                .withArtifactStreamId(artifactStreamId1)
+                .withAccountId(ACCOUNT_ID)
+                .withBuildNo(buildNo)
+                .withMetadata(artifactMetadata)
+                .withDisplayName("art1")
+                .build()));
+
+    WorkflowExecution workflowExecution =
+        WorkflowExecution.builder().serviceIds(asList(SERVICE_ID, serviceId1)).build();
+    when(artifactStreamServiceBindingService.listArtifactStreamIds(SERVICE_ID))
+        .thenReturn(singletonList(ARTIFACT_STREAM_ID));
+    when(artifactStreamServiceBindingService.listArtifactStreamIds(serviceId1))
+        .thenReturn(singletonList(artifactStreamId1));
+    when(artifactStreamServiceBindingService.listServices(ARTIFACT_STREAM_ID))
+        .thenReturn(singletonList(Service.builder().uuid(SERVICE_ID).name("s").build()));
+    when(artifactStreamServiceBindingService.listServices(artifactStreamId1))
+        .thenReturn(singletonList(Service.builder().uuid(serviceId1).name("s1").build()));
+    when(featureFlagService.isEnabled(SPG_ENABLE_POPULATE_USING_ARTIFACT_VARIABLE, ACCOUNT_ID)).thenReturn(true);
+
+    WorkflowStandardParams stdParams = aWorkflowStandardParams().build();
+    Set<String> keywords = new HashSet<>();
+    workflowExecutionService.populateArtifactsAndServices(
+        workflowExecution, stdParams, keywords, executionArgs, ACCOUNT_ID);
+
+    Function<List<Artifact>, Boolean> checkArtifacts = artifacts
+        -> EmptyPredicate.isNotEmpty(artifacts) && artifacts.size() == 4
+        && artifacts.get(0).getUuid().equals(ARTIFACT_ID) && artifacts.get(1).getUuid().equals(artifactId1);
+    assertThat(checkArtifacts.apply(workflowExecution.getArtifacts())).isTrue();
+    assertThat(checkArtifacts.apply(executionArgs.getArtifacts())).isTrue();
+    assertThat(keywords).contains("s", "s1");
+    assertThat(keywords).contains(buildNo);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
   public void shouldPopulateArtifactsAndServicesWithFF() {
     String serviceId1 = SERVICE_ID + "_1";
     String artifactId1 = ARTIFACT_ID + "_1";

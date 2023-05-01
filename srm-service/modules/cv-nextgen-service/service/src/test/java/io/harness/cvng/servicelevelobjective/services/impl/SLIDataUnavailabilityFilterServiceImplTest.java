@@ -69,20 +69,39 @@ public class SLIDataUnavailabilityFilterServiceImplTest extends CvNextGenTestBas
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
-  public void testFilter() {
+  public void testFilterOnDowntime() {
     Instant startTime = clock.instant();
     List<SLIState> sliStates = Arrays.asList(BAD, GOOD, SKIP_DATA, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, SKIP_DATA);
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
     EntityUnavailabilityStatusesDTO downtimeEntityUnavailabilityStatusesDTO =
         builderFactory.getDowntimeEntityUnavailabilityStatusesDTO();
-    EntityUnavailabilityStatusesDTO sloEntityUnavailabilityStatusesDTO =
-        builderFactory.getSLOEntityUnavailabilityStatusesDTO();
-    List<EntityUnavailabilityStatusesDTO> statusesDTOS =
-        List.of(downtimeEntityUnavailabilityStatusesDTO, sloEntityUnavailabilityStatusesDTO);
-    doReturn(statusesDTOS).when(entityUnavailabilityStatusesService).getAllInstances(any(), any(), any());
+    doReturn(Collections.singletonList(downtimeEntityUnavailabilityStatusesDTO))
+        .when(entityUnavailabilityStatusesService)
+        .getAllInstances(any(), any(), any());
     doReturn(Collections.singletonList(downtimeEntityUnavailabilityStatusesDTO))
         .when(downtimeService)
         .filterDowntimeInstancesOnMonitoredService(any(), any(), any());
+    List<SLIRecordParam> updatedSliRecordParams =
+        sliDataUnavailabilityFilterService.filterSLIRecordsToSkip(sliRecordParams, builderFactory.getProjectParams(),
+            startTime, startTime.plus(10, ChronoUnit.MINUTES), "msIdentifier", "sliId");
+    assertThat(updatedSliRecordParams.size()).isEqualTo(10);
+    assertThat(updatedSliRecordParams.get(9).getSliState()).isEqualTo(SKIP_DATA);
+    assertThat(updatedSliRecordParams.get(8).getSliState()).isEqualTo(SKIP_DATA);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testFilterOnDCFailureInstances() {
+    Instant startTime = clock.instant();
+    List<SLIState> sliStates = Arrays.asList(BAD, GOOD, SKIP_DATA, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, SKIP_DATA);
+    List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
+    EntityUnavailabilityStatusesDTO sloEntityUnavailabilityStatusesDTO =
+        builderFactory.getSLOEntityUnavailabilityStatusesDTO();
+    doReturn(Collections.singletonList(sloEntityUnavailabilityStatusesDTO))
+        .when(entityUnavailabilityStatusesService)
+        .getAllInstances(builderFactory.getProjectParams(), startTime.getEpochSecond(),
+            startTime.plus(10, ChronoUnit.MINUTES).getEpochSecond());
     List<SLIRecordParam> updatedSliRecordParams = sliDataUnavailabilityFilterService.filterSLIRecordsToSkip(
         sliRecordParams, builderFactory.getProjectParams(), startTime, startTime.plus(10, ChronoUnit.MINUTES),
         "msIdentifier", sloEntityUnavailabilityStatusesDTO.getEntityId());

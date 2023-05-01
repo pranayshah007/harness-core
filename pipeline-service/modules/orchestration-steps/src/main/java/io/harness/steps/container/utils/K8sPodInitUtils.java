@@ -56,6 +56,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Capabilities;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.SecurityContext;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;
+import io.harness.beans.yaml.extended.volumes.CIVolume;
 import io.harness.ci.utils.QuantityUtils;
 import io.harness.delegate.beans.ci.pod.ContainerCapabilities;
 import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
@@ -90,7 +91,6 @@ import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.steps.plugin.InitContainerV2StepInfo;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
-import io.harness.steps.plugin.infrastructure.volumes.ContainerVolume;
 import io.harness.steps.plugin.infrastructure.volumes.EmptyDirYaml;
 import io.harness.steps.plugin.infrastructure.volumes.HostPathYaml;
 import io.harness.steps.plugin.infrastructure.volumes.PersistentVolumeClaimYaml;
@@ -248,19 +248,19 @@ public class K8sPodInitUtils {
   public List<PodVolume> convertDirectK8Volumes(ContainerK8sInfra k8sDirectInfraYaml) {
     List<PodVolume> podVolumes = new ArrayList<>();
 
-    List<ContainerVolume> volumes = k8sDirectInfraYaml.getSpec().getVolumes().getValue();
+    List<CIVolume> volumes = k8sDirectInfraYaml.getSpec().getVolumes().getValue();
     if (isEmpty(volumes)) {
       return podVolumes;
     }
 
     int index = 0;
-    for (ContainerVolume volume : volumes) {
+    for (CIVolume volume : volumes) {
       String volumeName = format("%s%d", VOLUME_PREFIX, index);
-      if (volume.getType() == ContainerVolume.Type.EMPTY_DIR) {
+      if (volume.getType() == CIVolume.Type.EMPTY_DIR) {
         podVolumes.add(convertEmptyDir(volumeName, (EmptyDirYaml) volume));
-      } else if (volume.getType() == ContainerVolume.Type.HOST_PATH) {
+      } else if (volume.getType() == CIVolume.Type.HOST_PATH) {
         podVolumes.add(convertHostPath(volumeName, (HostPathYaml) volume));
-      } else if (volume.getType() == ContainerVolume.Type.PERSISTENT_VOLUME_CLAIM) {
+      } else if (volume.getType() == CIVolume.Type.PERSISTENT_VOLUME_CLAIM) {
         podVolumes.add(convertPVCVolume(volumeName, (PersistentVolumeClaimYaml) volume));
       }
 

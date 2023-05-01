@@ -21,6 +21,7 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.GenerateYamlRequest;
 import io.harness.spec.server.idp.v1.model.GenerateYamlResponse;
+import io.harness.spec.server.idp.v1.model.GenerateYamlResponseGeneratedYaml;
 import io.harness.spec.server.idp.v1.model.HarnessBackstageEntities;
 import io.harness.spec.server.idp.v1.model.HarnessEntitiesCountResponse;
 import io.harness.spec.server.idp.v1.model.HarnessEntitiesResponse;
@@ -29,6 +30,7 @@ import io.harness.spec.server.idp.v1.model.ImportEntitiesResponse;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -113,21 +115,21 @@ public class OnboardingResourceApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testOnboardingGenerateYaml() {
     GenerateYamlResponse generateYamlResponse = new GenerateYamlResponse();
-    generateYamlResponse.setDescription(GENERATE_YAML_DESC);
-    generateYamlResponse.setYamlDef(GENERATE_YAML_DEF);
+    generateYamlResponse.setGeneratedYaml(
+        new GenerateYamlResponseGeneratedYaml().description(GENERATE_YAML_DESC).yamlDef(GENERATE_YAML_DEF));
     when(onboardingService.generateYaml(ACCOUNT_IDENTIFIER, new GenerateYamlRequest()))
         .thenReturn(generateYamlResponse);
     Response response = onboardingResourceApiImpl.onboardingGenerateYaml(new GenerateYamlRequest(), ACCOUNT_IDENTIFIER);
     assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
     GenerateYamlResponse generateYamlResponseFromApi = (GenerateYamlResponse) response.getEntity();
-    assertThat(generateYamlResponseFromApi.getDescription()).isEqualTo(GENERATE_YAML_DESC);
-    assertThat(generateYamlResponseFromApi.getYamlDef()).isEqualTo(GENERATE_YAML_DEF);
+    assertThat(generateYamlResponseFromApi.getGeneratedYaml().getDescription()).isEqualTo(GENERATE_YAML_DESC);
+    assertThat(generateYamlResponseFromApi.getGeneratedYaml().getYamlDef()).isEqualTo(GENERATE_YAML_DEF);
   }
 
   @Test
   @Owner(developers = SATHISH)
   @Category(UnitTests.class)
-  public void testImportHarnessEntities() {
+  public void testImportHarnessEntities() throws ExecutionException {
     ImportEntitiesResponse importEntitiesResponse = new ImportEntitiesResponse();
     importEntitiesResponse.setStatus("SUCCESS");
     when(onboardingService.importHarnessEntities(ACCOUNT_IDENTIFIER, new ImportEntitiesBase()))

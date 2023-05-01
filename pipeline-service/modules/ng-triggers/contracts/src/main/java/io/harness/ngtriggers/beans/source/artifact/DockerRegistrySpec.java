@@ -25,6 +25,8 @@ import lombok.Data;
 public class DockerRegistrySpec implements ArtifactTypeSpec {
   String connectorRef;
   List<TriggerEventDataCondition> eventConditions;
+  List<TriggerEventDataCondition> metaDataConditions;
+  String jexlCondition;
   String imagePath;
   String tag;
 
@@ -41,5 +43,15 @@ public class DockerRegistrySpec implements ArtifactTypeSpec {
   @Override
   public List<TriggerEventDataCondition> fetchEventDataConditions() {
     return eventConditions;
+  }
+
+  @Override
+  public List<TriggerEventDataCondition> fetchMetaDataConditions() {
+    return metaDataConditions;
+  }
+
+  @Override
+  public String fetchJexlArtifactConditions() {
+    return jexlCondition;
   }
 }

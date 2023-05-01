@@ -73,7 +73,7 @@ public class CustomDeploymentInstanceSyncClientTest extends WingsBaseTest {
     PerpetualTaskClientContext clientContext = buildPerpetualTaskClientContext();
 
     final CustomDeploymentInstanceSyncTaskParams taskParams =
-        (CustomDeploymentInstanceSyncTaskParams) instanceSyncClient.getTaskParams(clientContext);
+        (CustomDeploymentInstanceSyncTaskParams) instanceSyncClient.getTaskParams(clientContext, true);
 
     assertThat(taskParams.getScript()).isEqualTo("echo abc");
     assertThat(taskParams.getAccountId()).isEqualTo(ACCOUNT_ID);
@@ -88,7 +88,7 @@ public class CustomDeploymentInstanceSyncClientTest extends WingsBaseTest {
     PerpetualTaskClientContext clientContext = buildPerpetualTaskClientContext();
 
     final CustomDeploymentInstanceSyncTaskParams taskParams =
-        (CustomDeploymentInstanceSyncTaskParams) instanceSyncClient.getTaskParams(clientContext);
+        (CustomDeploymentInstanceSyncTaskParams) instanceSyncClient.getTaskParams(clientContext, true);
 
     assertThat(taskParams).isNull();
   }

@@ -10,37 +10,30 @@ package io.harness.ng.core.migration.background;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
-import io.harness.account.AccountClient;
+import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.Connector;
 import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.migration.NGMigration;
-import io.harness.ng.core.dto.AccountDTO;
 import io.harness.persistence.HPersistence;
-import io.harness.remote.client.CGRestUtils;
 
 import com.google.inject.Inject;
 import com.mongodb.BulkWriteOperation;
 import com.mongodb.DBCollection;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PL)
 @Slf4j
 public class DeleteSoftDeletedConnectorsMigration implements NGMigration {
   @Inject private HPersistence hPersistence;
-  @Inject private AccountClient accountClient;
+  @Inject private AccountUtils accountUtils;
   private static final String DEBUG_LOG = "[DeleteSoftDeletedConnectorsMigration]: ";
   @Override
   public void migrate() {
     try {
       log.info(DEBUG_LOG + "Starting deletion of soft deleted connectors");
-      List<AccountDTO> allAccounts = CGRestUtils.getResponse(accountClient.getAllAccounts());
-      List<String> accountIdentifiers = allAccounts.stream()
-                                            .filter(AccountDTO::isNextGenEnabled)
-                                            .map(AccountDTO::getIdentifier)
-                                            .collect(Collectors.toList());
+      List<String> accountIdentifiers = accountUtils.getAllNGAccountIds();
       accountIdentifiers.forEach(accountId -> {
         try {
           DBCollection collection = hPersistence.getCollection(Connector.class);

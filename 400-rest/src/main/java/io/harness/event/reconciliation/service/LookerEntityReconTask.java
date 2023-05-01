@@ -7,9 +7,12 @@
 
 package io.harness.event.reconciliation.service;
 
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
+
 import io.harness.beans.FeatureName;
 import io.harness.event.reconciliation.ReconciliationStatus;
 import io.harness.ff.FeatureFlagService;
+import io.harness.persistence.HIterator;
 
 import software.wings.beans.Account;
 import software.wings.search.framework.TimeScaleEntity;
@@ -17,8 +20,8 @@ import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import dev.morphia.query.Query;
 import java.util.Date;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
@@ -37,29 +40,31 @@ public class LookerEntityReconTask implements Runnable {
   public void run() {
     try {
       long startTime = System.currentTimeMillis();
-      List<Account> accountList = accountService.getAccountsWithBasicInfo(false);
       Set<String> accountIds = featureFlagService.getAccountIds(FeatureName.TIME_SCALE_CG_SYNC);
-      for (Account account : accountList) {
-        if (accountIds.contains(account.getUuid())) {
-          for (TimeScaleEntity timeScaleEntity : timeScaleEntities) {
-            executorService.submit(() -> {
-              final long durationStartTs = startTime - 45 * 60 * 1000;
-              final long durationEndTs = startTime - 5 * 60 * 1000;
-              try {
-                LookerEntityReconService lookerEntityReconService = timeScaleEntity.getReconService();
-                ReconciliationStatus reconciliationStatus = lookerEntityReconService.performReconciliation(
-                    account.getUuid(), durationStartTs, durationEndTs, timeScaleEntity);
-                log.info(
-                    "Completed reconciliation for accountID:[{}],accountName:[{}] durationStart:[{}],durationEnd:[{}],status:[{}],entity[{}]",
-                    account.getUuid(), account.getAccountName(), new Date(durationStartTs), new Date(durationEndTs),
-                    reconciliationStatus, timeScaleEntity.getSourceEntityClass());
-              } catch (Exception e) {
-                log.error(
-                    "Error while performing reconciliation for accountID:[{}],accountName:[{}] durationStart:[{}],durationEnd:[{}],entity[{}]",
-                    account.getUuid(), account.getAccountName(), new Date(durationStartTs), new Date(durationEndTs),
-                    timeScaleEntity.getSourceEntityClass(), e);
-              }
-            });
+      Query<Account> query = accountService.getBasicAccountQuery().limit(NO_LIMIT);
+      try (HIterator<Account> iterator = new HIterator<>(query.fetch())) {
+        for (Account account : iterator) {
+          if (accountIds.contains(account.getUuid())) {
+            for (TimeScaleEntity timeScaleEntity : timeScaleEntities) {
+              executorService.submit(() -> {
+                final long durationStartTs = startTime - 45 * 60 * 1000;
+                final long durationEndTs = startTime - 5 * 60 * 1000;
+                try {
+                  LookerEntityReconService lookerEntityReconService = timeScaleEntity.getReconService();
+                  ReconciliationStatus reconciliationStatus = lookerEntityReconService.performReconciliation(
+                      account.getUuid(), durationStartTs, durationEndTs, timeScaleEntity);
+                  log.info(
+                      "Completed reconciliation for accountID:[{}],accountName:[{}] durationStart:[{}],durationEnd:[{}],status:[{}],entity[{}]",
+                      account.getUuid(), account.getAccountName(), new Date(durationStartTs), new Date(durationEndTs),
+                      reconciliationStatus, timeScaleEntity.getSourceEntityClass());
+                } catch (Exception e) {
+                  log.error(
+                      "Error while performing reconciliation for accountID:[{}],accountName:[{}] durationStart:[{}],durationEnd:[{}],entity[{}]",
+                      account.getUuid(), account.getAccountName(), new Date(durationStartTs), new Date(durationEndTs),
+                      timeScaleEntity.getSourceEntityClass(), e);
+                }
+              });
+            }
           }
         }
       }

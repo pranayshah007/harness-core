@@ -16,7 +16,6 @@ import io.harness.cdng.provision.terragrunt.TerragruntStepConfigurationType;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 
 import software.wings.beans.GraphNode;
@@ -63,11 +62,12 @@ public class TerragruntDestroyStepMapperImpl extends BaseTerragruntProvisionerMa
           getExecutionData(context.getEntities(), context.getMigratedEntities(), state));
     }
 
-    TerragruntDestroyStepInfo stepInfo = TerragruntDestroyStepInfo.infoBuilder()
-                                             .provisionerIdentifier(MigratorUtility.RUNTIME_INPUT)
-                                             .delegateSelectors(getDelegateSelectors(state))
-                                             .terragruntStepConfiguration(stepConfiguration)
-                                             .build();
+    TerragruntDestroyStepInfo stepInfo =
+        TerragruntDestroyStepInfo.infoBuilder()
+            .provisionerIdentifier(getProvisionerIdentifier(migrationContext, state.getProvisionerId()))
+            .delegateSelectors(getDelegateSelectors(state))
+            .terragruntStepConfiguration(stepConfiguration)
+            .build();
 
     terragruntDestroyStepNode.setTerragruntDestroyStepInfo(stepInfo);
     terragruntDestroyStepNode.setDelegateSelectors(getDelegateSel(state));

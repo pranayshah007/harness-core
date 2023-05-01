@@ -59,6 +59,7 @@ import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorServic
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
+import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.cvng.utils.ScopedInformation;
 import io.harness.datacollection.entity.TimeSeriesRecord;
@@ -396,9 +397,13 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
         if (intervalEndTime.isAfter(endTime)) {
           intervalEndTime = endTime;
         }
-        orchestrationService.queueAnalysis(verificationTaskService.getSLIVerificationTaskId(
-                                               serviceLevelIndicator.getAccountId(), serviceLevelIndicator.getUuid()),
-            intervalStartTime, intervalEndTime);
+        orchestrationService.queueAnalysis(
+            AnalysisInput.builder()
+                .verificationTaskId(verificationTaskService.getSLIVerificationTaskId(
+                    serviceLevelIndicator.getAccountId(), serviceLevelIndicator.getUuid()))
+                .startTime(intervalStartTime)
+                .endTime(intervalEndTime)
+                .build());
         intervalStartTime = intervalEndTime;
       }
     } else {
@@ -610,7 +615,11 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
       if (intervalEndTime.isAfter(endTime)) {
         intervalEndTime = endTime;
       }
-      orchestrationService.queueAnalysis(verificationTaskId, intervalStartTime, intervalEndTime);
+      orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                             .verificationTaskId(verificationTaskId)
+                                             .startTime(intervalStartTime)
+                                             .endTime(intervalEndTime)
+                                             .build());
       intervalStartTime = intervalEndTime;
     }
   }

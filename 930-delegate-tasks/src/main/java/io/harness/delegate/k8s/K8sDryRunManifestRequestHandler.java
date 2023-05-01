@@ -37,6 +37,8 @@ import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sDryRunManifestRequest;
 import io.harness.delegate.task.k8s.K8sDryRunManifestResponse;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.utils.ServiceHookDTO;
+import io.harness.delegate.utils.ServiceHookHandler;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.KubernetesCliTaskRuntimeException;
 import io.harness.filesystem.FileIo;
@@ -49,6 +51,8 @@ import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
+import io.harness.k8s.model.ServiceHookAction;
+import io.harness.k8s.model.ServiceHookType;
 import io.harness.k8s.releasehistory.IK8sReleaseHistory;
 import io.harness.logging.LogCallback;
 
@@ -93,11 +97,20 @@ public class K8sDryRunManifestRequestHandler extends K8sRequestHandler {
 
     LogCallback logCallback = k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, FetchFiles,
         k8sDryRunManifestRequest.isShouldOpenFetchFilesLogStream(), commandUnitsProgress);
-
+    ServiceHookDTO serviceHookTaskParams = new ServiceHookDTO(k8sDelegateTaskParams);
+    ServiceHookHandler serviceHookHandler = new ServiceHookHandler(
+        k8sDryRunManifestRequest.getServiceHooks(), serviceHookTaskParams, steadyStateTimeoutInMillis);
     logCallback.saveExecutionLog(color("\nStarting Kubernetes Dry Run", White, LogWeight.Bold));
-    k8sTaskHelperBase.fetchManifestFilesAndWriteToDirectory(k8sDryRunManifestRequest.getManifestDelegateConfig(),
-        this.manifestFilesDirectory, logCallback, steadyStateTimeoutInMillis, k8sDryRunManifestRequest.getAccountId());
+    serviceHookHandler.applyServiceHooks(ServiceHookType.PRE_HOOK, ServiceHookAction.FETCH_FILES,
+        k8sDelegateTaskParams.getWorkingDirectory(), logCallback, manifestFilesDirectory);
 
+    k8sTaskHelperBase.fetchManifestFilesAndWriteToDirectory(k8sDryRunManifestRequest.getManifestDelegateConfig(),
+        this.manifestFilesDirectory, logCallback, steadyStateTimeoutInMillis, k8sDryRunManifestRequest.getAccountId(),
+        false);
+
+    serviceHookHandler.applyServiceHooks(ServiceHookType.POST_HOOK, ServiceHookAction.FETCH_FILES,
+        k8sDelegateTaskParams.getWorkingDirectory(), logCallback, manifestFilesDirectory);
+    logCallback.saveExecutionLog("Done.", INFO, SUCCESS);
     String dryRunManifestYaml = manifestDryRunYaml(k8sDryRunManifestRequest, k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, K8sDryRun, true, commandUnitsProgress));
     return K8sDeployResponse.builder()

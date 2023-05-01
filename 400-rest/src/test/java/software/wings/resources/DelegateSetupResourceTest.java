@@ -174,8 +174,8 @@ public class DelegateSetupResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void listV2ShouldReturnDelegates() {
     DelegateGroupDetails delegateGroupDetails = DelegateGroupDetails.builder().groupName("group name").build();
-    when(delegateSetupService.listDelegateGroupDetailsV2(
-             eq(ACCOUNT_ID), eq("orgId"), eq("projectId"), any(), any(), any(DelegateFilterPropertiesDTO.class)))
+    when(delegateSetupService.listDelegateGroupDetailsV2(eq(ACCOUNT_ID), eq("orgId"), eq("projectId"), any(), any(),
+             any(DelegateFilterPropertiesDTO.class), any(io.harness.ng.beans.PageRequest.class)))
         .thenReturn(DelegateGroupListing.builder().delegateGroupDetails(Lists.list(delegateGroupDetails)).build());
     RestResponse<DelegateGroupListing> restResponse =
         RESOURCES.client()
@@ -185,8 +185,9 @@ public class DelegateSetupResourceTest extends CategoryTest {
                 new GenericType<RestResponse<DelegateGroupListing>>() {});
 
     verify(delegateSetupService, atLeastOnce())
-        .listDelegateGroupDetailsV2(
-            ACCOUNT_ID, "orgId", "projectId", null, null, DelegateFilterPropertiesDTO.builder().build());
+        .listDelegateGroupDetailsV2(ACCOUNT_ID, "orgId", "projectId", null, null,
+            DelegateFilterPropertiesDTO.builder().build(),
+            io.harness.ng.beans.PageRequest.builder().pageSize(50).sortOrders(Collections.emptyList()).build());
     assertThat(restResponse.getResource().getDelegateGroupDetails()).isNotEmpty();
     assertThat(restResponse.getResource().getDelegateGroupDetails().get(0).getGroupName()).isEqualTo("group name");
   }

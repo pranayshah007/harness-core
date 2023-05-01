@@ -31,6 +31,7 @@ import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.SLODashboardWidgetBuilder;
+import io.harness.cvng.servicelevelobjective.beans.SLOError;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsRefDTO;
@@ -104,9 +105,6 @@ public class SLODashboardServiceImpl implements SLODashboardService {
     PageResponse<AbstractServiceLevelObjective> sloPageResponse =
         serviceLevelObjectiveV2Service.getSLOForListView(projectParams, filter, pageParams);
 
-    Map<AbstractServiceLevelObjective, SLIEvaluationType> serviceLevelObjectiveSLIEvaluationTypeMap =
-        serviceLevelObjectiveV2Service.getEvaluationType(projectParams, sloPageResponse.getContent());
-
     Set<String> monitoredServiceIdentifiers =
         sloPageResponse.getContent()
             .stream()
@@ -179,7 +177,6 @@ public class SLODashboardServiceImpl implements SLODashboardService {
             .map(sloResponse
                 -> getSLOListView(projectParams, sloResponse, scopedMonitoredServiceIdentifierToDTOMap,
                     scopedSloIdentifierToHealthIndicatorMap, userJourneyIdentifierToNameMap,
-                    serviceLevelObjectiveSLIEvaluationTypeMap,
                     monitoredServiceIdentifierToUnavailabilityStatusesDTOMap))
             .collect(Collectors.toList());
 
@@ -285,7 +282,10 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         .projectParams(simpleSLOProjectParams)
         .projectName(projectName)
         .orgName(orgName)
-        .failedState(sloHealthIndicatorService.getFailedState(simpleSLOProjectParams, serviceLevelObjective))
+        .sloError(
+            SLOError.builder()
+                .failedState(sloHealthIndicatorService.getFailedState(simpleSLOProjectParams, serviceLevelObjective))
+                .build())
         .build();
   }
 
@@ -449,6 +449,8 @@ public class SLODashboardServiceImpl implements SLODashboardService {
                       .currentRatePercentage(sloGraphData.dailyBurnRate(serviceLevelObjective.getZoneOffset()))
                       .build())
         .evaluationType(sloGraphData.getEvaluationType())
+        .isTotalErrorBudgetApplicable(!(serviceLevelObjective.getType() == ServiceLevelObjectiveType.COMPOSITE
+            && sloGraphData.getEvaluationType() == SLIEvaluationType.REQUEST))
         .sloType(slo.getType());
   }
 
@@ -616,7 +618,6 @@ public class SLODashboardServiceImpl implements SLODashboardService {
       Map<String, MonitoredServiceDTO> scopedMonitoredServiceIdentifierToDTOMap,
       Map<String, SLOHealthIndicator> scopedSloIdentifierToHealthIndicatorMap,
       Map<String, String> userJourneyIdentifierToNameMap,
-      Map<AbstractServiceLevelObjective, SLIEvaluationType> serviceLevelObjectiveSLIEvaluationTypeMap,
       Map<String, EntityUnavailabilityStatusesDTO> monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap) {
     LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), slo.getZoneOffset());
     List<SLOErrorBudgetResetDTO> errorBudgetResetDTOS =
@@ -645,8 +646,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           getProjectName(projectParams.getAccountIdentifier(), slo.getOrgIdentifier(), slo.getProjectIdentifier());
       String orgName = getOrgName(projectParams.getAccountIdentifier(), slo.getOrgIdentifier());
       return SLOHealthListView
-          .getSLOHealthListViewBuilder(
-              slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator, serviceLevelObjectiveSLIEvaluationTypeMap)
+          .getSLOHealthListViewBuilder(slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator)
           .monitoredServiceIdentifier(monitoredService.getIdentifier())
           .monitoredServiceName(monitoredService.getName())
           .environmentIdentifier(monitoredService.getEnvironmentRef())
@@ -682,9 +682,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           .build();
     }
 
-    return SLOHealthListView
-        .getSLOHealthListViewBuilder(
-            slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator, serviceLevelObjectiveSLIEvaluationTypeMap)
+    return SLOHealthListView.getSLOHealthListViewBuilder(slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator)
         .build();
   }
 

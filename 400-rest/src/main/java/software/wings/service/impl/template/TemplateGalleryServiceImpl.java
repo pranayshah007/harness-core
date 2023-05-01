@@ -10,6 +10,7 @@ package software.wings.service.impl.template;
 import static io.harness.data.structure.CollectionUtils.trimmedLowercaseSet;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.validation.PersistenceValidator.duplicateCheck;
 import static io.harness.validation.Validator.notNullCheck;
 
@@ -34,6 +35,7 @@ import static java.util.Arrays.asList;
 
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
+import io.harness.persistence.HIterator;
 import io.harness.scheduler.PersistentScheduler;
 import io.harness.validation.Create;
 import io.harness.validation.Update;
@@ -194,21 +196,25 @@ public class TemplateGalleryServiceImpl implements TemplateGalleryService {
 
   @Override
   public void copyHarnessTemplates() {
-    List<Account> accounts = accountService.getAccountsWithBasicInfo(false);
-    for (Account account : accounts) {
-      if (!GLOBAL_ACCOUNT_ID.equals(account.getUuid())) {
-        deleteByAccountId(account.getUuid());
-        copyHarnessTemplatesToAccount(account.getUuid(), account.getAccountName());
+    Query<Account> query = accountService.getBasicAccountQuery().limit(NO_LIMIT);
+    try (HIterator<Account> iterator = new HIterator<>(query.fetch())) {
+      for (Account account : iterator) {
+        if (!GLOBAL_ACCOUNT_ID.equals(account.getUuid())) {
+          deleteByAccountId(account.getUuid());
+          copyHarnessTemplatesToAccount(account.getUuid(), account.getAccountName());
+        }
       }
     }
   }
 
   @Override
   public void createCommandLibraryGallery() {
-    List<Account> accounts = accountService.getAccountsWithBasicInfo(false);
-    for (Account account : accounts) {
-      if (!GLOBAL_ACCOUNT_ID.equals(account.getUuid())) {
-        saveHarnessCommandLibraryGalleryToAccount(account.getUuid(), account.getAccountName());
+    Query<Account> query = accountService.getBasicAccountQuery().limit(NO_LIMIT);
+    try (HIterator<Account> iterator = new HIterator<>(query.fetch())) {
+      for (Account account : iterator) {
+        if (!GLOBAL_ACCOUNT_ID.equals(account.getUuid())) {
+          saveHarnessCommandLibraryGalleryToAccount(account.getUuid(), account.getAccountName());
+        }
       }
     }
   }

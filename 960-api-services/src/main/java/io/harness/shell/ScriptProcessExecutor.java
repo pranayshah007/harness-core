@@ -7,6 +7,7 @@
 
 package io.harness.shell;
 
+import static io.harness.azure.model.AzureConstants.AZURE_LOGIN_CONFIG_DIR_PATH;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
@@ -43,6 +44,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Collections;
 import java.util.HashMap;
@@ -158,6 +160,10 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
         } else {
           deleteFileIfExists(scriptFile.getAbsolutePath());
           deleteFileIfExists(kubeConfigFile.getAbsolutePath());
+          deleteDirectoryAndItsContentIfExists(Paths.get(String.valueOf(workingDirectory), AZURE_LOGIN_CONFIG_DIR_PATH)
+                                                   .normalize()
+                                                   .toAbsolutePath()
+                                                   .toString());
           if (gcpKeyFile.isPresent()) {
             deleteFileIfExists(gcpKeyFile.get().toAbsolutePath().toString());
           }
@@ -364,6 +370,10 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
       } else {
         deleteFileIfExists(scriptFile.getAbsolutePath());
         deleteFileIfExists(kubeConfigFile.getAbsolutePath());
+        deleteDirectoryAndItsContentIfExists(Paths.get(String.valueOf(workingDirectory), AZURE_LOGIN_CONFIG_DIR_PATH)
+                                                 .normalize()
+                                                 .toAbsolutePath()
+                                                 .toString());
         if (envVariablesOutputFile != null) {
           deleteFileIfExists(envVariablesOutputFile.getAbsolutePath());
         }

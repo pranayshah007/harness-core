@@ -108,7 +108,6 @@ java_library(
         "@maven//:ch_qos_logback_logback_core",
         "@maven//:com_fasterxml_jackson_core_jackson_core",
         "@maven//:com_fasterxml_jackson_core_jackson_databind",
-        "@maven//:de_flapdoodle_embed_de_flapdoodle_embed_process",
         "@maven//:junit_junit",
         "@maven//:org_apache_commons_commons_lang3",
         "@maven//:org_assertj_assertj_core",

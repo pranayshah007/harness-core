@@ -12,6 +12,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketOAuthDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
@@ -21,12 +24,16 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.AzureRepoAccessRequest;
+import io.harness.gitsync.BitbucketAccessRequest;
+import io.harness.gitsync.BitbucketOAuthAccessRequest;
+import io.harness.gitsync.BitbucketUserNameTokenAccessRequest;
 import io.harness.gitsync.GitAccessRequest;
 import io.harness.gitsync.GithubAccessRequest;
 import io.harness.gitsync.GithubAppAccessRequest;
 import io.harness.gitsync.GithubTokenAccessRequest;
 import io.harness.gitsync.GitlabAccessRequest;
 import io.harness.gitsync.common.dtos.AzureRepoSCMDTO;
+import io.harness.gitsync.common.dtos.BitbucketSCMDTO;
 import io.harness.gitsync.common.dtos.GithubSCMDTO;
 import io.harness.gitsync.common.dtos.GitlabSCMDTO;
 import io.harness.gitsync.common.dtos.UserSourceCodeManagerDTO;
@@ -115,6 +122,44 @@ public class GitAccessRequestMapper {
           default:
             throw new InvalidRequestException(
                 String.format("ApiAccessType %s is not allowed for Azure Repo", azureRepoApiAccessDTO.getType()));
+        }
+      case BITBUCKET:
+        BitbucketSCMDTO bitbucketSCMDTO = (BitbucketSCMDTO) userSourceCodeManagerDTO;
+        BitbucketApiAccessDTO bitbucketApiAccessDTO = bitbucketSCMDTO.getApiAccess();
+        switch (bitbucketApiAccessDTO.getType()) {
+          case OAUTH:
+            return GitAccessRequest.newBuilder()
+                .setBitbucket(
+                    BitbucketAccessRequest.newBuilder()
+                        .setBitbucketOAuthAccessRequest(
+                            BitbucketOAuthAccessRequest.newBuilder()
+                                .setTokenRef(buildSecretRefData(
+                                    ((BitbucketOAuthDTO) bitbucketApiAccessDTO.getSpec()).getTokenRef().getIdentifier(),
+                                    accountIdentifier))
+                                .build())
+                        .build())
+                .build();
+          case USERNAME_AND_TOKEN:
+            return GitAccessRequest.newBuilder()
+                .setBitbucket(BitbucketAccessRequest.newBuilder()
+                                  .setBitbucketUserNameTokenAccessRequest(
+                                      BitbucketUserNameTokenAccessRequest.newBuilder()
+                                          .setTokenRef(buildSecretRefData(
+                                              ((BitbucketUsernameTokenApiAccessDTO) bitbucketApiAccessDTO.getSpec())
+                                                  .getTokenRef()
+                                                  .getIdentifier(),
+                                              accountIdentifier))
+                                          .setUserNameRef(buildSecretRefData(
+                                              ((BitbucketUsernameTokenApiAccessDTO) bitbucketApiAccessDTO.getSpec())
+                                                  .getUsernameRef()
+                                                  .getIdentifier(),
+                                              accountIdentifier))
+                                          .build())
+                                  .build())
+                .build();
+          default:
+            throw new InvalidRequestException(
+                String.format("ApiAccessType %s is not allowed for Bitbucket", bitbucketApiAccessDTO.getType()));
         }
       default:
         throw new InvalidRequestException(String.format("Invalid SCM Type", userSourceCodeManagerDTO.getType()));

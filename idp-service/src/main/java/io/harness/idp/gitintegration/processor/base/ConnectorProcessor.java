@@ -127,8 +127,8 @@ public abstract class ConnectorProcessor {
       for (String fileToPush : filesToPush) {
         String filePathInRepo = fileToPush.replace(locationParentPath + "/", "");
         Map<String, String> contextMap = new HashMap<>();
-        contextMap = GitSyncLogContextHelper.setContextMap(
-            scope, repoName, catalogConnectorInfo.getBranch(), filePathInRepo, GitOperation.CREATE_FILE, contextMap);
+        contextMap = GitSyncLogContextHelper.setContextMap(scope, repoName, catalogConnectorInfo.getBranch(), "",
+            filePathInRepo, GitOperation.CREATE_FILE, contextMap);
         final CreateFileRequest createFileRequest =
             CreateFileRequest.newBuilder()
                 .setRepoName(repoName)

@@ -214,7 +214,7 @@ public class SLOHealthIndicatorServiceImplTest extends CvNextGenTestBase {
 
     Duration increment = Duration.between(startTime, endTime);
 
-    increment.dividedBy(numOfBadReocrds + numOfGoodRecords + 1);
+    increment = increment.dividedBy(numOfBadReocrds + numOfGoodRecords + 1);
 
     for (int i = 0; i < numOfGoodRecords; i++) {
       sliStateList.add(GOOD);
@@ -241,10 +241,11 @@ public class SLOHealthIndicatorServiceImplTest extends CvNextGenTestBase {
       }
       sliRecordParams.add(SLIRecordParam.builder()
                               .sliState(sliState)
-                              .timeStamp(startTime.plus(increment))
+                              .timeStamp(startTime)
                               .goodEventCount(goodCount)
                               .badEventCount(badCount)
                               .build());
+      startTime = startTime.plus(increment.toMinutes(), ChronoUnit.MINUTES);
     }
     return sliRecordParams;
   }

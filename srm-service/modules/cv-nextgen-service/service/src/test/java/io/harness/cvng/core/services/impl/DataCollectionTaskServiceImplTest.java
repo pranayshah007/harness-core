@@ -77,6 +77,9 @@ import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.downtime.beans.EntityType;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
+import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
@@ -115,6 +118,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
 import org.mockito.Spy;
 
 public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
@@ -139,6 +143,8 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
   @Inject private MonitoredServiceService monitoredServiceService;
 
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
+
+  @Mock private EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
   private String cvConfigId;
   private String accountId;
   private String orgIdentifier;
@@ -175,8 +181,6 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
     dataCollectionTaskService = spy(dataCollectionTaskService);
     FieldUtils.writeField(dataCollectionTaskService, "clock", clock, true);
     FieldUtils.writeField(verificationJobInstanceService, "clock", clock, true);
-    FieldUtils.writeField(
-        dataCollectionTaskService, "verificationJobInstanceService", verificationJobInstanceService, true);
     FieldUtils.writeField(
         dataCollectionTaskService, "monitoringSourcePerpetualTaskService", monitoringSourcePerpetualTaskService, true);
     fakeNow = clock.instant();
@@ -521,6 +525,30 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
     DataCollectionTask updated = dataCollectionTaskService.getDataCollectionTask(dataCollectionTask.getUuid());
     assertThat(updated.getStatus()).isEqualTo(DataCollectionExecutionStatus.SUCCESS);
     assertThat(updated.getException()).isNull();
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testUpdateRestoreTaskStatus_taskStatusToSuccessAndUpdateInstancesToDCPassed()
+      throws IllegalAccessException {
+    sliDataCollectionTaskService =
+        (SLIDataCollectionTaskServiceImpl) dataCollectionTaskManagementServiceMapBinder.get(Type.SLI);
+    FieldUtils.writeField(
+        sliDataCollectionTaskService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
+    DataCollectionTask dataCollectionTask = createAndSaveRestoreSLITask(RUNNING);
+    DataCollectionTaskResult result = DataCollectionTaskDTO.DataCollectionTaskResult.builder()
+                                          .status(DataCollectionExecutionStatus.SUCCESS)
+                                          .dataCollectionTaskId(dataCollectionTask.getUuid())
+                                          .build();
+    dataCollectionTaskService.updateTaskStatus(result);
+    DataCollectionTask updated = dataCollectionTaskService.getDataCollectionTask(dataCollectionTask.getUuid());
+    assertThat(updated.getStatus()).isEqualTo(DataCollectionExecutionStatus.SUCCESS);
+    assertThat(updated.getException()).isNull();
+    verify(entityUnavailabilityStatusesService)
+        .updateStatusOfEntity(EntityType.SLO, serviceLevelIndicator.getUuid(), updated.getStartTime().getEpochSecond(),
+            updated.getEndTime().getEpochSecond(), EntityUnavailabilityStatus.DATA_COLLECTION_FAILED,
+            EntityUnavailabilityStatus.DATA_RECOLLECTION_PASSED);
   }
 
   @Test
@@ -892,8 +920,6 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(sliDataCollectionTaskService, "clock", clock, true);
     FieldUtils.writeField(sliDataCollectionTaskService, "dataSourceTypeDataCollectionInfoMapperMap",
         dataSourceTypeDataCollectionInfoMapperMap, true);
-    FieldUtils.writeField(
-        dataCollectionTaskService, "serviceLevelIndicatorService", serviceLevelIndicatorServiceMock, true);
     FieldUtils.writeField(
         sliDataCollectionTaskService, "serviceLevelIndicatorService", serviceLevelIndicatorServiceMock, true);
     FieldUtils.writeField(dataCollectionTaskService, "dataCollectionTaskManagementServiceMapBinder",
@@ -1289,6 +1315,13 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
     return dataCollectionTask;
   }
 
+  private DataCollectionTask createAndSaveRestoreSLITask(DataCollectionExecutionStatus executionStatus) {
+    DataCollectionTask dataCollectionTask =
+        create(executionStatus, Type.SLI, fakeNow.minus(Duration.ofMinutes(7)), fakeNow.minus(Duration.ofMinutes(2)));
+    ((SLIDataCollectionTask) dataCollectionTask).setRestore(true);
+    hPersistence.save(dataCollectionTask);
+    return dataCollectionTask;
+  }
   private CVConfig createCVConfig() {
     PrometheusCVConfig cvConfig = builderFactory.prometheusCVConfigBuilder().build();
     String identifier = HealthSourceService.getNameSpacedIdentifier(

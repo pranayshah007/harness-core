@@ -84,6 +84,17 @@ public class IpAllowlistApiImpl implements IpAllowlistApi {
   }
 
   @Override
+  public Response validateIpAddressAllowlistedOrNot(
+      @NotNull String ipAddress, String harnessAccount, String customIpAddressBlock) {
+    isIPAllowlistFFEnabled(harnessAccount);
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(harnessAccount, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
+    return Response.status(Response.Status.OK)
+        .entity(ipAllowlistService.validateIpAddressAllowlistedOrNot(ipAddress, harnessAccount, customIpAddressBlock))
+        .build();
+  }
+
+  @Override
   public Response deleteIpAllowlistConfig(String ipConfigIdentifier, String harnessAccount) {
     isIPAllowlistFFEnabled(harnessAccount);
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(harnessAccount, null, null),
@@ -123,12 +134,6 @@ public class IpAllowlistApiImpl implements IpAllowlistApi {
         ApiUtils.addLinksHeader(responseBuilder, ipAllowlistConfigResponsePage.getTotalElements(), page, limit);
 
     return responseBuilderWithLinks.entity(ipAllowlistConfigResponsePage.getContent()).build();
-  }
-
-  @Override
-  public Response validateIpAddressAllowlistedOrNot(
-      @NotNull String ipAddress, String harnessAccount, String ipAddressBlock) {
-    return null;
   }
 
   @Override

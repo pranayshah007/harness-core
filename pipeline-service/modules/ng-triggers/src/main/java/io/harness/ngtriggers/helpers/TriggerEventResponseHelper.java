@@ -17,6 +17,7 @@ import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalSta
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NO_ENABLED_TRIGGER_FOR_SOURCEREPO_TYPE;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NO_MATCHING_TRIGGER_FOR_EVENT_ACTION;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NO_MATCHING_TRIGGER_FOR_HEADER_CONDITIONS;
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NO_MATCHING_TRIGGER_FOR_METADATA_CONDITIONS;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NO_MATCHING_TRIGGER_FOR_PAYLOAD_CONDITIONS;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NO_MATCHING_TRIGGER_FOR_REPO;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.SCM_SERVICE_CONNECTION_FAILED;
@@ -115,10 +116,11 @@ public class TriggerEventResponseHelper {
   public boolean isFinalStatusAnEvent(TriggerEventResponse.FinalStatus status) {
     Set<FinalStatus> set = EnumSet.of(INVALID_PAYLOAD, INVALID_RUNTIME_INPUT_YAML, TARGET_DID_NOT_EXECUTE,
         TARGET_EXECUTION_REQUESTED, NO_ENABLED_TRIGGER_FOR_SOURCEREPO_TYPE, NO_ENABLED_TRIGGER_FOR_PROJECT,
-        NO_MATCHING_TRIGGER_FOR_REPO, NO_MATCHING_TRIGGER_FOR_EVENT_ACTION, NO_MATCHING_TRIGGER_FOR_PAYLOAD_CONDITIONS,
-        NO_MATCHING_TRIGGER_FOR_HEADER_CONDITIONS, EXCEPTION_WHILE_PROCESSING, FAILED_TO_FETCH_PR_DETAILS,
-        TRIGGER_CONFIRMATION_FAILED, TRIGGER_CONFIRMATION_SUCCESSFUL, VALIDATION_FAILED_FOR_TRIGGER,
-        NEW_ARTIFACT_EVENT_PROCESSED, NEW_MANIFEST_EVENT_PROCESSED);
+        NO_MATCHING_TRIGGER_FOR_REPO, NO_MATCHING_TRIGGER_FOR_EVENT_ACTION, NO_MATCHING_TRIGGER_FOR_METADATA_CONDITIONS,
+        NO_MATCHING_TRIGGER_FOR_PAYLOAD_CONDITIONS, NO_MATCHING_TRIGGER_FOR_HEADER_CONDITIONS,
+        EXCEPTION_WHILE_PROCESSING, FAILED_TO_FETCH_PR_DETAILS, TRIGGER_CONFIRMATION_FAILED,
+        TRIGGER_CONFIRMATION_SUCCESSFUL, VALIDATION_FAILED_FOR_TRIGGER, NEW_ARTIFACT_EVENT_PROCESSED,
+        NEW_MANIFEST_EVENT_PROCESSED);
     return set.contains(status);
   }
 

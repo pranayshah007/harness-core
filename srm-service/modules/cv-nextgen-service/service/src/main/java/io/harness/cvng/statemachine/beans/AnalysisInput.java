@@ -34,6 +34,8 @@ public class AnalysisInput {
   // Used in DeploymentTimeSeriesAnalysisState
   private LearningEngineTaskType learningEngineTaskType;
 
+  @Builder.Default private boolean isSLORestoreTask = false;
+
   public TimeRange getTimeRange() {
     return TimeRange.builder().startTime(startTime).endTime(endTime).build();
   }

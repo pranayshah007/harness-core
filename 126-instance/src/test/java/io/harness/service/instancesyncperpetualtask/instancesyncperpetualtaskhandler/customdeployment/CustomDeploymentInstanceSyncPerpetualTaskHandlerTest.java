@@ -27,6 +27,7 @@ import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.CustomDeploymentNGDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
+import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesync.CustomDeploymentNGInstanceSyncPerpetualTaskParams;
 import io.harness.rule.Owner;
@@ -55,6 +56,7 @@ public class CustomDeploymentInstanceSyncPerpetualTaskHandlerTest extends Instan
   private static final String SCRIPT = "script";
   @Mock KryoSerializer kryoSerializer;
   @InjectMocks CustomDeploymentInstanceSyncPerpetualTaskHandler customDeploymentInstanceSyncPerpetualTaskHandler;
+  @Mock DelegateServiceGrpcClient delegateServiceGrpcClient;
 
   @Test
   @Owner(developers = SOURABH)
@@ -158,6 +160,7 @@ public class CustomDeploymentInstanceSyncPerpetualTaskHandlerTest extends Instan
             .build();
 
     when(kryoSerializer.asDeflatedBytes(any())).thenReturn(new byte[] {'a'});
+    when(delegateServiceGrpcClient.isTaskTypeSupported(any(), any())).thenReturn(false);
 
     PerpetualTaskExecutionBundle perpetualTaskExecutionBundle =
         customDeploymentInstanceSyncPerpetualTaskHandler.getExecutionBundle(

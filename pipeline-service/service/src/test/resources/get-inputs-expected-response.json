@@ -26,18 +26,20 @@
       "enums": ["secret1", "secret2"]
     }
   },
-  "repository": {
-    "reference": {
-      "type": {
-        "prompt": false,
-        "required": true,
-        "type": "string",
-        "enums": ["branch", "tag", "pr"]
-      },
-      "value": {
-        "prompt": false,
-        "required": true,
-        "type": "string"
+  "options": {
+    "clone": {
+      "ref": {
+        "type": {
+          "prompt": false,
+          "required": true,
+          "type": "string",
+          "enums": ["branch", "tag", "pr"]
+        },
+        "name": {
+          "prompt": false,
+          "required": true,
+          "type": "string"
+        }
       }
     }
   }

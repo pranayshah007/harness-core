@@ -107,6 +107,7 @@ import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
@@ -261,13 +262,13 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     StringBuilder key = new StringBuilder().append(timeStamp).append("targetGroup");
 
     if (ecsServiceDefinitionHarnessContent != null) {
+      ecsServiceDefinitionHarnessContent = engineExpressionService.renderExpression(
+          ambiance, ecsServiceDefinitionHarnessContent, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
       if (ecsServiceDefinitionHarnessContent.contains(TARGET_GROUP_ARN_EXPRESSION)) {
         ecsServiceDefinitionHarnessContent =
             ecsServiceDefinitionHarnessContent.replace(TARGET_GROUP_ARN_EXPRESSION, key.toString());
       }
       ecsHarnessStoreContentBuilder.targetGroupArnKey(key.toString());
-      ecsServiceDefinitionHarnessContent =
-          engineExpressionService.renderExpression(ambiance, ecsServiceDefinitionHarnessContent);
     }
 
     return ecsHarnessStoreContentBuilder.taskDefinitionHarnessContent(ecsTaskDefinitionHarnessContent)
@@ -1582,12 +1583,12 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     String ecsServiceDefinitionFileContent;
     if (ecsS3FetchResponse.getEcsS3ServiceDefinitionContent() != null) {
       ecsServiceDefinitionFileContent = ecsS3FetchResponse.getEcsS3ServiceDefinitionContent();
+      ecsServiceDefinitionFileContent = engineExpressionService.renderExpression(
+          ambiance, ecsServiceDefinitionFileContent, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
       if (ecsServiceDefinitionFileContent.contains(TARGET_GROUP_ARN_EXPRESSION)) {
         ecsServiceDefinitionFileContent =
             ecsServiceDefinitionFileContent.replace(TARGET_GROUP_ARN_EXPRESSION, key.toString());
       }
-      ecsServiceDefinitionFileContent =
-          engineExpressionService.renderExpression(ambiance, ecsServiceDefinitionFileContent);
     } else {
       ecsServiceDefinitionFileContent = ecsOtherStoreContent.getEcsServiceDefinitionFileContent();
     }
@@ -1662,12 +1663,12 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     String ecsServiceDefinitionFileContent;
     if (ecsServiceDefinitionFetchFileResult != null) {
       ecsServiceDefinitionFileContent = ecsServiceDefinitionFetchFileResult.getFiles().get(0).getFileContent();
+      ecsServiceDefinitionFileContent = engineExpressionService.renderExpression(
+          ambiance, ecsServiceDefinitionFileContent, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
       if (ecsServiceDefinitionFileContent.contains(TARGET_GROUP_ARN_EXPRESSION)) {
         ecsServiceDefinitionFileContent =
             ecsServiceDefinitionFileContent.replace(TARGET_GROUP_ARN_EXPRESSION, key.toString());
       }
-      ecsServiceDefinitionFileContent =
-          engineExpressionService.renderExpression(ambiance, ecsServiceDefinitionFileContent);
     } else {
       ecsServiceDefinitionFileContent = ecsGitFetchPassThroughData.getServiceDefinitionHarnessFileContent();
     }
@@ -1761,7 +1762,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     FetchFilesResult ecsServiceDefinitionFetchFileResult =
         ecsGitFetchResponse.getEcsServiceDefinitionFetchFilesResult();
     String ecsServiceDefinitionFileContent = ecsServiceDefinitionFetchFileResult.getFiles().get(0).getFileContent();
-    return engineExpressionService.renderExpression(ambiance, ecsServiceDefinitionFileContent);
+    return engineExpressionService.renderExpression(
+        ambiance, ecsServiceDefinitionFileContent, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
   }
 
   private List<String> getRenderedScalableTargetsFileContent(

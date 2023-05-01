@@ -125,4 +125,9 @@ public class DockerHubArtifactConfig implements ArtifactConfig, Visitable, WithC
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return connectorRefMap;
   }
+
+  @Override
+  public void validate() {
+    ArtifactConfigHelper.checkTagAndTagRegex(tag, tagRegex);
+  }
 }

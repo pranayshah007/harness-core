@@ -25,6 +25,8 @@ import lombok.Data;
 public class GoolgeCloudStorageRegistrySpec implements ArtifactTypeSpec {
   String connectorRef;
   List<TriggerEventDataCondition> eventConditions;
+  List<TriggerEventDataCondition> metaDataConditions;
+  String jexlCondition;
   String project;
   String bucket;
   String artifactPath;
@@ -42,5 +44,15 @@ public class GoolgeCloudStorageRegistrySpec implements ArtifactTypeSpec {
   @Override
   public List<TriggerEventDataCondition> fetchEventDataConditions() {
     return eventConditions;
+  }
+
+  @Override
+  public List<TriggerEventDataCondition> fetchMetaDataConditions() {
+    return metaDataConditions;
+  }
+
+  @Override
+  public String fetchJexlArtifactConditions() {
+    return jexlCondition;
   }
 }

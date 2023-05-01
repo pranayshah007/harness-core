@@ -36,7 +36,6 @@ import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 import io.harness.ng.core.service.services.impl.ServiceEntitySetupUsageHelper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
-import io.harness.ng.core.yaml.CDYamlFacade;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
@@ -88,7 +87,6 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
   @Mock HPersistence hPersistence;
   @Mock NGFeatureFlagHelperService featureFlagHelperService;
   @Mock EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper;
-  CDYamlFacade cdYamlFacade = new CDYamlFacade();
   ServiceEntityServiceImpl serviceEntityService;
   EnvironmentServiceImpl environmentService;
   InfrastructureEntityServiceImpl infrastructureEntityService;
@@ -103,14 +101,12 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
     environmentService = spy(new EnvironmentServiceImpl(environmentRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, infrastructureEntityService, clusterService, serviceOverrideService,
         serviceEntityService, accountClient, settingsClient, environmentEntitySetupUsageHelper));
-    environmentRefreshHelper = spy(new EnvironmentRefreshHelper(
-        environmentService, infrastructureEntityService, serviceOverrideService, cdYamlFacade));
+    environmentRefreshHelper =
+        spy(new EnvironmentRefreshHelper(environmentService, infrastructureEntityService, serviceOverrideService));
     on(entityFetchHelper).set("serviceEntityService", serviceEntityService);
     on(inputsValidationHelper).set("serviceEntityService", serviceEntityService);
     on(inputsValidationHelper).set("entityFetchHelper", entityFetchHelper);
     on(inputsValidationHelper).set("environmentRefreshHelper", environmentRefreshHelper);
-    on(inputsValidationHelper).set("cdYamlFacade", cdYamlFacade);
-    on(cdYamlFacade).set("featureFlagHelperService", featureFlagHelperService);
   }
 
   private String readFile(String filename) {

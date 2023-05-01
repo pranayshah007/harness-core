@@ -82,6 +82,8 @@ public class GithubPackagesArtifactOutcome implements ArtifactOutcome {
    */
   String packageType;
 
+  String digest;
+
   Map<String, String> metadata;
 
   Map<String, String> label;

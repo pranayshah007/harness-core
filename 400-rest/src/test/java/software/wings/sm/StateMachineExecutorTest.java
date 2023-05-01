@@ -45,6 +45,7 @@ import static software.wings.common.NotificationMessageResolver.NotificationMess
 import static software.wings.common.NotificationMessageResolver.NotificationMessageType.PIPELINE_NOTIFICATION;
 import static software.wings.common.NotificationMessageResolver.NotificationMessageType.RUNTIME_INPUTS_PROVIDED;
 import static software.wings.sm.ExecutionEventAdvice.ExecutionEventAdviceBuilder.anExecutionEventAdvice;
+import static software.wings.sm.StateExecutionData.StateExecutionDataBuilder.aStateExecutionData;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
 import static software.wings.sm.StateMachine.StateMachineBuilder.aStateMachine;
 import static software.wings.sm.StateMachineExecutor.TEMPLATE_VARIABLE_ENTRY;
@@ -89,7 +90,6 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.rule.Owner;
 import io.harness.serializer.MapperUtils;
-import io.harness.testlib.RealMongo;
 import io.harness.waiter.OrchestrationNotifyEventListener;
 
 import software.wings.WingsBaseTest;
@@ -821,7 +821,6 @@ public class StateMachineExecutorTest extends WingsBaseTest {
     callback.await();
   }
 
-  @RealMongo
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
@@ -832,8 +831,8 @@ public class StateMachineExecutorTest extends WingsBaseTest {
         aStateExecutionInstance().appId("appId").displayName("state0").notifyElements(originalNotifyElements).build());
 
     HashMap<String, StateExecutionData> stateExecutionMap = new HashMap<>();
-    stateExecutionMap.put("state0", new StateExecutionData());
-    stateExecutionMap.put("state1", new StateExecutionData());
+    stateExecutionMap.put("state0", aStateExecutionData().withStateName("state0").build());
+    stateExecutionMap.put("state1", aStateExecutionData().withStateName("state1").build());
 
     List<ContextElement> notifyElements =
         asList(anInstanceElement().displayName("bar").build(), originalNotifyElements.get(0));

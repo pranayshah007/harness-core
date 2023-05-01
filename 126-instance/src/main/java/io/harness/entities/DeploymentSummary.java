@@ -63,6 +63,8 @@ public class DeploymentSummary implements PersistentEntity {
   private String pipelineExecutionName;
   private String stageNodeExecutionId;
   private Status stageStatus;
+  private String stageSetupId;
+  private RollbackStatus rollbackStatus;
   private ArtifactDetails artifactDetails;
   private String deployedById;
   private String deployedByName;

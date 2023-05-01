@@ -127,6 +127,8 @@ public interface AccountService {
 
   List<Account> listAllAccountsWithoutTheGlobalAccount();
 
+  long countAccountsWithoutTheGlobalAccount();
+
   List<Account> listAllActiveAccounts();
 
   List<Account> getAccountsWithBasicInfo(boolean includeLicenseInfo);
@@ -277,6 +279,8 @@ public interface AccountService {
   boolean doMultipleAccountsExist();
 
   List<AccountDTO> getAllAccounts();
+
+  PageResponse<AccountDTO> listAccounts(int offset, int pageSize);
 
   Integer getTrustLevel(String accountId);
 

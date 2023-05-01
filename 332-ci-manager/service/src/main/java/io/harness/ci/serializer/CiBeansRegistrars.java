@@ -54,6 +54,7 @@ import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -145,10 +146,11 @@ public class CiBeansRegistrars {
                    .entityType(EntityType.BACKGROUND_STEP)
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
-                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
-                                           .modulesSupported(Collections.singletonList(ModuleType.CI))
-                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
-                                           .build())
+                   .yamlSchemaMetadata(
+                       YamlSchemaMetadata.builder()
+                           .modulesSupported(Lists.newArrayList(ModuleType.CI, ModuleType.CD, ModuleType.PMS))
+                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                           .build())
                    .availableAtAccountLevel(false)
                    .clazz(BackgroundStepNode.class)
                    .build())
@@ -311,10 +313,11 @@ public class CiBeansRegistrars {
                    .entityType(EntityType.GIT_CLONE)
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
-                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
-                                           .modulesSupported(Collections.singletonList(ModuleType.CI))
-                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
-                                           .build())
+                   .yamlSchemaMetadata(
+                       YamlSchemaMetadata.builder()
+                           .modulesSupported(Lists.newArrayList(ModuleType.CI, ModuleType.CD, ModuleType.PMS))
+                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                           .build())
                    .availableAtAccountLevel(false)
                    .clazz(GitCloneStepNode.class)
                    .build())

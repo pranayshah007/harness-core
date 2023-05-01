@@ -12,4 +12,8 @@ import io.harness.cvng.core.entities.DataCollectionTask;
 public interface DataCollectionTaskManagementService<T> {
   void handleCreateNextTask(T entity);
   void createNextTask(DataCollectionTask dataCollectionTask);
+
+  default void processDataCollectionSuccess(DataCollectionTask dataCollectionTask) {}
+
+  default void processDataCollectionFailure(DataCollectionTask dataCollectionTask) {}
 }

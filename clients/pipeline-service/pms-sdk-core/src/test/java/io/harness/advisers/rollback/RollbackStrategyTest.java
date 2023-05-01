@@ -29,8 +29,8 @@ public class RollbackStrategyTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testFromRepairActionCode() {
-    List<RepairActionCode> validRepairActionCodes =
-        Arrays.asList(RepairActionCode.STAGE_ROLLBACK, RepairActionCode.STEP_GROUP_ROLLBACK, RepairActionCode.UNKNOWN);
+    List<RepairActionCode> validRepairActionCodes = Arrays.asList(RepairActionCode.STAGE_ROLLBACK,
+        RepairActionCode.STEP_GROUP_ROLLBACK, RepairActionCode.PIPELINE_ROLLBACK, RepairActionCode.UNKNOWN);
     for (RepairActionCode value : RepairActionCode.values()) {
       if (!validRepairActionCodes.contains(value)) {
         assertThat(RollbackStrategy.fromRepairActionCode(value)).isNull();
@@ -42,6 +42,8 @@ public class RollbackStrategyTest extends CategoryTest {
     assertThat(RollbackStrategy.fromRepairActionCode(RepairActionCode.STEP_GROUP_ROLLBACK))
         .isEqualTo(RollbackStrategy.STEP_GROUP_ROLLBACK);
     assertThat(RollbackStrategy.fromRepairActionCode(RepairActionCode.UNKNOWN)).isEqualTo(RollbackStrategy.UNKNOWN);
+    assertThat(RollbackStrategy.fromRepairActionCode(RepairActionCode.PIPELINE_ROLLBACK))
+        .isEqualTo(RollbackStrategy.PIPELINE_ROLLBACK);
   }
 
   @Test

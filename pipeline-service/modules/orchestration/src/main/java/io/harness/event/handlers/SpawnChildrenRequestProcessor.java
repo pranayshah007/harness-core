@@ -30,19 +30,20 @@ import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.contracts.execution.events.SpawnChildrenRequest;
-import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.PostExecutionRollbackInfo;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.utils.ExecutionModeUtils;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
@@ -92,21 +93,22 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
       nodeExecutionInfoService.addConcurrentChildInformation(
           ConcurrentChildInstance.builder().childrenNodeExecutionIds(childrenIds).cursor(maxConcurrency).build(),
           nodeExecutionId);
+      List<PostExecutionRollbackInfo> postExecutionRollbackInfos =
+          ambiance.getMetadata().getPostExecutionRollbackInfoList();
+      Multimap<String, StrategyMetadata> strategyMetadataMap = HashMultimap.create();
+      postExecutionRollbackInfos.forEach(
+          o -> strategyMetadataMap.put(o.getPostExecutionRollbackStageId(), o.getRollbackStageStrategyMetadata()));
+      String parentNodeId = AmbianceUtils.obtainCurrentSetupId(ambiance);
 
       for (Child child : request.getChildren().getChildrenList()) {
         String uuid = childrenIds.get(currentChild);
         StrategyMetadata strategyMetadata = child.hasStrategyMetadata() ? child.getStrategyMetadata() : null;
 
-        List<PostExecutionRollbackInfo> postExecutionRollbackInfos =
-            ambiance.getMetadata().getPostExecutionRollbackInfoList();
-        Map<String, StrategyMetadata> strategyMetadataMap = new HashMap<>();
-        postExecutionRollbackInfos.forEach(
-            o -> strategyMetadataMap.put(o.getPostExecutionRollbackStageId(), o.getRollbackStageStrategyMetadata()));
-        if (ambiance.getMetadata().getExecutionMode() == ExecutionMode.POST_EXECUTION_ROLLBACK) {
-          // If the stageId is same as the stage that is being rolledBack. Then initiate the child only if its
+        if (ExecutionModeUtils.isRollbackMode(ambiance.getMetadata().getExecutionMode())) {
+          // If the parentNodeId is present in the list of stages being rolledBack. Then initiate the child only if its
           // strategyMetadata matches the strategyMetadata of stage being rolledBack.
-          if (strategyMetadataMap.containsKey(child.getChildNodeId())
-              && !strategyMetadataMap.get(child.getChildNodeId()).equals(child.getStrategyMetadata())) {
+          if (strategyMetadataMap.containsKey(parentNodeId)
+              && !strategyMetadataMap.get(parentNodeId).contains(child.getStrategyMetadata())) {
             continue;
           }
         }
@@ -133,6 +135,12 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
         log.info("SpawnChildrenRequestProcessor registered a waitInstance for maxConcurrency with waitInstanceId: {}",
             waitInstanceId);
         currentChild++;
+      }
+      // If some children were skipped due to rollback mode. Then update the concurrent children info.
+      if (callbackIds.size() < childrenIds.size()) {
+        nodeExecutionInfoService.addConcurrentChildInformation(
+            ConcurrentChildInstance.builder().childrenNodeExecutionIds(callbackIds).cursor(maxConcurrency).build(),
+            nodeExecutionId);
       }
 
       // Attach a Callback to the parent for the child

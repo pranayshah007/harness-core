@@ -36,6 +36,7 @@ public class GitSyncLogContextHelperTest extends CategoryTest {
   private static final String PROJECT_IDENTIFIER = "project";
   private static final String REPO_NAME = "repoName";
   private static final String BRANCH_NAME = "branchName";
+  private static final String COMMIT_ID = "commitId";
   private static final String FILEPATH = "filePath";
   private static Scope scope;
   private static Map<String, String> logContext = new HashMap<>();
@@ -56,7 +57,7 @@ public class GitSyncLogContextHelperTest extends CategoryTest {
   public void testSetContext() {
     logContext.put(BRANCH_KEY, "branch1");
     logContext = GitSyncLogContextHelper.setContextMap(
-        scope, REPO_NAME, BRANCH_NAME, FILEPATH, GitOperation.CREATE_FILE, logContext);
+        scope, REPO_NAME, BRANCH_NAME, COMMIT_ID, FILEPATH, GitOperation.CREATE_FILE, logContext);
     assertThat(logContext.get(ACCOUNT_KEY)).isEqualTo(ACCOUNT_IDENTIFIER);
     assertThat(logContext.get(BRANCH_KEY)).isEqualTo("branch1");
     assertThat(logContext.get(GIT_OPERATION_TYPE)).isEqualTo(GitOperation.CREATE_FILE.name());

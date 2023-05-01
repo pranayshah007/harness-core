@@ -38,8 +38,7 @@ public class StatusInfoApiImpl implements StatusInfoApi {
   private StatusInfoService statusInfoService;
 
   @Override
-  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response getStatusInfoByType(String type, @AccountIdentifier String harnessAccount) {
+  public Response getStatusInfoByType(String type, String harnessAccount) {
     try {
       Optional<StatusInfo> statusInfo = statusInfoService.findByAccountIdentifierAndType(harnessAccount, type);
       StatusInfoResponse statusResponse = new StatusInfoResponse();

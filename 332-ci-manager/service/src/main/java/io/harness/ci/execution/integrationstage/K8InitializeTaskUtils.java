@@ -7,6 +7,7 @@
 
 package io.harness.ci.integrationstage;
 
+import static io.harness.beans.FeatureName.CIE_ENABLED_RBAC;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
@@ -618,7 +619,7 @@ public class K8InitializeTaskUtils {
             })
             .collect(Collectors.toList());
 
-    if (isNotEmpty(entityDetails)) {
+    if (isNotEmpty(entityDetails) && featureFlagService.isEnabled(CIE_ENABLED_RBAC, accountIdentifier)) {
       pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, false);
     }
   }

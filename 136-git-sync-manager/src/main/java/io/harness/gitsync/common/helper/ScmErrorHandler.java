@@ -19,7 +19,6 @@ import io.harness.exception.ScmException;
 import io.harness.exception.ScmInternalServerErrorException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
-import io.harness.gitsync.exceptions.GitErrorMetadataDTO;
 import io.harness.gitsync.scm.beans.ScmErrorDetails;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
 
@@ -38,18 +37,13 @@ public class ScmErrorHandler {
     switch (statusCode) {
       case 400:
       case 401:
-        throw addMetadata(
-            prepareException(new ScmBadRequestException(errorDetails.getErrorMessage()), errorDetails), errorMetadata);
+        throw prepareException(new ScmBadRequestException(errorDetails.getErrorMessage()), errorDetails);
       case 409:
-        throw addMetadata(
-            prepareException(new ScmConflictException(errorDetails.getErrorMessage()), errorDetails), errorMetadata);
+        throw prepareException(new ScmConflictException(errorDetails.getErrorMessage()), errorDetails);
       case 500:
-        throw addMetadata(
-            prepareException(new ScmInternalServerErrorException(errorDetails.getErrorMessage()), errorDetails),
-            errorMetadata);
+        throw prepareException(new ScmInternalServerErrorException(errorDetails.getErrorMessage()), errorDetails);
       default:
-        throw addMetadata(
-            prepareException(new ScmUnexpectedException(errorDetails.getErrorMessage()), errorDetails), errorMetadata);
+        throw prepareException(new ScmUnexpectedException(errorDetails.getErrorMessage()), errorDetails);
     }
   }
 
@@ -62,11 +56,5 @@ public class ScmErrorHandler {
       finalException = new HintException(scmErrorDetails.getHintMessage(), finalException);
     }
     return finalException;
-  }
-
-  private WingsException addMetadata(WingsException wingsException, ScmGitMetaData errorMetadata) {
-    wingsException.setMetadata(GitErrorMetadataDTO.builder().branch(errorMetadata.getBranchName()).build());
-
-    return wingsException;
   }
 }

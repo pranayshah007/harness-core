@@ -14,7 +14,6 @@ import static java.time.Duration.ofMinutes;
 
 import io.harness.Microservice;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.concurrent.HTimeLimiter;
 import io.harness.exception.GeneralException;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
@@ -34,7 +33,6 @@ import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -149,16 +147,23 @@ public class NGMigrationServiceImpl implements NGMigrationService {
     if (currentVersion < maxVersion) {
       executorService.submit(() -> {
         MigrationType migrationType = migrationDetail.getMigrationTypeName();
-        try (AcquiredLock ignore = persistentLocker.acquireLock(
-                 NGSchema.class, "Background-" + NG_SCHEMA_ID + microservice + migrationType, ofMinutes(120 + 1))) {
-          HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofHours(2), () -> {
-            doMigration(true, currentVersion, maxVersion, migrations, migrationType, schemaClass, serviceName);
-            return true;
-          });
+        try (AcquiredLock ignore = persistentLocker.tryToAcquireInfiniteLockWithPeriodicRefresh(
+                 "Background-" + NG_SCHEMA_ID + microservice + migrationType, ofMinutes(180))) {
+          doBackgroundMigration(maxVersion, migrations, migrationType, schemaClass, serviceName);
         } catch (Exception ex) {
           log.warn("Migration work", ex);
         }
       });
+    }
+  }
+
+  void doBackgroundMigration(int maxVersion, Map<Integer, Class<? extends NGMigration>> migrations,
+      MigrationType migrationTypeName, Class<? extends NGSchema> schemaClass, String serviceName) {
+    NGSchema schema = mongoTemplate.findOne(new Query(), schemaClass);
+    Map<MigrationType, Integer> allSchemaMigrations = schema.getMigrationDetails();
+    int currentVersion = allSchemaMigrations.getOrDefault(migrationTypeName, 0);
+    if (currentVersion < maxVersion) {
+      doMigration(true, currentVersion, maxVersion, migrations, migrationTypeName, schemaClass, serviceName);
     }
   }
 

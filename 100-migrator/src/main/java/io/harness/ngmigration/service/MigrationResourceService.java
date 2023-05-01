@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngmigration.dto.ApplicationFilter;
 import io.harness.ngmigration.dto.ConnectorFilter;
+import io.harness.ngmigration.dto.EnvironmentFilter;
 import io.harness.ngmigration.dto.Filter;
 import io.harness.ngmigration.dto.ImportDTO;
 import io.harness.ngmigration.dto.PipelineFilter;
@@ -26,6 +27,7 @@ import io.harness.ngmigration.dto.TriggerFilter;
 import io.harness.ngmigration.dto.WorkflowFilter;
 import io.harness.ngmigration.service.importer.AppImportService;
 import io.harness.ngmigration.service.importer.ConnectorImportService;
+import io.harness.ngmigration.service.importer.EnvironmentImportService;
 import io.harness.ngmigration.service.importer.PipelineImportService;
 import io.harness.ngmigration.service.importer.SecretManagerImportService;
 import io.harness.ngmigration.service.importer.SecretsImportService;
@@ -64,6 +66,7 @@ public class MigrationResourceService {
   @Inject private SecretsImportService secretsImportService;
   @Inject private AppImportService appImportService;
   @Inject private ServiceImportService serviceImportService;
+  @Inject private EnvironmentImportService environmentImportService;
   @Inject private DiscoveryService discoveryService;
   @Inject private TemplateImportService templateImportService;
   @Inject private WorkflowImportService workflowImportService;
@@ -107,6 +110,9 @@ public class MigrationResourceService {
     }
     if (filter instanceof TriggerFilter) {
       return triggerImportService.discover(importDTO);
+    }
+    if (filter instanceof EnvironmentFilter) {
+      return environmentImportService.discover(importDTO);
     }
     return DiscoveryResult.builder().build();
   }

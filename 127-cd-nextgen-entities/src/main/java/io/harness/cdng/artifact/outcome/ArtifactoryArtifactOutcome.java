@@ -83,6 +83,8 @@ public class ArtifactoryArtifactOutcome implements ArtifactOutcome {
 
   String registryHostname;
 
+  String digest;
+
   Map<String, String> metadata;
 
   Map<String, String> label;

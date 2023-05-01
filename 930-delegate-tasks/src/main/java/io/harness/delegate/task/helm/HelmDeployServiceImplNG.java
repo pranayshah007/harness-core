@@ -70,6 +70,8 @@ import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
 import io.harness.delegate.task.localstore.ManifestFiles;
+import io.harness.delegate.task.utils.ServiceHookDTO;
+import io.harness.delegate.utils.ServiceHookHandler;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GitOperationException;
 import io.harness.exception.HelmClientException;
@@ -97,6 +99,8 @@ import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.k8s.model.ServiceHookAction;
+import io.harness.k8s.model.ServiceHookType;
 import io.harness.k8s.releasehistory.IK8sRelease;
 import io.harness.k8s.releasehistory.K8sLegacyRelease;
 import io.harness.k8s.releasehistory.ReleaseHistory;
@@ -200,14 +204,19 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       }
 
       logCallback.saveExecutionLog(helmCliResponse.getOutputWithErrorStream());
-
+      ServiceHookDTO serviceHookDTO = new ServiceHookDTO(commandRequest);
       prevVersion = getPrevReleaseVersion(helmCliResponse);
-
+      String manifestFilesDirectory = Paths.get(commandRequest.getWorkingDir(), MANIFEST_FILES_DIR).toString();
+      ServiceHookHandler serviceHookHandler =
+          new ServiceHookHandler(commandRequest.getServiceHooks(), serviceHookDTO, commandRequest.getTimeoutInMillis());
+      serviceHookHandler.applyServiceHooks(ServiceHookType.PRE_HOOK, ServiceHookAction.FETCH_FILES,
+          serviceHookDTO.getWorkingDirectory(), logCallback, manifestFilesDirectory);
       kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
           commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
 
       prepareRepoAndCharts(commandRequest, commandRequest.getTimeoutInMillis(), logCallback);
-
+      serviceHookHandler.applyServiceHooks(ServiceHookType.POST_HOOK, ServiceHookAction.FETCH_FILES,
+          serviceHookDTO.getWorkingDirectory(), logCallback, manifestFilesDirectory);
       skipApplyDefaultValuesYaml(commandRequest);
 
       resources = printHelmChartKubernetesResources(commandRequest);
@@ -279,6 +288,9 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       return commandResponse;
 
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      throw new HelmNGException(prevVersion, ExceptionMessageSanitizer.sanitizeException(ex), isInstallUpgrade);
     } catch (UncheckedTimeoutException e) {
       logCallback.saveExecutionLog(TIMED_OUT_IN_STEADY_STATE, LogLevel.ERROR);
       if (isInstallUpgrade && useSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(), logCallback)

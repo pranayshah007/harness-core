@@ -65,6 +65,7 @@ public class CatalogConnectorEntity
   @NotNull String connectorIdentifier;
   @NotNull String connectorProviderType;
   @NotNull Set<String> delegateSelectors;
+  @NotNull String host;
   @NotNull CatalogInfraConnectorType type;
   CatalogRepositoryDetails catalogRepositoryDetails;
   @SchemaIgnore @CreatedBy private EmbeddedUser createdBy;

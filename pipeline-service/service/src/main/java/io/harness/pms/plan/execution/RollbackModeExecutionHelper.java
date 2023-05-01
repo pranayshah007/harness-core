@@ -24,6 +24,7 @@ import io.harness.plan.Node;
 import io.harness.plan.Plan;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionMetadata.Builder;
 import io.harness.pms.contracts.plan.ExecutionMode;
@@ -83,26 +84,38 @@ public class RollbackModeExecutionHelper {
     if (EmptyPredicate.isNotEmpty(stageNodeExecutionIds)) {
       List<NodeExecution> rollbackStageNodeExecutions = nodeExecutionService.getAllWithFieldIncluded(
           new HashSet<>(stageNodeExecutionIds), NodeProjectionUtils.fieldsForNodeAndAmbiance);
-      newMetadata.addAllPostExecutionRollbackInfo(
-          rollbackStageNodeExecutions.stream()
-              .map(o
-                  -> PostExecutionRollbackInfo.newBuilder()
-                         .setPostExecutionRollbackStageId(o.getNodeId())
-                         .setRollbackStageStrategyMetadata(
-                             AmbianceUtils.obtainCurrentLevel(o.getAmbiance()).getStrategyMetadata())
-                         .build())
-              .collect(Collectors.toList()));
+      newMetadata.addAllPostExecutionRollbackInfo(rollbackStageNodeExecutions.stream()
+                                                      .map(ne -> createPostExecutionRollbackInfo(ne.getAmbiance()))
+                                                      .collect(Collectors.toList()));
     }
     return newMetadata.build();
   }
 
+  private PostExecutionRollbackInfo createPostExecutionRollbackInfo(Ambiance ambiance) {
+    PostExecutionRollbackInfo.Builder builder = PostExecutionRollbackInfo.newBuilder();
+    String stageId;
+    // This stageId will also be the startingNodeId in the execution graph. So if its under the
+    // strategy(Multi-deployment) then it must be set to strategy setupId so that graph is shown correctly.
+    if (AmbianceUtils.getStrategyLevelFromAmbiance(ambiance).isPresent()) {
+      // If the nodeExecutions is under the strategy, then set the stageId to strategy setupId.
+      stageId = ambiance.getLevels(ambiance.getLevelsCount() - 2).getSetupId();
+      builder.setRollbackStageStrategyMetadata(AmbianceUtils.obtainCurrentLevel(ambiance).getStrategyMetadata());
+    } else {
+      // If not under strategy then stage setupId will be the stageId.
+      stageId = AmbianceUtils.obtainCurrentSetupId(ambiance);
+    }
+    builder.setPostExecutionRollbackStageId(stageId);
+    return builder.build();
+  }
+
   public PlanExecutionMetadata transformPlanExecutionMetadata(PlanExecutionMetadata planExecutionMetadata,
-      String planExecutionID, ExecutionMode executionMode, List<String> stageNodeExecutionIds) {
+      String planExecutionID, ExecutionMode executionMode, List<String> stageNodeExecutionIds, String updatedNotes) {
     String originalPlanExecutionId = planExecutionMetadata.getPlanExecutionId();
     PlanExecutionMetadata metadata =
         planExecutionMetadata.withPlanExecutionId(planExecutionID)
             .withProcessedYaml(transformProcessedYaml(
                 planExecutionMetadata.getProcessedYaml(), executionMode, originalPlanExecutionId))
+            .withNotes(updatedNotes) // these are updated notes given for a pipelineRollback.
             .withUuid(null); // this uuid is the mongo uuid. It is being set as null so that when this Plan Execution
                              // Metadata is saved later on in the execution, a new object is stored rather than
                              // replacing the Metadata for the original execution
@@ -302,6 +315,10 @@ public class RollbackModeExecutionHelper {
       List<AdviserObtainment> adviserObtainments = planNode.getAdvisorObtainmentsForExecutionMode().get(executionMode);
       if (EmptyPredicate.isNotEmpty(adviserObtainments)) {
         IdentityPlanNode updatedNode = (IdentityPlanNode) planNodeIDToUpdatedPlanNodes.get(planNode.getUuid());
+        if (updatedNode == null) {
+          // this means that the stage had failed before the node could start in the previous execution
+          continue;
+        }
         planNodeIDToUpdatedPlanNodes.put(
             planNode.getUuid(), updatedNode.withAdviserObtainments(adviserObtainments).withUseAdviserObtainments(true));
       }

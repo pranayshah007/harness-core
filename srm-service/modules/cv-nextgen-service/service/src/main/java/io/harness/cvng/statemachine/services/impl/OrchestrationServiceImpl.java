@@ -40,7 +40,6 @@ import dev.morphia.FindAndModifyOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,39 +65,38 @@ public class OrchestrationServiceImpl implements OrchestrationService {
   @Inject private Map<VerificationTask.TaskType, AnalysisStateMachineService> taskTypeAnalysisStateMachineServiceMap;
 
   @Override
-  public void queueAnalysis(String verificationTaskId, Instant startTime, Instant endTime) {
-    String accountId = verificationTaskService.get(verificationTaskId).getAccountId();
-    queueAnalysisWithoutEventPublish(verificationTaskId, accountId, startTime, endTime);
+  public void queueAnalysis(AnalysisInput analysisInput) {
+    String accountId = verificationTaskService.get(analysisInput.getVerificationTaskId()).getAccountId();
+    queueAnalysisWithoutEventPublish(accountId, analysisInput);
 
-    stateMachineEventPublisherService.registerTaskComplete(accountId, verificationTaskId);
+    stateMachineEventPublisherService.registerTaskComplete(accountId, analysisInput.getVerificationTaskId());
   }
 
   @Override
-  public void queueAnalysisWithoutEventPublish(
-      String verificationTaskId, String accountId, Instant startTime, Instant endTime) {
-    log.info("Queuing analysis for verificationTaskId: {}, startTime: {}, endTime: {}", verificationTaskId, startTime,
-        endTime);
-    if (deploymentTimeSeriesAnalysisService.isAnalysisFailFastForLatestTimeRange(verificationTaskId)) {
+  public void queueAnalysisWithoutEventPublish(String accountId, AnalysisInput analysisInput) {
+    validateAnalysisInputs(analysisInput);
+    log.info("Queuing analysis for verificationTaskId: {}, startTime: {}, endTime: {}",
+        analysisInput.getVerificationTaskId(), analysisInput.getStartTime(), analysisInput.getEndTime());
+    if (deploymentTimeSeriesAnalysisService.isAnalysisFailFastForLatestTimeRange(
+            analysisInput.getVerificationTaskId())) {
       log.info("DeploymentTimeSeriesAnalysis from LE is FailFast, so not queuing analysis for verificationTaskId: {}",
-          verificationTaskId);
+          analysisInput.getVerificationTaskId());
       return;
     }
-    AnalysisInput inputForAnalysis =
-        AnalysisInput.builder().verificationTaskId(verificationTaskId).startTime(startTime).endTime(endTime).build();
-    validateAnalysisInputs(inputForAnalysis);
-    VerificationTask verificationTask = verificationTaskService.get(inputForAnalysis.getVerificationTaskId());
+
+    VerificationTask verificationTask = verificationTaskService.get(analysisInput.getVerificationTaskId());
     VerificationTask.TaskType verificationTaskType = verificationTask.getTaskInfo().getTaskType();
 
     AnalysisStateMachine stateMachine =
-        taskTypeAnalysisStateMachineServiceMap.get(verificationTaskType).createStateMachine(inputForAnalysis);
+        taskTypeAnalysisStateMachineServiceMap.get(verificationTaskType).createStateMachine(analysisInput);
 
     Query<AnalysisOrchestrator> orchestratorQuery =
         hPersistence.createQuery(AnalysisOrchestrator.class)
-            .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId);
+            .filter(AnalysisOrchestratorKeys.verificationTaskId, analysisInput.getVerificationTaskId());
 
     UpdateOperations<AnalysisOrchestrator> updateOperations =
         hPersistence.createUpdateOperations(AnalysisOrchestrator.class)
-            .setOnInsert(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
+            .setOnInsert(AnalysisOrchestratorKeys.verificationTaskId, analysisInput.getVerificationTaskId())
             .setOnInsert(AnalysisOrchestratorKeys.accountId, accountId)
             .setOnInsert(AnalysisOrchestratorKeys.uuid,
                 generateUuid()) // By default mongo generates object id instead of string and our hPersistence does not
@@ -262,7 +260,7 @@ public class OrchestrationServiceImpl implements OrchestrationService {
       analysisStateMachine.setTotalRetryCount(totalRetryCount);
       Optional<AnalysisStateMachine> ignoredStateMachine =
           stateMachineService.ignoreOldStateMachine(analysisStateMachine);
-      if (!ignoredStateMachine.isPresent()) {
+      if (ignoredStateMachine.isEmpty()) {
         break;
       }
       analysisStateMachine = null;

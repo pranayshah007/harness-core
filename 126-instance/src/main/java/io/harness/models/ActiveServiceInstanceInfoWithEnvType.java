@@ -7,16 +7,20 @@
 
 package io.harness.models;
 
+import io.harness.entities.RollbackStatus;
 import io.harness.ng.core.environment.beans.EnvironmentType;
+import io.harness.pms.contracts.execution.Status;
 
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 
-@Getter
+@Data
 @AllArgsConstructor
 @EqualsAndHashCode
 public class ActiveServiceInstanceInfoWithEnvType {
+  private String instanceKey;
+  private String infrastructureMappingId;
   private String envIdentifier;
   private String envName;
   private EnvironmentType envType;
@@ -27,4 +31,10 @@ public class ActiveServiceInstanceInfoWithEnvType {
   private long lastDeployedAt;
   private String displayName;
   private Integer count;
+  private String lastPipelineExecutionName;
+  private String lastPipelineExecutionId;
+  private String stageNodeExecutionId;
+  private Status stageStatus;
+  private String stageSetupId;
+  private RollbackStatus rollbackStatus;
 }

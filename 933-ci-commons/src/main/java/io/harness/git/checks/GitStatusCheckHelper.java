@@ -33,6 +33,7 @@ import io.harness.delegate.task.ci.GitSCMType;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.git.GitClientHelper;
 import io.harness.git.GitTokenRetriever;
+import io.harness.impl.scm.ScmGitProviderMapper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -209,8 +210,10 @@ public class GitStatusCheckHelper {
 
       return Failsafe.with(retryPolicy)
           .get(()
-                   -> gitlabService.sendStatus(
-                       GitlabConfig.builder().gitlabUrl(getGitlabApiURL(gitConfigDTO.getUrl())).build(),
+                   -> gitlabService.sendStatus(GitlabConfig.builder()
+                                                   .gitlabUrl(getGitlabApiURL(gitConfigDTO.getUrl(),
+                                                       ScmGitProviderMapper.getGitlabApiUrl(gitConfigDTO)))
+                                                   .build(),
                        gitStatusCheckParams.getUserName(), token, null, gitStatusCheckParams.getSha(),
                        gitStatusCheckParams.getOwner(), gitStatusCheckParams.getRepo(), bodyObjectMap));
     } else {
@@ -317,9 +320,11 @@ public class GitStatusCheckHelper {
     return domain + customEndpoint;
   }
 
-  private String getGitlabApiURL(String url) {
+  private String getGitlabApiURL(String url, String apiUrl) {
     if (url.contains("gitlab.com")) {
       return GITLAB_API_URL;
+    } else if (!StringUtils.isBlank(apiUrl)) {
+      return StringUtils.stripEnd(apiUrl, "/") + "/api/";
     } else {
       String domain = GitClientHelper.getGitSCM(url);
       return "https://" + domain + "/api/";

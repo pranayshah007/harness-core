@@ -60,6 +60,7 @@ import io.harness.network.SafeHttpCall;
 import io.harness.perpetualtask.PerpetualTaskLogContext;
 import io.harness.perpetualtask.connector.ConnectorHearbeatPublisher;
 import io.harness.perpetualtask.instancesync.InstanceSyncResponsePublisher;
+import io.harness.perpetualtask.instancesync.InstanceSyncResponseV2;
 import io.harness.persistence.HPersistence;
 import io.harness.polling.client.PollingResourceClient;
 import io.harness.queueservice.infc.DelegateCapacityManagementService;
@@ -74,7 +75,6 @@ import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse;
 import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
-import software.wings.ratelimit.DelegateRequestRateLimiter;
 import software.wings.security.annotations.Scope;
 import software.wings.service.impl.instance.InstanceHelper;
 import software.wings.service.intfc.AccountService;
@@ -84,6 +84,7 @@ import software.wings.service.intfc.DelegateTaskServiceClassic;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.swagger.annotations.Api;
@@ -120,13 +121,13 @@ public class DelegateAgentResource {
   private DelegateService delegateService;
   private AccountService accountService;
   private HPersistence persistence;
-  private DelegateRequestRateLimiter delegateRequestRateLimiter;
   private SubdomainUrlHelperIntfc subdomainUrlHelper;
   private ArtifactCollectionResponseHandler artifactCollectionResponseHandler;
   private InstanceHelper instanceHelper;
   private ManifestCollectionResponseHandler manifestCollectionResponseHandler;
   private ConnectorHearbeatPublisher connectorHearbeatPublisher;
   private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   private ConfigurationController configurationController;
   private FeatureFlagService featureFlagService;
   private DelegateTaskServiceClassic delegateTaskServiceClassic;
@@ -137,20 +138,19 @@ public class DelegateAgentResource {
 
   @Inject
   public DelegateAgentResource(DelegateService delegateService, AccountService accountService, HPersistence persistence,
-      DelegateRequestRateLimiter delegateRequestRateLimiter, SubdomainUrlHelperIntfc subdomainUrlHelper,
-      ArtifactCollectionResponseHandler artifactCollectionResponseHandler, InstanceHelper instanceHelper,
-      ManifestCollectionResponseHandler manifestCollectionResponseHandler,
+      SubdomainUrlHelperIntfc subdomainUrlHelper, ArtifactCollectionResponseHandler artifactCollectionResponseHandler,
+      InstanceHelper instanceHelper, ManifestCollectionResponseHandler manifestCollectionResponseHandler,
       ConnectorHearbeatPublisher connectorHearbeatPublisher, KryoSerializer kryoSerializer,
       ConfigurationController configurationController, FeatureFlagService featureFlagService,
       DelegateTaskServiceClassic delegateTaskServiceClassic, PollingResourceClient pollingResourceClient,
       InstanceSyncResponsePublisher instanceSyncResponsePublisher,
       DelegatePollingHeartbeatService delegatePollingHeartbeatService,
-      DelegateCapacityManagementService delegateCapacityManagementService) {
+      DelegateCapacityManagementService delegateCapacityManagementService,
+      KryoSerializer referenceFalseKryoSerializer) {
     this.instanceHelper = instanceHelper;
     this.delegateService = delegateService;
     this.accountService = accountService;
     this.persistence = persistence;
-    this.delegateRequestRateLimiter = delegateRequestRateLimiter;
     this.subdomainUrlHelper = subdomainUrlHelper;
     this.artifactCollectionResponseHandler = artifactCollectionResponseHandler;
     this.manifestCollectionResponseHandler = manifestCollectionResponseHandler;
@@ -163,6 +163,7 @@ public class DelegateAgentResource {
     this.instanceSyncResponsePublisher = instanceSyncResponsePublisher;
     this.delegatePollingHeartbeatService = delegatePollingHeartbeatService;
     this.delegateCapacityManagementService = delegateCapacityManagementService;
+    this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
   }
 
   @DelegateAuth
@@ -317,9 +318,6 @@ public class DelegateAgentResource {
     try (AutoLogContext ignore1 = new TaskLogContext(taskId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore3 = new DelegateLogContext(accountId, delegateId, delegateInstanceId, OVERRIDE_ERROR)) {
-      if (delegateRequestRateLimiter.isOverRateLimit(accountId, delegateId)) {
-        return null;
-      }
       return delegateTaskServiceClassic.acquireDelegateTask(accountId, delegateId, taskId, delegateInstanceId);
     }
   }
@@ -492,6 +490,7 @@ public class DelegateAgentResource {
     return request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
   }
 
+  //@TODO: Remove the V1 version once all delegates adopt the V2 version of this endpoint
   @DelegateAuth
   @POST
   @Path("artifact-collection/{perpetualTaskId}")
@@ -503,6 +502,27 @@ public class DelegateAgentResource {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
       BuildSourceExecutionResponse executionResponse = (BuildSourceExecutionResponse) kryoSerializer.asObject(response);
+
+      if (executionResponse.getBuildSourceResponse() != null) {
+        log.debug("Received artifact collection {}", executionResponse.getBuildSourceResponse().getBuildDetails());
+      }
+      artifactCollectionResponseHandler.processArtifactCollectionResult(accountId, perpetualTaskId, executionResponse);
+    }
+    return new RestResponse<>(true);
+  }
+
+  @DelegateAuth
+  @POST
+  @Path("artifact-collection/v2/{perpetualTaskId}")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<Boolean> processArtifactCollectionResultV2(
+      @PathParam("perpetualTaskId") @NotEmpty String perpetualTaskId,
+      @QueryParam("accountId") @NotEmpty String accountId, byte[] response) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
+      BuildSourceExecutionResponse executionResponse =
+          (BuildSourceExecutionResponse) referenceFalseKryoSerializer.asObject(response);
 
       if (executionResponse.getBuildSourceResponse() != null) {
         log.debug("Received artifact collection {}", executionResponse.getBuildSourceResponse().getBuildDetails());
@@ -535,9 +555,25 @@ public class DelegateAgentResource {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
       instanceSyncResponsePublisher.publishInstanceSyncResponseToNG(
-          accountId, perpetualTaskId.replaceAll("[\r\n]", ""), response);
+          accountId, perpetualTaskId.replaceAll("[\r\n]", ""), response, false);
     } catch (Exception e) {
       log.error("Failed to process results for perpetual task: [{}]", perpetualTaskId.replaceAll("[\r\n]", ""), e);
+    }
+    return new RestResponse<>(true);
+  }
+
+  @DelegateAuth
+  @POST
+  @Path("instance-sync-ng-v2/{perpetualTaskId}")
+  public RestResponse<Boolean> processInstanceSyncNGResultV2(
+      @PathParam("perpetualTaskId") @NotEmpty String perpetualTaskId,
+      @QueryParam("accountId") @NotEmpty String accountId, InstanceSyncResponseV2 instanceSyncResponseV2) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
+      instanceSyncResponsePublisher.publishInstanceSyncResponseV2ToNG(
+          accountId, perpetualTaskId.replaceAll("[\r\n]", ""), instanceSyncResponseV2);
+    } catch (Exception e) {
+      log.error("Failed to process results for v2 perpetual task: [{}]", perpetualTaskId.replaceAll("[\r\n]", ""), e);
     }
     return new RestResponse<>(true);
   }
@@ -563,6 +599,25 @@ public class DelegateAgentResource {
 
   @DelegateAuth
   @POST
+  @Path("manifest-collection/v2/{perpetualTaskId}")
+  public RestResponse<Boolean> processManifestCollectionResultV2(
+      @PathParam("perpetualTaskId") @NotEmpty String perpetualTaskId,
+      @QueryParam("accountId") @NotEmpty String accountId, byte[] serializedExecutionResponse) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
+      ManifestCollectionExecutionResponse executionResponse =
+          (ManifestCollectionExecutionResponse) referenceFalseKryoSerializer.asObject(serializedExecutionResponse);
+
+      if (executionResponse.getManifestCollectionResponse() != null) {
+        log.debug("Received manifest collection {}", executionResponse.getManifestCollectionResponse().getHelmCharts());
+      }
+      manifestCollectionResponseHandler.handleManifestCollectionResponse(accountId, perpetualTaskId, executionResponse);
+    }
+    return new RestResponse<>(Boolean.TRUE);
+  }
+
+  @DelegateAuth
+  @POST
   @Path("connectors/{perpetualTaskId}")
   public RestResponse<Boolean> publishNGConnectorHeartbeatResult(
       @PathParam("perpetualTaskId") @NotEmpty String perpetualTaskId,
@@ -576,12 +631,39 @@ public class DelegateAgentResource {
 
   @DelegateAuth
   @POST
+  @Path("connectors/v2/{perpetualTaskId}")
+  public RestResponse<Boolean> publishNGConnectorHeartbeatResultV2(
+      @PathParam("perpetualTaskId") @NotEmpty String perpetualTaskId,
+      @QueryParam("accountId") @NotEmpty String accountId, ConnectorHeartbeatDelegateResponse validationResult) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
+      connectorHearbeatPublisher.pushConnectivityCheckActivity(accountId, validationResult);
+    }
+    return new RestResponse<>(true);
+  }
+
+  //@TODO: Remove V1 versions once all delegates adopts V2 version
+  @DelegateAuth
+  @POST
   @Path("polling/{perpetualTaskId}")
   public RestResponse<Boolean> processPollingResultNg(@PathParam("perpetualTaskId") @NotEmpty String perpetualTaskId,
       @QueryParam("accountId") @NotEmpty String accountId, byte[] serializedExecutionResponse) throws IOException {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
       SafeHttpCall.executeWithExceptions(pollingResourceClient.processPolledResult(perpetualTaskId, accountId,
+          RequestBody.create(MediaType.parse("application/octet-stream"), serializedExecutionResponse)));
+    }
+    return new RestResponse<>(Boolean.TRUE);
+  }
+
+  @DelegateAuth
+  @POST
+  @Path("polling/v2/{perpetualTaskId}")
+  public RestResponse<Boolean> processPollingResultNgV2(@PathParam("perpetualTaskId") @NotEmpty String perpetualTaskId,
+      @QueryParam("accountId") @NotEmpty String accountId, byte[] serializedExecutionResponse) throws IOException {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
+      SafeHttpCall.executeWithExceptions(pollingResourceClient.processPolledResultV2(perpetualTaskId, accountId,
           RequestBody.create(MediaType.parse("application/octet-stream"), serializedExecutionResponse)));
     }
     return new RestResponse<>(Boolean.TRUE);

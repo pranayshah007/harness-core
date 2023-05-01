@@ -44,6 +44,7 @@ import io.harness.gitsync.common.impl.UserSourceCodeManagerServiceImpl;
 import io.harness.gitsync.common.impl.YamlGitConfigServiceImpl;
 import io.harness.gitsync.common.impl.gittoharness.GitToHarnessProcessorServiceImpl;
 import io.harness.gitsync.common.mappers.AzureRepoSCMMapper;
+import io.harness.gitsync.common.mappers.BitbucketSCMMapper;
 import io.harness.gitsync.common.mappers.GithubSCMMapper;
 import io.harness.gitsync.common.mappers.GitlabSCMMapper;
 import io.harness.gitsync.common.mappers.UserSourceCodeManagerMapper;
@@ -204,6 +205,7 @@ public class GitSyncModule extends AbstractModule {
     sourceCodeManagerMapBinder.addBinding(SCMType.GITHUB).to(GithubSCMMapper.class);
     sourceCodeManagerMapBinder.addBinding(SCMType.GITLAB).to(GitlabSCMMapper.class);
     sourceCodeManagerMapBinder.addBinding(SCMType.AZURE_REPO).to(AzureRepoSCMMapper.class);
+    sourceCodeManagerMapBinder.addBinding(SCMType.BITBUCKET).to(BitbucketSCMMapper.class);
 
     bindFullSyncMessageListeners();
   }

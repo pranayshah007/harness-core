@@ -7,20 +7,15 @@
 
 package io.harness.cvng.servicelevelobjective.services.api;
 
-import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
-import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
-import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 
 public interface CompositeSLORecordService {
-  void create(Map<ServiceLevelObjectivesDetail, List<SLIRecord>> serviceLevelObjectivesDetailSLIRecordMap,
-      Map<ServiceLevelObjectivesDetail, SLIMissingDataType> objectivesDetailSLIMissingDataTypeMap, int sloVersion,
-      String verificationTaskId, Instant startTime, Instant endTime, SLIEvaluationType sliEvaluationType);
+  void create(CompositeServiceLevelObjective compositeServiceLevelObjective, Instant startTime, Instant endTime,
+      String verificationTaskId);
 
   CompositeSLORecord getLatestCompositeSLORecord(String sloId);
   CompositeSLORecord getLatestCompositeSLORecordWithVersion(

@@ -14,7 +14,9 @@ import io.harness.cvng.downtime.beans.EntitiesRule;
 import io.harness.cvng.downtime.beans.EntityType;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.data.validator.EntityIdentifier;
+import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
@@ -47,7 +49,8 @@ import lombok.experimental.FieldNameConstants;
 @Entity(value = "entityUnavailabilityStatuses")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-public class EntityUnavailabilityStatuses implements PersistentEntity, UuidAware, UpdatedAtAware, CreatedAtAware {
+public class EntityUnavailabilityStatuses
+    implements PersistentEntity, UuidAware, UpdatedAtAware, CreatedAtAware, PersistentRegularIterable {
   @Id private String uuid;
   @NotNull @EntityIdentifier String accountId;
   @NotNull @EntityIdentifier String orgIdentifier;
@@ -61,6 +64,8 @@ public class EntityUnavailabilityStatuses implements PersistentEntity, UuidAware
   @NotNull private long lastUpdatedAt;
 
   @NotNull EntitiesRule entitiesRule;
+
+  @FdIndex private long createNextTaskIteration;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -80,5 +85,22 @@ public class EntityUnavailabilityStatuses implements PersistentEntity, UuidAware
                  .field(EntityUnavailabilityStatusesKeys.entityIdentifier)
                  .build())
         .build();
+  }
+
+  @Override
+  public void updateNextIteration(String fieldName, long nextIteration) {
+    if (fieldName.equals(EntityUnavailabilityStatusesKeys.createNextTaskIteration)) {
+      this.createNextTaskIteration = nextIteration;
+      return;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
+  }
+
+  @Override
+  public Long obtainNextIteration(String fieldName) {
+    if (fieldName.equals(EntityUnavailabilityStatusesKeys.createNextTaskIteration)) {
+      return createNextTaskIteration;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 }

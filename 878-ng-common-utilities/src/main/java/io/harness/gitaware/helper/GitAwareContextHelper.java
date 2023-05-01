@@ -8,6 +8,7 @@
 package io.harness.gitaware.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -139,6 +140,32 @@ public class GitAwareContextHelper {
       return null;
     }
     return scmGitMetaData.getBranchName();
+  }
+
+  public void setIsDefaultBranchInGitEntityInfo() {
+    GitEntityInfo gitEntityInfo = getGitRequestParamsInfo();
+
+    if (gitEntityInfo != null) {
+      gitEntityInfo.setIsDefaultBranch(isEmpty(gitEntityInfo.getBranch()));
+    }
+  }
+
+  public boolean getIsDefaultBranchFromGitEntityInfo() {
+    GitEntityInfo gitEntityInfo = getGitRequestParamsInfo();
+
+    if (gitEntityInfo != null) {
+      return gitEntityInfo.getIsDefaultBranch();
+    }
+
+    return false;
+  }
+
+  public static void setIsDefaultBranchInGitEntityInfoWithParameter(String branch) {
+    GitEntityInfo gitEntityInfo = getGitRequestParamsInfo();
+
+    if (gitEntityInfo != null) {
+      gitEntityInfo.setIsDefaultBranch(isEmpty(branch));
+    }
   }
 
   public AutoLogContext autoLogContext() {

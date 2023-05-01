@@ -43,6 +43,7 @@ import software.wings.service.intfc.aws.delegate.AwsCloudWatchHelperServiceDeleg
 import software.wings.service.intfc.aws.delegate.AwsLambdaHelperServiceDelegate;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -67,7 +68,7 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
   @Mock private AwsCloudWatchHelperServiceDelegate awsCloudWatchHelperServiceDelegate;
   @Mock private Call<RestResponse<Boolean>> call;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   private ArgumentCaptor<AwsLambdaDetailsMetricsResponse> captor =
       ArgumentCaptor.forClass(AwsLambdaDetailsMetricsResponse.class);
@@ -76,7 +77,7 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
 
   @Before
   public void setup() {
-    on(executor).set("kryoSerializer", kryoSerializer);
+    on(executor).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
   }
 
   @Test
@@ -93,14 +94,15 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
 
     doReturn(call)
         .when(delegateAgentManagerClient)
-        .publishInstanceSyncResult(anyString(), anyString(), any(DelegateResponseData.class));
+        .publishInstanceSyncResultV2(anyString(), anyString(), any(DelegateResponseData.class));
     doReturn(retrofit2.Response.success("success")).when(call).execute();
 
     PerpetualTaskResponse perpetualTaskResponse;
     perpetualTaskResponse =
         executor.runOnce(PerpetualTaskId.newBuilder().setId("id").build(), getPerpetualTaskParams(), Instant.now());
 
-    verify(delegateAgentManagerClient, times(1)).publishInstanceSyncResult(eq("id"), eq("accountId"), captor.capture());
+    verify(delegateAgentManagerClient, times(1))
+        .publishInstanceSyncResultV2(eq("id"), eq("accountId"), captor.capture());
 
     final AwsLambdaDetailsMetricsResponse awsResponse = captor.getValue();
 
@@ -127,14 +129,15 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
 
     doReturn(call)
         .when(delegateAgentManagerClient)
-        .publishInstanceSyncResult(anyString(), anyString(), any(DelegateResponseData.class));
+        .publishInstanceSyncResultV2(anyString(), anyString(), any(DelegateResponseData.class));
     doReturn(retrofit2.Response.success("success")).when(call).execute();
 
     PerpetualTaskResponse perpetualTaskResponse;
     perpetualTaskResponse =
         executor.runOnce(PerpetualTaskId.newBuilder().setId("id").build(), getPerpetualTaskParams(), Instant.now());
 
-    verify(delegateAgentManagerClient, times(1)).publishInstanceSyncResult(eq("id"), eq("accountId"), captor.capture());
+    verify(delegateAgentManagerClient, times(1))
+        .publishInstanceSyncResultV2(eq("id"), eq("accountId"), captor.capture());
 
     final AwsLambdaDetailsMetricsResponse awsResponse = captor.getValue();
 
@@ -157,14 +160,15 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
 
     doReturn(call)
         .when(delegateAgentManagerClient)
-        .publishInstanceSyncResult(anyString(), anyString(), any(DelegateResponseData.class));
+        .publishInstanceSyncResultV2(anyString(), anyString(), any(DelegateResponseData.class));
     doReturn(retrofit2.Response.success("success")).when(call).execute();
 
     PerpetualTaskResponse perpetualTaskResponse;
     perpetualTaskResponse =
         executor.runOnce(PerpetualTaskId.newBuilder().setId("id").build(), getPerpetualTaskParams(), Instant.now());
 
-    verify(delegateAgentManagerClient, times(1)).publishInstanceSyncResult(eq("id"), eq("accountId"), captor.capture());
+    verify(delegateAgentManagerClient, times(1))
+        .publishInstanceSyncResultV2(eq("id"), eq("accountId"), captor.capture());
 
     final AwsLambdaDetailsMetricsResponse awsResponse = captor.getValue();
 
@@ -199,8 +203,8 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
 
   private PerpetualTaskExecutionParams getPerpetualTaskParams() {
     ByteString configBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(AwsConfig.builder().accountId("accountId").build()));
-    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
+        ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(AwsConfig.builder().accountId("accountId").build()));
+    ByteString encryptionDetailsBytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(new ArrayList<>()));
 
     AwsLambdaInstanceSyncPerpetualTaskParams params = AwsLambdaInstanceSyncPerpetualTaskParams.newBuilder()
                                                           .setAwsConfig(configBytes)
@@ -209,6 +213,9 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
                                                           .setFunctionName("function-1")
                                                           .setQualifier("version-1")
                                                           .build();
-    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(params)).build();
+    return PerpetualTaskExecutionParams.newBuilder()
+        .setCustomizedParams(Any.pack(params))
+        .setReferenceFalseKryoSerializer(true)
+        .build();
   }
 }

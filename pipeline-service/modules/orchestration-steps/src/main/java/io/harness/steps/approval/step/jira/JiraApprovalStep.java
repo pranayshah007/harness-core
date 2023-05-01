@@ -11,7 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.exception.ApprovalStepNGException;
+import io.harness.logstreaming.ILogStreamingStepClient;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
@@ -37,46 +40,59 @@ public class JiraApprovalStep extends PipelineAsyncExecutable {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.JIRA_APPROVAL_STEP_TYPE;
 
   @Inject private ApprovalInstanceService approvalInstanceService;
+  @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
 
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+    logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
     JiraApprovalInstance approvalInstance = JiraApprovalInstance.fromStepParameters(ambiance, stepParameters);
     approvalInstance = (JiraApprovalInstance) approvalInstanceService.save(approvalInstance);
     return AsyncExecutableResponse.newBuilder()
         .addCallbackIds(approvalInstance.getId())
-        .addAllLogKeys(CollectionUtils.emptyIfNull(
-            StepUtils.generateLogKeys(StepUtils.generateLogAbstractions(ambiance), Collections.emptyList())))
+        .addAllLogKeys(CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(
+            StepUtils.generateLogAbstractions(ambiance), Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT))))
         .build();
   }
 
   @Override
   public StepResponse handleAsyncResponseInternal(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    JiraApprovalResponseData jiraApprovalResponseData =
-        (JiraApprovalResponseData) responseDataMap.values().iterator().next();
-    JiraApprovalInstance instance =
-        (JiraApprovalInstance) approvalInstanceService.get(jiraApprovalResponseData.getInstanceId());
-    if (instance.getStatus() == ApprovalStatus.FAILED) {
-      throw new ApprovalStepNGException(
-          instance.getErrorMessage() != null ? instance.getErrorMessage() : "Unknown error polling jira issue");
+    try {
+      JiraApprovalResponseData jiraApprovalResponseData =
+          (JiraApprovalResponseData) responseDataMap.values().iterator().next();
+      JiraApprovalInstance instance =
+          (JiraApprovalInstance) approvalInstanceService.get(jiraApprovalResponseData.getInstanceId());
+      if (instance.getStatus() == ApprovalStatus.FAILED) {
+        throw new ApprovalStepNGException(
+            instance.getErrorMessage() != null ? instance.getErrorMessage() : "Unknown error polling jira issue");
+      }
+      return StepResponse.builder()
+          .status(instance.getStatus().toFinalExecutionStatus())
+          .failureInfo(instance.getFailureInfo())
+          .stepOutcome(
+              StepResponse.StepOutcome.builder().name("output").outcome(instance.toJiraApprovalOutcome()).build())
+          .build();
+    } finally {
+      closeLogStream(ambiance);
     }
-    return StepResponse.builder()
-        .status(instance.getStatus().toFinalExecutionStatus())
-        .failureInfo(instance.getFailureInfo())
-        .stepOutcome(
-            StepResponse.StepOutcome.builder().name("output").outcome(instance.toJiraApprovalOutcome()).build())
-        .build();
   }
 
   @Override
   public void handleAbort(
       Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    approvalInstanceService.expireByNodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
+    approvalInstanceService.abortByNodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
+    closeLogStream(ambiance);
   }
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
+  }
+
+  private void closeLogStream(Ambiance ambiance) {
+    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+    logStreamingStepClient.closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 }

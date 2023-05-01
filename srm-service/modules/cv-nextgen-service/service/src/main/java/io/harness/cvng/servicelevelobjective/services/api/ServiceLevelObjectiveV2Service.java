@@ -30,7 +30,6 @@ import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjectiv
 import io.harness.ng.beans.PageResponse;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<AbstractServiceLevelObjective> {
@@ -98,8 +97,8 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
 
   void handleNotification(AbstractServiceLevelObjective serviceLevelObjective);
 
-  Map<AbstractServiceLevelObjective, SLIEvaluationType> getEvaluationType(
-      ProjectParams projectParams, List<AbstractServiceLevelObjective> serviceLevelObjectiveList);
+  SLIEvaluationType getEvaluationType(AbstractServiceLevelObjective serviceLevelObjective);
+
   List<AbstractServiceLevelObjective> getAllReferredSLOs(
       ProjectParams projectParams, CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec);
 

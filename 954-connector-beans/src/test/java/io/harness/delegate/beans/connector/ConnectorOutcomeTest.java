@@ -29,6 +29,14 @@ import io.harness.delegate.beans.connector.awsconnector.AwsSdkClientBackoffStrat
 import io.harness.delegate.beans.connector.awsconnector.outcome.AwsConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.awsconnector.outcome.AwsCredentialOutcomeDTO;
 import io.harness.delegate.beans.connector.awsconnector.outcome.AwsSdkClientBackoffStrategyOutcomeDTO;
+import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsConnectorCredentialDTO;
+import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsConnectorDTO;
+import io.harness.delegate.beans.connector.awskmsconnector.outcome.AwsKmsConnectorCredentialOutcomeDTO;
+import io.harness.delegate.beans.connector.awskmsconnector.outcome.AwsKmsConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerCredentialDTO;
+import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerDTO;
+import io.harness.delegate.beans.connector.awssecretmanager.outcome.AwsSecretManagerCredentialOutcomeDTO;
+import io.harness.delegate.beans.connector.awssecretmanager.outcome.AwsSecretManagerOutcomeDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCredentialsDTO;
@@ -63,6 +71,10 @@ import io.harness.delegate.beans.connector.azureconnector.outcome.AzureMSIAuthUA
 import io.harness.delegate.beans.connector.azureconnector.outcome.AzureManualDetailsOutcomeDTO;
 import io.harness.delegate.beans.connector.azureconnector.outcome.AzureSystemAssignedMSIAuthOutcomeDTO;
 import io.harness.delegate.beans.connector.azureconnector.outcome.AzureUserAssignedMSIAuthOutcomeDTO;
+import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConnectorDTO;
+import io.harness.delegate.beans.connector.azurekeyvaultconnector.outcome.AzureKeyVaultConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerConnectorDTO;
+import io.harness.delegate.beans.connector.customsecretmanager.outcome.CustomSecretManagerConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.docker.outcome.DockerAuthenticationOutcomeDTO;
@@ -72,6 +84,10 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpDelegateDetailsDTO;
 import io.harness.delegate.beans.connector.gcpconnector.outcome.GcpConnectorCredentialOutcomeDTO;
 import io.harness.delegate.beans.connector.gcpconnector.outcome.GcpConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsConnectorDTO;
+import io.harness.delegate.beans.connector.gcpkmsconnector.outcome.GcpKmsConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSecretManagerConnectorDTO;
+import io.harness.delegate.beans.connector.gcpsecretmanager.outcome.GcpSecretManagerConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthenticationDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
 import io.harness.delegate.beans.connector.helm.OciHelmAuthenticationDTO;
@@ -153,6 +169,8 @@ import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
 import io.harness.delegate.beans.connector.tasconnector.TasCredentialDTO;
 import io.harness.delegate.beans.connector.tasconnector.outcome.TasConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.tasconnector.outcome.TasCredentialOutcomeDTO;
+import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
+import io.harness.delegate.beans.connector.vaultconnector.outcome.VaultConnectorOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.reflection.ReflectionUtils;
@@ -261,6 +279,15 @@ public class ConnectorOutcomeTest {
     classToOutcomeClass.put(BitbucketCredentialsDTO.class, BitbucketCredentialsOutcomeDTO.class);
     classToOutcomeClass.put(BitbucketHttpCredentialsDTO.class, BitbucketHttpCredentialsOutcomeDTO.class);
     classToOutcomeClass.put(BitbucketSshCredentialsDTO.class, BitbucketSshCredentialsOutcomeDTO.class);
+    classToOutcomeClass.put(AwsKmsConnectorDTO.class, AwsKmsConnectorOutcomeDTO.class);
+    classToOutcomeClass.put(AwsKmsConnectorCredentialDTO.class, AwsKmsConnectorCredentialOutcomeDTO.class);
+    classToOutcomeClass.put(AwsSecretManagerDTO.class, AwsSecretManagerOutcomeDTO.class);
+    classToOutcomeClass.put(AwsSecretManagerCredentialDTO.class, AwsSecretManagerCredentialOutcomeDTO.class);
+    classToOutcomeClass.put(AzureKeyVaultConnectorDTO.class, AzureKeyVaultConnectorOutcomeDTO.class);
+    classToOutcomeClass.put(CustomSecretManagerConnectorDTO.class, CustomSecretManagerConnectorOutcomeDTO.class);
+    classToOutcomeClass.put(GcpKmsConnectorDTO.class, GcpKmsConnectorOutcomeDTO.class);
+    classToOutcomeClass.put(GcpSecretManagerConnectorDTO.class, GcpSecretManagerConnectorOutcomeDTO.class);
+    classToOutcomeClass.put(VaultConnectorDTO.class, VaultConnectorOutcomeDTO.class);
 
     for (Map.Entry<Class<?>, Class<?>> entry : classToOutcomeClass.entrySet()) {
       compareNumOfFields(entry.getKey(), entry.getValue());
@@ -337,7 +364,12 @@ public class ConnectorOutcomeTest {
     if (Map.class.isAssignableFrom(fieldValue)) {
       Type[] types = ((ParameterizedType) field.getGenericType()).getActualTypeArguments();
       for (Type type : types) {
-        if (!isLeafVariable(null, (Class<?>) type, false)) {
+        if (type instanceof ParameterizedType) {
+          ParameterizedType pt = (ParameterizedType) type;
+          for (Type pType : pt.getActualTypeArguments()) {
+            getExpressionsInObject((Class<?>) pType, mergedFqn);
+          }
+        } else if (!isLeafVariable(null, (Class<?>) type, false)) {
           getExpressionsInObject((Class<?>) type, mergedFqn);
         }
       }
