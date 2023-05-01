@@ -294,7 +294,6 @@ public class StripeHelperImpl implements StripeHelper {
   public SubscriptionDetailDTO updateSubscription(StripeSubscriptionRequest stripeSubscriptionRequest) {
     Subscription subscription = stripeHandler.retrieveSubscription(stripeSubscriptionRequest.getSubscriptionId());
 
-
     // Collect item information in new subscription
     Map<String, StripeItemRequest> newItems = new HashMap<>();
     stripeSubscriptionRequest.getItems().forEach(item -> newItems.put(item.getPriceId(), item));
@@ -330,12 +329,12 @@ public class StripeHelperImpl implements StripeHelper {
     }
 
     Subscription updatedSubscription = stripeHandler.updateSubscription(stripeSubscriptionRequest.getSubscriptionId(),
-            updateParamBuilder.build(), stripeSubscriptionRequest.getModuleType());
+        updateParamBuilder.build(), stripeSubscriptionRequest.getModuleType());
 
     SubscriptionDetailDTO subscriptionDetailDTO = toSubscriptionDetailDTO(updatedSubscription);
 
-    stripeHandler.putInvoiceMetadata(
-            updatedSubscription.getLatestInvoice(), ACCOUNT_IDENTIFIER_KEY, stripeSubscriptionRequest.getAccountIdentifier());
+    stripeHandler.putInvoiceMetadata(updatedSubscription.getLatestInvoice(), ACCOUNT_IDENTIFIER_KEY,
+        stripeSubscriptionRequest.getAccountIdentifier());
 
     return subscriptionDetailDTO;
   }
