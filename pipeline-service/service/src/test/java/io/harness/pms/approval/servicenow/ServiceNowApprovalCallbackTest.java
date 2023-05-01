@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -30,11 +31,14 @@ import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.ApprovalStepNGException;
 import io.harness.exception.ServiceNowException;
+import io.harness.logging.LogLevel;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
+import io.harness.servicenow.ServiceNowFieldValueNG;
 import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.servicenow.misc.TicketNG;
 import io.harness.steps.approval.step.ApprovalInstanceService;
@@ -47,6 +51,9 @@ import io.harness.steps.approval.step.servicenow.evaluation.ServiceNowCriteriaEv
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.LogColor;
+import software.wings.beans.LogHelper;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Before;
@@ -55,6 +62,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -67,6 +75,7 @@ public class ServiceNowApprovalCallbackTest extends CategoryTest {
   @Mock private KryoSerializer kryoSerializer;
   @Mock private KryoSerializer referenceFalseKryoSerializer;
   private static String approvalInstanceId = "approvalInstanceId";
+  private static String issueKey = "issueKey";
   @Mock ILogStreamingStepClient iLogStreamingStepClient;
   @Mock NGErrorHelper ngErrorHelper;
   @InjectMocks private ServiceNowApprovalCallback serviceNowApprovalCallback;
@@ -103,7 +112,9 @@ public class ServiceNowApprovalCallbackTest extends CategoryTest {
       ServiceNowApprovalInstance instance = getServiceNowApprovalInstance(ambiance);
       Map<String, ResponseData> response = new HashMap<>();
       response.put("data", BinaryResponseData.builder().build());
-      doReturn(ServiceNowTaskNGResponse.builder().ticket(new ServiceNowTicketNG()).build())
+      Map<String, ServiceNowFieldValueNG> fields = new HashMap<>();
+      fields.put("dummyField", ServiceNowFieldValueNG.builder().build());
+      doReturn(ServiceNowTaskNGResponse.builder().ticket(ServiceNowTicketNG.builder().fields(fields).build()).build())
           .when(kryoSerializer)
           .asInflatedObject(any());
       doReturn(iLogStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
@@ -159,9 +170,17 @@ public class ServiceNowApprovalCallbackTest extends CategoryTest {
 
       doReturn(ServiceNowTaskNGResponse.builder().build()).when(kryoSerializer).asInflatedObject(any());
       serviceNowApprovalCallback.push(response);
-      // To test case of error in kryo serialization
+
+      // To test case of error in kryo serialization; also validate that in such case log callback
+      // is called with a non-terminal command execution status
       doReturn(ErrorNotifyResponseData.builder().build()).when(kryoSerializer).asInflatedObject(any());
-      serviceNowApprovalCallback.push(response);
+
+      try (MockedConstruction<NGLogCallback> mocked = mockConstruction(NGLogCallback.class)) {
+        serviceNowApprovalCallback.push(response);
+        NGLogCallback logCallback = mocked.constructed().get(0);
+        verify(logCallback).saveExecutionLog(any(), eq(LogLevel.ERROR));
+      }
+
       // To throw exception while casting the response to ResponseData and catch the exception
       doReturn(null).when(kryoSerializer).asInflatedObject(any());
       serviceNowApprovalCallback.push(response);
@@ -185,10 +204,14 @@ public class ServiceNowApprovalCallbackTest extends CategoryTest {
                               .build();
       ServiceNowApprovalInstance instance = getServiceNowApprovalInstance(ambiance);
       Map<String, ResponseData> response = new HashMap<>();
+
+      Map<String, ServiceNowFieldValueNG> fields = new HashMap<>();
+      fields.put("dummyField", ServiceNowFieldValueNG.builder().build());
       response.put("data", BinaryResponseData.builder().usingKryoWithoutReference(true).build());
-      doReturn(ServiceNowTaskNGResponse.builder().ticket(new ServiceNowTicketNG()).build())
+      doReturn(ServiceNowTaskNGResponse.builder().ticket(ServiceNowTicketNG.builder().fields(fields).build()).build())
           .when(referenceFalseKryoSerializer)
           .asInflatedObject(any());
+
       doReturn(iLogStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
       doReturn(instance).when(approvalInstanceService).get(approvalInstanceId);
       serviceNowApprovalCallback.push(response);
@@ -248,6 +271,21 @@ public class ServiceNowApprovalCallbackTest extends CategoryTest {
       // To throw exception while casting the response to ResponseData and catch the exception
       doReturn(null).when(referenceFalseKryoSerializer).asInflatedObject(any());
       serviceNowApprovalCallback.push(response);
+
+      // Case when issue key is invalid
+      instance.setDeadline(Long.MAX_VALUE);
+      doReturn(ServiceNowTaskNGResponse.builder().ticket(ServiceNowTicketNG.builder().build()).build())
+          .when(referenceFalseKryoSerializer)
+          .asInflatedObject(any());
+      try (MockedConstruction<NGLogCallback> mocked = mockConstruction(NGLogCallback.class)) {
+        serviceNowApprovalCallback.push(response);
+        NGLogCallback logCallback = mocked.constructed().get(0);
+        verify(logCallback)
+            .saveExecutionLog(
+                LogHelper.color(String.format("Failed to fetch ticket. Ticket number might be invalid: %s", issueKey),
+                    LogColor.Red),
+                LogLevel.ERROR);
+      }
     }
   }
 
@@ -261,6 +299,7 @@ public class ServiceNowApprovalCallbackTest extends CategoryTest {
     instance.setAmbiance(ambiance);
     instance.setType(ApprovalType.SERVICENOW_APPROVAL);
     instance.setId(approvalInstanceId);
+    instance.setTicketNumber(issueKey);
     return instance;
   }
 }

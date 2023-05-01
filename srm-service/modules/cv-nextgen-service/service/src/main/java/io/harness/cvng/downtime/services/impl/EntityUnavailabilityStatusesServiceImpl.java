@@ -26,6 +26,7 @@ import io.harness.persistence.HPersistence;
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -132,6 +133,14 @@ public class EntityUnavailabilityStatusesServiceImpl
   }
 
   @Override
+  public EntityUnavailabilityStatuses getMinStartTimeInstanceWithStatus(
+      ProjectParams projectParams, EntityType entityType, String entityIdentifier, EntityUnavailabilityStatus status) {
+    return getAllInstancesQuery(projectParams, entityType, entityIdentifier)
+        .filter(EntityUnavailabilityStatusesKeys.status, status)
+        .order(Sort.ascending(EntityUnavailabilityStatusesKeys.startTime))
+        .get();
+  }
+  @Override
   public List<EntityUnavailabilityStatusesDTO> getAllInstances(
       ProjectParams projectParams, long startTime, long endTime) {
     List<EntityUnavailabilityStatuses> allInstances =
@@ -151,6 +160,41 @@ public class EntityUnavailabilityStatusesServiceImpl
         .collect(Collectors.toList());
   }
 
+  @Override
+  public void updateStatusOfEntity(EntityType entityType, String entityId, long startTime, long endTime,
+      EntityUnavailabilityStatus prevStatus, EntityUnavailabilityStatus newStatus) {
+    Query<EntityUnavailabilityStatuses> entityUnavailabilityStatusesQuery =
+        hPersistence.createQuery(EntityUnavailabilityStatuses.class)
+            .disableValidation()
+            .filter(EntityUnavailabilityStatusesKeys.entityType, entityType)
+            .filter(EntityUnavailabilityStatusesKeys.entityIdentifier, entityId)
+            .filter(EntityUnavailabilityStatusesKeys.startTime, startTime)
+            .filter(EntityUnavailabilityStatusesKeys.endTime, endTime)
+            .filter(EntityUnavailabilityStatusesKeys.status, prevStatus);
+    UpdateOperations<EntityUnavailabilityStatuses> updateOperations =
+        hPersistence.createUpdateOperations(EntityUnavailabilityStatuses.class);
+    updateOperations.set(EntityUnavailabilityStatusesKeys.status, newStatus);
+    hPersistence.update(entityUnavailabilityStatusesQuery, updateOperations);
+  }
+
+  @Override
+  public void updateDCPassedToDCRestoredForAllEntities(
+      EntityType entityType, String entityId, long startTime, long endTime) {
+    Query<EntityUnavailabilityStatuses> query =
+        hPersistence.createQuery(EntityUnavailabilityStatuses.class)
+            .disableValidation()
+            .filter(EntityUnavailabilityStatusesKeys.entityType, entityType)
+            .filter(EntityUnavailabilityStatusesKeys.entityIdentifier, entityId)
+            .filter(EntityUnavailabilityStatusesKeys.status, EntityUnavailabilityStatus.DATA_RECOLLECTION_PASSED)
+            .field(EntityUnavailabilityStatusesKeys.startTime)
+            .greaterThanOrEq(startTime)
+            .field(EntityUnavailabilityStatusesKeys.endTime)
+            .lessThanOrEq(endTime);
+    UpdateOperations<EntityUnavailabilityStatuses> updateOperations =
+        hPersistence.createUpdateOperations(EntityUnavailabilityStatuses.class);
+    updateOperations.set(EntityUnavailabilityStatusesKeys.status, EntityUnavailabilityStatus.DATA_RESTORED);
+    hPersistence.update(query, updateOperations);
+  }
   @Override
   public List<EntityUnavailabilityStatuses> getAllUnavailabilityInstances(
       ProjectParams projectParams, long startTime, long endTime) {

@@ -38,6 +38,11 @@ message PollingResponse {
 message BuildInfo {
   string name = 1;
   repeated string versions = 2;
+  repeated Metadata metadata = 3;
+}
+
+message Metadata {
+  map<string, string> metadata = 1;
 }
 
 enum Category {

@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureFlag;
+import io.harness.beans.PageResponse;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.user.UserMetadata;
@@ -49,8 +50,6 @@ public interface AccountClient {
   String DEFAULT_PROJECT_TOKENS = "/default-for-projects";
 
   @POST(ACCOUNT_API) Call<RestResponse<AccountDTO>> create(@Body AccountDTO dto);
-
-  @GET(ACCOUNT_API + "/list") Call<RestResponse<List<AccountDTO>>> getAllAccounts();
 
   @GET(ACCOUNT_API + "/{accountId}") Call<RestResponse<AccountDTO>> getAccountDTO(@Path("accountId") String accountId);
 
@@ -130,4 +129,8 @@ public interface AccountClient {
 
   @GET(IMMUTABLE_DELEGATE_ENABLED)
   Call<RestResponse<Boolean>> isImmutableDelegateEnabled(@Query("accountId") String accountId);
+
+  @GET(ACCOUNT_API + "/listV2")
+  Call<RestResponse<PageResponse<AccountDTO>>> listAccounts(
+      @Query("offset") int offset, @Query("pageSize") int pageSize);
 }

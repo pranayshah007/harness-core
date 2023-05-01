@@ -41,6 +41,7 @@ import static org.powermock.api.mockito.PowerMockito.doReturn;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -95,6 +96,7 @@ import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filesystem.FileIo;
 import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -159,6 +161,7 @@ public class TerraformStepHelperTest extends CategoryTest {
   @Mock private TerraformConfigDAL terraformConfigDAL;
   @Mock private CDStepHelper cdStepHelper;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Mock private NGEncryptedDataService ngEncryptedDataService;
   @InjectMocks private TerraformStepHelper helper;
 
   private Ambiance getAmbiance() {
@@ -1969,6 +1972,45 @@ public class TerraformStepHelperTest extends CategoryTest {
     assertThat(configBEFiles.getBucket()).isEqualTo("bucket");
     assertThat(configBEFiles.getFolderPath()).isEqualTo("terraformBe");
     assertThat(configBEFiles.getVersions().get("terraform/backend.tf")).isEqualTo("444");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testValidateSecretManager() {
+    Ambiance ambiance = getAmbiance();
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier("accountIdentifier")
+                                      .orgIdentifier("orgIdentifier")
+                                      .projectIdentifier("projectIdentifier")
+                                      .identifier("identifier")
+                                      .build();
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(false).when(ngEncryptedDataService).isSecretManagerReadOnly(any(), any(), any(), any());
+
+    helper.validateSecretManager(ambiance, identifierRef);
+    verify(ngEncryptedDataService)
+        .isSecretManagerReadOnly(identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(),
+            identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testValidateSecretManagerExceptionThrown() {
+    Ambiance ambiance = getAmbiance();
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier("accountIdentifier")
+                                      .orgIdentifier("orgIdentifier")
+                                      .projectIdentifier("projectIdentifier")
+                                      .identifier("identifier")
+                                      .build();
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(true).when(ngEncryptedDataService).isSecretManagerReadOnly(any(), any(), any(), any());
+
+    assertThatThrownBy(() -> helper.validateSecretManager(ambiance, identifierRef))
+        .hasMessage(
+            "Please configure a secret manager which allows to store terraform plan as a secret. Read-only secret manager is not allowed.");
   }
 
   private TerraformPlanExecutionDetails createTfPlanExecutionDetails(String encryptionConfigName, String configId,

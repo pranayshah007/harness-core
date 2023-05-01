@@ -116,6 +116,9 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
         if (output != null && isNotEmpty(response.getOutput())) {
           output.append(response.getOutput());
         }
+        if (response.getStatus() == SUCCESS) {
+          saveExecutionLog("Command finished with status " + SUCCESS, SUCCESS);
+        }
         return response.getStatus();
       } catch (Exception ex) {
         log.error("Failed to exec due to: ", ex);
@@ -261,6 +264,11 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
     ExecResponse response = SshClientManager.exec(
         ExecRequest.builder().command(command).displayCommand(false).build(), config, logCallback);
     Map<String, String> envVariablesMap = new HashMap<>();
+    ExecuteCommandResponse result =
+        ExecuteCommandResponse.builder()
+            .status(response.getStatus())
+            .commandExecutionData(ShellExecutionData.builder().sweepingOutputEnvVariables(envVariablesMap).build())
+            .build();
     if (response.getStatus() == SUCCESS
         && isNotEmpty(getVariables(envVariablesToCollect, secretEnvVariablesToCollect))) {
       SftpResponse sftpResponse =
@@ -287,16 +295,9 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
       }
 
       validateExportedVariables(envVariablesMap);
-      return ExecuteCommandResponse.builder()
-          .status(response.getStatus())
-          .commandExecutionData(ShellExecutionData.builder().sweepingOutputEnvVariables(envVariablesMap).build())
-          .build();
-    } else {
-      return ExecuteCommandResponse.builder()
-          .status(response.getStatus())
-          .commandExecutionData(ShellExecutionData.builder().sweepingOutputEnvVariables(envVariablesMap).build())
-          .build();
     }
+    saveExecutionLog("Command finished with status " + response.getStatus(), response.getStatus());
+    return result;
   }
 
   private String setupBashEnvironment(String command, SshSessionConfig sshSessionConfig,

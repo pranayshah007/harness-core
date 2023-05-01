@@ -15,6 +15,7 @@ import io.harness.idp.configmanager.beans.entity.PluginConfigEnvVariablesEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity;
 import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
 import io.harness.idp.namespace.beans.entity.NamespaceEntity;
+import io.harness.idp.onboarding.entities.AsyncCatalogImportEntity;
 import io.harness.idp.plugin.beans.PluginInfoEntity;
 import io.harness.idp.plugin.beans.PluginRequestEntity;
 import io.harness.idp.settings.beans.entity.BackstagePermissionsEntity;
@@ -40,6 +41,7 @@ public class IdpServiceMorphiaRegistrar implements MorphiaRegistrar {
     set.add(UserEventEntity.class);
     set.add(PluginConfigEnvVariablesEntity.class);
     set.add(PluginRequestEntity.class);
+    set.add(AsyncCatalogImportEntity.class);
   }
 
   @Override

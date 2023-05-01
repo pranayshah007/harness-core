@@ -9,6 +9,7 @@ package io.harness.beans;
 
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SortOrder.Builder.aSortOrder;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -22,6 +23,7 @@ import io.harness.exception.InvalidRequestException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
+import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
 import dev.morphia.Key;
 import dev.morphia.mapping.MappedClass;
@@ -53,7 +55,9 @@ public class PageRequest<T> {
   public static final String LIMIT_2K_PAGE_SIZE = "2000";
   public static final int DEFAULT_PAGE_SIZE = 50;
 
+  @Inject static int maxDocumentsToBeFetchedByMongoQueries;
   private static Pattern searchField = Pattern.compile("search\\[[0-9]+]\\[field]");
+  private static final int MAX_LIMIT = maxDocumentsToBeFetchedByMongoQueries;
 
   @JsonIgnore Class<T> persistentClass;
   @DefaultValue("0") @QueryParam("offset") private String offset;
@@ -146,7 +150,11 @@ public class PageRequest<T> {
    * @param limit the limit
    */
   public void setLimit(String limit) {
-    this.limit = limit;
+    if (isEmpty(limit) || UNLIMITED.equals(limit) || MAX_LIMIT == 0) {
+      this.limit = limit;
+    } else {
+      this.limit = String.valueOf(Math.min(Parser.asInt(limit, DEFAULT_UNLIMITED), MAX_LIMIT));
+    }
   }
 
   /**
@@ -584,7 +592,11 @@ public class PageRequest<T> {
      * @return the builder
      */
     public PageRequestBuilder withLimit(String limit) {
-      this.limit = limit;
+      if (isEmpty(limit) || UNLIMITED.equals(limit) || MAX_LIMIT == 0) {
+        this.limit = limit;
+      } else {
+        this.limit = String.valueOf(Math.min(Parser.asInt(limit, DEFAULT_UNLIMITED), MAX_LIMIT));
+      }
       return this;
     }
 

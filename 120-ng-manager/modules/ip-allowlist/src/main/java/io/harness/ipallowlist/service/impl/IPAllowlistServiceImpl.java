@@ -166,6 +166,9 @@ public class IPAllowlistServiceImpl implements IPAllowlistService {
       criteria.and(IPAllowlistEntity.IPAllowlistConfigKeys.allowedSourceType)
           .is(ipAllowlistFilterDTO.getAllowedSourceType());
     }
+    if (null != ipAllowlistFilterDTO.getEnabled()) {
+      criteria.and(IPAllowlistEntity.IPAllowlistConfigKeys.enabled).is(ipAllowlistFilterDTO.getEnabled());
+    }
     if (StringUtils.isNotEmpty(ipAllowlistFilterDTO.getSearchTerm())) {
       criteria.orOperator(
           Criteria.where(IPAllowlistEntity.IPAllowlistConfigKeys.name)
@@ -214,7 +217,7 @@ public class IPAllowlistServiceImpl implements IPAllowlistService {
     int pageIndex = 0;
     int pageSize = 1000;
     IPAllowlistFilterDTO ipAllowlistFilterDTO =
-        IPAllowlistFilterDTO.builder().allowedSourceType(allowedSourceType).build();
+        IPAllowlistFilterDTO.builder().allowedSourceType(allowedSourceType).enabled(true).build();
     List<IPAllowlistEntity> allowlistedConfigs = new ArrayList<>();
     do {
       Pageable pageable = PageRequest.of(pageIndex, pageSize);

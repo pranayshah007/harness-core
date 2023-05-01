@@ -7,6 +7,7 @@
 
 package io.harness.utils;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -73,6 +74,14 @@ public class FilePathUtils {
     }
     path = StringUtils.stripStart(path, FILE_PATH_SEPARATOR);
     return StringUtils.stripEnd(path, FILE_PATH_SEPARATOR);
+  }
+
+  public boolean isScopedFilePath(final String path) {
+    if (isEmpty(path)) {
+      return false;
+    }
+
+    return FILE_PATH_PATTERN.matcher(path).find();
   }
 
   // ---------------------------------- PRIVATE METHODS ----------------------------

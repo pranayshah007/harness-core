@@ -194,6 +194,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
 
     MockedStatic kubeConfigAuthPluginHelper = mockStatic(KubeConfigAuthPluginHelper.class);
     Mockito.when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
+    when(KubeConfigAuthPluginHelper.runCommand(any(), any(), any())).thenReturn(true);
     KubernetesConfig expectedKubernetesConfig = KubernetesConfig.builder().password(secret).build();
     doReturn(expectedKubernetesConfig)
         .when(gkeClusterHelper)
@@ -225,6 +226,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
 
     MockedStatic kubeConfigAuthPluginHelper = mockStatic(KubeConfigAuthPluginHelper.class);
     Mockito.when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
+    when(KubeConfigAuthPluginHelper.runCommand(any(), any(), any())).thenReturn(true);
 
     KubernetesConfig expectedKubernetesConfig = KubernetesConfig.builder().username("test".toCharArray()).build();
     doReturn(expectedKubernetesConfig)
@@ -368,6 +370,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
     final KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
     MockedStatic kubeConfigAuthPluginHelper = mockStatic(KubeConfigAuthPluginHelper.class);
     Mockito.when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
+    when(KubeConfigAuthPluginHelper.runCommand(any(), any(), any())).thenReturn(true);
     doReturn(kubernetesConfig)
         .when(gkeClusterHelper)
         .getCluster(serviceAccountKeyFileContent, false, "cluster", "default", null);

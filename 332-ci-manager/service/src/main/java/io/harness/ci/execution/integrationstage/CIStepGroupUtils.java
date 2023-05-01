@@ -37,6 +37,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.executionargs.CIExecutionArgs;
@@ -345,6 +346,9 @@ public class CIStepGroupUtils {
     String uuid = generateUuid();
     // image is not controlled by user
     String restoreCacheImage = ciExecutionServiceConfig.getStepConfig().getCacheGCSConfig().getImage();
+    if (featureFlagService.isEnabled(FeatureName.CI_USE_S3_FOR_CACHE, accountId)) {
+      restoreCacheImage = ciExecutionServiceConfig.getStepConfig().getCacheS3Config().getImage();
+    }
 
     List<String> entrypoint = ciExecutionServiceConfig.getStepConfig().getCacheGCSConfig().getEntrypoint();
 
@@ -393,6 +397,9 @@ public class CIStepGroupUtils {
     String uuid = generateUuid();
     // image is not controlled by user
     String saveCacheImage = ciExecutionServiceConfig.getStepConfig().getCacheGCSConfig().getImage();
+    if (featureFlagService.isEnabled(FeatureName.CI_USE_S3_FOR_CACHE, accountId)) {
+      saveCacheImage = ciExecutionServiceConfig.getStepConfig().getCacheS3Config().getImage();
+    }
 
     List<String> entrypoint = ciExecutionServiceConfig.getStepConfig().getCacheGCSConfig().getEntrypoint();
 

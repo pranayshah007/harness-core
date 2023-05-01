@@ -7,6 +7,7 @@
 
 package io.harness.migrations.all;
 
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.migrations.Migration;
@@ -33,7 +34,8 @@ public class DanglingUserInviteCleanupMigration implements Migration {
 
   @Override
   public void migrate() {
-    Query<UserInvite> userInviteQuery = wingsPersistence.createQuery(UserInvite.class, excludeAuthority);
+    Query<UserInvite> userInviteQuery =
+        wingsPersistence.createQuery(UserInvite.class, excludeAuthority).limit(NO_LIMIT);
     try (HIterator<UserInvite> records = new HIterator<>(userInviteQuery.fetch())) {
       while (records.hasNext()) {
         UserInvite userInvite = records.next();

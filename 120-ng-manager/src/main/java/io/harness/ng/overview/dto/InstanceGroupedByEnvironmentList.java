@@ -7,6 +7,7 @@
 
 package io.harness.ng.overview.dto;
 
+import io.harness.entities.RollbackStatus;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 
 import java.util.List;
@@ -60,5 +61,7 @@ public class InstanceGroupedByEnvironmentList {
     String lastPlanExecutionId;
     String stageNodeExecutionId;
     String pipelineIdentifier;
+    String stageSetupId;
+    RollbackStatus rollbackStatus;
   }
 }

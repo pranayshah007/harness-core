@@ -26,6 +26,8 @@ import lombok.Data;
 @OwnedBy(CDC)
 public class CustomArtifactSpec implements ArtifactTypeSpec {
   List<TriggerEventDataCondition> eventConditions;
+  List<TriggerEventDataCondition> metaDataConditions;
+  String jexlCondition;
   String version;
   String artifactsArrayPath;
   String script;
@@ -46,5 +48,15 @@ public class CustomArtifactSpec implements ArtifactTypeSpec {
   @Override
   public List<TriggerEventDataCondition> fetchEventDataConditions() {
     return eventConditions;
+  }
+
+  @Override
+  public List<TriggerEventDataCondition> fetchMetaDataConditions() {
+    return metaDataConditions;
+  }
+
+  @Override
+  public String fetchJexlArtifactConditions() {
+    return jexlCondition;
   }
 }

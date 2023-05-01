@@ -8,6 +8,7 @@
 package io.harness.cdng.creator.plan;
 
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP_CHILD_NODE_ID;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.HarnessTeam;
@@ -46,7 +47,12 @@ public class CDStepsPlanCreator extends GenericStepsNodePlanCreator {
   @Override
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, StepsExecutionConfig config, List<String> childrenNodeIds) {
-    StepParameters stepParameters = NGSectionStepParameters.builder().childNodeId(childrenNodeIds.get(0)).build();
+    String childNodeId = childrenNodeIds.get(0);
+    if (ctx.getDependency() != null && ctx.getDependency().getMetadataMap().containsKey(STEP_GROUP_CHILD_NODE_ID)) {
+      ByteString childNodeIdData = ctx.getDependency().getMetadataMap().get(STEP_GROUP_CHILD_NODE_ID);
+      childNodeId = (String) kryoSerializer.asInflatedObject(childNodeIdData.toByteArray());
+    }
+    StepParameters stepParameters = NGSectionStepParameters.builder().childNodeId(childNodeId).build();
     PlanNodeBuilder planNodeBuilder =
         PlanNode.builder()
             .uuid(ctx.getCurrentField().getNode().getUuid())

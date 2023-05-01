@@ -16,6 +16,7 @@ import static io.harness.ccm.commons.constants.ViewFieldConstants.CLOUD_SERVICE_
 import static io.harness.ccm.commons.constants.ViewFieldConstants.CLUSTER_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.INSTANCE_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.NAMESPACE_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
 import static io.harness.ccm.commons.utils.TimeUtils.offsetDateTimeNow;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
@@ -355,10 +356,11 @@ public class RecommendationsOverviewQueryV2 {
       condition = condition.and(constructInCondition(CE_RECOMMENDATIONS.NAME, filter.getNames()));
       condition = condition.and(constructGreaterOrEqualFilter(CE_RECOMMENDATIONS.MONTHLYSAVING, filter.getMinSaving()));
       condition = condition.and(constructGreaterOrEqualFilter(CE_RECOMMENDATIONS.MONTHLYCOST, filter.getMinCost()));
-      if (filter.getDaysBack() != null) {
-        condition = condition.and(CE_RECOMMENDATIONS.LASTPROCESSEDAT.greaterOrEqual(
-            offsetDateTimeNow().truncatedTo(ChronoUnit.DAYS).minusDays(filter.getDaysBack())));
+      if (filter.getDaysBack() == null) {
+        filter.setDaysBack(THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION);
       }
+      condition = condition.and(CE_RECOMMENDATIONS.LASTPROCESSEDAT.greaterOrEqual(
+          offsetDateTimeNow().truncatedTo(ChronoUnit.DAYS).minusDays(filter.getDaysBack())));
     }
 
     final Condition perspectiveCondition =
@@ -388,10 +390,11 @@ public class RecommendationsOverviewQueryV2 {
     condition = condition.and(constructInCondition(CE_RECOMMENDATIONS.NAME, filter.getNames()));
     condition = condition.and(constructGreaterOrEqualFilter(CE_RECOMMENDATIONS.MONTHLYSAVING, filter.getMinSaving()));
     condition = condition.and(constructGreaterOrEqualFilter(CE_RECOMMENDATIONS.MONTHLYCOST, filter.getMinCost()));
-    if (filter.getDaysBack() != null) {
-      condition = condition.and(CE_RECOMMENDATIONS.LASTPROCESSEDAT.greaterOrEqual(
-          offsetDateTimeNow().truncatedTo(ChronoUnit.DAYS).minusDays(filter.getDaysBack())));
+    if (filter.getDaysBack() == null) {
+      filter.setDaysBack(THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION);
     }
+    condition = condition.and(CE_RECOMMENDATIONS.LASTPROCESSEDAT.greaterOrEqual(
+        offsetDateTimeNow().truncatedTo(ChronoUnit.DAYS).minusDays(filter.getDaysBack())));
 
     final Condition perspectiveCondition =
         getPerspectiveCondition(firstNonNull(filter.getPerspectiveFilters(), emptyList()), accountId);

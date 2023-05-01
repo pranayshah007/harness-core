@@ -27,12 +27,10 @@ import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAss
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
-import io.harness.account.AccountClient;
+import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.migration.NGMigration;
-import io.harness.ng.core.dto.AccountDTO;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
@@ -55,16 +53,16 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class UserRoleAssignmentRemovalMigration implements NGMigration {
   private final RoleAssignmentRepository roleAssignmentRepository;
   private final FeatureFlagHelperService featureFlagHelperService;
-  private final AccountClient accountClient;
+  private final AccountUtils accountUtils;
   private final ScopeService scopeService;
   private static final String DEBUG_MESSAGE = "UserRoleAssignmentRemovalMigration: ";
 
   @Inject
   public UserRoleAssignmentRemovalMigration(RoleAssignmentRepository roleAssignmentRepository,
-      FeatureFlagHelperService featureFlagHelperService, AccountClient accountClient, ScopeService scopeService) {
+      FeatureFlagHelperService featureFlagHelperService, AccountUtils accountUtils, ScopeService scopeService) {
     this.roleAssignmentRepository = roleAssignmentRepository;
     this.featureFlagHelperService = featureFlagHelperService;
-    this.accountClient = accountClient;
+    this.accountUtils = accountUtils;
     this.scopeService = scopeService;
   }
 
@@ -85,24 +83,16 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
   }
 
   private void doMigration() {
-    List<AccountDTO> accountDTOS = new ArrayList<>();
-    try {
-      accountDTOS = CGRestUtils.getResponse(accountClient.getAllAccounts());
-    } catch (Exception ex) {
-      log.error(DEBUG_MESSAGE + "Failed to fetch all accounts");
-    }
-    List<AccountDTO> ngEnabledAccounts =
-        accountDTOS.stream().filter(AccountDTO::isNextGenEnabled).collect(Collectors.toList());
-    log.info(DEBUG_MESSAGE + String.format("%s accounts fetched", ngEnabledAccounts.size()));
+    List<String> ngEnabledAccountIds = accountUtils.getAllNGAccountIds();
+    log.info(DEBUG_MESSAGE + String.format("%s accounts fetched", ngEnabledAccountIds.size()));
     HashSet<String> targetAccounts = new HashSet<>();
     HashSet<String> targetAccountsWithOrganizationAndProject = new HashSet<>();
-    for (AccountDTO accountDTO : ngEnabledAccounts) {
-      boolean isAccountBasicRoleOnlyEnabled =
-          featureFlagHelperService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountDTO.getIdentifier());
+    for (String accountId : ngEnabledAccountIds) {
+      boolean isAccountBasicRoleOnlyEnabled = featureFlagHelperService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountId);
       if (!isAccountBasicRoleOnlyEnabled) {
-        targetAccounts.add(accountDTO.getIdentifier());
+        targetAccounts.add(accountId);
       }
-      targetAccountsWithOrganizationAndProject.add(accountDTO.getIdentifier());
+      targetAccountsWithOrganizationAndProject.add(accountId);
     }
     List<String> filteredAccounts = filterAccounts(targetAccounts);
     if (isNotEmpty(filteredAccounts)) {

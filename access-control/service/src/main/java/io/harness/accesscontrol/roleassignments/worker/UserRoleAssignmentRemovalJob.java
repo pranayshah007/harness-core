@@ -34,8 +34,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ff.FeatureFlagService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.ng.core.dto.AccountDTO;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
@@ -48,6 +46,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -103,14 +102,9 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
   }
 
   @VisibleForTesting
-  protected void execute() {
-    List<AccountDTO> accountDTOS = new ArrayList<>();
-    try {
-      accountDTOS = CGRestUtils.getResponse(accountClient.getAllAccounts());
-    } catch (Exception ex) {
-      log.error(DEBUG_MESSAGE + "Failed to fetch all accounts", ex);
-    }
-    List<String> targetAccounts = filterAccountsForFFEnabled(accountDTOS);
+  void execute() {
+    Set<String> targetAccounts = featureFlagService.getAccountIds(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS);
+
     if (isEmpty(targetAccounts)) {
       return;
     }
@@ -131,7 +125,7 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
     }
   }
 
-  private List<String> filterAccountsForAccountBasicRoleOnlyFF(List<String> accountIds) {
+  private List<String> filterAccountsForAccountBasicRoleOnlyFF(Set<String> accountIds) {
     List<String> filteredAccounts = new ArrayList<>();
     try {
       for (String accountId : accountIds) {
@@ -144,22 +138,6 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
       log.error(DEBUG_MESSAGE + "Failed to filter accounts for FF ACCOUNT_BASIC_ROLE_ONLY");
     }
     return filteredAccounts;
-  }
-
-  private List<String> filterAccountsForFFEnabled(List<AccountDTO> ngEnabledAccounts) {
-    List<String> targetAccounts = new ArrayList<>();
-    try {
-      for (AccountDTO accountDTO : ngEnabledAccounts) {
-        boolean isRemoveUserViewerRoleAssignment =
-            featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountDTO.getIdentifier());
-        if (isRemoveUserViewerRoleAssignment) {
-          targetAccounts.add(accountDTO.getIdentifier());
-        }
-      }
-    } catch (Exception ex) {
-      log.error(DEBUG_MESSAGE + "Failed to filter accounts for FF PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS");
-    }
-    return targetAccounts;
   }
 
   private void deleteAccountScopeRoleAssignments(String accountId) {

@@ -26,6 +26,7 @@ import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.commons.RepairActionCode;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
@@ -72,6 +73,7 @@ public class RetryAdviserWithRollbackTest extends CategoryTest {
         AdvisingEvent.builder()
             .adviserParameters(null)
             .ambiance(Ambiance.newBuilder().addLevels(Level.newBuilder().setRuntimeId("runtimeId").build()).build())
+            .toStatus(Status.FAILED)
             .build();
     AdviserResponse adviserResponse = retryAdviserWithRollback.onAdviseEvent(advisingEvent);
     assertEquals(adviserResponse.getType(), AdviseType.RETRY);
@@ -81,6 +83,7 @@ public class RetryAdviserWithRollbackTest extends CategoryTest {
             .adviserParameters(null)
             .retryIds(retryIds)
             .ambiance(Ambiance.newBuilder().addLevels(Level.newBuilder().setRuntimeId("runtimeId").build()).build())
+            .toStatus(Status.FAILED)
             .build();
     adviserResponse = retryAdviserWithRollback.onAdviseEvent(advisingEvent);
     assertEquals(adviserResponse.getType(), AdviseType.INTERVENTION_WAIT);

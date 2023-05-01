@@ -17,6 +17,7 @@ import static io.harness.NGCommonEntityConstants.PIPELINE_KEY;
 import static io.harness.NGCommonEntityConstants.PLAN_KEY;
 import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
 import static io.harness.NGCommonEntityConstants.SERVICE_IDENTIFIER_KEY;
+import static io.harness.NGCommonEntityConstants.STAGE_KEY;
 import static io.harness.NGCommonEntityConstants.USER_ID;
 
 import static dev.morphia.mapping.Mapper.ID_KEY;
@@ -27,9 +28,11 @@ import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.entities.billing.CECloudAccount.CECloudAccountKeys;
+import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.entities.AccountEntity;
 import io.harness.entities.CDCEntity;
+import io.harness.entities.CDStageExecutionCDCEntity;
 import io.harness.entities.CECloudAccountCDCEntity;
 import io.harness.entities.ConnectorCDCEntity;
 import io.harness.entities.EnvironmentCDCEntity;
@@ -99,6 +102,7 @@ public class PartialSyncResource {
   @Inject ServiceCDCEntity serviceCDCEntity;
   @Inject ConnectorCDCEntity connectorCDCEntity;
   @Inject UserEntity userEntity;
+  @Inject CDStageExecutionCDCEntity cdStageExecutionCDCEntity;
 
   @GET
   @Path("/accounts")
@@ -223,6 +227,27 @@ public class PartialSyncResource {
     addTsFilter(filters, PlanExecutionSummaryKeys.startTs, startTsFrom, startTsTo);
 
     return triggerSync(pipelineExecutionSummaryEntityCDCEntity, filters, handler);
+  }
+
+  @GET
+  @Path("/cdStageExecutions")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "trigger bulk sync for the stage Execution entity using supplied filters")
+  public RestResponse<String> triggerCDStageExecutionSync(@QueryParam(STAGE_KEY) @Nullable String identifier,
+      @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(PROJECT_KEY) @Nullable String projectIdentifier,
+      @QueryParam(PIPELINE_KEY) @Nullable String pipelineIdentifier,
+      @QueryParam(PLAN_KEY) @Nullable String planExecutionId, @QueryParam(HANDLER_KEY) @Nullable String handler,
+      @QueryParam("startTs_from") @Nullable Long startTsFrom, @QueryParam("startTs_to") @Nullable Long startTsTo) {
+    List<Bson> filters = new ArrayList<>();
+    addEqFilter(filters, StageExecutionInfoKeys.stageExecutionId, identifier);
+    addEqFilter(filters, StageExecutionInfoKeys.planExecutionId, planExecutionId);
+    addEqFilter(filters, StageExecutionInfoKeys.accountIdentifier, accountId);
+    addEqFilter(filters, StageExecutionInfoKeys.projectIdentifier, projectIdentifier);
+    addEqFilter(filters, StageExecutionInfoKeys.pipelineIdentifier, pipelineIdentifier);
+    addTsFilter(filters, StageExecutionInfoKeys.startts, startTsFrom, startTsTo);
+
+    return triggerSync(cdStageExecutionCDCEntity, filters, handler);
   }
 
   @GET

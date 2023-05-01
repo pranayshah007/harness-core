@@ -9,15 +9,13 @@ package io.harness.cdng.migration;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
-import io.harness.account.AccountClient;
+import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.entities.InfrastructureMapping;
 import io.harness.entities.InfrastructureMapping.InfrastructureMappingNGKeys;
 import io.harness.migration.NGMigration;
-import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.entities.Project.ProjectKeys;
-import io.harness.remote.client.CGRestUtils;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -31,7 +29,7 @@ import org.springframework.data.mongodb.core.query.Query;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class DeleteInstanceOfDeletedProjects implements NGMigration {
-  private AccountClient accountClient;
+  private AccountUtils accountUtils;
   private MongoTemplate mongoTemplate;
   private CDMigrationUtils cdMigrationUtils;
 
@@ -39,9 +37,9 @@ public class DeleteInstanceOfDeletedProjects implements NGMigration {
   public void migrate() {
     log.info("Migrating instances belonging to deleted projects");
     try {
-      List<AccountDTO> accounts = CGRestUtils.getResponse(accountClient.getAllAccounts());
-      for (AccountDTO account : accounts) {
-        for (Project project : getDeletedProjectsForAccount(account.getIdentifier())) {
+      List<String> accounts = accountUtils.getAllAccountIds();
+      for (String accountId : accounts) {
+        for (Project project : getDeletedProjectsForAccount(accountId)) {
           for (InfrastructureMapping infrastructureMapping : getInfrastructureMappingsForProject(project)) {
             log.info("Deleting orphan entities for account {} belonging to deleted project {} with id {} and "
                     + "infrastructure mapping {}",

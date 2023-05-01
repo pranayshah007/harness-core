@@ -12,7 +12,6 @@ import org.redisson.api.BatchOptions;
 import org.redisson.api.ClusterNodesGroup;
 import org.redisson.api.ExecutorOptions;
 import org.redisson.api.LocalCachedMapOptions;
-import org.redisson.api.LockOptions.BackOff;
 import org.redisson.api.MapOptions;
 import org.redisson.api.Node;
 import org.redisson.api.NodesGroup;
@@ -31,11 +30,8 @@ import org.redisson.api.RCountDownLatch;
 import org.redisson.api.RDelayedQueue;
 import org.redisson.api.RDeque;
 import org.redisson.api.RDoubleAdder;
-import org.redisson.api.RFunction;
 import org.redisson.api.RGeo;
 import org.redisson.api.RHyperLogLog;
-import org.redisson.api.RIdGenerator;
-import org.redisson.api.RJsonBucket;
 import org.redisson.api.RKeys;
 import org.redisson.api.RLexSortedSet;
 import org.redisson.api.RList;
@@ -56,7 +52,6 @@ import org.redisson.api.RPriorityQueue;
 import org.redisson.api.RQueue;
 import org.redisson.api.RRateLimiter;
 import org.redisson.api.RReadWriteLock;
-import org.redisson.api.RReliableTopic;
 import org.redisson.api.RRemoteService;
 import org.redisson.api.RRingBuffer;
 import org.redisson.api.RScheduledExecutorService;
@@ -67,7 +62,6 @@ import org.redisson.api.RSet;
 import org.redisson.api.RSetCache;
 import org.redisson.api.RSetMultimap;
 import org.redisson.api.RSetMultimapCache;
-import org.redisson.api.RShardedTopic;
 import org.redisson.api.RSortedSet;
 import org.redisson.api.RStream;
 import org.redisson.api.RTimeSeries;
@@ -75,13 +69,10 @@ import org.redisson.api.RTopic;
 import org.redisson.api.RTransaction;
 import org.redisson.api.RTransferQueue;
 import org.redisson.api.RedissonClient;
-import org.redisson.api.RedissonReactiveClient;
-import org.redisson.api.RedissonRxClient;
 import org.redisson.api.TransactionOptions;
 import org.redisson.api.redisnode.BaseRedisNodes;
 import org.redisson.api.redisnode.RedisNodes;
 import org.redisson.client.codec.Codec;
-import org.redisson.codec.JsonCodec;
 import org.redisson.config.Config;
 
 public class MockedRedissonClient implements RedissonClient {
@@ -172,11 +163,6 @@ public class MockedRedissonClient implements RedissonClient {
 
   @Override
   public RBuckets getBuckets(Codec codec) {
-    return null;
-  }
-
-  @Override
-  public <V> RJsonBucket<V> getJsonBucket(String s, JsonCodec<V> jsonCodec) {
     return null;
   }
 
@@ -287,16 +273,6 @@ public class MockedRedissonClient implements RedissonClient {
   }
 
   @Override
-  public RLock getSpinLock(String s) {
-    return null;
-  }
-
-  @Override
-  public RLock getSpinLock(String s, BackOff backOff) {
-    return null;
-  }
-
-  @Override
   public RLock getMultiLock(RLock... rLocks) {
     return null;
   }
@@ -352,32 +328,12 @@ public class MockedRedissonClient implements RedissonClient {
   }
 
   @Override
-  public RShardedTopic getShardedTopic(String s) {
-    return null;
-  }
-
-  @Override
-  public RShardedTopic getShardedTopic(String s, Codec codec) {
-    return null;
-  }
-
-  @Override
   public RTopic getTopic(String s) {
     return null;
   }
 
   @Override
   public RTopic getTopic(String s, Codec codec) {
-    return null;
-  }
-
-  @Override
-  public RReliableTopic getReliableTopic(String s) {
-    return null;
-  }
-
-  @Override
-  public RReliableTopic getReliableTopic(String s, Codec codec) {
     return null;
   }
 
@@ -547,21 +503,6 @@ public class MockedRedissonClient implements RedissonClient {
   }
 
   @Override
-  public RIdGenerator getIdGenerator(String s) {
-    return null;
-  }
-
-  @Override
-  public RFunction getFunction() {
-    return null;
-  }
-
-  @Override
-  public RFunction getFunction(Codec codec) {
-    return null;
-  }
-
-  @Override
   public RScript getScript() {
     return null;
   }
@@ -633,16 +574,6 @@ public class MockedRedissonClient implements RedissonClient {
 
   @Override
   public RLiveObjectService getLiveObjectService() {
-    return null;
-  }
-
-  @Override
-  public RedissonRxClient rxJava() {
-    return null;
-  }
-
-  @Override
-  public RedissonReactiveClient reactive() {
     return null;
   }
 

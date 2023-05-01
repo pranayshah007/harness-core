@@ -38,6 +38,8 @@ import io.harness.perpetualtask.PerpetualTaskContextResponse;
 import io.harness.perpetualtask.PerpetualTaskFailureRequest;
 import io.harness.perpetualtask.PerpetualTaskFailureResponse;
 import io.harness.perpetualtask.PerpetualTaskListResponse;
+import io.harness.perpetualtask.instancesync.InstanceSyncResponseV2;
+import io.harness.perpetualtask.instancesync.InstanceSyncTaskDetails;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
 import io.harness.rest.RestResponse;
@@ -158,6 +160,14 @@ public interface DelegateAgentManagerClient {
   Call<RestResponse<Boolean>> publishInstanceSyncV2ResultV2(@Path("perpetualTaskId") String perpetualTaskId,
       @Query("accountId") String accountId, @Body CgInstanceSyncResponse responseData);
 
+  @POST("instancesync/instance-sync-ng-v2/{perpetualTaskId}")
+  Call<RestResponse<Boolean>> processInstanceSyncNGResultV2(@Path("perpetualTaskId") String perpetualTaskId,
+      @Query("accountId") String accountId, @Body InstanceSyncResponseV2 instanceSyncResponseV2);
+
+  @GET("instancesync/instance-sync-ng-v2/task/{perpetualTaskId}/details")
+  @Consumes({"application/x-protobuf"})
+  Call<InstanceSyncTaskDetails> fetchInstanceSyncV2TaskDetails(
+      @Path("perpetualTaskId") String perpetualTaskId, @Query("accountId") String accountId);
   // Query for a specific set of delegate properties for a given account.
   // Request: GetDelegatePropertiesRequest
   // Response: GetDelegatePropertiesResponse

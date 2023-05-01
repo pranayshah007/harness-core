@@ -125,6 +125,9 @@ public class ApprovalStageExecutionDataHandler implements ChangeHandler {
         continue;
       }
       Map<String, String> columnValueMapping = new HashMap<>();
+      if (approvalObject.get("nodeExecutionId") == null) {
+        continue;
+      }
       columnValueMapping.put("id", approvalObject.get("nodeExecutionId").toString());
       if (approvalObject.get("status") != null) {
         columnValueMapping.put("status", approvalObject.get("status").toString());

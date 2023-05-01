@@ -27,6 +27,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.retry.RetryExecutionParameters;
@@ -75,6 +76,7 @@ public class PipelineExecutorTest extends CategoryTest {
   @Mock PlanExecutionMetadataService planExecutionMetadataService;
 
   @Mock PMSExecutionService pmsExecutionService;
+  @Mock NodeExecutionService nodeExecutionService;
 
   String accountId = "accountId";
   String orgId = "orgId";
@@ -119,7 +121,7 @@ public class PipelineExecutorTest extends CategoryTest {
     doReturnStatementsForFreshRun(null, false, null);
 
     PlanExecutionResponseDto planExecutionResponse = pipelineExecutor.runPipelineWithInputSetPipelineYaml(
-        accountId, orgId, projectId, pipelineId, moduleType, runtimeInputYaml, useV2, false);
+        accountId, orgId, projectId, pipelineId, moduleType, runtimeInputYaml, useV2, false, null);
     assertThat(planExecutionResponse.getPlanExecution()).isEqualTo(planExecution);
     assertThat(planExecutionResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
 
@@ -133,7 +135,7 @@ public class PipelineExecutorTest extends CategoryTest {
     doReturnStatementsForFreshRun(null, true, null);
 
     PlanExecutionResponseDto planExecutionResponse = pipelineExecutor.runPipelineWithInputSetReferencesList(
-        accountId, orgId, projectId, pipelineId, moduleType, inputSetReferences, pipelineBranch, pipelineRepoId);
+        accountId, orgId, projectId, pipelineId, moduleType, inputSetReferences, pipelineBranch, pipelineRepoId, null);
     assertThat(planExecutionResponse.getPlanExecution()).isEqualTo(planExecution);
     assertThat(planExecutionResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
 
@@ -150,7 +152,7 @@ public class PipelineExecutorTest extends CategoryTest {
     doReturnStatementsForFreshRun(null, false, stageIdentifiers);
 
     PlanExecutionResponseDto planExecutionResponse = pipelineExecutor.runStagesWithRuntimeInputYaml(
-        accountId, orgId, projectId, pipelineId, moduleType, runStageRequestDTO, useV2);
+        accountId, orgId, projectId, pipelineId, moduleType, runStageRequestDTO, useV2, null);
     assertThat(planExecutionResponse.getPlanExecution()).isEqualTo(planExecution);
     assertThat(planExecutionResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
 
@@ -163,8 +165,8 @@ public class PipelineExecutorTest extends CategoryTest {
   public void testRerunStagesWithRuntimeInputYaml() {
     doReturnStatementsForFreshRun(originalExecutionId, false, stageIdentifiers);
 
-    PlanExecutionResponseDto planExecutionResponse = pipelineExecutor.rerunStagesWithRuntimeInputYaml(
-        accountId, orgId, projectId, pipelineId, moduleType, originalExecutionId, runStageRequestDTO, useV2, isDebug);
+    PlanExecutionResponseDto planExecutionResponse = pipelineExecutor.rerunStagesWithRuntimeInputYaml(accountId, orgId,
+        projectId, pipelineId, moduleType, originalExecutionId, runStageRequestDTO, useV2, isDebug, null);
     assertThat(planExecutionResponse.getPlanExecution()).isEqualTo(planExecution);
     assertThat(planExecutionResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
 
@@ -178,7 +180,7 @@ public class PipelineExecutorTest extends CategoryTest {
     doReturnStatementsForFreshRun(originalExecutionId, false, null);
 
     PlanExecutionResponseDto planExecutionResponse = pipelineExecutor.rerunPipelineWithInputSetPipelineYaml(
-        accountId, orgId, projectId, pipelineId, moduleType, originalExecutionId, runtimeInputYaml, useV2, false);
+        accountId, orgId, projectId, pipelineId, moduleType, originalExecutionId, runtimeInputYaml, useV2, false, null);
     assertThat(planExecutionResponse.getPlanExecution()).isEqualTo(planExecution);
     assertThat(planExecutionResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
 
@@ -193,7 +195,7 @@ public class PipelineExecutorTest extends CategoryTest {
 
     PlanExecutionResponseDto planExecutionResponse =
         pipelineExecutor.rerunPipelineWithInputSetReferencesList(accountId, orgId, projectId, pipelineId, moduleType,
-            originalExecutionId, inputSetReferences, pipelineBranch, pipelineRepoId, false);
+            originalExecutionId, inputSetReferences, pipelineBranch, pipelineRepoId, false, null);
     assertThat(planExecutionResponse.getPlanExecution()).isEqualTo(planExecution);
     assertThat(planExecutionResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
 
@@ -216,13 +218,13 @@ public class PipelineExecutorTest extends CategoryTest {
       doReturn(execArgs)
           .when(executionHelper)
           .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
-              Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false,
-              false);
+              Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false,
+              null);
     } else {
       doReturn(execArgs)
           .when(executionHelper)
           .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, stageIdentifiers, Collections.emptyMap(),
-              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false);
+              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false, null);
     }
 
     doReturn(planExecution)
@@ -244,12 +246,12 @@ public class PipelineExecutorTest extends CategoryTest {
     if (EmptyPredicate.isEmpty(stageIdentifiers)) {
       verify(executionHelper, times(1))
           .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
-              Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false,
-              false);
+              Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false,
+              null);
     } else {
       verify(executionHelper, times(1))
           .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, stageIdentifiers, Collections.emptyMap(),
-              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false);
+              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false, null);
     }
     verify(executionHelper, times(1))
         .startExecution(accountId, orgId, projectId, metadata, planExecutionMetadata, false, null, null, null);
@@ -284,8 +286,8 @@ public class PipelineExecutorTest extends CategoryTest {
     pipelineEntity.setIsDraft(true);
     doReturn(pipelineEntity).when(executionHelper).fetchPipelineEntity(accountId, orgId, projectId, pipelineId);
     assertThatThrownBy(()
-                           -> pipelineExecutor.runPipelineWithInputSetPipelineYaml(
-                               accountId, orgId, projectId, pipelineId, moduleType, runtimeInputYaml, useV2, false))
+                           -> pipelineExecutor.runPipelineWithInputSetPipelineYaml(accountId, orgId, projectId,
+                               pipelineId, moduleType, runtimeInputYaml, useV2, false, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
             String.format("Cannot execute a Draft Pipeline with PipelineID: %s, ProjectID %s", pipelineId, projectId));
@@ -317,14 +319,14 @@ public class PipelineExecutorTest extends CategoryTest {
         .findByPlanExecutionId(originalExecutionId);
     doReturn(planExecutionMetadata)
         .when(rollbackModeExecutionHelper)
-        .transformPlanExecutionMetadata(
-            originalPlanExecutionMetadata, "planId", ExecutionMode.POST_EXECUTION_ROLLBACK, stageNodeExecutionIds);
+        .transformPlanExecutionMetadata(originalPlanExecutionMetadata, "planId", ExecutionMode.POST_EXECUTION_ROLLBACK,
+            stageNodeExecutionIds, null);
     doReturn(planExecution)
         .when(executionHelper)
         .startExecution(
             accountId, orgId, projectId, metadata, planExecutionMetadata, false, null, originalExecutionId, null);
     assertThat(pipelineExecutor.startPostExecutionRollback(
-                   accountId, orgId, projectId, originalExecutionId, stageNodeExecutionIds))
+                   accountId, orgId, projectId, originalExecutionId, stageNodeExecutionIds, null))
         .isEqualTo(planExecution);
     mockSettings.close();
   }
@@ -346,7 +348,7 @@ public class PipelineExecutorTest extends CategoryTest {
     doReturn(metadata)
         .when(rollbackModeExecutionHelper)
         .transformExecutionMetadata(originalExecutionMetadata, "planId", executionTriggerInfo, accountId, orgId,
-            projectId, ExecutionMode.PIPELINE_ROLLBACK, null, null);
+            projectId, ExecutionMode.PIPELINE_ROLLBACK, null, Collections.emptyList());
     PlanExecutionMetadata originalPlanExecutionMetadata =
         PlanExecutionMetadata.builder().planExecutionId(originalExecutionId).build();
     doReturn(Optional.of(originalPlanExecutionMetadata))
@@ -354,11 +356,13 @@ public class PipelineExecutorTest extends CategoryTest {
         .findByPlanExecutionId(originalExecutionId);
     doReturn(planExecutionMetadata)
         .when(rollbackModeExecutionHelper)
-        .transformPlanExecutionMetadata(originalPlanExecutionMetadata, "planId", ExecutionMode.PIPELINE_ROLLBACK, null);
+        .transformPlanExecutionMetadata(
+            originalPlanExecutionMetadata, "planId", ExecutionMode.PIPELINE_ROLLBACK, Collections.emptyList(), null);
     doReturn(planExecution)
         .when(executionHelper)
         .startExecution(
             accountId, orgId, projectId, metadata, planExecutionMetadata, false, null, originalExecutionId, null);
+    doReturn(Collections.emptyList()).when(nodeExecutionService).fetchStageExecutions(any());
     assertThat(pipelineExecutor.startPipelineRollback(accountId, orgId, projectId, originalExecutionId, null))
         .isEqualTo(planExecution);
     mockSettings.close();

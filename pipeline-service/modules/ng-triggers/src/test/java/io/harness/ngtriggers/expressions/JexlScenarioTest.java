@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.JAMIE;
 import static io.harness.rule.OwnerRule.MATT;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,6 +21,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.HeaderConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.ngtriggers.utils.WebhookTriggerFilterUtils;
+import io.harness.pms.contracts.triggers.ArtifactData;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 import io.harness.product.ci.scm.proto.PullRequest;
 import io.harness.product.ci.scm.proto.PullRequestHook;
@@ -29,6 +31,8 @@ import io.harness.product.ci.scm.proto.User;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -55,6 +59,11 @@ public class JexlScenarioTest extends CategoryTest {
       + "       {\"name\": \"java\"}\n"
       + "    ]\n"
       + "  }\n"
+      + "}";
+
+  private String jsonMeta = "{\n"
+      + "  \"field1\": \"value1\",\n"
+      + "  \"field2\": \"value2\"\n"
       + "}";
 
   private String jsonGo = "{\n"
@@ -164,7 +173,8 @@ public class JexlScenarioTest extends CategoryTest {
   @Owner(developers = MATT)
   @Category(UnitTests.class)
   public void testJexlScript() {
-    TriggerExpressionEvaluator triggerExpressionEvaluator = new TriggerExpressionEvaluator(null, emptyList(), json);
+    TriggerExpressionEvaluator triggerExpressionEvaluator =
+        new TriggerExpressionEvaluator(null, null, emptyList(), json);
     Object o = triggerExpressionEvaluator.evaluateExpression(
         "for (var item : <+trigger.payload.pull_request.Labels>) { if (item.name == 'java') return true; } return false;");
     assertThat((Boolean) o).isTrue();
@@ -173,7 +183,7 @@ public class JexlScenarioTest extends CategoryTest {
         "for (var item : <+trigger.payload.pull_request.Labels>) { if (item.name == 'go') return true; } return false;");
     assertThat((Boolean) o).isFalse();
 
-    triggerExpressionEvaluator = new TriggerExpressionEvaluator(null, emptyList(), jsonGo);
+    triggerExpressionEvaluator = new TriggerExpressionEvaluator(null, null, emptyList(), jsonGo);
     o = triggerExpressionEvaluator.evaluateExpression(
         "for (var item : <+trigger.payload.pull_request.Labels>) { if (item.name == 'go') return true; } return false;");
     assertThat((Boolean) o).isTrue();
@@ -187,7 +197,8 @@ public class JexlScenarioTest extends CategoryTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testMapWebhookEventToTriggers() {
-    TriggerExpressionEvaluator triggerExpressionEvaluator = new TriggerExpressionEvaluator(null, emptyList(), json);
+    TriggerExpressionEvaluator triggerExpressionEvaluator =
+        new TriggerExpressionEvaluator(null, null, emptyList(), json);
     assertThat(triggerExpressionEvaluator.renderExpression("<+trigger.payload.pull_request.Labels[0].name>"))
         .isEqualTo("python");
     Object o =
@@ -201,7 +212,7 @@ public class JexlScenarioTest extends CategoryTest {
   @Owner(developers = MATT)
   @Category(UnitTests.class)
   public void testGetHeaderWebhook() {
-    TriggerExpressionEvaluator triggerExpressionEvaluator = new TriggerExpressionEvaluator(null,
+    TriggerExpressionEvaluator triggerExpressionEvaluator = new TriggerExpressionEvaluator(null, null,
         Arrays.asList(HeaderConfig.builder().key("content-type").values(Arrays.asList("application/json")).build()),
         json);
     assertThat(triggerExpressionEvaluator.renderExpression("<+trigger.header['content-type']>"))
@@ -212,7 +223,8 @@ public class JexlScenarioTest extends CategoryTest {
   @Owner(developers = MATT)
   @Category(UnitTests.class)
   public void testGetMetadataWebhook() {
-    TriggerExpressionEvaluator triggerExpressionEvaluator = new TriggerExpressionEvaluator(prEvent, emptyList(), json);
+    TriggerExpressionEvaluator triggerExpressionEvaluator =
+        new TriggerExpressionEvaluator(prEvent, null, emptyList(), json);
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.sourceBranch>")).isEqualTo("source");
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.targetBranch>")).isEqualTo("target");
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.event>")).isEqualTo("PR");
@@ -223,7 +235,7 @@ public class JexlScenarioTest extends CategoryTest {
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.gitUser>")).isEqualTo("user");
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.prTitle>")).isEqualTo("This is Title");
 
-    triggerExpressionEvaluator = new TriggerExpressionEvaluator(pushEvent, emptyList(), json);
+    triggerExpressionEvaluator = new TriggerExpressionEvaluator(pushEvent, null, emptyList(), json);
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.commitSha>")).isEqualTo("456");
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.repoUrl>")).isEqualTo("https://github.com");
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.gitUser>")).isEqualTo("user");
@@ -233,7 +245,8 @@ public class JexlScenarioTest extends CategoryTest {
   @Owner(developers = JAMIE)
   @Category(UnitTests.class)
   public void testGetVariablesManualExecution() {
-    TriggerExpressionEvaluator triggerExpressionEvaluator = new TriggerExpressionEvaluator(null, emptyList(), json);
+    TriggerExpressionEvaluator triggerExpressionEvaluator =
+        new TriggerExpressionEvaluator(null, null, emptyList(), json);
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.sourceBranch>")).isEqualTo("null");
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.targetBranch>")).isEqualTo("null");
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.event>")).isEqualTo("null");
@@ -242,5 +255,22 @@ public class JexlScenarioTest extends CategoryTest {
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.repoUrl>")).isEqualTo("null");
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.gitUser>")).isEqualTo("null");
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.prTitle>")).isEqualTo("null");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testGetVariablesForArtifactMetadata() {
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("field1", "value1");
+    metadata.put("field2", "value2");
+    ArtifactData artifactData = ArtifactData.newBuilder().putAllMetadata(metadata).build();
+    TriggerExpressionEvaluator triggerExpressionEvaluator =
+        new TriggerExpressionEvaluator(null, artifactData, emptyList(), jsonMeta);
+    assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.artifact.metadata.field1>"))
+        .isEqualTo("value1");
+    assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.artifact.metadata.field2>"))
+        .isEqualTo("value2");
+    assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.artifact.metadata.field3>")).isEqualTo("null");
   }
 }

@@ -89,7 +89,7 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
     if (instance.hasExpired()) {
       log.warn("Custom Approval Instance queued has expired");
       updateApprovalInstanceAndLog(logCallback, "Approval instance has expired", LogColor.Red,
-          CommandExecutionStatus.FAILURE, ApprovalStatus.EXPIRED, instance.getId());
+          CommandExecutionStatus.RUNNING, ApprovalStatus.EXPIRED, instance.getId());
       return;
     }
 
@@ -111,7 +111,8 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
       logCallback.saveExecutionLog(
           LogHelper.color(String.format("Error fetching custom approval response: %s. Retrying in sometime...",
                               ExceptionUtils.getMessage(ex)),
-              LogColor.Red));
+              LogColor.Red),
+          LogLevel.ERROR);
       log.error("Failed to run custom approval script", ex);
       return;
     }
@@ -135,10 +136,10 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
         return;
       }
 
-      logCallback.saveExecutionLog(
-          LogHelper.color(String.format("Error evaluating approval/rejection criteria: %s. Retrying in sometime...",
-                              ExceptionUtils.getMessage(ex)),
-              LogColor.Red));
+      logCallback.saveExecutionLog(LogHelper.color(String.format("Error evaluating approval/rejection criteria: %s.",
+                                                       ExceptionUtils.getMessage(ex)),
+                                       LogColor.Red),
+          LogLevel.ERROR);
       throw new HarnessCustomApprovalException("Error while evaluating approval/rejection criteria", ex, USER_SRE);
     }
   }

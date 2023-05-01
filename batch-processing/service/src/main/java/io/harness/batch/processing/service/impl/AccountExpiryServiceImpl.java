@@ -17,15 +17,19 @@ import io.harness.ccm.commons.entities.billing.BillingDataPipelineRecord;
 import software.wings.beans.Account;
 
 import com.google.api.gax.core.FixedCredentialsProvider;
+import com.google.api.gax.rpc.FixedHeaderProvider;
+import com.google.api.gax.rpc.HeaderProvider;
 import com.google.auth.Credentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.cloud.bigquery.datatransfer.v1.DataTransferServiceClient;
 import com.google.cloud.bigquery.datatransfer.v1.DataTransferServiceSettings;
+import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,8 +37,12 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class AccountExpiryServiceImpl implements AccountExpiryService {
-  private BillingDataPipelineRecordDao billingDataPipelineRecordDao;
+  private static final String USER_AGENT_HEADER = "user-agent";
+  private static final String USER_AGENT_HEADER_ENVIRONMENT_VARIABLE = "USER_AGENT_HEADER";
+  private static final String DEFAULT_USER_AGENT = "default-user-agent";
   private static final String GOOGLE_CREDENTIALS_PATH = "GOOGLE_CREDENTIALS_PATH";
+
+  private BillingDataPipelineRecordDao billingDataPipelineRecordDao;
 
   @Autowired
   public AccountExpiryServiceImpl(BillingDataPipelineRecordDao billingDataPipelineRecordDao) {
@@ -87,7 +95,17 @@ public class AccountExpiryServiceImpl implements AccountExpiryService {
 
   protected BigQuery getBigQueryClient() {
     ServiceAccountCredentials credentials = getCredentials(GOOGLE_CREDENTIALS_PATH);
-    return BigQueryOptions.newBuilder().setCredentials(credentials).build().getService();
+    return BigQueryOptions.newBuilder()
+        .setCredentials(credentials)
+        .setHeaderProvider(getHeaderProvider())
+        .build()
+        .getService();
+  }
+
+  private HeaderProvider getHeaderProvider() {
+    String userAgent = System.getenv(USER_AGENT_HEADER_ENVIRONMENT_VARIABLE);
+    return FixedHeaderProvider.create(
+        ImmutableMap.of(USER_AGENT_HEADER, Objects.nonNull(userAgent) ? userAgent : DEFAULT_USER_AGENT));
   }
 
   protected DataTransferServiceClient getDataTransferClient() throws IOException {

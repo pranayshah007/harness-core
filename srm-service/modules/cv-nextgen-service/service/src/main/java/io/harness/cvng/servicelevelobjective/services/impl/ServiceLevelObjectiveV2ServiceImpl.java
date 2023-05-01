@@ -87,6 +87,8 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV
 import io.harness.cvng.servicelevelobjective.transformer.ServiceLevelObjectiveDetailsTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2.SLOV2Transformer;
+import io.harness.cvng.statemachine.beans.AnalysisInput;
+import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.cvng.utils.ScopedInformation;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
@@ -145,6 +147,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject private SLOErrorBudgetResetService sloErrorBudgetResetService;
   @Inject private VerificationTaskService verificationTaskService;
+
+  @Inject private OrchestrationService orchestrationService;
   @Inject private CVNGLogService cvngLogService;
 
   @Inject private NextGenService nextGenService;
@@ -235,8 +239,14 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
           (CompositeServiceLevelObjective) saveServiceLevelObjectiveV2Entity(
               projectParams, serviceLevelObjectiveDTO, true);
       sloHealthIndicatorService.upsert(compositeServiceLevelObjective);
-      verificationTaskService.createCompositeSLOVerificationTask(
+      String sloVerificationTaskId = verificationTaskService.createCompositeSLOVerificationTask(
           compositeServiceLevelObjective.getAccountId(), compositeServiceLevelObjective.getUuid(), new HashMap<>());
+      orchestrationService.queueAnalysisWithoutEventPublish(compositeServiceLevelObjective.getAccountId(),
+          AnalysisInput.builder()
+              .verificationTaskId(sloVerificationTaskId)
+              .startTime(Instant.now())
+              .endTime(Instant.now())
+              .build());
       return getSLOResponse(compositeServiceLevelObjective.getIdentifier(), projectParams);
     }
   }

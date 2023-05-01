@@ -80,7 +80,7 @@ public class CIStagePlanCreationUtils {
             if (countPerDay.getOrDefault(day, 0L) >= validationService.getMaxBuildPerDay(accountId)) {
               log.error("Daily stage execution rate limit for free plan has reached for accountId {}", accountId);
               throw new CIStageExecutionException(
-                  "Execution limit has reached for the day, Please reach out to Harness support");
+                  "You have reached the daily execution limit for your account. To increase the limit, contact support: support@harness.io");
             }
           }
         }

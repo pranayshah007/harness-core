@@ -10,6 +10,7 @@ package io.harness.ng.migration;
 import io.harness.migration.MigrationDetails;
 import io.harness.migration.NGMigration;
 import io.harness.migration.beans.MigrationType;
+import io.harness.ng.core.migration.timescale.AddColumnsToCDStageTable;
 import io.harness.ng.core.migration.timescale.AddDeletedAtColumns;
 import io.harness.ng.core.migration.timescale.AddIndexToServiceInfraInfoTable;
 import io.harness.ng.core.migration.timescale.AddModuleTypeSpecificColumnsToModuleLicensesTable;
@@ -53,6 +54,7 @@ public class NGCoreTimeScaleMigrationDetails implements MigrationDetails {
         .add(Pair.of(10, CreateRuntimeInputsInfoTable.class))
         .add(Pair.of(11, CreateStageTable.class))
         .add(Pair.of(12, CreateCDStageTable.class))
+        .add(Pair.of(13, AddColumnsToCDStageTable.class))
         .build();
   }
 }

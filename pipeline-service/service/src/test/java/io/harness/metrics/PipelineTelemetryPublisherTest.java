@@ -8,11 +8,13 @@
 package io.harness.metrics;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -21,6 +23,7 @@ import static org.mockito.Mockito.verify;
 import io.harness.CategoryTest;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.PageResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.pms.pipeline.service.PMSPipelineService;
@@ -31,9 +34,9 @@ import io.harness.rule.Owner;
 import io.harness.telemetry.TelemetryOption;
 import io.harness.telemetry.TelemetryReporter;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -67,10 +70,11 @@ public class PipelineTelemetryPublisherTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testRecordTelemetry() {
-    List<AccountDTO> accounts = Collections.singletonList(AccountDTO.builder().identifier(acc).build());
-
-    Call<RestResponse<List<AccountDTO>>> requestCall = mock(Call.class);
-    doReturn(requestCall).when(accountClient).getAllAccounts();
+    AccountDTO account = AccountDTO.builder().identifier(acc).build();
+    PageResponse pageResponse =
+        aPageResponse().withOffset("0").withLimit("1").withResponse(Arrays.asList(account)).build();
+    Call<RestResponse<PageResponse<AccountDTO>>> requestCall = mock(Call.class);
+    doReturn(requestCall).when(accountClient).listAccounts(anyInt(), anyInt());
 
     long pipelinesCreatedInADay = 20L;
     doReturn(pipelinesCreatedInADay).when(pmsPipelineService).countAllPipelines(any());
@@ -93,7 +97,7 @@ public class PipelineTelemetryPublisherTest extends CategoryTest {
     map.put("total_pipeline_executions", executionsTotal);
 
     try (MockedStatic<CGRestUtils> mockStatic = Mockito.mockStatic(CGRestUtils.class)) {
-      mockStatic.when(() -> CGRestUtils.getResponse(requestCall)).thenReturn(accounts);
+      mockStatic.when(() -> CGRestUtils.getResponse(requestCall)).thenReturn(pageResponse);
 
       telemetryPublisher.recordTelemetry();
 
@@ -107,12 +111,13 @@ public class PipelineTelemetryPublisherTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetAccountId() {
-    List<AccountDTO> accounts = Collections.singletonList(AccountDTO.builder().identifier(acc).build());
-
-    Call<RestResponse<List<AccountDTO>>> requestCall = mock(Call.class);
-    doReturn(requestCall).when(accountClient).getAllAccounts();
+    AccountDTO account = AccountDTO.builder().identifier(acc).build();
+    PageResponse pageResponse =
+        aPageResponse().withOffset("0").withLimit("1").withResponse(Arrays.asList(account)).build();
+    Call<RestResponse<PageResponse<AccountDTO>>> requestCall = mock(Call.class);
+    doReturn(requestCall).when(accountClient).listAccounts(anyInt(), anyInt());
     try (MockedStatic<CGRestUtils> mockStatic = Mockito.mockStatic(CGRestUtils.class)) {
-      mockStatic.when(() -> CGRestUtils.getResponse(requestCall)).thenReturn(accounts);
+      mockStatic.when(() -> CGRestUtils.getResponse(requestCall)).thenReturn(pageResponse);
       String accountId = telemetryPublisher.getAccountId();
       assertThat(accountId).isEqualTo(acc);
     }

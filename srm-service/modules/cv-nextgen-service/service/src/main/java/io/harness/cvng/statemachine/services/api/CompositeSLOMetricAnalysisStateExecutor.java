@@ -10,16 +10,11 @@ package io.harness.cvng.statemachine.services.api;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.beans.SLOMetricContext;
-import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
-import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
-import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
-import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
-import io.harness.cvng.servicelevelobjective.services.impl.SLIRecordServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.ServiceLevelObjectiveV2ServiceImpl;
+import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.CompositeSLOMetricAnalysisState;
@@ -31,17 +26,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecutor<CompositeSLOMetricAnalysisState> {
-  @Inject private SLIRecordServiceImpl sliRecordService;
-
-  @Inject private SLOHealthIndicatorService sloHealthIndicatorService;
-
   @Inject private ServiceLevelObjectiveV2ServiceImpl serviceLevelObjectiveV2Service;
 
   @Inject private CompositeSLORecordService compositeSLORecordService;
@@ -60,7 +48,6 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
     String sloId = verificationTaskService.getCompositeSLOId(verificationTaskId);
     CompositeServiceLevelObjective compositeServiceLevelObjective =
         (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.get(sloId);
-    SLIEvaluationType evaluationType = compositeServiceLevelObjective.getSliEvaluationType();
     LocalDateTime currentLocalDate =
         LocalDateTime.ofInstant(clock.instant(), compositeServiceLevelObjective.getZoneOffset());
     Instant startTimeForCurrentRange = compositeServiceLevelObjective.getCurrentTimeRange(currentLocalDate)
@@ -76,16 +63,7 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
     if (endTime.isAfter(startTime.plus(12, ChronoUnit.HOURS))) {
       endTime = startTime.plus(12, ChronoUnit.HOURS);
     }
-    Pair<Map<ServiceLevelObjectivesDetail, List<SLIRecord>>, Map<ServiceLevelObjectivesDetail, SLIMissingDataType>>
-        sloDetailsSLIRecordsAndSLIMissingDataType = sliRecordService.getSLODetailsSLIRecordsAndSLIMissingDataType(
-            compositeServiceLevelObjective.getServiceLevelObjectivesDetails(), startTime, endTime);
-    if (sloDetailsSLIRecordsAndSLIMissingDataType.getKey().size()
-        == compositeServiceLevelObjective.getServiceLevelObjectivesDetails().size()) {
-      compositeSLORecordService.create(sloDetailsSLIRecordsAndSLIMissingDataType.getKey(),
-          sloDetailsSLIRecordsAndSLIMissingDataType.getValue(), compositeServiceLevelObjective.getVersion(),
-          verificationTaskId, startTime, endTime, evaluationType);
-      sloHealthIndicatorService.upsert(compositeServiceLevelObjective);
-    }
+    compositeSLORecordService.create(compositeServiceLevelObjective, startTime, endTime, verificationTaskId);
     try (SLOMetricContext sloMetricContext = new SLOMetricContext(compositeServiceLevelObjective)) {
       metricService.recordDuration(CVNGMetricsUtils.SLO_DATA_ANALYSIS_METRIC,
           Duration.between(clock.instant(), analysisState.getInputs().getStartTime()));
@@ -143,7 +121,11 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
     String sloId = verificationTaskService.getCompositeSLOId(verificationTaskId);
     CompositeServiceLevelObjective compositeServiceLevelObjective =
         (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.get(sloId);
-    orchestrationService.queueAnalysisWithoutEventPublish(
-        verificationTaskId, compositeServiceLevelObjective.getAccountId(), Instant.now(), Instant.now());
+    orchestrationService.queueAnalysisWithoutEventPublish(compositeServiceLevelObjective.getAccountId(),
+        AnalysisInput.builder()
+            .verificationTaskId(verificationTaskId)
+            .startTime(Instant.now())
+            .endTime(Instant.now())
+            .build());
   }
 }

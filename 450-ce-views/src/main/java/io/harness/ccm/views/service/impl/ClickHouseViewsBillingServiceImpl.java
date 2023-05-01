@@ -373,9 +373,10 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
     for (BusinessMapping sharedCostBusinessMapping : sharedCostBusinessMappings) {
       List<QLCEViewGroupBy> businessMappingGroupBy =
           viewsQueryHelper.createBusinessMappingGroupBy(sharedCostBusinessMapping);
+      ViewQueryParams modifiedQueryParams = viewsQueryHelper.buildQueryParamsWithSkipGroupBy(queryParams, false);
       SelectQuery query = viewBillingServiceHelper.getQuery(
           viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid()), groupBy,
-          businessMappingGroupBy, aggregateFunction, sort, cloudProviderTableName, queryParams,
+          businessMappingGroupBy, aggregateFunction, sort, cloudProviderTableName, modifiedQueryParams,
           sharedCostBusinessMapping, Collections.emptyList());
       query.addCustomization(new PgLimitClause(limit));
       query.addCustomization(new PgOffsetClause(offset));
