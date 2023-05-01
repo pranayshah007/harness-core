@@ -204,13 +204,17 @@ public class SignupServiceImpl implements SignupService {
           getRetryPolicy("SignupServiceImpl-Request failed", INITIAL_DELAY, MAX_DELAY, ChronoUnit.SECONDS));
     } catch (InvalidRequestException e) {
       if (e.getMessage().contains("User with this email is already registered")) {
+        sendFailedTelemetryEvent(email, dto.getUtmInfo(), e, account, "Create Marketplace user and complete signup");
         throw new InvalidRequestException("Email is already signed up", ErrorCode.USER_ALREADY_REGISTERED, USER);
       }
       throw e;
     } catch (Exception e) {
-      log.error("Unable to finish community provision flow", e);
+      log.error("Unable to finish marketplace provision flow", e);
+      sendFailedTelemetryEvent(email, dto.getUtmInfo(), e, account, "Create Marketplace user and complete signup");
       throw e;
     }
+    sendSucceedTelemetryEvent(email, dto.getUtmInfo(), userInfo.getDefaultAccountId(), userInfo, SignupType.MARKETPLACE,
+        userInfo.getAccounts().get(0).getAccountName(), null, null, null);
     return userInfo;
   }
 
