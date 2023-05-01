@@ -188,6 +188,7 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
       log.info(String.format("%s Grpc request received for getUserDetails ops %s", GIT_SERVICE, request));
+      setPrincipal(request.getAccountIdentifier(), request.getPrincipal());
       long startTime = currentTimeMillis();
       try {
         userDetailsResponse = harnessToGitHelperService.getUserDetails(request);
