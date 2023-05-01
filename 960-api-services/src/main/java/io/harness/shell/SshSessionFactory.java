@@ -174,6 +174,8 @@ public class SshSessionFactory {
       }
     }
     session.setConfig("StrictHostKeyChecking", "no");
+    session.setConfig("server_host_key", session.getConfig("server_host_key") + ",ssh-rsa");
+    session.setConfig("PubkeyAcceptedAlgorithms", session.getConfig("PubkeyAcceptedAlgorithms") + ",ssh-rsa");
     session.setTimeout(config.getSshSessionTimeout());
     session.setServerAliveInterval(10 * 1000); // Send noop packet every 10 sec
 

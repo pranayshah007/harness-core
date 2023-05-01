@@ -33,11 +33,9 @@ import io.harness.secretmanagerclient.SSHAuthScheme;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
-import io.harness.shell.SshSessionFactory;
 import io.harness.shell.ssh.SshClientManager;
 
 import com.google.inject.Inject;
-import com.jcraft.jsch.Session;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -86,12 +84,7 @@ public class SshHostConnectionCapabilityCheck implements CapabilityCheck {
   }
 
   void connect(SshSessionConfig config) throws Exception {
-    if (config.isUseSshClient()) {
-      SshClientManager.test(config);
-    } else {
-      Session session = SshSessionFactory.getSSHSession(config);
-      session.disconnect();
-    }
+    SshClientManager.test(config);
   }
 
   private SshSessionConfig generateSshSessionConfigForKerberos(SSHAuthDTO authDTO, String host,

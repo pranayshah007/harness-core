@@ -109,30 +109,19 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
 
   @Override
   public CommandExecutionStatus executeCommandString(String command, StringBuffer output, boolean displayCommand) {
-    if (config.isUseSshClient()) {
-      try {
-        ExecResponse response = SshClientManager.exec(
-            ExecRequest.builder().command(command).displayCommand(displayCommand).build(), config, logCallback);
-        if (output != null && isNotEmpty(response.getOutput())) {
-          output.append(response.getOutput());
-        }
-        if (response.getStatus() == SUCCESS) {
-          saveExecutionLog("Command finished with status " + SUCCESS, SUCCESS);
-        }
-        return response.getStatus();
-      } catch (Exception ex) {
-        log.error("Failed to exec due to: ", ex);
-        throw ex;
+    try {
+      ExecResponse response = SshClientManager.exec(
+          ExecRequest.builder().command(command).displayCommand(displayCommand).build(), config, logCallback);
+      if (output != null && isNotEmpty(response.getOutput())) {
+        output.append(response.getOutput());
       }
-    } else {
-      try {
-        return executeCommandString(command, output, displayCommand, false);
-      } catch (SshRetryableException ex) {
-        log.info("As MaxSessions limit reached, fetching new session for executionId: {}, hostName: {}",
-            config.getExecutionId(), config.getHost());
-        saveExecutionLog(format("Retry connecting to %s ....", config.getHost()));
-        return executeCommandString(command, output, displayCommand, true);
+      if (response.getStatus() == SUCCESS) {
+        saveExecutionLog("Command finished with status " + SUCCESS, SUCCESS);
       }
+      return response.getStatus();
+    } catch (Exception ex) {
+      log.error("Failed to exec due to: ", ex);
+      throw ex;
     }
   }
 
@@ -233,28 +222,13 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
   @Override
   public ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect,
       List<String> secretEnvVariablesToCollect, Long timeoutInMillis) {
-    if (config.isUseSshClient()) {
-      try {
-        return executeCommandStringWithSshClient(command, envVariablesToCollect, secretEnvVariablesToCollect);
-      } catch (Exception ex) {
-        log.error("Failed to execute command: ", ex);
-        throw ex;
-      } finally {
-        logCallback.dispatchLogs();
-      }
-    } else {
-      try {
-        return getExecuteCommandResponse(command, envVariablesToCollect,
-            secretEnvVariablesToCollect == null ? Collections.emptyList() : secretEnvVariablesToCollect, false);
-      } catch (SshRetryableException ex) {
-        log.info("As MaxSessions limit reached, fetching new session for executionId: {}, hostName: {}",
-            config.getExecutionId(), config.getHost());
-        saveExecutionLog(format("Retry connecting to %s ....", config.getHost()));
-        return getExecuteCommandResponse(command, envVariablesToCollect,
-            secretEnvVariablesToCollect == null ? Collections.emptyList() : secretEnvVariablesToCollect, true);
-      } finally {
-        logCallback.dispatchLogs();
-      }
+    try {
+      return executeCommandStringWithSshClient(command, envVariablesToCollect, secretEnvVariablesToCollect);
+    } catch (Exception ex) {
+      log.error("Failed to execute command: ", ex);
+      throw ex;
+    } finally {
+      logCallback.dispatchLogs();
     }
   }
 

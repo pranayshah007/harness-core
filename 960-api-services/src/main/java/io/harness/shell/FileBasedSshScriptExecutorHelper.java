@@ -12,8 +12,6 @@ import static io.harness.eraro.ErrorCode.ERROR_IN_GETTING_CHANNEL_STREAMS;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.shell.ScriptSshExecutor.CHANNEL_IS_NOT_OPENED;
-import static io.harness.shell.SshHelperUtils.checkAndSaveExecutionLogErrorFunction;
-import static io.harness.shell.SshHelperUtils.checkAndSaveExecutionLogFunction;
 import static io.harness.shell.SshHelperUtils.normalizeError;
 
 import static java.lang.String.format;
@@ -51,28 +49,12 @@ public class FileBasedSshScriptExecutorHelper {
   public static CommandExecutionStatus scpOneFile(String remoteFilePath,
       AbstractScriptExecutor.FileProvider fileProvider, SshSessionConfig config, LogCallback logCallback,
       boolean shouldSaveExecutionLogs) {
-    if (config.isUseSshClient()) {
-      if (!shouldSaveExecutionLogs) {
-        logCallback = new NoopExecutionCallback();
-      }
-      ScpResponse scpResponse = SshClientManager.scpUpload(
-          ScpRequest.builder().fileProvider(fileProvider).remoteFilePath(remoteFilePath).build(), config, logCallback);
-      return scpResponse.getStatus();
-    } else {
-      Consumer<String> saveExecutionLog = checkAndSaveExecutionLogFunction(logCallback, shouldSaveExecutionLogs);
-      Consumer<String> saveExecutionLogError =
-          checkAndSaveExecutionLogErrorFunction(logCallback, shouldSaveExecutionLogs);
-      try {
-        return scpOneFile(
-            remoteFilePath, fileProvider, false, config, logCallback, saveExecutionLog, saveExecutionLogError);
-      } catch (SshRetryableException ex) {
-        log.info("As MaxSessions limit reached, fetching new session for executionId: {}, hostName: {}",
-            config.getExecutionId(), config.getHost());
-        saveExecutionLog.accept(format("Retry connecting to %s ....", config.getHost()));
-        return scpOneFile(
-            remoteFilePath, fileProvider, true, config, logCallback, saveExecutionLog, saveExecutionLogError);
-      }
+    if (!shouldSaveExecutionLogs) {
+      logCallback = new NoopExecutionCallback();
     }
+    ScpResponse scpResponse = SshClientManager.scpUpload(
+        ScpRequest.builder().fileProvider(fileProvider).remoteFilePath(remoteFilePath).build(), config, logCallback);
+    return scpResponse.getStatus();
   }
 
   @NotNull

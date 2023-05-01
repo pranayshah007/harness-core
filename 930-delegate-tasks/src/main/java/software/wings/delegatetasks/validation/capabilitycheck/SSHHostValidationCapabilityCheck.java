@@ -9,7 +9,6 @@ package software.wings.delegatetasks.validation.capabilitycheck;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
-import static io.harness.shell.SshSessionFactory.getSSHSession;
 
 import static software.wings.utils.SshDelegateHelperUtils.populateBuilderWithCredentials;
 
@@ -79,11 +78,7 @@ public class SSHHostValidationCapabilityCheck implements CapabilityCheck {
 
   @VisibleForTesting
   void performTest(SshSessionConfig hostConnectionTest) throws Exception {
-    if (hostConnectionTest.isUseSshClient()) {
-      SshClientManager.test(hostConnectionTest);
-    } else {
-      getSSHSession(hostConnectionTest).disconnect();
-    }
+    SshClientManager.test(hostConnectionTest);
   }
 
   private void decryptCredentials(SettingAttribute hostConnectionAttributes,

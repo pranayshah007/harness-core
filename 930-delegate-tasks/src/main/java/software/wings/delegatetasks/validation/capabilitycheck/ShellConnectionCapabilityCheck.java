@@ -7,8 +7,6 @@
 
 package software.wings.delegatetasks.validation.capabilitycheck;
 
-import static io.harness.shell.SshSessionFactory.getSSHSession;
-
 import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -91,10 +89,6 @@ public class ShellConnectionCapabilityCheck implements CapabilityCheck {
 
   @VisibleForTesting
   void performTest(SshSessionConfig expectedSshConfig) throws Exception {
-    if (expectedSshConfig.isUseSshClient()) {
-      SshClientManager.test(expectedSshConfig);
-    } else {
-      getSSHSession(expectedSshConfig).disconnect();
-    }
+    SshClientManager.test(expectedSshConfig);
   }
 }
