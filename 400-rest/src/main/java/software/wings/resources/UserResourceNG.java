@@ -162,7 +162,7 @@ public class UserResourceNG {
           String.format("%s is an invalid email.Please add a valid email and try again.", request.getEmail()),
           exception);
     }
-    if (!accountService.listAllAccountsWithoutTheGlobalAccount().isEmpty()) {
+    if (accountService.countAccountsWithoutTheGlobalAccount() > 0) {
       throw new InvalidRequestException(COMMUNITY_ACCOUNT_EXISTS);
     }
 
@@ -292,10 +292,9 @@ public class UserResourceNG {
 
   @GET
   @Path("/{userId}")
-  public RestResponse<Optional<UserInfo>> getUser(@PathParam("userId") String userId,
-      @QueryParam("includeSupportAccounts") @DefaultValue("false") Boolean includeSupportAccounts) {
+  public RestResponse<Optional<UserInfo>> getUser(@PathParam("userId") String userId) {
     try {
-      User user = userService.get(userId, includeSupportAccounts);
+      User user = userService.get(userId);
       return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(user)));
     } catch (UnauthorizedException ex) {
       log.warn("User is not found in database {}", userId);
@@ -306,7 +305,7 @@ public class UserResourceNG {
   @GET
   @Path("email/{emailId}")
   public RestResponse<Optional<UserInfo>> getUserByEmailId(@PathParam("emailId") String emailId) {
-    User user = userService.getUserByEmail(emailId, false);
+    User user = userService.getUserByEmail(emailId);
     return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(user)));
   }
 

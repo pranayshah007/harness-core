@@ -8,6 +8,7 @@
 package io.harness.security;
 
 import io.harness.exception.InvalidRequestException;
+import io.harness.security.dto.ServicePrincipal;
 
 import com.google.protobuf.StringValue;
 import lombok.experimental.UtilityClass;
@@ -35,10 +36,47 @@ public class PrincipalProtoMapper {
     throw new InvalidRequestException("The request doesn't has the correct user principal set");
   }
 
+  public Principal toPrincipalProto(io.harness.security.dto.Principal principalDto) {
+    if (principalDto instanceof io.harness.security.dto.UserPrincipal) {
+      io.harness.security.dto.UserPrincipal userPrincipalDto = (io.harness.security.dto.UserPrincipal) principalDto;
+      return Principal.newBuilder()
+          .setUserPrincipal(UserPrincipal.newBuilder()
+                                .setUserId(getStringValueFromString(userPrincipalDto.getName()))
+                                .setUserName(getStringValueFromString(userPrincipalDto.getUsername()))
+                                .setEmail(getStringValueFromString(userPrincipalDto.getEmail()))
+                                .build())
+          .build();
+    } else if (principalDto instanceof ServicePrincipal) {
+      ServicePrincipal servicePrincipalDto = (ServicePrincipal) principalDto;
+      return Principal.newBuilder()
+          .setServicePrincipal(
+              io.harness.security.ServicePrincipal.newBuilder().setName(servicePrincipalDto.getName()).build())
+          .build();
+    } else if (principalDto instanceof io.harness.security.dto.ServiceAccountPrincipal) {
+      io.harness.security.dto.ServiceAccountPrincipal serviceAccountPrincipalDto =
+          (io.harness.security.dto.ServiceAccountPrincipal) principalDto;
+      return Principal.newBuilder()
+          .setServiceAccountPrincipal(
+              ServiceAccountPrincipal.newBuilder()
+                  .setEmail(getStringValueFromString(serviceAccountPrincipalDto.getEmail()))
+                  .setUserName(getStringValueFromString(serviceAccountPrincipalDto.getUsername()))
+                  .setName(getStringValueFromString(serviceAccountPrincipalDto.getName()))
+                  .build())
+          .build();
+    }
+    log.error("The request doesn't have the correct user principal set. The principal DTO type is {}",
+        principalDto.getType());
+    throw new InvalidRequestException("The request doesn't have the correct user principal set");
+  }
+
   private String getStringFromStringValue(StringValue stringValue) {
     if (stringValue != null) {
       return stringValue.getValue();
     }
     return null;
+  }
+
+  private StringValue getStringValueFromString(String value) {
+    return StringValue.newBuilder().setValue(value).build();
   }
 }

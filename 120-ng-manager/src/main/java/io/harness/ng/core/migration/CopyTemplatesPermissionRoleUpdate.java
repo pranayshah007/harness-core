@@ -17,18 +17,16 @@ import static java.lang.Boolean.FALSE;
 import io.harness.accesscontrol.AccessControlAdminClient;
 import io.harness.accesscontrol.roles.api.RoleDTO;
 import io.harness.accesscontrol.roles.api.RoleResponseDTO;
-import io.harness.account.AccountClient;
+import io.harness.account.utils.AccountUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.migration.NGMigration;
 import io.harness.ng.beans.PageResponse;
-import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Organization.OrganizationKeys;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.entities.Project.ProjectKeys;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
@@ -36,7 +34,6 @@ import com.google.inject.Inject;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -47,7 +44,7 @@ public class CopyTemplatesPermissionRoleUpdate implements NGMigration {
   @Inject private AccessControlAdminClient accessControlAdminClient;
   @Inject private OrganizationService organizationService;
   @Inject private ProjectService projectService;
-  @Inject private AccountClient accountClient;
+  @Inject private AccountUtils accountUtils;
   private static final String DEBUG_MESSAGE = "CopyTemplatesPermissionRoleUpdate: ";
   private static final int DEFAULT_PAGE_SIZE = 100;
 
@@ -69,11 +66,7 @@ public class CopyTemplatesPermissionRoleUpdate implements NGMigration {
   private void addCopyTemplatesPermissionToRequiredRoles() {
     List<String> nextgenAccountIds = null;
     try {
-      final List<AccountDTO> allAccounts = CGRestUtils.getResponse(accountClient.getAllAccounts());
-      nextgenAccountIds = allAccounts.stream()
-                              .filter(AccountDTO::isNextGenEnabled)
-                              .map(AccountDTO::getIdentifier)
-                              .collect(Collectors.toList());
+      nextgenAccountIds = accountUtils.getAllNGAccountIds();
       log.info(
           DEBUG_MESSAGE + String.format("Fetched %s accounts having NextGen enabled...", nextgenAccountIds.size()));
 

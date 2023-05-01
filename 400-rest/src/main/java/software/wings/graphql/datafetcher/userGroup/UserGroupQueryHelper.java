@@ -8,6 +8,7 @@
 package software.wings.graphql.datafetcher.userGroup;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -86,7 +87,7 @@ public class UserGroupQueryHelper {
     FieldEnd<? extends Query<UserInvite>> userInviteField = userInviteQuery.field("email");
     userInviteField.in(emailIds);
     Set<String> userGroups = new HashSet<>();
-    try (HIterator<UserInvite> iterator = new HIterator<>(userInviteQuery.fetch())) {
+    try (HIterator<UserInvite> iterator = new HIterator<>(userInviteQuery.limit(NO_LIMIT).fetch())) {
       while (iterator.hasNext()) {
         UserInvite userInvite = iterator.next();
         if (pendingAccounts.contains(userInvite.getAccountId())) {

@@ -7,7 +7,6 @@
 
 package io.harness.pms.governance;
 
-import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity.EnvironmentGroupKeys;
 import io.harness.governance.ExpansionKeysConstants;
 import io.harness.pms.merger.YamlConfig;
@@ -26,8 +25,10 @@ import lombok.SneakyThrows;
 @Builder
 public class EnvGroupExpandedValue implements ExpandedValue {
   private static final String ENVIRONMENTS = "environments";
-
-  private EnvironmentGroupEntity environmentGroup;
+  private String name;
+  private String identifier;
+  private Map<String, Object> metadata;
+  private Boolean deployToAll;
   private List<SingleEnvironmentExpandedValue> environments;
   @Override
   public String getKey() {
@@ -38,8 +39,10 @@ public class EnvGroupExpandedValue implements ExpandedValue {
   @SneakyThrows
   public String toJson() {
     Map<String, Object> map = new HashMap<>();
-    map.put(EnvironmentGroupKeys.name, environmentGroup.getName());
-    map.put(EnvironmentGroupKeys.identifier, environmentGroup.getIdentifier());
+    map.put(EnvironmentGroupKeys.name, name);
+    map.put(EnvironmentGroupKeys.identifier, identifier);
+    map.put("metadata", metadata);
+    map.put("deployToAll", deployToAll);
     map.put(ENVIRONMENTS, environments);
     String json = JsonPipelineUtils.writeJsonString(map);
     YamlConfig yamlConfig = new YamlConfig(json);

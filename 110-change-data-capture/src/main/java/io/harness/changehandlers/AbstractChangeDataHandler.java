@@ -11,6 +11,7 @@ import io.harness.ChangeHandler;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.changestreamsframework.ChangeEvent;
+import io.harness.changestreamsframework.ChangeType;
 import io.harness.timescaledb.TimeScaleDBService;
 
 import com.google.inject.Inject;
@@ -33,13 +34,16 @@ public abstract class AbstractChangeDataHandler implements ChangeHandler {
   @Override
   public boolean handleChange(ChangeEvent<?> changeEvent, String tableName, String[] fields) {
     log.trace("In TimeScale Change Handler: {}, {}, {}", changeEvent, tableName, fields);
+    if (!changeEventHandled(changeEvent.getChangeType())) {
+      return true;
+    }
     Map<String, String> columnValueMapping = null;
     List<String> primaryKeys = null;
     try {
       primaryKeys = getPrimaryKeys();
       columnValueMapping = getColumnValueMapping(changeEvent, fields);
     } catch (Exception e) {
-      log.info(String.format("Not able to parse this event %s", changeEvent));
+      log.info(String.format("Not able to parse this event %s", changeEvent), e);
     }
 
     if (!tableName.equals("pipeline_execution_summary_ci") && columnValueMapping != null) {
@@ -110,6 +114,18 @@ public abstract class AbstractChangeDataHandler implements ChangeHandler {
 
   public boolean shouldDelete() {
     return true;
+  }
+
+  public boolean changeEventHandled(ChangeType changeType) {
+    switch (changeType) {
+      case INSERT:
+      case UPDATE:
+      case DELETE:
+        return true;
+      default:
+        log.info("Change Event Type not Handled: {}", changeType);
+        return false;
+    }
   }
 
   public abstract List<String> getPrimaryKeys();

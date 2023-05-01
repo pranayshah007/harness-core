@@ -25,8 +25,8 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.ModuleType;
-import io.harness.account.AccountClient;
 import io.harness.account.AccountConfig;
+import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdlicense.bean.CgActiveServicesUsageInfo;
@@ -37,7 +37,6 @@ import io.harness.licensing.usage.beans.cd.CDLicenseUsageDTO;
 import io.harness.licensing.usage.beans.cd.ServiceInstanceUsageDTO;
 import io.harness.licensing.usage.beans.cd.ServiceUsageDTO;
 import io.harness.licensing.usage.params.CDUsageRequestParams;
-import io.harness.ng.core.dto.AccountDTO;
 import io.harness.repositories.telemetry.CdTelemetryStatusRepository;
 import io.harness.rule.Owner;
 import io.harness.telemetry.TelemetryOption;
@@ -62,7 +61,7 @@ public class CdTelemetryPublisherTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   private CDLicenseUsageImpl licenseUsageInterface = mock(CDLicenseUsageImpl.class);
   @Mock private TelemetryReporter telemetryReporter;
-  @Mock private AccountClient accountClient;
+  @Mock private AccountUtils accountUtils;
   @Mock private CdTelemetryStatusRepository cdTelemetryStatusRepository;
   @Mock private AccountConfig accountConfig;
 
@@ -92,12 +91,10 @@ public class CdTelemetryPublisherTest extends CategoryTest {
             eq(CDUsageRequestParams.builder().cdLicenseType(SERVICE_INSTANCES).build()));
 
     doReturn(true).when(cdTelemetryStatusRepository).updateTimestampIfOlderThan(anyString(), anyLong(), anyLong());
-    AccountDTO accountDTO1 = AccountDTO.builder().identifier("acc1").build();
-    AccountDTO accountDTO2 = AccountDTO.builder().identifier("acc2").build();
-    List<AccountDTO> accountDTOList = new ArrayList<>();
-    accountDTOList.add(accountDTO1);
-    accountDTOList.add(accountDTO2);
-    doReturn(accountDTOList).when(telemetryPublisher).getAllAccounts();
+    List<String> accountIdList = new ArrayList<>();
+    accountIdList.add("acc1");
+    accountIdList.add("acc2");
+    doReturn(accountIdList).when(accountUtils).getAllAccountIds();
     doReturn("someCluster").when(accountConfig).getDeploymentClusterName();
 
     CgActiveServicesUsageInfo cgLicenseUsage =
@@ -156,12 +153,10 @@ public class CdTelemetryPublisherTest extends CategoryTest {
         .getLicenseUsage(anyString(), eq(ModuleType.CD), anyLong(),
             eq(CDUsageRequestParams.builder().cdLicenseType(SERVICES).build()));
     doReturn(false).when(cdTelemetryStatusRepository).updateTimestampIfOlderThan(anyString(), anyLong(), anyLong());
-    AccountDTO accountDTO1 = AccountDTO.builder().identifier("acc1").build();
-    AccountDTO accountDTO2 = AccountDTO.builder().identifier("acc2").build();
-    List<AccountDTO> accountDTOList = new ArrayList<>();
-    accountDTOList.add(accountDTO1);
-    accountDTOList.add(accountDTO2);
-    doReturn(accountDTOList).when(telemetryPublisher).getAllAccounts();
+    List<String> accountIdList = new ArrayList<>();
+    accountIdList.add("acc1");
+    accountIdList.add("acc2");
+    doReturn(accountIdList).when(accountUtils).getAllAccountIds();
 
     telemetryPublisher.recordTelemetry();
     verify(telemetryReporter, times(0)).sendGroupEvent(anyString(), anyString(), any(), anyMap(), any());

@@ -30,6 +30,7 @@ import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NoResultFoundException;
 import io.harness.ipallowlist.IPAllowlistResourceUtils;
+import io.harness.ipallowlist.dto.IPAllowlistFilterDTO;
 import io.harness.ipallowlist.entity.IPAllowlistEntity;
 import io.harness.ipallowlist.events.IPAllowlistConfigCreateEvent;
 import io.harness.ipallowlist.events.IPAllowlistConfigDeleteEvent;
@@ -44,6 +45,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import javax.validation.Validator;
+import org.bson.Document;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -53,6 +55,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -308,7 +311,44 @@ public class IPAllowlistServiceImplTest extends CategoryTest {
 
     List<IPAllowlistEntity> response =
         ipAllowlistService.getAllowedIPConfigs(ACCOUNT_IDENTIFIER, "2001:0db8:0000:0000:ffff:ffff:ffff:ffff", UI);
+    Criteria criteria = criteriaArgumentCaptor.getValue();
+    Document document = criteria.getCriteriaObject();
+    assertThat(document.get(IPAllowlistEntity.IPAllowlistConfigKeys.enabled)).isEqualTo(true);
     assertThat(response.size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testList_enabledTrue_sourceTypeUI() {
+    Pageable pageable1 = PageRequest.of(0, 1000);
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(ipAllowlistRepository.findAll(criteriaArgumentCaptor.capture(), eq(pageable1)))
+        .thenReturn(PageUtils.getPage(Collections.emptyList(), 0, 1000));
+
+    IPAllowlistFilterDTO ipAllowlistFilterDTO =
+        IPAllowlistFilterDTO.builder().enabled(true).allowedSourceType(UI).build();
+    Page<IPAllowlistEntity> response = ipAllowlistService.list(ACCOUNT_IDENTIFIER, pageable1, ipAllowlistFilterDTO);
+    Criteria criteria = criteriaArgumentCaptor.getValue();
+    Document document = criteria.getCriteriaObject();
+    assertThat(document.get(IPAllowlistEntity.IPAllowlistConfigKeys.enabled)).isEqualTo(true);
+    assertThat(document.get(IPAllowlistEntity.IPAllowlistConfigKeys.allowedSourceType)).isEqualTo(UI);
+  }
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testList_enabledNull_sourceTypeAPI() {
+    Pageable pageable1 = PageRequest.of(0, 1000);
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(ipAllowlistRepository.findAll(criteriaArgumentCaptor.capture(), eq(pageable1)))
+        .thenReturn(PageUtils.getPage(Collections.emptyList(), 0, 1000));
+
+    IPAllowlistFilterDTO ipAllowlistFilterDTO = IPAllowlistFilterDTO.builder().allowedSourceType(UI).build();
+    Page<IPAllowlistEntity> response = ipAllowlistService.list(ACCOUNT_IDENTIFIER, pageable1, ipAllowlistFilterDTO);
+    Criteria criteria = criteriaArgumentCaptor.getValue();
+    Document document = criteria.getCriteriaObject();
+    assertThat(document.get(IPAllowlistEntity.IPAllowlistConfigKeys.enabled)).isNull();
+    assertThat(document.get(IPAllowlistEntity.IPAllowlistConfigKeys.allowedSourceType)).isEqualTo(UI);
   }
 
   private IPAllowlistEntity getIPAllowlistEntity() {

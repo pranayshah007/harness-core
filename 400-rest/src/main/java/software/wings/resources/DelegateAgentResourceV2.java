@@ -27,7 +27,6 @@ import io.harness.logging.AutoLogContext;
 import io.harness.security.annotations.DelegateAuth;
 
 import software.wings.beans.TaskType;
-import software.wings.ratelimit.DelegateRequestRateLimiter;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.DelegateTaskServiceClassic;
 
@@ -52,13 +51,10 @@ import org.hibernate.validator.constraints.NotEmpty;
 @OwnedBy(DEL)
 @BreakDependencyOn("software.wings.service.impl.instance.InstanceHelper")
 public class DelegateAgentResourceV2 {
-  private DelegateRequestRateLimiter delegateRequestRateLimiter;
   private DelegateTaskServiceClassic delegateTaskServiceClassic;
 
   @Inject
-  public DelegateAgentResourceV2(
-      DelegateRequestRateLimiter delegateRequestRateLimiter, DelegateTaskServiceClassic delegateTaskServiceClassic) {
-    this.delegateRequestRateLimiter = delegateRequestRateLimiter;
+  public DelegateAgentResourceV2(DelegateTaskServiceClassic delegateTaskServiceClassic) {
     this.delegateTaskServiceClassic = delegateTaskServiceClassic;
   }
 
@@ -73,9 +69,6 @@ public class DelegateAgentResourceV2 {
     try (AutoLogContext ignore1 = new TaskLogContext(taskId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore3 = new DelegateLogContext(accountId, delegateId, delegateInstanceId, OVERRIDE_ERROR)) {
-      if (delegateRequestRateLimiter.isOverRateLimit(accountId, delegateId)) {
-        return null;
-      }
       DelegateTaskPackage delegateTaskPackage =
           delegateTaskServiceClassic.acquireDelegateTask(accountId, delegateId, taskId, delegateInstanceId);
       // Convert DelegateTaskPackage to DelegateTaskPackageV2

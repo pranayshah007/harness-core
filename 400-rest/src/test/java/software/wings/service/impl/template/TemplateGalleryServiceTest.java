@@ -9,12 +9,16 @@ package software.wings.service.impl.template;
 
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
+import static io.harness.persistence.HQuery.excludeAuthorityCount;
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 import static io.harness.shell.ScriptType.POWERSHELL;
 
+import static software.wings.beans.Account.AccountKeys;
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
+import static software.wings.beans.Application.ApplicationKeys;
+import static software.wings.beans.Base.ID_KEY2;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.command.CommandType.INSTALL;
 import static software.wings.beans.command.CommandUnitType.DOWNLOAD_ARTIFACT;
@@ -62,6 +66,7 @@ import software.wings.service.intfc.template.TemplateService;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -263,9 +268,14 @@ public class TemplateGalleryServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldCopyHarnessTemplates() {
     templateGalleryService.loadHarnessGallery();
+    persistence.save(Account.Builder.anAccount().withUuid(ACCOUNT_ID).withAccountName(ACCOUNT_NAME).build());
+    Query query = persistence.createQuery(Account.class, excludeAuthorityCount)
+                      .project(ID_KEY2, true)
+                      .project(AccountKeys.accountName, true)
+                      .project(AccountKeys.companyName, true)
+                      .filter(ApplicationKeys.appId, GLOBAL_APP_ID);
 
-    when(accountService.getAccountsWithBasicInfo(false))
-        .thenReturn(asList(Account.Builder.anAccount().withUuid(ACCOUNT_ID).withAccountName(ACCOUNT_NAME).build()));
+    when(accountService.getBasicAccountQuery()).thenReturn(query);
 
     templateGalleryService.copyHarnessTemplates();
 
@@ -278,8 +288,14 @@ public class TemplateGalleryServiceTest extends WingsBaseTest {
   public void shouldDeleteByAccountId() {
     templateGalleryService.loadHarnessGallery();
 
-    when(accountService.getAccountsWithBasicInfo(false))
-        .thenReturn(asList(Account.Builder.anAccount().withUuid(ACCOUNT_ID).withAccountName(ACCOUNT_NAME).build()));
+    persistence.save(Account.Builder.anAccount().withUuid(ACCOUNT_ID).withAccountName(ACCOUNT_NAME).build());
+    Query query = persistence.createQuery(Account.class, excludeAuthorityCount)
+                      .project(ID_KEY2, true)
+                      .project(AccountKeys.accountName, true)
+                      .project(AccountKeys.companyName, true)
+                      .filter(ApplicationKeys.appId, GLOBAL_APP_ID);
+
+    when(accountService.getBasicAccountQuery()).thenReturn(query);
 
     templateGalleryService.copyHarnessTemplates();
     assertAccountGallery();

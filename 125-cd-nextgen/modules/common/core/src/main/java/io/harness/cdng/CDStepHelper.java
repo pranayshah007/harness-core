@@ -1046,6 +1046,9 @@ public class CDStepHelper {
       case BITBUCKET:
         delegateSelectors = ((BitbucketConnectorDTO) connectorInfoDTO.getConnectorConfig()).getDelegateSelectors();
         break;
+      case GITLAB:
+        delegateSelectors = ((GitlabConnectorDTO) connectorInfoDTO.getConnectorConfig()).getDelegateSelectors();
+        break;
       default:
         throw new UnsupportedOperationException("Unknown Connector Config for delegate selectors");
     }

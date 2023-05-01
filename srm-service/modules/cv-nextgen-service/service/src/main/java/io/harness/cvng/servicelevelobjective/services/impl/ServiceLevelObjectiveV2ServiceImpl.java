@@ -87,6 +87,7 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV
 import io.harness.cvng.servicelevelobjective.transformer.ServiceLevelObjectiveDetailsTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2.SLOV2Transformer;
+import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.cvng.utils.ScopedInformation;
 import io.harness.exception.DuplicateFieldException;
@@ -240,8 +241,12 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       sloHealthIndicatorService.upsert(compositeServiceLevelObjective);
       String sloVerificationTaskId = verificationTaskService.createCompositeSLOVerificationTask(
           compositeServiceLevelObjective.getAccountId(), compositeServiceLevelObjective.getUuid(), new HashMap<>());
-      orchestrationService.queueAnalysisWithoutEventPublish(
-          sloVerificationTaskId, compositeServiceLevelObjective.getAccountId(), Instant.now(), Instant.now());
+      orchestrationService.queueAnalysisWithoutEventPublish(compositeServiceLevelObjective.getAccountId(),
+          AnalysisInput.builder()
+              .verificationTaskId(sloVerificationTaskId)
+              .startTime(Instant.now())
+              .endTime(Instant.now())
+              .build());
       return getSLOResponse(compositeServiceLevelObjective.getIdentifier(), projectParams);
     }
   }

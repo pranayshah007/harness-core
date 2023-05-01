@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.account.AccountClient;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.PageResponse;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.remote.client.CGRestUtils;
@@ -21,7 +22,6 @@ import io.harness.signup.dto.SignupDTO;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
@@ -66,13 +66,15 @@ public class AccountServiceImpl implements AccountService {
 
   @Override
   public AccountDTO getOnPremAccount() {
-    List<AccountDTO> accountDTOS = CGRestUtils.getResponse(accountClient.getAllAccounts());
-    if (isEmpty(accountDTOS)) {
-      return null;
+    PageResponse<AccountDTO> pageResponse = CGRestUtils.getResponse(accountClient.listAccounts(0, 2));
+    String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
+    AccountDTO accountDTO = null;
+    if (pageResponse.size() > 0 && !GLOBAL_ACCOUNT_ID.equals(pageResponse.getResponse().get(0).getIdentifier())) {
+      accountDTO = pageResponse.getResponse().get(0);
+    } else if (pageResponse.size() > 1) {
+      accountDTO = pageResponse.getResponse().get(1);
     }
-    Optional<AccountDTO> onPremAccount =
-        accountDTOS.stream().filter(dto -> !dto.getIdentifier().equals("__GLOBAL_ACCOUNT_ID__")).findAny();
-    return onPremAccount.orElse(null);
+    return accountDTO;
   }
 
   @Override

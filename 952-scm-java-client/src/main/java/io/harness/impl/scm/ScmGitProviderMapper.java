@@ -246,7 +246,7 @@ public class ScmGitProviderMapper {
     return scmGitProviderHelper.getToken(githubOauthDTO.getTokenRef());
   }
 
-  private String getGitlabApiUrl(GitlabConnectorDTO gitlabConnector) {
+  public static String getGitlabApiUrl(GitlabConnectorDTO gitlabConnector) {
     if (gitlabConnector.getApiAccess() == null || gitlabConnector.getApiAccess().getSpec() == null) {
       // not expected
       return null;

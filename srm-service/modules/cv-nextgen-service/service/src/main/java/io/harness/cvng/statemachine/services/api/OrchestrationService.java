@@ -7,15 +7,14 @@
 
 package io.harness.cvng.statemachine.services.api;
 
+import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 
-import java.time.Instant;
 import java.util.Set;
 
 public interface OrchestrationService {
-  void queueAnalysis(String verificationTaskId, Instant startTime, Instant endTime);
-  void queueAnalysisWithoutEventPublish(
-      String verificationTaskId, String accountId, Instant startTime, Instant endTime);
+  void queueAnalysis(AnalysisInput analysisInput);
+  void queueAnalysisWithoutEventPublish(String accountId, AnalysisInput analysisInput);
   void orchestrate(AnalysisOrchestrator orchestrator);
   void markTerminated(String verificationTaskId);
   void markStateMachineTerminated(String verificationTaskId);

@@ -824,6 +824,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
             .infraIdentifier(deploymentSummaryDTO.getInfrastructureIdentifier())
             .infraName(deploymentSummaryDTO.getInfrastructureName())
             .stageNodeExecutionId(deploymentSummaryDTO.getStageNodeExecutionId())
+            .stageSetupId(deploymentSummaryDTO.getStageSetupId())
+            .rollbackStatus(deploymentSummaryDTO.getRollbackStatus())
             .stageStatus(deploymentSummaryDTO.getStageStatus())
             .instanceInfoDTO(instanceInfoDTO);
 

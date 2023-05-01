@@ -9,8 +9,11 @@ package io.harness.shell.ssh.client;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
+import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.shell.ssh.SshUtils.getCacheKey;
+
+import static java.util.Collections.emptyMap;
 
 import io.harness.eraro.ErrorCode;
 import io.harness.logging.CommandExecutionStatus;
@@ -23,12 +26,13 @@ import io.harness.shell.ssh.sftp.SftpRequest;
 import io.harness.shell.ssh.sftp.SftpResponse;
 import io.harness.shell.ssh.xfer.ScpRequest;
 import io.harness.shell.ssh.xfer.ScpResponse;
+import io.harness.ssh.SshHelperUtils;
 
+import com.jcraft.jsch.JSchException;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -41,6 +45,8 @@ public abstract class SshClient implements AutoCloseable {
   @Getter(AccessLevel.PROTECTED) @Setter private LogCallback logCallback;
   private final List<SshConnection> connectionCache = new ArrayList<>();
 
+  public abstract SshClientType getType();
+
   protected char[] getCopyOfKey() {
     return Arrays.copyOf(sshSessionConfig.getKey(), sshSessionConfig.getKey().length);
   }
@@ -48,6 +54,7 @@ public abstract class SshClient implements AutoCloseable {
   public ExecResponse exec(ExecRequest request) throws SshClientException {
     try {
       SshConnection sshConnection = getCachedConnection(request);
+      saveExecutionLog("Exec using " + getType());
       return execInternal(request, sshConnection);
     } catch (SshClientException se) {
       if (!request.isRetry() && se.getCode() == ErrorCode.SSH_RETRY) {
@@ -61,8 +68,11 @@ public abstract class SshClient implements AutoCloseable {
   }
 
   public ScpResponse scpUpload(ScpRequest request) throws SshClientException {
+    createDirectoryForScp(request);
+
     try {
       SshConnection sshConnection = getCachedConnection(request);
+      saveExecutionLog("SCP using " + getType());
       return scpUploadInternal(request, sshConnection);
     } catch (SshClientException se) {
       if (!request.isRetry() && se.getCode() == ErrorCode.SSH_RETRY) {
@@ -75,9 +85,12 @@ public abstract class SshClient implements AutoCloseable {
     }
   }
 
+  public abstract void createDirectoryForScp(ScpRequest request);
+
   public SftpResponse sftpDownload(SftpRequest request) throws SshClientException {
     try {
       SshConnection sshConnection = getCachedConnection(request);
+      saveExecutionLog("SFTP download using " + getType());
       return sftpDownloadInternal(request, sshConnection);
     } catch (SshClientException se) {
       if (!request.isRetry() && se.getCode() == ErrorCode.SSH_RETRY) {
@@ -126,6 +139,7 @@ public abstract class SshClient implements AutoCloseable {
   public abstract SshConnection getConnection() throws SshClientException;
   protected abstract Object getExecSession(SshConnection sshConnection) throws SshClientException;
   protected abstract Object getSftpSession(SshConnection sshConnection) throws SshClientException;
+  protected abstract Object getScpSession(SshConnection sshConnection) throws SshClientException;
   protected String getKeyPath() {
     String userhome = System.getProperty("user.home");
     String keyPath = userhome + File.separator + ".ssh" + File.separator + "id_rsa";
@@ -138,8 +152,24 @@ public abstract class SshClient implements AutoCloseable {
   protected void saveExecutionLog(String line) {
     saveExecutionLog(line, RUNNING);
   }
+
+  protected void saveExecutionLogError(String line) {
+    getLogCallback().saveExecutionLog(line, ERROR, RUNNING);
+  }
   protected void saveExecutionLog(String line, CommandExecutionStatus commandExecutionStatus) {
     logCallback.saveExecutionLog(line, INFO, commandExecutionStatus);
+  }
+
+  protected void generateTGTUsingSshConfig(SshSessionConfig config, LogCallback logCallback) throws JSchException {
+    if (config.getKerberosConfig() == null) {
+      return;
+    }
+    log.info("Do we need to generate Ticket Granting Ticket(TGT)? " + config.getKerberosConfig().isGenerateTGT());
+    if (config.getKerberosConfig().isGenerateTGT()) {
+      SshHelperUtils.generateTGT(config.getKerberosConfig().getPrincipalWithRealm(),
+          config.getPassword() != null ? new String(config.getPassword()) : null,
+          config.getKerberosConfig().getKeyTabFilePath(), logCallback, emptyMap());
+    }
   }
 
   @Override

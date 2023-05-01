@@ -311,8 +311,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
         InstanceKeys.infrastructureMappingId, InstanceKeys.envIdentifier, InstanceKeys.envName, InstanceKeys.envType,
         InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME, InstanceKeys.infraIdentifier, InstanceKeys.infraName,
         InstanceKeysAdditional.instanceInfoClusterIdentifier, InstanceKeysAdditional.instanceInfoAgentIdentifier,
-        InstanceKeys.lastDeployedAt, InstanceKeys.stageNodeExecutionId, InstanceKeys.lastPipelineExecutionName,
-        InstanceKeys.lastPipelineExecutionId);
+        InstanceKeys.lastDeployedAt, InstanceKeys.stageNodeExecutionId, InstanceKeys.stageSetupId,
+        InstanceKeys.rollbackStatus, InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastPipelineExecutionId);
     GroupOperation groupOperation;
     if (!isGitOps) {
       groupOperation =
@@ -335,6 +335,10 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                          .as(InstanceKeys.infrastructureMappingId)
                          .first(InstanceKeys.stageNodeExecutionId)
                          .as(InstanceKeys.stageNodeExecutionId)
+                         .first(InstanceKeys.stageSetupId)
+                         .as(InstanceKeys.stageSetupId)
+                         .first(InstanceKeys.rollbackStatus)
+                         .as(InstanceKeys.rollbackStatus)
                          .first(InstanceKeys.lastPipelineExecutionId)
                          .as(InstanceKeys.lastPipelineExecutionId)
                          .first(InstanceKeys.lastPipelineExecutionName)
@@ -346,8 +350,9 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
         Aggregation
             .project(InstanceKeys.instanceKey, InstanceKeys.infrastructureMappingId, InstanceKeys.envName,
                 InstanceKeys.infraName, AGENT_IDENTIFIER, InstanceKeys.lastDeployedAt,
-                InstanceKeys.stageNodeExecutionId, InstanceKeys.lastPipelineExecutionName,
-                InstanceKeys.lastPipelineExecutionId, InstanceSyncConstants.COUNT)
+                InstanceKeys.stageNodeExecutionId, InstanceKeys.stageSetupId, InstanceKeys.rollbackStatus,
+                InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastPipelineExecutionId,
+                InstanceSyncConstants.COUNT)
             .andExpression("_id." + InstanceKeys.envIdentifier)
             .as(InstanceKeys.envIdentifier)
             .andExpression("_id." + InstanceKeys.envType)

@@ -29,8 +29,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ff.FeatureFlagService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.ng.core.dto.AccountDTO;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.utils.CryptoUtils;
@@ -38,8 +36,8 @@ import io.harness.utils.CryptoUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
@@ -103,13 +101,7 @@ public class ProjectOrgBasicRoleCreationJob implements Runnable {
   }
 
   private void execute() {
-    List<AccountDTO> accountDTOS = new ArrayList<>();
-    try {
-      accountDTOS = CGRestUtils.getResponse(accountClient.getAllAccounts());
-    } catch (Exception ex) {
-      log.error(DEBUG_MESSAGE + "Failed to fetch all accounts", ex);
-    }
-    List<String> targetAccounts = filterAccountsForFFEnabled(accountDTOS);
+    Set<String> targetAccounts = featureFlagService.getAccountIds(PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS);
     if (isEmpty(targetAccounts)) {
       return;
     }
@@ -149,22 +141,6 @@ public class ProjectOrgBasicRoleCreationJob implements Runnable {
     } catch (Exception ex) {
       log.error(DEBUG_MESSAGE + "Failed to create basic role for org/project", ex);
     }
-  }
-
-  private List<String> filterAccountsForFFEnabled(List<AccountDTO> accountDTOS) {
-    List<String> targetAccounts = new ArrayList<>();
-    try {
-      for (AccountDTO accountDTO : accountDTOS) {
-        boolean isBasicRoleCreationEnabled =
-            featureFlagService.isEnabled(PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS, accountDTO.getIdentifier());
-        if (isBasicRoleCreationEnabled) {
-          targetAccounts.add(accountDTO.getIdentifier());
-        }
-      }
-    } catch (Exception ex) {
-      log.error(DEBUG_MESSAGE + "Failed to filter accounts for FF PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS");
-    }
-    return targetAccounts;
   }
 
   private void addBasicRoleToDefaultUserGroup(Criteria criteria, String roleIdentifier) {

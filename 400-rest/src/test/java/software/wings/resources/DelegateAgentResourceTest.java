@@ -88,7 +88,6 @@ import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.dl.WingsPersistence;
 import software.wings.exception.WingsExceptionMapper;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
-import software.wings.ratelimit.DelegateRequestRateLimiter;
 import software.wings.service.impl.instance.InstanceHelper;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.DelegateService;
@@ -133,7 +132,6 @@ public class DelegateAgentResourceTest extends CategoryTest {
 
   private static final AccountService accountService = mock(AccountService.class);
   private static final WingsPersistence wingsPersistence = mock(WingsPersistence.class);
-  private static final DelegateRequestRateLimiter delegateRequestRateLimiter = mock(DelegateRequestRateLimiter.class);
   private static final SubdomainUrlHelperIntfc subdomainUrlHelper = mock(SubdomainUrlHelperIntfc.class);
   private static final InstanceHelper instanceSyncResponseHandler = mock(InstanceHelper.class);
   private static final ArtifactCollectionResponseHandler artifactCollectionResponseHandler;
@@ -166,12 +164,11 @@ public class DelegateAgentResourceTest extends CategoryTest {
   @ClassRule
   public static final ResourceTestRule RESOURCES =
       ResourceTestRule.builder()
-          .instance(new DelegateAgentResource(delegateService, accountService, wingsPersistence,
-              delegateRequestRateLimiter, subdomainUrlHelper, artifactCollectionResponseHandler,
-              instanceSyncResponseHandler, manifestCollectionResponseHandler, connectorHearbeatPublisher,
-              kryoSerializer, configurationController, featureFlagService, delegateTaskServiceClassic,
-              pollResourceClient, instanceSyncResponsePublisher, delegatePollingHeartbeatService,
-              delegateCapacityManagementService, referenceFalseKryoSerializer))
+          .instance(new DelegateAgentResource(delegateService, accountService, wingsPersistence, subdomainUrlHelper,
+              artifactCollectionResponseHandler, instanceSyncResponseHandler, manifestCollectionResponseHandler,
+              connectorHearbeatPublisher, kryoSerializer, configurationController, featureFlagService,
+              delegateTaskServiceClassic, pollResourceClient, instanceSyncResponsePublisher,
+              delegatePollingHeartbeatService, delegateCapacityManagementService, referenceFalseKryoSerializer))
           .instance(new AbstractBinder() {
             @Override
             protected void configure() {

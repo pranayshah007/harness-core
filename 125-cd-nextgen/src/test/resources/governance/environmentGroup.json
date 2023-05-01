@@ -1,0 +1,38 @@
+{
+  "envGroupRef": "env_group_1",
+  "metadata": {
+    "parallel": true
+  },
+  "deployToAll": false,
+  "environments": [
+    {
+      "environmentRef": "my_environment",
+      "infrastructureDefinitions": [
+        {
+          "identifier": "my_infra_with_ns_runtime",
+          "inputs": {
+            "identifier": "my_infra_with_ns_runtime",
+            "type": "KubernetesDirect",
+            "spec": {
+              "namespace": "harness",
+              "releaseName": "dev-0001"
+            }
+          }
+        }, {
+          "identifier": "some-<+expression>-with_should_be_ignored"
+        },
+        {
+          "identifier": "my_infra"
+        }
+      ]
+    },
+    {
+      "environmentRef": "non_existent_environment",
+      "infrastructureDefinitions": [
+        {
+          "identifier": "some_infra"
+        }
+      ]
+    }
+  ]
+}

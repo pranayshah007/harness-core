@@ -9,6 +9,7 @@ package io.harness.cvng.core.jobs;
 
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -29,8 +30,12 @@ public class AnalysisOrchestratorQueueNextAnalysisHandler
   public void handle(AnalysisOrchestrator entity) {
     VerificationTask verificationTask = verificationTaskService.get(entity.getVerificationTaskId());
     if (shouldQueueAnalysisForTaskType(verificationTask)) {
-      orchestrationService.queueAnalysisWithoutEventPublish(
-          entity.getVerificationTaskId(), entity.getAccountId(), Instant.now(), Instant.now());
+      orchestrationService.queueAnalysisWithoutEventPublish(entity.getAccountId(),
+          AnalysisInput.builder()
+              .verificationTaskId(entity.getVerificationTaskId())
+              .startTime(Instant.now())
+              .endTime(Instant.now())
+              .build());
     }
   }
 

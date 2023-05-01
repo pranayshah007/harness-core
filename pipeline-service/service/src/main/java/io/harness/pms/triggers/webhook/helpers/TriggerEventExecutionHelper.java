@@ -96,7 +96,9 @@ import com.google.inject.name.Named;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -317,7 +319,12 @@ public class TriggerEventExecutionHelper {
 
       String build = pollingResponse.getBuildInfo().getVersions(0);
       if (buildType == Type.ARTIFACT) {
-        triggerPayloadBuilder.setArtifactData(ArtifactData.newBuilder().setBuild(build).build());
+        Map<String, String> metadata = new HashMap<>();
+        if (pollingResponse.getBuildInfo().getMetadataCount() != 0) {
+          metadata = pollingResponse.getBuildInfo().getMetadata(0).getMetadataMap();
+        }
+        triggerPayloadBuilder.setArtifactData(
+            ArtifactData.newBuilder().setBuild(build).putAllMetadata(metadata).build());
       } else if (buildType == Type.MANIFEST) {
         triggerPayloadBuilder.setManifestData(ManifestData.newBuilder().setVersion(build).build());
       }

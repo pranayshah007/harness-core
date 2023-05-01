@@ -29,6 +29,7 @@ import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.configfile.ConfigGitFile;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
+import io.harness.cdng.manifest.yaml.GitLabStore;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.GithubStore;
@@ -144,6 +145,14 @@ public class SshWinRmConfigFileHelperTest extends CategoryTest {
   public void testGetFileDelegateConfigFromBitBucket() {
     BitbucketStore bitbucketStore = BitbucketStore.builder().build();
     verifyGetFileDelegateConfig(bitbucketStore);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetFileDelegateConfigFromGitLab() {
+    GitLabStore gitLabStore = GitLabStore.builder().build();
+    verifyGetFileDelegateConfig(gitLabStore);
   }
 
   private void verifyGetFileDelegateConfig(GitStoreConfig githubStore) {

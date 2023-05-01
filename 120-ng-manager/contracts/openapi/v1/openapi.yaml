@@ -641,15 +641,15 @@ paths:
         - IP Allowlist
       x-internal: false
       responses:
-        '204':
-          description: No Content
+        '200':
+          $ref: '#/components/responses/IPAllowlistValidateUniqueIdentifierResponse'
     parameters:
       - schema:
           type: string
         name: ip-config-identifier
         in: path
         required: true
-  /v1/ip-allowlist/validate:
+  /v1/ip-allowlist/validate/ip-address:
     get:
       summary: Validate IP address lies in a specified range or not
       operationId: validate-ip-address-allowlisted-or-not
@@ -2229,6 +2229,9 @@ components:
           type: integer
           format: int64
           description: Last modification timestamp for IP Allowlist config.
+      required:
+        - created
+        - updated
     IPAllowlistConfigValidateResponse:
       title: IPAllowlistConfigValidateResponse
       x-stoplight:
@@ -2817,6 +2820,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/IPAllowlistConfigValidateResponse'
+    IPAllowlistValidateUniqueIdentifierResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: boolean
   requestBodies:
     ServiceRequest:
       content:

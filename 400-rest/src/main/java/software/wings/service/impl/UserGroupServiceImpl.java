@@ -13,6 +13,7 @@ import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.validation.Validator.notNullCheck;
@@ -1092,11 +1093,15 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   private void removeUserGroupFromInvites(String accountId, String userGroupId) {
-    List<UserInvite> invites = userService.getInvitesFromAccountIdAndUserGroupId(accountId, userGroupId);
-    invites.forEach(invite -> invite.getUserGroups().removeIf(group -> group.getUuid().equals(userGroupId)));
-    log.info(
-        "Removing user group id {} from userInvites for unlink SSO group flow in account {}", userGroupId, accountId);
-    wingsPersistence.save(invites);
+    Query<UserInvite> query = userService.getInvitesQueryFromAccountId(accountId);
+    try (HIterator<UserInvite> userInvites = new HIterator<>(query.limit(NO_LIMIT).fetch())) {
+      for (UserInvite invite : userInvites) {
+        invite.getUserGroups().removeIf(x -> x.getUuid().equals(userGroupId));
+        log.info("Removing user group id {} from userInvites for unlink SSO group flow in account {}", userGroupId,
+            accountId);
+        wingsPersistence.save(invite);
+      }
+    }
   }
 
   @Override

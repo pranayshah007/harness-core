@@ -93,7 +93,7 @@ public class PipelineTelemetryPublisher {
 
   @VisibleForTesting
   String getAccountId() {
-    List<AccountDTO> accountDTOList = CGRestUtils.getResponse(accountClient.getAllAccounts());
+    List<AccountDTO> accountDTOList = CGRestUtils.getResponse(accountClient.listAccounts(0, 2)).getResponse();
     String accountId = accountDTOList.get(0).getIdentifier();
     if (accountDTOList.size() > 1 && accountId.equals(GLOBAL_ACCOUNT_ID)) {
       accountId = accountDTOList.get(1).getIdentifier();
