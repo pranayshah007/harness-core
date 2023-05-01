@@ -11,14 +11,12 @@ import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.common.beans.Generation.NG;
-import static io.harness.remote.client.CGRestUtils.getResponse;
 import static io.harness.security.dto.PrincipalType.USER;
 
 import static software.wings.security.PermissionAttribute.PermissionType.USER_PERMISSION_MANAGEMENT;
 
 import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 
-// import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
