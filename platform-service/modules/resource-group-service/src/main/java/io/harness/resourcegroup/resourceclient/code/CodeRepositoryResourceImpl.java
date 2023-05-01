@@ -8,7 +8,6 @@
 package io.harness.resourcegroup.resourceclient.code;
 
 import static io.harness.annotations.dev.HarnessTeam.CODE;
-import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_IDENTIFIER;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES;
 
