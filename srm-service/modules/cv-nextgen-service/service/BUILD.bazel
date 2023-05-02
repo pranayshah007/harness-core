@@ -33,6 +33,8 @@ shared_dependencies = [
     "//942-enforcement-sdk:module",
     "//965-api-key-filter:module",
     "//970-ng-commons:module",
+    "//970-telemetry-beans:module",
+    "//950-telemetry:module",
     "//980-commons:module",
     "//clients/access-control/sdk:module",
     "//clients/pipeline-service/pms-sdk:module",
