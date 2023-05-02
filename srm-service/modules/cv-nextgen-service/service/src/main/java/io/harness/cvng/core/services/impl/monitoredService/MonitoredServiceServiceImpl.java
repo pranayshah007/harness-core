@@ -120,6 +120,7 @@ import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
+import io.harness.cvng.usage.impl.ActiveServiceMonitoredDTO;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.DuplicateFieldException;
@@ -1434,7 +1435,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   private boolean isUniqueService(ProjectParams projectParams, MonitoredService monitoredService) {
-    List<MonitoredService> enabledMonitoredServices = getEnabledMonitoredServices(projectParams.getAccountIdentifier());
+    List<MonitoredService> enabledMonitoredServices = getEnabledMonitoredServicesWithScopedQuery(projectParams);
 
     return getServiceParamsSet(enabledMonitoredServices)
         .contains(ServiceParams.builder()
@@ -1902,8 +1903,51 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     if (!featureFlagService.isFeatureFlagEnabled(accountId, FeatureFlagNames.CVNG_LICENSE_ENFORCEMENT)) {
       return 0;
     }
-    List<MonitoredService> enabledMonitoredServices = getEnabledMonitoredServices(accountId);
+    List<MonitoredService> enabledMonitoredServices =
+        getEnabledMonitoredServicesWithScopedQuery(ProjectParams.builder().accountIdentifier(accountId).build());
     return getServiceParamsSet(enabledMonitoredServices).size();
+  }
+
+  @Override
+  public List<ActiveServiceMonitoredDTO> listActiveServiceMonitored(ProjectParams projectParams) {
+    Map<ServiceParams, Long> serviceParamsCountMap = new HashMap<>();
+    getEnableMonitoredServiceParamsSet(projectParams).stream().forEach(serviceParams -> {
+      long count = serviceParamsCountMap.getOrDefault(serviceParams, 0L);
+      serviceParamsCountMap.put(serviceParams, count + 1);
+    });
+
+    Map<String, String> serviceIdNameMap = nextGenService.getServiceIdNameMap(projectParams,
+        serviceParamsCountMap.keySet().stream().map(ServiceParams::getServiceIdentifier).collect(Collectors.toList()));
+
+    List<ActiveServiceMonitoredDTO> activeServiceMonitoredDTOList = new ArrayList<>();
+
+    for (ServiceParams serviceParams : serviceParamsCountMap.keySet()) {
+      ActiveServiceMonitoredDTO activeServiceMonitoredDTO =
+          ActiveServiceMonitoredDTO.builder()
+              .identifier(serviceParams.getServiceIdentifier())
+              .orgIdentifier(serviceParams.getOrgIdentifier())
+              .projectIdentifier(serviceParams.getProjectIdentifier())
+              .name(serviceIdNameMap.get(serviceParams.serviceIdentifier))
+              .monitoredServiceCount(serviceParamsCountMap.get(serviceParams))
+              .build();
+
+      activeServiceMonitoredDTOList.add(activeServiceMonitoredDTO);
+    }
+
+    return activeServiceMonitoredDTOList;
+  }
+
+  private List<ServiceParams> getEnableMonitoredServiceParamsSet(ProjectParams projectParams) {
+    List<MonitoredService> enabledMonitoredServices = getEnabledMonitoredServicesWithScopedQuery(projectParams);
+    return enabledMonitoredServices.stream()
+        .map(monitoredService
+            -> ServiceParams.builder()
+                   .serviceIdentifier(monitoredService.getServiceIdentifier())
+                   .orgIdentifier(monitoredService.getOrgIdentifier())
+                   .projectIdentifier(monitoredService.getProjectIdentifier())
+                   .accountIdentifier(monitoredService.getAccountId())
+                   .build())
+        .collect(Collectors.toList());
   }
 
   private Set<ServiceParams> getServiceParamsSet(List<MonitoredService> monitoredServices) {
@@ -1918,11 +1962,19 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         .collect(Collectors.toSet());
   }
 
-  private List<MonitoredService> getEnabledMonitoredServices(String accountId) {
-    return hPersistence.createQuery(MonitoredService.class)
-        .filter(MonitoredServiceKeys.accountId, accountId)
-        .filter(MonitoredServiceKeys.enabled, true)
-        .asList();
+  private List<MonitoredService> getEnabledMonitoredServicesWithScopedQuery(ProjectParams projectParams) {
+    Query<MonitoredService> query = hPersistence.createQuery(MonitoredService.class)
+                                        .filter(MonitoredServiceKeys.accountId, projectParams.getProjectIdentifier())
+                                        .filter(MonitoredServiceKeys.enabled, true);
+
+    if (projectParams.getOrgIdentifier() != null) {
+      query = query.filter(MonitoredServiceKeys.orgIdentifier, projectParams.getOrgIdentifier());
+    }
+    if (projectParams.getProjectIdentifier() != null) {
+      query = query.filter(MonitoredServiceKeys.projectIdentifier, projectParams.getProjectIdentifier());
+    }
+
+    return query.asList();
   }
 
   private List<MonitoredService> get(ProjectParams projectParams, Filter filter) {

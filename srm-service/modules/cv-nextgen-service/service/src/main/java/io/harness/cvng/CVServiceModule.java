@@ -489,6 +489,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
@@ -544,6 +546,14 @@ public class CVServiceModule extends AbstractModule {
     bind(LogClusterService.class).to(LogClusterServiceImpl.class);
     bind(LogAnalysisService.class).to(LogAnalysisServiceImpl.class);
     bind(DataCollectionTaskService.class).to(DataCollectionTaskServiceImpl.class);
+
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("SrmTelemetryPublisherExecutor"))
+        .toInstance(new ScheduledThreadPoolExecutor(1,
+            new ThreadFactoryBuilder()
+                .setNameFormat("Srm-telemetry-publisher-Thread-%d")
+                .setPriority(Thread.NORM_PRIORITY)
+                .build()));
     bind(WebhookConfigService.class).toInstance(new WebhookConfigService() {
       @Override
       public String getWebhookApiBaseUrl() {

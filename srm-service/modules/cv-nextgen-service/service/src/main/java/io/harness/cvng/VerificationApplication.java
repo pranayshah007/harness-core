@@ -109,6 +109,7 @@ import io.harness.cvng.statemachine.beans.AnalysisOrchestratorStatus;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator.AnalysisOrchestratorKeys;
 import io.harness.cvng.statemachine.jobs.AnalysisOrchestrationJob;
+import io.harness.cvng.telemetry.SrmTelemetryRecordsJob;
 import io.harness.cvng.ticket.clients.TicketServiceRestClientModule;
 import io.harness.cvng.utils.SRMServiceAuthIfHasApiKey;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -509,6 +510,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     initAutoscalingMetrics();
     registerOasResource(configuration, environment, injector);
     registerMigrations(injector);
+    initializeCdMonitoring(configuration, injector);
 
     if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
       registerTraceFilter(environment, injector);
@@ -1302,5 +1304,10 @@ public class VerificationApplication extends Application<VerificationConfigurati
   private void registerGaugeMetric(String metricName, String[] labels) {
     harnessMetricRegistry.registerGaugeMetric(metricName, labels, "Metrics from CVNG for LE");
     harnessMetricRegistry.registerGaugeMetric(ENVIRONMENT + "_" + metricName, labels, "Metrics from CVNG for LE");
+  }
+
+  private void initializeCdMonitoring(VerificationConfiguration configuration, Injector injector) {
+    log.info("Initializing Srm Monitoring");
+    injector.getInstance(SrmTelemetryRecordsJob.class).scheduleTasks();
   }
 }

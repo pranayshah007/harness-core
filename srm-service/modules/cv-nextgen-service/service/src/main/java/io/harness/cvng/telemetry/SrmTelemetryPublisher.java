@@ -35,6 +35,8 @@ public class SrmTelemetryPublisher {
   @Inject private TelemetryReporter telemetryReporter;
   @Inject private AccountClient accountClient;
 
+  @Inject private SrmTelemetryStatusRepository srmTelemetryStatusRepository;
+
   private static final String COUNT_ACTIVE_SERVICES_LICENSES = "srm_license_services_monitored";
   // Locking for a bit less than one day. It's ok to send a bit more than less considering downtime/etc
   //(24*60*60*1000)-(10*60*1000)
@@ -65,17 +67,22 @@ public class SrmTelemetryPublisher {
 
   private void sendEvent(String accountId) {
     if (EmptyPredicate.isNotEmpty(accountId) && !accountId.equals(GLOBAL_ACCOUNT_ID)) {
-      HashMap<String, Object> map = new HashMap<>();
-      map.put(GROUP_TYPE, ACCOUNT);
-      map.put(GROUP_ID, accountId);
+      if (srmTelemetryStatusRepository.updateTimestampIfOlderThan(
+              accountId, System.currentTimeMillis() - A_DAY_MINUS_TEN_MINS_IN_MILLIS, System.currentTimeMillis())) {
+        HashMap<String, Object> map = new HashMap<>();
+        map.put(GROUP_TYPE, ACCOUNT);
+        map.put(GROUP_ID, accountId);
 
-      SRMLicenseUsageDTO srmLicenseUsageDTO =
-          srmLicenseUsageService.getLicenseUsage(accountId, ModuleType.SRM, new Date().getTime(), null);
-      map.put(COUNT_ACTIVE_SERVICES_LICENSES, srmLicenseUsageDTO.getActiveServices());
+        SRMLicenseUsageDTO srmLicenseUsageDTO =
+            srmLicenseUsageService.getLicenseUsage(accountId, ModuleType.SRM, new Date().getTime(), null);
+        map.put(COUNT_ACTIVE_SERVICES_LICENSES, srmLicenseUsageDTO.getActiveServices().getCount());
 
-      telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(ALL, true),
-          TelemetryOption.builder().sendForCommunity(true).build());
-      log.info("Scheduled CdTelemetryPublisher event sent for account [{}], with values: [{}]", accountId, map);
+        telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(ALL, true),
+            TelemetryOption.builder().sendForCommunity(true).build());
+        log.info("Scheduled SrmTelemetryPublisher event sent for account [{}], with values: [{}]", accountId, map);
+      } else {
+        log.info("Skipping already sent account {} in past 24 hours", accountId);
+      }
     }
   }
 
