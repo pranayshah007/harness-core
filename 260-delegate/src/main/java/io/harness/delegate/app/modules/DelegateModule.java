@@ -2070,6 +2070,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.FETCH_INSTANCE_SCRIPT_TASK_NG).toInstance(FetchInstanceScriptTaskNG.class);
     mapBinder.addBinding(TaskType.COMMAND_TASK_NG).toInstance(CommandTaskNG.class);
     mapBinder.addBinding(TaskType.COMMAND_TASK_NG_WITH_AZURE_ARTIFACT).toInstance(CommandTaskNG.class);
+    mapBinder.addBinding(TaskType.COMMAND_TASK_NG_WITH_GIT_CONFIGS).toInstance(CommandTaskNG.class);
     mapBinder.addBinding(TaskType.TRIGGER_AUTHENTICATION_TASK).toInstance(TriggerAuthenticationTask.class);
     mapBinder.addBinding(TaskType.HELM_FETCH_CHART_VERSIONS_TASK_NG).toInstance(HelmFetchChartVersionTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_CLOUD_TASK_NG).toInstance(TerraformCloudTaskNG.class);

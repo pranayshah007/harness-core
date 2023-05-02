@@ -18,6 +18,7 @@ import static io.harness.k8s.K8sCommandUnitConstants.Prepare;
 import static io.harness.k8s.K8sCommandUnitConstants.WaitForSteadyState;
 import static io.harness.k8s.K8sCommandUnitConstants.WrapUp;
 import static io.harness.k8s.K8sConstants.MANIFEST_FILES_DIR;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.INFO;
 
 import static software.wings.beans.LogColor.White;
@@ -39,6 +40,8 @@ import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.delegate.task.k8s.client.K8sClient;
 import io.harness.delegate.task.k8s.data.K8sCanaryDataException;
 import io.harness.delegate.task.k8s.data.K8sCanaryDataException.K8sCanaryDataExceptionBuilder;
+import io.harness.delegate.task.utils.ServiceHookDTO;
+import io.harness.delegate.utils.ServiceHookHandler;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.K8sCliCommandType;
@@ -50,6 +53,8 @@ import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesResource;
+import io.harness.k8s.model.ServiceHookAction;
+import io.harness.k8s.model.ServiceHookType;
 import io.harness.k8s.releasehistory.IK8sRelease;
 import io.harness.k8s.releasehistory.IK8sReleaseHistory;
 import io.harness.k8s.releasehistory.K8SLegacyReleaseHistory;
@@ -101,10 +106,19 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
         k8sCanaryDeployRequest.isShouldOpenFetchFilesLogStream(), commandUnitsProgress);
     executionLogCallback.saveExecutionLog(
         color("\nStarting Kubernetes Canary Deployment", LogColor.White, LogWeight.Bold));
+    ServiceHookDTO serviceHookTaskParams = new ServiceHookDTO(k8sDelegateTaskParams);
+    ServiceHookHandler serviceHookHandler =
+        new ServiceHookHandler(k8sCanaryDeployRequest.getServiceHooks(), serviceHookTaskParams, timeoutInMillis);
+    serviceHookHandler.applyServiceHooks(ServiceHookType.PRE_HOOK, ServiceHookAction.FETCH_FILES,
+        k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback,
+        k8sCanaryHandlerConfig.getManifestFilesDirectory());
     k8sTaskHelperBase.fetchManifestFilesAndWriteToDirectory(k8sCanaryDeployRequest.getManifestDelegateConfig(),
         k8sCanaryHandlerConfig.getManifestFilesDirectory(), executionLogCallback, timeoutInMillis,
-        k8sCanaryDeployRequest.getAccountId());
-
+        k8sCanaryDeployRequest.getAccountId(), false);
+    serviceHookHandler.applyServiceHooks(ServiceHookType.POST_HOOK, ServiceHookAction.FETCH_FILES,
+        k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback,
+        k8sCanaryHandlerConfig.getManifestFilesDirectory());
+    executionLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
     init(k8sCanaryDeployRequest, k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress));
 

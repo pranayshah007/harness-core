@@ -9,12 +9,12 @@ package io.harness.ci.utils;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ci.buildstate.SecretUtils;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.ExpressionResolveFunctor;
 import io.harness.ng.core.NGAccess;
-import io.harness.steps.container.utils.SecretUtils;
 
 import java.util.HashMap;
 import java.util.List;

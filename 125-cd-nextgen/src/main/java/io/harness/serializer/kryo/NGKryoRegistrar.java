@@ -60,6 +60,8 @@ import io.harness.cdng.infra.yaml.AwsSamInfrastructure;
 import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepInfo;
 import io.harness.cdng.k8s.DeleteResourcesWrapper;
+import io.harness.cdng.k8s.K8sBGStageScaleDownStepInfo;
+import io.harness.cdng.k8s.K8sBGStageScaleDownStepParameters;
 import io.harness.cdng.k8s.K8sBlueGreenOutcome;
 import io.harness.cdng.k8s.K8sCanaryOutcome;
 import io.harness.cdng.k8s.K8sCanaryStepInfo;
@@ -303,5 +305,8 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(ServiceHookAction.class, 12672);
     kryo.register(InlineStoreConfig.class, 12673);
     kryo.register(ServiceHookType.class, 12674);
+
+    kryo.register(K8sBGStageScaleDownStepInfo.class, 12647);
+    kryo.register(K8sBGStageScaleDownStepParameters.class, 12648);
   }
 }

@@ -20,6 +20,7 @@ import io.harness.ng.core.entities.ApiKey;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 
 @OwnedBy(PL)
@@ -30,8 +31,8 @@ public interface ApiKeyService {
       String parentIdentifier, String identifier);
   List<ApiKeyDTO> listApiKeys(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       ApiKeyType apiKeyType, String parentIdentifier, List<String> identifiers);
-  ApiKey getApiKey(String accountIdentifier, String orgIdentifier, String projectIdentifier, ApiKeyType apiKeyType,
-      String parentIdentifier, String identifier);
+  Optional<ApiKey> getApiKey(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      ApiKeyType apiKeyType, String parentIdentifier, String identifier);
 
   Map<String, Integer> getApiKeysPerParentIdentifier(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, ApiKeyType apiKeyType, List<String> parentIdentifier);

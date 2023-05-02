@@ -1,39 +1,39 @@
 pipeline:
-  name: "Test Pipline"
-  identifier: "Test_Pipline11"
+  name: Test Pipline
+  identifier: Test_Pipline11
   variables:
-  - name: "port"
-    value: 6060
-    type: "String"
+    - name: port
+      value: 6060
+      type: String
   stages:
-  - stage:
-      identifier: "qaStage"
-      name: "qa stage"
-      type: "Approval"
-      spec:
-        execution:
-          steps:
-          - step:
-              identifier: "approval"
-              name: "Approval"
-              type: "HarnessApproval"
-              timeout: "1d"
-              spec:
-                approvalMessage: "Please review and approve"
-                includePipelineExecutionHistory: true
-                approvers:
-                  minimumCount: 1
-                  disallowPipelineExecutor: false
-                  userGroups: "myUserGroup"
-                approverInputs: []
-          - step:
-              identifier: "http"
-              name: "http"
-              type: "Http"
-              spec:
-                url: "https://www.google.com"
-                method: "GET.allowedValues(POST, PUT, GET)"
-                headers: []
-                outputVariables: []
-                requestBody: "<+input>"
-              timeout: "10s"
+    - stage:
+        identifier: qaStage
+        name: qa stage
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - step:
+                  identifier: approval
+                  name: Approval
+                  type: HarnessApproval
+                  timeout: 1d
+                  spec:
+                    approvalMessage: Please review and approve
+                    includePipelineExecutionHistory: true
+                    approvers:
+                      minimumCount: 1
+                      disallowPipelineExecutor: false
+                      userGroups: myUserGroup
+                    approverInputs: []
+              - step:
+                  identifier: http
+                  name: http
+                  type: Http
+                  spec:
+                    url: https://www.google.com
+                    method: "GET.allowedValues(POST, PUT, GET)"
+                    headers: []
+                    outputVariables: []
+                    requestBody: <+input>
+                  timeout: 10s

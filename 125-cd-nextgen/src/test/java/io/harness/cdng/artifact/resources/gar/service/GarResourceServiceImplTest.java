@@ -281,7 +281,7 @@ public class GarResourceServiceImplTest extends CategoryTest {
                 .build());
 
     GARBuildDetailsDTO garResponseDTO = garResourceService.getLastSuccessfulBuild(connectorRef, REGION, repositoryName,
-        project, pkg, GarRequestDTO.builder().tag(version).build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+        project, pkg, GarRequestDTO.builder().version(version).build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER);
     assertThat(garResponseDTO).isNotNull();
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");

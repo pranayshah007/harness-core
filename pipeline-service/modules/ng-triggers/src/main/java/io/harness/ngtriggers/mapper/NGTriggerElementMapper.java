@@ -346,8 +346,9 @@ public class NGTriggerElementMapper {
       case SCHEDULED:
         ScheduledTriggerConfig scheduledTriggerConfig = (ScheduledTriggerConfig) triggerSource.getSpec();
         CronTriggerSpec cronTriggerSpec = (CronTriggerSpec) scheduledTriggerConfig.getSpec();
+        String cronExpressionType = StringUtils.isBlank(cronTriggerSpec.getType()) ? "UNIX" : cronTriggerSpec.getType();
         return NGTriggerMetadata.builder()
-            .cron(CronMetadata.builder().expression(cronTriggerSpec.getExpression()).build())
+            .cron(CronMetadata.builder().expression(cronTriggerSpec.getExpression()).type(cronExpressionType).build())
             .build();
       case ARTIFACT:
         ArtifactTypeSpec artifactTypeSpec = ((ArtifactTriggerConfig) triggerSource.getSpec()).getSpec();

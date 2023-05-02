@@ -7,8 +7,8 @@
 
 package io.harness.template.helpers;
 
-import static io.harness.template.beans.NGTemplateConstants.SPEC;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE;
+import static io.harness.template.resources.beans.NGTemplateConstants.SPEC;
+import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;

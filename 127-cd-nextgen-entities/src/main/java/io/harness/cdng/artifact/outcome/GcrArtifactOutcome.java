@@ -69,6 +69,9 @@ public class GcrArtifactOutcome implements ArtifactOutcome {
    * imagePullSecret for Gcr credentials base encoded.
    */
   String imagePullSecret;
+
+  String digest;
+
   Map<String, String> metadata;
   Map<String, String> label;
   /**

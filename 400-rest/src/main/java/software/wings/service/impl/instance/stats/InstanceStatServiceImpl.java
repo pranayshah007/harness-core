@@ -7,6 +7,8 @@
 
 package software.wings.service.impl.instance.stats;
 
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
+
 import static software.wings.resources.stats.model.InstanceTimeline.top;
 
 import static dev.morphia.aggregation.Projection.projection;
@@ -79,8 +81,8 @@ public class InstanceStatServiceImpl implements InstanceStatService {
     log.info("Purging instance stats up to {}", timestamp);
     // Deleting old instances separately for each active account and then for deleted accounts
     // So that the deletion happens in a staggered way
-    try (HIterator<Account> accounts =
-             new HIterator<>(persistence.createQuery(Account.class).project(Account.ID_KEY2, true).fetch())) {
+    try (HIterator<Account> accounts = new HIterator<>(
+             persistence.createQuery(Account.class).project(Account.ID_KEY2, true).limit(NO_LIMIT).fetch())) {
       while (accounts.hasNext()) {
         final Account account = accounts.next();
         log.info("Purging instance stats for account {} with ID {}", account.getAccountName(), account.getUuid());

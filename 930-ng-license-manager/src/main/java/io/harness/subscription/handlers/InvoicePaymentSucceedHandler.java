@@ -178,13 +178,13 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
 
   private void syncCFLicense(CFModuleLicense cfModuleLicense, List<InvoiceLineItem> items) {
     items.forEach(item -> {
+      setLicenseProperty(item, cfModuleLicense);
       if (isPaymentConsequence(item)) {
         if (isItem(DEVELOPERS_TYPE, item)) {
           cfModuleLicense.setNumberOfUsers(item.getQuantity().intValue());
         }
         if (isItem(MAU_TYPE, item)) {
           cfModuleLicense.setNumberOfClientMAUs(getQuantity(item));
-          setLicenseProperty(item, cfModuleLicense);
         }
         if (isItem(MAU_SUPPORT_TYPE, item) || isItem(DEVELOPERS_SUPPORT_TYPE, item)) {
           cfModuleLicense.setPremiumSupport(true);
@@ -201,7 +201,7 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
               ciModuleLicense.getNumberOfCommitters() + item.getQuantity().intValue());
           setLicenseProperty(item, ciModuleLicense);
         }
-        if (isItem("SUPPORT", item)) {
+        if (isItem(DEVELOPERS_SUPPORT_TYPE, item)) {
           ciModuleLicense.setPremiumSupport(true);
         }
       }

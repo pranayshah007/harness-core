@@ -185,6 +185,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
       ACTION actionForPrimaryArtifact =
           shouldCreateDelegateTask(artifacts.getPrimary().getSourceType(), artifacts.getPrimary().getSpec());
       if (ACTION.CREATE_DELEGATE_TASK.equals(actionForPrimaryArtifact)) {
+        artifacts.getPrimary().getSpec().validate();
         checkAndWarnIfDoesNotFollowIdentifierRegex(
             artifacts.getPrimary().getSpec().getIdentifier(), "Primary", logCallback);
         primaryArtifactTaskId = createDelegateTask(
@@ -203,6 +204,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
         ACTION actionForSidecar =
             shouldCreateDelegateTask(sidecar.getSidecar().getSourceType(), sidecar.getSidecar().getSpec());
         if (ACTION.CREATE_DELEGATE_TASK.equals(actionForSidecar)) {
+          sidecar.getSidecar().getSpec().validate();
           checkAndWarnIfDoesNotFollowIdentifierRegex(
               sidecar.getSidecar().getSpec().getIdentifier(), "Sidecar", logCallback);
           String taskId = createDelegateTask(

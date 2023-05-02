@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.instancesync.InstanceSyncPerpetualTaskResponse;
 import io.harness.models.DeploymentEvent;
+import io.harness.perpetualtask.instancesync.InstanceSyncResponseV2;
 import io.harness.perpetualtask.instancesync.InstanceSyncTaskDetails;
 
 @OwnedBy(HarnessTeam.DX)
@@ -18,6 +19,9 @@ public interface InstanceSyncService {
   void processInstanceSyncForNewDeployment(DeploymentEvent deploymentEvent);
   void processInstanceSyncByPerpetualTask(String accountIdentifier, String perpetualTaskId,
       InstanceSyncPerpetualTaskResponse instanceSyncPerpetualTaskResponse);
+
+  void processInstanceSyncByPerpetualTaskV2(
+      String accountIdentifier, String perpetualTaskId, InstanceSyncResponseV2 instanceSyncResponseV2);
 
   InstanceSyncTaskDetails fetchTaskDetails(String accountIdentifier, String perpetualTaskId);
 }

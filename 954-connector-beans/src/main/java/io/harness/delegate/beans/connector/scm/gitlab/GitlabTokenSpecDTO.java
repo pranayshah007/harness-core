@@ -29,4 +29,5 @@ import lombok.experimental.FieldDefaults;
     description = "This contains details of the information such as references of token needed for Gitlab API access")
 public class GitlabTokenSpecDTO implements GitlabApiAccessSpecDTO {
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData tokenRef;
+  @ApiModelProperty(dataType = "string") String apiUrl;
 }

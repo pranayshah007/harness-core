@@ -27,7 +27,7 @@ import io.harness.ngtriggers.beans.source.artifact.ArtifactType;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.shellscript.ShellType;
-import io.harness.template.beans.yaml.NGTemplateConfig;
+import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.template.yaml.TemplateLinkConfig;
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.StringNGVariable;

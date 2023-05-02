@@ -134,7 +134,7 @@ public class HelmRepoConfigValidationTask extends AbstractDelegateRunnableTask {
 
   private void tryLoginOciRegistry(HelmRepoConfig helmRepoConfig, HelmVersion helmVersion, String workingDirectory) {
     helmTaskHelper.loginOciRegistry(
-        (OciHelmRepoConfig) helmRepoConfig, helmVersion, DEFAULT_TIMEOUT_IN_MILLIS, workingDirectory);
+        (OciHelmRepoConfig) helmRepoConfig, helmVersion, DEFAULT_TIMEOUT_IN_MILLIS, workingDirectory, "");
   }
 
   private void tryAddingGCSHelmRepo(HelmRepoConfig helmRepoConfig, String repoName,

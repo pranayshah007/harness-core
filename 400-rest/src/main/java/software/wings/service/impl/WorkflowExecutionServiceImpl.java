@@ -2736,6 +2736,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       Set<String> keywords, ExecutionArgs executionArgs, String accountId) {
     boolean shouldReduceKeywords =
         featureFlagService.isEnabled(SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS, accountId);
+    boolean shouldCollectArtifactVariablesData =
+        featureFlagService.isEnabled(SPG_ENABLE_POPULATE_USING_ARTIFACT_VARIABLE, accountId);
+
     if (featureFlagService.isEnabled(HELM_CHART_AS_ARTIFACT, accountId)) {
       populateHelmChartsInWorkflowExecution(
           workflowExecution, keywords, executionArgs, accountId, shouldReduceKeywords);
@@ -2758,8 +2761,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         log.error("artifactIds from executionArgs contains invalid artifacts");
         throw new InvalidRequestException("Invalid artifact");
       }
-    } else if (featureFlagService.isEnabled(SPG_ENABLE_POPULATE_USING_ARTIFACT_VARIABLE, accountId)
-        && isNotEmpty(executionArgs.getArtifactVariables())) {
+    } else if (shouldCollectArtifactVariablesData && isNotEmpty(executionArgs.getArtifactVariables())) {
       List<List<Artifact>> tempArts = executionArgs.getArtifactVariables()
                                           .stream()
                                           .map(artifactVar
@@ -2793,8 +2795,13 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       }
     }
 
-    executionArgs.setArtifactIdNames(
-        filteredArtifacts.stream().collect(toMap(Artifact::getUuid, Artifact::getDisplayName)));
+    if (shouldCollectArtifactVariablesData) {
+      executionArgs.setArtifactIdNames(filteredArtifacts.stream().collect(
+          toMap(Artifact::getUuid, Artifact::getDisplayName, (artifact1, artifact2) -> artifact1)));
+    } else {
+      executionArgs.setArtifactIdNames(
+          filteredArtifacts.stream().collect(toMap(Artifact::getUuid, Artifact::getDisplayName)));
+    }
     filteredArtifacts.forEach(artifact -> {
       artifact.setArtifactFiles(null);
       artifact.setCreatedBy(null);

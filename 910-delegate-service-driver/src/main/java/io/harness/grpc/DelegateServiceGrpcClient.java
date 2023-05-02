@@ -74,6 +74,7 @@ import io.grpc.StatusRuntimeException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -253,7 +254,7 @@ public class DelegateServiceGrpcClient {
       TaskSetupAbstractions taskSetupAbstractions, TaskLogAbstractions taskLogAbstractions, TaskDetails taskDetails,
       List<ExecutionCapability> capabilities, List<String> taskSelectors, Duration holdFor, boolean forceExecute,
       boolean executeOnHarnessHostedDelegates, List<String> eligibleToExecuteDelegateIds, boolean emitEvent,
-      String stageId, Boolean delegateSelectionTrackingLogEnabled) {
+      String stageId, Boolean delegateSelectionTrackingLogEnabled, List<TaskSelector> selectors) {
     try {
       if (taskSetupAbstractions == null || taskSetupAbstractions.getValuesCount() == 0) {
         Map<String, String> setupAbstractions = new HashMap<>();
@@ -296,7 +297,9 @@ public class DelegateServiceGrpcClient {
                 .collect(toList()));
       }
 
-      if (isNotEmpty(taskSelectors)) {
+      if (isNotEmpty(selectors)) {
+        submitTaskRequestBuilder.addAllSelectors(selectors);
+      } else if (isNotEmpty(taskSelectors)) {
         submitTaskRequestBuilder.addAllSelectors(
             taskSelectors.stream()
                 .map(selector -> TaskSelector.newBuilder().setSelector(selector).build())
@@ -402,7 +405,7 @@ public class DelegateServiceGrpcClient {
         builder.build(), taskDetailsBuilder.build(), capabilities, taskRequest.getTaskSelectors(), holdFor,
         taskRequest.isForceExecute(), taskRequest.isExecuteOnHarnessHostedDelegates(),
         taskRequest.getEligibleToExecuteDelegateIds(), taskRequest.isEmitEvent(), taskRequest.getStageId(),
-        delegateSelectionTrackingLogEnabled);
+        delegateSelectionTrackingLogEnabled, taskRequest.getSelectors());
   }
 
   public TaskExecutionStage cancelTask(AccountId accountId, TaskId taskId) {
@@ -545,6 +548,6 @@ public class DelegateServiceGrpcClient {
         .entrySet()
         .stream()
         .filter(entry -> !Objects.isNull(entry.getValue()))
-        .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+        .collect(Collectors.toMap(Entry::getKey, Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
   }
 }

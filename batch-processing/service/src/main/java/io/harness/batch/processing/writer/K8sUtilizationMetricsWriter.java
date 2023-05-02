@@ -71,6 +71,43 @@ public class K8sUtilizationMetricsWriter extends EventWriter implements ItemWrit
           double cpuMaxValue = instanceUtilizationData.getCpuUtilizationMax();
           double memoryAvgValue = instanceUtilizationData.getMemoryUtilizationAvg();
           double memoryMaxValue = instanceUtilizationData.getMemoryUtilizationMax();
+
+          Double limitCpuUnits =
+              instanceData.getLimitResource() == null ? null : instanceData.getLimitResource().getCpuUnits();
+
+          Double limitMemoryValue =
+              instanceData.getLimitResource() == null ? null : instanceData.getLimitResource().getMemoryMb();
+
+          if (limitCpuUnits != null && limitCpuUnits > 0) {
+            if (cpuAvgValue > 4 * limitCpuUnits) {
+              log.warn(
+                  "Limit Exceeded CPU AVG :: accountId: {}, instanceId: {}, cpuUtilizationAvg: {}, limitCpuUnits: {}",
+                  accountId, instanceId, cpuAvgValue, limitCpuUnits);
+              cpuAvgValue = 4 * limitCpuUnits;
+            }
+            if (cpuMaxValue > 4 * limitCpuUnits) {
+              log.warn(
+                  "Limit Exceeded CPU MAX :: accountId: {}, instanceId: {}, cpuUtilizationMax: {}, limitCpuUnits: {}",
+                  accountId, instanceId, cpuMaxValue, limitCpuUnits);
+              cpuMaxValue = 4 * cpuMaxValue;
+            }
+          }
+
+          if (limitMemoryValue != null && limitMemoryValue > 0) {
+            if (memoryAvgValue > 4 * limitMemoryValue) {
+              log.warn(
+                  "Limit Exceeded Memory AVG :: accountId: {}, instanceId: {}, memoryUtilizationAvg: {}, limitMemoryValue: {}",
+                  accountId, instanceId, memoryAvgValue, limitMemoryValue);
+              memoryAvgValue = 4 * limitMemoryValue;
+            }
+            if (memoryMaxValue > 4 * limitMemoryValue) {
+              log.warn(
+                  "Limit Exceeded Memory MAX :: accountId: {}, instanceId: {}, memoryUtilizationMax: {}, limitMemoryValue: {}",
+                  accountId, instanceId, memoryMaxValue, limitMemoryValue);
+              memoryMaxValue = 4 * limitMemoryValue;
+            }
+          }
+
           if (instanceData.getTotalResource() != null) {
             Double totalCpuResource = instanceData.getTotalResource().getCpuUnits();
             Double totalMemoryResource = instanceData.getTotalResource().getMemoryMb();

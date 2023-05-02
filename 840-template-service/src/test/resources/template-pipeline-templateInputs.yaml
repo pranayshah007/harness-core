@@ -1,16 +1,16 @@
 stages:
-- stage:
-    identifier: "Stage_1"
-    type: "Deployment"
-    spec:
-      execution:
-        steps:
-        - step:
-            identifier: "Step_1"
-            type: "ShellScript"
-            spec:
-              source:
-                type: "Inline"
+  - stage:
+      identifier: Stage_1
+      type: Deployment
+      spec:
+        execution:
+          steps:
+            - step:
+                identifier: Step_1
+                type: ShellScript
                 spec:
-                  script: "<+input>"
-            timeout: "<+input>"
+                  source:
+                    type: Inline
+                    spec:
+                      script: <+input>
+                timeout: <+input>

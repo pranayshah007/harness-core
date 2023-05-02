@@ -15,7 +15,7 @@ import static io.harness.eraro.ErrorCode.CLUSTER_NOT_FOUND;
 import static io.harness.k8s.K8sConstants.API_VERSION;
 import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_BINARY;
 import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_INSTALL_HINT;
-import static io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable;
+import static io.harness.k8s.K8sConstants.GOOGLE_APPLICATION_CREDENTIALS_FLAG;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
@@ -38,6 +38,7 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesConfig.KubernetesConfigBuilder;
 import io.harness.k8s.model.kubeconfig.Exec;
 import io.harness.k8s.model.kubeconfig.InteractiveMode;
+import io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper;
 import io.harness.logging.LogCallback;
 import io.harness.serializer.JsonUtils;
 
@@ -63,6 +64,7 @@ import com.google.inject.Singleton;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -248,7 +250,7 @@ public class GkeClusterHelper {
       }
       kubernetesConfigBuilder.serviceAccountTokenSupplier(tokenSupplier);
     }
-    if (isExecAuthPluginBinaryAvailable(GCP_AUTH_PLUGIN_BINARY, logCallback)) {
+    if (KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(GCP_AUTH_PLUGIN_BINARY, logCallback)) {
       kubernetesConfigBuilder.authType(KubernetesClusterAuthType.EXEC_OAUTH);
       kubernetesConfigBuilder.exec(getGkeUserExecConfig());
     }
@@ -331,6 +333,7 @@ public class GkeClusterHelper {
     return Exec.builder()
         .apiVersion(API_VERSION)
         .command(GCP_AUTH_PLUGIN_BINARY)
+        .args(Collections.singletonList(GOOGLE_APPLICATION_CREDENTIALS_FLAG))
         .interactiveMode(InteractiveMode.NEVER)
         .provideClusterInfo(true)
         .installHint(GCP_AUTH_PLUGIN_INSTALL_HINT)

@@ -20,6 +20,7 @@ import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketOAuthDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
@@ -27,10 +28,12 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.git.GitClientHelper;
+import io.harness.product.ci.scm.proto.AuthType;
 import io.harness.product.ci.scm.proto.AzureProvider;
 import io.harness.product.ci.scm.proto.BitbucketCloudProvider;
 import io.harness.product.ci.scm.proto.BitbucketServerProvider;
@@ -133,13 +136,20 @@ public class ScmGitProviderMapper {
 
   private BitbucketCloudProvider createBitbucketCloudProvider(BitbucketConnectorDTO bitbucketConnector) {
     BitbucketApiAccessDTO apiAccess = bitbucketConnector.getApiAccess();
-    BitbucketUsernameTokenApiAccessDTO bitbucketUsernameTokenApiAccessDTO =
-        (BitbucketUsernameTokenApiAccessDTO) apiAccess.getSpec();
-    String username = getSecretAsStringFromPlainTextOrSecretRef(
-        bitbucketUsernameTokenApiAccessDTO.getUsername(), bitbucketUsernameTokenApiAccessDTO.getUsernameRef());
-    String appPassword = String.valueOf(bitbucketUsernameTokenApiAccessDTO.getTokenRef().getDecryptedValue());
-
-    return BitbucketCloudProvider.newBuilder().setUsername(username).setAppPassword(appPassword).build();
+    if (apiAccess.getSpec() instanceof BitbucketUsernameTokenApiAccessDTO) {
+      BitbucketUsernameTokenApiAccessDTO bitbucketUsernameTokenApiAccessDTO =
+          (BitbucketUsernameTokenApiAccessDTO) apiAccess.getSpec();
+      String username = getSecretAsStringFromPlainTextOrSecretRef(
+          bitbucketUsernameTokenApiAccessDTO.getUsername(), bitbucketUsernameTokenApiAccessDTO.getUsernameRef());
+      String appPassword = String.valueOf(bitbucketUsernameTokenApiAccessDTO.getTokenRef().getDecryptedValue());
+      return BitbucketCloudProvider.newBuilder().setUsername(username).setAppPassword(appPassword).build();
+    } else {
+      BitbucketOAuthDTO bitBucketOAuthDTO = (BitbucketOAuthDTO) apiAccess.getSpec();
+      return BitbucketCloudProvider.newBuilder()
+          .setOauthToken(scmGitProviderHelper.getToken(bitBucketOAuthDTO.getTokenRef()))
+          .setAuthType(AuthType.OAUTH)
+          .build();
+    }
   }
 
   private BitbucketServerProvider createBitbucketServerProvider(BitbucketConnectorDTO bitbucketConnector) {
@@ -161,7 +171,7 @@ public class ScmGitProviderMapper {
     return Provider.newBuilder()
         .setGitlab(createGitLabProvider(gitlabConnector))
         .setDebug(debug)
-        .setEndpoint(GitClientHelper.getGitlabApiURL(gitlabConnector.getUrl()))
+        .setEndpoint(GitClientHelper.getGitlabApiURL(gitlabConnector.getUrl(), getGitlabApiUrl(gitlabConnector)))
         .setSkipVerify(skipVerify)
         .setAdditionalCertsPath(getAdditionalCertsPath())
         .build();
@@ -234,5 +244,18 @@ public class ScmGitProviderMapper {
     GithubApiAccessDTO apiAccess = githubConnector.getApiAccess();
     GithubOauthDTO githubOauthDTO = (GithubOauthDTO) apiAccess.getSpec();
     return scmGitProviderHelper.getToken(githubOauthDTO.getTokenRef());
+  }
+
+  public static String getGitlabApiUrl(GitlabConnectorDTO gitlabConnector) {
+    if (gitlabConnector.getApiAccess() == null || gitlabConnector.getApiAccess().getSpec() == null) {
+      // not expected
+      return null;
+    }
+    GitlabApiAccessSpecDTO spec = gitlabConnector.getApiAccess().getSpec();
+    if (spec instanceof GitlabTokenSpecDTO) {
+      GitlabTokenSpecDTO tokenSpec = (GitlabTokenSpecDTO) spec;
+      return tokenSpec.getApiUrl();
+    }
+    return null;
   }
 }

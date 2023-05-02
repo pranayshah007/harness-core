@@ -244,7 +244,9 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
     String comment = "Rejected due to approval of " + pipelineUrl;
     HarnessApprovalActivityRequestDTO harnessApprovalActivityRequest =
         HarnessApprovalActivityRequestDTO.builder().comments(comment).action(HarnessApprovalAction.REJECT).build();
-    addHarnessApprovalActivity(approvalInstanceId, user, harnessApprovalActivityRequest);
+    HarnessApprovalInstance instance =
+        addHarnessApprovalActivity(approvalInstanceId, user, harnessApprovalActivityRequest);
+    closeHarnessApprovalStep(instance);
   }
 
   @Override

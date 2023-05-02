@@ -14,6 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
@@ -83,6 +84,9 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
     if (language == null) {
       throw new CIStageExecutionException("language cannot be null");
     }
+    if (language.equalsIgnoreCase("python") && featureFlagService.isEnabled(FeatureName.CI_PYTHON_TI, accountId)) {
+      throw new CIStageExecutionException("python TI is not enabled for this account");
+    }
     runTestsStepBuilder.setLanguage(language.toLowerCase());
     runTestsStepBuilder.setBuildTool(buildTool.toLowerCase());
 
@@ -110,6 +114,12 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
       runTestsStepBuilder.setTestAnnotations(testAnnotations);
     }
 
+    String testRoot = RunTimeInputHandler.resolveStringParameter(
+        "TestRoot", "RunTests", identifier, runTestsStepInfo.getTestRoot(), false);
+    if (StringUtils.isNotEmpty(testRoot)) {
+      runTestsStepBuilder.setTestRoot(testRoot);
+    }
+
     String packages = RunTimeInputHandler.resolveStringParameter(
         "Packages", "RunTests", identifier, runTestsStepInfo.getPackages(), false);
     if (StringUtils.isNotEmpty(packages)) {
@@ -130,6 +140,11 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
     String frameworkVersion = RunTimeInputHandler.resolveDotNetVersion(runTestsStepInfo.getFrameworkVersion());
     if (StringUtils.isNotEmpty(frameworkVersion)) {
       runTestsStepBuilder.setFrameworkVersion(frameworkVersion.toLowerCase());
+    }
+
+    String pythonVersion = RunTimeInputHandler.resolvePythonVersion(runTestsStepInfo.getPythonVersion());
+    if (StringUtils.isNotEmpty(pythonVersion)) {
+      runTestsStepBuilder.setPythonVersion(pythonVersion.toLowerCase());
     }
 
     UnitTestReport reports = runTestsStepInfo.getReports().getValue();

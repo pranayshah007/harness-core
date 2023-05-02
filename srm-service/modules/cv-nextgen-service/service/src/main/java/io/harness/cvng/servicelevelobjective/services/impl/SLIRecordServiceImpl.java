@@ -217,6 +217,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         .order(Sort.ascending(SLIRecordKeys.timestamp))
         .asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
   }
+  @Override
   public Pair<Map<ServiceLevelObjectivesDetail, List<SLIRecord>>, Map<ServiceLevelObjectivesDetail, SLIMissingDataType>>
   getSLODetailsSLIRecordsAndSLIMissingDataType(
       List<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList,

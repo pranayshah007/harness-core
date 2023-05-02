@@ -144,4 +144,9 @@ public class GoogleArtifactRegistryConfig implements ArtifactConfig, Visitable, 
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return connectorRefMap;
   }
+
+  @Override
+  public void validate() {
+    ArtifactConfigHelper.checkVersionAndVersionRegex(version, versionRegex);
+  }
 }

@@ -10,6 +10,7 @@ package io.harness.ng.core.api.impl;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ng.core.account.ServiceAccountConfig.DEFAULT_TOKEN_LIMIT;
+import static io.harness.ng.core.entities.ApiKey.DEFAULT_TTL_FOR_TOKEN;
 import static io.harness.ng.core.utils.NGUtils.validate;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
@@ -30,6 +31,7 @@ import io.harness.ng.core.api.ApiKeyService;
 import io.harness.ng.core.api.TokenService;
 import io.harness.ng.core.api.utils.JWTTokenFlowAuthFilterUtils;
 import io.harness.ng.core.common.beans.ApiKeyType;
+import io.harness.ng.core.dto.ApiKeyDTO;
 import io.harness.ng.core.dto.TokenAggregateDTO;
 import io.harness.ng.core.dto.TokenDTO;
 import io.harness.ng.core.dto.TokenFilterDTO;
@@ -51,6 +53,7 @@ import io.harness.token.TokenValidationHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -97,11 +100,16 @@ public class TokenServiceImpl implements TokenService {
     String randomString = RandomStringUtils.random(20, 0, 0, true, true, null, new SecureRandom());
     PasswordEncoder passwordEncoder = new BCryptPasswordEncoder($2A, 10);
     String tokenString = passwordEncoder.encode(randomString);
-    ApiKey apiKey = apiKeyService.getApiKey(tokenDTO.getAccountIdentifier(), tokenDTO.getOrgIdentifier(),
-        tokenDTO.getProjectIdentifier(), tokenDTO.getApiKeyType(), tokenDTO.getParentIdentifier(),
-        tokenDTO.getApiKeyIdentifier());
+    Optional<ApiKey> apiKeyOptional = apiKeyService.getApiKey(tokenDTO.getAccountIdentifier(),
+        tokenDTO.getOrgIdentifier(), tokenDTO.getProjectIdentifier(), tokenDTO.getApiKeyType(),
+        tokenDTO.getParentIdentifier(), tokenDTO.getApiKeyIdentifier());
+    if (apiKeyOptional.isEmpty()) {
+      throw new InvalidRequestException(
+          String.format("Api key not present in scope for identifier: [%s]", tokenDTO.getApiKeyIdentifier()));
+    }
+
     try {
-      Token token = TokenDTOMapper.getTokenFromDTO(tokenDTO, apiKey.getDefaultTimeToExpireToken());
+      Token token = TokenDTOMapper.getTokenFromDTO(tokenDTO, apiKeyOptional.get().getDefaultTimeToExpireToken());
       token.setEncodedPassword(tokenString);
       validate(token);
       Token newToken = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
@@ -117,7 +125,8 @@ public class TokenServiceImpl implements TokenService {
     }
   }
 
-  private void validateTokenRequest(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+  @VisibleForTesting
+  protected void validateTokenRequest(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       ApiKeyType apiKeyType, String parentIdentifier, String apiKeyIdentifier, TokenDTO tokenDTO) {
     if (!accountOrgProjectValidator.isPresent(accountIdentifier, orgIdentifier, projectIdentifier)) {
       throw new InvalidArgumentsException(String.format("Project [%s] in Org [%s] and Account [%s] does not exist",
@@ -125,8 +134,25 @@ public class TokenServiceImpl implements TokenService {
           USER_SRE);
     }
     validateTokenExpiryTime(tokenDTO);
-    apiKeyService.getApiKey(
+    Optional<ApiKey> apiKeyOptional = apiKeyService.getApiKey(
         accountIdentifier, orgIdentifier, projectIdentifier, apiKeyType, parentIdentifier, apiKeyIdentifier);
+    if (apiKeyOptional.isEmpty()) {
+      createApiKey(tokenDTO);
+    }
+  }
+
+  private void createApiKey(TokenDTO tokenDTO) {
+    apiKeyService.createApiKey(ApiKeyDTO.builder()
+                                   .name(tokenDTO.getApiKeyIdentifier().concat("_auto"))
+                                   .description("Auto Generated API key")
+                                   .accountIdentifier(tokenDTO.getAccountIdentifier())
+                                   .orgIdentifier(tokenDTO.getOrgIdentifier())
+                                   .projectIdentifier(tokenDTO.getProjectIdentifier())
+                                   .identifier(tokenDTO.getApiKeyIdentifier())
+                                   .parentIdentifier(tokenDTO.getParentIdentifier())
+                                   .apiKeyType(tokenDTO.getApiKeyType())
+                                   .defaultTimeToExpireToken(DEFAULT_TTL_FOR_TOKEN)
+                                   .build());
   }
 
   private void validateTokenExpiryTime(TokenDTO tokenDTO) {

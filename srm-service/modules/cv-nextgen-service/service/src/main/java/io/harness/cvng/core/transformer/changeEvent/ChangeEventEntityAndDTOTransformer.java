@@ -8,6 +8,7 @@
 package io.harness.cvng.core.transformer.changeEvent;
 
 import io.harness.cvng.activity.entities.Activity;
+import io.harness.cvng.activity.entities.ActivityBucket;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
 
@@ -27,5 +28,11 @@ public class ChangeEventEntityAndDTOTransformer {
     ChangeEventMetaDataTransformer changeEventMetaDataTransformer =
         changeTypeMetaDataTransformerMap.get(ChangeSourceType.ofActivityType(changeEvent.getType()));
     return changeEventMetaDataTransformer.getDTO(changeEvent);
+  }
+
+  public ActivityBucket getActivityBucket(Activity changeEvent) {
+    ChangeEventMetaDataTransformer changeEventMetaDataTransformer =
+        changeTypeMetaDataTransformerMap.get(ChangeSourceType.ofActivityType(changeEvent.getType()));
+    return changeEventMetaDataTransformer.getActivityBucket(changeEvent);
   }
 }

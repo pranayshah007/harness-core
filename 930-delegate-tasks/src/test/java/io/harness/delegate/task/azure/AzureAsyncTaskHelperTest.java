@@ -8,6 +8,7 @@
 package io.harness.delegate.task.azure;
 
 import static io.harness.azure.model.AzureConstants.AZURE_AUTH_PLUGIN_INSTALL_HINT;
+import static io.harness.azure.model.AzureConstants.AZURE_CONFIG_DIR;
 import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.MLUKIC;
@@ -92,6 +93,7 @@ import io.harness.exception.NestedExceptionUtils;
 import io.harness.filesystem.FileIo;
 import io.harness.filesystem.LazyAutoCloseableWorkingDirectory;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.k8s.model.kubeconfig.Exec;
 import io.harness.k8s.model.kubeconfig.InteractiveMode;
 import io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper;
@@ -114,6 +116,7 @@ import com.google.common.io.Resources;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1023,7 +1026,8 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
                        .installHint(AZURE_AUTH_PLUGIN_INSTALL_HINT)
                        .provideClusterInfo(false)
                        .interactiveMode(InteractiveMode.NEVER)
-                       .env(Collections.emptyList())
+                       .env(List.of(new EnvVariable(
+                           AZURE_CONFIG_DIR, Paths.get(WORKING_DIR, ".azure").normalize().toAbsolutePath().toString())))
                        .args(getArgsForKubeconfig(azureConfig.getAzureAuthenticationType()))
                        .build());
   }

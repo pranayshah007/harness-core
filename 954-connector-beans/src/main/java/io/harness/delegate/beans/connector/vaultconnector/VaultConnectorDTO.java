@@ -31,6 +31,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.vaultconnector.outcome.VaultConnectorOutcomeDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.secret.SecretReference;
@@ -119,6 +121,36 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
     return Collections.singletonList(this);
+  }
+
+  @Override
+  public ConnectorConfigOutcomeDTO toOutcome() {
+    return VaultConnectorOutcomeDTO.builder()
+        .authToken(authToken)
+        .basePath(basePath)
+        .vaultUrl(vaultUrl)
+        .isReadOnly(isReadOnly)
+        .renewalIntervalMinutes(renewalIntervalMinutes)
+        .secretEngineManuallyConfigured(secretEngineManuallyConfigured)
+        .secretEngineName(secretEngineName)
+        .appRoleId(appRoleId)
+        .secretId(secretId)
+        .isDefault(isDefault)
+        .secretEngineVersion(secretEngineVersion)
+        .delegateSelectors(delegateSelectors)
+        .namespace(namespace)
+        .sinkPath(sinkPath)
+        .useVaultAgent(useVaultAgent)
+        .useAwsIam(useAwsIam)
+        .awsRegion(awsRegion)
+        .vaultAwsIamRole(vaultAwsIamRole)
+        .headerAwsIam(headerAwsIam)
+        .useK8sAuth(useK8sAuth)
+        .vaultK8sAuthRole(vaultK8sAuthRole)
+        .serviceAccountTokenPath(serviceAccountTokenPath)
+        .k8sAuthEndpoint(k8sAuthEndpoint)
+        .renewAppRoleToken(renewAppRoleToken)
+        .build();
   }
 
   @Override

@@ -51,8 +51,7 @@ public abstract class AbstractApprovalCallback {
   protected void handleErrorNotifyResponse(
       NGLogCallback logCallback, ErrorNotifyResponseData responseData, String errorMessagePrefix) {
     String errorMessage = String.format(errorMessagePrefix + " %s", responseData.getErrorMessage());
-    logCallback.saveExecutionLog(
-        LogHelper.color(errorMessage, LogColor.Red), LogLevel.INFO, CommandExecutionStatus.FAILURE);
+    logCallback.saveExecutionLog(LogHelper.color(errorMessage, LogColor.Red), LogLevel.ERROR);
     log.error(errorMessage, responseData.getException());
   }
 
@@ -71,7 +70,7 @@ public abstract class AbstractApprovalCallback {
       if (evaluateWithinChangeWindow(ticket, instance, logCallback)) {
         log.info("Approval criteria has been met for instance id - {}", instance.getId());
         updateApprovalInstanceAndLog(logCallback, "Approval criteria has been met", LogColor.Cyan,
-            CommandExecutionStatus.SUCCESS, ApprovalStatus.APPROVED, instance.getId(), ticket);
+            CommandExecutionStatus.RUNNING, ApprovalStatus.APPROVED, instance.getId(), ticket);
         return;
       }
       log.info("Approval criteria met and waiting for change window for instance id - {}", instance.getId());
@@ -96,7 +95,7 @@ public abstract class AbstractApprovalCallback {
     if (rejectionEvaluationResult) {
       log.info("Rejection criteria has been met for instance id - {}", instance.getId());
       updateApprovalInstanceAndLog(logCallback, "Rejection criteria has been met", LogColor.Red,
-          CommandExecutionStatus.FAILURE, ApprovalStatus.REJECTED, instance.getId(), ticket);
+          CommandExecutionStatus.RUNNING, ApprovalStatus.REJECTED, instance.getId(), ticket);
       return;
     }
     log.info("Rejection criteria has also not been met for instance id - {}", instance.getId());
@@ -108,8 +107,7 @@ public abstract class AbstractApprovalCallback {
     log.error("Error while evaluating approval/rejection criteria", ex);
     String errorMessage = String.format(
         "Fatal error evaluating approval/rejection criteria: %s", ngErrorHelper.getErrorSummary(ex.getMessage()));
-    logCallback.saveExecutionLog(
-        LogHelper.color(errorMessage, LogColor.Red), LogLevel.INFO, CommandExecutionStatus.FAILURE);
+    logCallback.saveExecutionLog(LogHelper.color(errorMessage, LogColor.Red), LogLevel.ERROR);
     approvalInstanceService.finalizeStatus(instance.getId(), ApprovalStatus.FAILED, errorMessage);
   }
 

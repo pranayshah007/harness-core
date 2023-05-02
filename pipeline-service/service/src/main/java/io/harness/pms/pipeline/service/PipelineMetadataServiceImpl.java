@@ -12,7 +12,6 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineMetadataV2;
 import io.harness.pms.pipeline.PipelineMetadataV2.PipelineMetadataV2Keys;
 import io.harness.repositories.pipeline.PipelineMetadataV2Repository;
@@ -40,26 +39,24 @@ public class PipelineMetadataServiceImpl implements PipelineMetadataService {
   private PersistentLocker persistentLocker;
 
   @Override
-  public int incrementRunSequence(PipelineEntity pipelineEntity) {
-    String accountId = pipelineEntity.getAccountId();
-    String orgIdentifier = pipelineEntity.getOrgIdentifier();
-    String projectIdentifier = pipelineEntity.getProjectIdentifier();
-    int count = incrementExecutionCounter(accountId, orgIdentifier, projectIdentifier, pipelineEntity.getIdentifier());
+  public int incrementRunSequence(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    int count = incrementExecutionCounter(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     if (count == -1) {
       try {
         PipelineMetadataV2 metadata =
             PipelineMetadataV2.builder()
-                .accountIdentifier(pipelineEntity.getAccountIdentifier())
+                .accountIdentifier(accountId)
                 .orgIdentifier(orgIdentifier)
                 .projectIdentifier(projectIdentifier)
-                .runSequence(pipelineEntity.getRunSequence() + 1)
-                .identifier(pipelineEntity.getIdentifier())
+                .runSequence(1)
+                .identifier(pipelineIdentifier)
                 .entityGitDetails(EntityGitDetails.builder().branch(GitContextHelper.getBranch()).build())
                 .build();
         return save(metadata).getRunSequence();
       } catch (DuplicateKeyException exception) {
         // retry insert if above fails
-        return incrementExecutionCounter(accountId, orgIdentifier, projectIdentifier, pipelineEntity.getIdentifier());
+        return incrementExecutionCounter(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
       }
     }
     return count;

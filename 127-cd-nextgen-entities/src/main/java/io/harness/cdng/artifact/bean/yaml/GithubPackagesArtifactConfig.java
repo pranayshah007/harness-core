@@ -168,4 +168,9 @@ public class GithubPackagesArtifactConfig implements ArtifactConfig, Visitable, 
 
     return connectorRefMap;
   }
+
+  @Override
+  public void validate() {
+    ArtifactConfigHelper.checkVersionAndVersionRegex(version, versionRegex);
+  }
 }

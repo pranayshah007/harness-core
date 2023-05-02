@@ -26,6 +26,7 @@ import io.harness.spec.server.idp.v1.model.ConnectorInfoResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import javax.ws.rs.core.Response;
 import org.junit.Before;
 import org.junit.Test;
@@ -92,7 +93,7 @@ public class ConnectorInfoApiImplTest {
   @Test
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
-  public void testSaveConnectorInfo() {
+  public void testSaveConnectorInfo() throws ExecutionException {
     ConnectorInfoRequest request = new ConnectorInfoRequest();
     ConnectorDetails connectorDetails = new ConnectorDetails();
     connectorDetails.setIdentifier(GITHUB_IDENTIFIER);

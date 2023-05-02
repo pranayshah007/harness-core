@@ -36,6 +36,7 @@ import lombok.Data;
 import lombok.Singular;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -134,7 +135,8 @@ public class NGTriggerEntity implements PersistentEntity, PersistentNGCronIterab
     }
     try {
       String cronExpr = metadata.getCron().getExpression();
-      expandNextIterations(skipMissed, throttled, cronExpr, nextIterations);
+      String cronType = StringUtils.isBlank(metadata.getCron().getType()) ? "UNIX" : metadata.getCron().getType();
+      expandNextIterations(skipMissed, throttled, cronExpr, nextIterations, cronType);
     } catch (Exception e) {
       log.error("Failed to schedule executions for trigger {}", uuid, e);
       throw e;

@@ -132,6 +132,7 @@ public class PluginSettingUtils {
   public static final String PLUGIN_BUILD_ARGS = "PLUGIN_BUILD_ARGS";
   public static final String PLUGIN_CUSTOM_LABELS = "PLUGIN_CUSTOM_LABELS";
   public static final String PLUGIN_MOUNT = "PLUGIN_MOUNT";
+  public static final String PLUGIN_DEBUG = "PLUGIN_DEBUG";
   public static final String PLUGIN_BUCKET = "PLUGIN_BUCKET";
   public static final String PLUGIN_ENDPOINT = "PLUGIN_ENDPOINT";
   public static final String PLUGIN_REGION = "PLUGIN_REGION";

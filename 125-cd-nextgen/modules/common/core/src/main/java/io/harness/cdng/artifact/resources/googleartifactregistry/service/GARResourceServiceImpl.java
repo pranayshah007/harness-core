@@ -129,7 +129,7 @@ public class GARResourceServiceImpl implements GARResourceService {
         getBaseNGAccess(googleArtifactRegistryRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     GarDelegateRequest googleArtifactDelegateRequest = ArtifactDelegateRequestUtils.getGoogleArtifactDelegateRequest(
-        region, repositoryName, project, pkg, garRequestDTO.getTag(), garRequestDTO.getTagRegex(), connector,
+        region, repositoryName, project, pkg, garRequestDTO.getVersion(), garRequestDTO.getVersionRegex(), connector,
         encryptionDetails, ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY, MAXBUILDS);
 
     try {

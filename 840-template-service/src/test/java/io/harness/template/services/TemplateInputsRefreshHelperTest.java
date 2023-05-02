@@ -19,7 +19,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.harness.TemplateServiceTestBase;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -34,8 +33,6 @@ import io.harness.rule.OwnerRule;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateInputsRefreshHelper;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
-import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
-import io.harness.template.yaml.TemplateYamlFacade;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -54,10 +51,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
   @Mock private NGTemplateServiceHelper templateServiceHelper;
   @InjectMocks TemplateInputsRefreshHelper templateInputsRefreshHelper;
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
-  @Mock NGTemplateFeatureFlagHelperService featureFlagHelperService;
   @Mock NgManagerReconcileClient ngManagerReconcileClient;
-  TemplateYamlFacade templateYamlFacade = new TemplateYamlFacade();
-
   private static final String ACCOUNT_ID = "accountId";
 
   private String refreshedYaml;
@@ -75,15 +69,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
   public void setup() throws IllegalAccessException, IOException {
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
     on(templateInputsRefreshHelper).set("templateMergeServiceHelper", templateMergeServiceHelper);
-    on(templateInputsRefreshHelper).set("featureFlagHelperService", featureFlagHelperService);
     on(templateInputsRefreshHelper).set("ngManagerReconcileClient", ngManagerReconcileClient);
-    on(templateYamlFacade).set("featureFlagHelperService", featureFlagHelperService);
-    on(templateInputsRefreshHelper).set("templateYamlFacade", templateYamlFacade);
-    on(templateMergeServiceHelper).set("templateYamlFacade", templateYamlFacade);
-
-    doReturn(true)
-        .when(featureFlagHelperService)
-        .isFeatureFlagEnabled("", FeatureName.CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS);
 
     Call<ResponseDTO<InputsValidationResponse>> ngManagerReconcileCall = mock(Call.class);
 

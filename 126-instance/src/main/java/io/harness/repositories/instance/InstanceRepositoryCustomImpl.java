@@ -307,10 +307,12 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
 
     MatchOperation matchStage = Aggregation.match(criteria);
     SortOperation sortOperation = Aggregation.sort(Sort.by(Sort.Direction.DESC, InstanceKeys.lastDeployedAt));
-    ProjectionOperation projectionOperation = Aggregation.project(InstanceKeys.envIdentifier, InstanceKeys.envName,
-        InstanceKeys.envType, InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME, InstanceKeys.infraIdentifier,
-        InstanceKeys.infraName, InstanceKeysAdditional.instanceInfoClusterIdentifier,
-        InstanceKeysAdditional.instanceInfoAgentIdentifier, InstanceKeys.lastDeployedAt);
+    ProjectionOperation projectionOperation = Aggregation.project(InstanceKeys.instanceKey,
+        InstanceKeys.infrastructureMappingId, InstanceKeys.envIdentifier, InstanceKeys.envName, InstanceKeys.envType,
+        InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME, InstanceKeys.infraIdentifier, InstanceKeys.infraName,
+        InstanceKeysAdditional.instanceInfoClusterIdentifier, InstanceKeysAdditional.instanceInfoAgentIdentifier,
+        InstanceKeys.lastDeployedAt, InstanceKeys.stageNodeExecutionId, InstanceKeys.stageSetupId,
+        InstanceKeys.rollbackStatus, InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastPipelineExecutionId);
     GroupOperation groupOperation;
     if (!isGitOps) {
       groupOperation =
@@ -327,12 +329,29 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                          .as(InstanceKeys.infraName)
                          .first(AGENT_IDENTIFIER)
                          .as(AGENT_IDENTIFIER)
+                         .first(InstanceKeys.instanceKey)
+                         .as(InstanceKeys.instanceKey)
+                         .first(InstanceKeys.infrastructureMappingId)
+                         .as(InstanceKeys.infrastructureMappingId)
+                         .first(InstanceKeys.stageNodeExecutionId)
+                         .as(InstanceKeys.stageNodeExecutionId)
+                         .first(InstanceKeys.stageSetupId)
+                         .as(InstanceKeys.stageSetupId)
+                         .first(InstanceKeys.rollbackStatus)
+                         .as(InstanceKeys.rollbackStatus)
+                         .first(InstanceKeys.lastPipelineExecutionId)
+                         .as(InstanceKeys.lastPipelineExecutionId)
+                         .first(InstanceKeys.lastPipelineExecutionName)
+                         .as(InstanceKeys.lastPipelineExecutionName)
                          .count()
                          .as(InstanceSyncConstants.COUNT);
 
     ProjectionOperation projectionOperation2 =
         Aggregation
-            .project(InstanceKeys.envName, InstanceKeys.infraName, AGENT_IDENTIFIER, InstanceKeys.lastDeployedAt,
+            .project(InstanceKeys.instanceKey, InstanceKeys.infrastructureMappingId, InstanceKeys.envName,
+                InstanceKeys.infraName, AGENT_IDENTIFIER, InstanceKeys.lastDeployedAt,
+                InstanceKeys.stageNodeExecutionId, InstanceKeys.stageSetupId, InstanceKeys.rollbackStatus,
+                InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastPipelineExecutionId,
                 InstanceSyncConstants.COUNT)
             .andExpression("_id." + InstanceKeys.envIdentifier)
             .as(InstanceKeys.envIdentifier)

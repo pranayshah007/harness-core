@@ -10,9 +10,11 @@ package io.harness.pms.plan.execution.helpers;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.expressions.InputsExpressionEvaluator;
+import io.harness.pms.merger.helpers.MergeHelper;
 
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -21,8 +23,12 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class InputSetMergeHelperV1 {
-  public String mergeInputSetIntoPipelineYaml(String inputSet, String pipelineYaml) {
-    EngineExpressionEvaluator evaluator = new InputsExpressionEvaluator(inputSet, pipelineYaml);
+  public String mergeInputSetIntoPipelineYaml(String inputSetYaml, String pipelineYaml) {
+    if (EmptyPredicate.isEmpty(inputSetYaml)) {
+      return pipelineYaml;
+    }
+    pipelineYaml = MergeHelper.mergeOptionsRuntimeInput(pipelineYaml, inputSetYaml);
+    EngineExpressionEvaluator evaluator = new InputsExpressionEvaluator(inputSetYaml, pipelineYaml);
     return (String) evaluator.resolve(pipelineYaml, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
   }
 }

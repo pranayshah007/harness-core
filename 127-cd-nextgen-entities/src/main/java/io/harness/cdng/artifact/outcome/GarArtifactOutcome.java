@@ -47,6 +47,7 @@ public class GarArtifactOutcome implements ArtifactOutcome {
    */
   String dockerConfigJsonSecret;
   String repositoryType;
+  String digest;
   Map<String, String> metadata;
   Map<String, String> label;
   boolean primaryArtifact;

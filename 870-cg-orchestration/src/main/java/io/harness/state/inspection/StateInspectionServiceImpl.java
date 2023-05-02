@@ -15,7 +15,9 @@ import static java.util.Arrays.asList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.k8s.manifest.ManifestHelper;
+import io.harness.mongo.MongoConfig;
 import io.harness.observer.Subject;
+import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.state.inspection.StateInspection.StateInspectionKeys;
 
@@ -26,8 +28,9 @@ import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,15 +56,19 @@ public class StateInspectionServiceImpl implements StateInspectionService {
     if (v != null) {
       List<ExpressionVariableUsage.Item> vars = v.getVariables();
 
+      List<ExpressionVariableUsage.Item> newVars = new ArrayList<>();
       for (ExpressionVariableUsage.Item var : vars) {
         if (K8S_RESOURCES_MANIFESTS.equals(var.getExpression())) {
-          vars.remove(var);
-          vars.add(ExpressionVariableUsage.Item.builder()
-                       .expression(var.getExpression())
-                       .value(ManifestHelper.toYamlForLogs(ManifestHelper.processYaml(var.getValue())))
-                       .count(var.getCount())
-                       .build());
+          newVars.add(ExpressionVariableUsage.Item.builder()
+                          .expression(var.getExpression())
+                          .value(ManifestHelper.toYamlForLogs(ManifestHelper.processYaml(var.getValue())))
+                          .count(var.getCount())
+                          .build());
+        } else {
+          newVars.add(var);
         }
+        stateInspection.getData().put(
+            EXPRESSION_VARIABLE_USAGE, ExpressionVariableUsage.builder().variables(newVars).build());
       }
     }
   }
@@ -80,15 +87,18 @@ public class StateInspectionServiceImpl implements StateInspectionService {
   }
 
   @Override
-  public List<StateInspection> listUsingSecondary(Collection<String> stateExecutionInstanceIds) {
+  public void search(Set<String> stateExecutionInstanceIds, Consumer<StateInspection> consumer) {
     if (isEmpty(stateExecutionInstanceIds)) {
-      return new ArrayList<>();
+      return;
     }
-
-    return persistence.createAnalyticsQuery(StateInspection.class, excludeAuthority)
-        .field(StateInspectionKeys.stateExecutionInstanceId)
-        .in(stateExecutionInstanceIds)
-        .asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
+    try (HIterator<StateInspection> iterator =
+             new HIterator<>(persistence.createAnalyticsQuery(StateInspection.class, excludeAuthority)
+                                 .field(StateInspectionKeys.stateExecutionInstanceId)
+                                 .in(stateExecutionInstanceIds)
+                                 .limit(MongoConfig.NO_LIMIT)
+                                 .fetch(new FindOptions().readPreference(ReadPreference.secondaryPreferred())))) {
+      iterator.forEach(consumer);
+    }
   }
 
   @Override

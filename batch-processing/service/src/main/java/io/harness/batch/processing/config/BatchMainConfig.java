@@ -23,6 +23,7 @@ import io.harness.timescaledb.TimeScaleDBConfig;
 import software.wings.helpers.ext.mail.SmtpConfig;
 import software.wings.security.authentication.AwsS3SyncConfig;
 import software.wings.security.authentication.BatchQueryConfig;
+import software.wings.security.authentication.BulkOperationBatchQueryConfig;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ public class BatchMainConfig {
   @JsonProperty("harness-mongo") private MongoConfig harnessMongo;
   @JsonProperty("events-mongo") private MongoConfig eventsMongo;
   @JsonProperty("batchQueryConfig") private BatchQueryConfig batchQueryConfig;
+  @JsonProperty("bulkOperationBatchQueryConfig") private BulkOperationBatchQueryConfig bulkOperationBatchQueryConfig;
   @JsonProperty("awsRegionIdToName") private Map<String, String> awsRegionIdToName;
   @JsonProperty("awsS3SyncConfig") private AwsS3SyncConfig awsS3SyncConfig;
   @JsonProperty("azureStorageSyncConfig") private AzureStorageSyncConfig azureStorageSyncConfig;

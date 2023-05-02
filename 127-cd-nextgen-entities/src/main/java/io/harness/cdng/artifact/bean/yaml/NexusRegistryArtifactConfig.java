@@ -159,4 +159,9 @@ public class NexusRegistryArtifactConfig implements ArtifactConfig, Visitable, W
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return connectorRefMap;
   }
+
+  @Override
+  public void validate() {
+    ArtifactConfigHelper.checkTagAndTagRegex(tag, tagRegex);
+  }
 }

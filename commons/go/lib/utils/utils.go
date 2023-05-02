@@ -128,6 +128,33 @@ func ParseCsharpNode(file types.File, testGlobs []string) (*Node, error) {
 	return &node, nil
 }
 
+// ParsePythonNode extracts the file name from a Python file path
+// e.g., src/abc/def/A.py
+// will return class = A
+func ParsePythonNode(file types.File, testGlobs []string) (*Node, error) {
+	var node Node
+	node.Pkg = ""
+	node.Class = ""
+	node.Lang = LangType_UNKNOWN
+	node.Type = NodeType_OTHER
+
+	filename := strings.TrimSpace(file.Name)
+	if !strings.HasSuffix(filename, ".py") {
+		return &node, nil
+	}
+	node.Lang = LangType_PYTHON
+	node.Type = NodeType_SOURCE
+
+	for _, glob := range testGlobs {
+		if matched, _ := zglob.Match(glob, filename); !matched {
+			continue
+		}
+		node.Type = NodeType_TEST
+	}
+	node.File = filename
+	return &node, nil
+}
+
 //ParseJavaNodeFromPath extracts the pkg and class names from a Java file path
 // e.g., 320-ci-execution/src/main/java/io/harness/stateutils/buildstate/ConnectorUtils.java
 // will return pkg = io.harness.stateutils.buildstate, class = ConnectorUtils
@@ -258,6 +285,9 @@ func ParseFileNames(files []types.File) ([]Node, error) {
 		}
 		if strings.HasSuffix(path, ".cs") {
 			node, _ := ParseCsharpNode(file, []string{})
+			nodes = append(nodes, *node)
+		} else if strings.HasSuffix(path, ".py") {
+			node, _ := ParsePythonNode(file, []string{})
 			nodes = append(nodes, *node)
 		} else {
 			node, _ := ParseJavaNode(file)

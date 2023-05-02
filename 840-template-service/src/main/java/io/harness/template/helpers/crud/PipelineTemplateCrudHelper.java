@@ -9,7 +9,7 @@ package io.harness.template.helpers.crud;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
+import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE_INPUTS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
