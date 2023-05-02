@@ -10,6 +10,7 @@ package software.wings.service.impl.instance;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
+import static io.harness.beans.FeatureName.SPG_CG_STATS_INSTANCE_CONSUMER;
 import static io.harness.beans.FeatureName.SPG_SERVICES_OVERVIEW_RBAC;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
@@ -1173,10 +1174,15 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
   @Override
   public Set<String> getDeletedAppIds(String accountId, long timestamp) {
-    List<Instance> instancesForAccount =
-        getInstancesForAccount(accountId, timestamp, Collections.singletonList("appId"));
-    Set<String> appIdsFromInstances = instancesForAccount.stream().map(Instance::getAppId).collect(Collectors.toSet());
-
+    final Set<String> appIdsFromInstances = new HashSet<>();
+    if (featureFlagService.isEnabled(SPG_CG_STATS_INSTANCE_CONSUMER, accountId)) {
+      consumeInstancesForAccount(accountId, timestamp, Collections.singletonList("appId"),
+          (instance) -> appIdsFromInstances.add(instance.getAppId()));
+    } else {
+      List<Instance> instancesForAccount =
+          getInstancesForAccount(accountId, timestamp, Collections.singletonList("appId"));
+      appIdsFromInstances.addAll(instancesForAccount.stream().map(Instance::getAppId).collect(Collectors.toSet()));
+    }
     List<Application> appsByAccountId = appService.getAppsByAccountId(accountId);
     Set<String> existingApps = appsByAccountId.stream().map(Application::getUuid).collect(Collectors.toSet());
     appIdsFromInstances.removeAll(existingApps);
