@@ -12,7 +12,6 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.pluginstep.AbstractContainerStepPlanCreator;
-import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.steps.SkipType;
@@ -25,7 +24,6 @@ import io.harness.ssca.cd.beans.orchestration.CdSscaOrchestrationStepNode;
 import io.harness.steps.plugin.ContainerCommandUnitConstants;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -42,8 +40,7 @@ public class CdSscaOrchestrationStepPlanCreator extends AbstractContainerStepPla
   }
 
   @Override
-  public PlanNode createPlanForStep(
-      String stepNodeId, StepParameters stepParameters, List<AdviserObtainment> adviserObtainments) {
+  public PlanNode createPlanForStep(String stepNodeId, StepParameters stepParameters) {
     return PlanNode.builder()
         .uuid(stepNodeId)
         .name(ContainerCommandUnitConstants.SscaOrchestrationStep)

@@ -10,7 +10,6 @@ package io.harness.plancreator.steps.pluginstep;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.steps.SkipType;
@@ -23,14 +22,12 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.plugin.ContainerCommandUnitConstants;
 
-import java.util.List;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 @OwnedBy(PIPELINE)
 public class RunContainerStepPlanCreater {
-  public PlanNode createPlanForField(
-      String runStepNodeId, StepParameters stepElementParameters, List<AdviserObtainment> adviserObtainments) {
+  public PlanNode createPlanForField(String runStepNodeId, StepParameters stepElementParameters) {
     return PlanNode.builder()
         .uuid(runStepNodeId)
         .name(ContainerCommandUnitConstants.ContainerStep)
@@ -39,7 +36,6 @@ public class RunContainerStepPlanCreater {
                       .setType(StepSpecTypeConstants.RUN_CONTAINER_STEP)
                       .setStepCategory(StepCategory.STEP)
                       .build())
-        .adviserObtainments(adviserObtainments)
         .group(StepOutcomeGroup.STEP.name())
         .stepParameters(stepElementParameters)
         .facilitatorObtainment(
