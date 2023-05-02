@@ -8,7 +8,9 @@
 package io.harness.assessment.settings.services;
 
 import io.harness.assessment.settings.beans.dto.AssessmentResultsResponse;
+import io.harness.assessment.settings.beans.dto.AssessmentSectionResultResponse;
 import io.harness.assessment.settings.beans.dto.ScoreOverviewDTO;
+import io.harness.assessment.settings.beans.dto.SectionResultResponse;
 import io.harness.assessment.settings.beans.dto.UserResponsesResponse;
 import io.harness.assessment.settings.beans.entities.Assessment;
 import io.harness.assessment.settings.beans.entities.AssessmentResponse;
@@ -28,6 +30,7 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -107,6 +110,39 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
     Long numOfResponses = organizationEvaluation.getNumOfResponses();
     setResultsOverview(benchmarkId, assessmentResultsResponse, numOfResponses);
     return assessmentResultsResponse;
+  }
+
+  @Override
+  public AssessmentSectionResultResponse getSectionResults(String resultCode, String benchmarkId) {
+    AssessmentResultsResponse resultsResponse = getResults(resultCode, benchmarkId);
+    if (resultsResponse != null) {
+      Map<String, SectionResultResponse> sectionResultResponseMap = new HashMap<>();
+      resultsResponse.getResponses().forEach(userResponse -> {
+        String sectionId = userResponse.getSectionId();
+        sectionResultResponseMap.putIfAbsent(sectionId,
+            SectionResultResponse.builder()
+                .sectionId(sectionId)
+                .sectionText(userResponse.getSectionText())
+                .userResponses(new ArrayList<>())
+                .build());
+        sectionResultResponseMap.get(sectionId).getUserResponses().add(userResponse);
+      });
+      AssessmentSectionResultResponse sectionResultResponse =
+          AssessmentSectionResultResponse.builder()
+              .sectionResultResponses(new HashSet<>(sectionResultResponseMap.values()))
+              .assessmentName(resultsResponse.getAssessmentName())
+              .assessmentId(resultsResponse.getAssessmentId())
+              .resultLink(resultsResponse.getResultLink())
+              .majorVersion(resultsResponse.getMajorVersion())
+              .minorVersion(resultsResponse.getMinorVersion())
+              .status(resultsResponse.getStatus())
+              .userScores(resultsResponse.getUserScores())
+              .organizationScores(resultsResponse.getOrganizationScores())
+              .benchmarks(resultsResponse.getBenchmarks())
+              .scoreOverview(resultsResponse.getScoreOverview())
+              .build();
+    }
+    return null;
   }
 
   @NotNull

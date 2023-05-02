@@ -31,5 +31,8 @@ java_library(
         "@maven//:org_springframework_data_spring_data_commons",
         "@maven//:org_springframework_data_spring_data_mongodb",
         "@maven//:org_apache_commons_commons_email",
+        "@maven//:com_squareup_okhttp3_okhttp",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:com_squareup_retrofit2_converter_gson",
     ],
 )

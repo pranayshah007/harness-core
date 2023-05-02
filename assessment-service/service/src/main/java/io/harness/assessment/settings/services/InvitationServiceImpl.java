@@ -13,6 +13,7 @@ import static org.apache.commons.lang3.StringUtils.stripToNull;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.assessment.settings.beans.WhoIsRecord;
 import io.harness.assessment.settings.beans.dto.AssessmentInviteDTO;
 import io.harness.assessment.settings.beans.entities.Assessment;
 import io.harness.assessment.settings.beans.entities.Organization;
@@ -22,20 +23,27 @@ import io.harness.assessment.settings.repositories.AssessmentRepository;
 import io.harness.assessment.settings.repositories.OrganizationRepository;
 import io.harness.assessment.settings.repositories.UserInvitationRepository;
 import io.harness.assessment.settings.repositories.UserRepository;
+import io.harness.assessment.settings.utils.RequestExecutor;
+import io.harness.assessment.settings.utils.RequestExecutor.CustomRestClient;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.notification.SmtpConfig;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
+import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import javax.mail.internet.AddressException;
@@ -48,6 +56,9 @@ import org.apache.commons.mail.DefaultAuthenticator;
 import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
+import retrofit2.Call;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 @OwnedBy(HarnessTeam.SEI)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -58,6 +69,7 @@ public class InvitationServiceImpl implements InvitationService {
   private OrganizationRepository organizationRepository;
   private AssessmentRepository assessmentRepository;
   private SmtpConfig smtpConfig;
+  private RequestExecutor requestExecutor;
   @Inject @Named("baseUrl") private String baseUrl;
 
   private UserInvitationRepository userInvitationRepository;
@@ -77,10 +89,14 @@ public class InvitationServiceImpl implements InvitationService {
     for (String userEmail : assessmentInviteDTO.getEmails()) {
       try {
         String organizationId = StringUtils.substringAfter(userEmail, "@");
+        String organizationName = getCompanyInfo(userEmail);
         Optional<Organization> organizationOptional = organizationRepository.findById(organizationId);
         if (organizationOptional.isEmpty()) {
           organizationRepository.save(
-              Organization.builder().id(organizationId).organizationName(organizationId).build());
+              Organization.builder()
+                  .id(organizationId)
+                  .organizationName(organizationName == null ? organizationId : organizationName)
+                  .build());
         }
         encoded = TokenGenerationUtil.generateInviteFromEmail(userEmail, assessmentId);
         String invitedBy = assessmentInviteDTO.getInvitedBy().orElse("Self");
@@ -96,6 +112,7 @@ public class InvitationServiceImpl implements InvitationService {
                                             .generatedCode(encoded)
                                             .assessmentId(assessmentId)
                                             .invitedBy(invitedBy)
+
                                             .build();
         userInvitationRepository.save(userInvitation);
         String surveyLink = baseUrl + "assessment/" + userInvitation.getGeneratedCode();
@@ -116,6 +133,36 @@ public class InvitationServiceImpl implements InvitationService {
     // Create the user in DB
     // call sending invite.
     return assessmentInviteDTO;
+  }
+
+  private String getCompanyInfo(String userEmail) {
+    Retrofit baseCall = new Retrofit.Builder()
+                            .baseUrl("https://www.whoisxmlapi.com/whoisserver/")
+                            .addConverterFactory(GsonConverterFactory.create())
+                            .client(RequestExecutor.getUnsafeOkHttpClient())
+                            .build();
+
+    Map<String, String> headerMap = new HashMap<>();
+    headerMap.put("Accept", "application/json");
+
+    Map<String, Object> queryMap = new HashMap<>();
+    queryMap.put("domainName", userEmail);
+    queryMap.put("outputFormat", "json");
+    queryMap.put("apiKey", "at_kg0maqjqnhfz3MvYRJyyV1JPFYEbf");
+    Call call = baseCall.create(CustomRestClient.class).get("WhoisService", headerMap, queryMap);
+    String jsonResponse = new Gson().toJson(requestExecutor.executeRequest(call));
+
+    ObjectMapper objectMapper = new ObjectMapper();
+    WhoIsRecord whoIsRecord = null;
+    try {
+      whoIsRecord = objectMapper.readValue(jsonResponse, WhoIsRecord.class);
+      return whoIsRecord.getWhoIsRecord().getRegistrant() != null
+          ? whoIsRecord.getWhoIsRecord().getRegistrant().getOrganization()
+          : whoIsRecord.getWhoIsRecord().getDomainName();
+
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e.getMessage());
+    }
   }
 
   private NotificationProcessingResponse send(

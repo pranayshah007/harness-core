@@ -7,7 +7,9 @@
 package io.harness.assessment.settings.services;
 
 import io.harness.assessment.settings.beans.dto.AssessmentResultsResponse;
+import io.harness.assessment.settings.beans.dto.AssessmentSectionResultResponse;
 
 public interface AssessmentResultService {
   AssessmentResultsResponse getResults(String resultCode, String benchmarkId);
+  AssessmentSectionResultResponse getSectionResults(String resultCode, String benchmarkId);
 }

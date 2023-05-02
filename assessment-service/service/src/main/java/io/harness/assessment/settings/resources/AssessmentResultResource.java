@@ -40,4 +40,18 @@ public class AssessmentResultResource {
         .entity(assessmentResultService.getResults(resultCode, benchmarkId))
         .build();
   }
+
+  @GET
+  @Path(("section-results/{resultCode}"))
+  @Produces({"application/json"})
+  @ApiOperation(value = "View section wise results of an assessment previously attempted.",
+      nickname = "getAssessmentSectionResults", response = AssessmentResultsResponse.class)
+  public Response
+  getAssessmentSectionResults(
+      @PathParam("resultCode") String resultCode, @QueryParam("benchmarkId") String benchmarkId) {
+    // A uniquely generated non guessable link.
+    return Response.status(Response.Status.OK)
+        .entity(assessmentResultService.getSectionResults(resultCode, benchmarkId))
+        .build();
+  }
 }

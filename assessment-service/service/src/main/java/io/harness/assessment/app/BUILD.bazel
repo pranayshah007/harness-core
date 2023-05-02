@@ -44,6 +44,10 @@ java_binary(
         "@maven//:com_google_inject_guice",
         "@maven//:org_apache_logging_log4j_log4j_api",
         "@maven//:org_apache_logging_log4j_log4j_to_slf4j",
+        "@maven//:com_squareup_okhttp3_okhttp",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:com_squareup_retrofit2_converter_gson",
+
     ],
 )
 
