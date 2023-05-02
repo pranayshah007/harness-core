@@ -129,7 +129,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -1174,7 +1173,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
       String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,
       Boolean getDistinctFromBranches, Pageable pageable) {
-    filterProperties.setTypes(Arrays.asList(new ConnectorType[] {ConnectorType.KUBERNETES_CLUSTER}));
+    filterProperties.setTypes(List.of(ConnectorType.KUBERNETES_CLUSTER));
     Page<Connector> k8sConnectors = listHelper(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
         filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable);
 
@@ -1184,13 +1183,14 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     }
     log.info("k8sConnectorRefList {}", k8sConnectorRefList);
 
-    filterProperties.setTypes(Arrays.asList(new ConnectorType[] {ConnectorType.CE_KUBERNETES_CLUSTER}));
+    Pageable ccmK8sPageable = getPageRequest(0, 100, null);
+    filterProperties.setTypes(List.of(ConnectorType.CE_KUBERNETES_CLUSTER));
     filterProperties.setCcmConnectorFilter(CcmConnectorFilter.builder().k8sConnectorRef(k8sConnectorRefList).build());
-    Page<Connector> ccmk8sConnectors = listHelper(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
-        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable);
-    log.info("ccmk8sConnectors count elements: {} pages: {}", ccmk8sConnectors.getTotalElements(),
-        ccmk8sConnectors.getTotalPages());
-    return getCcmK8sResponseList(accountIdentifier, orgIdentifier, projectIdentifier, k8sConnectors, ccmk8sConnectors);
+    Page<Connector> ccmK8sConnectors = listHelper(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
+        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, ccmK8sPageable);
+    log.info("ccmK8sConnectors count elements: {} pages: {}", ccmK8sConnectors.getTotalElements(),
+        ccmK8sConnectors.getTotalPages());
+    return getCcmK8sResponseList(accountIdentifier, orgIdentifier, projectIdentifier, k8sConnectors, ccmK8sConnectors);
   }
 
   private Boolean isBuiltInSMDisabled(String accountIdentifier) {
