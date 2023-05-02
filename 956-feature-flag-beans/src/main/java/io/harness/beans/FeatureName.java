@@ -750,7 +750,6 @@ public enum FeatureName {
   PL_USE_CREDENTIALS_FROM_DELEGATE_FOR_GCP_SM(
       "Enables the use of credentials from Delegate in GCP Secret Manager", HarnessTeam.PL),
   CI_ENABLE_DLC("Enable docker layer caching", HarnessTeam.CI),
-  SRM_SPLUNK_SIGNALFX("Will enable SignalFX metric health source in SRM", HarnessTeam.CV),
   SRM_TELEMETRY("Will enable telemetry for verify step result", HarnessTeam.CV);
 
   @Deprecated
