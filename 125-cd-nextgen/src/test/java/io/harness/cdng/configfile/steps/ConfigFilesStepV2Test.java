@@ -165,7 +165,6 @@ public class ConfigFilesStepV2Test extends CategoryTest {
 
     AsyncExecutableResponse stepResponse = step.executeAsyncAfterRbac(buildAmbiance(), new EmptyStepParameters(), null);
 
-    assertThat(stepResponse.getStatus()).isEqualTo(Status.SKIPPED);
     verify(mockSweepingOutputService, never()).consume(any(), anyString(), any(), anyString());
   }
 
@@ -223,7 +222,6 @@ public class ConfigFilesStepV2Test extends CategoryTest {
         .consume(any(), eq("CONFIG_FILES_STEP_V2"), captor.capture(), eq("STAGE"));
     verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(any(), any(List.class), any(Boolean.class));
     ConfigFilesStepV2SweepingOutput outcome = captor.getValue();
-    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(outcome.getGitConfigFileOutcomesMapTaskIds().size()).isEqualTo(3);
   }
 
@@ -274,7 +272,6 @@ public class ConfigFilesStepV2Test extends CategoryTest {
         .consume(any(), eq("CONFIG_FILES_STEP_V2"), captor.capture(), eq("STAGE"));
     verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(any(), any(List.class), any(Boolean.class));
     ConfigFilesStepV2SweepingOutput outcome = captor.getValue();
-    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(outcome.getHarnessConfigFileOutcomes().size()).isEqualTo(3);
   }
 

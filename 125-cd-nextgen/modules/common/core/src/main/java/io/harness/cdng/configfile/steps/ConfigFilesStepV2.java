@@ -171,10 +171,8 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (EmptyPredicate.isEmpty(configFiles)) {
       logCallback.saveExecutionLog(
-          String.format("No config files configured in the service. <+%s> expressions will not work",
-              OutcomeExpressionConstants.CONFIG_FILES),
-          LogLevel.WARN);
-      return AsyncExecutableResponse.newBuilder().setStatus(Status.SKIPPED).build();
+          "No config files configured in the service. configFiles expressions will not work", LogLevel.WARN);
+      return AsyncExecutableResponse.newBuilder().build();
     }
     cdExpressionResolver.updateExpressions(ambiance, configFiles);
     JavaxValidator.validateBeanOrThrow(new ConfigFileValidatorDTO(configFiles));
@@ -222,7 +220,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
           ambiance, OutcomeExpressionConstants.CONFIG_FILES, configFilesOutcomes, StepCategory.STAGE.name());
     }
 
-    return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).setStatus(Status.SUCCEEDED).build();
+    return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
   }
 
   private String createGitDelegateTask(
