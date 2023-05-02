@@ -734,7 +734,8 @@ public enum FeatureName {
   CIE_USE_DOCKER_BUILDX("Enable docker build and push step to use buildx", HarnessTeam.CI),
   CDS_STAGE_EXECUTION_DATA_SYNC(
       "This flag controls if you want CD Stage execution data saved in cd service and eventually synced to timescale",
-      HarnessTeam.CDC);
+      HarnessTeam.CDC),
+  PL_USE_CREDENTIALS_FROM_DELEGATE_FOR_GCP_KMS("Enables the use of credentials from Delegate in GCP KMS Secret Manager", HarnessTeam.PL);
 
   @Deprecated
   FeatureName() {
