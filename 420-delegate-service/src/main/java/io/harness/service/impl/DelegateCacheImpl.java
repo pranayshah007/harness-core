@@ -42,6 +42,8 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -56,6 +58,7 @@ import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.redisson.api.LocalCachedMapOptions;
 import org.redisson.api.RLocalCachedMap;
 import org.redisson.api.RMap;
 
@@ -336,8 +339,8 @@ public class DelegateCacheImpl implements DelegateCache {
 
   @Override
   public List<Delegate> getAllDelegatesFromRedisCache() {
-    RMap<Integer, RLocalCachedMap<String, Object>> delegates = delegateRedissonCacheManager.getMapFromCache(DELEGATE_CACHE);
-   return delegates.values().stream().map(ent -> (Delegate) ent.values()).collect(Collectors.toList());
+    RLocalCachedMap<String, Delegate> delegates = delegateRedissonCacheManager.getCache(DELEGATE_CACHE,String.class, Delegate.class, LocalCachedMapOptions.defaults());
+    return new ArrayList<>(delegates.values());
   }
 
   private Set<String> getIntersectionOfSupportedTaskTypes(@NotNull String accountId) {
