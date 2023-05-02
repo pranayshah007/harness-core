@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.favourites.entities;
+package io.harness.favorites.entities;
 
 import io.harness.ModuleType;
 import io.harness.annotations.StoreIn;
@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.Trimmed;
-import io.harness.favourites.ResourceType;
+import io.harness.favorites.ResourceType;
 import io.harness.ng.DbAliases;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -23,6 +23,7 @@ import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -30,14 +31,14 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @OwnedBy(HarnessTeam.PL)
 @Data
 @Builder
-@FieldNameConstants(innerTypeName = "FavouriteKeys")
+@FieldNameConstants(innerTypeName = "FavoriteKeys")
 @StoreIn(DbAliases.NG_MANAGER)
-@Entity(value = "favourites", noClassnameStored = true)
+@Entity(value = "favorites", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Document("favourites")
+@Document("favorites")
 @Persistent
-@TypeAlias("Favourites")
-public class Favourite {
+@TypeAlias("FavoriteEntity")
+public class FavoriteEntity {
   @NotEmpty @EntityIdentifier String userIdentifier;
   @Trimmed @NotEmpty String accountIdentifier;
   @Trimmed String orgIdentifier;
@@ -45,4 +46,5 @@ public class Favourite {
   @NotNull ModuleType module;
   @NotNull ResourceType resourceType;
   @Trimmed String resourceIdentifier;
+  @CreatedDate Long created;
 }
