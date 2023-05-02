@@ -80,6 +80,7 @@ import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
@@ -93,7 +94,8 @@ public class InfrastructureMapper {
   @NotNull
   public InfrastructureOutcome toOutcome(@Nonnull Infrastructure infrastructure,
       ProvisionerExpressionEvaluator expressionEvaluator, EnvironmentOutcome environmentOutcome,
-      ServiceStepOutcome service, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+      ServiceStepOutcome service, String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      Map<String, String> entityTags) {
     final InfrastructureOutcomeAbstract infrastructureOutcome;
     final boolean isDynamicallyProvisioned = infrastructure.isDynamicallyProvisioned();
     switch (infrastructure.getKind()) {
@@ -490,6 +492,7 @@ public class InfrastructureMapper {
 
     setConnectorInOutcome(infrastructure, accountIdentifier, projectIdentifier, orgIdentifier, infrastructureOutcome);
 
+    infrastructureOutcome.setEntityTags(entityTags);
     return infrastructureOutcome;
   }
 
