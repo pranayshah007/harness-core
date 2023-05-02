@@ -36,10 +36,12 @@ public class SSHAuthDTO {
   @Valid
   private BaseSSHSpecDTO spec;
 
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  @ApiModelProperty(hidden = true)
+  @Getter(onMethod_ = { @ApiModelProperty(accessMode = ApiModelProperty.AccessMode.READ_ONLY) })
+  @ApiModelProperty(accessMode = ApiModelProperty.AccessMode.READ_ONLY)
   private boolean useSshClient;
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) private boolean useSshj;
+  @Getter(onMethod_ = { @ApiModelProperty(accessMode = ApiModelProperty.AccessMode.READ_ONLY) })
+  @ApiModelProperty(accessMode = ApiModelProperty.AccessMode.READ_ONLY)
+  private boolean useSshj;
 
   @Builder
   public SSHAuthDTO(SSHAuthScheme type, BaseSSHSpecDTO spec) {

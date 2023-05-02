@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.HDelegateTask;
 import io.harness.delegate.task.TaskParameters;
@@ -76,7 +77,7 @@ public class CIDelegateTaskExecutor {
   public String queueTask(Map<String, String> setupAbstractions, HDelegateTask task, List<String> taskSelectors,
       List<String> eligibleToExecuteDelegateIds, boolean executeOnHarnessHostedDelegates, boolean emitEvent,
       String stageExecutionId, LinkedHashMap<String, String> logStreamingAbstractions, long expressionFunctorToken,
-      Boolean selectionTrackingLogEnabled) {
+      Boolean selectionTrackingLogEnabled, List<TaskSelector> selectors) {
     String accountId = task.getAccountId();
     TaskData taskData = task.getData();
     final DelegateTaskRequest delegateTaskRequest =
@@ -95,6 +96,7 @@ public class CIDelegateTaskExecutor {
             .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
             .emitEvent(emitEvent)
             .stageId(stageExecutionId)
+            .selectors(selectors)
             .build();
     RetryPolicy<Object> retryPolicy =
         getRetryPolicy(format("[Retrying failed call to submit delegate task attempt: {}"),

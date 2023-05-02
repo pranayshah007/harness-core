@@ -730,8 +730,8 @@ public class ArtifactResourceUtils {
       GoogleArtifactRegistryConfig googleArtifactRegistryConfig =
           (GoogleArtifactRegistryConfig) artifactSpecFromService;
 
-      if (isEmpty(garRequestDTO.getTag())) {
-        garRequestDTO.setTag((String) googleArtifactRegistryConfig.getVersion().fetchFinalValue());
+      if (isEmpty(garRequestDTO.getVersion())) {
+        garRequestDTO.setVersion((String) googleArtifactRegistryConfig.getVersion().fetchFinalValue());
       }
 
       if (isBlank(gcpConnectorIdentifier)) {
@@ -754,8 +754,8 @@ public class ArtifactResourceUtils {
         project = (String) googleArtifactRegistryConfig.getProject().fetchFinalValue();
       }
 
-      if (isEmpty(garRequestDTO.getTagRegex())) {
-        garRequestDTO.setTagRegex((String) googleArtifactRegistryConfig.getVersionRegex().fetchFinalValue());
+      if (isEmpty(garRequestDTO.getVersionRegex())) {
+        garRequestDTO.setVersionRegex((String) googleArtifactRegistryConfig.getVersionRegex().fetchFinalValue());
       }
     }
 
@@ -768,8 +768,8 @@ public class ArtifactResourceUtils {
     region = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         garRequestDTO.getRuntimeInputYaml(), region, fqnPath, gitEntityBasicInfo, serviceRef);
 
-    garRequestDTO.setTag(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-        garRequestDTO.getRuntimeInputYaml(), garRequestDTO.getTag(), fqnPath, gitEntityBasicInfo, serviceRef));
+    garRequestDTO.setVersion(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        garRequestDTO.getRuntimeInputYaml(), garRequestDTO.getVersion(), fqnPath, gitEntityBasicInfo, serviceRef));
 
     project = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         garRequestDTO.getRuntimeInputYaml(), project, fqnPath, gitEntityBasicInfo, serviceRef);
@@ -780,8 +780,8 @@ public class ArtifactResourceUtils {
     pkg = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         garRequestDTO.getRuntimeInputYaml(), pkg, fqnPath, gitEntityBasicInfo, serviceRef);
 
-    garRequestDTO.setTagRegex(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-        garRequestDTO.getRuntimeInputYaml(), garRequestDTO.getTagRegex(), fqnPath, gitEntityBasicInfo, serviceRef));
+    garRequestDTO.setVersionRegex(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        garRequestDTO.getRuntimeInputYaml(), garRequestDTO.getVersionRegex(), fqnPath, gitEntityBasicInfo, serviceRef));
 
     return garResourceService.getLastSuccessfulBuild(
         connectorRef, region, repositoryName, project, pkg, garRequestDTO, orgIdentifier, projectIdentifier);

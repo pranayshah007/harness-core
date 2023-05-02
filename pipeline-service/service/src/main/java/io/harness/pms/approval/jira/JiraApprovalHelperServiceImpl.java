@@ -8,6 +8,7 @@
 package io.harness.pms.approval.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.pms.approval.ApprovalUtils.sendTaskIdProgressUpdate;
 
 import static java.lang.String.format;
@@ -114,8 +115,7 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
 
   private void handlePollingEventInternal(JiraApprovalInstance instance) {
     Ambiance ambiance = instance.getAmbiance();
-    NGLogCallback logCallback = new NGLogCallback(
-        logStreamingStepClientFactory, ambiance, null, instance.getVersion() == null || instance.getVersion() == 0);
+    NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
 
     try {
       log.info("Polling jira approval instance");

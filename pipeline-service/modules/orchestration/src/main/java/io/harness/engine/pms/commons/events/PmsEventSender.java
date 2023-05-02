@@ -11,10 +11,12 @@ import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVI
 import static io.harness.eventsframework.EventsFrameworkConstants.DUMMY_REDIS_URL;
 import static io.harness.pms.events.PmsEventFrameworkConstants.PIPELINE_MONITORING_ENABLED;
 import static io.harness.pms.events.PmsEventFrameworkConstants.SERVICE_NAME;
+import static io.harness.steps.StepSpecTypeConstants.INIT_CONTAINER_V2_STEP_TYPE;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
+import io.harness.ModuleType;
 import io.harness.OrchestrationModuleConfig;
 import io.harness.OrchestrationRedisEventsConfig;
 import io.harness.annotations.dev.HarnessTeam;
@@ -81,6 +83,9 @@ public class PmsEventSender {
 
   public String sendEvent(Ambiance ambiance, ByteString eventData, PmsEventCategory eventCategory, String serviceName,
       boolean isMonitored) {
+    if (INIT_CONTAINER_V2_STEP_TYPE.equals(AmbianceUtils.obtainCurrentLevel(ambiance).getStepType())) {
+      serviceName = ModuleType.PMS.name().toLowerCase();
+    }
     log.info("Sending {} event for {} to the producer", eventCategory, serviceName);
     ImmutableMap.Builder<String, String> metadataBuilder = ImmutableMap.<String, String>builder()
                                                                .put(SERVICE_NAME, serviceName)

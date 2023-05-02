@@ -95,6 +95,7 @@ public class JsonUtils {
 
     mapper = new ObjectMapper();
     mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    mapper.configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE, true);
     mapper.setSerializationInclusion(Include.NON_NULL);
     mapper.setSubtypeResolver(new JsonSubtypeResolver(mapper.getSubtypeResolver()));
     mapper.registerModule(new Jdk8Module());

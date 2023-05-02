@@ -10,6 +10,7 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.UpdatableEntity;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
@@ -209,5 +210,18 @@ public abstract class AbstractServiceLevelObjective
             ServiceLevelObjectiveV2Keys.projectIdentifier, abstractServiceLevelObjective.getProjectIdentifier());
       }
     }
+  }
+
+  public static AbstractServiceLevelObjective getDeletedAbstractServiceLevelObjective(
+      ProjectParams projectParams, String sloIdentifier) {
+    return SimpleServiceLevelObjective.builder()
+        .accountId(projectParams.getAccountIdentifier())
+        .projectIdentifier(projectParams.getProjectIdentifier())
+        .orgIdentifier(projectParams.getOrgIdentifier())
+        .identifier(sloIdentifier)
+        .name(sloIdentifier)
+        .type(ServiceLevelObjectiveType.SIMPLE)
+        .monitoredServiceIdentifier("")
+        .build();
   }
 }

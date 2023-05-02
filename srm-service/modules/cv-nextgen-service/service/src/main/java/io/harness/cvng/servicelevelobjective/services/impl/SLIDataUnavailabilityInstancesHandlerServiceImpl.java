@@ -9,6 +9,7 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.downtime.beans.EntityType;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
@@ -48,7 +49,10 @@ public class SLIDataUnavailabilityInstancesHandlerServiceImpl implements SLIData
     failureInstances.addAll(
         entityUnavailabilityStatusesDTOS.stream()
             .filter(statusesDTO
-                -> statusesDTO.getEntityType().equals(EntityType.SLO) && statusesDTO.getEntityId().equals(sliId))
+                -> statusesDTO.getEntityType().equals(EntityType.SLO)
+                    && (statusesDTO.getStatus().equals(EntityUnavailabilityStatus.DATA_COLLECTION_FAILED)
+                        || statusesDTO.getStatus().equals(EntityUnavailabilityStatus.DATA_RECOLLECTION_PASSED))
+                    && statusesDTO.getEntityId().equals(sliId))
             .collect(Collectors.toList()));
 
     Set<Instant> failureInstants = new HashSet<>();

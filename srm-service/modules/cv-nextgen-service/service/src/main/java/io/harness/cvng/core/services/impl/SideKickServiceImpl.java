@@ -38,7 +38,7 @@ public class SideKickServiceImpl implements SideKickService {
   public void schedule(SideKickData sideKickData, Instant runAfter) {
     hPersistence.save(
         SideKick.builder().status(Status.QUEUED).runAfter(runAfter).retryCount(0).sideKickData(sideKickData).build());
-    log.info("Saved sidekick: {} run after: ", sideKickData, runAfter);
+    log.info("Saved sidekick: {} run after: {}", sideKickData, runAfter);
   }
 
   @Override

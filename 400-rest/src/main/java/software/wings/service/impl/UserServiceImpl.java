@@ -466,7 +466,8 @@ public class UserServiceImpl implements UserService {
 
   public io.harness.ng.beans.PageResponse<Account> getUserAccountsAndSupportAccounts(
       String userId, int pageIndex, int pageSize, String searchTerm) {
-    User user = get(userId, true);
+    User user = get(userId);
+    loadSupportAccounts(user);
     Account defaultAccount = null;
     List<Account> userAccounts = user.getAccounts();
     for (Account account : userAccounts) {
@@ -868,6 +869,7 @@ public class UserServiceImpl implements UserService {
       List<UserInvite> userInviteList = wingsPersistence.createQuery(UserInvite.class)
                                             .filter(UserInviteKeys.email, email)
                                             .order(Sort.descending("createdAt"))
+                                            .limit(1)
                                             .asList();
       if (isNotEmpty(userInviteList)) {
         return userInviteList.get(0).getUuid();
@@ -1112,13 +1114,10 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public User getUserByEmail(String email, boolean loadSupportAccounts) {
+  public User getUserByEmail(String email) {
     User user = null;
     if (isNotEmpty(email)) {
       user = wingsPersistence.createQuery(User.class).filter(UserKeys.email, email.trim().toLowerCase()).get();
-      if (loadSupportAccounts) {
-        loadSupportAccounts(user);
-      }
       if (user != null && isEmpty(user.getAccounts())) {
         user.setAccounts(newArrayList());
       }
@@ -1128,11 +1127,6 @@ public class UserServiceImpl implements UserService {
     }
 
     return user;
-  }
-
-  @Override
-  public User getUserByEmail(String email) {
-    return getUserByEmail(email, false);
   }
 
   @Override
@@ -1177,7 +1171,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public List<User> getUsersEmails(String accountId) {
     Query<User> query = wingsPersistence.createQuery(User.class);
-    query.project(UserKeys.email, true).criteria(UserKeys.accounts).hasThisOne(accountId);
+    query.project(UserKeys.email, true).limit(NO_LIMIT).criteria(UserKeys.accounts).hasThisOne(accountId);
 
     return query.asList();
   }
@@ -1902,8 +1896,8 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public List<UserInvite> getInvitesFromAccountId(String accountId) {
-    return wingsPersistence.createQuery(UserInvite.class).filter(UserInvite.ACCOUNT_ID_KEY2, accountId).asList();
+  public Query<UserInvite> getInvitesQueryFromAccountId(String accountId) {
+    return wingsPersistence.createQuery(UserInvite.class).filter(UserInvite.ACCOUNT_ID_KEY2, accountId);
   }
 
   @Override
@@ -3256,18 +3250,9 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public User get(String userId) {
-    return get(userId, false);
-  }
-
-  @Override
-  public User get(String userId, boolean includeSupportAccounts) {
     User user = wingsPersistence.get(User.class, userId);
     if (user == null) {
       throw new UnauthorizedException(EXC_MSG_USER_DOESNT_EXIST, USER);
-    }
-
-    if (includeSupportAccounts) {
-      loadSupportAccounts(user);
     }
 
     List<Account> accounts = user.getAccounts();

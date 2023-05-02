@@ -7,6 +7,7 @@
 
 package io.harness.utils;
 
+import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,5 +31,20 @@ public class FilePathUtilsTest extends CategoryTest {
     assertThat(FilePathUtils.addEndingSlashIfMissing("abc/")).isEqualTo("abc/");
     assertThat(FilePathUtils.addEndingSlashIfMissing("abc//")).isEqualTo("abc//");
     assertThat(FilePathUtils.addEndingSlashIfMissing("")).isEqualTo("/");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testIsScopedFilePath() {
+    assertThat(FilePathUtils.isScopedFilePath("account:/folder1/folder2/configFile")).isTrue();
+    assertThat(FilePathUtils.isScopedFilePath("org:/folder1/folder2/configFile")).isTrue();
+    assertThat(FilePathUtils.isScopedFilePath("/folder1/folder2/configFile")).isTrue();
+    assertThat(FilePathUtils.isScopedFilePath("/folder1/folder2/")).isTrue();
+    assertThat(FilePathUtils.isScopedFilePath("/folder1")).isTrue();
+
+    assertThat(FilePathUtils.isScopedFilePath("folder1/folder2/configFile")).isFalse();
+    assertThat(FilePathUtils.isScopedFilePath("configFile")).isFalse();
+    assertThat(FilePathUtils.isScopedFilePath(":/folder1/folder2/configFile")).isFalse();
   }
 }

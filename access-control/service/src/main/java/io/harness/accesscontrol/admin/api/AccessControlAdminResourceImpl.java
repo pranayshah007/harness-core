@@ -11,6 +11,7 @@ import io.harness.aggregator.AccessControlAdminService;
 import io.harness.aggregator.models.BlockedAccount;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.security.annotations.InternalApi;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -31,18 +32,21 @@ public class AccessControlAdminResourceImpl implements AccessControlAdminResourc
   }
 
   @Override
+  @InternalApi
   public Response blockAccount(BlockAccountDTO blockAccountDTO) {
     accessControlAdminService.block(blockAccountDTO.getAccountIdentifier());
     return Response.accepted().build();
   }
 
   @Override
+  @InternalApi
   public Response unblockAccount(UnblockAccountDTO unblockAccountDTO) {
     accessControlAdminService.unblock(unblockAccountDTO.getAccountIdentifier());
     return Response.accepted().build();
   }
 
   @Override
+  @InternalApi
   public Response getBlockedAccounts() {
     List<BlockedAccount> blockedACLEntities = accessControlAdminService.getAllBlockedAccounts();
     List<BlockAccountDTO> blockAccountDTOS =

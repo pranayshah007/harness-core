@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.container.ContainerStepSpecTypeConstants;
 
 import com.google.common.collect.Sets;
 import java.io.IOException;
@@ -46,7 +47,7 @@ public class PmsStepFilterJsonCreatorV2Test extends CategoryTest {
         StepSpecTypeConstants.SERVICENOW_APPROVAL, StepSpecTypeConstants.BARRIER, StepSpecTypeConstants.POLICY_STEP,
         StepSpecTypeConstants.SERVICENOW_CREATE, StepSpecTypeConstants.SERVICENOW_UPDATE,
         StepSpecTypeConstants.SERVICENOW_IMPORT_SET, StepSpecTypeConstants.QUEUE, StepSpecTypeConstants.EMAIL,
-        StepSpecTypeConstants.WAIT_STEP, StepSpecTypeConstants.CONTAINER_STEP);
+        StepSpecTypeConstants.WAIT_STEP, ContainerStepSpecTypeConstants.CONTAINER_STEP);
     assertThat(strings).isEqualTo(strings2);
     assertThat(strings).contains(StepSpecTypeConstants.JIRA_CREATE);
   }

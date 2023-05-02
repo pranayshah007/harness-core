@@ -11,6 +11,7 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s/k8sngtask:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s/modules:module",
         "//950-delegate-tasks-beans:module",
         "//delegate/src/main/java/io/harness/delegate/executor:module",

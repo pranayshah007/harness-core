@@ -34,6 +34,9 @@ public class ManagerExecutorModule extends AbstractModule {
         .annotatedWith(Names.named("gitChangeSet"))
         .toInstance(new ManagedScheduledExecutorService("GitChangeSet"));
     bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("gitPolling"))
+        .toInstance(new ManagedScheduledExecutorService("GitPolling"));
+    bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("taskPollExecutor"))
         .toInstance(
             new ScheduledThreadPoolExecutor(3, new ThreadFactoryBuilder().setNameFormat("TaskPoll-Thread").build()));

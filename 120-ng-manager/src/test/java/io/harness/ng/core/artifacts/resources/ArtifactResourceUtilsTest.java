@@ -290,8 +290,8 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
           .runtimeInputYaml(pipelineYamlWithoutTemplates)
           .build();
   private static final GarRequestDTO GAR_REQUEST_DTO_2 = GarRequestDTO.builder()
-                                                             .tag(VERSION)
-                                                             .tagRegex(VERSION_REGEX)
+                                                             .version(VERSION)
+                                                             .versionRegex(VERSION_REGEX)
                                                              .runtimeInputYaml(pipelineYamlWithoutTemplates)
                                                              .build();
 

@@ -142,12 +142,10 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
     LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome = (LiteEnginePodDetailsOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME));
     String ip = liteEnginePodDetailsOutcome.getIpAddress();
+    String runtimeId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
 
-    ExecuteStepRequest executeStepRequest = ExecuteStepRequest.newBuilder()
-                                                .setExecutionId(ambiance.getPlanExecutionId())
-                                                .setStep(unitStep)
-                                                .setTmpFilePath(TMP_PATH)
-                                                .build();
+    ExecuteStepRequest executeStepRequest =
+        ExecuteStepRequest.newBuilder().setExecutionId(runtimeId).setStep(unitStep).setTmpFilePath(TMP_PATH).build();
 
     boolean isLocal = false;
     String delegateSvcEndpoint = DELEGATE_SVC_ENDPOINT;

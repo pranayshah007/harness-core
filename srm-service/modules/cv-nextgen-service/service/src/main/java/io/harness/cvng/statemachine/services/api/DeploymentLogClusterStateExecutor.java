@@ -8,15 +8,12 @@
 package io.harness.cvng.statemachine.services.api;
 
 import static io.harness.cvng.analysis.beans.LogClusterLevel.L2;
-import static io.harness.cvng.core.utils.FeatureFlagNames.SRM_LOG_HOST_SAMPLING_ENABLE;
 
-import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
-import io.harness.cvng.statemachine.entities.DeploymentLogAnalysisState;
 import io.harness.cvng.statemachine.entities.DeploymentLogClusterState;
 import io.harness.cvng.statemachine.entities.DeploymentLogHostSamplingState;
 import io.harness.cvng.statemachine.entities.LogClusterState;
@@ -56,19 +53,10 @@ public class DeploymentLogClusterStateExecutor extends LogClusterStateExecutor<D
         deploymentLogClusterState.setStatus(AnalysisStatus.CREATED);
         return deploymentLogClusterState;
       case L2:
-        VerificationTask verificationTask =
-            verificationTaskService.get(analysisState.getInputs().getVerificationTaskId());
-        if (featureFlagService.isFeatureFlagEnabled(verificationTask.getAccountId(), SRM_LOG_HOST_SAMPLING_ENABLE)) {
-          DeploymentLogHostSamplingState deploymentLogHostSamplingState = new DeploymentLogHostSamplingState();
-          deploymentLogHostSamplingState.setInputs(analysisState.getInputs());
-          deploymentLogHostSamplingState.setStatus(AnalysisStatus.CREATED);
-          return deploymentLogHostSamplingState;
-        } else {
-          DeploymentLogAnalysisState deploymentLogAnalysisState = DeploymentLogAnalysisState.builder().build();
-          deploymentLogAnalysisState.setInputs(analysisState.getInputs());
-          deploymentLogAnalysisState.setStatus(AnalysisStatus.CREATED);
-          return deploymentLogAnalysisState;
-        }
+        DeploymentLogHostSamplingState deploymentLogHostSamplingState = new DeploymentLogHostSamplingState();
+        deploymentLogHostSamplingState.setInputs(analysisState.getInputs());
+        deploymentLogHostSamplingState.setStatus(AnalysisStatus.CREATED);
+        return deploymentLogHostSamplingState;
       default:
         throw new AnalysisStateMachineException("Unknown cluster level in handleTransition "
             + "of ServiceGuardLogClusterState: " + analysisState.getClusterLevel());

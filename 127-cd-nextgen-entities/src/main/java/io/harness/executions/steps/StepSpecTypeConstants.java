@@ -30,7 +30,7 @@ public interface StepSpecTypeConstants {
   String K8S_CANARY_DELETE = "K8sCanaryDelete";
   String K8S_CANARY_DEPLOY = "K8sCanaryDeploy";
   String K8S_DELETE = "K8sDelete";
-  String K8S_BG_STAGE_SCALE_DOWN = "K8sBGStageScaleDown";
+  String K8S_BLUE_GREEN_STAGE_SCALE_DOWN = "K8sBlueGreenStageScaleDown";
 
   String TERRAFORM_APPLY = "TerraformApply";
   String TERRAFORM_PLAN = "TerraformPlan";

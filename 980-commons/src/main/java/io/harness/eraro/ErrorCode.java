@@ -23,6 +23,7 @@ import static java.util.stream.Collectors.joining;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
 import com.google.common.base.Splitter;
 
 /**
@@ -30,7 +31,7 @@ import com.google.common.base.Splitter;
  */
 @OwnedBy(HarnessTeam.DX)
 public enum ErrorCode {
-  DEFAULT_ERROR_CODE,
+  @JsonEnumDefaultValue DEFAULT_ERROR_CODE,
 
   INVALID_ARGUMENT,
 

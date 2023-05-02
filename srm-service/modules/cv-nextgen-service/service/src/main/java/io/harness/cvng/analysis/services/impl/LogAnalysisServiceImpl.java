@@ -17,7 +17,6 @@ import static io.harness.cvng.analysis.CVAnalysisConstants.LOG_FEEDBACK_LIST;
 import static io.harness.cvng.analysis.CVAnalysisConstants.PREVIOUS_ANALYSIS_URL;
 import static io.harness.cvng.analysis.CVAnalysisConstants.PREVIOUS_LOG_ANALYSIS_PATH;
 import static io.harness.cvng.analysis.CVAnalysisConstants.TEST_DATA_PATH;
-import static io.harness.cvng.core.utils.FeatureFlagNames.SRM_LOG_HOST_SAMPLING_ENABLE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -52,7 +51,6 @@ import io.harness.cvng.core.beans.LogFeedback;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.LogCVConfig;
-import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.HostRecordService;
@@ -145,13 +143,8 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
 
   @Override
   public String scheduleDeploymentLogAnalysisTask(AnalysisInput analysisInput) {
-    VerificationTask verificationTask = verificationTaskService.get(analysisInput.getVerificationTaskId());
     LogAnalysisLearningEngineTask task;
-    if (featureFlagService.isFeatureFlagEnabled(verificationTask.getAccountId(), SRM_LOG_HOST_SAMPLING_ENABLE)) {
-      task = createLogCanaryAnalysisLearningEngineTask_v2(analysisInput);
-    } else {
-      task = createLogCanaryAnalysisLearningEngineTask(analysisInput);
-    }
+    task = createLogCanaryAnalysisLearningEngineTask_v2(analysisInput);
     log.info("Scheduling LogCanaryAnalysisLearningEngineTask {}", task);
     return learningEngineTaskService.createLearningEngineTask(task);
   }

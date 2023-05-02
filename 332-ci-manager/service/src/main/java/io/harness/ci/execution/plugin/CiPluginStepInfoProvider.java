@@ -8,10 +8,12 @@
 package io.harness.ci.plugin;
 
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.PORT_STARTING_RANGE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.steps.CIAbstractStepNode;
+import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.integrationstage.K8InitializeStepUtils;
 import io.harness.ci.utils.PortFinder;
@@ -23,6 +25,7 @@ import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.plan.PluginDetails;
 import io.harness.pms.contracts.plan.PortDetails;
 import io.harness.pms.contracts.plan.SecretVariable;
+import io.harness.pms.expression.ExpressionResolverUtils;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
 import io.harness.pms.sdk.core.plugin.ImageDetailsUtils;
 import io.harness.pms.sdk.core.plugin.PluginInfoProvider;
@@ -53,7 +56,6 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
           String.format("Error in parsing CI step for step type [%s]", request.getType()), e);
     }
     // todo(abhinav): get used ports from request
-    // pluginCompatibleStep = (PluginCompatibleStep) ciAbstractStepNode.getStepSpecType();
     Set<Integer> usedPorts = new HashSet<>(request.getUsedPortDetails().getUsedPortsList());
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
     ContainerDefinitionInfo containerDefinitionInfo =
@@ -66,30 +68,44 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
     HashSet<Integer> ports = new HashSet<>(portFinder.getUsedPorts());
     ports.addAll(containerDefinitionInfo.getPorts());
 
-    return PluginCreationResponse.newBuilder()
-        .setPluginDetails(
-            PluginDetails.newBuilder()
-                .putAllEnvVariables(containerDefinitionInfo.getEnvVars())
-                .setRunAsUser(
-                    containerDefinitionInfo.getRunAsUser() == null ? 1000 : containerDefinitionInfo.getRunAsUser())
-                .setImageDetails(
-                    ImageDetails.newBuilder()
-                        .setImageInformation(ImageDetailsUtils.getImageDetails(
-                            containerDefinitionInfo.getContainerImageDetails().getImageDetails()))
-                        .setConnectorDetails(
-                            ConnectorDetails.newBuilder()
-                                .setConnectorRef(emptyIfNull(
-                                    containerDefinitionInfo.getContainerImageDetails().getConnectorIdentifier()))
-                                .build())
-                        .build())
-                .setPrivileged(
-                    containerDefinitionInfo.getPrivileged() == null || containerDefinitionInfo.getPrivileged())
-                .addAllPortUsed(containerDefinitionInfo.getPorts())
-                .setTotalPortUsedDetails(PortDetails.newBuilder().addAllUsedPorts(ports).build())
-                .setResource(getPluginContainerResources(containerDefinitionInfo))
-                .addAllSecretVariable(secretVariables)
-                .build())
-        .build();
+    PluginDetails.Builder pluginDetailsBuilder =
+        PluginDetails.newBuilder()
+            .putAllEnvVariables(containerDefinitionInfo.getEnvVars())
+            .setImageDetails(
+                ImageDetails.newBuilder()
+                    .setImageInformation(ImageDetailsUtils.getImageDetails(
+                        containerDefinitionInfo.getContainerImageDetails().getImageDetails()))
+                    .setConnectorDetails(
+                        ConnectorDetails.newBuilder()
+                            .setConnectorRef(emptyIfNull(
+                                containerDefinitionInfo.getContainerImageDetails().getConnectorIdentifier()))
+                            .build())
+                    .build())
+            .setPrivileged(containerDefinitionInfo.getPrivileged() == null || containerDefinitionInfo.getPrivileged())
+            .addAllPortUsed(containerDefinitionInfo.getPorts())
+            .setTotalPortUsedDetails(PortDetails.newBuilder().addAllUsedPorts(ports).build())
+            .setResource(getPluginContainerResources(containerDefinitionInfo))
+            .addAllSecretVariable(secretVariables);
+
+    if (containerDefinitionInfo.getRunAsUser() != null) {
+      pluginDetailsBuilder.setRunAsUser(containerDefinitionInfo.getRunAsUser());
+    }
+
+    if (!(CIStepInfoType.BACKGROUND_V1.getDisplayName().equals(ciAbstractStepNode.getType())
+            || CIStepInfoType.BACKGROUND.getDisplayName().equals(ciAbstractStepNode.getType()))) {
+      pluginCompatibleStep =
+          (io.harness.beans.plugin.compatible.PluginCompatibleStep) ciAbstractStepNode.getStepSpecType();
+
+      String stepConnectorRef =
+          ExpressionResolverUtils.resolveStringParameter("connectorRef", pluginCompatibleStep.getStepType().toString(),
+              pluginCompatibleStep.getIdentifier(), pluginCompatibleStep.getConnectorRef(), false);
+      if (isNotEmpty(stepConnectorRef)) {
+        // todo: if we need to support more steps we need to add connector env conversion map too.
+        pluginDetailsBuilder.addConnectorsForStep(
+            ConnectorDetails.newBuilder().setConnectorRef(stepConnectorRef).build());
+      }
+    }
+    return PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();
   }
 
   private PluginContainerResources getPluginContainerResources(ContainerDefinitionInfo containerDefinitionInfo) {
@@ -101,6 +117,8 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
 
   @Override
   public boolean isSupported(String stepType) {
-    return true;
+    return CIStepInfoType.BACKGROUND.getDisplayName().equals(stepType)
+        || CIStepInfoType.BACKGROUND_V1.getDisplayName().equals(stepType)
+        || CIStepInfoType.GIT_CLONE.getDisplayName().equals(stepType);
   }
 }

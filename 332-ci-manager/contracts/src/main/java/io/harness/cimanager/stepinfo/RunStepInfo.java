@@ -143,7 +143,9 @@ public class RunStepInfo implements CIStepInfo, WithConnectorRef {
   @Override
   public Map<String, ParameterField<String>> extractConnectorRefs() {
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
-    connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
+    if (connectorRef.getValue() != null) {
+      connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
+    }
     return connectorRefMap;
   }
 

@@ -195,16 +195,11 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   }
 
   @Override
-  public ApiKey getApiKey(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+  public Optional<ApiKey> getApiKey(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       ApiKeyType apiKeyType, String parentIdentifier, String identifier) {
-    Optional<ApiKey> optionalApiKey =
-        apiKeyRepository
-            .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifierAndIdentifier(
-                accountIdentifier, orgIdentifier, projectIdentifier, apiKeyType, parentIdentifier, identifier);
-    if (optionalApiKey.isPresent()) {
-      return optionalApiKey.get();
-    }
-    throw new InvalidRequestException(String.format("Api key not present in scope for identifier: [%s]", identifier));
+    return apiKeyRepository
+        .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifierAndIdentifier(
+            accountIdentifier, orgIdentifier, projectIdentifier, apiKeyType, parentIdentifier, identifier);
   }
 
   @Override

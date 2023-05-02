@@ -11,18 +11,16 @@ import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLI
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import io.harness.account.AccountClient;
+import io.harness.account.utils.AccountUtils;
 import io.harness.encryption.Scope;
 import io.harness.migration.NGMigration;
 import io.harness.mongo.MongoPersistence;
-import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
 import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.persistence.HIterator;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.scope.ScopeHelper;
 import io.harness.utils.IdentifierRefHelper;
 
@@ -32,7 +30,6 @@ import com.google.inject.Inject;
 import dev.morphia.query.Query;
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -44,7 +41,7 @@ import org.springframework.data.mongodb.core.query.Update;
 public class UpdateEnvironmentRefValueInServiceOverrideNGMigration implements NGMigration {
   @Inject private MongoPersistence mongoPersistence;
   @Inject private MongoTemplate mongoTemplate;
-  @Inject private AccountClient accountClient;
+  @Inject private AccountUtils accountUtils;
   private static final String DEBUG_LOG = "[UpdateEnvironmentRefValueInServiceOverrideNGMigration]: ";
   private static final String SERVICE_OVERRIDES_NODE = "serviceOverrides";
 
@@ -52,11 +49,7 @@ public class UpdateEnvironmentRefValueInServiceOverrideNGMigration implements NG
   public void migrate() {
     try {
       log.info(DEBUG_LOG + "Starting migration of updating environmentRef value in serviceOverridesNG");
-      List<AccountDTO> allAccounts = CGRestUtils.getResponse(accountClient.getAllAccounts());
-      List<String> accountIdentifiers = allAccounts.stream()
-                                            .filter(AccountDTO::isNextGenEnabled)
-                                            .map(AccountDTO::getIdentifier)
-                                            .collect(Collectors.toList());
+      List<String> accountIdentifiers = accountUtils.getAllNGAccountIds();
 
       accountIdentifiers.forEach(accountId -> {
         try {

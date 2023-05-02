@@ -583,9 +583,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK)
   GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK,
       IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK),
-  @JsonProperty(EntityTypeConstants.K8S_BG_STAGE_SCALE_DOWN)
-  K8S_BG_STAGE_SCALE_DOWN(ModuleType.CD, EntityTypeConstants.K8S_BG_STAGE_SCALE_DOWN, IdentifierRef.class,
-      EntityYamlRootNames.K8S_BG_STAGE_SCALE_DOWN);
+  @JsonProperty(EntityTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN)
+  K8S_BLUE_GREEN_STAGE_SCALE_DOWN(ModuleType.CD, EntityTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN,
+      IdentifierRef.class, EntityYamlRootNames.K8S_BLUE_GREEN_STAGE_SCALE_DOWN);
 
   private final ModuleType moduleType;
   String yamlName;

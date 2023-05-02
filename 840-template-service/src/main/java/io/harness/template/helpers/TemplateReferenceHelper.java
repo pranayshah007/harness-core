@@ -9,12 +9,12 @@ package io.harness.template.helpers;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.template.beans.NGTemplateConstants.CUSTOM_DEPLOYMENT_TEMPLATE;
-import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_REF;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_VERSION_LABEL;
+import static io.harness.template.resources.beans.NGTemplateConstants.CUSTOM_DEPLOYMENT_TEMPLATE;
+import static io.harness.template.resources.beans.NGTemplateConstants.STABLE_VERSION;
+import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE;
+import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE_INPUTS;
+import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE_REF;
+import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE_VERSION_LABEL;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;

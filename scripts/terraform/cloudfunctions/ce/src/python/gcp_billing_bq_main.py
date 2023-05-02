@@ -114,7 +114,6 @@ def main(event, context):
             jsonData["gcpBillingExportTablePartitionColumnName"] = "usage_start_time"
         print_(f"Partition column for gcp_billing_export table: {jsonData['gcpBillingExportTablePartitionColumnName']}")
 
-        get_unique_billingaccount_id(jsonData)
         jsonData["isFreshSync"] = isFreshSync(jsonData)
         if jsonData.get("isFreshSync"):
             jsonData["interval"] = '180'
@@ -122,6 +121,7 @@ def main(event, context):
             jsonData["interval"] = str(datetime.datetime.utcnow().date().day - 1)
         else:
             jsonData["interval"] = '3'
+        get_unique_billingaccount_id(jsonData)
 
         # currency specific methods
         insert_currencies_with_unit_conversion_factors_in_bq(jsonData)
@@ -1189,9 +1189,9 @@ def get_unique_billingaccount_id(jsonData):
     # Get unique billingAccountIds from main gcp table
     print_("Getting unique billingAccountIds from %s" % jsonData["tableName"])
     query = """  SELECT DISTINCT(billing_account_id) as billing_account_id FROM `%s.%s.%s` 
-            WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL 10 DAY);
+            WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL %s DAY);
             """ % (PROJECTID, jsonData["datasetName"], jsonData["tableName"],
-                   jsonData["gcpBillingExportTablePartitionColumnName"])
+                   jsonData["gcpBillingExportTablePartitionColumnName"], str(int(jsonData["interval"]) + 7))
     # Configure the query job.
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
