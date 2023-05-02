@@ -33,9 +33,12 @@ import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MonitoringSourcePerpetualTask;
 import io.harness.cvng.core.entities.MonitoringSourcePerpetualTask.MonitoringSourcePerpetualTaskKeys;
 import io.harness.cvng.core.entities.VerificationTask;
+import io.harness.cvng.core.entities.demo.CVNGDemoDataIndex;
+import io.harness.cvng.core.entities.demo.CVNGDemoDataIndex.cvngDemoDataIndexKeys;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.core.services.api.demo.CVNGDemoDataIndexService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
@@ -59,7 +62,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.reflect.FieldUtils;
+import org.bson.types.ObjectId;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -72,6 +75,7 @@ public class VerificationTaskCleanupSideKickExecutorTest extends CvNextGenTestBa
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject private MonitoredServiceService monitoredServiceService;
   @Inject private CVConfigService cvConfigService;
+  @Inject private CVNGDemoDataIndexService cvngDemoDataIndexService;
 
   @Inject private Clock clock;
   private CVConfig cvConfig;
@@ -323,45 +327,84 @@ public class VerificationTaskCleanupSideKickExecutorTest extends CvNextGenTestBa
   @Test
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
-  public void testExecute_cleanupLogAnalysisResultRecords() throws IllegalAccessException {
-    HPersistence spiedPersistence = spy(hPersistence);
-    FieldUtils.writeField(sideKickExecutor, "hPersistence", spiedPersistence, true);
+  public void testExecute_cleanupLogAnalysisResultRecords() {
+    VerificationTaskCleanupSideKickExecutor spiedSideKickExecutor = spy(sideKickExecutor);
     int numberOfRecords = new Random().nextInt(999) + 1;
     for (int i = 0; i < numberOfRecords; ++i) {
       LogAnalysisResult logAnalysisResult = LogAnalysisResult.builder().verificationTaskId(verificationTaskId).build();
-      spiedPersistence.save(logAnalysisResult);
+      hPersistence.save(logAnalysisResult);
     }
-    Query<LogAnalysisResult> query = spiedPersistence.createQuery(LogAnalysisResult.class)
+    Query<LogAnalysisResult> query = hPersistence.createQuery(LogAnalysisResult.class)
                                          .filter(LogAnalysisResultKeys.verificationTaskId, verificationTaskId);
     assertThat(query.count()).isEqualTo(numberOfRecords);
-    sideKickExecutor.execute(VerificationTaskCleanupSideKickData.builder()
-                                 .verificationTaskId(verificationTaskId)
-                                 .cvConfig(cvConfig)
-                                 .build());
+    spiedSideKickExecutor.execute(VerificationTaskCleanupSideKickData.builder()
+                                      .verificationTaskId(verificationTaskId)
+                                      .cvConfig(cvConfig)
+                                      .build());
     assertThat(query.count()).isZero();
     int expectedNumberOfDbDeleteCalls =
         (int) Math.ceil((double) numberOfRecords / RECORDS_TO_BE_DELETED_IN_SINGLE_BATCH);
-    verify(spiedPersistence, times(expectedNumberOfDbDeleteCalls)).delete(any(Query.class));
+    verify(spiedSideKickExecutor, times(expectedNumberOfDbDeleteCalls)).deleteRecords(any(Query.class));
   }
 
   @Test
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
-  public void testExecute_recordsAreNotDeleted() throws IllegalAccessException {
-    HPersistence spiedPersistence = spy(hPersistence);
-    FieldUtils.writeField(sideKickExecutor, "hPersistence", spiedPersistence, true);
+  public void testExecute_recordsAreNotDeleted() {
+    VerificationTaskCleanupSideKickExecutor spiedSideKickExecutor = spy(sideKickExecutor);
     DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysis =
         DeploymentTimeSeriesAnalysis.builder().verificationTaskId(verificationTaskId).build();
-    spiedPersistence.save(deploymentTimeSeriesAnalysis);
+    hPersistence.save(deploymentTimeSeriesAnalysis);
     Query<DeploymentTimeSeriesAnalysis> query =
-        spiedPersistence.createQuery(DeploymentTimeSeriesAnalysis.class)
+        hPersistence.createQuery(DeploymentTimeSeriesAnalysis.class)
             .filter(DeploymentTimeSeriesAnalysisKeys.verificationTaskId, verificationTaskId);
     assertThat(query.count()).isEqualTo(1);
-    sideKickExecutor.execute(VerificationTaskCleanupSideKickData.builder()
-                                 .verificationTaskId(verificationTaskId)
-                                 .cvConfig(cvConfig)
-                                 .build());
+    spiedSideKickExecutor.execute(VerificationTaskCleanupSideKickData.builder()
+                                      .verificationTaskId(verificationTaskId)
+                                      .cvConfig(cvConfig)
+                                      .build());
     assertThat(query.count()).isEqualTo(1);
-    verify(spiedPersistence, times(0)).delete(any(Query.class));
+    verify(spiedSideKickExecutor, times(0)).deleteRecords(any(Query.class));
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testExecute_cleanupRecordsWithMixedTypesOfUuids() {
+    VerificationTaskCleanupSideKickExecutor spiedSideKickExecutor = spy(sideKickExecutor);
+    saveRecordsWithMixedTypesOfUuids();
+    Query<CVNGDemoDataIndex> cvngDemoDataIndicesQuery =
+        hPersistence.createQuery(CVNGDemoDataIndex.class)
+            .filter(cvngDemoDataIndexKeys.verificationTaskId, verificationTaskId);
+    Query<LogAnalysisResult> logAnalysisResultsQuery =
+        hPersistence.createQuery(LogAnalysisResult.class)
+            .filter(LogAnalysisResultKeys.verificationTaskId, verificationTaskId);
+    assertThat(cvngDemoDataIndicesQuery.count()).isEqualTo(2);
+    assertThat(logAnalysisResultsQuery.count()).isEqualTo(1);
+    List<CVNGDemoDataIndex> cvngDemoDataIndices = cvngDemoDataIndicesQuery.find().toList();
+    assertThat(ObjectId.isValid(cvngDemoDataIndices.get(0).getUuid())).isFalse();
+    assertThat(ObjectId.isValid(cvngDemoDataIndices.get(1).getUuid())).isTrue();
+    assertThat(ObjectId.isValid(logAnalysisResultsQuery.get().getUuid())).isFalse();
+    spiedSideKickExecutor.execute(VerificationTaskCleanupSideKickData.builder()
+                                      .verificationTaskId(verificationTaskId)
+                                      .cvConfig(cvConfig)
+                                      .build());
+    assertThat(cvngDemoDataIndicesQuery.count()).isZero();
+    assertThat(logAnalysisResultsQuery.count()).isZero();
+    int expectedNumberOfDbDeleteCalls = 2;
+    verify(spiedSideKickExecutor, times(expectedNumberOfDbDeleteCalls)).deleteRecords(any(Query.class));
+  }
+
+  private void saveRecordsWithMixedTypesOfUuids() {
+    hPersistence.save(LogAnalysisResult.builder().verificationTaskId(verificationTaskId).build());
+    hPersistence.save(CVNGDemoDataIndex.builder()
+                          .uuid("1234567890")
+                          .lastIndex(2)
+                          .dataCollectionWorkerId("234")
+                          .verificationTaskId(verificationTaskId)
+                          .accountId(builderFactory.getContext().getAccountId())
+                          .build());
+    cvngDemoDataIndexService.saveIndexForDemoData(
+        builderFactory.getContext().getAccountId(), "123", verificationTaskId, 3);
   }
 }
