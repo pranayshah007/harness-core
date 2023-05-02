@@ -72,6 +72,7 @@ import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
+import io.harness.ng.core.infrastructure.resource.InfrastructureYamlSchemaHelper;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -142,6 +143,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   @Inject private StrategyHelper strategyHelper;
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
+  @Inject private InfrastructureYamlSchemaHelper infrastructureYamlSchemaHelper;
 
   @Override
   public Class<InfrastructureTaskExecutableStepV2Params> getStepParametersClass() {
@@ -384,10 +386,25 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     if (ParameterField.isNotNull(stepParameters.getInfraInputs())
         && isNotEmpty(stepParameters.getInfraInputs().getValue())) {
       String mergedYaml = mergeInfraInputs(infrastructureEntity.getYaml(), stepParameters.getInfraInputs().getValue());
+
       infrastructureEntity.setYaml(mergedYaml);
     }
 
+    validateInfrastructureSchemaAndLog(
+        AmbianceUtils.getAccountId(ambiance), infrastructureEntity.getYaml(), infrastructureEntity.getIdentifier());
+
     return InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity);
+  }
+
+  private void validateInfrastructureSchemaAndLog(String accountId, String resolvedYaml, String infraRef) {
+    try {
+      infrastructureYamlSchemaHelper.validateSchema(accountId, resolvedYaml);
+    } catch (Exception ex) {
+      log.error(
+          String.format(
+              "Infrastructure %s failed schema validation in the InfrastructureTaskExecutableStepV2 step", infraRef),
+          ex);
+    }
   }
 
   private Optional<InstancesOutcome> publishInfraOutput(NGLogCallback logCallback, ServiceStepOutcome serviceOutcome,
