@@ -421,7 +421,7 @@ public class AuthenticationSettingsResource {
   }
 
   @DELETE
-  @Path("/delete-saml-metadata/{samlSSOId}")
+  @Path("/saml-metadata/{samlSSOId}/delete")
   @ApiOperation(value = "Delete SAML Config for given SAML sso id", nickname = "deleteSamlMetaDataForSamlSSOId")
   @Operation(operationId = "deleteSamlMetaDataForSamlSSOId", summary = "Delete SAML meta data for given SAML sso id",
       description = "Deletes SAML metadata for the given Account and SAML sso id",
