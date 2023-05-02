@@ -10,6 +10,8 @@ config: |-
   proxy:
     '/snyk':
       target: https://snyk.io/api/v1
+      pathRewrite:
+        'api/proxy/snyk/?': '/'
       headers:
         User-Agent: tech-services/backstage-plugin/1.0
         Authorization: token ${SNYK_TOKEN}

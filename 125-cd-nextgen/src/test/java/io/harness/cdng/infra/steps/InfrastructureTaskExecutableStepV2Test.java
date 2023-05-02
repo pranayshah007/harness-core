@@ -108,6 +108,7 @@ import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
+import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -172,6 +173,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   @Mock private CDExpressionResolver resolver;
   @Spy InstanceOutcomeHelper instanceOutcomeHelper;
   @Mock EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
+  @Mock private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
 
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
@@ -400,7 +402,8 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
                                 .infraInputs(ParameterField.createValueField(YamlUtils.read(inputYaml, Map.class)))
                                 .build(),
                             null))
-        .withMessageContaining("The value provided prod does not match any of the allowed values [dev,qa]");
+        .withMessageContaining(
+            "The value provided for [infrastructureDefinition.spec.credentialsRef: prod] does not match any of the allowed values [dev,qa]");
   }
 
   @Test

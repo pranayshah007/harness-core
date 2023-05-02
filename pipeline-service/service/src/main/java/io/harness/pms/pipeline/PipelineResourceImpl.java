@@ -334,14 +334,16 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<PMSPipelineSummaryResponseDTO> getPipelineSummary(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId,
-      @ResourceIdentifier String pipelineId, GitEntityFindInfoDTO gitEntityBasicInfo, Boolean getMetadataOnly) {
+      @ResourceIdentifier String pipelineId, GitEntityFindInfoDTO gitEntityBasicInfo, Boolean getMetadataOnly,
+      boolean loadFromFallbackBranch, String loadFromCache) {
     log.info(
         String.format("Get pipeline summary for pipeline with with identifier %s in project %s, org %s, account %s",
             pipelineId, projectId, orgId, accountId));
 
     Optional<PipelineEntity> pipelineEntity;
-    pipelineEntity = pmsPipelineService.getPipeline(
-        accountId, orgId, projectId, pipelineId, false, Boolean.TRUE.equals(getMetadataOnly));
+    pipelineEntity = pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false,
+        Boolean.TRUE.equals(getMetadataOnly), loadFromFallbackBranch,
+        GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCache));
 
     PMSPipelineSummaryResponseDTO pipelineSummary = PMSPipelineDtoMapper.preparePipelineSummary(
         pipelineEntity.orElseThrow(

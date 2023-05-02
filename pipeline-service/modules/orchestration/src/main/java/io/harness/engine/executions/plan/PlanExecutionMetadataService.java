@@ -25,4 +25,8 @@ public interface PlanExecutionMetadataService {
    * @param planExecutionIds
    */
   void deleteMetadataForGivenPlanExecutionIds(Set<String> planExecutionIds);
+
+  String getNotesForExecution(String planExecutionId);
+
+  String updateNotesForExecution(String planExecutionId, String notes);
 }

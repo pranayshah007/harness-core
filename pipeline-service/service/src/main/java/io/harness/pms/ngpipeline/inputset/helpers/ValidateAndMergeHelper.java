@@ -14,6 +14,7 @@ import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSets;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetsForGivenStages;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipeline;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipelineForGivenStages;
+import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateWithDefaultValuesAndModifiedPropertiesFromPipelineForGivenStages;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateWithDefaultValuesFromPipeline;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateWithDefaultValuesFromPipelineForGivenStages;
 
@@ -145,7 +146,8 @@ public class ValidateAndMergeHelper {
         String yaml = getYaml(accountId, orgIdentifier, projectIdentifier, pipelineYaml, optionalPipelineEntity);
         StagesExecutionHelper.throwErrorIfAllStagesAreDeleted(yaml, stageIdentifiers);
         replacedExpressions = new ArrayList<>(StagesExpressionExtractor.getNonLocalExpressions(yaml, stageIdentifiers));
-        template = createTemplateWithDefaultValuesFromPipelineForGivenStages(pipelineYaml, stageIdentifiers);
+        template = createTemplateWithDefaultValuesAndModifiedPropertiesFromPipelineForGivenStages(
+            yaml, pipelineYaml, stageIdentifiers);
       }
 
       boolean hasInputSets = pmsInputSetService.checkForInputSetsForPipeline(

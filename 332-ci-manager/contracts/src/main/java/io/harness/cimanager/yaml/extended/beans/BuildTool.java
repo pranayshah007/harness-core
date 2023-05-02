@@ -54,6 +54,20 @@ public enum BuildTool {
     public TIBuildTool toTIBuildTool() {
       return TIBuildTool.SBT;
     }
+  },
+  @JsonProperty("pytest")
+  PYTEST("pytest") {
+    @Override
+    public TIBuildTool toTIBuildTool() {
+      return TIBuildTool.PYTEST;
+    }
+  },
+  @JsonProperty("unittest")
+  UNITTEST("unittest") {
+    @Override
+    public TIBuildTool toTIBuildTool() {
+      return TIBuildTool.UNITTEST;
+    }
   };
 
   private final String yamlName;

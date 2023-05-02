@@ -81,8 +81,9 @@ public class VmRunStepSerializer {
     if (ambiance.hasMetadata() && ambiance.getMetadata().getIsDebug()
         && featureFlagService.isEnabled(FeatureName.CI_REMOTE_DEBUG, ngAccess.getAccountIdentifier())) {
       command = earlyExitCommand + System.lineSeparator()
-          + SerializerUtils.getVmDebugCommand(ciExecutionServiceConfig.getRemoteDebugTimeout()) + System.lineSeparator()
-          + command;
+          + SerializerUtils.getVmDebugCommand(
+              ngAccess.getAccountIdentifier(), ciExecutionServiceConfig.getRemoteDebugTimeout())
+          + System.lineSeparator() + command;
     } else {
       command = earlyExitCommand + command;
     }

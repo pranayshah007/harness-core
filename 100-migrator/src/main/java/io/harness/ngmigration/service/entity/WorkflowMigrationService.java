@@ -57,10 +57,10 @@ import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.template.beans.TemplateWrapperResponseDTO;
-import io.harness.template.beans.yaml.NGTemplateConfig;
-import io.harness.template.beans.yaml.NGTemplateInfoConfig;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.template.resources.beans.TemplateWrapperResponseDTO;
+import io.harness.template.resources.beans.yaml.NGTemplateConfig;
+import io.harness.template.resources.beans.yaml.NGTemplateInfoConfig;
 
 import software.wings.beans.GraphNode;
 import software.wings.beans.Workflow;
@@ -300,7 +300,7 @@ public class WorkflowMigrationService extends NgMigrationService {
                                             .stages(stages)
                                             .allowStageExecutions(true)
                                             .tags(MigratorUtility.getTags(workflow.getTagLinks()))
-                                            .variables(workflowHandler.getVariables(migrationContext, workflow))
+                                            .variables(workflowHandler.getVariables(migrationContext, workflow, stages))
                                             .build())
                     .build();
       ngType = PIPELINE;

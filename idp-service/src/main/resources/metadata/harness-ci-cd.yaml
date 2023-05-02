@@ -11,6 +11,8 @@ config: |-
   proxy:
     '/harness':
       target: 'https://app.harness.io/'
+      pathRewrite:
+        'api/proxy/harness/?': '/'
       headers:
         'x-api-key': ${HARNESS_TOKEN}
 environmentVariables:

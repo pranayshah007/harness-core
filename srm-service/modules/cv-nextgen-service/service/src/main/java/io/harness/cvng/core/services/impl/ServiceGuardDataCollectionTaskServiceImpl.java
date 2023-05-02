@@ -14,6 +14,7 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.DataCollectionTask;
+import io.harness.cvng.core.entities.DeploymentDataCollectionTask;
 import io.harness.cvng.core.entities.ServiceGuardDataCollectionTask;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.services.api.CVConfigService;
@@ -22,6 +23,8 @@ import io.harness.cvng.core.services.api.DataCollectionTaskManagementService;
 import io.harness.cvng.core.services.api.DataCollectionTaskService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
+import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -40,6 +43,8 @@ public class ServiceGuardDataCollectionTaskServiceImpl implements DataCollection
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private MonitoringSourcePerpetualTaskService monitoringSourcePerpetualTaskService;
   @Inject private DataCollectionTaskService dataCollectionTaskService;
+
+  @Inject VerificationJobInstanceService verificationJobInstanceService;
 
   @Override
   public void handleCreateNextTask(CVConfig cvConfig) {
@@ -96,6 +101,35 @@ public class ServiceGuardDataCollectionTaskServiceImpl implements DataCollection
     }
     dataCollectionTaskService.validateIfAlreadyExists(dataCollectionTask);
     dataCollectionTaskService.save(dataCollectionTask);
+  }
+
+  @Override
+  public void processDataCollectionSuccess(DataCollectionTask dataCollectionTask) {
+    if (dataCollectionTask instanceof DeploymentDataCollectionTask) {
+      verificationJobInstanceService.logProgress(VerificationJobInstance.DataCollectionProgressLog.builder()
+                                                     .executionStatus(dataCollectionTask.getStatus())
+                                                     .isFinalState(false)
+                                                     .startTime(dataCollectionTask.getStartTime())
+                                                     .endTime(dataCollectionTask.getEndTime())
+                                                     .verificationTaskId(dataCollectionTask.getVerificationTaskId())
+                                                     .log("Data collection task successful")
+                                                     .build());
+    }
+  }
+
+  @Override
+  public void processDataCollectionFailure(DataCollectionTask dataCollectionTask) {
+    if (dataCollectionTask instanceof DeploymentDataCollectionTask) {
+      verificationJobInstanceService.logProgress(
+          VerificationJobInstance.DataCollectionProgressLog.builder()
+              .executionStatus(dataCollectionTask.getStatus())
+              .isFinalState(false)
+              .startTime(dataCollectionTask.getStartTime())
+              .endTime(dataCollectionTask.getEndTime())
+              .verificationTaskId(dataCollectionTask.getVerificationTaskId())
+              .log("Data collection failed with exception: " + dataCollectionTask.getException())
+              .build());
+    }
   }
 
   private void enqueueFirstTask(CVConfig cvConfig) {

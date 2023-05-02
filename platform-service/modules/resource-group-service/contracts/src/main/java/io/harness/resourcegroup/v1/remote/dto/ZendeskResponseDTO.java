@@ -7,12 +7,17 @@
 
 package io.harness.resourcegroup.v1.remote.dto;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+
 import lombok.Builder;
 import lombok.Data;
+import org.jetbrains.annotations.NotNull;
 
 @Data
 @Builder
+@OwnedBy(HarnessTeam.CDP)
 public class ZendeskResponseDTO {
-  String message;
-  Integer code;
+  @NotNull String message;
+  @NotNull Integer code;
 }

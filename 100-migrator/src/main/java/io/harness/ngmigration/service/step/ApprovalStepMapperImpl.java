@@ -241,7 +241,7 @@ public class ApprovalStepMapperImpl extends StepMapper {
       approval = getKeyValueCriteria(approvalParams.getApprovalField(), approvalParams.getApprovalValue());
     }
 
-    CriteriaSpecWrapper rejection = getRuntimeJexl();
+    CriteriaSpecWrapper rejection = null;
     if (StringUtils.isNoneBlank(approvalParams.getRejectionField(), approvalParams.getRejectionValue())) {
       rejection = getKeyValueCriteria(approvalParams.getRejectionField(), approvalParams.getRejectionValue());
     }

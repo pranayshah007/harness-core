@@ -14,7 +14,7 @@ import io.harness.filter.entity.FilterProperties;
 import io.harness.filter.mapper.FilterPropertiesMapper;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.template.TemplateFilterPropertiesDTO;
-import io.harness.template.beans.TemplateFilterProperties;
+import io.harness.template.resources.beans.TemplateFilterProperties;
 
 import org.modelmapper.ModelMapper;
 

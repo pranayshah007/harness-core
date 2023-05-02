@@ -834,6 +834,7 @@ public class InviteServiceImpl implements InviteService {
     markInviteApprovedAndDeleted(invite);
     // telemetry for adding user to an account
     sendInviteAcceptTelemetryEvents(user, invite);
+    ngUserService.waitForRbacSetup(scope, user.getUuid(), email);
     return true;
   }
 

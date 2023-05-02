@@ -18,7 +18,7 @@ import io.harness.serializer.kryo.NGTemplateKryoRegistrar;
 import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
 import io.harness.serializer.morphia.NGTemplateMorphiaRegistrar;
 import io.harness.serializer.morphia.NotificationBeansMorphiaRegistrar;
-import io.harness.template.beans.yaml.NGTemplateConfig;
+import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
 import com.google.common.collect.ImmutableList;

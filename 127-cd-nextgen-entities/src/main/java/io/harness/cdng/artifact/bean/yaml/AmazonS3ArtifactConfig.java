@@ -131,4 +131,9 @@ public class AmazonS3ArtifactConfig implements ArtifactConfig, Visitable, WithCo
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return connectorRefMap;
   }
+
+  @Override
+  public void validate() {
+    ArtifactConfigHelper.checkFilePathAndFilePathRegex(filePath, filePathRegex);
+  }
 }

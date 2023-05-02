@@ -28,4 +28,6 @@ public interface PlanExecutionResourceConstants {
 
   String RUN_ALL_STAGES =
       "This param provides an option to run only the failed stages when Pipeline fails at parallel group. By default, it will run all the stages in the failed parallel group.";
+
+  String NOTES_OF_A_PIPELINE_EXECUTION = "Notes of a Pipeline Execution";
 }

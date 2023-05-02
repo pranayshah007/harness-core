@@ -63,6 +63,7 @@ public class NGCommonEntityConstants {
   public static final String REPO_URL = "repoURL";
   public static final String REPO_NAME = "repoName";
   public static final String PLAN_KEY = "planExecutionId";
+  public static final String STAGE_KEY = "stageExecutionId";
   public static final String TYPE_KEY = "type";
   public static final String TOKEN_KEY = "tokenId";
   public static final String REFERRED_ENTITY_TYPE = "referredEntityType";
@@ -151,10 +152,13 @@ public class NGCommonEntityConstants {
   public static final String ENVIRONMENT_GROUP_KEY = "envGroupIdentifier";
   public static final String ENV_PARAM_MESSAGE = "Environment Identifier for the Entity.";
 
+  public static final String ENV_REF_PARAM_MESSAGE = "Environment Reference for the Entity.";
+
   public static final String INFRADEF_PARAM_MESSAGE = "Infrastructure Definition Identifier for the Entity.";
   // Service Overrides
   public static final String SERVICE_IDENTIFIER_KEY = "serviceIdentifier";
   public static final String SERVICE_PARAM_MESSAGE = "Service Identifier for the Entity.";
+  public static final String SERVICE_REF_PARAM_MESSAGE = "Service Reference for Entity";
   public static final String VARIABLE_OVERRIDE_PARAM_MESSAGE = "Variable Overrides for an Environment";
 
   // Infrastructures
@@ -191,4 +195,5 @@ public class NGCommonEntityConstants {
   public static final String FILE_STORE_FUNCTOR = "fileStore";
   public static final String PLAN_NAME = "planName";
   public static final String TARGET_IDENTIFIER_KEY = "targetIdentifier";
+  public static final String NOTES_FOR_PIPELINE_EXECUTION = "notesForPipelineExecution";
 }

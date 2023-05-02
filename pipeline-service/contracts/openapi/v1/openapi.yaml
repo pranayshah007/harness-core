@@ -469,7 +469,7 @@ paths:
           description: Identifier of the Harness Connector used for CRUD operations on the Entity (for Git Experience).
       tags:
         - Inputs
-      x-internal: false
+      x-internal: true
   '/v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/move-config':
     parameters:
       - $ref: '#/components/parameters/OrgParam'
@@ -1830,16 +1830,19 @@ components:
       properties:
         inputs:
           type: object
-        repository:
+        options:
           type: object
           properties:
-            reference:
+            clone:
               type: object
               properties:
-                type:
+                ref:
                   type: object
-                value:
-                  type: object
+                  properties:
+                    type:
+                      type: object
+                    name:
+                      type: object
       x-examples:
         example-inputs-response:
           inputs:
@@ -1866,20 +1869,21 @@ components:
               enums:
                 - enum1
                 - enum2
-          repository:
-            reference:
-              type:
-                prompt: false
-                required: true
-                type: string
-                enums:
-                  - enum1
-                  - enum2
-                  - enum3
-              value:
-                prompt: false
-                required: true
-                type: string
+          options:
+            clone:
+              ref:
+                type:
+                  prompt: false
+                  required: true
+                  type: string
+                  enums:
+                    - enum1
+                    - enum2
+                    - enum3
+                name:
+                  prompt: false
+                  required: true
+                  type: string
       description: Response Body for Pipeline Inputs
     ParentStageInfo:
       title: ParentStageInfo
@@ -2756,20 +2760,21 @@ components:
                     enums:
                       - enum1
                       - enum2
-                repository:
-                  reference:
-                    type:
-                      prompt: false
-                      required: true
-                      type: string
-                      enums:
-                        - enum1
-                        - enum2
-                        - enum3
-                    value:
-                      prompt: false
-                      required: true
-                      type: string
+                options:
+                  clone:
+                    ref:
+                      type:
+                        prompt: false
+                        required: true
+                        type: string
+                        enums:
+                          - enum1
+                          - enum2
+                          - enum3
+                      name:
+                        prompt: false
+                        required: true
+                        type: string
     PipelineMoveConfigResponseBody:
       description: Response body for moving a pipeline configuration.
       content:

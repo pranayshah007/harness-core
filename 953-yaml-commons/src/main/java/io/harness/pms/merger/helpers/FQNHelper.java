@@ -23,6 +23,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(PIPELINE)
@@ -88,5 +89,29 @@ public class FQNHelper {
       }
     });
     toBeRemovedFQNs.forEach(templateMap::remove);
+  }
+
+  public void removeProperties(Map<FQN, Object> templateMap, Set<String> stageIdentifiersWithCloneEnabled) {
+    if (EmptyPredicate.isEmpty(stageIdentifiersWithCloneEnabled)) {
+      return;
+    }
+    boolean removeProperties = true;
+    for (FQN key : templateMap.keySet()) {
+      String stageIdentifier = key.getStageIdentifier();
+      if (EmptyPredicate.isNotEmpty(stageIdentifier) && stageIdentifiersWithCloneEnabled.contains(stageIdentifier)) {
+        removeProperties = false;
+        break;
+      }
+    }
+    if (removeProperties) {
+      Set<FQN> toBeRemovedFQNs =
+          templateMap.keySet()
+              .stream()
+              .filter(key
+                  -> key.getFqnList().size() >= 2
+                      && key.getFqnList().get(1).getKey().equals(YAMLFieldNameConstants.PROPERTIES))
+              .collect(Collectors.toSet());
+      toBeRemovedFQNs.forEach(templateMap::remove);
+    }
   }
 }

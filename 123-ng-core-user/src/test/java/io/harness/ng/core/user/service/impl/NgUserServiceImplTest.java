@@ -12,12 +12,14 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.createRoleAssignmentDTOs;
 import static io.harness.ng.core.user.UserMembershipUpdateSource.USER;
+import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.REETIKA;
 
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
@@ -25,6 +27,7 @@ import static junit.framework.TestCase.fail;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -35,6 +38,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.AccessControlAdminClient;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
@@ -111,6 +115,7 @@ public class NgUserServiceImplTest extends CategoryTest {
   @Mock private LastAdminCheckService lastAdminCheckService;
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private DefaultUserGroupService defaultUserGroupService;
+  @Mock private AccessControlClient accessControlClient;
   @Spy @Inject @InjectMocks private NgUserServiceImpl ngUserService;
   private String accountIdentifier;
   private String orgIdentifier;
@@ -527,6 +532,33 @@ public class NgUserServiceImplTest extends CategoryTest {
         .getUsersAtScope(Sets.newHashSet(), Scope.of(accountIdentifier, null, null));
 
     assertInviteUser(scope, singletonList(newEmail), addUsersDTO);
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void testWaitForRbacSetup() {
+    doReturn(true).when(accessControlClient).hasAccess(any(), any(), any(), anyString());
+    Scope scope = Scope.of(accountIdentifier, orgIdentifier, null);
+    String email = randomAlphabetic(10) + '@' + randomAlphabetic(10);
+    String userId = randomAlphabetic(10);
+    ngUserService.waitForRbacSetup(scope, userId, email);
+    verify(accessControlClient, times(1)).hasAccess(any(), any(), any(), anyString());
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void busyPollUntilAccountRBACSetupCompletes_VerifyMaxRetries() {
+    for (int i = 0; i < 3; i++) {
+      doReturn(false).when(accessControlClient).hasAccess(any(), any(), any(), anyString());
+    }
+    Scope scope = Scope.of(accountIdentifier, null, null);
+    String email = "testEmail";
+    String userId = "testUserId";
+    boolean result = ngUserService.busyPollUntilAccountRBACSetupCompletes(scope, userId, 3, 100);
+    assertFalse(result);
+    verify(accessControlClient, times(3)).hasAccess(any(), any(), any(), anyString());
   }
 
   private void assertInviteUser(Scope scope, List<String> emailsExpectedToBeInvited, AddUsersDTO addUsersDTO) {

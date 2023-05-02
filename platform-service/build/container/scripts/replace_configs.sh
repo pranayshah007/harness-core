@@ -228,16 +228,16 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_PASSWORD" ]]; then
   export EVENTS_FRAMEWORK_REDIS_PASSWORD; yq -i '.resourceGroupServiceConfig.redis.password=env(EVENTS_FRAMEWORK_REDIS_PASSWORD)' $CONFIG_FILE
 fi
 
-if [[ "" != "$PROD_QA_ZENDESK_BASE_URL" ]]; then
-  export PROD_QA_ZENDESK_BASE_URL; yq -i '.zendeskApiConfig.baseUrl=env(PROD_QA_ZENDESK_BASE_URL)' $CONFIG_FILE
+if [[ "" != "$ZENDESK_BASE_URL" ]]; then
+  export ZENDESK_BASE_URL; yq -i '.zendeskApiConfig.baseUrl=env(ZENDESK_BASE_URL)' $CONFIG_FILE
 fi
 
-if [[ "" != "$PROD_QA_ZENDESK_TOKEN" ]]; then
-  export PROD_QA_ZENDESK_TOKEN; yq -i '.zendeskApiConfig.token=env(PROD_QA_ZENDESK_TOKEN)' $CONFIG_FILE
+if [[ "" != "$ZENDESK_TOKEN" ]]; then
+  export ZENDESK_TOKEN; yq -i '.zendeskApiConfig.token=env(ZENDESK_TOKEN)' $CONFIG_FILE
 fi
 
-if [[ "" != "$PROD_QA_COVEO_TOKEN" ]]; then
-  export PROD_QA_COVEO_TOKEN; yq -i '.zendeskApiConfig.coveoToken=env(PROD_QA_COVEO_TOKEN)' $CONFIG_FILE
+if [[ "" != "$COVEO_TOKEN" ]]; then
+  export COVEO_TOKEN; yq -i '.zendeskApiConfig.coveoToken=env(COVEO_TOKEN)' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then

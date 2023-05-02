@@ -704,7 +704,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
 
   private String getFileUrl(ScmGetFileResponseDTO scmGetFileResponseDTO, Scope scope, GitRepositoryDTO gitRepositoryDTO,
       String filepath, String connectorRef) {
-    if (isEmpty(scmGetFileResponseDTO.getBranchName())) {
+    if (isEmpty(scmGetFileResponseDTO.getBranchName()) && isEmpty(scmGetFileResponseDTO.getCommitId())) {
       return filepath;
     }
     return gitFilePathHelper.getFileUrl(scope, connectorRef, scmGetFileResponseDTO.getBranchName(), filepath,
@@ -816,6 +816,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
     gitFilePathHelper.validateFilePath(getFileRequest.getFilePath());
     return ScmGetFileByBranchRequestDTO.builder()
         .branchName(getFileRequest.getBranchName())
+        .commitId(getFileRequest.getCommitId())
         .connectorRef(getFileRequest.getConnectorRef())
         .filePath(getFileRequest.getFilePath())
         .repoName(getFileRequest.getRepoName())

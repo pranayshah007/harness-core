@@ -107,7 +107,9 @@ public class ShellScriptTemplateService implements NgTemplateService {
   @Override
   public String getTimeoutString(Template template) {
     ShellScriptTemplate shellScriptTemplate = (ShellScriptTemplate) template.getTemplateObject();
-    return shellScriptTemplate.getTimeoutMillis() < 10000 ? "10s" : shellScriptTemplate.getTimeoutMillis() / 1000 + "s";
+    return shellScriptTemplate.getTimeoutMillis() < 10000
+        ? "10s"
+        : MigratorUtility.toTimeoutString(shellScriptTemplate.getTimeoutMillis());
   }
 
   static String valueOrDefaultEmpty(String val) {

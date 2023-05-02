@@ -262,7 +262,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                                     .build();
     String yaml = NGFreezeDtoMapper.toYaml(freezeConfig);
     FreezeConfigEntity freezeConfigEntity =
-        NGFreezeDtoMapper.toFreezeConfigEntity("accountId", null, null, yaml, FreezeType.GLOBAL);
+        NGFreezeDtoMapper.toFreezeConfigEntity("accountId", "orgId", "projId", yaml, FreezeType.GLOBAL);
     return NGFreezeDtoMapper.prepareFreezeResponseSummaryDto(freezeConfigEntity);
   }
 

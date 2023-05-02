@@ -349,7 +349,9 @@ public class EventJobScheduler {
   public void runGovernanceRecommendationJob() {
     try {
       log.info("generateRecommendation Running");
-      governanceRecommendationService.generateRecommendation();
+      if (batchMainConfig.getRecommendationConfig().isGovernanceRecommendationEnabled()) {
+        governanceRecommendationService.generateRecommendation();
+      }
     } catch (Exception e) {
       log.error("Exception while running runGovernanceRecommendationJob", e);
     }

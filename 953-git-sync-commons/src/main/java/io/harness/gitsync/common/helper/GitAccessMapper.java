@@ -13,6 +13,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.gitsync.AzureRepoAccessRequest;
+import io.harness.gitsync.BitbucketAccessRequest;
+import io.harness.gitsync.BitbucketOAuthAccessRequest;
+import io.harness.gitsync.BitbucketUserNameTokenAccessRequest;
 import io.harness.gitsync.GitAccessRequest;
 import io.harness.gitsync.GithubAccessRequest;
 import io.harness.gitsync.GithubAppAccessRequest;
@@ -20,6 +23,8 @@ import io.harness.gitsync.GithubTokenAccessRequest;
 import io.harness.gitsync.GitlabAccessRequest;
 import io.harness.gitsync.UserDetailsRequest;
 import io.harness.gitsync.common.dtos.gitAccess.AzureRepoAccessDTO;
+import io.harness.gitsync.common.dtos.gitAccess.BitbucketOAuthAccessDTO;
+import io.harness.gitsync.common.dtos.gitAccess.BitbucketUsernameTokenAccessDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GitAccessDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GithubAccessTokenDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GithubAppAccessDTO;
@@ -68,7 +73,7 @@ public class GitAccessMapper {
           .tokenScope(getScope(scopeIdentifiers.getAccountIdentifier(), scopeIdentifiers.getOrgIdentifier(),
               scopeIdentifiers.getProjectIdentifier()))
           .build();
-    } else {
+    } else if (gitAccessRequest.hasAzureRepo()) {
       AzureRepoAccessRequest azureRepoAccessRequest = gitAccessRequest.getAzureRepo();
       io.harness.gitsync.SecretRefData tokenRef = azureRepoAccessRequest.getTokenRef();
       ScopeIdentifiers scopeIdentifiers = tokenRef.getScope();
@@ -77,6 +82,30 @@ public class GitAccessMapper {
           .tokenScope(getScope(scopeIdentifiers.getAccountIdentifier(), scopeIdentifiers.getOrgIdentifier(),
               scopeIdentifiers.getProjectIdentifier()))
           .build();
+    } else {
+      BitbucketAccessRequest bitbucketAccessRequest = gitAccessRequest.getBitbucket();
+      if (bitbucketAccessRequest.hasBitbucketOAuthAccessRequest()) {
+        BitbucketOAuthAccessRequest bitbucketOAuthAccessRequest =
+            bitbucketAccessRequest.getBitbucketOAuthAccessRequest();
+        io.harness.gitsync.SecretRefData tokenRef = bitbucketOAuthAccessRequest.getTokenRef();
+        ScopeIdentifiers scopeIdentifiers = tokenRef.getScope();
+        return BitbucketOAuthAccessDTO.builder()
+            .tokenRef(prepareSecretRefData(tokenRef))
+            .tokenScope(getScope(scopeIdentifiers.getAccountIdentifier(), scopeIdentifiers.getOrgIdentifier(),
+                scopeIdentifiers.getProjectIdentifier()))
+            .build();
+      } else {
+        BitbucketUserNameTokenAccessRequest bitbucketUserNameTokenAccessRequest =
+            bitbucketAccessRequest.getBitbucketUserNameTokenAccessRequest();
+        io.harness.gitsync.SecretRefData tokenRef = bitbucketUserNameTokenAccessRequest.getTokenRef();
+        ScopeIdentifiers scopeIdentifiers = tokenRef.getScope();
+        return BitbucketUsernameTokenAccessDTO.builder()
+            .tokenRef(prepareSecretRefData(tokenRef))
+            .tokenScope(getScope(scopeIdentifiers.getAccountIdentifier(), scopeIdentifiers.getOrgIdentifier(),
+                scopeIdentifiers.getProjectIdentifier()))
+            .usernameRef(prepareSecretRefData(bitbucketUserNameTokenAccessRequest.getUserNameRef()))
+            .build();
+      }
     }
   }
 

@@ -63,6 +63,7 @@ import io.harness.ng.core.ScopeAware;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.entity.ServiceSequence;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 
 import java.util.Set;
@@ -96,6 +97,7 @@ public class NGEntitiesMorphiaRegistrar implements MorphiaRegistrar {
     set.add(AwsLambdaInfrastructureMapping.class);
     set.add(K8sAwsInfraMapping.class);
     set.add(K8sRancherInfraMapping.class);
+    set.add(ServiceSequence.class);
   }
 
   @Override

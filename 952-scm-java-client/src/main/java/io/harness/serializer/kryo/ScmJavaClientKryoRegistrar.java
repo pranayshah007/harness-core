@@ -26,6 +26,9 @@ import io.harness.beans.response.GitFileResponse;
 import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.exception.ScmException;
 import io.harness.gitsync.common.dtos.gitAccess.AzureRepoAccessDTO;
+import io.harness.gitsync.common.dtos.gitAccess.BitbucketAccessDTO;
+import io.harness.gitsync.common.dtos.gitAccess.BitbucketOAuthAccessDTO;
+import io.harness.gitsync.common.dtos.gitAccess.BitbucketUsernameTokenAccessDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GitAccessDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GithubAccessDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GithubAccessTokenDTO;
@@ -74,5 +77,8 @@ public class ScmJavaClientKryoRegistrar implements KryoRegistrar {
     kryo.register(AzureRepoAccessDTO.class, 955026);
     kryo.register(GithubAppAccessDTO.class, 955027);
     kryo.register(Scope.class, 955028);
+    kryo.register(BitbucketAccessDTO.class, 955029);
+    kryo.register(BitbucketOAuthAccessDTO.class, 955030);
+    kryo.register(BitbucketUsernameTokenAccessDTO.class, 955031);
   }
 }

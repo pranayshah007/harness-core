@@ -31,6 +31,7 @@ import io.harness.pms.notification.orchestration.helpers.AbortInfoHelper;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.remote.client.NGRestUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
@@ -74,7 +75,8 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver, N
     sendOutboxEvents(nodeOutboxInfo);
   }
 
-  private void sendOutboxEvents(NodeOutboxInfo nodeOutboxInfo) {
+  @VisibleForTesting
+  void sendOutboxEvents(NodeOutboxInfo nodeOutboxInfo) {
     Ambiance ambiance = nodeOutboxInfo.getNodeExecution().getAmbiance();
     String enableNodeAudit = null;
     try {

@@ -42,9 +42,10 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class GitPollingPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
-  private final KryoSerializer kryoSerializer;
   private final GitPollingServiceImpl gitPollingService;
   private final PollingResponsePublisher pollingResponsePublisher;
+  private final KryoSerializer kryoSerializer;
+  private final KryoSerializer referenceFalseKryoSerializer;
 
   private final @Getter Cache<String, GitPollingCache> cache = Caffeine.newBuilder().build();
   private static final long TIMEOUT_IN_MILLIS = 90L * 1000;
@@ -56,22 +57,25 @@ public class GitPollingPerpetualTaskExecutorNg implements PerpetualTaskExecutor 
     String pollingDocId = taskParams.getPollingDocId();
     String perpetualTaskId = taskId.getId();
     GitPollingTaskParameters gitPollingTaskParameters =
-        (GitPollingTaskParameters) kryoSerializer.asObject(taskParams.getGitpollingWebhookParams().toByteArray());
+        (GitPollingTaskParameters) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+            .asObject(taskParams.getGitpollingWebhookParams().toByteArray());
     GitPollingCache gitPollingCache = cache.get(pollingDocId, id -> new GitPollingCache());
 
     if (!gitPollingCache.needsToPublish()) {
-      getWebhookEvents(gitPollingCache, gitPollingTaskParameters, perpetualTaskId, pollingDocId);
+      getWebhookEvents(gitPollingCache, gitPollingTaskParameters, perpetualTaskId, pollingDocId,
+          params.getReferenceFalseKryoSerializer());
     }
 
     if (gitPollingCache.needsToPublish()) {
-      publishFromCache(perpetualTaskId, pollingDocId, gitPollingTaskParameters, gitPollingCache);
+      publishFromCache(perpetualTaskId, pollingDocId, gitPollingTaskParameters, gitPollingCache,
+          params.getReferenceFalseKryoSerializer());
     }
 
     return PerpetualTaskResponse.builder().responseCode(200).responseMessage("success").build();
   }
 
   private void publishFromCache(String perpetualTaskId, String pollingDocId, GitPollingTaskParameters taskParams,
-      GitPollingCache gitPollingCache) {
+      GitPollingCache gitPollingCache, boolean referenceFalseSerializer) {
     List<GitPollingWebhookData> unpublishedWebhooks = gitPollingCache.getUnpublishedWebhooks();
     Set<String> toBeDeletedIds = gitPollingCache.getToBeDeletedWebookDeliveryIds();
     if (isEmpty(unpublishedWebhooks) && isEmpty(toBeDeletedIds)) {
@@ -90,7 +94,7 @@ public class GitPollingPerpetualTaskExecutorNg implements PerpetualTaskExecutor 
                                      .build())
             .build();
 
-    if (pollingResponsePublisher.publishToManger(perpetualTaskId, response)) {
+    if (pollingResponsePublisher.publishToManger(perpetualTaskId, response, referenceFalseSerializer)) {
       gitPollingCache.setFirstCollectionOnDelegate(false);
       gitPollingCache.clearUnpublishedWebhooks(unpublishedWebhooks);
       gitPollingCache.removeDeletedWebhookIds(toBeDeletedIds);
@@ -98,7 +102,7 @@ public class GitPollingPerpetualTaskExecutorNg implements PerpetualTaskExecutor 
   }
 
   private void getWebhookEvents(GitPollingCache gitPollingCache, GitPollingTaskParameters gitPollingTaskParameters,
-      String taskId, String pollingDocId) {
+      String taskId, String pollingDocId, boolean referenceFalseSerializer) {
     try {
       GitPollingTaskExecutionResponse response =
           gitPollingService.getWebhookRecentDeliveryEvents(gitPollingTaskParameters);
@@ -123,7 +127,8 @@ public class GitPollingPerpetualTaskExecutorNg implements PerpetualTaskExecutor 
               .commandExecutionStatus(CommandExecutionStatus.FAILURE)
               .errorMessage(e.getMessage())
               .pollingDocId(pollingDocId)
-              .build());
+              .build(),
+          referenceFalseSerializer);
     }
   }
 
@@ -134,5 +139,9 @@ public class GitPollingPerpetualTaskExecutorNg implements PerpetualTaskExecutor 
   @Override
   public boolean cleanup(PerpetualTaskId taskId, PerpetualTaskExecutionParams params) {
     return true;
+  }
+
+  private KryoSerializer getKryoSerializer(boolean referenceFalse) {
+    return referenceFalse ? referenceFalseKryoSerializer : kryoSerializer;
   }
 }

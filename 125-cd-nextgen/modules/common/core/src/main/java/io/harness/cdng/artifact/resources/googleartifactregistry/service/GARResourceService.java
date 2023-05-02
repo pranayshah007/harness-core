@@ -8,9 +8,14 @@
 package io.harness.cdng.artifact.resources.googleartifactregistry.service;
 
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GarRequestDTO;
 
 public interface GARResourceService {
   GARResponseDTO getBuildDetails(IdentifierRef GoogleArtifactRegistryRef, String region, String repositoryName,
       String project, String pkg, String version, String versionRegex, String orgIdentifier, String projectIdentifier);
+  GARBuildDetailsDTO getLastSuccessfulBuild(IdentifierRef googleArtifactRegistryRef, String region,
+      String repositoryName, String project, String pkg, GarRequestDTO garRequestDTO, String orgIdentifier,
+      String projectIdentifier);
 }

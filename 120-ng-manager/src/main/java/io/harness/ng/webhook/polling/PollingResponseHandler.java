@@ -33,6 +33,7 @@ import static io.harness.polling.contracts.Type.S3_HELM;
 import io.harness.NgAutoLogContext;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.HttpStoreConfig;
@@ -59,6 +60,7 @@ import io.harness.polling.bean.ManifestPolledResponse;
 import io.harness.polling.bean.PolledResponseResult;
 import io.harness.polling.bean.PolledResponseResult.PolledResponseResultBuilder;
 import io.harness.polling.bean.PollingDocument;
+import io.harness.polling.bean.PollingType;
 import io.harness.polling.bean.artifact.AMIArtifactInfo;
 import io.harness.polling.bean.artifact.AcrArtifactInfo;
 import io.harness.polling.bean.artifact.ArtifactoryRegistryArtifactInfo;
@@ -76,13 +78,19 @@ import io.harness.polling.bean.artifact.Nexus2RegistryArtifactInfo;
 import io.harness.polling.bean.artifact.NexusRegistryArtifactInfo;
 import io.harness.polling.bean.artifact.S3ArtifactInfo;
 import io.harness.polling.contracts.BuildInfo;
+import io.harness.polling.contracts.Metadata;
 import io.harness.polling.contracts.PollingResponse;
 import io.harness.polling.service.intfc.PollingPerpetualTaskService;
 import io.harness.polling.service.intfc.PollingService;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -95,6 +103,7 @@ public class PollingResponseHandler {
   private PollingService pollingService;
   private PollingPerpetualTaskService pollingPerpetualTaskService;
   private PolledItemPublisher polledItemPublisher;
+  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Inject
   public PollingResponseHandler(PollingService pollingService, PollingPerpetualTaskService pollingPerpetualTaskService,
@@ -173,15 +182,27 @@ public class PollingResponseHandler {
     // find if there are any new keys which are not in db. This is required because of delegate rebalancing,
     // delegate can loose context of latest keys.
     Set<String> savedArtifactKeys = savedResponse.getAllPolledKeys();
-    List<String> newArtifactKeys = unpublishedArtifactKeys.stream()
-                                       .filter(artifact -> !savedArtifactKeys.contains(artifact))
-                                       .collect(Collectors.toList());
+    List<String> newArtifactKeys = new ArrayList<>();
+    List<Metadata> newArtifactsMetadata = new ArrayList<>();
+    for (ArtifactDelegateResponse artifactDelegateResponse : unpublishedArtifacts) {
+      String key = ArtifactCollectionUtilsNg.getArtifactKey(artifactDelegateResponse);
+      if (!savedArtifactKeys.contains(key)) {
+        newArtifactKeys.add(key);
+        Map<String, String> metadata = new HashMap<>();
+        if (artifactDelegateResponse.getBuildDetails() != null
+            && artifactDelegateResponse.getBuildDetails().getMetadata() != null) {
+          metadata = artifactDelegateResponse.getBuildDetails().getMetadata();
+          metadata.values().removeAll(Collections.singleton(null));
+        }
+        newArtifactsMetadata.add(Metadata.newBuilder().putAllMetadata(metadata).build());
+      }
+    }
 
     if (isNotEmpty(newArtifactKeys)) {
       log.info("Publishing artifact versions {} to topic.", newArtifactKeys);
       PolledResponseResult polledResponseResult =
           getPolledResponseResultForArtifact((ArtifactInfo) pollingDocument.getPollingInfo());
-      publishPolledItemToTopic(pollingDocument, newArtifactKeys, polledResponseResult);
+      publishPolledItemToTopic(pollingDocument, newArtifactKeys, polledResponseResult, newArtifactsMetadata);
     }
 
     // after publishing event, update database as well.
@@ -201,16 +222,41 @@ public class PollingResponseHandler {
     pollingService.updatePolledResponse(accountId, pollDocId, artifactPolledResponse);
   }
 
-  private void publishPolledItemToTopic(
-      PollingDocument pollingDocument, List<String> newVersions, PolledResponseResult polledResponseResult) {
-    polledItemPublisher.publishPolledItems(
-        PollingResponse.newBuilder()
-            .setAccountId(pollingDocument.getAccountId())
-            .setBuildInfo(
-                BuildInfo.newBuilder().setName(polledResponseResult.getName()).addAllVersions(newVersions).build())
-            .setType(polledResponseResult.getType())
-            .addAllSignatures(pollingDocument.getSignatures())
-            .build());
+  private void publishPolledItemToTopic(PollingDocument pollingDocument, List<String> newVersions,
+      PolledResponseResult polledResponseResult, List<Metadata> newArtifactsMetadata) {
+    if (ngFeatureFlagHelperService.isEnabled(
+            pollingDocument.getAccountId(), FeatureName.SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG)) {
+      // This ff is added needed in a use case where in customer wanted their pipeline to be triggered via trigger for
+      // all the new pushed artifacts and manifests that were collected by the perpetual task in a single execution.
+      // Hence we are sending a polling response for all the artifact or manifest version to the pipeline service.
+      for (int i = 0; i < newVersions.size(); i++) {
+        List<Metadata> metaDataList = pollingDocument.getPollingType() == PollingType.ARTIFACT
+            ? Collections.singletonList(newArtifactsMetadata.get(i))
+            : Collections.emptyList();
+        polledItemPublisher.publishPolledItems(
+            PollingResponse.newBuilder()
+                .setAccountId(pollingDocument.getAccountId())
+                .setBuildInfo(BuildInfo.newBuilder()
+                                  .setName(polledResponseResult.getName())
+                                  .addAllMetadata(metaDataList)
+                                  .addAllVersions(Collections.singletonList(newVersions.get(i)))
+                                  .build())
+                .setType(polledResponseResult.getType())
+                .addAllSignatures(pollingDocument.getSignatures())
+                .build());
+      }
+    } else {
+      polledItemPublisher.publishPolledItems(PollingResponse.newBuilder()
+                                                 .setAccountId(pollingDocument.getAccountId())
+                                                 .setBuildInfo(BuildInfo.newBuilder()
+                                                                   .setName(polledResponseResult.getName())
+                                                                   .addAllMetadata(newArtifactsMetadata)
+                                                                   .addAllVersions(newVersions)
+                                                                   .build())
+                                                 .setType(polledResponseResult.getType())
+                                                 .addAllSignatures(pollingDocument.getSignatures())
+                                                 .build());
+    }
   }
   private void handleGitPollingResponse(PollingDocument pollingDocument, PollingResponseInfc pollingResponseInfc) {
     GitPollingDelegateResponse response = (GitPollingDelegateResponse) pollingResponseInfc;
@@ -312,7 +358,7 @@ public class PollingResponseHandler {
       log.info("Publishing manifest versions {} to topic.", newVersions);
       PolledResponseResult polledResponseResult =
           getPolledResponseResultForManifest((ManifestInfo) pollingDocument.getPollingInfo());
-      publishPolledItemToTopic(pollingDocument, newVersions, polledResponseResult);
+      publishPolledItemToTopic(pollingDocument, newVersions, polledResponseResult, new ArrayList<>());
     }
 
     // after publishing event, update database as well.

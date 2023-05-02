@@ -34,13 +34,13 @@ import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.template.TemplateFilterPropertiesDTO;
-import io.harness.template.beans.FilterParamsDTO;
-import io.harness.template.beans.PageParamsDTO;
-import io.harness.template.beans.TemplateFilterProperties;
-import io.harness.template.beans.yaml.NGTemplateConfig;
-import io.harness.template.beans.yaml.NGTemplateInfoConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntityGetResponse;
+import io.harness.template.resources.beans.FilterParamsDTO;
+import io.harness.template.resources.beans.PageParamsDTO;
+import io.harness.template.resources.beans.TemplateFilterProperties;
+import io.harness.template.resources.beans.yaml.NGTemplateConfig;
+import io.harness.template.resources.beans.yaml.NGTemplateInfoConfig;
 import io.harness.template.yaml.TemplateYamlUtils;
 
 import com.google.common.annotations.VisibleForTesting;

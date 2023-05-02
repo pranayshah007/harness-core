@@ -33,15 +33,17 @@ import io.harness.exception.WingsException;
 import io.harness.nexus.model.Asset;
 import io.harness.nexus.model.DockerImageResponse;
 import io.harness.nexus.model.Nexus3ComponentResponse;
+import io.harness.nexus.model.Nexus3ComponentResponse.Component;
 import io.harness.nexus.model.Nexus3Repository;
 
-import software.wings.common.AlphanumComparator;
 import software.wings.utils.RepositoryFormat;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +59,6 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Singleton
 @Slf4j
 public class NexusThreeClientImpl {
-  private static final int MAX_PAGES = 10;
   private static final List<String> IGNORE_EXTENSIONS = Lists.newArrayList("pom", "sha1", "sha256", "sha512", "md5");
   private static final String REPO_PORT_REGEX = "^[\\d]+$";
 
@@ -68,7 +69,7 @@ public class NexusThreeClientImpl {
     if (nexusConfig.isHasCredentials()) {
       response =
           nexusThreeRestClient
-              .listRepositories(Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())))
+              .listRepositories(Credentials.basic(nexusConfig.getUsername(), String.valueOf(nexusConfig.getPassword())))
               .execute();
     } else {
       response = nexusThreeRestClient.listRepositories().execute();
@@ -110,8 +111,8 @@ public class NexusThreeClientImpl {
     if (nexusConfig.isHasCredentials()) {
       response =
           nexusThreeRestClient
-              .getDockerImages(
-                  Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())), repositoryKey)
+              .getDockerImages(Credentials.basic(nexusConfig.getUsername(), String.valueOf(nexusConfig.getPassword())),
+                  repositoryKey)
               .execute();
     } else {
       response = nexusThreeRestClient.getDockerImages(repositoryKey).execute();
@@ -145,7 +146,7 @@ public class NexusThreeClientImpl {
     if (nexusConfig.isHasCredentials()) {
       response =
           nexusThreeRestClient
-              .listRepositories(Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())))
+              .listRepositories(Credentials.basic(nexusConfig.getUsername(), String.valueOf(nexusConfig.getPassword())))
               .execute();
     } else {
       response = nexusThreeRestClient.listRepositories().execute();
@@ -204,7 +205,7 @@ public class NexusThreeClientImpl {
     final Call<Nexus3ComponentResponse> request;
     if (nexusConfig.isHasCredentials()) {
       request = nexusThreeRestClient.search(
-          Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())), repositoryKey,
+          Credentials.basic(nexusConfig.getUsername(), String.valueOf(nexusConfig.getPassword())), repositoryKey,
           artifactPath, repositoryFormat, null);
     } else {
       request = nexusThreeRestClient.search(repositoryKey, artifactPath, repositoryFormat, null);
@@ -279,7 +280,7 @@ public class NexusThreeClientImpl {
   public List<BuildDetailsInternal> getPackageVersions(
       NexusRequest nexusConfig, String repositoryName, String packageName) throws IOException {
     log.info("Retrieving package versions for repository {} package {} ", repositoryName, packageName);
-    List<String> versions = new ArrayList<>();
+    List<Nexus3ComponentResponse.Component> components = new ArrayList<>();
     Map<String, Asset> versionToArtifactUrls = new HashMap<>();
     Map<String, List<ArtifactFileMetadataInternal>> versionToArtifactDownloadUrls = new HashMap<>();
     NexusThreeRestClient nexusThreeRestClient = getNexusThreeClient(nexusConfig);
@@ -289,11 +290,11 @@ public class NexusThreeClientImpl {
     while (hasMoreResults) {
       hasMoreResults = false;
       if (nexusConfig.isHasCredentials()) {
-        response =
-            nexusThreeRestClient
-                .getPackageVersions(Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())),
-                    repositoryName, packageName, continuationToken)
-                .execute();
+        response = nexusThreeRestClient
+                       .getPackageVersions(
+                           Credentials.basic(nexusConfig.getUsername(), String.valueOf(nexusConfig.getPassword())),
+                           repositoryName, packageName, continuationToken)
+                       .execute();
 
       } else {
         response = nexusThreeRestClient.getPackageVersions(repositoryName, packageName, continuationToken).execute();
@@ -304,7 +305,7 @@ public class NexusThreeClientImpl {
           if (isNotEmpty(response.body().getItems())) {
             for (Nexus3ComponentResponse.Component component : response.body().getItems()) {
               String version = component.getVersion();
-              versions.add(version); // todo: add limit if results are returned in descending order of lastUpdatedTs
+              components.add(component);
 
               if (isNotEmpty(component.getAssets())) {
                 Asset asset = component.getAssets().get(0);
@@ -331,9 +332,8 @@ public class NexusThreeClientImpl {
             "Failed to fetch the versions for package [" + packageName + "]", WingsException.USER);
       }
     }
+    List<String> versions = sort(components).stream().map(Component::getVersion).collect(toList());
     log.info("Versions come from nexus server {}", versions);
-    versions = versions.stream().sorted(new AlphanumComparator()).collect(toList());
-    log.info("After sorting alphanumerically versions {}", versions);
 
     return versions.stream()
         .map(version -> {
@@ -387,19 +387,19 @@ public class NexusThreeClientImpl {
       String artifactName, String extension, String classifier, int maxBuilds) {
     try {
       log.info("Retrieving versions for repoId {} groupId {} and artifactName {}", repoId, groupId, artifactName);
-      List<String> versions = new ArrayList<>();
+      List<Nexus3ComponentResponse.Component> components = new ArrayList<>();
       Map<String, String> versionToArtifactUrls = new HashMap<>();
       Map<String, List<ArtifactFileMetadataInternal>> versionToArtifactDownloadUrls = new HashMap<>();
       NexusThreeRestClient nexusThreeRestClient = getNexusThreeClient(nexusConfig);
       Response<Nexus3ComponentResponse> response;
       boolean hasMoreResults = true;
       String continuationToken = null;
-      while (hasMoreResults && versions.size() < maxBuilds) {
+      while (hasMoreResults && components.size() < maxBuilds) {
         hasMoreResults = false;
         if (nexusConfig.isHasCredentials()) {
           response = nexusThreeRestClient
                          .getArtifactVersionsWithExtensionAndClassifier(
-                             Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())),
+                             Credentials.basic(nexusConfig.getUsername(), String.valueOf(nexusConfig.getPassword())),
                              repoId, groupId, artifactName, extension, classifier, continuationToken)
                          .execute();
         } else {
@@ -413,7 +413,7 @@ public class NexusThreeClientImpl {
             if (isNotEmpty(response.body().getItems())) {
               for (Nexus3ComponentResponse.Component component : response.body().getItems()) {
                 String version = component.getVersion();
-                versions.add(version);
+                components.add(component);
                 List<ArtifactFileMetadataInternal> artifactFileMetadata =
                     getArtifactMetadata(component.getAssets(), repoId);
 
@@ -438,6 +438,7 @@ public class NexusThreeClientImpl {
               WingsException.USER);
         }
       }
+      List<String> versions = sort(components).stream().map(Component::getVersion).collect(toList());
       return constructBuildDetails(repoId, groupId, artifactName, versions, versionToArtifactUrls,
           versionToArtifactDownloadUrls, extension, classifier);
     } catch (IOException | NexusRegistryException e) {
@@ -447,14 +448,11 @@ public class NexusThreeClientImpl {
     }
   }
 
-  public List<BuildDetailsInternal> constructBuildDetails(String repoId, String groupId, String artifactName,
+  private List<BuildDetailsInternal> constructBuildDetails(String repoId, String groupId, String artifactName,
       List<String> versions, Map<String, String> versionToArtifactUrls,
       Map<String, List<ArtifactFileMetadataInternal>> versionToArtifactDownloadUrls, String extension,
       String classifier) {
     log.info("Versions come from nexus server {}", versions);
-    versions = versions.stream().sorted(new AlphanumComparator()).collect(toList());
-    log.info("After sorting alphanumerically versions {}", versions);
-
     return versions.stream()
         .map(version -> {
           Map<String, String> metadata = new HashMap<>();
@@ -490,7 +488,8 @@ public class NexusThreeClientImpl {
           "Please check repository port field in your Nexus artifact configuration.",
           String.format("Repository port [%s] field must only contain numeric characters.", port),
           new NexusRegistryException(String.format(
-              "Repository port has an invalid value.", repositoryFormat, repositoryKey, artifactPath, tag)));
+              "Repository port has an invalid value for format - %s repository - %s artifactPath - %s tag - %s",
+              repositoryFormat, repositoryKey, artifactPath, tag)));
     }
     log.info("Retrieving artifact details");
 
@@ -522,7 +521,7 @@ public class NexusThreeClientImpl {
     final Call<Nexus3ComponentResponse> request;
     if (nexusConfig.isHasCredentials()) {
       request = nexusThreeRestClient.getArtifact(
-          Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())), repositoryKey,
+          Credentials.basic(nexusConfig.getUsername(), String.valueOf(nexusConfig.getPassword())), repositoryKey,
           artifactPath, repositoryFormat, tag, null);
     } else {
       request = nexusThreeRestClient.getArtifact(repositoryKey, artifactPath, repositoryFormat, tag, null);
@@ -553,17 +552,17 @@ public class NexusThreeClientImpl {
 
     if (nexusConfig.isHasCredentials()) {
       if (isV1) {
-        response =
-            nexusThreeRestClient
-                .getImageManifestV1(Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())),
-                    repoKey, imageName, tag)
-                .execute();
+        response = nexusThreeRestClient
+                       .getImageManifestV1(
+                           Credentials.basic(nexusConfig.getUsername(), String.valueOf(nexusConfig.getPassword())),
+                           repoKey, imageName, tag)
+                       .execute();
       } else {
-        response =
-            nexusThreeRestClient
-                .getImageManifestV2(Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())),
-                    repoKey, imageName, tag)
-                .execute();
+        response = nexusThreeRestClient
+                       .getImageManifestV2(
+                           Credentials.basic(nexusConfig.getUsername(), String.valueOf(nexusConfig.getPassword())),
+                           repoKey, imageName, tag)
+                       .execute();
       }
     } else {
       if (isV1) {
@@ -595,47 +594,64 @@ public class NexusThreeClientImpl {
   private List<BuildDetailsInternal> processComponentResponse(Call request, Response<Nexus3ComponentResponse> response,
       NexusRequest nexusConfig, String repository, String port, String artifactName, String tag) {
     List<BuildDetailsInternal> components = new ArrayList<>();
-    if (isRequestSuccessful(request, response)) {
-      if (isNotEmpty(response.body().getItems())) {
-        for (Nexus3ComponentResponse.Component component : response.body().getItems()) {
-          List<ArtifactFileMetadataInternal> artifactFileMetadataInternals =
-              getArtifactMetadata(component.getAssets(), repository);
-          String versionDownloadUrl = null;
-          String artifactPath = null;
-          String actualTag = isEmpty(tag) ? component.getVersion() : tag;
-          if (isNotEmpty(artifactFileMetadataInternals)) {
-            versionDownloadUrl = getArtifactDownloadUrl(artifactFileMetadataInternals, null, null);
-            artifactPath = getArtifactImagePath(artifactFileMetadataInternals, null, null);
-          }
-
-          String repoName = ArtifactUtilities.getNexusRepositoryNameNG(
-              nexusConfig.getNexusUrl(), port, nexusConfig.getArtifactRepositoryUrl(), artifactName);
-          String registryHostname = ArtifactUtilities.extractRegistryHost(repoName);
-
-          log.info("Retrieving docker tags for repository {} imageName {} ", repository, artifactName);
-          Map<String, String> metadata = new HashMap<>();
-          metadata.put(ArtifactMetadataKeys.IMAGE, repoName + ":" + actualTag);
-          metadata.put(ArtifactMetadataKeys.TAG, actualTag);
-          metadata.put(ArtifactMetadataKeys.REGISTRY_HOSTNAME, registryHostname);
-
-          BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder()
-                                                          .number(component.getVersion())
-                                                          .metadata(metadata)
-                                                          .buildUrl(versionDownloadUrl)
-                                                          .artifactPath(artifactPath)
-                                                          .build();
-
-          components.add(buildDetailsInternal);
+    if (isRequestSuccessful(request, response) && response.body() != null && isNotEmpty(response.body().getItems())) {
+      List<Nexus3ComponentResponse.Component> nexusComponents = sort(response.body().getItems());
+      for (Nexus3ComponentResponse.Component component : nexusComponents) {
+        List<ArtifactFileMetadataInternal> artifactFileMetadataInternals =
+            getArtifactMetadata(component.getAssets(), repository);
+        String versionDownloadUrl = null;
+        String artifactPath = null;
+        String actualTag = isEmpty(tag) ? component.getVersion() : tag;
+        if (isNotEmpty(artifactFileMetadataInternals)) {
+          versionDownloadUrl = getArtifactDownloadUrl(artifactFileMetadataInternals, null, null);
+          artifactPath = getArtifactImagePath(artifactFileMetadataInternals, null, null);
         }
+
+        String repoName = ArtifactUtilities.getNexusRepositoryNameNG(
+            nexusConfig.getNexusUrl(), port, nexusConfig.getArtifactRepositoryUrl(), artifactName);
+        String registryHostname = ArtifactUtilities.extractRegistryHost(repoName);
+
+        log.info("Retrieving docker tags for repository {} imageName {} ", repository, artifactName);
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put(ArtifactMetadataKeys.IMAGE, repoName + ":" + actualTag);
+        metadata.put(ArtifactMetadataKeys.TAG, actualTag);
+        metadata.put(ArtifactMetadataKeys.REGISTRY_HOSTNAME, registryHostname);
+
+        BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder()
+                                                        .number(component.getVersion())
+                                                        .metadata(metadata)
+                                                        .buildUrl(versionDownloadUrl)
+                                                        .artifactPath(artifactPath)
+                                                        .build();
+
+        components.add(buildDetailsInternal);
       }
     }
     return components;
   }
 
+  private List<Nexus3ComponentResponse.Component> sort(List<Nexus3ComponentResponse.Component> components) {
+    if (components.stream()
+            .flatMap(component -> component.getAssets().stream())
+            .anyMatch(asset -> asset.getLastModified() == null)) {
+      return components;
+    }
+
+    return components.stream()
+        .sorted((o1, o2) -> {
+          Date update1 =
+              o1.getAssets().stream().map(Asset::getLastModified).sorted(Comparator.reverseOrder()).findFirst().get();
+          Date update2 =
+              o2.getAssets().stream().map(Asset::getLastModified).sorted(Comparator.reverseOrder()).findFirst().get();
+          return update2.compareTo(update1);
+        })
+        .collect(toList());
+  }
+
   public List<BuildDetailsInternal> getPackageNamesBuildDetails(
       NexusRequest nexusConfig, String repositoryName, String groupName) throws IOException {
     log.info("Retrieving package names for repository {} package {} ", repositoryName, groupName);
-    List<String> names = new ArrayList<>();
+    List<Nexus3ComponentResponse.Component> components = new ArrayList<>();
     Map<String, Asset> nameToArtifactUrls = new HashMap<>();
     Map<String, List<ArtifactFileMetadataInternal>> nameToArtifactDownloadUrls = new HashMap<>();
     NexusThreeRestClient nexusThreeRestClient = getNexusThreeClient(nexusConfig);
@@ -644,11 +660,11 @@ public class NexusThreeClientImpl {
     do {
       continuationToken = null;
       if (nexusConfig.isHasCredentials()) {
-        response =
-            nexusThreeRestClient
-                .getGroupVersions(Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())),
-                    repositoryName, groupName, continuationToken)
-                .execute();
+        response = nexusThreeRestClient
+                       .getGroupVersions(
+                           Credentials.basic(nexusConfig.getUsername(), String.valueOf(nexusConfig.getPassword())),
+                           repositoryName, groupName, continuationToken)
+                       .execute();
 
       } else {
         response = nexusThreeRestClient.getGroupVersions(repositoryName, groupName, continuationToken).execute();
@@ -659,7 +675,7 @@ public class NexusThreeClientImpl {
           if (isNotEmpty(response.body().getItems())) {
             for (Nexus3ComponentResponse.Component component : response.body().getItems()) {
               String name = component.getName();
-              names.add(name);
+              components.add(component);
 
               if (isNotEmpty(component.getAssets())) {
                 Asset asset = component.getAssets().get(0);
@@ -681,6 +697,7 @@ public class NexusThreeClientImpl {
             "Failed to fetch the names for package [" + groupName + "]", WingsException.USER);
       }
     } while (!StringUtils.isBlank(continuationToken));
+    List<String> names = sort(components).stream().map(Component::getName).collect(toList());
     log.info("Names coming from nexus server {}", names);
 
     return names.stream()

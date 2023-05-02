@@ -12,13 +12,11 @@ import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.telemetry.Destination.ALL;
 
 import io.harness.ModuleType;
-import io.harness.account.AccountClient;
+import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.core.ci.services.CIOverviewDashboardService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.licensing.entities.modules.ModuleLicense;
-import io.harness.ng.core.dto.AccountDTO;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.CITelemetryStatusRepository;
 import io.harness.repositories.ModuleLicenseRepository;
 
@@ -26,7 +24,6 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -34,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CiTelemetryPublisher {
   @Inject CIOverviewDashboardService ciOverviewDashboardService;
   @Inject TelemetryReporter telemetryReporter;
-  @Inject AccountClient accountClient;
+  @Inject AccountUtils accountUtils;
   @Inject CITelemetryStatusRepository ciTelemetryStatusRepository;
   @Inject ModuleLicenseRepository moduleLicenseRepository;
 
@@ -50,7 +47,7 @@ public class CiTelemetryPublisher {
   public void recordTelemetry() {
     log.info("CiTelemetryPublisher recordTelemetry execute started.");
     try {
-      List<String> accountIdentifiers = getAllAccounts();
+      List<String> accountIdentifiers = accountUtils.getAllNGAccountIds();
       log.info("Memory before telemetry is {} ", getMemoryUse());
       log.info("Size of the account list is {} ", accountIdentifiers.size());
 
@@ -87,14 +84,6 @@ public class CiTelemetryPublisher {
     } finally {
       log.info("CITelemetryPublisher recordTelemetry execute finished.");
     }
-  }
-
-  List<String> getAllAccounts() {
-    List<AccountDTO> accountDTOList = CGRestUtils.getResponse(accountClient.getAllAccounts());
-    return accountDTOList.stream()
-        .filter(AccountDTO::isNextGenEnabled)
-        .map(AccountDTO::getIdentifier)
-        .collect(Collectors.toList());
   }
 
   private long getMemoryUse() {

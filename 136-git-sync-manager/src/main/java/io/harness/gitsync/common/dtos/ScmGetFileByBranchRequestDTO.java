@@ -25,6 +25,7 @@ public class ScmGetFileByBranchRequestDTO {
   Scope scope;
   String repoName;
   String branchName;
+  String commitId;
   String filePath;
   String connectorRef;
   boolean useCache;

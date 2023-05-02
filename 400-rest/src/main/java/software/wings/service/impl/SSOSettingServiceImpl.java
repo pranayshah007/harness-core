@@ -148,6 +148,16 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   }
 
   @Override
+  public List<SamlSettings> getSamlSettingsListByAccountId(String accountId) {
+    return wingsPersistence.createQuery(SamlSettings.class)
+        .field(SamlSettings.ACCOUNT_ID_KEY2)
+        .equal(accountId)
+        .field("type")
+        .equal(SSOType.SAML)
+        .asList();
+  }
+
+  @Override
   public OauthSettings getOauthSettingsByAccountId(String accountId) {
     return wingsPersistence.createQuery(OauthSettings.class)
         .field("accountId")

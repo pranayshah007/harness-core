@@ -358,6 +358,42 @@ public class VersionUtilsTest extends CategoryTest {
     assertConfigMapName(name250, suffix, expectedName);
   }
 
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testSuffixAdditionOnlyForVersionedResourcesAndNotForExternalConfigmapsSecrets() throws IOException {
+    String testSuffix = "testsuffix";
+    URL url = this.getClass().getResource("/add-suffix-to-only-required-configmaps-secrets.yaml");
+    String fileContents = Resources.toString(url, StandardCharsets.UTF_8);
+    List<KubernetesResource> resources = processYaml(fileContents);
+    List<KubernetesResource> resourcesWithSuffixedResources = processYaml(fileContents);
+
+    addSuffixToConfigmapsAndSecrets(resourcesWithSuffixedResources, testSuffix, logCallback);
+
+    assertThat(resourcesWithSuffixedResources.get(2).getField(
+                   "spec.template.spec.containers[0].env[0].valueFrom.configMapKeyRef.name"))
+        .isEqualTo(resources.get(2).getField("spec.template.spec.containers[0].env[0].valueFrom.configMapKeyRef.name"));
+
+    assertThat(resourcesWithSuffixedResources.get(2).getField(
+                   "spec.template.spec.containers[0].env[1].valueFrom.secretKeyRef.name"))
+        .isEqualTo(resources.get(2).getField("spec.template.spec.containers[0].env[1].valueFrom.secretKeyRef.name"));
+
+    assertThat(
+        resourcesWithSuffixedResources.get(2).getField("spec.template.spec.containers[0].envFrom[0].configMapRef.name"))
+        .isEqualTo(resources.get(2).getField("spec.template.spec.containers[0].envFrom[0].configMapRef.name") + "-"
+            + testSuffix);
+
+    assertThat(
+        resourcesWithSuffixedResources.get(2).getField("spec.template.spec.containers[0].envFrom[1].secretRef.name"))
+        .isEqualTo(
+            resources.get(2).getField("spec.template.spec.containers[0].envFrom[1].secretRef.name") + "-" + testSuffix);
+
+    assertThat(resourcesWithSuffixedResources.get(2).getField("spec.template.spec.volumes[0].configMap.name"))
+        .isEqualTo(resources.get(2).getField("spec.template.spec.volumes[0].configMap.name") + "-" + testSuffix);
+    assertThat(resourcesWithSuffixedResources.get(2).getField("spec.template.spec.volumes[1].secret.secretName"))
+        .isEqualTo(resources.get(2).getField("spec.template.spec.volumes[1].secret.secretName") + "-" + testSuffix);
+  }
+
   private void assertConfigMapName(String name, String suffix, String expectedName) throws IOException {
     URL url = this.getClass().getResource("/configmap.yaml");
     String fileContents = Resources.toString(url, StandardCharsets.UTF_8);

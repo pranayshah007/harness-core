@@ -714,7 +714,7 @@ public class EnvironmentResourceV2 {
                             NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Parameter(description = "Details of the Service Override to be upserted")
       @Valid io.harness.ng.core.serviceoverride.beans.ServiceOverrideRequestDTO serviceOverrideRequestDTO) {
-    throwExceptionForNoRequestDTO(serviceOverrideRequestDTO);
+    throwExceptionForInvalidRequestDTO(serviceOverrideRequestDTO);
     validateServiceOverrideScope(serviceOverrideRequestDTO, accountId);
 
     boolean isOverridesV2 = checkFeatureFlagForOverridesV2(accountId);
@@ -1069,9 +1069,12 @@ public class EnvironmentResourceV2 {
     }
   }
 
-  private void throwExceptionForNoRequestDTO(ServiceOverrideRequestDTO dto) {
+  private void throwExceptionForInvalidRequestDTO(ServiceOverrideRequestDTO dto) {
     if (dto == null) {
-      throw new InvalidRequestException("No request body for Service overrides sent in the API");
+      throw new InvalidRequestException("No request body for Service overrides");
+    }
+    if (isEmpty(dto.getServiceIdentifier())) {
+      throw new InvalidRequestException("No service identifier for Service Overrides request");
     }
   }
 

@@ -55,6 +55,12 @@ public class SpringDataMongoUtils {
     }
   }
 
+  public void populateNotInFilter(Criteria criteria, String fieldName, List<?> values) {
+    if (isNotEmpty(values)) {
+      criteria.and(fieldName).nin(values);
+    }
+  }
+
   public void populateAllFilter(Criteria criteria, String fieldName, List<?> values) {
     if (isNotEmpty(values)) {
       criteria.and(fieldName).all(values);

@@ -82,7 +82,8 @@ public class GitXSettingsHelper {
     }
   }
 
-  private StoreType getDefaultStoreTypeForEntities(
+  @VisibleForTesting
+  StoreType getDefaultStoreTypeForEntities(
       String accountIdentifier, String orgIdentifier, String projIdentifier, StoreType storeType) {
     String defaultStoreTypeForEntities;
 

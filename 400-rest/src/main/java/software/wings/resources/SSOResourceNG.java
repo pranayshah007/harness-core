@@ -29,6 +29,7 @@ import io.harness.exception.WingsException;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.rest.RestResponse;
 import io.harness.secretmanagers.SecretManagerConfigService;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import software.wings.beans.sso.LdapSettings;
@@ -95,6 +96,16 @@ public class SSOResourceNG {
     return new RestResponse<>(ssoService.getAccountAccessManagementSettings(accountId));
   }
 
+  @GET
+  @Path("v2/get-access-management")
+  @Timed
+  @AuthRule(permissionType = LOGGED_IN)
+  @ExceptionMetered
+  @InternalApi
+  public RestResponse<SSOConfig> getAccountAccessManagementSettingsV2(@QueryParam("accountId") String accountId) {
+    return new RestResponse<>(ssoService.getAccountAccessManagementSettingsV2(accountId));
+  }
+
   @POST
   @Path("oauth-settings-upload")
   @Timed
@@ -141,11 +152,11 @@ public class SSOResourceNG {
       @FormDataParam("authorizationEnabled") Boolean authorizationEnabled, @FormDataParam("logoutUrl") String logoutUrl,
       @FormDataParam("entityIdentifier") String entityIdentifier,
       @FormDataParam("samlProviderType") String samlProviderType, @FormDataParam("clientId") String clientId,
-      @FormDataParam("clientSecret") String clientSecret) {
+      @FormDataParam("clientSecret") String clientSecret, @FormDataParam("friendlySamlName") String friendlySamlName) {
     final String clientSecretRef = getCGSecretManagerRefForClientSecret(accountId, true, clientId, clientSecret);
     return new RestResponse<>(ssoService.uploadSamlConfiguration(accountId, uploadedInputStream, displayName,
         groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), true));
+        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), friendlySamlName, true));
   }
 
   @PUT
@@ -163,7 +174,7 @@ public class SSOResourceNG {
     final String clientSecretRef = getCGSecretManagerRefForClientSecret(accountId, false, clientId, clientSecret);
     return new RestResponse<>(ssoService.updateSamlConfiguration(accountId, uploadedInputStream, displayName,
         groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), true));
+        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), null, true));
   }
 
   @DELETE

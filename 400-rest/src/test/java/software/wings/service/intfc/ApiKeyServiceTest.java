@@ -8,6 +8,7 @@
 package software.wings.service.intfc;
 
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.NIKOLA;
 import static io.harness.rule.OwnerRule.PRATEEK;
@@ -26,6 +27,7 @@ import static software.wings.utils.WingsTestConstants.USER_NAME;
 
 import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
+import static java.util.List.of;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -389,6 +391,24 @@ public class ApiKeyServiceTest extends WingsBaseTest {
     assertThat(apiKeyEntryFromGet).isNotNull();
     String key = apiKeyEntryFromGet.getDecryptedKey();
     assertThat(key).isEqualTo(apiKeyEntry.getDecryptedKey());
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void shouldNotAddNullUserGroupsInApiKeyEntry() {
+    ApiKeyEntry apiKeyEntry = ApiKeyEntry.builder()
+                                  .uuid(uuid)
+                                  .name("api-key-name")
+                                  .accountId(ACCOUNT_ID)
+                                  .userGroupIds(of("existing-group", "non-existing-group"))
+                                  .build();
+
+    when(userGroupService.filter(any(), any())).thenReturn(of(UserGroup.builder().uuid("existing-group").build()));
+
+    apiKeyService.loadUserGroupsForApiKeys(of(apiKeyEntry), ACCOUNT_ID);
+
+    assertThat(apiKeyEntry.getUserGroups()).doesNotContainNull();
   }
 
   private ApiKeyEntry generateNonMigratedKey(String name) {

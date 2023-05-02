@@ -38,19 +38,22 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
 public class ManifestPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
-  private final KryoSerializer kryoSerializer;
   private final ManifestCollectionService manifestCollectionService;
   private final PollingResponsePublisher pollingResponsePublisher;
+  private final KryoSerializer kryoSerializer;
+  private final KryoSerializer referenceFalseKryoSerializer;
 
   private final @Getter Cache<String, ManifestsCollectionCache> cache = Caffeine.newBuilder().build();
   private static final long TIMEOUT_IN_MILLIS = 120L * 1000;
 
   @Inject
-  public ManifestPerpetualTaskExecutorNg(KryoSerializer kryoSerializer,
-      ManifestCollectionService manifestCollectionService, PollingResponsePublisher pollingResponsePublisher) {
-    this.kryoSerializer = kryoSerializer;
+  public ManifestPerpetualTaskExecutorNg(ManifestCollectionService manifestCollectionService,
+      PollingResponsePublisher pollingResponsePublisher, KryoSerializer kryoSerializer,
+      KryoSerializer referenceFalseKryoSerializer) {
     this.manifestCollectionService = manifestCollectionService;
     this.pollingResponsePublisher = pollingResponsePublisher;
+    this.kryoSerializer = kryoSerializer;
+    this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
   }
 
   @Override
@@ -63,12 +66,13 @@ public class ManifestPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
 
     Instant startTime = Instant.now();
     if (!manifestsCollectionCache.needsToPublish()) {
-      collectManifests(manifestsCollectionCache, taskParams, perpetualTaskId);
+      collectManifests(manifestsCollectionCache, taskParams, perpetualTaskId, params.getReferenceFalseKryoSerializer());
     }
 
     if (manifestsCollectionCache.needsToPublish()) {
       Instant deadline = startTime.plusMillis(TIMEOUT_IN_MILLIS);
-      publishFromCache(manifestsCollectionCache, deadline, taskParams, perpetualTaskId);
+      publishFromCache(
+          manifestsCollectionCache, deadline, taskParams, perpetualTaskId, params.getReferenceFalseKryoSerializer());
     }
 
     return PerpetualTaskResponse.builder().responseCode(200).responseMessage("success").build();
@@ -79,7 +83,8 @@ public class ManifestPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
     ManifestCollectionTaskParamsNg taskParams = getTaskParams(params);
     cache.invalidate(taskParams.getPollingDocId());
     ManifestDelegateConfig manifestConfig =
-        (ManifestDelegateConfig) kryoSerializer.asObject(taskParams.getManifestCollectionParams().toByteArray());
+        (ManifestDelegateConfig) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+            .asObject(taskParams.getManifestCollectionParams().toByteArray());
     manifestCollectionService.cleanup(manifestConfig);
     return true;
   }
@@ -88,11 +93,11 @@ public class ManifestPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
     return AnyUtils.unpack(params.getCustomizedParams(), ManifestCollectionTaskParamsNg.class);
   }
 
-  private void collectManifests(
-      ManifestsCollectionCache manifestsCollectionCache, ManifestCollectionTaskParamsNg taskParams, String taskId) {
+  private void collectManifests(ManifestsCollectionCache manifestsCollectionCache,
+      ManifestCollectionTaskParamsNg taskParams, String taskId, boolean referenceFalseKryoSerializer) {
     try {
-      ManifestDelegateConfig manifestConfig =
-          (ManifestDelegateConfig) kryoSerializer.asObject(taskParams.getManifestCollectionParams().toByteArray());
+      ManifestDelegateConfig manifestConfig = (ManifestDelegateConfig) getKryoSerializer(referenceFalseKryoSerializer)
+                                                  .asObject(taskParams.getManifestCollectionParams().toByteArray());
       List<String> chartVersions = manifestCollectionService.collectManifests(manifestConfig);
       if (isEmpty(chartVersions)) {
         log.info("No manifests present for the repository");
@@ -107,12 +112,13 @@ public class ManifestPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
               .commandExecutionStatus(CommandExecutionStatus.FAILURE)
               .errorMessage(e.getMessage())
               .pollingDocId(taskParams.getPollingDocId())
-              .build());
+              .build(),
+          referenceFalseKryoSerializer);
     }
   }
 
   private void publishFromCache(ManifestsCollectionCache manifestsCollectionCache, Instant expiryTime,
-      ManifestCollectionTaskParamsNg taskParams, String taskId) {
+      ManifestCollectionTaskParamsNg taskParams, String taskId, boolean referenceFalseKryoSerializer) {
     if (expiryTime.isBefore(Instant.now())) {
       log.warn("Manifest Collection timed out after {} seconds",
           Instant.now().compareTo(expiryTime.minusMillis(TIMEOUT_IN_MILLIS)));
@@ -139,10 +145,13 @@ public class ManifestPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
                     .build())
             .build();
 
-    if (pollingResponsePublisher.publishToManger(taskId, response)) {
+    if (pollingResponsePublisher.publishToManger(taskId, response, referenceFalseKryoSerializer)) {
       manifestsCollectionCache.setFirstCollectionOnDelegateFalse();
       manifestsCollectionCache.clearUnpublishedVersions(unpublishedManifests);
       manifestsCollectionCache.removeDeletedArtifactKeys(toBeDeletedKeys);
     }
+  }
+  private KryoSerializer getKryoSerializer(boolean referenceFalse) {
+    return referenceFalse ? referenceFalseKryoSerializer : kryoSerializer;
   }
 }

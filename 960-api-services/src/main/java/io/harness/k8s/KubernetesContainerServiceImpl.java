@@ -190,6 +190,7 @@ import java.io.InterruptedIOException;
 import java.lang.reflect.Type;
 import java.net.ConnectException;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
@@ -2363,7 +2364,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   private Retry buildRetryAndRegisterListeners() {
     final Retry exponentialRetry = RetryHelper.getExponentialRetry(this.getClass().getSimpleName(),
         new Class[] {ConnectException.class, TimeoutException.class, ConnectionShutdownException.class,
-            StreamResetException.class, SocketException.class, EOFException.class});
+            StreamResetException.class, SocketException.class, EOFException.class, SocketTimeoutException.class});
     RetryHelper.registerEventListeners(exponentialRetry);
     return exponentialRetry;
   }

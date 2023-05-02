@@ -17,7 +17,5 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.PIPELINE)
 public class UserDetailsDTO {
-  String userName;
   String userEmail;
-  String userIdentifier;
 }

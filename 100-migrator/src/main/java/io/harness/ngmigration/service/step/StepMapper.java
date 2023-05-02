@@ -9,6 +9,8 @@ package io.harness.ngmigration.service.step;
 
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 
+import static software.wings.ngmigration.NGMigrationEntityType.INFRA_PROVISIONER;
+
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.CollectionUtils;
@@ -37,10 +39,12 @@ import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import software.wings.beans.GraphNode;
+import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 import software.wings.sm.states.mixin.SweepingOutputStateMixin;
@@ -170,12 +174,7 @@ public abstract class StepMapper {
 
     String timeoutString = "10m";
     if (properties.containsKey("timeoutMillis") && properties.get("timeoutMillis") != null) {
-      long t = Long.parseLong(properties.get("timeoutMillis").toString()) / 1000;
-      if (t > 60) {
-        timeoutString = (t / 60) + "m";
-      } else {
-        timeoutString = t + "s";
-      }
+      timeoutString = MigratorUtility.toTimeoutString(Long.parseLong(properties.get("timeoutMillis").toString()));
     }
     Object str = properties.getOrDefault("stateTimeoutInMinutes", null);
     if ((str instanceof Integer || str instanceof String) && StringUtils.isNotBlank(String.valueOf(str))) {
@@ -261,5 +260,19 @@ public abstract class StepMapper {
           NGMigrationEntityType.CONNECTOR, NGMigrationConstants.RUNTIME_INPUT);
     }
     return ParameterField.createValueField(connectorRef);
+  }
+
+  protected ParameterField<String> getProvisionerIdentifier(MigrationContext context, String provisionerId) {
+    Map<CgEntityId, CgEntityNode> entities = context.getEntities();
+    CgEntityId provisioner = CgEntityId.builder().id(provisionerId).type(INFRA_PROVISIONER).build();
+    if (!entities.containsKey(provisioner)) {
+      return MigratorUtility.RUNTIME_INPUT;
+    }
+    InfrastructureProvisioner infraProv = (InfrastructureProvisioner) entities.get(provisioner).getEntity();
+    if (infraProv == null || StringUtils.isBlank(infraProv.getName())) {
+      return MigratorUtility.RUNTIME_INPUT;
+    }
+    return ParameterField.createValueField(
+        MigratorUtility.generateIdentifier(infraProv.getName(), CaseFormat.CAMEL_CASE));
   }
 }

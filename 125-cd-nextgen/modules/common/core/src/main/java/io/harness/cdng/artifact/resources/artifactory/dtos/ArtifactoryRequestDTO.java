@@ -17,10 +17,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
-@Value
+@Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(NON_NULL)
@@ -30,4 +30,6 @@ import lombok.experimental.FieldDefaults;
 public class ArtifactoryRequestDTO {
   @Schema(description = "Image tag for finding the artifact") String tag;
   @Schema(description = "Image tag regex value for finding the artifact") String tagRegex;
+  /** Runtime input Yaml for expression resolution.*/
+  String runtimeInputYaml;
 }

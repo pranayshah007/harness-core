@@ -24,6 +24,7 @@ import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.common.beans.GithubSCM;
+import io.harness.gitsync.common.dtos.GithubAuthenticationDTO;
 import io.harness.gitsync.common.dtos.GithubSCMDTO;
 import io.harness.gitsync.common.dtos.GithubSCMRequestDTO;
 import io.harness.gitsync.common.dtos.GithubSCMResponseDTO;
@@ -76,12 +77,13 @@ public class GithubSCMMapperTest extends GitSyncTestBase {
                     .apiAccessType(GithubApiAccessType.OAUTH)
                     .githubApiAccess(githubApiAccess)
                     .build();
-    githubSCMRequestDTO = GithubSCMRequestDTO.builder()
-                              .accountIdentifier(accountIdentifier)
-                              .userIdentifier(userIdentifier)
-                              .type(scmType)
-                              .apiAccess(githubApiAccessDTO)
-                              .build();
+    githubSCMRequestDTO =
+        GithubSCMRequestDTO.builder()
+            .accountIdentifier(accountIdentifier)
+            .userIdentifier(userIdentifier)
+            .type(scmType)
+            .authentication(GithubAuthenticationDTO.builder().apiAccessDTO(githubApiAccessDTO).build())
+            .build();
     githubSCMResponseDTO = GithubSCMResponseDTO.builder()
                                .accountIdentifier(accountIdentifier)
                                .userIdentifier(userIdentifier)

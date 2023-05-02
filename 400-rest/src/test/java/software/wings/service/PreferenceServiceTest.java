@@ -200,6 +200,28 @@ public class PreferenceServiceTest extends WingsBaseTest {
   @Test
   @Owner(developers = RAFAEL)
   @Category(UnitTests.class)
+  public void shouldListWithoutUserGroupSharedWhenFFEnable() {
+    User user = anUser().uuid(TEST_USER_ID).appId(GLOBAL_APP_ID).build();
+    when(featureFlagService.isEnabled(eq(SPG_ENABLE_SHARING_FILTERS), any())).thenReturn(true);
+    when(userService.get(TEST_USER_ID)).thenReturn(user);
+    when(userGroupService.listByAccountId(INTEGRATION_TEST_ACCOUNT_ID, user, true)).thenReturn(List.of());
+    preference.setAppId(GLOBAL_APP_ID);
+    preference.setAccountId(INTEGRATION_TEST_ACCOUNT_ID);
+    preference.setUserId(TEST_USER_ID);
+    preferenceWithShareUserGroupId.setUserGroupsIdToShare(Set.of(USER_GROUP_ID));
+    preferenceWithShareUserGroupId.setAccountId(INTEGRATION_TEST_ACCOUNT_ID);
+    preferenceWithShareUserGroupId.setUserId(USER_ID);
+    preferenceWithShareUserGroupId.setAppId(GLOBAL_APP_ID);
+    Preference savedPreference = wingsPersistence.saveAndGet(Preference.class, preference);
+    assertThat(preferenceService.list(aPageRequest().addFilter("accountId", EQ, INTEGRATION_TEST_ACCOUNT_ID).build(),
+                   INTEGRATION_TEST_ACCOUNT_ID, TEST_USER_ID))
+        .hasSize(1)
+        .contains(savedPreference);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
   public void shouldListWithUserGroupWhenFFEnable() {
     User user = anUser().userGroups(List.of(userGroupBuilder.build())).uuid(TEST_USER_ID).appId(GLOBAL_APP_ID).build();
     when(featureFlagService.isEnabled(eq(SPG_ENABLE_SHARING_FILTERS), any())).thenReturn(true);

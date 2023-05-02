@@ -41,6 +41,8 @@ import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.integrationstage.SecretEnvVars;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.CIK8ContainerParams;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -106,7 +108,7 @@ public class InternalContainerParamsProvider {
       Map<String, ConnectorDetails> publishArtifactConnectors, K8PodDetails k8PodDetails, Integer stageCpuRequest,
       Integer stageMemoryRequest, Map<String, String> logEnvVars, Map<String, String> tiEnvVars,
       Map<String, String> stoEnvVars, Map<String, String> volumeToMountPath, String workDirPath,
-      ContainerSecurityContext ctrSecurityContext, String logPrefix, Ambiance ambiance) {
+      ContainerSecurityContext ctrSecurityContext, String logPrefix, Ambiance ambiance, SecretEnvVars secretEnvVars) {
     String imageName = ciExecutionConfigService.getLiteEngineImage(AmbianceUtils.getAccountId(ambiance));
     String fullyQualifiedImage =
         IntegrationStageUtils.getFullyQualifiedImageName(imageName, harnessInternalImageConnector);
@@ -115,10 +117,11 @@ public class InternalContainerParamsProvider {
         .containerResourceParams(getLiteEngineResourceParams(stageCpuRequest, stageMemoryRequest))
         .envVars(getLiteEngineEnvVars(k8PodDetails, workDirPath, logPrefix, ambiance))
         .containerType(CIContainerType.LITE_ENGINE)
-        .containerSecrets(ContainerSecrets.builder()
-                              .connectorDetailsMap(publishArtifactConnectors)
-                              .plainTextSecretsByName(getLiteEngineSecretVars(logEnvVars, tiEnvVars, stoEnvVars))
-                              .build())
+        .containerSecrets(
+            ContainerSecrets.builder()
+                .connectorDetailsMap(publishArtifactConnectors)
+                .plainTextSecretsByName(getLiteEngineSecretVars(logEnvVars, tiEnvVars, stoEnvVars, secretEnvVars))
+                .build())
         .imageDetailsWithConnector(ImageDetailsWithConnector.builder()
                                        .imageDetails(IntegrationStageUtils.getImageInfo(fullyQualifiedImage))
                                        .imageConnectorDetails(harnessInternalImageConnector)
@@ -164,12 +167,17 @@ public class InternalContainerParamsProvider {
     return envVars;
   }
 
-  public Map<String, SecretParams> getLiteEngineSecretVars(
-      Map<String, String> logEnvVars, Map<String, String> tiEnvVars, Map<String, String> stoEnvVars) {
+  public Map<String, SecretParams> getLiteEngineSecretVars(Map<String, String> logEnvVars,
+      Map<String, String> tiEnvVars, Map<String, String> stoEnvVars, SecretEnvVars secretEnvVars) {
     Map<String, String> vars = new HashMap<>();
     vars.putAll(logEnvVars);
     vars.putAll(tiEnvVars);
     vars.putAll(stoEnvVars);
+    if (secretEnvVars != null) {
+      if (EmptyPredicate.isNotEmpty(secretEnvVars.getSscaEnvVars())) {
+        vars.putAll(secretEnvVars.getSscaEnvVars());
+      }
+    }
 
     Map<String, SecretParams> secretVars = new HashMap<>();
     for (Map.Entry<String, String> entry : vars.entrySet()) {

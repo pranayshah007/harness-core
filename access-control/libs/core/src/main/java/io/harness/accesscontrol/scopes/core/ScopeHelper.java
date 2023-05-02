@@ -7,10 +7,13 @@
 
 package io.harness.accesscontrol.scopes.core;
 
+import static io.harness.accesscontrol.scopes.core.Scope.PATH_DELIMITER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.Arrays;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.experimental.UtilityClass;
@@ -32,5 +35,25 @@ public class ScopeHelper {
       currentScope = currentScope.getParentScope();
     }
     return null;
+  }
+
+  /*
+  It expects scope identifier parameter in either of below format
+  "/ACCOUNT/<account-id>"
+  "/ACCOUNT/<account-id>/ORGANIZATION/<org-id>"
+  "/ACCOUNT/<account-id>/ORGANIZATION/<org-id>/PROJECT/<project-id>"
+  and splits it based on '/' and returns <account-id> from it.
+
+  If input parameter is null OR do not have correct format it returns null.
+   */
+  public static String getAccountFromScopeIdentifier(String scopeIdentifier) {
+    if (scopeIdentifier == null) {
+      return null;
+    }
+    List<String> scopeIdentifierElements = Arrays.asList(scopeIdentifier.split(PATH_DELIMITER));
+    if (scopeIdentifierElements.size() < 3) {
+      return null;
+    }
+    return scopeIdentifierElements.get(2);
   }
 }

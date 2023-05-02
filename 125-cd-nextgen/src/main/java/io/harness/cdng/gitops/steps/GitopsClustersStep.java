@@ -393,7 +393,9 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
                                         .envName(envsWithAllClustersAsTarget.get(c.getEnvRef()) != null
                                                 ? envsWithAllClustersAsTarget.get(c.getEnvRef()).getEnvName()
                                                 : null)
-                                        .envType(envsWithAllClustersAsTarget.get(c.getEnvRef()).getEnvType())
+                                        .envType(envsWithAllClustersAsTarget.get(c.getEnvRef()) != null
+                                                ? envsWithAllClustersAsTarget.get(c.getEnvRef()).getEnvType()
+                                                : null)
                                         .clusterRef(c.getClusterRef())
                                         .envVariables(envVarsMap.get(c.getEnvRef()))
                                         .build())

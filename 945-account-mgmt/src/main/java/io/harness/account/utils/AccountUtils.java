@@ -10,11 +10,16 @@ package io.harness.account.utils;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.PageResponse;
 import io.harness.exception.GeneralException;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.remote.client.CGRestUtils;
 
 import com.google.inject.Inject;
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,5 +58,42 @@ public class AccountUtils {
 
   private boolean isDuplicateAccountName(String accountName) {
     return CGRestUtils.getResponse(accountClient.doesAccountExist(accountName));
+  }
+
+  public List<String> getAllAccountIds() {
+    int pageSize = 10000;
+    List<String> accountIds = new ArrayList<>();
+    for (int pageIndex = 0; pageIndex < 100; pageIndex++) {
+      PageResponse<AccountDTO> pageResponse = CGRestUtils.getResponse(accountClient.listAccounts(pageIndex, pageSize));
+      if (pageResponse.size() == 0) {
+        break;
+      }
+      accountIds.addAll(
+          pageResponse.getResponse().stream().map(AccountDTO::getIdentifier).collect(Collectors.toList()));
+      if (pageIndex > 80) {
+        log.warn("We are soon reaching the max limit of 100. Please increase the limit.");
+      }
+    }
+    return accountIds;
+  }
+
+  public List<String> getAllNGAccountIds() {
+    int pageSize = 10000;
+    List<String> accountIds = new ArrayList<>();
+    for (int pageIndex = 0; pageIndex < 100; pageIndex++) {
+      PageResponse<AccountDTO> pageResponse = CGRestUtils.getResponse(accountClient.listAccounts(pageIndex, pageSize));
+      if (pageResponse.size() == 0) {
+        break;
+      }
+      accountIds.addAll(pageResponse.getResponse()
+                            .stream()
+                            .filter(AccountDTO::isNextGenEnabled)
+                            .map(AccountDTO::getIdentifier)
+                            .collect(Collectors.toList()));
+      if (pageIndex > 80) {
+        log.warn("We are soon reaching the max limit of 100. Please increase the limit.");
+      }
+    }
+    return accountIds;
   }
 }

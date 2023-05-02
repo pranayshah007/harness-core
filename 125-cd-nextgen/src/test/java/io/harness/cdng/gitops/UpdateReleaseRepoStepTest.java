@@ -222,6 +222,7 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
     Map<String, Object> variables = new HashMap<>();
     variables.put("config1", ParameterField.builder().value("VALUE1").build());
     variables.put("config2", "VALUE2");
+    variables.put("secret", "${ngSecretManager.obtain(\\\"serviceSecret\\\", 166585618)}");
     GithubStore githubStore = GithubStore.builder()
                                   .paths(ParameterField.<List<String>>builder()
                                              .value(List.of("FILE_PATH/<+envgroup.name>/<+env.name>/<+cluster.name>"))
@@ -255,5 +256,6 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
     assertThat(fileVariables).isNotNull();
     assertThat(fileVariables.get("config1")).isEqualTo("VALUE1");
     assertThat(fileVariables.get("config2")).isEqualTo("VALUE2");
+    assertThat(fileVariables.containsKey("secret")).isEqualTo(false);
   }
 }

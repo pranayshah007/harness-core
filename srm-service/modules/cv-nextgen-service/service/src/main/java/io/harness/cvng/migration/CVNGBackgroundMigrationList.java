@@ -9,6 +9,7 @@ package io.harness.cvng.migration;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.migration.list.ActivityCleanupAndBucketMigration;
 import io.harness.cvng.migration.list.AddDeploymentMonitoringSourcePerpetualTask;
 import io.harness.cvng.migration.list.AddEnabledFlagToSLISLOMigration;
 import io.harness.cvng.migration.list.AddEnvRefsToMonitoredServiceMigration;
@@ -21,6 +22,7 @@ import io.harness.cvng.migration.list.AddMonitoredServiceToChangeSourceMigration
 import io.harness.cvng.migration.list.AddMonitoredServiceToHeatMapMigration;
 import io.harness.cvng.migration.list.AddMonitoredServiceToWebhookMigration;
 import io.harness.cvng.migration.list.AddMonitoringSourcesToVerificationJobMigration;
+import io.harness.cvng.migration.list.AddSLIEvaluationTypeToSLOMigration;
 import io.harness.cvng.migration.list.AddStartedAtToServiceLevelObjectiveV2;
 import io.harness.cvng.migration.list.AddTaskInfoToVerificationTask;
 import io.harness.cvng.migration.list.AddTypeToServiceLevelObjectivesV2;
@@ -44,6 +46,7 @@ import io.harness.cvng.migration.list.FixRuntimeParamInCanaryBlueGreenVerificati
 import io.harness.cvng.migration.list.MigrateSLOTargetInSLOV2;
 import io.harness.cvng.migration.list.NewRelicCustomPackForExistingProjects;
 import io.harness.cvng.migration.list.NoOppMigration;
+import io.harness.cvng.migration.list.OrphanMonitoredServicesCleanup;
 import io.harness.cvng.migration.list.PrometheusConnectorAuthenticationPerpetualTaskMigration;
 import io.harness.cvng.migration.list.RecoverMonitoringSourceWorkerId;
 import io.harness.cvng.migration.list.RecreateMetricPackAndThresholdMigration;
@@ -132,6 +135,9 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(58, UpdateELKCVConfigToNextGenCVConfig.class))
         .add(Pair.of(59, MigrateSLOTargetInSLOV2.class))
         .add(Pair.of(60, ELKMigrationCreateVerificationTaskLiveMonitoring.class))
+        .add(Pair.of(61, AddSLIEvaluationTypeToSLOMigration.class))
+        .add(Pair.of(62, OrphanMonitoredServicesCleanup.class))
+        .add(Pair.of(63, ActivityCleanupAndBucketMigration.class))
         .build();
   }
 }

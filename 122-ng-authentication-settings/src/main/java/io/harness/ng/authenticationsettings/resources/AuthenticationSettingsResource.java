@@ -121,6 +121,28 @@ public class AuthenticationSettingsResource {
   }
 
   @GET
+  @Path("/v2")
+  @ApiOperation(
+      value = "Get authentication settings version 2 for an account", nickname = "getAuthenticationSettingsV2")
+  @Operation(operationId = "getAuthenticationSettingsV2",
+      summary = "Gets authentication settings version 2 for the given Account ID",
+      description = "Gets authentication settings version 2 for the given Account ID.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Successfully returns authentication settings of an Account")
+      })
+  public RestResponse<AuthenticationSettingsResponse>
+  getAuthenticationSettingsV2(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+      "accountIdentifier") @NotNull String accountIdentifier) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountIdentifier, null, null), Resource.of(AUTHSETTING, null), VIEW_AUTHSETTING_PERMISSION);
+    AuthenticationSettingsResponse response =
+        authenticationSettingsService.getAuthenticationSettingsV2(accountIdentifier);
+    return new RestResponse<>(response);
+  }
+
+  @GET
   @Path("/login-settings/password-strength")
   @ApiOperation(value = "Get Password strength settings", nickname = "getPasswordStrengthSettings")
   @Operation(operationId = "getPasswordStrengthSettings", summary = "Get password strength",
@@ -274,7 +296,9 @@ public class AuthenticationSettingsResource {
       @Parameter(description = "SAML provider type") @FormDataParam("samlProviderType") String samlProviderType,
       @Parameter(description = "Optional SAML clientId for Azure SSO") @FormDataParam("clientId") String clientId,
       @Parameter(description = "Optional SAML clientSecret reference string for Azure SSO") @FormDataParam(
-          "clientSecret") String clientSecret) {
+          "clientSecret") String clientSecret,
+      @Parameter(description = "Friendly name of the app on SAML SSO provider end in Harness") @FormDataParam(
+          "friendlySamlName") String friendlySamlName) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
     try {
@@ -282,9 +306,9 @@ public class AuthenticationSettingsResource {
           new BoundedInputStream(uploadedInputStream, mainConfiguration.getFileUploadLimits().getCommandUploadLimit()));
       final MultipartBody.Part formData =
           MultipartBody.Part.createFormData("file", null, RequestBody.create(MultipartBody.FORM, bytes));
-      SSOConfig response =
-          authenticationSettingsService.uploadSAMLMetadata(accountId, formData, displayName, groupMembershipAttr,
-              authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId, clientSecret);
+      SSOConfig response = authenticationSettingsService.uploadSAMLMetadata(accountId, formData, displayName,
+          groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
+          clientSecret, friendlySamlName);
       return new RestResponse<>(response);
     } catch (Exception e) {
       throw new GeneralException("Error while creating new SAML Config", e);

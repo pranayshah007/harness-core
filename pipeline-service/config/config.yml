@@ -582,6 +582,11 @@ featureFlagConfig:
   syncFeaturesToCF: false
 
 sscaServiceConfig:
+  httpClientConfig:
+    baseUrl: http://localhost:8186
+    connectTimeOutSeconds: 40
+    readTimeOutSeconds: 40
+  serviceSecret: secret
   baseUrl: http://localhost:8186
   globalToken: "551715ea-ca71-11ec-9d64-0242ac120002" # this is dummy token
 

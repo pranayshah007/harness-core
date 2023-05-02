@@ -18,12 +18,12 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.PageRequest;
 import io.harness.delegate.beans.DelegateGroupDetails;
 import io.harness.delegate.beans.DelegateGroupListing;
 import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.rest.RestResponse;
@@ -120,14 +120,13 @@ public class DelegateSetupResourceV2 {
       @QueryParam(NGResourceFilterConstants.FILTER_KEY) String filterIdentifier,
       @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
       @Body @RequestBody(description = "Details of the Delegate filter properties to be applied")
-      DelegateFilterPropertiesDTO delegateFilterPropertiesDTO,
-      @BeanParam PageRequest<DelegateGroupDetails> pageRequest) {
+      DelegateFilterPropertiesDTO delegateFilterPropertiesDTO, @BeanParam PageRequest pageRequest) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
 
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       return new RestResponse<>(delegateSetupService.listDelegateGroupDetailsV2(
-          accountId, orgId, projectId, filterIdentifier, searchTerm, delegateFilterPropertiesDTO));
+          accountId, orgId, projectId, filterIdentifier, searchTerm, delegateFilterPropertiesDTO, pageRequest));
     }
   }
 

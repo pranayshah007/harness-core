@@ -21,6 +21,7 @@ import (
 	"github.com/harness/harness-core/product/ci/addon/testintelligence"
 	"github.com/harness/harness-core/product/ci/addon/testintelligence/csharp"
 	"github.com/harness/harness-core/product/ci/addon/testintelligence/java"
+	"github.com/harness/harness-core/product/ci/addon/testintelligence/python"
 	"github.com/harness/harness-core/product/ci/common/external"
 	pb "github.com/harness/harness-core/product/ci/engine/proto"
 	stutils "github.com/harness/harness-core/product/ci/split_tests/utils"
@@ -520,6 +521,17 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 				return "", fmt.Errorf("build tool: %s is not supported for csharp", r.buildTool)
 			}
 		}
+	case "python":
+		{
+			switch r.buildTool {
+			case "pytest":
+				runner = python.NewPytestRunner(r.log, r.fs, r.cmdContextFactory, agentPath)
+			case "unittest":
+				runner = python.NewUnittestRunner(r.log, r.fs, r.cmdContextFactory, agentPath)
+			default:
+				return "", fmt.Errorf("build tool: %s is not supported for python", r.buildTool)
+			}
+		}
 	default:
 		return "", fmt.Errorf("language %s is not suported", r.language)
 	}
@@ -624,9 +636,9 @@ func (r *runTestsTask) execute(ctx context.Context) (map[string]string, error) {
 	stepOutput := make(map[string]string)
 	if len(r.envVarOutputs) != 0 {
 		var err error
-		outputVars, err := fetchOutputVariables(outputFile, r.fs, r.log)
+		outputVars, err := fetchOutputVariablesFromDotEnv(outputFile, r.log)
 		if err != nil {
-			logCommandExecErr(r.log, "error encountered while fetching output of runtest step", r.id, cmdToExecute, retryCount, start, err)
+			logCommandExecErr(r.log, "error encountered while fetching output of runtest step from .env File", r.id, cmdToExecute, retryCount, start, err)
 			return nil, err
 		}
 

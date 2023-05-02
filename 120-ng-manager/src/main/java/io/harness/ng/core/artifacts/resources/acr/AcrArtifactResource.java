@@ -18,9 +18,11 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.resources.acr.dtos.AcrRegistriesDTO;
 import io.harness.cdng.artifact.resources.acr.dtos.AcrRepositoriesDTO;
+import io.harness.cdng.artifact.resources.acr.dtos.AcrRequestDTO;
 import io.harness.cdng.artifact.resources.acr.service.AcrResourceService;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureSubscriptionsDTO;
 import io.harness.cdng.k8s.resources.azure.service.AzureResourceService;
+import io.harness.delegate.beans.azure.AcrBuildDetailsDTO;
 import io.harness.delegate.beans.azure.AcrResponseDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
@@ -291,6 +293,23 @@ public class AcrArtifactResource {
   }
 
   @POST
+  @Path("getLastSuccessfulBuild")
+  @ApiOperation(
+      value = "Gets ACR repository last successful build", nickname = "getLastSuccessfulBuildForACRRepository")
+  public ResponseDTO<AcrBuildDetailsDTO>
+  getLastSuccessfulBuild(@QueryParam("subscriptionId") String subscriptionId, @QueryParam("registry") String registry,
+      @QueryParam("repository") String repository, @QueryParam("connectorRef") String azureConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, AcrRequestDTO acrRequestDTO) {
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    AcrBuildDetailsDTO buildDetails = acrResourceService.getLastSuccessfulBuild(
+        connectorRef, subscriptionId, registry, repository, orgIdentifier, projectIdentifier, acrRequestDTO);
+    return ResponseDTO.newResponse(buildDetails);
+  }
+
+  @POST
   @Path("getBuildDetailsV2")
   @ApiOperation(value = "Gets ACR build details with yaml input for expression resolution",
       nickname = "getBuildDetailsForAcrArtifactWithYaml")
@@ -328,6 +347,26 @@ public class AcrArtifactResource {
 
     AcrResponseDTO buildDetails = acrResourceService.getBuildDetails(
         connectorRef, subscriptionId, registry, repository, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(buildDetails);
+  }
+
+  @POST
+  @Path("getLastSuccessfulBuildV2")
+  @ApiOperation(value = "Gets ACR last successful build with yaml input for expression resolution",
+      nickname = "getLastSuccessfulBuildForAcrArtifactWithYaml")
+  public ResponseDTO<AcrBuildDetailsDTO>
+  getLastSuccessfulBuildV2(@QueryParam("subscriptionId") String subscriptionId, @QueryParam("registry") String registry,
+      @QueryParam("repository") String repository, @QueryParam("connectorRef") String azureConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull AcrRequestDTO acrRequestDTO) {
+    AcrBuildDetailsDTO buildDetails = artifactResourceUtils.getLastSuccessfulBuildV2ACR(subscriptionId, registry,
+        repository, azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier, fqnPath, serviceRef,
+        pipelineIdentifier, gitEntityBasicInfo, acrRequestDTO);
     return ResponseDTO.newResponse(buildDetails);
   }
 }
