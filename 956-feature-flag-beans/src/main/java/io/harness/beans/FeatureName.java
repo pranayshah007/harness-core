@@ -733,7 +733,8 @@ public enum FeatureName {
       "Enables new default page size for several listing pages like pipelines, access control, executions, connectors, etc.",
       HarnessTeam.PL),
   CDS_SUPPORT_TICKET_DEFLECTION("Enable api to create zendesk ticket and for generating coveo token", HarnessTeam.CDP),
-  SRM_SPLUNK_SIGNALFX("Will enable SignalFX metric health source in SRM", HarnessTeam.CV);
+  SRM_SPLUNK_SIGNALFX("Will enable SignalFX metric health source in SRM", HarnessTeam.CV),
+  SRM_TELEMETRY("Will enable telemetry for verify step result", HarnessTeam.CV);
 
   @Deprecated
   FeatureName() {
