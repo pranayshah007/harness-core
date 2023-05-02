@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 public class ServiceNowFunctor extends StepExpressionFunctor {
   private StepOutput stepOutput;
   public ServiceNowFunctor(StepOutput stepOutput) {
+    super(stepOutput);
     this.stepOutput = stepOutput;
   }
 
@@ -30,10 +31,5 @@ public class ServiceNowFunctor extends StepExpressionFunctor {
 
     return String.format("<+pipeline.stages.%s.spec.execution.steps.%s.steps.%s.ticket.%s>",
         stepOutput.getStageIdentifier(), stepOutput.getStepGroupIdentifier(), stepOutput.getStepIdentifier(), newKey);
-  }
-
-  @Override
-  public String getCgExpression() {
-    return stepOutput.getExpression();
   }
 }

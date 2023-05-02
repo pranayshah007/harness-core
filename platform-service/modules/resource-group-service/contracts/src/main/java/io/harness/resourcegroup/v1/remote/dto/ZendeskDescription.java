@@ -23,7 +23,6 @@ public class ZendeskDescription {
   @NotNull String userBrowser;
   @NotNull String browserResolution;
   @NotNull String userOS;
-  @NotNull String website;
   @NotNull String userName;
   @NotNull String accountId;
   @NotNull String module;

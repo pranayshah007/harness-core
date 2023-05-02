@@ -50,6 +50,11 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
 
     GithubConnectorDTO config = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
     GithubApiAccessDTO apiAccess = config.getApiAccess();
+    String authType = String.valueOf(config.getAuthentication().getAuthType());
+    if (authType.equals("Ssh")) {
+      throw new InvalidRequestException(
+          String.format("Connector type Ssh not allowed for Github connector with Id - : [%s] ", connectorIdentifier));
+    }
 
     Map<String, BackstageEnvVariable> secrets = new HashMap<>();
 

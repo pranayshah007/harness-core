@@ -64,7 +64,10 @@ public class SscaOrchestrationPluginHelper {
                                                      .stepExecutionId(runtimeId)
                                                      .stepIdentifier(identifier)
                                                      .build();
-    return SscaOrchestrationStepPluginUtils.getSScaOrchestrationStepEnvVariables(envVariables);
+    Map<String, String> envVars = SscaOrchestrationStepPluginUtils.getSScaOrchestrationStepEnvVariables(envVariables);
+    envVars.putAll(sscaServiceUtils.getSSCAServiceEnvVariables(AmbianceUtils.getAccountId(ambiance),
+        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance)));
+    return envVars;
   }
 
   private static String getFormat(CdSscaOrchestrationSpecParameters stepInfo) {

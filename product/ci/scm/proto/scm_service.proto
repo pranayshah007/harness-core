@@ -253,9 +253,16 @@ message GiteaProvider {
   string access_token = 1;
 }
 
+enum AuthType {
+  USERNAME_AND_TOKEN = 0;
+  OAUTH = 1;
+}
+
 message BitbucketCloudProvider {
   string username = 1;
   string app_password = 2;
+  string oauth_token = 3;
+  AuthType auth_type = 4;
 }
 
 message BitbucketServerProvider {

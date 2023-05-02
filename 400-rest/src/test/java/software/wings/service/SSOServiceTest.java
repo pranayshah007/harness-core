@@ -7,6 +7,7 @@
 
 package software.wings.service;
 
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RUSHABH;
 import static io.harness.rule.OwnerRule.UJJAWAL;
@@ -22,6 +23,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -124,6 +127,7 @@ public class SSOServiceTest extends WingsBaseTest {
     account.setAccountName("account_name");
     account.setCompanyName("company_name");
     account.setUuid("accountId");
+    final String friendlySamlName = "testFriendlySamlName";
 
     account.setAuthenticationMechanism(AuthenticationMechanism.SAML);
     String xml = IOUtils.toString(getClass().getResourceAsStream("/okta-IDP-metadata.xml"), Charset.defaultCharset());
@@ -137,19 +141,22 @@ public class SSOServiceTest extends WingsBaseTest {
         "https://dev-274703.oktapreview.com/app/harnessiodev274703_testapp_1/exkefa5xlgHhrU1Mc0h7/sso/saml");
     mockSamlSettings.setMetaDataFile(xml);
     mockSamlSettings.setDisplayName("Okta");
+    mockSamlSettings.setFriendlySamlName(friendlySamlName);
     when(SSO_SETTING_SERVICE.getSamlSettingsByAccountId(anyString())).thenReturn(mockSamlSettings);
 
     SSOConfig settings = ssoService.uploadSamlConfiguration(account.getUuid(),
         getClass().getResourceAsStream("/okta-IDP-metadata.xml"), "Okta", "group", true, logoutUrl, "app.harness.io",
-        SAMLProviderType.OKTA.name(), anyString(), any(), false);
+        SAMLProviderType.OKTA.name(), anyString(), any(), friendlySamlName, false);
     String idpRedirectUrl = ((SamlSettings) settings.getSsoSettings().get(0)).getUrl();
     assertThat(idpRedirectUrl)
         .isEqualTo("https://dev-274703.oktapreview.com/app/harnessiodev274703_testapp_1/exkefa5xlgHhrU1Mc0h7/sso/saml");
     assertThat(settings.getSsoSettings().get(0).getDisplayName()).isEqualTo("Okta");
+    assertThat(((SamlSettings) settings.getSsoSettings().get(0)).getFriendlySamlName()).isEqualTo(friendlySamlName);
 
     try {
       ssoService.uploadSamlConfiguration(account.getUuid(), getClass().getResourceAsStream("/SamlResponse.txt"), "Okta",
-          "group", true, logoutUrl, "app.harness.io", SAMLProviderType.OKTA.name(), anyString(), any(), false);
+          "group", true, logoutUrl, "app.harness.io", SAMLProviderType.OKTA.name(), anyString(), any(),
+          friendlySamlName, false);
       failBecauseExceptionWasNotThrown(WingsException.class);
     } catch (WingsException e) {
       assertThat(e.getMessage()).isEqualTo(ErrorCode.INVALID_SAML_CONFIGURATION.name());
@@ -208,6 +215,29 @@ public class SSOServiceTest extends WingsBaseTest {
         .thenReturn(LdapTestResponse.builder().status(Status.SUCCESS).build());
     LdapTestResponse response = ssoService.validateLdapConnectionSettings(ldapSettings, "testAccount");
     assertThat(response.getStatus()).isEqualTo(Status.SUCCESS);
+    verify(SECRET_MANAGER, times(1)).deleteSecret(anyString(), any(), any(), anyBoolean());
+  }
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void validateLdapConnectionSettingsWithSecret() {
+    when(DELEGATE_PROXY_FACTORY.getV2(any(), any())).thenReturn(LDAP_DELEGATE_SERVICE);
+    when(LDAP_DELEGATE_SERVICE.validateLdapConnectionSettings(any(), any()))
+        .thenReturn(LdapTestResponse.builder().status(Status.SUCCESS).build());
+    LdapConnectionSettings connectionSettings = new LdapConnectionSettings();
+    connectionSettings.setBindDN("testBindDN");
+    connectionSettings.setEncryptedBindSecret("secretuuID");
+    LdapUserSettings userSettings = new LdapUserSettings();
+    userSettings.setBaseDN("testBaseDN");
+    List<LdapUserSettings> userSettingsList = new ArrayList<>();
+    userSettingsList.add(userSettings);
+    LdapGroupSettings groupSettings = new LdapGroupSettings();
+    groupSettings.setBaseDN("testBaseDN");
+    LdapSettings ldapSettings2 = new LdapSettings(
+        "testSettings", ACCOUNT_ID, connectionSettings, userSettingsList, Arrays.asList(groupSettings));
+    LdapTestResponse response = ssoService.validateLdapConnectionSettings(ldapSettings2, "testAccount");
+    assertThat(response.getStatus()).isEqualTo(Status.SUCCESS);
+    verify(SECRET_MANAGER, times(0)).deleteSecret(anyString(), any(), any(), anyBoolean());
   }
 
   @Test

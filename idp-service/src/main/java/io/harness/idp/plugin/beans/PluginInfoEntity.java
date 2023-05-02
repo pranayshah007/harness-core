@@ -39,7 +39,7 @@ public class PluginInfoEntity implements PersistentEntity {
   private String name;
   private String description;
   private String createdBy;
-  private PluginInfo.CategoryEnum category;
+  private String category;
   @Builder.Default private boolean core = false;
   private String source;
   private String config;

@@ -44,6 +44,7 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.ssca.client.SSCAServiceUtils;
 import io.harness.sto.beans.entities.STOServiceConfig;
 import io.harness.stoserviceclient.STOServiceUtils;
 
@@ -73,6 +74,7 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
 
   @Mock private VmInitializeUtils vmInitializeUtils;
   @InjectMocks VmInitializeTaskParamsBuilder vmInitializeTaskParamsBuilder;
+  @Mock SSCAServiceUtils sscaServiceUtils;
 
   private Ambiance ambiance;
   private static final String accountId = "test";

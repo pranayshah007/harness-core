@@ -110,6 +110,8 @@ public class HarnessApprovalStepTest {
         .isEqualTo(ApprovalUserGroupDTO.toApprovalUserGroupDTO(buildUserGroup()));
     assertThat(instance.getValidatedUserGroups().size()).isEqualTo(1);
     assertThat(instance.getValidatedUserGroups().get(0)).isEqualTo(buildUserGroup());
+    assertThat(instance.getIsAutoRejectEnabled()).isEqualTo(false);
+    assertThat(instance.getApprovalKey()).isEqualTo("#_id");
     verify(logStreamingStepClient, times(2)).openStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
@@ -191,6 +193,7 @@ public class HarnessApprovalStepTest {
 
   private StepElementParameters getStepElementParameters() {
     return StepElementParameters.builder()
+        .identifier("_id")
         .type("HARNESS_APPROVAL")
         .spec(
             HarnessApprovalSpecParameters.builder()
@@ -203,6 +206,7 @@ public class HarnessApprovalStepTest {
                         .minimumCount(ParameterField.<Integer>builder().value(1).build())
                         .disallowPipelineExecutor(ParameterField.<Boolean>builder().value(false).build())
                         .build())
+                .isAutoRejectEnabled(ParameterField.<Boolean>builder().value(false).build())
                 .build())
         .build();
   }

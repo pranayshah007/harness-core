@@ -184,7 +184,7 @@ public class SSOServiceImplTest extends WingsBaseTest {
 
     // Upload SAML config and enable
     ssoService.uploadSamlConfiguration(accountId, new ByteArrayInputStream("test data".getBytes()), "test", "", false,
-        "", "", SAMLProviderType.ONELOGIN.name(), anyString(), any(), false);
+        "", "", SAMLProviderType.ONELOGIN.name(), anyString(), any(), "testOtherSamlName", false);
     ssoService.setAuthenticationMechanism(accountId, SAML);
     account = accountService.get(account.getUuid());
     assertThat(account.getAuthenticationMechanism()).isEqualTo(SAML);
@@ -221,7 +221,7 @@ public class SSOServiceImplTest extends WingsBaseTest {
 
     // Upload SAML config and enable
     ssoService.uploadSamlConfiguration(accountId, new ByteArrayInputStream("test data".getBytes()), "test", "", false,
-        "", "", SAMLProviderType.ONELOGIN.name(), anyString(), any(), false);
+        "", "", SAMLProviderType.ONELOGIN.name(), anyString(), any(), "testOtherSamlName", false);
     ssoService.setAuthenticationMechanism(accountId, SAML);
     account = accountService.get(account.getUuid());
     assertThat(account.getAuthenticationMechanism()).isEqualTo(SAML);
@@ -298,7 +298,6 @@ public class SSOServiceImplTest extends WingsBaseTest {
     doThrow(new InvalidRequestException("INVALID")).when(authHandler).authorizeAccountPermission(anyList());
     try {
       ssoService.getAccountAccessManagementSettings(account.getUuid());
-      assertThat(1 == 2).isTrue();
     } catch (InvalidRequestException ex) {
       assertThat(ex.getCode()).isEqualTo(ErrorCode.USER_NOT_AUTHORIZED);
     }
@@ -477,5 +476,24 @@ public class SSOServiceImplTest extends WingsBaseTest {
         .isEqualTo(SAML);
     assertThat(loginSettingsAuthMechanismUpdateEvent.getNewAuthMechanismYamlDTO().getAuthenticationMechanism())
         .isEqualTo(LDAP);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testAccessManagementSettingsV2() {
+    Account account = Account.Builder.anAccount()
+                          .withUuid("Account 1")
+                          .withOauthEnabled(false)
+                          .withAccountName("Account 1")
+                          .withLicenseInfo(getLicenseInfo())
+                          .withAppId(APP_ID)
+                          .withCompanyName("Account 1")
+                          .withAuthenticationMechanism(USER_PASSWORD)
+                          .build();
+    accountService.save(account, false);
+    doNothing().when(authHandler).authorizeAccountPermission(anyList());
+    SSOConfig accountAccessManagementSettings = ssoService.getAccountAccessManagementSettingsV2(account.getUuid());
+    assertThat(accountAccessManagementSettings).isNotNull();
   }
 }

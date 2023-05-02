@@ -17,6 +17,7 @@ import io.harness.idp.events.eventlisteners.utility.EventListenerLogger;
 import io.harness.idp.gitintegration.service.GitIntegrationService;
 
 import com.google.inject.Inject;
+import java.util.concurrent.ExecutionException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,7 +29,7 @@ public class ConnectorMessageHandler implements EventMessageHandler {
   private GitIntegrationService gitIntegrationService;
 
   @Override
-  public void handleMessage(Message message, EntityChangeDTO entityChangeDTO, String action) {
+  public void handleMessage(Message message, EntityChangeDTO entityChangeDTO, String action) throws ExecutionException {
     EventListenerLogger.logForEventReceived(message);
     switch (action) {
       case UPDATE_ACTION:

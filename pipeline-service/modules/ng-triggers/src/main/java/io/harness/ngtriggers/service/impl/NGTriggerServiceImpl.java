@@ -696,7 +696,12 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       case SCHEDULED:
         ScheduledTriggerConfig scheduledTriggerConfig = (ScheduledTriggerConfig) triggerSource.getSpec();
         CronTriggerSpec cronTriggerSpec = (CronTriggerSpec) scheduledTriggerConfig.getSpec();
-        CronParser cronParser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.UNIX));
+        CronParser cronParser;
+        if (cronTriggerSpec.getType() != null && cronTriggerSpec.getType().equalsIgnoreCase("QUARTZ")) {
+          cronParser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ));
+        } else {
+          cronParser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.UNIX));
+        }
         Cron cron = cronParser.parse(cronTriggerSpec.getExpression());
         ExecutionTime executionTime = ExecutionTime.forCron(cron);
         Optional<ZonedDateTime> firstExecutionTimeOptional = executionTime.nextExecution(ZonedDateTime.now());
@@ -805,7 +810,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
                     + "in the pipeline yaml, but the trigger has it as " + value.toString());
           }
         } else {
-          String error = validateStaticValues(templateValue, value);
+          String error = validateStaticValues(templateValue, value, key.getExpressionFqn());
           if (isNotEmpty(error)) {
             errorMap.put(key, error);
           }
@@ -1010,7 +1015,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
             toUpdateTriggerPipelineFQNToValueMap.put(key, templateValue);
           } else {
             // If key is variable value, validate its value type
-            String error = validateStaticValues(templateValue, triggerValue);
+            String error = validateStaticValues(templateValue, triggerValue, key.getExpressionFqn());
             if (isNotEmpty(error)) {
               // Replace by empty variable value if validation fails (user will need to provide the value)
               toUpdateTriggerPipelineFQNToValueMap.put(key, "");

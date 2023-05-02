@@ -8,7 +8,7 @@
 package io.harness.template.helpers;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
+import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE_INPUTS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,13 +28,12 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.reconcile.remote.NgManagerReconcileClient;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntityGetResponse;
 import io.harness.template.mappers.NGTemplateDtoMapper;
+import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.template.yaml.TemplateRefHelper;
-import io.harness.template.yaml.TemplateYamlFacade;
 import io.harness.template.yaml.TemplateYamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -58,8 +57,6 @@ public class InputsValidator {
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
   @Inject private NGTemplateFeatureFlagHelperService featureFlagHelperService;
   @Inject private NgManagerReconcileClient ngManagerReconcileClient;
-  @Inject private TemplateYamlFacade templateYamlFacade;
-
   public ValidateInputsResponseDTO validateInputsForTemplate(
       String accountId, String orgId, String projectId, TemplateEntityGetResponse templateEntityGetResponse) {
     TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
@@ -118,7 +115,7 @@ public class InputsValidator {
     if (TemplateRefHelper.hasTemplateRef(yaml)) {
       Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
           accountId, orgId, projectId, yamlNode, templateCacheMap, 0, loadFromCache, false);
-      resolvedTemplatesYaml = templateYamlFacade.writeYamlString(resolvedTemplatesMap);
+      resolvedTemplatesYaml = TemplateYamlUtils.writeYamlString(resolvedTemplatesMap);
     }
     InputsValidationResponse ngManagerInputsValidationResponse =
         NGRestUtils.getResponse(ngManagerReconcileClient.validateYaml(accountId, orgId, projectId,

@@ -146,6 +146,28 @@ public class NexusArtifactResource {
     return ResponseDTO.newResponse(buildDetails);
   }
 
+  @POST
+  @Path("getLastSuccessfulBuildV2")
+  @ApiOperation(value = "Gets nexus artifact last successful build with yaml input for expression resolution",
+      nickname = "getLastSuccessfulBuildForNexusArtifactWithYaml")
+  public ResponseDTO<NexusBuildDetailsDTO>
+  getLastSuccessfulBuildV2(@QueryParam("repository") String repository,
+      @QueryParam("repositoryPort") String repositoryPort, @QueryParam("artifactPath") String artifactPath,
+      @QueryParam("repositoryFormat") String repositoryFormat,
+      @QueryParam("repositoryUrl") String artifactRepositoryUrl,
+      @QueryParam("connectorRef") String nexusConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @QueryParam("fqnPath") String fqnPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef, @NotNull NexusRequestDTO nexusRequestDTO) {
+    NexusBuildDetailsDTO buildDetails = artifactResourceUtils.getLastSuccessfulBuildV2Nexus3(repository, repositoryPort,
+        artifactPath, repositoryFormat, artifactRepositoryUrl, nexusConnectorIdentifier, accountId, orgIdentifier,
+        projectIdentifier, pipelineIdentifier, fqnPath, gitEntityBasicInfo, serviceRef, nexusRequestDTO);
+    return ResponseDTO.newResponse(buildDetails);
+  }
+
   @GET
   @Path("validateArtifactServer")
   @ApiOperation(value = "Validate nexus artifact server", nickname = "validateArtifactServerForNexus")

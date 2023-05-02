@@ -10,8 +10,10 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.UpdatableEntity;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
@@ -87,6 +89,7 @@ public abstract class AbstractServiceLevelObjective
   @FdIndex private long recordMetricIteration;
   @FdIndex private long sloHistoryTimescaleIteration;
   @NotNull ServiceLevelObjectiveType type;
+  @NotNull SLIEvaluationType sliEvaluationType;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -193,7 +196,8 @@ public abstract class AbstractServiceLevelObjective
           .set(ServiceLevelObjectiveV2Keys.userJourneyIdentifiers,
               abstractServiceLevelObjective.getUserJourneyIdentifiers())
           .set(ServiceLevelObjectiveV2Keys.type, abstractServiceLevelObjective.getType())
-          .set(ServiceLevelObjectiveV2Keys.sloTargetPercentage, abstractServiceLevelObjective.getSloTargetPercentage());
+          .set(ServiceLevelObjectiveV2Keys.sloTargetPercentage, abstractServiceLevelObjective.getSloTargetPercentage())
+          .set(ServiceLevelObjectiveV2Keys.sliEvaluationType, abstractServiceLevelObjective.getSliEvaluationType());
       if (abstractServiceLevelObjective.getDesc() != null) {
         updateOperations.set(ServiceLevelObjectiveV2Keys.desc, abstractServiceLevelObjective.getDesc());
       }
@@ -206,5 +210,18 @@ public abstract class AbstractServiceLevelObjective
             ServiceLevelObjectiveV2Keys.projectIdentifier, abstractServiceLevelObjective.getProjectIdentifier());
       }
     }
+  }
+
+  public static AbstractServiceLevelObjective getDeletedAbstractServiceLevelObjective(
+      ProjectParams projectParams, String sloIdentifier) {
+    return SimpleServiceLevelObjective.builder()
+        .accountId(projectParams.getAccountIdentifier())
+        .projectIdentifier(projectParams.getProjectIdentifier())
+        .orgIdentifier(projectParams.getOrgIdentifier())
+        .identifier(sloIdentifier)
+        .name(sloIdentifier)
+        .type(ServiceLevelObjectiveType.SIMPLE)
+        .monitoredServiceIdentifier("")
+        .build();
   }
 }

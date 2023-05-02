@@ -9,6 +9,7 @@ package software.wings.scheduler;
 
 import static io.harness.annotations.dev.HarnessModule._360_CG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -82,7 +83,7 @@ public class AccountPasswordExpirationJob implements Job {
 
   public void checkAccountPasswordExpiration() {
     try (HIterator<User> userIterator =
-             new HIterator<>(wingsPersistence.createQuery(User.class, excludeAuthority).fetch())) {
+             new HIterator<>(wingsPersistence.createQuery(User.class, excludeAuthority).limit(NO_LIMIT).fetch())) {
       Account account;
       for (User user : userIterator) {
         try {

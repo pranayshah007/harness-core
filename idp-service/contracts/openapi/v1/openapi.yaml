@@ -1101,14 +1101,7 @@ components:
         category:
           type: string
           x-stoplight:
-            id: ql3oqpkls4fft
-          enum:
-            - Monitoring
-            - CI/CD
-            - Discovery
-            - Quality
-            - Security
-            - Source Control Mgmt
+            id: 8rqc7h1vyq7sh
         source:
           type: string
           x-stoplight:
@@ -1713,14 +1706,6 @@ components:
       required: true
       schema:
         type: string
-        enum:
-          - pager-duty
-          - snyk-security
-          - harness-ci-cd
-          - github-pull-requests-board
-          - kafka
-          - lighthouse
-          - todo
     PluginName:
       name: PluginId
       in: query

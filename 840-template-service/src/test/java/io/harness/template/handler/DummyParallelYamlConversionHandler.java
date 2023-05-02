@@ -8,8 +8,8 @@
 package io.harness.template.handler;
 
 import static io.harness.ng.core.template.TemplateEntityConstants.STEP;
-import static io.harness.template.beans.NGTemplateConstants.IDENTIFIER;
-import static io.harness.template.beans.NGTemplateConstants.NAME;
+import static io.harness.template.resources.beans.NGTemplateConstants.IDENTIFIER;
+import static io.harness.template.resources.beans.NGTemplateConstants.NAME;
 
 import static java.util.Arrays.asList;
 

@@ -37,13 +37,13 @@ import org.hibernate.validator.constraints.NotBlank;
 public interface SSOService {
   SSOConfig uploadSamlConfiguration(String accountId, InputStream inputStream, String displayName,
       String groupMembershipAttr, Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
-      String samlProviderType, String clientId, char[] clientSecret, boolean isNGSSO);
+      String samlProviderType, String clientId, char[] clientSecret, String friendlySamlName, boolean isNGSSO);
 
   SSOConfig uploadOauthConfiguration(String accountId, String filter, Set<OauthProviderType> allowedProviders);
 
   SSOConfig updateSamlConfiguration(@NotNull String accountId, InputStream inputStream, String displayName,
       String groupMembershipAttr, @NotNull Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
-      String samlProviderType, String clientId, char[] clientSecret, boolean isNGSSO);
+      String samlProviderType, String clientId, char[] clientSecret, String friendlySamlName, boolean isNGSSO);
 
   SSOConfig updateLogoutUrlSamlSettings(@NotNull String accountId, @NotNull String logoutUrl);
 
@@ -53,6 +53,8 @@ public interface SSOService {
       @NotNull String accountId, @NotNull AuthenticationMechanism authenticationMechanism);
 
   SSOConfig getAccountAccessManagementSettings(@NotNull String accountId);
+
+  SSOConfig getAccountAccessManagementSettingsV2(@NotNull String accountId);
 
   LdapSettings createLdapSettings(@NotNull LdapSettings settings);
 

@@ -18,6 +18,7 @@ import io.harness.delegate.beans.DelegateGroupDetails;
 import io.harness.delegate.beans.DelegateGroupListing;
 import io.harness.delegate.beans.DelegateGroupTags;
 import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
+import io.harness.ng.beans.PageRequest;
 
 import software.wings.beans.SelectorType;
 
@@ -57,7 +58,8 @@ public interface DelegateSetupService {
       String accountId, String orgId, String projectId, String identifier, DelegateGroupDetails delegateGroupDetails);
 
   DelegateGroupListing listDelegateGroupDetailsV2(String accountId, String orgId, String projectId,
-      String filterIdentifier, String searchTerm, DelegateFilterPropertiesDTO delegateFilterPropertiesDTO);
+      String filterIdentifier, String searchTerm, DelegateFilterPropertiesDTO delegateFilterPropertiesDTO,
+      PageRequest pageRequest);
 
   DelegateGroupListing listDelegateGroupDetails(
       String accountId, String orgId, String projectId, String delegateTokenName);

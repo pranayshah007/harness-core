@@ -85,7 +85,6 @@ import io.harness.service.impl.DelegateCacheImpl;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.telemetry.segment.SegmentConfiguration;
-import io.harness.testlib.RealMongo;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -405,12 +404,9 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
     if (annotations.stream().anyMatch(SetupScheduler.class ::isInstance)) {
       configuration.getBackgroundSchedulerConfig().setAutoStart("true");
       configuration.getServiceSchedulerConfig().setAutoStart("true");
-      if (!annotations.stream().anyMatch(RealMongo.class ::isInstance)) {
-        configuration.getBackgroundSchedulerConfig().setJobStoreClass(
-            org.quartz.simpl.RAMJobStore.class.getCanonicalName());
-        configuration.getServiceSchedulerConfig().setJobStoreClass(
-            org.quartz.simpl.RAMJobStore.class.getCanonicalName());
-      }
+      configuration.getBackgroundSchedulerConfig().setJobStoreClass(
+          org.quartz.simpl.RAMJobStore.class.getCanonicalName());
+      configuration.getServiceSchedulerConfig().setJobStoreClass(org.quartz.simpl.RAMJobStore.class.getCanonicalName());
     }
 
     MarketoConfig marketoConfig =

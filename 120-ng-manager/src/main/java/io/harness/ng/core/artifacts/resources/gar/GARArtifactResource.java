@@ -13,7 +13,9 @@ import static io.harness.cdng.artifact.resources.googleartifactregistry.service.
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GarRequestDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.RegionGar;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -95,6 +97,44 @@ public class GARArtifactResource {
     GARResponseDTO buildDetails = artifactResourceUtils.getBuildDetailsV2GAR(gcpConnectorIdentifier, region,
         repositoryName, project, pkg, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, version,
         versionRegex, fqnPath, runtimeInputYaml, serviceRef, gitEntityBasicInfo);
+    return ResponseDTO.newResponse(buildDetails);
+  }
+
+  @POST
+  @Path("getLastSuccessfulBuild")
+  @ApiOperation(value = "Gets google artifact registry last successful build",
+      nickname = "getLastSuccessfulBuildForGoogleArtifactRegistry")
+  public ResponseDTO<GARBuildDetailsDTO>
+  getLastSuccessfulBuild(@QueryParam("connectorRef") String GCPConnectorIdentifier, @QueryParam("region") String region,
+      @QueryParam("repositoryName") String repositoryName, @QueryParam("project") String project,
+      @QueryParam("package") String pkg, @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @NotNull GarRequestDTO garRequestDTO) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(GCPConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    GARBuildDetailsDTO buildDetails = gARResourceService.getLastSuccessfulBuild(
+        connectorRef, region, repositoryName, project, pkg, garRequestDTO, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(buildDetails);
+  }
+
+  @POST
+  @Path("v2/getLastSuccessfulBuild")
+  @ApiOperation(value = "Gets google artifact registry last successful build v2",
+      nickname = "getLastSuccessfulBuildForGoogleArtifactRegistryV2")
+  public ResponseDTO<GARBuildDetailsDTO>
+  getLastSuccessfulBuildV2(@QueryParam("connectorRef") String gcpConnectorIdentifier,
+      @QueryParam("region") String region, @QueryParam("repositoryName") String repositoryName,
+      @QueryParam("project") String project, @QueryParam("package") String pkg,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @NotNull @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull GarRequestDTO garRequestDTO) {
+    GARBuildDetailsDTO buildDetails = artifactResourceUtils.getLastSuccessfulBuildV2GAR(gcpConnectorIdentifier, region,
+        repositoryName, project, pkg, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, garRequestDTO,
+        fqnPath, serviceRef, gitEntityBasicInfo);
     return ResponseDTO.newResponse(buildDetails);
   }
 

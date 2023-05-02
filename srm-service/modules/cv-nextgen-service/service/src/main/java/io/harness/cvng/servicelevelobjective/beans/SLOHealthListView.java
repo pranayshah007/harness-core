@@ -38,12 +38,12 @@ public class SLOHealthListView {
   Map<String, String> tags;
   String description;
   String userJourneyName;
-  @NotNull List<UserJourneyDTO> userJourneys;
+  List<UserJourneyDTO> userJourneys;
   @NotNull double burnRate;
   @NotNull double errorBudgetRemainingPercentage;
   @NotNull int errorBudgetRemaining;
   @NotNull int totalErrorBudget;
-  @NotNull SLOTargetType sloTargetType;
+  SLOTargetType sloTargetType;
   ServiceLevelIndicatorType sliType;
   @JsonIgnore String sliIdentifier;
   @NotNull ServiceLevelObjectiveType sloType;
@@ -53,16 +53,29 @@ public class SLOHealthListView {
   DowntimeStatusDetails downtimeStatusDetails;
   @NotNull ProjectParams projectParams;
 
-  @NotNull boolean failedState;
+  SLOError sloError;
   @NotNull
   public ErrorBudgetRisk getErrorBudgetRisk() {
     return ErrorBudgetRisk.getFromPercentage(errorBudgetRemainingPercentage);
   }
 
+  public static SLOHealthListViewBuilder getSLOHealthListViewBuilderForDeletedSimpleSLO(
+      AbstractServiceLevelObjective serviceLevelObjective) {
+    return SLOHealthListView.builder()
+        .sloIdentifier(serviceLevelObjective.getIdentifier())
+        .projectParams(ProjectParams.builder()
+                           .accountIdentifier(serviceLevelObjective.getAccountId())
+                           .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                           .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                           .build())
+        .sloType(ServiceLevelObjectiveType.SIMPLE)
+        .sloError(SLOError.getErrorForDeletionOfSimpleSLOInConfigurationListView())
+        .name(serviceLevelObjective.getName());
+  }
+
   public static SLOHealthListViewBuilder getSLOHealthListViewBuilder(
       AbstractServiceLevelObjective serviceLevelObjective, List<UserJourneyDTO> userJourneys,
-      int totalErrorBudgetMinutes, SLOHealthIndicator sloHealthIndicator,
-      Map<AbstractServiceLevelObjective, SLIEvaluationType> serviceLevelObjectiveSLIEvaluationTypeMap) {
+      int totalErrorBudgetMinutes, SLOHealthIndicator sloHealthIndicator, SLOError sloError) {
     return SLOHealthListView.builder()
         .sloIdentifier(serviceLevelObjective.getIdentifier())
         .name(serviceLevelObjective.getName())
@@ -78,12 +91,12 @@ public class SLOHealthListView {
         .burnRate(sloHealthIndicator.getErrorBudgetBurnRate())
         .noOfActiveAlerts(serviceLevelObjective.getNotificationRuleRefs().size())
         .sloType(serviceLevelObjective.getType())
-        .evaluationType(serviceLevelObjectiveSLIEvaluationTypeMap.get(serviceLevelObjective))
+        .evaluationType(serviceLevelObjective.getSliEvaluationType())
         .projectParams(ProjectParams.builder()
                            .accountIdentifier(serviceLevelObjective.getAccountId())
                            .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
                            .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
                            .build())
-        .failedState(sloHealthIndicator.getFailedState() != null && sloHealthIndicator.getFailedState());
+        .sloError(sloError);
   }
 }

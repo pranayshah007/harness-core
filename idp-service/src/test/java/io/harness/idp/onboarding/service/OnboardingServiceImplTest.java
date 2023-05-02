@@ -12,18 +12,22 @@ import static io.harness.rule.OwnerRule.SATHISH;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.idp.common.CommonUtils;
 import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
 import io.harness.idp.gitintegration.processor.impl.GithubConnectorProcessor;
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
+import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsCache;
 import io.harness.idp.onboarding.client.FakeOrganizationClient;
 import io.harness.idp.onboarding.client.FakeProjectClient;
 import io.harness.idp.onboarding.client.FakeServiceResourceClient;
@@ -48,6 +52,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -67,6 +72,8 @@ public class OnboardingServiceImplTest extends CategoryTest {
   static final String TEST_SERVICE_IDENTIFIER = "serviceId";
   static final String GENERATE_YAML_DEF =
       "apiVersion: backstage.io/v1alpha1\nkind: Component\nmetadata:\n  name: my-example-service\n  description: |\n    My Example service which has something to do with APIs and database.\n  links:\n    - title: Website\n      url: http://my-internal-website.com\n  annotations:\n    github.com/project-slug: myorg/myrepo\n    backstage.io/techdocs-ref: dir:.\n    lighthouse.com/website-url: https://harness.io\n# labels:\n#   key1: value1\n# tags: \nspec:\n  type: service\n  owner: my-team\n  lifecycle: experimental\n  system: my-project\n#  dependsOn:\n#    - resource:default/my-db\n#  consumesApis:\n#    - user-api\n#  providesApis:\n#    - example-api";
+  private static final String URL = "https://www.github.com";
+  private static final String CONNECTOR_NAME = "test-connector-name";
   AutoCloseable openMocks;
   @InjectMocks private OnboardingServiceImpl onboardingServiceImpl;
   @InjectMocks HarnessOrgToBackstageDomain harnessOrgToBackstageDomain;
@@ -75,6 +82,7 @@ public class OnboardingServiceImplTest extends CategoryTest {
   @Mock GithubConnectorProcessor githubConnectorProcessor;
   @Mock CatalogConnectorRepository catalogConnectorRepository;
   @Mock StatusInfoService statusInfoService;
+  @Mock DelegateSelectorsCache delegateSelectorsCache;
   final OnboardingModuleConfig onboardingModuleConfig =
       OnboardingModuleConfig.builder()
           .descriptionForSampleEntity(
@@ -169,12 +177,27 @@ public class OnboardingServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SATHISH)
   @Category(UnitTests.class)
-  public void testImportHarnessEntities() {
+  public void testImportHarnessEntities() throws ExecutionException {
+    GithubConnectorDTO githubConnectorDTO = GithubConnectorDTO.builder()
+                                                .url(URL)
+                                                .connectionType(GitConnectionType.ACCOUNT)
+                                                .delegateSelectors(null)
+                                                .executeOnDelegate(false)
+                                                .build();
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
+                                            .connectorConfig(githubConnectorDTO)
+                                            .connectorType(ConnectorType.GITHUB)
+                                            .identifier(ACCOUNT_IDENTIFIER)
+                                            .orgIdentifier(null)
+                                            .projectIdentifier(null)
+                                            .name(CONNECTOR_NAME)
+                                            .build();
     mockStatic(CommonUtils.class);
     when(CommonUtils.readFileFromClassPath(any())).thenReturn("");
     when(connectorProcessorFactory.getConnectorProcessor(ConnectorType.fromString("Github")))
         .thenReturn(githubConnectorProcessor);
     when(githubConnectorProcessor.getInfraConnectorType(any())).thenReturn("DIRECT");
+    when(githubConnectorProcessor.getConnectorInfo(any(), any())).thenReturn(connectorInfoDTO);
     ImportEntitiesResponse importEntitiesResponse = onboardingServiceImpl.importHarnessEntities(ACCOUNT_IDENTIFIER,
         new ImportEntitiesBase()
             .type(ImportEntitiesBase.TypeEnum.SAMPLE)
@@ -187,6 +210,7 @@ public class OnboardingServiceImplTest extends CategoryTest {
                                       .path("idp")));
     assertNotNull(importEntitiesResponse);
     assertEquals("SUCCESS", importEntitiesResponse.getStatus());
+    verify(delegateSelectorsCache).put(eq(ACCOUNT_IDENTIFIER), any(), any());
   }
 
   @After

@@ -9,17 +9,13 @@ package io.harness.delegate.beans.connector.azureartifacts.outcome;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -53,19 +49,6 @@ public class AzureArtifactsConnectorOutcomeDTO
     this.auth = auth;
     this.delegateSelectors = delegateSelectors;
     this.executeOnDelegate = executeOnDelegate;
-  }
-
-  @Override
-  public List<DecryptableEntity> getDecryptableEntities() {
-    List<DecryptableEntity> decryptableEntities = new ArrayList<>();
-
-    AzureArtifactsTokenDTO httpCredentialsSpec = (auth.getSpec()).getSpec();
-
-    if (httpCredentialsSpec != null) {
-      decryptableEntities.add(httpCredentialsSpec);
-    }
-
-    return decryptableEntities;
   }
 
   public String getAzureArtifactsUrl() {

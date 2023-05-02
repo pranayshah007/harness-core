@@ -69,6 +69,9 @@ public class EcrArtifactOutcome implements ArtifactOutcome {
    * imagePullSecret for Ecr credentials base encoded.
    */
   String imagePullSecret;
+
+  String digest;
+
   Map<String, String> metadata;
   /**
    * dockerConfigJson for docker credentials base encoded.

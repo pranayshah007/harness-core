@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.util.Arrays.asList;
 
+import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.changestreamsframework.ChangeEvent;
 
 import com.mongodb.BasicDBList;
@@ -95,18 +96,20 @@ public class TagsInfoNGCDChangeDataHandler extends AbstractChangeDataHandler {
     String projectId = TagsInfoCDChangeDataHandlerHelper.getProjectIdentifier(changeEvent, dbObject);
     String parentIdentifier = TagsInfoCDChangeDataHandlerHelper.getParentIdentifier(changeEvent, dbObject);
     String parentType = TagsInfoCDChangeDataHandlerHelper.getParentType(changeEvent);
-    BasicDBList tags = TagsInfoCDChangeDataHandlerHelper.getTags(changeEvent, dbObject);
-
     if (id == null || accountId == null || parentType == null || parentIdentifier == null) {
       return null;
     }
-
+    String tagString;
+    BasicDBList tags = TagsInfoCDChangeDataHandlerHelper.getTags(changeEvent, dbObject);
     if (isEmpty(tags)) {
-      return columnValueMapping;
+      return null;
     }
-
-    BasicDBObject[] tagArray = tags.toArray(new BasicDBObject[tags.size()]);
-    String tagString = TagsInfoCDChangeDataHandlerHelper.getTagString(tagArray);
+    if (changeEvent.getEntityType().equals(StageExecutionInfo.class)) {
+      tagString = TagsInfoCDChangeDataHandlerHelper.getStageExecutionTags(tags);
+    } else {
+      BasicDBObject[] tagArray = tags.toArray(new BasicDBObject[tags.size()]);
+      tagString = TagsInfoCDChangeDataHandlerHelper.getTagString(tagArray);
+    }
 
     columnValueMapping.put(ID, id);
     columnValueMapping.put("account_id", accountId);

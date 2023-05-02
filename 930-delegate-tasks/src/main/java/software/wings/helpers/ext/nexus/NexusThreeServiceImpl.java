@@ -37,7 +37,6 @@ import io.harness.nexus.model.DockerImageResponse;
 import io.harness.nexus.model.DockerImageTagResponse;
 import io.harness.nexus.model.Nexus3AssetResponse;
 import io.harness.nexus.model.Nexus3ComponentResponse;
-import io.harness.nexus.model.Nexus3Repository;
 import io.harness.stream.StreamUtils;
 
 import software.wings.beans.artifact.ArtifactMetadataKeys;
@@ -53,8 +52,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -741,28 +738,6 @@ public class NexusThreeServiceImpl {
     return true;
   }
 
-  public boolean isServerValid(NexusRequest nexusConfig) throws IOException {
-    log.info("Validate if nexus is running by retrieving repositories");
-    NexusThreeRestClient nexusThreeRestClient = getNexusThreeClient(nexusConfig);
-    Response<List<Nexus3Repository>> response;
-    if (nexusConfig.isHasCredentials()) {
-      response =
-          nexusThreeRestClient
-              .listRepositories(Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())))
-              .execute();
-    } else {
-      response = nexusThreeRestClient.listRepositories().execute();
-    }
-    if (response == null) {
-      return false;
-    }
-
-    if (response.code() == 404) {
-      throw new InvalidArtifactServerException("Invalid Artifact server");
-    }
-    return isSuccessful(response);
-  }
-
   @SuppressWarnings({"squid:S3510"})
   public Pair<String, InputStream> downloadArtifactByUrl(
       NexusRequest nexusConfig, String artifactName, String artifactUrl) {
@@ -801,19 +776,5 @@ public class NexusThreeServiceImpl {
     }
     log.info(format("Computed file size: [%d] bytes for artifact Path: [%s]", size, artifactUrl));
     return size;
-  }
-
-  static class MyAuthenticator extends Authenticator {
-    private String username, password;
-
-    MyAuthenticator(String user, String pass) {
-      username = user;
-      password = pass;
-    }
-
-    @Override
-    protected PasswordAuthentication getPasswordAuthentication() {
-      return new PasswordAuthentication(username, password.toCharArray());
-    }
   }
 }

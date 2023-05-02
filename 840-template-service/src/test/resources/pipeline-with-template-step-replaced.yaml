@@ -1,89 +1,89 @@
 pipeline:
-  name: "Test Pipline"
-  identifier: "Test_Pipline11"
+  name: Test Pipline
+  identifier: Test_Pipline11
   variables:
-  - name: "port"
-    value: 6060
-    type: "String"
+    - name: port
+      value: 6060
+      type: String
   stages:
-  - stage:
-      identifier: "qaStage"
-      name: "qa stage"
-      type: "Deployment"
-      spec:
-        service:
-          identifier: "manager"
-          name: "manager"
-          serviceDefinition:
-            type: "Kubernetes"
-            spec:
-              manifests:
-              - manifest:
-                  identifier: "baseValues"
-                  type: "K8sManifest"
-                  spec:
-                    store:
-                      type: "Git"
+    - stage:
+        identifier: qaStage
+        name: qa stage
+        type: Deployment
+        spec:
+          service:
+            identifier: manager
+            name: manager
+            serviceDefinition:
+              type: Kubernetes
+              spec:
+                manifests:
+                  - manifest:
+                      identifier: baseValues
+                      type: K8sManifest
                       spec:
-                        connectorRef: "my_git_connector"
-                        gitFetchType: "Branch"
-                        branch: "master"
-                        paths:
-                        - "test/baseValues.yaml"
-                        - "test/qa/values_1.yaml"
-        infrastructure:
-          environment:
-            identifier: "stagingInfra"
-            type: "PreProduction"
-            tags:
-              cloud: "GCP"
-              team: "CDC"
-          infrastructureDefinition:
-            type: "KubernetesDirect"
-            spec:
-              connectorRef: "myconnector"
-              namespace: "mynamespace"
-              releaseName: "myrelease"
-        execution:
-          steps:
-          - step:
-              name: "shell script step 11"
-              identifier: "shellScriptStep11"
-              type: "ShellScript"
+                        store:
+                          type: Git
+                          spec:
+                            connectorRef: my_git_connector
+                            gitFetchType: Branch
+                            branch: master
+                            paths:
+                              - test/baseValues.yaml
+                              - test/qa/values_1.yaml
+          infrastructure:
+            environment:
+              identifier: stagingInfra
+              type: PreProduction
+              tags:
+                cloud: GCP
+                team: CDC
+            infrastructureDefinition:
+              type: KubernetesDirect
               spec:
-                shell: "Bash"
-                onDelegate: true
-                source:
-                  type: "Inline"
+                connectorRef: myconnector
+                namespace: mynamespace
+                releaseName: myrelease
+          execution:
+            steps:
+              - step:
+                  name: shell script step 11
+                  identifier: shellScriptStep11
+                  type: ShellScript
                   spec:
-                    script: "echo 1"
-                environmentVariables: []
-                outputVariables: []
-              timeout: 1234
-          - step:
-              name: "shell script step 12"
-              identifier: "shellScriptStep12"
-              type: "ShellScript"
-              spec:
-                shell: "Bash"
-                onDelegate: true
-                source:
-                  type: "Inline"
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: echo 1
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 1234
+              - step:
+                  name: shell script step 12
+                  identifier: shellScriptStep12
+                  type: ShellScript
                   spec:
-                    script: "echo 1"
-                environmentVariables: []
-                outputVariables: []
-              timeout: "<+input>"
-          - step:
-              name: "Approval"
-              identifier: "approval"
-              type: "HarnessApproval"
-              timeout: "1d"
-              spec:
-                approvalMessage: "Please review and approve"
-                includePipelineExecutionHistory: true
-                approvers:
-                  minimumCount: 1
-                  disallowPipelineExecutor: false
-                  userGroups: "<+input>"
-                approverInputs: []
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: echo 1
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: <+input>
+              - step:
+                  name: Approval
+                  identifier: approval
+                  type: HarnessApproval
+                  timeout: 1d
+                  spec:
+                    approvalMessage: Please review and approve
+                    includePipelineExecutionHistory: true
+                    approvers:
+                      minimumCount: 1
+                      disallowPipelineExecutor: false
+                      userGroups: <+input>
+                    approverInputs: []

@@ -22,6 +22,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.gitsync.GitSyncTestBase;
+import io.harness.gitsync.common.dtos.GithubAuthenticationDTO;
 import io.harness.gitsync.common.dtos.GithubSCMDTO;
 import io.harness.gitsync.common.dtos.GithubSCMRequestDTO;
 import io.harness.gitsync.common.dtos.UserSourceCodeManagerDTO;
@@ -100,12 +101,16 @@ public class UserSourceCodeManagerResourceTest extends GitSyncTestBase {
   public void testSave() {
     ResponseDTO<UserSourceCodeManagerResponseDTO> responseDTO = userSourceCodeManagerResource.save(
         GithubSCMRequestDTO.builder()
-            .apiAccess(
-                GithubApiAccessDTO.builder()
-                    .type(GithubApiAccessType.OAUTH)
-                    .spec(GithubOauthDTO.builder()
-                              .tokenRef(SecretRefData.builder().identifier("tokenRef").scope(Scope.ACCOUNT).build())
-                              .build())
+            .authentication(
+                GithubAuthenticationDTO.builder()
+                    .apiAccessDTO(
+                        GithubApiAccessDTO.builder()
+                            .type(GithubApiAccessType.OAUTH)
+                            .spec(GithubOauthDTO.builder()
+                                      .tokenRef(
+                                          SecretRefData.builder().identifier("tokenRef").scope(Scope.ACCOUNT).build())
+                                      .build())
+                            .build())
                     .build())
             .build());
     assertEquals(responseDTO.getData(), scmMapBinder.get(SCMType.GITHUB).toResponseDTO(userSourceCodeManagerDTO));

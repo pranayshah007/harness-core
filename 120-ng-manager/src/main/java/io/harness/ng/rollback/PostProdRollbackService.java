@@ -14,6 +14,6 @@ import io.harness.dtos.rollback.PostProdRollbackResponseDTO;
 
 @OwnedBy(HarnessTeam.CDP)
 public interface PostProdRollbackService {
-  PostProdRollbackCheckDTO checkIfRollbackAllowed(String accountIdentifier, String instanceUuid);
-  PostProdRollbackResponseDTO triggerRollback(String accountIdentifier, String instanceUuid);
+  PostProdRollbackCheckDTO checkIfRollbackAllowed(String accountIdentifier, String instanceKey, String infraMappingId);
+  PostProdRollbackResponseDTO triggerRollback(String accountIdentifier, String instanceKey, String infraMappingId);
 }

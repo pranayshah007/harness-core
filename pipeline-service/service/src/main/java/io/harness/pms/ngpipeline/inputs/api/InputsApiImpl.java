@@ -20,7 +20,7 @@ import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.ngpipeline.inputs.beans.entity.InputEntity;
-import io.harness.pms.ngpipeline.inputs.beans.entity.RepositoryInput;
+import io.harness.pms.ngpipeline.inputs.beans.entity.OptionsInput;
 import io.harness.pms.ngpipeline.inputs.mappers.PMSInputsElementMapper;
 import io.harness.pms.ngpipeline.inputs.service.PMSInputsService;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -67,9 +67,9 @@ public class InputsApiImpl implements InputsApi {
       throw new IllegalStateException(String.format("Error in parsing inputs for pipeline %s", pipeline));
     }
     Map<String, InputEntity> inputEntityMap = optionalInputEntityMap.get();
-    Optional<RepositoryInput> optionalRepositoryInput = pmsInputsService.getRepository(pipelineYaml);
+    Optional<OptionsInput> optionalOptionsInput = pmsInputsService.getOptions(pipelineYaml);
     InputsResponseBody inputsResponseBody =
-        PMSInputsElementMapper.inputsResponseDTOPMS(inputEntityMap, optionalRepositoryInput.orElse(null));
+        PMSInputsElementMapper.inputsResponseDTOPMS(inputEntityMap, optionalOptionsInput.orElse(null));
     return Response.ok().entity(inputsResponseBody).build();
   }
 }

@@ -40,4 +40,5 @@ public interface ArtifactConfig extends WithIdentifier, OverridesApplier<Artifac
   @JsonIgnore void setPrimaryArtifact(boolean primaryArtifact);
   void setIdentifier(String identifier);
   @Override @JsonIgnore String getIdentifier();
+  default void validate() {}
 }

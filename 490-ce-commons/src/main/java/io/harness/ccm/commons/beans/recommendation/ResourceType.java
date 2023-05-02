@@ -11,7 +11,8 @@ public enum ResourceType {
   WORKLOAD,
   NODE_POOL,
   ECS_SERVICE,
-  EC2_INSTANCE
+  EC2_INSTANCE,
+  GOVERNANCE
   //  CLUSTER,
   //  AUTO_STOPPING;
 }

@@ -49,6 +49,7 @@ import software.wings.security.authentication.TwoFactorAuthenticationSettings;
 import software.wings.security.authentication.oauth.OauthUserInfo;
 import software.wings.service.intfc.ownership.OwnedByAccount;
 
+import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -229,8 +230,6 @@ public interface UserService extends OwnedByAccount {
    */
   User get(@NotEmpty String userId);
 
-  User get(@NotEmpty String userId, boolean includeSupportAccounts);
-
   List<User> getUsers(Set<String> userIds);
 
   /**
@@ -279,8 +278,6 @@ public interface UserService extends OwnedByAccount {
    * @return the account
    */
   Account addAccount(Account account, User user, boolean addUser);
-
-  User getUserByEmail(String email, boolean loadSupportAccounts);
 
   /**
    * Retrieve an user by its email.
@@ -390,7 +387,7 @@ public interface UserService extends OwnedByAccount {
    * @param accountId the account id
    * @return the invites
    */
-  List<UserInvite> getInvitesFromAccountId(String accountId);
+  Query<UserInvite> getInvitesQueryFromAccountId(String accountId);
 
   /**
    * Gets invite.
@@ -499,6 +496,16 @@ public interface UserService extends OwnedByAccount {
    * @return the String
    */
   String getInviteIdFromToken(String jwtToken);
+
+  /**
+   * Gets invites from accountId & userGroupId.
+   *
+   * @param accountId the account id
+   * @param userGroupId the userGroup id
+   * @return the invites list
+   */
+  List<UserInvite> getInvitesFromAccountIdAndUserGroupId(String accountId, String userGroupId);
+
   /**
    * Gets user account role.
    *

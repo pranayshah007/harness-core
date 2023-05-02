@@ -106,6 +106,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
   private static final String CONFIG_FILES_STEP_V2 = "CONFIG_FILES_STEP_V2";
   static final String CONFIG_FILE_COMMAND_UNIT = "configFiles";
   static final int CONFIG_FILE_GIT_TASK_TIMEOUT = 10;
+  private static final String CONFIG_FILES_STEP_DETAIL_KEY = "ConfigFilesStepDetailKey";
 
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private CDExpressionResolver cdExpressionResolver;
@@ -170,7 +171,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
     if (EmptyPredicate.isEmpty(configFiles)) {
       logCallback.saveExecutionLog(
           "No config files configured in the service. configFiles expressions will not work", LogLevel.WARN);
-      return AsyncExecutableResponse.newBuilder().setStatus(Status.SKIPPED).build();
+      return AsyncExecutableResponse.newBuilder().build();
     }
     cdExpressionResolver.updateExpressions(ambiance, configFiles);
     JavaxValidator.validateBeanOrThrow(new ConfigFileValidatorDTO(configFiles));
@@ -218,7 +219,9 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
           ambiance, OutcomeExpressionConstants.CONFIG_FILES, configFilesOutcomes, StepCategory.STAGE.name());
     }
 
-    return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).setStatus(Status.SUCCEEDED).build();
+    serviceStepsHelper.publishTaskIdsStepDetailsForServiceStep(ambiance, taskIds, CONFIG_FILES_STEP_DETAIL_KEY);
+
+    return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
   }
 
   private String createGitDelegateTask(

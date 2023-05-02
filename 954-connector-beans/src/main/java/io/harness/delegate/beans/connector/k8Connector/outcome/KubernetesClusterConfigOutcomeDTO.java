@@ -7,14 +7,9 @@
 
 package io.harness.delegate.beans.connector.k8Connector.outcome;
 
-import io.harness.beans.DecryptableEntity;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
-import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsDTO;
-import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -29,13 +24,4 @@ import lombok.EqualsAndHashCode;
 public class KubernetesClusterConfigOutcomeDTO extends ConnectorConfigOutcomeDTO {
   @Valid @NotNull KubernetesCredentialOutcomeDTO credential;
   Set<String> delegateSelectors;
-
-  @Override
-  public List<DecryptableEntity> getDecryptableEntities() {
-    if (credential.getType() == KubernetesCredentialType.MANUAL_CREDENTIALS) {
-      KubernetesClusterDetailsDTO k8sManualCreds = (KubernetesClusterDetailsDTO) credential.getSpec();
-      return Collections.singletonList(k8sManualCreds.getAuth().getCredentials());
-    }
-    return null;
-  }
 }

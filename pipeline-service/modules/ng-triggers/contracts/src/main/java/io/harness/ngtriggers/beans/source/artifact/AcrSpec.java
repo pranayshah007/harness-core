@@ -25,6 +25,8 @@ import lombok.Data;
 public class AcrSpec implements ArtifactTypeSpec {
   String connectorRef;
   List<TriggerEventDataCondition> eventConditions;
+  List<TriggerEventDataCondition> metaDataConditions;
+  String jexlCondition;
   String registry;
   String repository;
   String subscriptionId;
@@ -43,5 +45,15 @@ public class AcrSpec implements ArtifactTypeSpec {
   @Override
   public List<TriggerEventDataCondition> fetchEventDataConditions() {
     return eventConditions;
+  }
+
+  @Override
+  public List<TriggerEventDataCondition> fetchMetaDataConditions() {
+    return metaDataConditions;
+  }
+
+  @Override
+  public String fetchJexlArtifactConditions() {
+    return jexlCondition;
   }
 }

@@ -25,7 +25,6 @@ import io.harness.ng.core.mapper.TagMapper;
 
 import com.google.inject.Inject;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -47,6 +46,8 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
                               .getSLOTarget(serviceLevelObjectiveV2DTO.getSloTarget().getSpec());
     return CompositeServiceLevelObjective.builder()
         .type(ServiceLevelObjectiveType.COMPOSITE)
+        .sliEvaluationType(
+            ((CompositeServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec()).getEvaluationType())
         .accountId(projectParams.getAccountIdentifier())
         .orgIdentifier(projectParams.getOrgIdentifier())
         .projectIdentifier(projectParams.getProjectIdentifier())
@@ -97,14 +98,7 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
 
   private ServiceLevelObjectiveSpec getSpec(CompositeServiceLevelObjective serviceLevelObjective) {
     return CompositeServiceLevelObjectiveSpec.builder()
-        .evaluationType(serviceLevelObjectiveV2Service
-                            .getEvaluationType(ProjectParams.builder()
-                                                   .accountIdentifier(serviceLevelObjective.getAccountId())
-                                                   .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
-                                                   .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
-                                                   .build(),
-                                Collections.singletonList(serviceLevelObjective))
-                            .get(serviceLevelObjective))
+        .evaluationType(serviceLevelObjective.getSliEvaluationType())
         .serviceLevelObjectivesDetails(
             serviceLevelObjective.getServiceLevelObjectivesDetails()
                 .stream()

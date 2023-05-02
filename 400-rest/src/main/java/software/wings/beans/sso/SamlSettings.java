@@ -8,6 +8,7 @@
 package software.wings.beans.sso;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.settings.SettingVariableTypes.SSO_SAML;
@@ -49,6 +50,7 @@ public class SamlSettings extends SSOSettings implements EncryptableSetting {
   private String clientId;
   @Encrypted(fieldName = "clientSecret") private char[] clientSecret;
   @SchemaIgnore private String encryptedClientSecret;
+  private String friendlySamlName;
 
   @JsonCreator
   @Builder
@@ -58,7 +60,8 @@ public class SamlSettings extends SSOSettings implements EncryptableSetting {
       @JsonProperty("groupMembershipAttr") String groupMembershipAttr, @JsonProperty("logoutUrl") String logoutUrl,
       @JsonProperty("entityIdentifier") String entityIdentifier,
       @JsonProperty("providerType") SAMLProviderType samlProviderType, @JsonProperty("clientId") String clientId,
-      @JsonProperty("clientSecret") final char[] clientSecret) {
+      @JsonProperty("clientSecret") final char[] clientSecret,
+      @JsonProperty("friendlySamlName") String friendlySamlName) {
     super(SSOType.SAML, displayName, url);
     this.metaDataFile = metaDataFile;
     this.accountId = accountId;
@@ -69,6 +72,7 @@ public class SamlSettings extends SSOSettings implements EncryptableSetting {
     this.samlProviderType = samlProviderType;
     this.clientId = clientId;
     this.clientSecret = clientSecret == null ? null : clientSecret.clone();
+    this.friendlySamlName = isEmpty(friendlySamlName) ? displayName : friendlySamlName;
   }
 
   @Override

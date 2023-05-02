@@ -24,6 +24,7 @@ import static java.util.stream.Collectors.toSet;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SortOrder;
 import io.harness.delegate.beans.AutoUpgrade;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
@@ -49,6 +50,7 @@ import io.harness.delegate.utils.DelegateEntityOwnerHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
+import io.harness.ng.beans.PageRequest;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.DelegateCache;
@@ -66,6 +68,7 @@ import dev.morphia.query.UpdateOperations;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -502,7 +505,8 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
 
   @Override
   public DelegateGroupListing listDelegateGroupDetailsV2(String accountId, String orgId, String projectId,
-      String filterIdentifier, String searchTerm, DelegateFilterPropertiesDTO filterProperties) {
+      String filterIdentifier, String searchTerm, DelegateFilterPropertiesDTO filterProperties,
+      PageRequest pageRequest) {
     if (isNotEmpty(filterIdentifier) && filterProperties != null) {
       throw new InvalidRequestException("Can not apply both filter properties and saved filter together");
     }
@@ -546,7 +550,44 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
             })
             .sorted(new DelegateGroupDetailsComparator())
             .collect(toList());
+    sortDelegateGroups(delegateGroupDetails, pageRequest);
     return DelegateGroupListing.builder().delegateGroupDetails(delegateGroupDetails).build();
+  }
+
+  private List<DelegateGroupDetails> sortDelegateGroups(
+      List<DelegateGroupDetails> delegateGroupDetails, PageRequest pageRequest) {
+    if (isNotEmpty(pageRequest.getSortOrders())) {
+      SortOrder sortOrder = pageRequest.getSortOrders().get(0);
+      switch (sortOrder.getFieldName()) {
+        case "name":
+          if (sortOrder.getOrderType().equals(SortOrder.OrderType.DESC)) {
+            delegateGroupDetails.sort(Comparator.comparing(DelegateGroupDetails::getGroupName).reversed());
+          } else {
+            delegateGroupDetails.sort(Comparator.comparing(DelegateGroupDetails::getGroupName));
+          }
+          break;
+        case "version":
+          if (sortOrder.getOrderType().equals(SortOrder.OrderType.DESC)) {
+            delegateGroupDetails.sort(
+                Comparator
+                    .comparing(
+                        (DelegateGroupDetails del) -> isEmpty(del.getGroupVersion()) ? "" : del.getGroupVersion())
+                    .reversed());
+          } else {
+            delegateGroupDetails.sort(
+                Comparator.comparing(del -> isEmpty(del.getGroupVersion()) ? "" : del.getGroupVersion()));
+          }
+          break;
+        case "status":
+          if (sortOrder.getOrderType().equals(SortOrder.OrderType.DESC)) {
+            Collections.reverse(delegateGroupDetails);
+          }
+          break;
+        default:
+          break;
+      }
+    }
+    return delegateGroupDetails;
   }
 
   // Todo: Anupam to remove this condition once UI changes are deployed.

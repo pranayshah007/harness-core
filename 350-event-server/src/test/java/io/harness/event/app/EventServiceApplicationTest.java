@@ -26,7 +26,6 @@ import io.harness.event.payloads.Lifecycle;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.testlib.RealMongo;
 
 import software.wings.beans.Account;
 
@@ -68,7 +67,7 @@ public class EventServiceApplicationTest extends EventServerTestBase {
   @Test
   @Owner(developers = AVMOHAN, intermittent = true)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void shouldEventuallyPersistPublishedEvent() throws Exception {
     hPersistence.save(
         Account.Builder.anAccount().withUuid(DEFAULT_ACCOUNT_ID).withAccountKey(DEFAULT_ACCOUNT_SECRET).build());

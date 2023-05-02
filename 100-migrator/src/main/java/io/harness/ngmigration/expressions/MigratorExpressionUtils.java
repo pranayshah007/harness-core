@@ -43,7 +43,7 @@ import org.jetbrains.annotations.NotNull;
 @Slf4j
 @Singleton
 public class MigratorExpressionUtils {
-  private static final int MAX_DEPTH = 8;
+  private static final int MAX_DEPTH = 32;
 
   public static Object render(MigrationContext context, Object object, Map<String, Object> customExpressions) {
     return render(context, object, MigExpressionOverrides.builder().customExpressions(customExpressions).build());

@@ -73,6 +73,8 @@ public interface SSOSettingService extends OwnedByAccount {
 
   SSOSettings getSsoSettings(@NotBlank String uuid);
 
+  List<SamlSettings> getSamlSettingsListByAccountId(@NotNull String accountId);
+
   /**
    * Raise group sync alert specifying the cause of the failure
    *

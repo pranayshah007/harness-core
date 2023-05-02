@@ -19,6 +19,7 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureManagedIdentityType;
+import io.harness.delegate.beans.connector.azurekeyvaultconnector.outcome.AzureKeyVaultConnectorOutcomeDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
 
@@ -72,6 +73,23 @@ public class AzureKeyVaultConnectorDTO extends ConnectorConfigDTO implements Del
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
     return Collections.singletonList(this);
+  }
+
+  @Override
+  public AzureKeyVaultConnectorOutcomeDTO toOutcome() {
+    return AzureKeyVaultConnectorOutcomeDTO.builder()
+        .clientId(clientId)
+        .secretKey(secretKey)
+        .tenantId(tenantId)
+        .vaultName(vaultName)
+        .subscription(subscription)
+        .isDefault(isDefault)
+        .azureEnvironmentType(azureEnvironmentType)
+        .delegateSelectors(delegateSelectors)
+        .useManagedIdentity(useManagedIdentity)
+        .azureManagedIdentityType(azureManagedIdentityType)
+        .managedClientId(managedClientId)
+        .build();
   }
 
   @Override

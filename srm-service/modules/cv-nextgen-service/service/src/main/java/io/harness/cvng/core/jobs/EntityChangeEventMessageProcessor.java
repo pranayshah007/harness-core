@@ -46,8 +46,7 @@ import java.util.Map;
 import java.util.Set;
 
 public abstract class EntityChangeEventMessageProcessor implements ConsumerMessageProcessor {
-  @VisibleForTesting
-  static final Map<Class<? extends PersistentEntity>, Class<? extends DeleteEntityByHandler>> ENTITIES_MAP;
+  public static final Map<Class<? extends PersistentEntity>, Class<? extends DeleteEntityByHandler>> ENTITIES_MAP;
   @VisibleForTesting static final Set<Class<? extends PersistentEntity>> EXCEPTIONS;
 
   static {

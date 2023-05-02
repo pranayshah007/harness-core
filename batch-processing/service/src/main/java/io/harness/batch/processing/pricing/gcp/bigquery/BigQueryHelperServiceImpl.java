@@ -28,6 +28,8 @@ import io.harness.ff.FeatureFlagService;
 
 import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
 
+import com.google.api.gax.rpc.FixedHeaderProvider;
+import com.google.api.gax.rpc.HeaderProvider;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
@@ -39,6 +41,7 @@ import com.google.cloud.bigquery.FieldValueList;
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.TableResult;
+import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -48,6 +51,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -56,17 +60,24 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class BigQueryHelperServiceImpl implements BigQueryHelperService {
-  private static final String CONTENT_STACK_ACCOUNTID = "CYVS6BRkSPKdIE5FZThNRQ";
-  private BatchMainConfig mainConfig;
-  private CloudBillingHelper cloudBillingHelper;
-  private int clusterDetailsCount;
-  private double billingSum;
+  private static final String CONTENT_STACK_ACCOUNT_ID = "CYVS6BRkSPKdIE5FZThNRQ";
+  private static final String USER_AGENT_HEADER = "user-agent";
+  private static final String USER_AGENT_HEADER_ENVIRONMENT_VARIABLE = "USER_AGENT_HEADER";
+  private static final String DEFAULT_USER_AGENT = "default-user-agent";
+  private static final String PRE_AGGREGATED = "preAggregated";
+  private static final String CLUSTER_DATA = "clusterData";
+  private static final String COUNT = "count";
+  private static final String CLOUD_PROVIDER = "cloudProvider";
+  private static final String GOOGLE_CREDENTIALS_PATH = "GOOGLE_CREDENTIALS_PATH";
+  private static final String TABLE_SUFFIX = "%s_%s";
+  private static final String AWS_CUR_TABLE_NAME = "awscur_%s";
+  private static final String AZURE_TABLE_NAME = "unifiedTable";
+  private static final String GCP_COST_TRUE_UP_TABLE_WITH_WILDCARD = "gcp_cost_export_*";
+  private static final String RESOURCE_CONDITION = "resourceid like '%%%s%%'";
 
-  private FeatureFlagService featureFlagService;
-  private static final String preAggregated = "preAggregated";
-  private static final String clusterData = "clusterData";
-  private static final String countConst = "count";
-  private static final String cloudProviderConst = "cloudProvider";
+  private final BatchMainConfig mainConfig;
+  private final CloudBillingHelper cloudBillingHelper;
+  private final FeatureFlagService featureFlagService;
 
   @Autowired
   public BigQueryHelperServiceImpl(
@@ -75,13 +86,6 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     this.cloudBillingHelper = cloudBillingHelper;
     this.featureFlagService = featureFlagService;
   }
-
-  private static final String GOOGLE_CREDENTIALS_PATH = "GOOGLE_CREDENTIALS_PATH";
-  private static final String TABLE_SUFFIX = "%s_%s";
-  private static final String AWS_CUR_TABLE_NAME = "awscur_%s";
-  private static final String AZURE_TABLE_NAME = "unifiedTable";
-  private static final String GCP_COST_TRUEUP_TABLE_WITH_WILDCARD = "gcp_cost_export_*";
-  private String resourceCondition = "resourceid like '%%%s%%'";
 
   @Override
   public Map<String, VMInstanceBillingData> getAwsEC2BillingData(
@@ -107,19 +111,18 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   public ClusterDataDetails getClusterDataDetails(String accountId, Instant startTime) {
     String query = BQConst.CLUSTER_DATA_QUERY;
     String tableName = cloudBillingHelper.getCloudProviderTableName(
-        mainConfig.getBillingDataPipelineConfig().getGcpProjectId(), accountId, clusterData);
+        mainConfig.getBillingDataPipelineConfig().getGcpProjectId(), accountId, CLUSTER_DATA);
     String formattedQuery = format(query, tableName, accountId, startTime.toEpochMilli());
     log.info("BigQuery formatted query : " + formattedQuery);
     BigQuery bigQueryService = getBigQueryService();
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(formattedQuery).build();
-    TableResult result = null;
+    TableResult result;
     try {
       result = bigQueryService.query(queryConfig);
       FieldList fields = getFieldList(result);
-      List<VMInstanceServiceBillingData> instanceServiceBillingDataList = new ArrayList<>();
       Iterable<FieldValueList> fieldValueLists = getFieldValueLists(result);
-      clusterDetailsCount = 0;
-      billingSum = 0.0;
+      int clusterDetailsCount = 0;
+      double billingSum = 0.0;
       for (FieldValueList row : fieldValueLists) {
         for (Field field : fields) {
           switch (field.getName()) {
@@ -151,7 +154,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   private String getResourceConditionWhereClause(List<String> resourceIds) {
     List<String> resourceIdConditions = new ArrayList<>();
     for (String resourceId : resourceIds) {
-      resourceIdConditions.add(format(resourceCondition, resourceId));
+      resourceIdConditions.add(format(RESOURCE_CONDITION, resourceId));
     }
     return String.join(" OR ", resourceIdConditions);
   }
@@ -373,22 +376,22 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   @Override
   public void updateCloudProviderMetaData(String accountId, CEMetadataRecordBuilder ceMetadataRecordBuilder) {
     String tableName = cloudBillingHelper.getCloudProviderTableName(
-        mainConfig.getBillingDataPipelineConfig().getGcpProjectId(), accountId, preAggregated);
+        mainConfig.getBillingDataPipelineConfig().getGcpProjectId(), accountId, PRE_AGGREGATED);
     String formattedQuery = format(BQConst.CLOUD_PROVIDER_AGG_DATA, tableName);
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(formattedQuery).build();
     try {
       TableResult result = getBigQueryService().query(queryConfig);
       for (FieldValueList row : result.iterateAll()) {
-        String cloudProvider = row.get(cloudProviderConst).getStringValue();
+        String cloudProvider = row.get(CLOUD_PROVIDER).getStringValue();
         switch (cloudProvider) {
           case "AWS":
-            ceMetadataRecordBuilder.awsDataPresent(row.get(countConst).getDoubleValue() > 0);
+            ceMetadataRecordBuilder.awsDataPresent(row.get(COUNT).getDoubleValue() > 0);
             break;
           case "GCP":
-            ceMetadataRecordBuilder.gcpDataPresent(row.get(countConst).getDoubleValue() > 0);
+            ceMetadataRecordBuilder.gcpDataPresent(row.get(COUNT).getDoubleValue() > 0);
             break;
           case "AZURE":
-            ceMetadataRecordBuilder.azureDataPresent(row.get(countConst).getDoubleValue() > 0);
+            ceMetadataRecordBuilder.azureDataPresent(row.get(COUNT).getDoubleValue() > 0);
             break;
           default:
             break;
@@ -504,7 +507,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   private String getGcpProjectTableName(String dataSetId) {
     BillingDataPipelineConfig billingDataPipelineConfig = mainConfig.getBillingDataPipelineConfig();
     return format(
-        "%s.%s.%s", billingDataPipelineConfig.getGcpProjectId(), dataSetId, GCP_COST_TRUEUP_TABLE_WITH_WILDCARD);
+        "%s.%s.%s", billingDataPipelineConfig.getGcpProjectId(), dataSetId, GCP_COST_TRUE_UP_TABLE_WITH_WILDCARD);
   }
 
   public FieldList getFieldList(TableResult result) {
@@ -585,7 +588,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
         boolean netAmortisedCostCalculationEnabled =
             featureFlagService.isEnabled(FeatureName.CE_NET_AMORTISED_COST_ENABLED, accountId);
 
-        if ((netAmortisedCostCalculationEnabled || CONTENT_STACK_ACCOUNTID.equals(accountId))
+        if ((netAmortisedCostCalculationEnabled || CONTENT_STACK_ACCOUNT_ID.equals(accountId))
             && null != vmInstanceServiceBillingData.getNetAmortisedCost()) {
           cost = vmInstanceServiceBillingData.getNetAmortisedCost();
           log.info("accountId: {} - net amortisedCost: {}", accountId, cost);
@@ -675,6 +678,16 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
         log.error("Exception in using Google ADC", e);
       }
     }
-    return BigQueryOptions.newBuilder().setCredentials(sourceCredentials).build().getService();
+    return BigQueryOptions.newBuilder()
+        .setCredentials(sourceCredentials)
+        .setHeaderProvider(getHeaderProvider())
+        .build()
+        .getService();
+  }
+
+  private HeaderProvider getHeaderProvider() {
+    String userAgent = System.getenv(USER_AGENT_HEADER_ENVIRONMENT_VARIABLE);
+    return FixedHeaderProvider.create(
+        ImmutableMap.of(USER_AGENT_HEADER, Objects.nonNull(userAgent) ? userAgent : DEFAULT_USER_AGENT));
   }
 }
