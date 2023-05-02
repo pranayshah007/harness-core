@@ -25,8 +25,7 @@ import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
-import io.kubernetes.client.openapi.models.V1CronJob;
-import io.kubernetes.client.openapi.models.V1CronJobList;
+import io.kubernetes.client.openapi.apis.BatchV1beta1Api;
 import io.kubernetes.client.openapi.models.V1DaemonSet;
 import io.kubernetes.client.openapi.models.V1DaemonSetList;
 import io.kubernetes.client.openapi.models.V1Deployment;
@@ -37,6 +36,8 @@ import io.kubernetes.client.openapi.models.V1ReplicaSet;
 import io.kubernetes.client.openapi.models.V1ReplicaSetList;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
 import io.kubernetes.client.openapi.models.V1StatefulSetList;
+import io.kubernetes.client.openapi.models.V1beta1CronJob;
+import io.kubernetes.client.openapi.models.V1beta1CronJobList;
 import io.kubernetes.client.util.CallGeneratorParams;
 import lombok.extern.slf4j.Slf4j;
 
@@ -65,12 +66,12 @@ public class SharedInformerFactoryFactory {
   }
 
   private void addHandlerForCronJob(SharedInformerFactory factory, ApiClient apiClient, ClusterDetails clusterDetails) {
-    BatchV1Api batchV1beta1Api = new BatchV1Api(apiClient);
+    BatchV1beta1Api batchV1beta1Api = new BatchV1beta1Api(apiClient);
     factory
         .sharedIndexInformerFor((CallGeneratorParams params)
                                     -> batchV1beta1Api.listCronJobForAllNamespacesCall(null, null, null, null, null,
                                         null, params.resourceVersion, null, params.timeoutSeconds, params.watch, null),
-            V1CronJob.class, V1CronJobList.class)
+            V1beta1CronJob.class, V1beta1CronJobList.class)
         .addEventHandler(new V1beta1CronJobHandler(eventPublisher, clusterDetails));
   }
 

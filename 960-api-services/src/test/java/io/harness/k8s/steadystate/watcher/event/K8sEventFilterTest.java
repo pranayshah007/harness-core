@@ -134,6 +134,7 @@ public class K8sEventFilterTest extends CategoryTest {
                       .withName("nginxPod")
                       .withNamespace("namespace")
                       .withUid("podId")
-                      .build());
+                      .build()
+                      .clusterName("cluster"));
   }
 }
