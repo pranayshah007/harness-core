@@ -302,6 +302,9 @@ public class NgStepRegistrar {
 
     // Service Hooks
     engineSteps.put(ServiceHooksStep.STEP_TYPE, ServiceHooksStep.class);
+
+    // Blue Green Stage Scale Down
+    engineSteps.put(K8sBGStageScaleDownStep.STEP_TYPE, K8sBGStageScaleDownStep.class);
     return engineSteps;
   }
 }

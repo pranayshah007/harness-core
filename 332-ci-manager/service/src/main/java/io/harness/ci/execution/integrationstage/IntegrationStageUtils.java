@@ -658,13 +658,17 @@ public class IntegrationStageUtils {
     String tag = "";
     String name = image;
 
-    if (image.contains(IMAGE_PATH_SPLIT_REGEX)) {
-      String[] subTokens = image.split(IMAGE_PATH_SPLIT_REGEX);
-      if (subTokens.length > 1) {
-        tag = subTokens[subTokens.length - 1];
-        String[] nameparts = Arrays.copyOf(subTokens, subTokens.length - 1);
-        name = String.join(IMAGE_PATH_SPLIT_REGEX, nameparts);
+    if (isNotEmpty(image)) {
+      if (image.contains(IMAGE_PATH_SPLIT_REGEX)) {
+        String[] subTokens = image.split(IMAGE_PATH_SPLIT_REGEX);
+        if (subTokens.length > 1) {
+          tag = subTokens[subTokens.length - 1];
+          String[] nameparts = Arrays.copyOf(subTokens, subTokens.length - 1);
+          name = String.join(IMAGE_PATH_SPLIT_REGEX, nameparts);
+        }
       }
+    } else {
+      throw new CIStageExecutionException(format("ConnectorRef and Image should not be empty"));
     }
 
     return ImageDetails.builder().name(name).tag(tag).build();

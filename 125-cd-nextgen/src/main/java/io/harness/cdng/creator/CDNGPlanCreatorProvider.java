@@ -103,6 +103,7 @@ import io.harness.cdng.creator.plan.steps.GitOpsUpdateReleaseRepoStepPlanCreator
 import io.harness.cdng.creator.plan.steps.HelmDeployStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.HelmRollbackStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.K8sApplyStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.K8sBGStageScaleDownStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sBGSwapServicesStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sBlueGreenStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sCanaryDeleteStepPlanCreator;
@@ -198,6 +199,7 @@ import io.harness.cdng.creator.variables.GitOpsUpdateReleaseRepoStepVariableCrea
 import io.harness.cdng.creator.variables.HelmDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.HelmRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sApplyStepVariableCreator;
+import io.harness.cdng.creator.variables.K8sBGStageScaleDownStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sBGSwapServicesVariableCreator;
 import io.harness.cdng.creator.variables.K8sBlueGreenStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sCanaryDeleteStepVariableCreator;
@@ -482,6 +484,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new AwsSamDeployStepPlanCreator());
     planCreators.add(new AwsSamRollbackStepPlanCreator());
 
+    planCreators.add(new K8sBGStageScaleDownStepPlanCreator());
+
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -620,6 +624,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     // AWS SAM
     variableCreators.add(new AwsSamDeployStepVariableCreator());
     variableCreators.add(new AwsSamRollbackStepVariableCreator());
+
+    variableCreators.add(new K8sBGStageScaleDownStepVariableCreator());
 
     return variableCreators;
   }
@@ -1361,6 +1367,15 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.CDS_AWS_NATIVE_LAMBDA.name())
             .build();
 
+    StepInfo k8sBGStageScaleDown =
+        StepInfo.newBuilder()
+            .setName("K8s Blue Green Stage Scale Down")
+            .setType(StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN)
+            .setFeatureRestrictionName(FeatureRestrictionName.K8S_BLUE_GREEN_STAGE_SCALE_DOWN.name())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").addFolderPaths("Kubernetes").build())
+            .setFeatureFlag(FeatureName.CDS_BG_STAGE_SCALE_DOWN_STEP_NG.name())
+            .build();
+
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(gitOpsCreatePR);
@@ -1449,6 +1464,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(tasRouteMapping);
     stepInfos.add(googleFunctionGenOneDeploy);
     stepInfos.add(googleFunctionGenOneRollback);
+    stepInfos.add(k8sBGStageScaleDown);
 
     return stepInfos;
   }

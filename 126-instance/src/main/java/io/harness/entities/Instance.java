@@ -208,6 +208,8 @@ public class Instance {
   private String lastPipelineExecutionName;
   private String stageNodeExecutionId;
   private Status stageStatus;
+  private String stageSetupId;
+  @Builder.Default private RollbackStatus rollbackStatus = RollbackStatus.UNAVAILABLE;
 
   private InstanceInfo instanceInfo;
 

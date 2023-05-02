@@ -7,10 +7,15 @@
 
 package io.harness.delegate.pcf;
 
+import static io.harness.delegate.cf.CfTestConstants.STOPPED;
+import static io.harness.delegate.pcf.TasTestConstants.MANIFEST_YAML;
+import static io.harness.delegate.pcf.TasTestConstants.MANIFEST_YAML_PROCESS;
+import static io.harness.delegate.pcf.TasTestConstants.VARS_YAML;
 import static io.harness.pcf.model.PcfConstants.PCF_ARTIFACT_DOWNLOAD_DIR_PATH;
 import static io.harness.rule.OwnerRule.SOURABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doNothing;
@@ -27,15 +32,22 @@ import io.harness.connector.task.tas.TasNgConfigMapper;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.delegate.beans.pcf.artifact.TasArtifactRegistryType;
 import io.harness.delegate.cf.PcfCommandTaskBaseHelper;
 import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
 import io.harness.delegate.task.cf.TasArtifactDownloadResponse;
+import io.harness.delegate.task.cf.artifact.TasArtifactCreds;
+import io.harness.delegate.task.cf.artifact.TasRegistrySettingsAdapter;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.TasTaskHelperBase;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
+import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
 import io.harness.delegate.task.pcf.request.CfBasicSetupRequestNG;
+import io.harness.delegate.task.pcf.request.CfBlueGreenSetupRequestNG;
+import io.harness.delegate.task.pcf.request.TasManifestsPackage;
 import io.harness.delegate.task.pcf.response.CfBasicSetupResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.pcf.CfDeploymentManager;
@@ -50,6 +62,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
 import org.junit.Before;
 import org.junit.Test;
@@ -71,7 +84,7 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
   public static final String APP_ID = "appName";
   public static final String APP_NAME_OLD = "appName__0";
   public static final String ACCOUNT = "account_Id";
-  public static final String APP_INACTIVE_OLD = "app_inactive__0";
+  public static final String APP_NAME_OLD_1 = "appName__1";
 
   private final CloudFoundryConfig cloudFoundryConfig = CloudFoundryConfig.builder()
                                                             .endpointUrl(ENDPOINT_URL)
@@ -85,6 +98,7 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
   @Mock TasTaskHelperBase tasTaskHelperBase;
   @Mock ILogStreamingTaskClient logStreamingTaskClient;
   @Mock CfDeploymentManager cfDeploymentManager;
+  @Mock TasRegistrySettingsAdapter tasRegistrySettingsAdapter;
   @InjectMocks @Spy PcfCommandTaskBaseHelper pcfCommandTaskBaseHelper;
   @InjectMocks @Spy CfCommandTaskHelperNG cfCommandTaskHelperNG;
 
@@ -96,6 +110,338 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
     doReturn(logCallback).when(tasTaskHelperBase).getLogCallback(any(), any(), anyBoolean(), any());
     doReturn(cloudFoundryConfig).when(tasNgConfigMapper).mapTasConfigWithDecryption(any(), any());
     doReturn("cfCliPath").when(cfCommandTaskHelperNG).getCfCliPathOnDelegate(anyBoolean(), any());
+    doReturn(false).when(cfDeploymentManager).checkIfAppHasAutoscalarEnabled(any(), any());
+    doReturn(false).when(pcfCommandTaskBaseHelper).disableAutoscalarSafe(any(), any());
+    doNothing().when(cfDeploymentManager).unmapRouteMapForApplication(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testExecuteTaskInternalWithIncorrectRequest() {
+    CfBlueGreenSetupRequestNG cfBlueGreenSetupRequestNG =
+        CfBlueGreenSetupRequestNG.builder()
+            .tasInfraConfig(tasInfraConfig)
+            .cfCommandTypeNG(CfCommandTypeNG.APP_RESIZE)
+            .cfCliVersion(CfCliVersion.V7)
+            .olderActiveVersionCountToKeep(1)
+            .releaseNamePrefix(APP_NAME)
+            .tasManifestsPackage(
+                TasManifestsPackage.builder().manifestYml(MANIFEST_YAML).variableYmls(List.of()).build())
+            .tasArtifactConfig(TasContainerArtifactConfig.builder()
+                                   .registryType(TasArtifactRegistryType.GITHUB_PACKAGE_REGISTRY)
+                                   .build())
+            .commandUnitsProgress(CommandUnitsProgress.builder().build())
+            .accountId(ACCOUNT)
+            .timeoutIntervalInMin(10)
+            .useAppAutoScalar(false)
+            .build();
+    assertThatThrownBy(()
+                           -> tasBasicSetupTaskHandler.executeTaskInternal(cfBlueGreenSetupRequestNG,
+                               logStreamingTaskClient, CommandUnitsProgress.builder().build()))
+        .isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testExecuteTaskInternalWithFirstDeployment() throws Exception {
+    CfBasicSetupRequestNG cfBasicSetupRequestNG =
+        CfBasicSetupRequestNG.builder()
+            .tasInfraConfig(tasInfraConfig)
+            .cfCommandTypeNG(CfCommandTypeNG.APP_RESIZE)
+            .cfCliVersion(CfCliVersion.V7)
+            .olderActiveVersionCountToKeep(1)
+            .releaseNamePrefix(APP_NAME)
+            .tasManifestsPackage(
+                TasManifestsPackage.builder().manifestYml(MANIFEST_YAML).variableYmls(List.of()).build())
+            .tasArtifactConfig(TasContainerArtifactConfig.builder()
+                                   .registryType(TasArtifactRegistryType.GITHUB_PACKAGE_REGISTRY)
+                                   .build())
+            .commandUnitsProgress(CommandUnitsProgress.builder().build())
+            .accountId(ACCOUNT)
+            .timeoutIntervalInMin(10)
+            .useAppAutoScalar(false)
+            .build();
+
+    ApplicationDetail applicationDetail = ApplicationDetail.builder()
+                                              .id(APP_ID)
+                                              .diskQuota(1)
+                                              .url("url")
+                                              .instances(0)
+                                              .memoryLimit(1)
+                                              .name(APP_NAME)
+                                              .requestedState(STOPPED)
+                                              .stack("")
+                                              .runningInstances(0)
+                                              .build();
+    doReturn(false).when(cfDeploymentManager).checkIfAppHasAutoscalarEnabled(any(), any());
+    doNothing().when(cfDeploymentManager).renameApplication(any(), any());
+    doNothing().when(cfDeploymentManager).deleteApplication(any());
+    doReturn(applicationDetail).when(cfDeploymentManager).createApplication(any(), any());
+    doReturn(TasArtifactDownloadResponse.builder().build())
+        .when(cfCommandTaskHelperNG)
+        .downloadPackageArtifact(any(), any());
+
+    doReturn(TasArtifactCreds.builder().username("user").password("pass").build())
+        .when(tasRegistrySettingsAdapter)
+        .getContainerSettings(any());
+
+    when(cfDeploymentManager.getPreviousReleases(any(), any()))
+        .thenReturn(List.of(getApplicationSummary(APP_NAME, APP_ID)));
+
+    CfBasicSetupResponseNG cfBasicSetupResponseNG =
+        (CfBasicSetupResponseNG) tasBasicSetupTaskHandler.executeTaskInternal(
+            cfBasicSetupRequestNG, logStreamingTaskClient, CommandUnitsProgress.builder().build());
+
+    assertThat(cfBasicSetupResponseNG.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    verify(cfDeploymentManager, times(0)).deleteApplication(any());
+    verify(cfDeploymentManager, times(1)).renameApplication(any(), any());
+    verify(cfDeploymentManager, times(1)).createApplication(any(), any());
+
+    assertThat(cfBasicSetupResponseNG.getNewApplicationInfo().getApplicationGuid()).isEqualTo(APP_ID);
+    assertThat(cfBasicSetupResponseNG.getNewApplicationInfo().getApplicationName()).isEqualTo(APP_NAME);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testExecuteTaskInternalWithSecondDeployment() throws Exception {
+    CfBasicSetupRequestNG cfBasicSetupRequestNG =
+        CfBasicSetupRequestNG.builder()
+            .tasInfraConfig(tasInfraConfig)
+            .cfCommandTypeNG(CfCommandTypeNG.APP_RESIZE)
+            .cfCliVersion(CfCliVersion.V7)
+            .releaseNamePrefix(APP_NAME)
+            .tasManifestsPackage(
+                TasManifestsPackage.builder().manifestYml(MANIFEST_YAML).variableYmls(List.of(VARS_YAML)).build())
+            .tasArtifactConfig(TasPackageArtifactConfig.builder().build())
+            .commandUnitsProgress(CommandUnitsProgress.builder().build())
+            .accountId(ACCOUNT)
+            .timeoutIntervalInMin(10)
+            .useAppAutoScalar(false)
+            .build();
+
+    ApplicationDetail applicationDetail = ApplicationDetail.builder()
+                                              .id(APP_ID)
+                                              .diskQuota(1)
+                                              .instances(0)
+                                              .memoryLimit(1)
+                                              .name(APP_NAME)
+                                              .requestedState(STOPPED)
+                                              .stack("")
+                                              .runningInstances(0)
+                                              .build();
+
+    doReturn(false).when(cfDeploymentManager).checkIfAppHasAutoscalarEnabled(any(), any());
+    doNothing().when(cfDeploymentManager).renameApplication(any(), any());
+    doNothing().when(cfDeploymentManager).deleteApplication(any());
+    doReturn(applicationDetail).when(cfDeploymentManager).createApplication(any(), any());
+    doReturn(TasArtifactDownloadResponse.builder().build())
+        .when(cfCommandTaskHelperNG)
+        .downloadPackageArtifact(any(), any());
+    doReturn(TasArtifactCreds.builder().username("user").password("pass").build())
+        .when(tasRegistrySettingsAdapter)
+        .getContainerSettings(any());
+    when(cfDeploymentManager.getPreviousReleases(any(), any()))
+        .thenReturn(List.of(getApplicationSummary(APP_NAME, APP_ID)));
+
+    ArgumentCaptor<CfRenameRequest> cfRenameRequestArgumentCaptor = ArgumentCaptor.forClass(CfRenameRequest.class);
+    CfBasicSetupResponseNG cfBasicSetupResponseNG =
+        (CfBasicSetupResponseNG) tasBasicSetupTaskHandler.executeTaskInternal(
+            cfBasicSetupRequestNG, logStreamingTaskClient, CommandUnitsProgress.builder().build());
+
+    assertThat(cfBasicSetupResponseNG.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    verify(cfDeploymentManager, times(0)).deleteApplication(any());
+    verify(cfDeploymentManager, times(1)).renameApplication(cfRenameRequestArgumentCaptor.capture(), any());
+    verify(cfDeploymentManager, times(1)).createApplication(any(), any());
+
+    assertThat(cfBasicSetupResponseNG.getNewApplicationInfo().getApplicationGuid()).isEqualTo(APP_ID);
+    assertThat(cfBasicSetupResponseNG.getNewApplicationInfo().getApplicationName()).isEqualTo(APP_NAME);
+    CfRenameRequest cfRenameRequest = cfRenameRequestArgumentCaptor.getValue();
+    assertForRenameConfig(cfRenameRequest, APP_NAME, APP_NAME_OLD);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testExecuteTaskInternalWithThirdDeployment() throws Exception {
+    CfBasicSetupRequestNG cfBasicSetupRequestNG =
+        CfBasicSetupRequestNG.builder()
+            .tasInfraConfig(tasInfraConfig)
+            .cfCommandTypeNG(CfCommandTypeNG.APP_RESIZE)
+            .cfCliVersion(CfCliVersion.V7)
+            .releaseNamePrefix(APP_NAME)
+            .tasManifestsPackage(
+                TasManifestsPackage.builder().manifestYml(MANIFEST_YAML).variableYmls(List.of(VARS_YAML)).build())
+            .tasArtifactConfig(TasPackageArtifactConfig.builder().build())
+            .commandUnitsProgress(CommandUnitsProgress.builder().build())
+            .olderActiveVersionCountToKeep(2)
+            .accountId(ACCOUNT)
+            .timeoutIntervalInMin(10)
+            .useAppAutoScalar(false)
+            .build();
+
+    ApplicationDetail applicationDetail = ApplicationDetail.builder()
+                                              .id(APP_ID)
+                                              .diskQuota(1)
+                                              .instances(0)
+                                              .url("url")
+                                              .memoryLimit(1)
+                                              .name(APP_NAME)
+                                              .requestedState(STOPPED)
+                                              .stack("")
+                                              .runningInstances(0)
+                                              .build();
+
+    doReturn(false).when(cfDeploymentManager).checkIfAppHasAutoscalarEnabled(any(), any());
+    doNothing().when(cfDeploymentManager).renameApplication(any(), any());
+    doReturn(null).when(cfDeploymentManager).resizeApplication(any());
+    doReturn(applicationDetail).when(cfDeploymentManager).createApplication(any(), any());
+    doReturn(applicationDetail).when(cfDeploymentManager).getApplicationByName(any());
+    doReturn(TasArtifactDownloadResponse.builder().build())
+        .when(cfCommandTaskHelperNG)
+        .downloadPackageArtifact(any(), any());
+    doReturn(TasArtifactCreds.builder().username("user").password("pass").build())
+        .when(tasRegistrySettingsAdapter)
+        .getContainerSettings(any());
+    when(cfDeploymentManager.getPreviousReleases(any(), any()))
+        .thenReturn(List.of(getApplicationSummary(APP_NAME, APP_ID), getApplicationSummary(APP_NAME_OLD, APP_ID)));
+
+    ArgumentCaptor<CfRenameRequest> cfRenameRequestArgumentCaptor = ArgumentCaptor.forClass(CfRenameRequest.class);
+    CfBasicSetupResponseNG cfBasicSetupResponseNG =
+        (CfBasicSetupResponseNG) tasBasicSetupTaskHandler.executeTaskInternal(
+            cfBasicSetupRequestNG, logStreamingTaskClient, CommandUnitsProgress.builder().build());
+
+    assertThat(cfBasicSetupResponseNG.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(cfBasicSetupResponseNG.getNewApplicationInfo().getApplicationGuid()).isEqualTo(APP_ID);
+    assertThat(cfBasicSetupResponseNG.getNewApplicationInfo().getApplicationName()).isEqualTo(APP_NAME);
+    verify(cfDeploymentManager, times(0)).deleteApplication(any());
+    verify(cfDeploymentManager, times(1)).renameApplication(cfRenameRequestArgumentCaptor.capture(), any());
+    verify(cfDeploymentManager, times(1)).createApplication(any(), any());
+
+    CfRenameRequest cfRenameRequest = cfRenameRequestArgumentCaptor.getValue();
+    assertForRenameConfig(cfRenameRequest, APP_NAME_OLD, APP_NAME_OLD_1);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testExecuteTaskInternalWithDeploymentFailure() throws Exception {
+    CfBasicSetupRequestNG cfBasicSetupRequestNG =
+        CfBasicSetupRequestNG.builder()
+            .tasInfraConfig(tasInfraConfig)
+            .cfCommandTypeNG(CfCommandTypeNG.APP_RESIZE)
+            .cfCliVersion(CfCliVersion.V7)
+            .releaseNamePrefix(APP_NAME)
+            .tasManifestsPackage(
+                TasManifestsPackage.builder().manifestYml(MANIFEST_YAML).variableYmls(List.of(VARS_YAML)).build())
+            .tasArtifactConfig(TasPackageArtifactConfig.builder().build())
+            .commandUnitsProgress(CommandUnitsProgress.builder().build())
+            .olderActiveVersionCountToKeep(1)
+            .accountId(ACCOUNT)
+            .timeoutIntervalInMin(10)
+            .useAppAutoScalar(false)
+            .build();
+
+    ApplicationDetail applicationDetail = ApplicationDetail.builder()
+                                              .id(APP_ID)
+                                              .diskQuota(1)
+                                              .instances(0)
+                                              .url("url")
+                                              .memoryLimit(1)
+                                              .name(APP_NAME)
+                                              .requestedState(STOPPED)
+                                              .stack("")
+                                              .runningInstances(0)
+                                              .build();
+
+    doReturn(false).when(cfDeploymentManager).checkIfAppHasAutoscalarEnabled(any(), any());
+    doNothing().when(cfDeploymentManager).renameApplication(any(), any());
+    doThrow(new PivotalClientApiException("error")).when(cfDeploymentManager).deleteApplication(any());
+    doReturn(null).when(cfDeploymentManager).resizeApplication(any());
+    doReturn(applicationDetail).when(cfDeploymentManager).createApplication(any(), any());
+    doReturn(applicationDetail).when(cfDeploymentManager).getApplicationByName(any());
+    doReturn(TasArtifactDownloadResponse.builder().build())
+        .when(cfCommandTaskHelperNG)
+        .downloadPackageArtifact(any(), any());
+    doReturn(TasArtifactCreds.builder().username("user").password("pass").build())
+        .when(tasRegistrySettingsAdapter)
+        .getContainerSettings(any());
+    when(cfDeploymentManager.getPreviousReleases(any(), any()))
+        .thenReturn(List.of(getApplicationSummary(APP_NAME, APP_ID), getApplicationSummary(APP_NAME_OLD, APP_ID)));
+
+    CfBasicSetupResponseNG cfBasicSetupResponseNG =
+        (CfBasicSetupResponseNG) tasBasicSetupTaskHandler.executeTaskInternal(
+            cfBasicSetupRequestNG, logStreamingTaskClient, CommandUnitsProgress.builder().build());
+
+    assertThat(cfBasicSetupResponseNG.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
+    verify(cfDeploymentManager, times(1)).deleteApplication(any());
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testExecuteTaskInternalWithProcessManifest() throws Exception {
+    CfBasicSetupRequestNG cfBasicSetupRequestNG = CfBasicSetupRequestNG.builder()
+                                                      .tasInfraConfig(tasInfraConfig)
+                                                      .cfCommandTypeNG(CfCommandTypeNG.APP_RESIZE)
+                                                      .cfCliVersion(CfCliVersion.V7)
+                                                      .releaseNamePrefix(APP_NAME)
+                                                      .tasManifestsPackage(TasManifestsPackage.builder()
+                                                                               .manifestYml(MANIFEST_YAML_PROCESS)
+                                                                               .variableYmls(List.of(VARS_YAML))
+                                                                               .build())
+                                                      .tasArtifactConfig(TasPackageArtifactConfig.builder().build())
+                                                      .commandUnitsProgress(CommandUnitsProgress.builder().build())
+                                                      .olderActiveVersionCountToKeep(2)
+                                                      .routeMaps(List.of("route1"))
+                                                      .accountId(ACCOUNT)
+                                                      .timeoutIntervalInMin(10)
+                                                      .useAppAutoScalar(false)
+                                                      .build();
+
+    ApplicationDetail applicationDetail = ApplicationDetail.builder()
+                                              .id(APP_ID)
+                                              .diskQuota(1)
+                                              .instances(0)
+                                              .url("url")
+                                              .memoryLimit(1)
+                                              .name(APP_NAME)
+                                              .requestedState(STOPPED)
+                                              .stack("")
+                                              .runningInstances(0)
+                                              .build();
+
+    doReturn(false).when(cfDeploymentManager).checkIfAppHasAutoscalarEnabled(any(), any());
+    doNothing().when(cfDeploymentManager).renameApplication(any(), any());
+    doThrow(new PivotalClientApiException("error")).when(cfDeploymentManager).deleteApplication(any());
+    doReturn(null).when(cfDeploymentManager).resizeApplication(any());
+    doReturn(applicationDetail).when(cfDeploymentManager).createApplication(any(), any());
+    doReturn(applicationDetail).when(cfDeploymentManager).getApplicationByName(any());
+    doReturn(TasArtifactDownloadResponse.builder().build())
+        .when(cfCommandTaskHelperNG)
+        .downloadPackageArtifact(any(), any());
+    doReturn(TasArtifactCreds.builder().username("user").password("pass").build())
+        .when(tasRegistrySettingsAdapter)
+        .getContainerSettings(any());
+    when(cfDeploymentManager.getPreviousReleases(any(), any()))
+        .thenReturn(List.of(getApplicationSummary(APP_NAME, APP_ID), getApplicationSummary(APP_NAME_OLD, APP_ID)));
+    ArgumentCaptor<CfRenameRequest> cfRenameRequestArgumentCaptor = ArgumentCaptor.forClass(CfRenameRequest.class);
+
+    CfBasicSetupResponseNG cfBasicSetupResponseNG =
+        (CfBasicSetupResponseNG) tasBasicSetupTaskHandler.executeTaskInternal(
+            cfBasicSetupRequestNG, logStreamingTaskClient, CommandUnitsProgress.builder().build());
+
+    assertThat(cfBasicSetupResponseNG.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(cfBasicSetupResponseNG.getNewApplicationInfo().getApplicationGuid()).isEqualTo(APP_ID);
+    assertThat(cfBasicSetupResponseNG.getNewApplicationInfo().getApplicationName()).isEqualTo(APP_NAME);
+    verify(cfDeploymentManager, times(0)).deleteApplication(any());
+    verify(cfDeploymentManager, times(1)).renameApplication(cfRenameRequestArgumentCaptor.capture(), any());
+    verify(cfDeploymentManager, times(1)).createApplication(any(), any());
+
+    CfRenameRequest cfRenameRequest = cfRenameRequestArgumentCaptor.getValue();
+    assertForRenameConfig(cfRenameRequest, APP_NAME_OLD, APP_NAME_OLD_1);
   }
 
   @Test

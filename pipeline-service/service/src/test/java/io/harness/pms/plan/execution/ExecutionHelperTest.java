@@ -559,7 +559,7 @@ public class ExecutionHelperTest extends CategoryTest {
 
   private void buildExecutionArgsMocks() {
     doReturn(executionPrincipalInfo).when(principalInfoHelper).getPrincipalInfoFromSecurityContext();
-    doReturn(394).when(pipelineMetadataService).incrementRunSequence(any());
+    doReturn(394).when(pipelineMetadataService).incrementRunSequence(any(), any(), any(), any());
     doReturn(null).when(pmsGitSyncHelper).getGitSyncBranchContextBytesThreadLocal(pipelineEntity, null, null, null);
     doReturn(true).when(pmsYamlSchemaService).validateYamlSchema(accountId, orgId, projectId, mergedPipelineYaml);
     doNothing()
@@ -571,7 +571,7 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(metadata.getExecutionUuid()).isEqualTo(generatedExecutionId);
     assertThat(metadata.getTriggerInfo()).isEqualTo(executionTriggerInfo);
     assertThat(metadata.getModuleType()).isEqualTo(moduleType);
-    assertThat(metadata.getRunSequence()).isEqualTo(394);
+    assertThat(metadata.getRunSequence()).isEqualTo(0);
     assertThat(metadata.getPipelineIdentifier()).isEqualTo(pipelineId);
     assertThat(metadata.getPrincipalInfo()).isEqualTo(executionPrincipalInfo);
     assertThat(metadata.getGitSyncBranchContext().size()).isEqualTo(0);

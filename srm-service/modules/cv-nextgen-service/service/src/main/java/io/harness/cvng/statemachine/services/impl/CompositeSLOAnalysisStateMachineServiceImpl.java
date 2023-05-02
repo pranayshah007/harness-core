@@ -18,6 +18,7 @@ import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 import io.harness.cvng.statemachine.entities.CompositeSLOMetricAnalysisState;
+import io.harness.cvng.statemachine.entities.CompositeSLORestoreMetricAnalysisState;
 
 import com.google.inject.Inject;
 
@@ -38,7 +39,12 @@ public class CompositeSLOAnalysisStateMachineServiceImpl extends AnalysisStateMa
     String sloId = verificationTaskService.getCompositeSLOId(inputForAnalysis.getVerificationTaskId());
     CompositeServiceLevelObjective compositeServiceLevelObjective =
         (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.get(sloId);
-    AnalysisState firstState = CompositeSLOMetricAnalysisState.builder().build();
+    AnalysisState firstState;
+    if (inputForAnalysis.isSLORestoreTask()) {
+      firstState = CompositeSLORestoreMetricAnalysisState.builder().build();
+    } else {
+      firstState = CompositeSLOMetricAnalysisState.builder().build();
+    }
     firstState.setStatus(AnalysisStatus.CREATED);
     firstState.setInputs(inputForAnalysis);
     stateMachine.setAccountId(compositeServiceLevelObjective.getAccountId());

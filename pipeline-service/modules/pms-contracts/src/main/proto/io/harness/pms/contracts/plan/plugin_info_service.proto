@@ -44,6 +44,7 @@ message PluginDetails {
   PortDetails totalPortUsedDetails = 6;
   repeated int32 portUsed = 7;
   repeated SecretVariable secretVariable = 8;
+  repeated ConnectorDetails connectors_for_step = 9;
 }
 
 message PluginContainerResources {
@@ -69,6 +70,7 @@ message ImageInformation {
 
 message ConnectorDetails {
   string connectorRef = 1;
+  map<string, string> connector_secret_env_map = 2;
 }
 
 message PortDetails {

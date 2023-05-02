@@ -30,6 +30,9 @@ import io.harness.gitsync.common.service.UserSourceCodeManagerService;
 import io.harness.gitsync.scm.beans.ScmErrorDetails;
 import io.harness.ng.userprofile.commons.SCMType;
 import io.harness.repositories.userSourceCodeManager.UserSourceCodeManagerRepository;
+import io.harness.security.PrincipalProtoMapper;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.SourcePrincipalContextBuilder;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -120,9 +123,14 @@ public class UserSourceCodeManagerServiceImpl implements UserSourceCodeManagerSe
 
   private UserDetailsResponseDTO getUserDetails(UserSourceCodeManagerDTO userSourceCodeManagerDTO) {
     GitAccessRequest gitAccessRequest = GitAccessRequestMapper.buildGitAccessRequest(userSourceCodeManagerDTO);
+    io.harness.security.dto.Principal currentPrincipal = SourcePrincipalContextBuilder.getSourcePrincipal();
+    if (currentPrincipal == null) {
+      currentPrincipal = SecurityContextBuilder.getPrincipal();
+    }
     UserDetailsRequest userDetailsRequest = UserDetailsRequest.newBuilder()
                                                 .setGitAccessRequest(gitAccessRequest)
                                                 .setAccountIdentifier(userSourceCodeManagerDTO.getAccountIdentifier())
+                                                .setPrincipal(PrincipalProtoMapper.toPrincipalProto(currentPrincipal))
                                                 .build();
     final io.harness.gitsync.UserDetailsResponse userDetailsResponse = GitSyncGrpcClientUtils.retryAndProcessException(
         harnessToGitPushInfoServiceBlockingStub::getUserDetails, userDetailsRequest);

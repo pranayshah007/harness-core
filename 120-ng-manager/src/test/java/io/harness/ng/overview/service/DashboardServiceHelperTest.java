@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.ABHISHEK;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
+import io.harness.entities.RollbackStatus;
 import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
@@ -51,6 +52,8 @@ public class DashboardServiceHelperTest {
   private String lastPipelineExecutionId;
   private String stageNodeExecutionId;
   private Status stageStatus;
+  private String stageSetupId;
+  private RollbackStatus rollbackStatus;
   private Map<String, String> envIdToNameMap;
   private Map<String, String> infraIdToNameMap;
   private Map<String,
@@ -267,19 +270,24 @@ public class DashboardServiceHelperTest {
     List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList = new ArrayList<>();
     activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
         ENV_1, ENV_1, EnvironmentType.PreProduction, INFRA_1, INFRA_1, null, null, 1l, DISPLAY_NAME_1, 1,
-        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId,
+        rollbackStatus));
     activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey2, infraMappingId2,
         ENV_1, ENV_1, EnvironmentType.PreProduction, INFRA_1, INFRA_1, null, null, 2l, DISPLAY_NAME_2, 1,
-        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId,
+        rollbackStatus));
     activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
         ENV_1, ENV_1, EnvironmentType.PreProduction, INFRA_2, INFRA_2, null, null, 3l, DISPLAY_NAME_1, 1,
-        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
-    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
-        ENV_1, ENV_1, EnvironmentType.Production, INFRA_1, INFRA_1, null, null, 4l, DISPLAY_NAME_1, 1,
-        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
-    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
-        ENV_2, ENV_2, EnvironmentType.Production, INFRA_1, INFRA_1, null, null, 5l, DISPLAY_NAME_1, 1,
-        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId,
+        rollbackStatus));
+    activeServiceInstanceInfoWithEnvTypeList.add(
+        new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1, ENV_1, ENV_1,
+            EnvironmentType.Production, INFRA_1, INFRA_1, null, null, 4l, DISPLAY_NAME_1, 1, lastPipelineExecutionName,
+            lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId, rollbackStatus));
+    activeServiceInstanceInfoWithEnvTypeList.add(
+        new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1, ENV_2, ENV_2,
+            EnvironmentType.Production, INFRA_1, INFRA_1, null, null, 5l, DISPLAY_NAME_1, 1, lastPipelineExecutionName,
+            lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId, rollbackStatus));
     return activeServiceInstanceInfoWithEnvTypeList;
   }
 
@@ -287,19 +295,24 @@ public class DashboardServiceHelperTest {
     List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList = new ArrayList<>();
     activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
         ENV_1, ENV_1, EnvironmentType.PreProduction, null, null, INFRA_1, INFRA_1, 1l, DISPLAY_NAME_1, 1,
-        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId,
+        rollbackStatus));
     activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey2, infraMappingId2,
         ENV_1, ENV_1, EnvironmentType.PreProduction, null, null, INFRA_1, INFRA_1, 2l, DISPLAY_NAME_2, 1,
-        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId,
+        rollbackStatus));
     activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
         ENV_1, ENV_1, EnvironmentType.PreProduction, null, null, INFRA_2, INFRA_2, 3l, DISPLAY_NAME_1, 1,
-        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
-    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
-        ENV_1, ENV_1, EnvironmentType.Production, null, null, INFRA_1, INFRA_1, 4l, DISPLAY_NAME_1, 1,
-        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
-    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
-        ENV_2, ENV_2, EnvironmentType.Production, null, null, INFRA_1, INFRA_1, 5l, DISPLAY_NAME_1, 1,
-        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus));
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId,
+        rollbackStatus));
+    activeServiceInstanceInfoWithEnvTypeList.add(
+        new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1, ENV_1, ENV_1,
+            EnvironmentType.Production, null, null, INFRA_1, INFRA_1, 4l, DISPLAY_NAME_1, 1, lastPipelineExecutionName,
+            lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId, rollbackStatus));
+    activeServiceInstanceInfoWithEnvTypeList.add(
+        new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1, ENV_2, ENV_2,
+            EnvironmentType.Production, null, null, INFRA_1, INFRA_1, 5l, DISPLAY_NAME_1, 1, lastPipelineExecutionName,
+            lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId, rollbackStatus));
     return activeServiceInstanceInfoWithEnvTypeList;
   }
 

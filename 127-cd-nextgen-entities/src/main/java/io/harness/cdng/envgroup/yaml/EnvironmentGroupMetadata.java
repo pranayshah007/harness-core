@@ -15,10 +15,12 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
+import lombok.experimental.FieldNameConstants;
 
 @Data
 @Builder
 @RecasterAlias("io.harness.cdng.envgroup.yaml.EnvironmentGroupMetadata")
+@FieldNameConstants(innerTypeName = "environmentGroupMetadataKeys")
 public class EnvironmentGroupMetadata {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })

@@ -118,8 +118,7 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
 
     doReturn(buildDetailsData.get("bdi1"))
         .when(nexusClient)
-        .getDockerArtifactVersions(
-            nexusConfig, "test1", null, "superApp", RepositoryFormat.docker.name(), Integer.MAX_VALUE);
+        .getDockerArtifactVersions(nexusConfig, "test1", null, "superApp", RepositoryFormat.docker.name());
 
     List<BuildDetailsInternal> response = nexusRegistryService.getBuilds(nexusConfig, "test1", null, "superApp",
         RepositoryFormat.docker.name(), null, null, null, null, null, null, Integer.MAX_VALUE);
@@ -143,7 +142,7 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
                                    .build();
     doReturn(buildDetailsData.get("bdi1"))
         .when(nexusClient)
-        .getDockerArtifactVersions(nexusConfig, "test1", null, "superApp", "test", Integer.MAX_VALUE);
+        .getDockerArtifactVersions(nexusConfig, "test1", null, "superApp", "test");
     try {
       nexusRegistryService.getBuilds(
           nexusConfig, "test1", null, "superApp", "test", null, null, null, null, null, null, Integer.MAX_VALUE);
@@ -255,8 +254,7 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
                                    .build();
     doReturn(buildDetailsData.get("bdi1"))
         .when(nexusClient)
-        .getDockerArtifactVersions(
-            nexusConfig, "test1", null, "superApp", RepositoryFormat.docker.name(), Integer.MAX_VALUE);
+        .getDockerArtifactVersions(nexusConfig, "test1", null, "superApp", RepositoryFormat.docker.name());
     doReturn(ARTIFACT_META_INFO_1).when(nexusClient).getArtifactMetaInfo(nexusConfig, "test1", "superApp", "3.0", true);
     doReturn(ARTIFACT_META_INFO_2)
         .when(nexusClient)
@@ -282,8 +280,7 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
                                    .build();
     doReturn(buildDetailsData.get("bdi2"))
         .when(nexusClient)
-        .getDockerArtifactVersions(
-            nexusConfig, "test2", null, "super/duper/app", RepositoryFormat.docker.name(), Integer.MAX_VALUE);
+        .getDockerArtifactVersions(nexusConfig, "test2", null, "super/duper/app", RepositoryFormat.docker.name());
     doReturn(ARTIFACT_META_INFO_1)
         .when(nexusClient)
         .getArtifactMetaInfo(nexusConfig, "test2", "super/duper/app", "2.5.3", true);
@@ -313,8 +310,7 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
 
     doReturn(buildDetailsData.get("bdi3"))
         .when(nexusClient)
-        .getDockerArtifactVersions(
-            nexusConfig, "test2", null, "extra/megaapp", RepositoryFormat.docker.name(), Integer.MAX_VALUE);
+        .getDockerArtifactVersions(nexusConfig, "test2", null, "extra/megaapp", RepositoryFormat.docker.name());
     doReturn(ARTIFACT_META_INFO_1)
         .when(nexusClient)
         .getArtifactMetaInfo(nexusConfig, "test2", "extra/megaapp", "latest", true);
@@ -343,8 +339,7 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
                                    .build();
     doReturn(buildDetailsData.get("bdi3"))
         .when(nexusClient)
-        .getDockerArtifactVersions(
-            nexusConfig, "test2", null, "extra/megaapp", RepositoryFormat.docker.name(), Integer.MAX_VALUE);
+        .getDockerArtifactVersions(nexusConfig, "test2", null, "extra/megaapp", RepositoryFormat.docker.name());
     try {
       BuildDetailsInternal response =
           nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig, "test2", null, "extra/megaapp",
@@ -366,8 +361,7 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
                                    .build();
     doReturn(buildDetailsData.get("bdi3"))
         .when(nexusClient)
-        .getDockerArtifactVersions(
-            nexusConfig, "test2", null, "extra/megaapp", RepositoryFormat.docker.name(), Integer.MAX_VALUE);
+        .getDockerArtifactVersions(nexusConfig, "test2", null, "extra/megaapp", RepositoryFormat.docker.name());
     assertThatThrownBy(()
                            -> nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig, "test2", null,
                                "extra/megaapp", RepositoryFormat.docker.name(), "noArtifactFound", null, null, null,

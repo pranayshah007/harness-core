@@ -14245,22 +14245,6 @@
           "if": {
             "properties": {
               "type": {
-                "const": "K8sBGStageScaleDown"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/K8sBGStageScaleDownStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
                 "const": "K8sBGSwapServices"
               }
             }
@@ -14285,6 +14269,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/K8sBlueGreenStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "K8sBlueGreenStageScaleDown"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/K8sBGStageScaleDownStepInfo"
               }
             }
           }

@@ -46,9 +46,9 @@ import io.harness.spec.server.template.v1.model.TemplateMetadataSummaryResponse;
 import io.harness.spec.server.template.v1.model.TemplateResponse;
 import io.harness.spec.server.template.v1.model.TemplateUpdateStableResponse;
 import io.harness.spec.server.template.v1.model.TemplateWithInputsResponse;
-import io.harness.template.beans.PermissionTypes;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
+import io.harness.template.resources.beans.PermissionTypes;
 import io.harness.template.services.NGTemplateService;
 
 import com.google.common.io.Resources;

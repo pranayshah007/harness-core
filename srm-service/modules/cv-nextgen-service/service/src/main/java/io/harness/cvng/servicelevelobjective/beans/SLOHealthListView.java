@@ -38,12 +38,12 @@ public class SLOHealthListView {
   Map<String, String> tags;
   String description;
   String userJourneyName;
-  @NotNull List<UserJourneyDTO> userJourneys;
+  List<UserJourneyDTO> userJourneys;
   @NotNull double burnRate;
   @NotNull double errorBudgetRemainingPercentage;
   @NotNull int errorBudgetRemaining;
   @NotNull int totalErrorBudget;
-  @NotNull SLOTargetType sloTargetType;
+  SLOTargetType sloTargetType;
   ServiceLevelIndicatorType sliType;
   @JsonIgnore String sliIdentifier;
   @NotNull ServiceLevelObjectiveType sloType;
@@ -59,9 +59,23 @@ public class SLOHealthListView {
     return ErrorBudgetRisk.getFromPercentage(errorBudgetRemainingPercentage);
   }
 
+  public static SLOHealthListViewBuilder getSLOHealthListViewBuilderForDeletedSimpleSLO(
+      AbstractServiceLevelObjective serviceLevelObjective) {
+    return SLOHealthListView.builder()
+        .sloIdentifier(serviceLevelObjective.getIdentifier())
+        .projectParams(ProjectParams.builder()
+                           .accountIdentifier(serviceLevelObjective.getAccountId())
+                           .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                           .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                           .build())
+        .sloType(ServiceLevelObjectiveType.SIMPLE)
+        .sloError(SLOError.getErrorForDeletionOfSimpleSLOInConfigurationListView())
+        .name(serviceLevelObjective.getName());
+  }
+
   public static SLOHealthListViewBuilder getSLOHealthListViewBuilder(
       AbstractServiceLevelObjective serviceLevelObjective, List<UserJourneyDTO> userJourneys,
-      int totalErrorBudgetMinutes, SLOHealthIndicator sloHealthIndicator) {
+      int totalErrorBudgetMinutes, SLOHealthIndicator sloHealthIndicator, SLOError sloError) {
     return SLOHealthListView.builder()
         .sloIdentifier(serviceLevelObjective.getIdentifier())
         .name(serviceLevelObjective.getName())
@@ -83,8 +97,6 @@ public class SLOHealthListView {
                            .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
                            .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
                            .build())
-        .sloError(SLOError.builder()
-                      .failedState(sloHealthIndicator.getFailedState() != null && sloHealthIndicator.getFailedState())
-                      .build());
+        .sloError(sloError);
   }
 }

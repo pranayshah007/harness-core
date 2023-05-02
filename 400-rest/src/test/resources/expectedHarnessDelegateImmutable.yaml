@@ -44,6 +44,7 @@ metadata:
   namespace: harness-delegate
 spec:
   replicas: 1
+  minReadySeconds: 120
   selector:
     matchLabels:
       harness.io/name: harness-delegate
@@ -116,6 +117,10 @@ spec:
           value: "true"
         - name: LOG_STREAMING_SERVICE_URL
           value: "http://localhost:8079"
+        - name: DELEGATE_RESOURCE_THRESHOLD
+          value: ""
+        - name: DYNAMIC_REQUEST_HANDLING
+          value: "false"
 
 
 ---
