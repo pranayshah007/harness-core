@@ -41,6 +41,12 @@ logging:
       target: STDOUT
       stackdriverLogEnabled: false
 
+segmentConfiguration:
+  enabled: true #segmentConfigEnable
+  url: "segment_url_place_holder"
+  apiKey: "segment_api_key"
+  certValidationRequired: false
+
 mongo:
   uri: mongodb://localhost:27017/cvng
   connectTimeout: 30000

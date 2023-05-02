@@ -455,6 +455,8 @@ import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.CvNextGenRegistrars;
+import io.harness.telemetry.AbstractTelemetryModule;
+import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.template.TemplateResourceClientModule;
 import io.harness.threading.ThreadPool;
 import io.harness.timescaledb.TimeScaleDBConfig;
@@ -534,6 +536,12 @@ public class CVServiceModule extends AbstractModule {
         AuthorizationServiceHeader.CV_NEXT_GEN.toString()));
     install(new OpaClientModule(verificationConfiguration.getOpaClientConfig(),
         verificationConfiguration.getPolicyManagerSecret(), CV_NEXT_GEN.getServiceId()));
+    install(new AbstractTelemetryModule() {
+      @Override
+      public TelemetryConfiguration telemetryConfiguration() {
+        return verificationConfiguration.getSegmentConfiguration();
+      }
+    });
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(SRMPersistence.class).to(SRMMongoPersistence.class);
     bind(TimeSeriesRecordService.class).to(TimeSeriesRecordServiceImpl.class);
