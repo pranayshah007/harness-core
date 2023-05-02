@@ -65,6 +65,7 @@ import io.harness.connector.ConnectorDTO;
 import io.harness.connector.entities.Connector;
 import io.harness.connector.gitsync.ConnectorGitSyncHelper;
 import io.harness.controller.PrimaryVersionChangeScheduler;
+import io.harness.credit.schedular.CICreditExpiryIteratorHandler;
 import io.harness.credit.schedular.CreditExpiryIteratorHandler;
 import io.harness.enforcement.client.CustomRestrictionRegisterConfiguration;
 import io.harness.enforcement.client.RestrictionUsageRegisterConfiguration;
@@ -645,7 +646,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     injector.getInstance(GitlabSCMOAuthTokenRefresher.class)
         .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
     injector.getInstance(NGVaultUnsetRenewalHandler.class).registerIterators(5);
-    injector.getInstance(CreditExpiryIteratorHandler.class).registerIterator(2);
+    injector.getInstance(CICreditExpiryIteratorHandler.class).registerIterator(2);
   }
 
   public void registerJobs(Injector injector) {
