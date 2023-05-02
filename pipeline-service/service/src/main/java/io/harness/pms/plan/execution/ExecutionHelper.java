@@ -112,6 +112,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.InternalServerErrorException;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
@@ -303,19 +304,17 @@ public class ExecutionHelper {
   private ExecutionMetadata buildExecutionMetadata(@NotNull String pipelineIdentifier, String moduleType,
       ExecutionTriggerInfo triggerInfo, PipelineEntity pipelineEntity, String executionId,
       RetryExecutionInfo retryExecutionInfo, List<NotificationRules> notificationRules, boolean isDebug) {
-    ExecutionMetadata.Builder builder =
-        ExecutionMetadata.newBuilder()
-            .setExecutionUuid(executionId)
-            .setTriggerInfo(triggerInfo)
-            .setModuleType(EmptyPredicate.isEmpty(moduleType) ? "" : moduleType)
-            .setRunSequence(pipelineMetadataService.incrementRunSequence(pipelineEntity))
-            .setPipelineIdentifier(pipelineIdentifier)
-            .setRetryInfo(retryExecutionInfo)
-            .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
-            .setIsNotificationConfigured(isNotEmpty(notificationRules))
-            .setHarnessVersion(pipelineEntity.getHarnessVersion())
-            .setIsDebug(isDebug)
-            .setExecutionMode(ExecutionMode.NORMAL);
+    ExecutionMetadata.Builder builder = ExecutionMetadata.newBuilder()
+                                            .setExecutionUuid(executionId)
+                                            .setTriggerInfo(triggerInfo)
+                                            .setModuleType(EmptyPredicate.isEmpty(moduleType) ? "" : moduleType)
+                                            .setPipelineIdentifier(pipelineIdentifier)
+                                            .setRetryInfo(retryExecutionInfo)
+                                            .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
+                                            .setIsNotificationConfigured(isNotEmpty(notificationRules))
+                                            .setHarnessVersion(pipelineEntity.getHarnessVersion())
+                                            .setIsDebug(isDebug)
+                                            .setExecutionMode(ExecutionMode.NORMAL);
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(
         pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo(), pipelineEntity.getConnectorRef());
     if (gitSyncBranchContext != null) {
@@ -521,7 +520,19 @@ public class ExecutionHelper {
       }
       plan = transformPlan(plan, isRetry, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier,
           executionMode, rollbackStageIds);
-      return orchestrationService.startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
+
+      // Currently not adding transaction here to validate if there are errors after plan creation
+      ExecutionMetadata finalExecutionMetadata =
+          executionMetadata.toBuilder()
+              .setRunSequence(pipelineMetadataService.incrementRunSequence(
+                  accountId, orgIdentifier, projectIdentifier, executionMetadata.getPipelineIdentifier()))
+              .build();
+      try {
+        return orchestrationService.startExecution(plan, abstractions, finalExecutionMetadata, planExecutionMetadata);
+      } catch (Exception e) {
+        log.warn("Add transaction for increment and startExecution as execution failed after plan creation");
+        throw new InternalServerErrorException(e.getMessage());
+      }
     }
   }
 

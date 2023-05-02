@@ -594,7 +594,6 @@ public class CDDashboardOverviewResource {
   @Path("/getPipelineExecutionCount")
   @ApiOperation(value = "Get pipeline execution count for a service grouped on artifact and status",
       nickname = "getPipelineExecutionCount")
-  @Hidden
   public ResponseDTO<PipelineExecutionCountInfo>
   getPipelineExecutionCount(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,

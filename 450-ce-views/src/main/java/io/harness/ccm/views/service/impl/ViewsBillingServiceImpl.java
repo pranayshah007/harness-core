@@ -1361,11 +1361,12 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       final boolean groupByCurrentBusinessMapping =
           groupByBusinessMappingId != null && groupByBusinessMappingId.equals(sharedCostBusinessMapping.getUuid());
 
+      ViewQueryParams modifiedQueryParams = viewsQueryHelper.buildQueryParamsWithSkipGroupBy(queryParams, false);
       List<QLCEViewGroupBy> businessMappingGroupBy =
           viewsQueryHelper.createBusinessMappingGroupBy(sharedCostBusinessMapping);
       SelectQuery query = viewBillingServiceHelper.getQuery(
           viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid()), groupBy,
-          businessMappingGroupBy, aggregateFunction, sort, cloudProviderTableName, queryParams,
+          businessMappingGroupBy, aggregateFunction, sort, cloudProviderTableName, modifiedQueryParams,
           sharedCostBusinessMapping, Collections.emptyList());
       TableResult result = getTableResultWithLimitAndOffset(bigQuery, query, limit, offset);
 

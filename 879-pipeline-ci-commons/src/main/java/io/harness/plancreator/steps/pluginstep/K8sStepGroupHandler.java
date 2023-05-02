@@ -33,6 +33,7 @@ public class K8sStepGroupHandler implements StepGroupInfraHandler {
             .stepGroupName(config.getName())
             .infrastructure(
                 ContainerK8sInfra.builder().spec(((K8sDirectInfra) config.getStepGroupInfra()).getSpec()).build())
+            .sharedPaths(config.getSharedPaths())
             .stepsExecutionConfig(StepsExecutionConfig.builder().steps(config.getSteps()).build())
             .build();
     String initNodeId = "init-" + ctx.getCurrentField().getNode().getUuid();

@@ -7,7 +7,7 @@
 
 package io.harness.ci.buildstate;
 
-import static io.harness.beans.serializer.RunTimeInputHandler.resolveSecretRefWithDefaultValue;
+import static io.harness.ci.serializer.BaseRunTimeInputHandler.resolveSecretRefWithDefaultValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;

@@ -8,6 +8,8 @@
 package software.wings.delegatetasks.azure;
 
 import static io.harness.azure.model.AzureConstants.AZURE_AUTH_PLUGIN_INSTALL_HINT;
+import static io.harness.azure.model.AzureConstants.AZURE_CONFIG_DIR;
+import static io.harness.azure.model.AzureConstants.AZURE_LOGIN_CONFIG_DIR_PATH;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_FULL_NAME_PATTERN;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_NON_PRODUCTION_TYPE;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_PRODUCTION_TYPE;
@@ -108,6 +110,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -643,6 +646,8 @@ public class AzureAsyncTaskHelper {
         String apiServerId = Exec.getValueFromArgsList(userConfig.getExec().getArgs(), KUBECFG_ARGS_SERVER_ID);
         azureKubeConfig.setAadToken(fetchAksAADToken(azureConfig, apiServerId));
         Map<String, String> env = new HashMap<>();
+        env.put(AZURE_CONFIG_DIR,
+            Paths.get(workingDirectory, AZURE_LOGIN_CONFIG_DIR_PATH).normalize().toAbsolutePath().toString());
         if (AzureAuthenticationType.SERVICE_PRINCIPAL_CERT == azureConfig.getAzureAuthenticationType()) {
           AzureCliClient.loginToAksCluster(azureConfig, env, workingDirectory, logCallback);
         }
