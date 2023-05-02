@@ -196,7 +196,7 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
   private void syncCILicense(CIModuleLicense ciModuleLicense, List<InvoiceLineItem> items) {
     items.forEach(item -> {
       if (isPaymentConsequence(item)) {
-        if (isItem("DEVELOPERS", item)) {
+        if (isItem(DEVELOPERS_SUPPORT_TYPE, item)) {
           ciModuleLicense.setNumberOfCommitters(
               ciModuleLicense.getNumberOfCommitters() + item.getQuantity().intValue());
           setLicenseProperty(item, ciModuleLicense);
