@@ -740,11 +740,9 @@ public enum FeatureName {
       HarnessTeam.GTM),
   SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG(
       "Will fire the artifact and manifest triggers for all the versions in the polling response instead of the latest only",
-      HarnessTeam.SPG);
+      HarnessTeam.SPG),
   SRM_SPLUNK_SIGNALFX("Will enable SignalFX metric health source in SRM", HarnessTeam.CV),
-      SRM_TELEMETRY(
-          "Will enabl956-feature-flag-beans/src/main/java/io/harness/beans/FeatureName.javae telemetry for verify step result",
-          HarnessTeam.CV);
+  SRM_TELEMETRY("Will enable telemetry for verify step result", HarnessTeam.CV);
 
   @Deprecated
   FeatureName() {
