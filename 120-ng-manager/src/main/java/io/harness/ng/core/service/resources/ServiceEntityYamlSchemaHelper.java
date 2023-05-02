@@ -30,7 +30,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
+@AllArgsConstructor(access = AccessLevel.PUBLIC, onConstructor = @__({ @Inject }))
 @Singleton
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
@@ -38,7 +38,7 @@ public class ServiceEntityYamlSchemaHelper {
   private NGFeatureFlagHelperService featureFlagHelperService;
   private YamlSchemaValidator yamlSchemaValidator;
 
-  void validateSchema(String accountId, String yaml) {
+  public void validateSchema(String accountId, String yaml) {
     if (featureFlagHelperService.isEnabled(accountId, FeatureName.NG_SVC_ENV_REDESIGN)
         && !featureFlagHelperService.isEnabled(accountId, FeatureName.DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION)
         && isNotEmpty(yaml)) {

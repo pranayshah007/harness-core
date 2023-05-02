@@ -64,6 +64,7 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.resources.ServiceEntityYamlSchemaHelper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
@@ -149,6 +150,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject private ServiceCustomSweepingOutputHelper serviceCustomSweepingOutputHelper;
+  @Inject private ServiceEntityYamlSchemaHelper serviceEntityYamlSchemaHelper;
 
   private static final Pattern serviceVariablePattern = Pattern.compile(SERVICE_VARIABLES_PATTERN_REGEX);
   private static final Pattern envVariablePattern = Pattern.compile(ENV_VARIABLES_PATTERN_REGEX);
@@ -222,10 +224,9 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
           serviceTags, AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
           AmbianceUtils.getProjectIdentifier(ambiance));
     }
-    Set<String> envRefs =
-        envClusterRefs.stream().map(envClusterRefs1 -> envClusterRefs1.getEnvRef()).collect(Collectors.toSet());
+    Set<String> envRefs = envClusterRefs.stream().map(EnvClusterRefs::getEnvRef).collect(Collectors.toSet());
     List<ParameterField<String>> envRefsList =
-        envRefs.stream().map(envRef -> ParameterField.createValueField(envRef)).collect(Collectors.toList());
+        envRefs.stream().map(ParameterField::createValueField).collect(Collectors.toList());
     stepParameters.setEnvRefs(envRefsList);
   }
 
@@ -411,7 +412,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   }
 
   private List<Environment> getEnvironmentsFromEnvRef(Ambiance ambiance, List<ParameterField<String>> envRefs) {
-    List<String> envRefsIds = envRefs.stream().map(e -> e.getValue()).collect(Collectors.toList());
+    List<String> envRefsIds = envRefs.stream().map(ParameterField::getValue).collect(Collectors.toList());
 
     List<Environment> environments =
         environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(AmbianceUtils.getAccountId(ambiance),
@@ -701,6 +702,15 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       mergedServiceYaml = mergeServiceInputsIntoService(serviceEntity.getYaml(), stepParameters.getInputs().getValue());
     } else {
       mergedServiceYaml = serviceEntity.getYaml();
+    }
+
+    // ToDo: Remove once we see logs in production
+    try {
+      serviceEntityYamlSchemaHelper.validateSchema(serviceEntity.getAccountId(), mergedServiceYaml);
+    } catch (Exception ex) {
+      log.error(
+          String.format("Service %s failed schema validation in the service step", serviceOpt.get().getIdentifier()),
+          ex);
     }
 
     final NGServiceConfig ngServiceConfig;
