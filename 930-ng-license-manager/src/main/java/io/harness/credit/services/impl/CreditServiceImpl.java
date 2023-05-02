@@ -52,7 +52,7 @@ public class CreditServiceImpl implements CreditService {
   }
 
   @Override
-  public void checkForCreditExpiry(Credit entity) {
+  public void setCreditStatusExpired(Credit entity) {
     entity.setCreditStatus(CreditStatus.EXPIRED);
     creditRepository.save(entity);
   }

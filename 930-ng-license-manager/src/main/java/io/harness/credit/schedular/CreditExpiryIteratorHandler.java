@@ -30,16 +30,13 @@ import java.time.Duration;
 import java.time.Instant;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Handler class that checks for license expiry
- * @author rktummala
- */
-
 @Slf4j
 @OwnedBy(HarnessTeam.GTM)
 public class CreditExpiryIteratorHandler implements Handler<CICredit> {
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(60);
   private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(15);
+  private static final Duration TARGET_INTERVAL = ofSeconds(31);
+  private static final Duration INTERVAL = ofHours(6);
 
   private final PersistenceIteratorFactory persistenceIteratorFactory;
   private final MorphiaPersistenceProvider<CICredit> persistenceProvider;
@@ -58,13 +55,13 @@ public class CreditExpiryIteratorHandler implements Handler<CICredit> {
         PersistenceIteratorFactory.PumpExecutorOptions.builder()
             .name(this.getClass().getName())
             .poolSize(threadPoolSize)
-            .interval(ofHours(6))
+            .interval(INTERVAL)
             .build(),
         Credit.class,
         MongoPersistenceIterator.<CICredit, MorphiaFilterExpander<CICredit>>builder()
             .clazz(CICredit.class)
             .fieldName(CreditsKeys.creditExpiryCheckIteration)
-            .targetInterval(ofSeconds(31))
+            .targetInterval(TARGET_INTERVAL)
             .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
             .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
             .handler(this)
@@ -87,7 +84,7 @@ public class CreditExpiryIteratorHandler implements Handler<CICredit> {
       return;
     }
     try {
-      creditService.checkForCreditExpiry(entity);
+      creditService.setCreditStatusExpired(entity);
     } catch (Exception ex) {
       log.error("Error while handling credit expiry check", ex);
     }

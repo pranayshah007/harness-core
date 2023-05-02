@@ -20,5 +20,5 @@ public interface CreditService {
 
   CreditDTO purchaseCredit(String accountIdentifier, CreditDTO creditDTO);
 
-  void checkForCreditExpiry(Credit entity);
+  void setCreditStatusExpired(Credit entity);
 }
