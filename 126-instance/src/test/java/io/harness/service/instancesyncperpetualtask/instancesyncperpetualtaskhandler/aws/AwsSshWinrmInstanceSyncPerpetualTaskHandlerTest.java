@@ -103,7 +103,7 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandlerTest extends InstancesTe
                                                    .infrastructureKey(INFRASTRUCTURE_KEY)
                                                    .credentialsRef(CRED_REF)
                                                    .hostConnectionType(HostConnectionTypeKind.PRIVATE_IP)
-                                                   .tags(new HashMap<>())
+                                                   .hostTags(new HashMap<>())
                                                    .build();
     SecretSpec secretSpec = Mockito.mock(SecretSpec.class);
     doReturn(SSHKeySpecDTO.builder().port(PORT).build()).when(secretSpec).toDTO();

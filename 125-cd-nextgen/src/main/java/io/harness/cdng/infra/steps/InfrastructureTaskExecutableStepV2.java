@@ -164,7 +164,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     boolean skipInstances = ParameterFieldHelper.getBooleanParameterFieldValue(stepParameters.getSkipInstances());
 
     validateResources(ambiance, infraSpec);
-    setInfraIdentifierAndName(infraSpec, infrastructureConfig);
+    setCommonInfraDetails(infraSpec, infrastructureConfig);
     resolver.updateExpressions(ambiance, infraSpec);
 
     final NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true, LOG_SUFFIX);
@@ -304,12 +304,14 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
   }
 
-  public void setInfraIdentifierAndName(Infrastructure infraSpec, InfrastructureConfig infrastructureConfig) {
+  public void setCommonInfraDetails(Infrastructure infraSpec, InfrastructureConfig infrastructureConfig) {
     if (infraSpec instanceof InfrastructureDetailsAbstract) {
       ((InfrastructureDetailsAbstract) infraSpec)
           .setInfraIdentifier(infrastructureConfig.getInfrastructureDefinitionConfig().getIdentifier());
       ((InfrastructureDetailsAbstract) infraSpec)
           .setInfraName(infrastructureConfig.getInfrastructureDefinitionConfig().getName());
+      ((InfrastructureDetailsAbstract) infraSpec)
+          .setInfraTags(infrastructureConfig.getInfrastructureDefinitionConfig().getTags());
     }
   }
 

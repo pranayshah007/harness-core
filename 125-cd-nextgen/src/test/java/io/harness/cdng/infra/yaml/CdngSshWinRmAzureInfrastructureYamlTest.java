@@ -50,9 +50,9 @@ public class CdngSshWinRmAzureInfrastructureYamlTest extends CategoryTest {
     assertThat(infrastructure.applyOverrides(infrastructureNew))
         .extracting(SshWinRmAzureInfrastructure::getCredentialsRef, SshWinRmAzureInfrastructure::getConnectorRef,
             SshWinRmAzureInfrastructure::getSubscriptionId, SshWinRmAzureInfrastructure::getResourceGroup,
-            SshWinRmAzureInfrastructure::getTags, SshWinRmAzureInfrastructure::getHostConnectionType)
+            SshWinRmAzureInfrastructure::getInfraTags, SshWinRmAzureInfrastructure::getHostConnectionType)
         .containsExactly(infrastructureNew.getCredentialsRef(), infrastructureNew.getConnectorRef(),
-            infrastructureNew.getSubscriptionId(), infrastructureNew.getResourceGroup(), infrastructure.getTags(),
+            infrastructureNew.getSubscriptionId(), infrastructureNew.getResourceGroup(), infrastructure.getInfraTags(),
             infrastructure.getHostConnectionType());
   }
 

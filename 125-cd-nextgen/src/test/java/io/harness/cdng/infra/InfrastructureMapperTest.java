@@ -332,7 +332,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                      .credentialsRef("credentials-ref")
                                                      .resourceGroup("res-group")
                                                      .subscriptionId("sub-id")
-                                                     .tags(Collections.singletonMap("tag", "val"))
+                                                     .hostTags(Collections.singletonMap("tag", "val"))
                                                      .hostConnectionType("Hostname")
                                                      .environment(environment)
                                                      .build();
@@ -558,9 +558,11 @@ public class InfrastructureMapperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSetInfraIdentifierAndName_InfrastructureDetailsAbstract() {
     InfrastructureOutcomeAbstract k8SDirectInfrastructureOutcome = K8sDirectInfrastructureOutcome.builder().build();
-    infrastructureMapper.setInfraIdentifierAndName(k8SDirectInfrastructureOutcome, "Identifier", "Name");
+    infrastructureMapper.setCommonInfraDetails(
+        k8SDirectInfrastructureOutcome, "Identifier", "Name", Collections.singletonMap("tagKey", "tagValue"));
     assertThat(k8SDirectInfrastructureOutcome.getInfraIdentifier()).isEqualTo("Identifier");
     assertThat(k8SDirectInfrastructureOutcome.getInfraName()).isEqualTo("Name");
+    assertThat(k8SDirectInfrastructureOutcome.getTags().get("tagKey")).isEqualTo("tagValue");
   }
 
   private ProvisionerExpressionEvaluator getEmptyProvisionerExpressionEvaluator() {

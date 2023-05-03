@@ -14,6 +14,7 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
 
 import io.swagger.annotations.ApiModelProperty;
+import java.util.Map;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -25,6 +26,9 @@ public abstract class InfrastructureDetailsAbstract {
   @ApiModelProperty(hidden = true)
   public String infraIdentifier;
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) public String infraName;
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  public Map<String, String> infraTags;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> provisioner;
 
   @ApiModelProperty(hidden = true) public Boolean skipInstances;
@@ -35,11 +39,17 @@ public abstract class InfrastructureDetailsAbstract {
   public String getInfraName() {
     return infraName;
   }
+  public Map<String, String> getInfraTags() {
+    return infraTags;
+  }
   public void setInfraIdentifier(String infraIdentifier) {
     this.infraIdentifier = infraIdentifier;
   }
   public void setInfraName(String infraName) {
     this.infraName = infraName;
+  }
+  public void setInfraTags(Map<String, String> tags) {
+    this.infraTags = tags;
   }
 
   public Boolean getSkipInstances() {

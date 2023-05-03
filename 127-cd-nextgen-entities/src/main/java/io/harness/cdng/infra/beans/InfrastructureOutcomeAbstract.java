@@ -10,6 +10,7 @@ package io.harness.cdng.infra.beans;
 import io.harness.cdng.infra.Connector;
 
 import io.swagger.annotations.ApiModelProperty;
+import java.util.Map;
 import lombok.Data;
 import lombok.Getter;
 
@@ -28,6 +29,9 @@ public abstract class InfrastructureOutcomeAbstract implements InfrastructureOut
   @Deprecated
   public String infraName;
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) public String name;
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  public Map<String, String> tags;
   @ApiModelProperty(hidden = true) public Boolean skipInstances;
 
   private Connector connector;

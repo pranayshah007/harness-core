@@ -144,8 +144,8 @@ public class SshWinRmAzureInfrastructure
     if (!ParameterField.isNull(config.getCredentialsRef())) {
       resultantInfra = resultantInfra.withCredentialsRef(config.getCredentialsRef());
     }
-    if (!ParameterField.isNull(config.getTags())) {
-      resultantInfra = resultantInfra.withTags(config.getTags());
+    if (!ParameterField.isNull(config.getInfraTags())) {
+      resultantInfra = resultantInfra.withTags(config.getInfraTags());
     }
     if (!ParameterField.isNull(config.getHostConnectionType())) {
       resultantInfra = resultantInfra.withHostConnectionType(config.getHostConnectionType());

@@ -80,6 +80,7 @@ import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
@@ -112,8 +113,8 @@ public class InfrastructureMapper {
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, k8SDirectInfrastructure.getInfrastructureKeyValues()))
                 .build();
-        setInfraIdentifierAndName(k8SDirectInfrastructureOutcome, k8SDirectInfrastructure.getInfraIdentifier(),
-            k8SDirectInfrastructure.getInfraName());
+        setCommonInfraDetails(k8SDirectInfrastructureOutcome, k8SDirectInfrastructure.getInfraIdentifier(),
+            k8SDirectInfrastructure.getInfraName(), k8SDirectInfrastructure.getInfraTags());
         infrastructureOutcome = k8SDirectInfrastructureOutcome;
         break;
 
@@ -135,8 +136,8 @@ public class InfrastructureMapper {
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, k8sGcpInfrastructure.getInfrastructureKeyValues()))
                 .build();
-        setInfraIdentifierAndName(k8sGcpInfrastructureOutcome, k8sGcpInfrastructure.getInfraIdentifier(),
-            k8sGcpInfrastructure.getInfraName());
+        setCommonInfraDetails(k8sGcpInfrastructureOutcome, k8sGcpInfrastructure.getInfraIdentifier(),
+            k8sGcpInfrastructure.getInfraName(), k8sGcpInfrastructure.getInfraTags());
         infrastructureOutcome = k8sGcpInfrastructureOutcome;
         break;
 
@@ -156,8 +157,9 @@ public class InfrastructureMapper {
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, serverlessAwsLambdaInfrastructure.getInfrastructureKeyValues()))
                 .build();
-        setInfraIdentifierAndName(serverlessAwsLambdaInfrastructureOutcome,
-            serverlessAwsLambdaInfrastructure.getInfraIdentifier(), serverlessAwsLambdaInfrastructure.getInfraName());
+        setCommonInfraDetails(serverlessAwsLambdaInfrastructureOutcome,
+            serverlessAwsLambdaInfrastructure.getInfraIdentifier(), serverlessAwsLambdaInfrastructure.getInfraName(),
+            serverlessAwsLambdaInfrastructure.getInfraTags());
         infrastructureOutcome = serverlessAwsLambdaInfrastructureOutcome;
         break;
 
@@ -187,8 +189,8 @@ public class InfrastructureMapper {
                 .useClusterAdminCredentials(ParameterFieldHelper.getBooleanParameterFieldValue(
                     k8sAzureInfrastructure.getUseClusterAdminCredentials()))
                 .build();
-        setInfraIdentifierAndName(k8sAzureInfrastructureOutcome, k8sAzureInfrastructure.getInfraIdentifier(),
-            k8sAzureInfrastructure.getInfraName());
+        setCommonInfraDetails(k8sAzureInfrastructureOutcome, k8sAzureInfrastructure.getInfraIdentifier(),
+            k8sAzureInfrastructure.getInfraName(), k8sAzureInfrastructure.getInfraTags());
         infrastructureOutcome = k8sAzureInfrastructureOutcome;
         break;
 
@@ -210,8 +212,8 @@ public class InfrastructureMapper {
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, pdcInfrastructure.getInfrastructureKeyValues()))
                 .build();
-        setInfraIdentifierAndName(
-            pdcInfrastructureOutcome, pdcInfrastructure.getInfraIdentifier(), pdcInfrastructure.getInfraName());
+        setCommonInfraDetails(pdcInfrastructureOutcome, pdcInfrastructure.getInfraIdentifier(),
+            pdcInfrastructure.getInfraName(), pdcInfrastructure.getInfraTags());
         infrastructureOutcome = pdcInfrastructureOutcome;
         break;
 
@@ -227,14 +229,14 @@ public class InfrastructureMapper {
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, infrastructure.getInfrastructureKeyValues()))
-                .tags(getParameterFieldValueOrEvaluateProvisionerExpression(expressionEvaluator,
+                .hostTags(getParameterFieldValueOrEvaluateProvisionerExpression(expressionEvaluator,
                     isDynamicallyProvisioned, sshWinRmAwsInfrastructure.getAwsInstanceFilter().getTags(),
                     ExpressionMode.RETURN_NULL_IF_UNRESOLVED))
                 .hostConnectionType(getParameterFieldValue(sshWinRmAwsInfrastructure.getHostConnectionType()))
                 .build();
 
-        setInfraIdentifierAndName(sshWinRmAwsInfrastructureOutcome, sshWinRmAwsInfrastructure.getInfraIdentifier(),
-            sshWinRmAwsInfrastructure.getInfraName());
+        setCommonInfraDetails(sshWinRmAwsInfrastructureOutcome, sshWinRmAwsInfrastructure.getInfraIdentifier(),
+            sshWinRmAwsInfrastructure.getInfraName(), sshWinRmAwsInfrastructure.getInfraTags());
         infrastructureOutcome = sshWinRmAwsInfrastructureOutcome;
         break;
 
@@ -250,16 +252,16 @@ public class InfrastructureMapper {
                     getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
                         sshWinRmAzureInfrastructure.getResourceGroup(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
                 .credentialsRef(getParameterFieldValue(sshWinRmAzureInfrastructure.getCredentialsRef()))
-                .tags(
+                .hostTags(
                     getParameterFieldValueOrEvaluateProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        sshWinRmAzureInfrastructure.getTags(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED))
+                        sshWinRmAzureInfrastructure.getInfraTags(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED))
                 .hostConnectionType(getParameterFieldValue(sshWinRmAzureInfrastructure.getHostConnectionType()))
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, sshWinRmAzureInfrastructure.getInfrastructureKeyValues()))
                 .build();
-        setInfraIdentifierAndName(sshWinRmAzureInfrastructureOutcome, sshWinRmAzureInfrastructure.getInfraIdentifier(),
-            sshWinRmAzureInfrastructure.getInfraName());
+        setCommonInfraDetails(sshWinRmAzureInfrastructureOutcome, sshWinRmAzureInfrastructure.getInfraIdentifier(),
+            sshWinRmAzureInfrastructure.getInfraName(), sshWinRmAzureInfrastructure.getInfraTags());
         infrastructureOutcome = sshWinRmAzureInfrastructureOutcome;
         break;
 
@@ -278,8 +280,8 @@ public class InfrastructureMapper {
                     getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
                         azureWebAppInfrastructure.getResourceGroup(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
                 .build();
-        setInfraIdentifierAndName(azureWebAppInfrastructureOutcome, azureWebAppInfrastructure.getInfraIdentifier(),
-            azureWebAppInfrastructure.getInfraName());
+        setCommonInfraDetails(azureWebAppInfrastructureOutcome, azureWebAppInfrastructure.getInfraIdentifier(),
+            azureWebAppInfrastructure.getInfraName(), azureWebAppInfrastructure.getInfraTags());
         infrastructureOutcome = azureWebAppInfrastructureOutcome;
         break;
 
@@ -298,8 +300,8 @@ public class InfrastructureMapper {
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, ecsInfrastructure.getInfrastructureKeyValues()))
                 .build();
-        setInfraIdentifierAndName(
-            ecsInfrastructureOutcome, ecsInfrastructure.getInfraIdentifier(), ecsInfrastructure.getInfraName());
+        setCommonInfraDetails(ecsInfrastructureOutcome, ecsInfrastructure.getInfraIdentifier(),
+            ecsInfrastructure.getInfraName(), ecsInfrastructure.getInfraTags());
         infrastructureOutcome = ecsInfrastructureOutcome;
         break;
 
@@ -318,8 +320,8 @@ public class InfrastructureMapper {
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, googleFunctionsInfrastructure.getInfrastructureKeyValues()))
                 .build();
-        setInfraIdentifierAndName(googleFunctionsInfrastructureOutcome,
-            googleFunctionsInfrastructure.getInfraIdentifier(), googleFunctionsInfrastructure.getInfraName());
+        setCommonInfraDetails(googleFunctionsInfrastructureOutcome, googleFunctionsInfrastructure.getInfraIdentifier(),
+            googleFunctionsInfrastructure.getInfraName(), googleFunctionsInfrastructure.getInfraTags());
         infrastructureOutcome = googleFunctionsInfrastructureOutcome;
         break;
 
@@ -332,8 +334,8 @@ public class InfrastructureMapper {
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, elastigroupInfrastructure.getInfrastructureKeyValues()))
                 .build();
-        setInfraIdentifierAndName(elastigroupInfrastructureOutcome, elastigroupInfrastructure.getInfraIdentifier(),
-            elastigroupInfrastructure.getInfraName());
+        setCommonInfraDetails(elastigroupInfrastructureOutcome, elastigroupInfrastructure.getInfraIdentifier(),
+            elastigroupInfrastructure.getInfraName(), elastigroupInfrastructure.getInfraTags());
         infrastructureOutcome = elastigroupInfrastructureOutcome;
         break;
 
@@ -349,8 +351,8 @@ public class InfrastructureMapper {
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, asgInfrastructure.getInfrastructureKeyValues()))
                 .build();
-        setInfraIdentifierAndName(
-            asgInfrastructureOutcome, asgInfrastructure.getInfraIdentifier(), asgInfrastructure.getInfraName());
+        setCommonInfraDetails(asgInfrastructureOutcome, asgInfrastructure.getInfraIdentifier(),
+            asgInfrastructure.getInfraName(), asgInfrastructure.getInfraTags());
         infrastructureOutcome = asgInfrastructureOutcome;
         break;
 
@@ -376,8 +378,9 @@ public class InfrastructureMapper {
                 .infrastructureKey(
                     InfrastructureKey.generate(service, environmentOutcome, infraKeys.toArray(new String[0])))
                 .build();
-        setInfraIdentifierAndName(customDeploymentInfrastructureOutcome,
-            customDeploymentInfrastructure.getInfraIdentifier(), customDeploymentInfrastructure.getInfraName());
+        setCommonInfraDetails(customDeploymentInfrastructureOutcome,
+            customDeploymentInfrastructure.getInfraIdentifier(), customDeploymentInfrastructure.getInfraName(),
+            customDeploymentInfrastructure.getInfraTags());
         infrastructureOutcome = customDeploymentInfrastructureOutcome;
         break;
 
@@ -399,8 +402,8 @@ public class InfrastructureMapper {
                     service, environmentOutcome, tanzuInfrastructure.getInfrastructureKeyValues()))
                 .build();
 
-        setInfraIdentifierAndName(
-            tanzuInfrastructureOutcome, tanzuInfrastructure.getInfraIdentifier(), tanzuInfrastructure.getInfraName());
+        setCommonInfraDetails(tanzuInfrastructureOutcome, tanzuInfrastructure.getInfraIdentifier(),
+            tanzuInfrastructure.getInfraName(), tanzuInfrastructure.getInfraTags());
         infrastructureOutcome = tanzuInfrastructureOutcome;
         break;
       case InfrastructureKind.AWS_SAM:
@@ -415,8 +418,8 @@ public class InfrastructureMapper {
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, awsSamInfrastructure.getInfrastructureKeyValues()))
                 .build();
-        setInfraIdentifierAndName(awsSamInfrastructureOutcome, awsSamInfrastructure.getInfraIdentifier(),
-            awsSamInfrastructure.getInfraName());
+        setCommonInfraDetails(awsSamInfrastructureOutcome, awsSamInfrastructure.getInfraIdentifier(),
+            awsSamInfrastructure.getInfraName(), awsSamInfrastructure.getInfraTags());
         infrastructureOutcome = awsSamInfrastructureOutcome;
         break;
 
@@ -432,8 +435,8 @@ public class InfrastructureMapper {
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, awsLambdaInfrastructure.getInfrastructureKeyValues()))
                 .build();
-        setInfraIdentifierAndName(awsLambdaInfrastructureOutcome, awsLambdaInfrastructure.getInfraIdentifier(),
-            awsLambdaInfrastructure.getInfraName());
+        setCommonInfraDetails(awsLambdaInfrastructureOutcome, awsLambdaInfrastructure.getInfraIdentifier(),
+            awsLambdaInfrastructure.getInfraName(), awsLambdaInfrastructure.getInfraTags());
         infrastructureOutcome = awsLambdaInfrastructureOutcome;
         break;
 
@@ -455,8 +458,8 @@ public class InfrastructureMapper {
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, k8sAwsInfrastructure.getInfrastructureKeyValues()))
                 .build();
-        setInfraIdentifierAndName(k8sAwsInfrastructureOutcome, k8sAwsInfrastructure.getInfraIdentifier(),
-            k8sAwsInfrastructure.getInfraName());
+        setCommonInfraDetails(k8sAwsInfrastructureOutcome, k8sAwsInfrastructure.getInfraIdentifier(),
+            k8sAwsInfrastructure.getInfraName(), k8sAwsInfrastructure.getInfraTags());
         infrastructureOutcome = k8sAwsInfrastructureOutcome;
         break;
 
@@ -479,8 +482,8 @@ public class InfrastructureMapper {
                     service, environmentOutcome, rancherInfrastructure.getInfrastructureKeyValues()))
                 .build();
 
-        setInfraIdentifierAndName(rancherInfrastructureOutcome, rancherInfrastructure.getInfraIdentifier(),
-            rancherInfrastructure.getInfraName());
+        setCommonInfraDetails(rancherInfrastructureOutcome, rancherInfrastructure.getInfraIdentifier(),
+            rancherInfrastructure.getInfraName(), rancherInfrastructure.getInfraTags());
         infrastructureOutcome = rancherInfrastructureOutcome;
         break;
 
@@ -539,11 +542,12 @@ public class InfrastructureMapper {
     }
   }
 
-  public void setInfraIdentifierAndName(
-      InfrastructureOutcomeAbstract infrastructureOutcome, String infraIdentifier, String infraName) {
+  public void setCommonInfraDetails(InfrastructureOutcomeAbstract infrastructureOutcome, String infraIdentifier,
+      String infraName, Map<String, String> tags) {
     infrastructureOutcome.setInfraIdentifier(infraIdentifier);
     infrastructureOutcome.setInfraName(infraName);
     infrastructureOutcome.setName(infraName);
+    infrastructureOutcome.setTags(tags);
   }
 
   private String getValueOrExpression(ParameterField<String> parameterField) {
