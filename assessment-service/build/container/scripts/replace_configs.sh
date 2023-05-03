@@ -46,7 +46,7 @@ fi
 if [[ "" != "$SERVER_PORT" ]]; then
   export SERVER_PORT; yq -i '.server.applicationConnectors[0].port=env(SERVER_PORT)' $CONFIG_FILE
 else
-  yq -i '.server.applicationConnectors[0].port=7090' $CONFIG_FILE
+  yq -i '.server.applicationConnectors[0].port=12050' $CONFIG_FILE
 fi
 
 
@@ -128,13 +128,24 @@ else
   yq -i 'del(.logging.appenders.[] | select(.type == "gke-console"))' $CONFIG_FILE
 fi
 
-replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
-replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE
-replace_key_value eventsFramework.redis.redisUrl $EVENTS_FRAMEWORK_REDIS_URL
-replace_key_value eventsFramework.redis.masterName $EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME
-replace_key_value eventsFramework.redis.userName $EVENTS_FRAMEWORK_REDIS_USERNAME
-replace_key_value eventsFramework.redis.password $EVENTS_FRAMEWORK_REDIS_PASSWORD
-replace_key_value eventsFramework.redis.nettyThreads $EVENTS_FRAMEWORK_NETTY_THREADS
-replace_key_value eventsFramework.redis.sslConfig.enabled $EVENTS_FRAMEWORK_REDIS_SSL_ENABLED
-replace_key_value eventsFramework.redis.sslConfig.CATrustStorePath $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH
-replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD
+if [[ "" != "$SMTP_HOST" ]]; then
+  export SMTP_HOST; yq -i '.smtp.host=env(SMTP_HOST)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SMTP_PORT" ]]; then
+  export SMTP_PORT; yq -i '.smtp.port=env(SMTP_PORT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SMTP_USERNAME" ]]; then
+  export SMTP_USERNAME; yq -i '.smtp.username=env(SMTP_USERNAME)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SMTP_PASSWORD" ]]; then
+  export SMTP_PASSWORD; yq -i '.smtp.password=env(SMTP_PASSWORD)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SMTP_USE_SSL" ]]; then
+  export SMTP_USE_SSL; yq -i '.smtp.useSSL=env(SMTP_USE_SSL)' $CONFIG_FILE
+fi
+
+replace_key_value baseUrl "$BASEURL"

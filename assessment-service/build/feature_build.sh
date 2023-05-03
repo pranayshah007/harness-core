@@ -30,12 +30,12 @@ cat bazelrc.remote
 yum install zlib-devel -y
 
 chmod +x scripts/bazel/UpdateVersionInfoyaml.sh
-chmod +x access-control/build/build_jar.sh
-chmod +x access-control/build/build_dist.sh
+chmod +x assessment-service/build/build_jar.sh
+chmod +x assessment-service/build/build_dist.sh
 
-scripts/bazel/UpdateVersionInfoyaml.sh $BUILD access-control/build.properties
-access-control/build/build_jar.sh
-access-control/build/build_dist.sh || true
+scripts/bazel/UpdateVersionInfoyaml.sh $BUILD assessment-service/build.properties
+assessment-service/build/build_jar.sh
+assessment-service/build/build_dist.sh || true
 
 echo "INFO: list the jars built"
 find . -name "*.jar"

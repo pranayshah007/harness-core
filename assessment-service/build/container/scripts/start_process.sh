@@ -21,7 +21,7 @@ fi
 echo "Using memory " "$MEMORY"
 
 if [[ -z "$CAPSULE_JAR" ]]; then
-   export CAPSULE_JAR=/opt/harness/accesscontrol-service-capsule.jar
+   export CAPSULE_JAR=/opt/harness/assessment-service-capsule.jar
 fi
 
 export GC_PARAMS=" -XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=40 -XX:MaxGCPauseMillis=1000 -Dfile.encoding=UTF-8"
@@ -38,7 +38,7 @@ fi
 
 if [[ "${ENABLE_OPENTELEMETRY}" == "true" ]] ; then
     echo "OpenTelemetry is enabled"
-    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/opentelemetry-javaagent.jar -Dotel.service.name=${OTEL_SERVICE_NAME:-accesscontrol-service}"
+    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/opentelemetry-javaagent.jar -Dotel.service.name=${OTEL_SERVICE_NAME:-assessment-service}"
 
     if [ -n "$OTEL_EXPORTER_OTLP_ENDPOINT" ]; then
         JAVA_OPTS=$JAVA_OPTS" -Dotel.exporter.otlp.endpoint=$OTEL_EXPORTER_OTLP_ENDPOINT "
@@ -52,5 +52,5 @@ fi
 if [[ "${DEPLOY_MODE}" == "KUBERNETES" ]] || [[ "${DEPLOY_MODE}" == "KUBERNETES_ONPREM" ]]; then
     java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config.yml
 else
-    java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config.yml > /opt/harness/logs/accesscontrol-service.log 2>&1
+    java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config.yml > /opt/harness/logs/assessment-service.log 2>&1
 fi
