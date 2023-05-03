@@ -83,7 +83,7 @@ public class PmsEventSender {
 
   public String sendEvent(Ambiance ambiance, ByteString eventData, PmsEventCategory eventCategory, String serviceName,
       boolean isMonitored) {
-    if (INIT_CONTAINER_V2_STEP_TYPE.equals(AmbianceUtils.obtainCurrentLevel(ambiance).getStepType())) {
+    if (INIT_CONTAINER_V2_STEP_TYPE.getType().equals(AmbianceUtils.getCurrentStepType(ambiance).getType())) {
       serviceName = ModuleType.PMS.name().toLowerCase();
     }
     log.info("Sending {} event for {} to the producer", eventCategory, serviceName);

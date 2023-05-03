@@ -64,17 +64,19 @@ import io.harness.cvng.core.entities.changeSource.ChangeSource.ChangeSourceKeys;
 import io.harness.cvng.core.entities.changeSource.HarnessCDCurrentGenChangeSource;
 import io.harness.cvng.core.entities.demo.CVNGDemoPerpetualTask;
 import io.harness.cvng.core.entities.demo.CVNGDemoPerpetualTask.CVNGDemoPerpetualTaskKeys;
+import io.harness.cvng.core.jobs.AnalysisOrchestratorQueueNextAnalysisHandler;
 import io.harness.cvng.core.jobs.CVNGDemoPerpetualTaskHandler;
 import io.harness.cvng.core.jobs.ChangeSourceDemoHandler;
-import io.harness.cvng.core.jobs.CompositeSLODataExecutorTaskHandler;
 import io.harness.cvng.core.jobs.CustomChangeEventConsumer;
 import io.harness.cvng.core.jobs.DataCollectionTasksPerpetualTaskStatusUpdateHandler;
 import io.harness.cvng.core.jobs.DeploymentChangeEventConsumer;
 import io.harness.cvng.core.jobs.EntityCRUDStreamConsumer;
+import io.harness.cvng.core.jobs.FailedDataCollectionTasksRecollectionHandler;
 import io.harness.cvng.core.jobs.InternalChangeEventCEConsumer;
 import io.harness.cvng.core.jobs.InternalChangeEventFFConsumer;
 import io.harness.cvng.core.jobs.MonitoringSourcePerpetualTaskHandler;
 import io.harness.cvng.core.jobs.PersistentLockCleanup;
+import io.harness.cvng.core.jobs.RestoreDataCollectionTaskRecalculationHandler;
 import io.harness.cvng.core.jobs.SLIDataCollectionTaskCreateNextTaskHandler;
 import io.harness.cvng.core.jobs.SLOHealthIndicatorTimescaleHandler;
 import io.harness.cvng.core.jobs.SLOHistoryTimescaleHandler;
@@ -83,6 +85,10 @@ import io.harness.cvng.core.jobs.ServiceGuardDataCollectionTaskCreateNextTaskHan
 import io.harness.cvng.core.jobs.StatemachineEventConsumer;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.SideKickService;
+import io.harness.cvng.downtime.beans.EntityType;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
+import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
+import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses.EntityUnavailabilityStatusesKeys;
 import io.harness.cvng.exception.BadRequestExceptionMapper;
 import io.harness.cvng.exception.ConstraintViolationExceptionMapper;
 import io.harness.cvng.exception.NotFoundExceptionMapper;
@@ -98,7 +104,6 @@ import io.harness.cvng.migration.beans.CVNGSchema.CVNGSchemaKeys;
 import io.harness.cvng.migration.service.CVNGMigrationService;
 import io.harness.cvng.notification.jobs.MonitoredServiceNotificationHandler;
 import io.harness.cvng.notification.jobs.SLONotificationHandler;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
@@ -240,6 +245,7 @@ import java.time.Clock;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -266,7 +272,7 @@ import ru.vyarus.guice.validator.ValidationModule;
 @Slf4j
 @OwnedBy(HarnessTeam.CV)
 public class VerificationApplication extends Application<VerificationConfiguration> {
-  private static String APPLICATION_NAME = "Verification NextGen Application";
+  private static final String APPLICATION_NAME = "Verification NextGen Application";
   private static final SecureRandom random = new SecureRandom();
 
   private final MetricRegistry metricRegistry = new MetricRegistry();
@@ -481,13 +487,15 @@ public class VerificationApplication extends Application<VerificationConfigurati
     registerVerificationJobInstanceDataCollectionTaskIterator(injector);
     registerDataCollectionTaskIterator(injector);
     registerCreateNextSLIDataCollectionTaskIterator(injector);
+    registerAnalysisOrchestratorQueueNextAnalysisHandler(injector);
+    registerCreateRestoreSLIDataCollectionTaskIterator(injector);
+    registerRestoreSLIRecalculationTaskIterator(injector);
     registerCreateNextDataCollectionTaskIterator(injector);
     registerCVNGDemoPerpetualTaskIterator(injector);
     registerSLORecalculationFailure(injector);
     sloHistoryTimescale(injector);
     sloHealthIndicatorTimescale(injector);
     registerDataCollectionTasksPerpetualTaskStatusUpdateIterator(injector);
-    registerCompositeSLODataExecutorTaskIterator(injector);
     injector.getInstance(CVNGStepTaskHandler.class).registerIterator();
     injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
     registerExceptionMappers(environment.jersey());
@@ -548,7 +556,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     final NotifyQueuePublisherRegister notifyQueuePublisherRegister =
         injector.getInstance(NotifyQueuePublisherRegister.class);
     notifyQueuePublisherRegister.register(
-        CVNG_ORCHESTRATION, payload -> publisher.send(Arrays.asList(CVNG_ORCHESTRATION), payload));
+        CVNG_ORCHESTRATION, payload -> publisher.send(List.of(CVNG_ORCHESTRATION), payload));
   }
 
   private void registerMigrations(Injector injector) {
@@ -582,10 +590,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
   }
 
   private PmsSdkConfiguration getPmsSdkConfiguration(VerificationConfiguration config) {
-    boolean remote = false;
-    if (config.getShouldConfigureWithPMS() != null && config.getShouldConfigureWithPMS()) {
-      remote = true;
-    }
+    boolean remote = config.getShouldConfigureWithPMS() != null && config.getShouldConfigureWithPMS();
 
     return PmsSdkConfiguration.builder()
         .deploymentMode(remote ? SdkDeployMode.REMOTE : SdkDeployMode.LOCAL)
@@ -622,7 +627,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
   private void initMetrics(Injector injector) {
     injector.getInstance(MetricService.class)
-        .initializeMetrics(Arrays.asList(injector.getInstance(CVNGMetricsPublisher.class)));
+        .initializeMetrics(Collections.singletonList(injector.getInstance(CVNGMetricsPublisher.class)));
     injector.getInstance(RecordMetricsJob.class).scheduleMetricsTasks();
   }
 
@@ -663,7 +668,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .build();
     injector.injectMembers(activityIterator);
-    workflowVerificationExecutor.scheduleWithFixedDelay(() -> activityIterator.process(), 0, 30, TimeUnit.SECONDS);
+    workflowVerificationExecutor.scheduleWithFixedDelay(activityIterator::process, 0, 30, TimeUnit.SECONDS);
   }
 
   private void registerVerificationTaskOrchestrationIterator(Injector injector) {
@@ -692,8 +697,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .build();
     injector.injectMembers(analysisOrchestrationIterator);
-    workflowVerificationExecutor.scheduleWithFixedDelay(
-        () -> analysisOrchestrationIterator.process(), 0, 5, TimeUnit.SECONDS);
+    workflowVerificationExecutor.scheduleWithFixedDelay(analysisOrchestrationIterator::process, 0, 5, TimeUnit.SECONDS);
   }
 
   private void registerVerificationJobInstanceTimeoutIterator(Injector injector) {
@@ -718,7 +722,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .build();
     injector.injectMembers(persistenceIterator);
-    scheduledThreadPoolExecutor.scheduleWithFixedDelay(() -> persistenceIterator.process(), 0, 1, TimeUnit.MINUTES);
+    scheduledThreadPoolExecutor.scheduleWithFixedDelay(persistenceIterator::process, 0, 1, TimeUnit.MINUTES);
   }
 
   private void registerDemoGenerationIterator(Injector injector) {
@@ -742,7 +746,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .redistribute(true)
             .build();
     injector.injectMembers(demoDataIterator);
-    dataCollectionExecutor.scheduleWithFixedDelay(() -> demoDataIterator.process(), 0, 30, TimeUnit.SECONDS);
+    dataCollectionExecutor.scheduleWithFixedDelay(demoDataIterator::process, 0, 30, TimeUnit.SECONDS);
   }
 
   private void registerDataCollectionTaskIterator(Injector injector) {
@@ -769,7 +773,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .redistribute(true)
             .build();
     injector.injectMembers(monitoringSourceIterator);
-    dataCollectionExecutor.scheduleWithFixedDelay(() -> monitoringSourceIterator.process(), 0, 30, TimeUnit.SECONDS);
+    dataCollectionExecutor.scheduleWithFixedDelay(monitoringSourceIterator::process, 0, 30, TimeUnit.SECONDS);
 
     HarnessCDCurrentGenEventsHandler harnessCDCurrentGenEventsHandler =
         injector.getInstance(HarnessCDCurrentGenEventsHandler.class);
@@ -791,7 +795,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .redistribute(true)
             .build();
     injector.injectMembers(harnessCDIterator);
-    dataCollectionExecutor.scheduleWithFixedDelay(() -> harnessCDIterator.process(), 0, 30, TimeUnit.SECONDS);
+    dataCollectionExecutor.scheduleWithFixedDelay(harnessCDIterator::process, 0, 30, TimeUnit.SECONDS);
   }
 
   private void registerCreateNextDataCollectionTaskIterator(Injector injector) {
@@ -817,7 +821,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .build();
     injector.injectMembers(liveMonitoringDataCollectionTaskRecoverHandlerIterator);
     dataCollectionExecutor.scheduleWithFixedDelay(
-        () -> liveMonitoringDataCollectionTaskRecoverHandlerIterator.process(), 0, 1, TimeUnit.MINUTES);
+        liveMonitoringDataCollectionTaskRecoverHandlerIterator::process, 0, 1, TimeUnit.MINUTES);
   }
 
   private void registerCreateNextSLIDataCollectionTaskIterator(Injector injector) {
@@ -842,7 +846,96 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .build();
     injector.injectMembers(sliDataCollectionTaskRecoverHandlerIterator);
     dataCollectionExecutor.scheduleWithFixedDelay(
-        () -> sliDataCollectionTaskRecoverHandlerIterator.process(), 0, 1, TimeUnit.MINUTES);
+        sliDataCollectionTaskRecoverHandlerIterator::process, 0, 1, TimeUnit.MINUTES);
+  }
+
+  private void registerCreateRestoreSLIDataCollectionTaskIterator(Injector injector) {
+    ScheduledThreadPoolExecutor dataCollectionExecutor = new ScheduledThreadPoolExecutor(
+        2, new ThreadFactoryBuilder().setNameFormat("create-restore-sli-dc-task-iterator").build());
+    FailedDataCollectionTasksRecollectionHandler failedDataCollectionTasksRecollectionHandler =
+        injector.getInstance(FailedDataCollectionTasksRecollectionHandler.class);
+    PersistenceIterator sliDataCollectionTaskRecoverHandlerIterator =
+        MongoPersistenceIterator
+            .<EntityUnavailabilityStatuses, MorphiaFilterExpander<EntityUnavailabilityStatuses>>builder()
+            .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("CreateRestoreSLIDataCollectionTaskIterator")
+            .clazz(EntityUnavailabilityStatuses.class)
+            .fieldName(EntityUnavailabilityStatusesKeys.createNextTaskIteration)
+            .targetInterval(ofMinutes(5))
+            .acceptableNoAlertDelay(ofHours(2))
+            .executorService(dataCollectionExecutor)
+            .semaphore(new Semaphore(2))
+            .handler(failedDataCollectionTasksRecollectionHandler)
+            .schedulingType(REGULAR)
+            .filterExpander(query
+                -> query.and(query.criteria(EntityUnavailabilityStatusesKeys.entityType).equal(EntityType.SLO),
+                    query.and(query.criteria(EntityUnavailabilityStatusesKeys.status)
+                                  .equal(EntityUnavailabilityStatus.DATA_COLLECTION_FAILED)),
+                    query.criteria(EntityUnavailabilityStatusesKeys.startTime)
+                        .greaterThanOrEq(
+                            injector.getInstance(Clock.class).instant().minus(1, ChronoUnit.DAYS).getEpochSecond())))
+            .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
+            .redistribute(true)
+            .build();
+    injector.injectMembers(sliDataCollectionTaskRecoverHandlerIterator);
+    dataCollectionExecutor.scheduleWithFixedDelay(
+        sliDataCollectionTaskRecoverHandlerIterator::process, 0, 1, TimeUnit.HOURS);
+  }
+
+  private void registerRestoreSLIRecalculationTaskIterator(Injector injector) {
+    ScheduledThreadPoolExecutor dataCollectionExecutor = new ScheduledThreadPoolExecutor(
+        2, new ThreadFactoryBuilder().setNameFormat("restore-sli-recalculation-task-iterator").build());
+    RestoreDataCollectionTaskRecalculationHandler restoreDataCollectionTaskRecalculationHandler =
+        injector.getInstance(RestoreDataCollectionTaskRecalculationHandler.class);
+    PersistenceIterator sliDataCollectionTaskRecoverHandlerIterator =
+        MongoPersistenceIterator
+            .<EntityUnavailabilityStatuses, MorphiaFilterExpander<EntityUnavailabilityStatuses>>builder()
+            .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("RestoreSLIRecalculationTaskIterator")
+            .clazz(EntityUnavailabilityStatuses.class)
+            .fieldName(EntityUnavailabilityStatusesKeys.createNextTaskIteration)
+            .targetInterval(ofMinutes(2))
+            .acceptableNoAlertDelay(ofHours(1))
+            .executorService(dataCollectionExecutor)
+            .semaphore(new Semaphore(2))
+            .handler(restoreDataCollectionTaskRecalculationHandler)
+            .schedulingType(REGULAR)
+            .filterExpander(query
+                -> query.and(query.criteria(EntityUnavailabilityStatusesKeys.entityType).equal(EntityType.SLO),
+                    query.and(query.criteria(EntityUnavailabilityStatusesKeys.status)
+                                  .equal(EntityUnavailabilityStatus.DATA_RECOLLECTION_PASSED))))
+            .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
+            .redistribute(true)
+            .build();
+    injector.injectMembers(sliDataCollectionTaskRecoverHandlerIterator);
+    dataCollectionExecutor.scheduleWithFixedDelay(
+        sliDataCollectionTaskRecoverHandlerIterator::process, 0, 6, TimeUnit.HOURS);
+  }
+
+  private void registerAnalysisOrchestratorQueueNextAnalysisHandler(Injector injector) {
+    ScheduledThreadPoolExecutor dataCollectionExecutor = new ScheduledThreadPoolExecutor(3,
+        new ThreadFactoryBuilder().setNameFormat("analysis-orchestrator-queue-next-analysis-handler-iterator").build());
+    AnalysisOrchestratorQueueNextAnalysisHandler analysisOrchestraorQueueNextAnalysisHandler =
+        injector.getInstance(AnalysisOrchestratorQueueNextAnalysisHandler.class);
+    PersistenceIterator iterator =
+        MongoPersistenceIterator.<AnalysisOrchestrator, MorphiaFilterExpander<AnalysisOrchestrator>>builder()
+            .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("AnalysisOrchestraorQueueNextAnalysisIterator")
+            .clazz(AnalysisOrchestrator.class)
+            .targetInterval(ofMinutes(5))
+            .acceptableNoAlertDelay(ofMinutes(1))
+            .executorService(dataCollectionExecutor)
+            .semaphore(new Semaphore(3))
+            .handler(analysisOrchestraorQueueNextAnalysisHandler)
+            .schedulingType(REGULAR)
+            .filterExpander(query
+                -> query.criteria(VerificationTaskBaseKeys.lastUpdatedAt)
+                       .lessThan(injector.getInstance(Clock.class).instant().minus(2, ChronoUnit.HOURS).toEpochMilli()))
+            .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
+            .redistribute(true)
+            .build();
+    injector.injectMembers(iterator);
+    dataCollectionExecutor.scheduleWithFixedDelay(() -> iterator.process(), 0, 1, TimeUnit.HOURS);
   }
 
   private void registerSLORecalculationFailure(Injector injector) {
@@ -872,7 +965,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .build();
     injector.injectMembers(sloRecalculationFailureHandlerIterator);
     dataCollectionExecutor.scheduleWithFixedDelay(
-        () -> sloRecalculationFailureHandlerIterator.process(), 0, 1, TimeUnit.MINUTES);
+        sloRecalculationFailureHandlerIterator::process, 0, 1, TimeUnit.MINUTES);
   }
   private void sloHistoryTimescale(Injector injector) {
     ScheduledThreadPoolExecutor dataCollectionExecutor =
@@ -899,8 +992,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .redistribute(true)
             .build();
     injector.injectMembers(sloHistoryTimescaleHandlerIterator);
-    dataCollectionExecutor.scheduleWithFixedDelay(
-        () -> sloHistoryTimescaleHandlerIterator.process(), 0, 1, TimeUnit.MINUTES);
+    dataCollectionExecutor.scheduleWithFixedDelay(sloHistoryTimescaleHandlerIterator::process, 0, 1, TimeUnit.MINUTES);
   }
 
   private void sloHealthIndicatorTimescale(Injector injector) {
@@ -925,7 +1017,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .build();
     injector.injectMembers(sloHealthIndicatorTimescaleHandler);
     dataCollectionExecutor.scheduleWithFixedDelay(
-        () -> sloHealthIndicatorTimescaleHandlerIterator.process(), 0, 60, TimeUnit.MINUTES);
+        sloHealthIndicatorTimescaleHandlerIterator::process, 0, 60, TimeUnit.MINUTES);
   }
 
   private void registerCVNGDemoPerpetualTaskIterator(Injector injector) {
@@ -953,7 +1045,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
     injector.injectMembers(cvngDemoPerpetualTaskIterator);
     cvngDemoPerpetualTaskExecutor.scheduleWithFixedDelay(
-        () -> cvngDemoPerpetualTaskIterator.process(), 0, 1, TimeUnit.MINUTES);
+        cvngDemoPerpetualTaskIterator::process, 0, 1, TimeUnit.MINUTES);
   }
 
   private void registerDataCollectionTasksPerpetualTaskStatusUpdateIterator(Injector injector) {
@@ -996,40 +1088,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
     injector.injectMembers(dataCollectionTasksPerpetualTaskStatusUpdateIterator);
     dataCollectionTasksPerpetualTaskStatusUpdateExecutor.scheduleWithFixedDelay(
-        () -> dataCollectionTasksPerpetualTaskStatusUpdateIterator.process(), 0, 2, TimeUnit.MINUTES);
-  }
-
-  private void registerCompositeSLODataExecutorTaskIterator(Injector injector) {
-    ScheduledThreadPoolExecutor compositeSLODataExecutorTaskExecutor = new ScheduledThreadPoolExecutor(
-        3, new ThreadFactoryBuilder().setNameFormat("composite-slo-data-collection-task-iterator").build());
-
-    CompositeSLODataExecutorTaskHandler compositeSLODataExecutorTaskHandler =
-        injector.getInstance(CompositeSLODataExecutorTaskHandler.class);
-
-    PersistenceIterator serviceLevelObjectiveV2CompositeSLOTaskIterator =
-        MongoPersistenceIterator
-            .<AbstractServiceLevelObjective, MorphiaFilterExpander<AbstractServiceLevelObjective>>builder()
-            .mode(PersistenceIterator.ProcessMode.PUMP)
-            .iteratorName("ServiceLevelObjectiveV2CompositeSLOTaskIterator")
-            .clazz(AbstractServiceLevelObjective.class)
-            .fieldName(ServiceLevelObjectiveV2Keys.createNextTaskIteration)
-            .targetInterval(ofMinutes(1))
-            .acceptableNoAlertDelay(ofMinutes(1))
-            .executorService(compositeSLODataExecutorTaskExecutor)
-            .semaphore(new Semaphore(2))
-            .handler(compositeSLODataExecutorTaskHandler)
-            .schedulingType(REGULAR)
-            .filterExpander(query
-                -> query.and(
-                    query.criteria(ServiceLevelObjectiveV2Keys.type).equal(ServiceLevelObjectiveType.COMPOSITE),
-                    query.criteria(ServiceLevelObjectiveV2Keys.createNextTaskIteration).equal(0L)))
-            .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
-            .redistribute(true)
-            .build();
-
-    injector.injectMembers(serviceLevelObjectiveV2CompositeSLOTaskIterator);
-    compositeSLODataExecutorTaskExecutor.scheduleWithFixedDelay(
-        () -> serviceLevelObjectiveV2CompositeSLOTaskIterator.process(), 0, 30, TimeUnit.SECONDS);
+        dataCollectionTasksPerpetualTaskStatusUpdateIterator::process, 0, 2, TimeUnit.MINUTES);
   }
 
   private void registerVerificationJobInstanceDataCollectionTaskIterator(Injector injector) {
@@ -1056,7 +1115,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .redistribute(true)
             .build();
     injector.injectMembers(dataCollectionIterator);
-    verificationTaskExecutor.scheduleWithFixedDelay(() -> dataCollectionIterator.process(), 0, 30, TimeUnit.SECONDS);
+    verificationTaskExecutor.scheduleWithFixedDelay(dataCollectionIterator::process, 0, 30, TimeUnit.SECONDS);
   }
 
   private void registerHealthChecks(Environment environment, Injector injector) {
@@ -1107,7 +1166,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .redistribute(true)
             .build();
     injector.injectMembers(dataCollectionIterator);
-    migrationExecutor.scheduleWithFixedDelay(() -> dataCollectionIterator.process(), 0, 15, TimeUnit.MINUTES);
+    migrationExecutor.scheduleWithFixedDelay(dataCollectionIterator::process, 0, 15, TimeUnit.MINUTES);
   }
 
   private void registerNotificationTemplates(VerificationConfiguration configuration, Injector injector) {
@@ -1159,7 +1218,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .redistribute(true)
             .build();
     injector.injectMembers(dataCollectionIterator);
-    notificationExecutor.scheduleWithFixedDelay(() -> dataCollectionIterator.process(), 0, 5, TimeUnit.MINUTES);
+    notificationExecutor.scheduleWithFixedDelay(dataCollectionIterator::process, 0, 5, TimeUnit.MINUTES);
   }
 
   private void registerMonitoredServiceNotificationIterator(Injector injector) {
@@ -1185,7 +1244,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .redistribute(true)
             .build();
     injector.injectMembers(dataCollectionIterator);
-    notificationExecutor.scheduleWithFixedDelay(() -> dataCollectionIterator.process(), 0, 2, TimeUnit.MINUTES);
+    notificationExecutor.scheduleWithFixedDelay(dataCollectionIterator::process, 0, 2, TimeUnit.MINUTES);
   }
 
   private void initializeServiceSecretKeys() {

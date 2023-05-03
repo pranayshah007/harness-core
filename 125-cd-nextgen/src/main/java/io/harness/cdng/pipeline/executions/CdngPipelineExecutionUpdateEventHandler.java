@@ -72,7 +72,7 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
           StepSpecTypeConstants.ASG_BLUE_GREEN_ROLLBACK, StepSpecTypeConstants.ASG_BLUE_GREEN_SWAP_SERVICE,
           StepSpecTypeConstants.ELASTIGROUP_SETUP, StepSpecTypeConstants.ELASTIGROUP_DEPLOY,
           StepSpecTypeConstants.ELASTIGROUP_ROLLBACK, StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP,
-          StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE, StepSpecTypeConstants.K8S_BG_STAGE_SCALE_DOWN);
+          StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE, StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN);
 
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepHelper stepHelper;

@@ -16,11 +16,11 @@ import io.harness.gitsync.ScopeDetails;
 import io.harness.gitsync.common.GitSyncFileConstants;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.ng.core.entitydetail.EntityDetailRestToProtoMapper;
-import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.helpers.TemplateEntityDetailUtils;
 import io.harness.template.mappers.NGTemplateDtoMapper;
+import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
 

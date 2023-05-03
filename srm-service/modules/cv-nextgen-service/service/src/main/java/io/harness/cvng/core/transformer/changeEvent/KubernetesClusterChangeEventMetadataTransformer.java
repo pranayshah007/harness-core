@@ -58,4 +58,9 @@ public class KubernetesClusterChangeEventMetadataTransformer
             !dependentMonitoredServiceIdentifiers.isEmpty() ? dependentMonitoredServiceIdentifiers.get(0) : null)
         .build();
   }
+
+  @Override
+  public List<String> getMonitoredServiceIdentifiers(KubernetesClusterActivity activity) {
+    return activity.getRealatedAppMonitoredServiceIdentifiers();
+  }
 }

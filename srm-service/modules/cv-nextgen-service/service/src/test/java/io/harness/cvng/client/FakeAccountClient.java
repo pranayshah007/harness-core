@@ -9,6 +9,7 @@ package io.harness.cvng.client;
 
 import io.harness.account.AccountClient;
 import io.harness.beans.FeatureFlag;
+import io.harness.beans.PageResponse;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.user.UserMetadata;
@@ -28,11 +29,6 @@ public class FakeAccountClient implements AccountClient {
 
   @Override
   public Call<RestResponse<AccountDTO>> create(AccountDTO dto) {
-    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
-  }
-
-  @Override
-  public Call<RestResponse<List<AccountDTO>>> getAllAccounts() {
     throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
@@ -227,6 +223,11 @@ public class FakeAccountClient implements AccountClient {
 
   @Override
   public Call<RestResponse<Boolean>> isImmutableDelegateEnabled(String accountId) {
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
+  }
+
+  @Override
+  public Call<RestResponse<PageResponse<AccountDTO>>> listAccounts(int offset, int pageSize) {
     throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 }

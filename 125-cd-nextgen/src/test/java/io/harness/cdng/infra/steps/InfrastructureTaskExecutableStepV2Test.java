@@ -402,7 +402,8 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
                                 .infraInputs(ParameterField.createValueField(YamlUtils.read(inputYaml, Map.class)))
                                 .build(),
                             null))
-        .withMessageContaining("The value provided prod does not match any of the allowed values [dev,qa]");
+        .withMessageContaining(
+            "The value provided for [infrastructureDefinition.spec.credentialsRef: prod] does not match any of the allowed values [dev,qa]");
   }
 
   @Test

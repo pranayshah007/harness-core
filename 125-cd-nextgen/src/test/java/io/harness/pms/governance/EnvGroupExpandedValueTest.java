@@ -11,7 +11,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.infrastructure.InfrastructureType;
@@ -39,7 +38,8 @@ public class EnvGroupExpandedValueTest extends CategoryTest {
     JsonNode connectorNode = new ObjectMapper().readTree(connectorNodeJson);
     EnvGroupExpandedValue value =
         EnvGroupExpandedValue.builder()
-            .environmentGroup(EnvironmentGroupEntity.builder().name("wave1").identifier("xyz").build())
+            .name("wave1")
+            .identifier("xyz")
             .environments(
                 List.of(SingleEnvironmentExpandedValue.builder()
                             .name("my env")

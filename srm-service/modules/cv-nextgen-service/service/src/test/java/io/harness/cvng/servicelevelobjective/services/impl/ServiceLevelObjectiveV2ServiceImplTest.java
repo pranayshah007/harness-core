@@ -94,6 +94,7 @@ import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
+import io.harness.cvng.servicelevelobjective.transformer.ServiceLevelObjectiveDetailsTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
@@ -146,6 +147,8 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Inject private SLIRecordService sliRecordService;
 
   @Inject private Map<SLOTargetType, SLOTargetTransformer> sloTargetTypeSLOTargetTransformerMap;
+
+  @Inject private ServiceLevelObjectiveDetailsTransformer serviceLevelObjectiveDetailsTransformer;
 
   private BuilderFactory builderFactory;
   ProjectParams projectParams;
@@ -2422,19 +2425,6 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
-  public void testGetAllSLOs() {
-    createMonitoredService();
-    ServiceLevelObjectiveV2DTO sloDTO =
-        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id3").build();
-    sloDTO.setUserJourneyRefs(Arrays.asList("Uid4", "Uid2"));
-    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
-
-    assertThat(serviceLevelObjectiveV2Service.getAllSLOs(projectParams)).hasSize(4);
-  }
-
-  @Test
-  @Owner(developers = VARSHA_LALWANI)
-  @Category(UnitTests.class)
   public void testGetSImpleSLOsByMonitoredServiceIdentifier() {
     createMonitoredService();
     ServiceLevelObjectiveV2DTO sloDTO =
@@ -2986,8 +2976,15 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                                                 .build()))
                                     .build())
                           .build();
-    List<AbstractServiceLevelObjective> serviceLevelObjectiveList = serviceLevelObjectiveV2Service.getAllReferredSLOs(
-        projectParams2, (CompositeServiceLevelObjectiveSpec) compositeSLODTO.getSpec());
+    List<AbstractServiceLevelObjective> serviceLevelObjectiveList =
+        serviceLevelObjectiveV2Service.getAllReferredSLOs(projectParams2,
+            ((CompositeServiceLevelObjectiveSpec) compositeSLODTO.getSpec())
+                .getServiceLevelObjectivesDetails()
+                .stream()
+                .map(serviceLevelObjectiveDetailsDTO
+                    -> serviceLevelObjectiveDetailsTransformer.getServiceLevelObjectiveDetails(
+                        serviceLevelObjectiveDetailsDTO))
+                .collect(Collectors.toSet()));
     assertThat(serviceLevelObjectiveList.size()).isEqualTo(2);
     assertThat(serviceLevelObjectiveList.get(0).getIdentifier()).isEqualTo("simpleSLOIdentifier");
     assertThat(serviceLevelObjectiveList.get(0).getProjectIdentifier()).isEqualTo("project1");

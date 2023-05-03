@@ -13,6 +13,7 @@ import static io.harness.pms.contracts.execution.Status.INTERVENTION_WAITING;
 import static io.harness.pms.execution.utils.StatusUtils.retryableStatuses;
 
 import io.harness.advisers.CommonAdviserTypes;
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackAdviser;
 import io.harness.advisers.rollback.OnFailRollbackOutput;
 import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.OwnedBy;
@@ -52,6 +53,7 @@ import lombok.extern.slf4j.Slf4j;
 public class RetryAdviserWithRollback implements Adviser {
   @Inject private KryoSerializer kryoSerializer;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject OnFailPipelineRollbackAdviser onFailPipelineRollbackAdviser;
 
   public static final AdviserType ADVISER_TYPE =
       AdviserType.newBuilder().setType(CommonAdviserTypes.RETRY_WITH_ROLLBACK.name()).build();
@@ -143,6 +145,8 @@ public class RetryAdviserWithRollback implements Adviser {
             .setMarkAsFailureAdvise(builder.build())
             .setType(AdviseType.MARK_AS_FAILURE)
             .build();
+      case PIPELINE_ROLLBACK:
+        return onFailPipelineRollbackAdviser.onAdviseEvent(AdvisingEvent.builder().ambiance(ambiance).build());
       default:
         throw new IllegalStateException("Unexpected value: " + parameters.getRepairActionCodeAfterRetry());
     }

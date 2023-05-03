@@ -39,7 +39,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName(StepSpecTypeConstants.K8S_BG_STAGE_SCALE_DOWN)
+@JsonTypeName(StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN)
 @SimpleVisitorHelper(helperClass = K8sBGStageScaleDownStepInfoVisitorHelper.class)
 @TypeAlias("K8sBGStageScaleDownStepInfo")
 @RecasterAlias("io.harness.cdng.k8s.K8sBGStageScaleDownStepInfo")

@@ -51,6 +51,33 @@ public class StateInspectionServiceTest extends CgOrchestrationTestBase {
   @Test
   @Owner(developers = RAFAEL)
   @Category(UnitTests.class)
+  public void shouldRedactSecretsWithMoreThanOne() {
+    final String uuidSecret = generateUuid();
+    stateInspectionService.append(uuidSecret,
+        ExpressionVariableUsage.builder()
+            .variables(List.of(ExpressionVariableUsage.Item.builder()
+                                   .expression("k8sResources.manifests")
+                                   .value(expression)
+                                   .count(0)
+                                   .build(),
+                ExpressionVariableUsage.Item.builder()
+                    .expression("dummyexpression")
+                    .value(expression)
+                    .count(0)
+                    .build()))
+            .build());
+    StateInspection stateInspectionResult = stateInspectionService.get(uuidSecret);
+    ExpressionVariableUsage evu =
+        (ExpressionVariableUsage) stateInspectionResult.getData().get("expressionVariableUsage");
+    assertThat(evu.getVariables().get(0).getValue().contains("***"));
+    assertThat(evu.getVariables().get(0).getValue()).isNotEqualTo(expression);
+    assertThat(evu.getVariables().get(1).getValue()).doesNotContain("***");
+    assertThat(evu.getVariables().get(1).getValue()).isEqualTo(expression);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
   public void shouldRedactSecrets() {
     final String uuid = generateUuid();
     stateInspectionService.append(uuid,

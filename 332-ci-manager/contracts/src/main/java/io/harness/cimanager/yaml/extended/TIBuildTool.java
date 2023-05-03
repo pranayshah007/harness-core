@@ -25,7 +25,9 @@ public enum TIBuildTool {
   @JsonProperty("Gradle") GRADLE("Gradle"),
   @JsonProperty("Dotnet") DOTNET("Dotnet"),
   @JsonProperty("Nunitconsole") NUNITCONSOLE("Nunitconsole"),
-  @JsonProperty("SBT") SBT("SBT");
+  @JsonProperty("SBT") SBT("SBT"),
+  @JsonProperty("Pytest") PYTEST("Pytest"),
+  @JsonProperty("Unittest") UNITTEST("Unittest");
 
   private final String yamlName;
 

@@ -930,3 +930,7 @@ io.harness.cdng.tas.TasCommandStepInfo
 io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure
 io.harness.cdng.aws.asg.AsgStepExceptionPassThroughData
 io.harness.cdng.configfile.steps.ConfigFilesOutcome
+io.harness.cdng.aws.sam.AwsSamBuildStepParameters
+io.harness.cdng.aws.sam.AwsSamBuildStepInfo
+io.harness.cdng.aws.sam.AwsSamBuildStepNode
+io.harness.cdng.k8s.K8sBGStageScaleDownStepNode

@@ -10,6 +10,7 @@ package io.harness.serializer.morphia;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.activity.entities.Activity;
+import io.harness.cvng.activity.entities.ActivityBucket;
 import io.harness.cvng.activity.entities.CustomChangeActivity;
 import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.activity.entities.HarnessCDCurrentGenActivity;
@@ -248,6 +249,7 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(LogFeedbackAnalysisLearningEngineTask.class);
     set.add(RequestServiceLevelIndicator.class);
     set.add(Annotation.class);
+    set.add(ActivityBucket.class);
   }
 
   @Override

@@ -23,6 +23,7 @@ import lombok.Getter;
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
   SPG_UI_ALLOW_ENCODING_FOR_JENKINS_ARTIFACT("Enables correct encoding for jenkins artifact", HarnessTeam.SPG),
+  SPG_CG_STATS_INSTANCE_CONSUMER("Optimize stats collector for instance collection", HarnessTeam.SPG),
   SPG_HTTP_STEP_CERTIFICATE("Allow enforce SSL/TLS certificate in HTTP step", HarnessTeam.SPG),
   SPG_GRAPHQL_VERIFY_APPLICATION_FROM_USER_GROUP(
       "Verify if application references from a user group still exist", HarnessTeam.SPG),
@@ -463,8 +464,6 @@ public enum FeatureName {
   SPG_OPTIMIZE_ENVIRONMENT_VIEW_BUILDER(
       "Optimizes environment view builder queries for workflowExecutions", HarnessTeam.SPG),
   CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC),
-  SRM_HOST_SAMPLING_ENABLE("Enables Host Sampling feature for Learning Engine.", HarnessTeam.CV),
-  SRM_LOG_HOST_SAMPLING_ENABLE("Enables Host Sampling for log for Learning Engine.", HarnessTeam.CV),
   CDS_SHOW_CREATE_PR("Start showing CreatePR step on the plan creator if enabled", HarnessTeam.GITOPS),
   SPG_PIPELINE_ROLLBACK("Enables pipeline rollback on failure option", HarnessTeam.SPG),
   PL_FORCE_DELETE_CONNECTOR_SECRET(
@@ -725,6 +724,7 @@ public enum FeatureName {
       HarnessTeam.CDP),
   CDS_K8S_SERVICE_HOOKS_NG("Enables Service hooks support for K8s/Native Helm Services", HarnessTeam.CDP),
   CIE_USE_DOCKER_BUILDX("Enable docker build and push step to use buildx", HarnessTeam.CI),
+  CIE_ENABLED_RBAC("Enable rbac validationa at CI level", HarnessTeam.CI),
   CDS_STAGE_EXECUTION_DATA_SYNC(
       "This flag controls if you want CD Stage execution data saved in cd service and eventually synced to timescale",
       HarnessTeam.CDC),
@@ -733,7 +733,15 @@ public enum FeatureName {
       "Enables new default page size for several listing pages like pipelines, access control, executions, connectors, etc.",
       HarnessTeam.PL),
   CDS_SUPPORT_TICKET_DEFLECTION("Enable api to create zendesk ticket and for generating coveo token", HarnessTeam.CDP),
-  SRM_SPLUNK_SIGNALFX("Will enable SignalFX metric health source in SRM", HarnessTeam.CV);
+  CI_PYTHON_TI("Enable Test Intelligence for Python", HarnessTeam.CI),
+  SRM_SPLUNK_SIGNALFX("Will enable SignalFX metric health source in SRM", HarnessTeam.CV),
+  CI_USE_S3_FOR_CACHE("Use S3 bucket for cache intelligence instead of GCP", HarnessTeam.CI),
+  BUILD_CREDITS_VIEW(
+      "Enable build credit dashboard in UI, FF will be removed once the Free credits allocation for all users are introduced",
+      HarnessTeam.GTM),
+  SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG(
+      "Will fire the artifact and manifest triggers for all the versions in the polling response instead of the latest only",
+      HarnessTeam.SPG);
 
   @Deprecated
   FeatureName() {

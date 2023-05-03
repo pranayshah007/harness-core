@@ -180,13 +180,19 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.11
-  liteEngineImage: harness/ci-lite-engine:1.16.11
+  addonImage: harness/ci-addon:1.16.12
+  liteEngineImage: harness/ci-lite-engine:1.16.12
   isLocal: false
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
     bucket: "gcp_bucket"
     serviceKey: "gcp_service_key"
+  cacheIntelligenceS3Config:
+    bucket: "s3_bucket"
+    accessKey: "s3_access_key"
+    accessSecret: "s3_access_secret"
+    region: "s3_bucket_region"
+    endpoint: "s3_endpoint"
   dockerLayerCachingConfig:
     endpoint: "endpoint"
     bucket: "bucket"
@@ -267,7 +273,7 @@ ciExecutionServiceConfig:
     # The below config is for K8 steps
     gitCloneConfig:
       # Use rootless image only for K8 git clone
-      image: harness/drone-git:1.3.3-rootless
+      image: harness/drone-git:1.3.4-rootless
       entrypoint:
         - /usr/local/bin/clone
       windowsEntrypoint:

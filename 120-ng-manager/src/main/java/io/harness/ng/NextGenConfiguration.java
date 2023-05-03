@@ -19,6 +19,7 @@ import io.harness.account.AccountConfig;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
+import io.harness.cdng.plugininfoproviders.PluginExecutionConfig;
 import io.harness.cf.CfClientConfig;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
@@ -253,6 +254,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   @JsonProperty("gitService") private GitServiceConfiguration gitServiceConfiguration;
   @JsonProperty(value = "disableFreezeNotificationTemplate") private boolean disableFreezeNotificationTemplate;
+  @JsonProperty(value = "pluginExecutionConfig") private PluginExecutionConfig pluginExecutionConfig;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;

@@ -9,7 +9,7 @@ package io.harness.template.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
+import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE_INPUTS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ngexception.NGTemplateException;
@@ -21,9 +21,9 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.reconcile.remote.NgManagerReconcileClient;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntityGetResponse;
+import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.template.yaml.TemplateYamlUtils;

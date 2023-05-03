@@ -34,6 +34,9 @@ batchQueryConfig:
   instanceDataBatchSize: 5000
   syncJobDisabled: false
 
+bulkOperationBatchQueryConfig:
+  queryBatchSize: 400
+
 podInfo:
   name: batch-processing-0
   replica: 1

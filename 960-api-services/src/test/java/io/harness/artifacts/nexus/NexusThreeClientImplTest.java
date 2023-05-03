@@ -8,6 +8,7 @@
 package io.harness.artifacts.nexus;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.SHIVAM;
 
@@ -38,6 +39,7 @@ import software.wings.utils.RepositoryFormat;
 import com.github.tomakehurst.wiremock.core.Options;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -643,10 +645,10 @@ public class NexusThreeClientImplTest {
 
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(2);
-    assertThat(response.get(0).getNumber()).isEqualTo("a1new");
-    assertThat(response.get(0).getUiDisplayName()).isEqualTo("Version# a1new");
+    assertThat(response.get(0).getNumber()).isEqualTo("latest2");
+    assertThat(response.get(0).getUiDisplayName()).isEqualTo("Version# latest2");
     assertThat(response.get(0).getBuildUrl())
-        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new");
+        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/latest2");
   }
 
   @Test
@@ -818,10 +820,10 @@ public class NexusThreeClientImplTest {
 
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(2);
-    assertThat(response.get(0).getNumber()).isEqualTo("a1new");
-    assertThat(response.get(0).getUiDisplayName()).isEqualTo("Version# a1new");
+    assertThat(response.get(0).getNumber()).isEqualTo("latest2");
+    assertThat(response.get(0).getUiDisplayName()).isEqualTo("Version# latest2");
     assertThat(response.get(0).getBuildUrl())
-        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new");
+        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/latest2");
   }
   @Test
   @Owner(developers = SHIVAM)
@@ -926,10 +928,10 @@ public class NexusThreeClientImplTest {
 
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(2);
-    assertThat(response.get(0).getNumber()).isEqualTo("a1new");
-    assertThat(response.get(0).getUiDisplayName()).isEqualTo("Version# a1new");
+    assertThat(response.get(0).getNumber()).isEqualTo("latest2");
+    assertThat(response.get(0).getUiDisplayName()).isEqualTo("Version# latest2");
     assertThat(response.get(0).getBuildUrl())
-        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new");
+        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/latest2");
   }
 
   @Test
@@ -1035,10 +1037,10 @@ public class NexusThreeClientImplTest {
 
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(2);
-    assertThat(response.get(0).getNumber()).isEqualTo("a1new");
-    assertThat(response.get(0).getUiDisplayName()).isEqualTo("Version# a1new");
+    assertThat(response.get(0).getNumber()).isEqualTo("latest2");
+    assertThat(response.get(0).getUiDisplayName()).isEqualTo("Version# latest2");
     assertThat(response.get(0).getBuildUrl())
-        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new");
+        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/latest2");
   }
 
   @Test
@@ -1501,5 +1503,153 @@ public class NexusThreeClientImplTest {
     assertThat(response).isNotNull();
     assertThat(response.code()).isEqualTo(200);
     assertThat(response.headers().get(DOCKER_CONTENT_DIGEST)).isEqualTo(SHA);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_PUTHRAYA)
+  @Category(UnitTests.class)
+  public void testGetPackageNameBuildDetailsWithLastUpdatedAr() throws IOException {
+    NexusRequest nexusConfig = NexusRequest.builder()
+                                   .nexusUrl(url)
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
+                                   .hasCredentials(true)
+                                   .artifactRepositoryUrl(artifactRepoUrl)
+                                   .version(VERSION_3)
+                                   .build();
+
+    String repoKey = "TestRepoKey1";
+    String artifactPath = "test/artifact";
+
+    wireMockRule.stubFor(
+        get(urlEqualTo("/service/rest/v1/search?sort=version&direction=desc&repository=" + repoKey + "&group=group"))
+            .willReturn(aResponse().withStatus(200).withBody("{\n"
+                + "    \"items\": [\n"
+                + "        {\n"
+                + "            \"id\": \"Z2VuZXJpYy1yZXBvOmYxMGJkMDU5M2RlM2I1ZTRkMmY2OTViNGZhODFlNTFi\",\n"
+                + "            \"repository\": \"generic-repo\",\n"
+                + "            \"format\": \"raw\",\n"
+                + "            \"group\": \"/hello-world\",\n"
+                + "            \"name\": \"hello-world/v4.json\",\n"
+                + "            \"version\": null,\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"http://localhost:8081/repository/generic-repo/hello-world/v4.json\",\n"
+                + "                    \"path\": \"hello-world/v4.json\",\n"
+                + "                    \"id\": \"Z2VuZXJpYy1yZXBvOmY4OThiMzkwM2NiOTljNTk2ODM1OTdlZGM1YWZmOWJj\",\n"
+                + "                    \"repository\": \"generic-repo\",\n"
+                + "                    \"format\": \"raw\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"a62a5724d6d71acc7fa02640b7a1d5e812d8a17c\",\n"
+                + "                        \"sha256\": \"edf078aeadbe4701be97a64cd60eccf11f3679a1672c11acc89e961794072821\",\n"
+                + "                        \"sha512\": \"533e589c9f5b5243b91e26eb40592a520eb224fdb208a4866a3a64d428845a239635f20f3ba0f849f9b8e1431e35a21d81087a58f884007553cb8a04d243a022\",\n"
+                + "                        \"md5\": \"31ef97ef67cf3461bdc345c35711f9e6\"\n"
+                + "                    },\n"
+                + "                    \"contentType\": \"application/json\",\n"
+                + "                    \"lastModified\": \"2023-04-28T05:20:39.016+00:00\",\n"
+                + "                    \"lastDownloaded\": null,\n"
+                + "                    \"uploader\": \"admin\",\n"
+                + "                    \"uploaderIp\": \"172.17.0.1\",\n"
+                + "                    \"fileSize\": 0\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"id\": \"Z2VuZXJpYy1yZXBvOjQwMjkyYWNkZWJjMDFiODMxMDMwY2Q1MjdlZDZmNDRj\",\n"
+                + "            \"repository\": \"generic-repo\",\n"
+                + "            \"format\": \"raw\",\n"
+                + "            \"group\": \"/hello-world\",\n"
+                + "            \"name\": \"hello-world/v1.json\",\n"
+                + "            \"version\": null,\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"http://localhost:8081/repository/generic-repo/hello-world/v1.json\",\n"
+                + "                    \"path\": \"hello-world/v1.json\",\n"
+                + "                    \"id\": \"Z2VuZXJpYy1yZXBvOjIxMDMxZGZhZjQ1ZTViNTgzNjE1NGJhYTBkYzIxZjBj\",\n"
+                + "                    \"repository\": \"generic-repo\",\n"
+                + "                    \"format\": \"raw\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"885a76c040184933d4e7efbe6c7c7c1648ed8f60\",\n"
+                + "                        \"sha256\": \"c4ca054baad24321c897016b70be0456a4781112940c350d7b01d6a768a72bb3\",\n"
+                + "                        \"sha512\": \"ddb4c6f4f993b2023dc8a9dfce0c505726f38d287270084f9a603f0e352916b85f4bd2101e008d58e49eff0e47f597af4167584fd2dde115c0b23323632c2027\",\n"
+                + "                        \"md5\": \"a6667dc31a2a68a3dab4537d14ea6433\"\n"
+                + "                    },\n"
+                + "                    \"contentType\": \"application/json\",\n"
+                + "                    \"lastModified\": \"2023-04-28T05:20:57.843+00:00\",\n"
+                + "                    \"lastDownloaded\": null,\n"
+                + "                    \"uploader\": \"admin\",\n"
+                + "                    \"uploaderIp\": \"172.17.0.1\",\n"
+                + "                    \"fileSize\": 0\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"id\": \"Z2VuZXJpYy1yZXBvOjJlNDdkZGEwZjFiNTU1ZTA3MTU5ZGM5ZjlkZDNmZWY0\",\n"
+                + "            \"repository\": \"generic-repo\",\n"
+                + "            \"format\": \"raw\",\n"
+                + "            \"group\": \"/hello-world\",\n"
+                + "            \"name\": \"hello-world/v0.json\",\n"
+                + "            \"version\": null,\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"http://localhost:8081/repository/generic-repo/hello-world/v0.json\",\n"
+                + "                    \"path\": \"hello-world/v0.json\",\n"
+                + "                    \"id\": \"Z2VuZXJpYy1yZXBvOjU4MTgwMDVkZTJlYjJiZDEwODFmYjVlMWRkYWFmMjNj\",\n"
+                + "                    \"repository\": \"generic-repo\",\n"
+                + "                    \"format\": \"raw\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"885a76c040184933d4e7efbe6c7c7c1648ed8f60\",\n"
+                + "                        \"sha256\": \"c4ca054baad24321c897016b70be0456a4781112940c350d7b01d6a768a72bb3\",\n"
+                + "                        \"sha512\": \"ddb4c6f4f993b2023dc8a9dfce0c505726f38d287270084f9a603f0e352916b85f4bd2101e008d58e49eff0e47f597af4167584fd2dde115c0b23323632c2027\",\n"
+                + "                        \"md5\": \"a6667dc31a2a68a3dab4537d14ea6433\"\n"
+                + "                    },\n"
+                + "                    \"contentType\": \"application/json\",\n"
+                + "                    \"lastModified\": \"2023-04-28T07:07:04.503+00:00\",\n"
+                + "                    \"lastDownloaded\": null,\n"
+                + "                    \"uploader\": \"admin\",\n"
+                + "                    \"uploaderIp\": \"172.17.0.1\",\n"
+                + "                    \"fileSize\": 0\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"id\": \"Z2VuZXJpYy1yZXBvOjc3MGIyMDQ3NDZmMjRhOTE3M2FjNzhjZDA3OTRiMzcw\",\n"
+                + "            \"repository\": \"generic-repo\",\n"
+                + "            \"format\": \"raw\",\n"
+                + "            \"group\": \"/hello-world\",\n"
+                + "            \"name\": \"hello-world/v5.json\",\n"
+                + "            \"version\": null,\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"http://localhost:8081/repository/generic-repo/hello-world/v5.json\",\n"
+                + "                    \"path\": \"hello-world/v5.json\",\n"
+                + "                    \"id\": \"Z2VuZXJpYy1yZXBvOmJiNmM2ZWY5Nzk2ZGFjODM4MWNjOWI2OTliZTRmMGJl\",\n"
+                + "                    \"repository\": \"generic-repo\",\n"
+                + "                    \"format\": \"raw\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"a62a5724d6d71acc7fa02640b7a1d5e812d8a17c\",\n"
+                + "                        \"sha256\": \"edf078aeadbe4701be97a64cd60eccf11f3679a1672c11acc89e961794072821\",\n"
+                + "                        \"sha512\": \"533e589c9f5b5243b91e26eb40592a520eb224fdb208a4866a3a64d428845a239635f20f3ba0f849f9b8e1431e35a21d81087a58f884007553cb8a04d243a022\",\n"
+                + "                        \"md5\": \"31ef97ef67cf3461bdc345c35711f9e6\"\n"
+                + "                    },\n"
+                + "                    \"contentType\": \"application/json\",\n"
+                + "                    \"lastModified\": \"2023-04-28T07:07:19.699+00:00\",\n"
+                + "                    \"lastDownloaded\": null,\n"
+                + "                    \"uploader\": \"admin\",\n"
+                + "                    \"uploaderIp\": \"172.17.0.1\",\n"
+                + "                    \"fileSize\": 0\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        }\n"
+                + "    ],\n"
+                + "    \"continuationToken\": null\n"
+                + "}")));
+    List<BuildDetailsInternal> response = nexusThreeService.getPackageNamesBuildDetails(nexusConfig, repoKey, "group");
+
+    assertThat(response).isNotNull();
+    assertThat(response).size().isEqualTo(4);
+    assertThat(response.stream().map(BuildDetailsInternal::getNumber).collect(Collectors.toList()))
+        .isEqualTo(Lists.newArrayList(
+            "hello-world/v5.json", "hello-world/v0.json", "hello-world/v1.json", "hello-world/v4.json"));
   }
 }

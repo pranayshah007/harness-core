@@ -53,16 +53,16 @@ import io.harness.pms.contracts.service.VariablesServiceGrpc;
 import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceBlockingStub;
 import io.harness.pms.contracts.service.VariablesServiceRequest;
 import io.harness.rule.Owner;
-import io.harness.template.beans.PermissionTypes;
-import io.harness.template.beans.TemplateDeleteListRequestDTO;
-import io.harness.template.beans.TemplateImportRequestDTO;
-import io.harness.template.beans.TemplateImportSaveResponse;
-import io.harness.template.beans.TemplateListRepoResponse;
-import io.harness.template.beans.TemplateWrapperResponseDTO;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.helpers.TemplateReferenceHelper;
 import io.harness.template.helpers.TemplateYamlConversionHelper;
+import io.harness.template.resources.beans.PermissionTypes;
+import io.harness.template.resources.beans.TemplateDeleteListRequestDTO;
+import io.harness.template.resources.beans.TemplateImportRequestDTO;
+import io.harness.template.resources.beans.TemplateImportSaveResponse;
+import io.harness.template.resources.beans.TemplateListRepoResponse;
+import io.harness.template.resources.beans.TemplateWrapperResponseDTO;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateMergeService;
@@ -160,7 +160,7 @@ public class NGTemplateResourceTest extends CategoryTest {
     // Create a VariablesStub using the in-process channel;
     variablesServiceBlockingStub = VariablesServiceGrpc.newBlockingStub(channel);
 
-    templateResource = new NGTemplateResource(templateService, templateServiceHelper, accessControlClient,
+    templateResource = new NGTemplateResourceImpl(templateService, templateServiceHelper, accessControlClient,
         templateMergeService, variablesServiceBlockingStub, templateYamlConversionHelper, templateReferenceHelper,
         customDeploymentResourceClient, templateVariableCreatorFactory);
     ClassLoader classLoader = this.getClass().getClassLoader();

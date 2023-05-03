@@ -579,7 +579,8 @@ public class ServiceStepV3Test extends CategoryTest {
                                 .childrenNodeIds(new ArrayList<>())
                                 .build(),
                             null))
-        .withMessageContaining("The value provided xyz-1 does not match the required regex pattern");
+        .withMessageContaining(
+            "The value provided for [service.serviceDefinition.spec.artifacts.primary.spec.tag: xyz-1] does not match the required regex pattern");
   }
 
   @Test
@@ -609,7 +610,8 @@ public class ServiceStepV3Test extends CategoryTest {
                                 .childrenNodeIds(new ArrayList<>())
                                 .build(),
                             null))
-        .withMessageContaining("The value provided 7 does not match any of the allowed values [5,6]");
+        .withMessageContaining(
+            "The value provided for [environment.variables.numbervar: 7] does not match any of the allowed values [5,6]");
   }
   @Test
   @Owner(developers = OwnerRule.ROHITKARELIA)

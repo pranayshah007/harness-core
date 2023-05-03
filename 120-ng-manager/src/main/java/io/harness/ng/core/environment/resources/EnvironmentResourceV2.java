@@ -717,9 +717,8 @@ public class EnvironmentResourceV2 {
     throwExceptionForInvalidRequestDTO(serviceOverrideRequestDTO);
     validateServiceOverrideScope(serviceOverrideRequestDTO, accountId);
 
-    boolean isOverridesV2 = checkFeatureFlagForOverridesV2(accountId);
     NGServiceOverridesEntity serviceOverridesEntity =
-        ServiceOverridesMapper.toServiceOverridesEntity(accountId, serviceOverrideRequestDTO, isOverridesV2);
+        ServiceOverridesMapper.toServiceOverridesEntity(accountId, serviceOverrideRequestDTO);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(serviceOverridesEntity.getOrgIdentifier(),
         serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getAccountId());
     environmentValidationHelper.checkThatEnvExists(serviceOverridesEntity.getAccountId(),

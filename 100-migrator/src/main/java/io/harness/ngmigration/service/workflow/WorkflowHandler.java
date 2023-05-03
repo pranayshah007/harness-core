@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service.workflow;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_INPUT;
 import static io.harness.ngmigration.utils.MigratorUtility.getRollbackPhases;
@@ -72,6 +73,7 @@ import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.FailureStrategy;
 import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
+import software.wings.beans.TemplateExpression;
 import software.wings.beans.Variable;
 import software.wings.beans.VariableType;
 import software.wings.beans.Workflow;
@@ -972,25 +974,103 @@ public abstract class WorkflowHandler {
     }
     List<WorkflowPhase> phases = getPhases(workflow);
 
-    // Case where all the phases uses same service and infra and are not templatized
-    // Later need to handle templatization case as well.
-    if (isNotEmpty(phases)) {
-      Set<String> serviceIds = new HashSet<>();
-      Set<String> infraDefIds = new HashSet<>();
+    if (isEmpty(phases)) {
+      return true;
+    }
 
-      for (WorkflowPhase workflowPhase : phases) {
-        if (workflowPhase.checkServiceTemplatized() || workflowPhase.checkInfraDefinitionTemplatized()) {
-          return false;
-        }
-        String serviceId = workflowPhase.getServiceId();
-        String infraDefinitionId = workflowPhase.getInfraDefinitionId();
-        serviceIds.add(serviceId);
-        infraDefIds.add(infraDefinitionId);
-        if (serviceIds.size() > 1 || infraDefIds.size() > 1) {
-          return false;
-        }
+    return areAllPhasesNonTemplatizedAndHaveSameSvcInfra(phases) || areAllPhasesTemplatizedAndHaveSameSvcInfra(phases);
+  }
+
+  private boolean areAllPhasesNonTemplatizedAndHaveSameSvcInfra(List<WorkflowPhase> phases) {
+    Set<String> serviceIds = new HashSet<>();
+    Set<String> infraDefIds = new HashSet<>();
+
+    for (WorkflowPhase workflowPhase : phases) {
+      if (workflowPhase.checkServiceTemplatized() || workflowPhase.checkInfraDefinitionTemplatized()) {
+        return false;
+      }
+      String serviceId = workflowPhase.getServiceId();
+      String infraDefinitionId = workflowPhase.getInfraDefinitionId();
+      serviceIds.add(serviceId);
+      infraDefIds.add(infraDefinitionId);
+      if (serviceIds.size() > 1 || infraDefIds.size() > 1) {
+        return false;
       }
     }
     return true;
+  }
+
+  private boolean areAllPhasesTemplatizedAndHaveSameSvcInfra(List<WorkflowPhase> phases) {
+    Set<String> serviceExpressions = new HashSet<>();
+    Set<String> infraDefExpressions = new HashSet<>();
+
+    for (WorkflowPhase workflowPhase : phases) {
+      if (!workflowPhase.checkServiceTemplatized() || !workflowPhase.checkInfraDefinitionTemplatized()) {
+        return false;
+      }
+      List<TemplateExpression> templateExpressions =
+          CollectionUtils.emptyIfNull(workflowPhase.getTemplateExpressions());
+
+      for (TemplateExpression templateExpression : templateExpressions) {
+        if ("serviceId".equals(templateExpression.getFieldName())) {
+          serviceExpressions.add(templateExpression.getExpression());
+        }
+        if ("infraDefinitionId".equals(templateExpression.getFieldName())) {
+          infraDefExpressions.add(templateExpression.getExpression());
+        }
+      }
+      if (serviceExpressions.size() > 1 || infraDefExpressions.size() > 1) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public List<StepExpressionFunctor> getExpressionFunctors(MigrationContext migrationContext, Workflow workflow) {
+    WorkflowMigrationContext context = WorkflowMigrationContext.newInstance(migrationContext, workflow);
+    PhaseStep prePhaseStep = getPreDeploymentPhase(workflow);
+    List<WorkflowPhase> phases = getPhases(workflow);
+    PhaseStep postPhaseStep = getPostDeploymentPhase(workflow);
+    List<WorkflowPhase> rollbackPhases = getRollbackPhases(workflow);
+
+    List<StepExpressionFunctor> stepExpressionFunctors = new ArrayList<>();
+
+    if (prePhaseStep != null && EmptyPredicate.isNotEmpty(prePhaseStep.getSteps())) {
+      WorkflowPhase prePhase = WorkflowPhaseBuilder.aWorkflowPhase().name("Pre Deployment").build();
+      prePhaseStep.setName("Pre Deployment");
+      stepExpressionFunctors.addAll(getFunctorForPhase(context, prePhase));
+    }
+
+    if (EmptyPredicate.isNotEmpty(phases)) {
+      phases.stream()
+          .map(phase -> getFunctorForPhase(context, phase))
+          .forEach(functors -> stepExpressionFunctors.addAll(functors));
+    }
+
+    if (postPhaseStep != null && EmptyPredicate.isNotEmpty(postPhaseStep.getSteps())) {
+      WorkflowPhase postPhase = WorkflowPhaseBuilder.aWorkflowPhase().name("Post Deployment").build();
+      postPhaseStep.setName("Post Deployment");
+      stepExpressionFunctors.addAll(getFunctorForPhase(context, postPhase));
+    }
+
+    return stepExpressionFunctors;
+  }
+
+  private List<StepExpressionFunctor> getFunctorForPhase(
+      WorkflowMigrationContext migrationContext, WorkflowPhase phase) {
+    if (phase == null || EmptyPredicate.isEmpty(phase.getPhaseSteps())) {
+      return Collections.emptyList();
+    }
+
+    List<StepExpressionFunctor> functors = new ArrayList<>();
+    for (PhaseStep phaseStep : phase.getPhaseSteps()) {
+      if (EmptyPredicate.isNotEmpty(phaseStep.getSteps())) {
+        for (GraphNode step : phaseStep.getSteps()) {
+          StepMapper factory = stepMapperFactory.getStepMapper(step.getType());
+          functors.addAll(factory.getExpressionFunctor(migrationContext, phase, phaseStep, step));
+        }
+      }
+    }
+    return functors;
   }
 }

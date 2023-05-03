@@ -28,8 +28,11 @@ import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -56,6 +59,7 @@ import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookRegistrationStatus;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogType;
+import io.harness.ngtriggers.beans.entity.metadata.status.StatusResult;
 import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistrationStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.WebhookInfo;
@@ -73,6 +77,7 @@ import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.service.impl.NGTriggerServiceImpl;
 import io.harness.ngtriggers.utils.PollingSubscriptionHelper;
 import io.harness.ngtriggers.validations.TriggerValidationHandler;
+import io.harness.ngtriggers.validations.ValidationResult;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.merger.YamlConfig;
@@ -784,5 +789,40 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     assertThatThrownBy(() -> ngTriggerServiceImpl.validatePipelineRef(triggerDetails))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("pipelineBranchName is missing or is empty.");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testUpdateTriggerWithValidationStatusWhileRuntime() {
+    NGTriggerEntity ngTriggerEntity = NGTriggerEntity.builder()
+                                          .identifier("id")
+                                          .orgIdentifier("orgId")
+                                          .projectIdentifier("projId")
+                                          .targetIdentifier("targetId")
+                                          .enabled(true)
+                                          .name("name")
+                                          .build();
+    doNothing().when(ngTriggerElementMapper).updateEntityYmlWithEnabledValue(ngTriggerEntity);
+    doReturn(ngTriggerEntity).when(ngTriggerRepository).updateValidationStatus(any(), any());
+    ArgumentCaptor<NGTriggerEntity> entityAfterUpdate = ArgumentCaptor.forClass(NGTriggerEntity.class);
+    ngTriggerServiceImpl.updateTriggerWithValidationStatus(
+        ngTriggerEntity, ValidationResult.builder().success(false).message("message").build(), true);
+    verify(ngTriggerRepository, times(1)).updateValidationStatus(any(), entityAfterUpdate.capture());
+    assertThat(entityAfterUpdate.getValue().getEnabled()).isTrue();
+    assertThat(entityAfterUpdate.getValue().getTriggerStatus().getValidationStatus().getStatusResult())
+        .isEqualTo(StatusResult.FAILED);
+    assertThat(entityAfterUpdate.getValue().getTriggerStatus().getValidationStatus().getDetailedMessage())
+        .isEqualTo("message");
+
+    ArgumentCaptor<NGTriggerEntity> entityAfterUpdate1 = ArgumentCaptor.forClass(NGTriggerEntity.class);
+    ngTriggerServiceImpl.updateTriggerWithValidationStatus(
+        ngTriggerEntity, ValidationResult.builder().success(false).message("message").build(), false);
+    verify(ngTriggerRepository, times(2)).updateValidationStatus(any(), entityAfterUpdate1.capture());
+    assertThat(entityAfterUpdate1.getValue().getEnabled()).isFalse();
+    assertThat(entityAfterUpdate1.getValue().getTriggerStatus().getValidationStatus().getStatusResult())
+        .isEqualTo(StatusResult.FAILED);
+    assertThat(entityAfterUpdate1.getValue().getTriggerStatus().getValidationStatus().getDetailedMessage())
+        .isEqualTo("message");
   }
 }

@@ -7,6 +7,7 @@
 
 package io.harness.models;
 
+import io.harness.entities.RollbackStatus;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.contracts.execution.Status;
 
@@ -34,4 +35,6 @@ public class ActiveServiceInstanceInfoWithEnvType {
   private String lastPipelineExecutionId;
   private String stageNodeExecutionId;
   private Status stageStatus;
+  private String stageSetupId;
+  private RollbackStatus rollbackStatus;
 }

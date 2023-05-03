@@ -27,6 +27,7 @@ import io.harness.beans.yaml.extended.TIBuildTool;
 import io.harness.beans.yaml.extended.TIDotNetBuildEnvName;
 import io.harness.beans.yaml.extended.TIDotNetVersion;
 import io.harness.beans.yaml.extended.TILanguage;
+import io.harness.beans.yaml.extended.TIPythonVersion;
 import io.harness.beans.yaml.extended.TISplitStrategy;
 import io.harness.beans.yaml.extended.reports.UnitTestReport;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -93,12 +94,16 @@ public class RunTestsStepInfo implements CIStepInfo {
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> packages;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> namespaces;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> testAnnotations;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> testRoot;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.TIDotNetBuildEnvName")
   private ParameterField<TIDotNetBuildEnvName> buildEnvironment;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.TIDotNetVersion")
   private ParameterField<TIDotNetVersion> frameworkVersion;
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.TIPythonVersion")
+  private ParameterField<TIPythonVersion> pythonVersion;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.reports.UnitTestReport")
   private ParameterField<UnitTestReport> reports;
@@ -134,22 +139,24 @@ public class RunTestsStepInfo implements CIStepInfo {
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> testGlobs;
 
   @Builder
-  @ConstructorProperties({"identifier", "name", "retry", "args", "language", "buildTool", "image", "connectorRef",
-      "resources", "reports", "testAnnotations", "packages", "namespaces", "runOnlySelectedTests", "preCommand",
-      "postCommand", "outputVariables", "envVariables", "buildEnvironment", "frameworkVersion", "privileged",
-      "runAsUser", "imagePullPolicy", "shell", "testSplitStrategy", "enableTestSplitting", "testGlobs"})
+  @ConstructorProperties(
+      {"identifier", "name", "retry", "args", "language", "buildTool", "image", "connectorRef", "resources", "reports",
+          "testAnnotations", "testRoot", "packages", "namespaces", "runOnlySelectedTests", "preCommand", "postCommand",
+          "outputVariables", "envVariables", "buildEnvironment", "frameworkVersion", "pythonVersion", "privileged",
+          "runAsUser", "imagePullPolicy", "shell", "testSplitStrategy", "enableTestSplitting", "testGlobs"})
   public RunTestsStepInfo(String identifier, String name, Integer retry, ParameterField<String> args,
       ParameterField<TILanguage> language, ParameterField<TIBuildTool> buildTool, ParameterField<String> image,
       ParameterField<String> connectorRef, ContainerResource resources, ParameterField<UnitTestReport> reports,
-      ParameterField<String> testAnnotations, ParameterField<String> packages, ParameterField<String> namespaces,
-      ParameterField<Boolean> runOnlySelectedTests, ParameterField<String> preCommand,
-      ParameterField<String> postCommand, ParameterField<List<OutputNGVariable>> outputVariables,
+      ParameterField<String> testAnnotations, ParameterField<String> testRoot, ParameterField<String> packages,
+      ParameterField<String> namespaces, ParameterField<Boolean> runOnlySelectedTests,
+      ParameterField<String> preCommand, ParameterField<String> postCommand,
+      ParameterField<List<OutputNGVariable>> outputVariables,
       ParameterField<Map<String, ParameterField<String>>> envVariables,
       ParameterField<TIDotNetBuildEnvName> buildEnvironment, ParameterField<TIDotNetVersion> frameworkVersion,
-      ParameterField<Boolean> privileged, ParameterField<Integer> runAsUser,
-      ParameterField<ImagePullPolicy> imagePullPolicy, ParameterField<CIShellType> shell,
-      ParameterField<TISplitStrategy> testSplitStrategy, ParameterField<Boolean> enableTestSplitting,
-      ParameterField<String> testGlobs) {
+      ParameterField<TIPythonVersion> pythonVersion, ParameterField<Boolean> privileged,
+      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
+      ParameterField<CIShellType> shell, ParameterField<TISplitStrategy> testSplitStrategy,
+      ParameterField<Boolean> enableTestSplitting, ParameterField<String> testGlobs) {
     this.identifier = identifier;
     this.name = name;
     this.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);
@@ -161,6 +168,7 @@ public class RunTestsStepInfo implements CIStepInfo {
     this.resources = resources;
     this.reports = reports;
     this.testAnnotations = testAnnotations;
+    this.testRoot = testRoot;
     this.packages = packages;
     this.namespaces = namespaces;
     this.runOnlySelectedTests = runOnlySelectedTests;
@@ -174,6 +182,7 @@ public class RunTestsStepInfo implements CIStepInfo {
     this.shell = shell;
     this.buildEnvironment = buildEnvironment;
     this.frameworkVersion = frameworkVersion;
+    this.pythonVersion = pythonVersion;
     this.testSplitStrategy = testSplitStrategy;
     this.enableTestSplitting = enableTestSplitting;
     this.testGlobs = testGlobs;

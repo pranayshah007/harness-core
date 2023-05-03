@@ -9,8 +9,8 @@ package io.harness.template.services;
 
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.rule.OwnerRule.vivekveman;
-import static io.harness.template.beans.PermissionTypes.TEMPLATE_VIEW_PERMISSION;
 import static io.harness.template.resources.NGTemplateResource.TEMPLATE;
+import static io.harness.template.resources.beans.PermissionTypes.TEMPLATE_VIEW_PERMISSION;
 
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doReturn;

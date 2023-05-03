@@ -27,6 +27,7 @@ import com.mongodb.ReadPreference;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -55,15 +56,19 @@ public class StateInspectionServiceImpl implements StateInspectionService {
     if (v != null) {
       List<ExpressionVariableUsage.Item> vars = v.getVariables();
 
+      List<ExpressionVariableUsage.Item> newVars = new ArrayList<>();
       for (ExpressionVariableUsage.Item var : vars) {
         if (K8S_RESOURCES_MANIFESTS.equals(var.getExpression())) {
-          vars.remove(var);
-          vars.add(ExpressionVariableUsage.Item.builder()
-                       .expression(var.getExpression())
-                       .value(ManifestHelper.toYamlForLogs(ManifestHelper.processYaml(var.getValue())))
-                       .count(var.getCount())
-                       .build());
+          newVars.add(ExpressionVariableUsage.Item.builder()
+                          .expression(var.getExpression())
+                          .value(ManifestHelper.toYamlForLogs(ManifestHelper.processYaml(var.getValue())))
+                          .count(var.getCount())
+                          .build());
+        } else {
+          newVars.add(var);
         }
+        stateInspection.getData().put(
+            EXPRESSION_VARIABLE_USAGE, ExpressionVariableUsage.builder().variables(newVars).build());
       }
     }
   }

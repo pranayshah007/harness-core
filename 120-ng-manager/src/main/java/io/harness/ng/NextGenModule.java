@@ -81,6 +81,7 @@ import io.harness.cdng.fileservice.FileServiceClient;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperService;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperServiceImpl;
+import io.harness.cdng.plugininfoproviders.PluginExecutionConfig;
 import io.harness.client.NgConnectorManagerClientModule;
 import io.harness.connector.ConnectorModule;
 import io.harness.connector.ConnectorResourceClientModule;
@@ -519,6 +520,12 @@ public class NextGenModule extends AbstractModule {
   @Singleton
   CEGcpSetupConfig ceGcpSetupConfig() {
     return this.appConfig.getCeGcpSetupConfig();
+  }
+
+  @Provides
+  @Singleton
+  PluginExecutionConfig pluginExecutionConfig() {
+    return this.appConfig.getPluginExecutionConfig();
   }
 
   @Provides

@@ -13,6 +13,7 @@ import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSec
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cistatus.service.GithubAppConfig;
 import io.harness.cistatus.service.GithubService;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
@@ -39,7 +40,7 @@ public class ScmGitProviderHelper {
     if (scmConnector instanceof GithubConnectorDTO) {
       return getSlugFromUrl(((GithubConnectorDTO) scmConnector).getUrl());
     } else if (scmConnector instanceof GitlabConnectorDTO) {
-      return getSlugFromUrl(((GitlabConnectorDTO) scmConnector).getUrl());
+      return getSlugFromUrlForGitlab((GitlabConnectorDTO) scmConnector);
     } else if (scmConnector instanceof BitbucketConnectorDTO) {
       return getSlugFromUrlForBitbucket(((BitbucketConnectorDTO) scmConnector).getUrl());
     } else if (scmConnector instanceof AzureRepoConnectorDTO) {
@@ -55,6 +56,19 @@ public class ScmGitProviderHelper {
   }
 
   private String getSlugFromUrl(String url) {
+    String repoName = gitClientHelper.getGitRepo(url);
+    String ownerName = gitClientHelper.getGitOwner(url, false);
+    return ownerName + "/" + repoName;
+  }
+
+  private String getSlugFromUrlForGitlab(GitlabConnectorDTO gitlabConnectorDTO) {
+    String url = gitlabConnectorDTO.getUrl();
+    String apiUrl = ScmGitProviderMapper.getGitlabApiUrl(gitlabConnectorDTO);
+    if (!StringUtils.isBlank(apiUrl) && gitlabConnectorDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
+      apiUrl = StringUtils.stripEnd(apiUrl, "/") + "/";
+      String slug = StringUtils.removeStart(url, apiUrl);
+      return StringUtils.removeEnd(slug, ".git");
+    }
     String repoName = gitClientHelper.getGitRepo(url);
     String ownerName = gitClientHelper.getGitOwner(url, false);
     return ownerName + "/" + repoName;

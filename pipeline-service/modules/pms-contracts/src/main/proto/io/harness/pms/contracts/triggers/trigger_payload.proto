@@ -25,6 +25,7 @@ message TriggerPayload {
 
 message ArtifactData {
   string build = 1;
+  map<string, string> metadata = 2;
 }
 
 message ManifestData {

@@ -274,6 +274,7 @@ message GetBatchFilesResponse {
 message UserDetailsRequest {
   string accountIdentifier = 1;
   GitAccessRequest gitAccessRequest = 2;
+  io.harness.security.Principal principal = 3;
 }
 
 message GitAccessRequest {

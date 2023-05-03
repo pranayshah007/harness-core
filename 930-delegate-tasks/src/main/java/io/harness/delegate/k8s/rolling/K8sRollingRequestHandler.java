@@ -47,6 +47,8 @@ import io.harness.delegate.task.k8s.K8sRollingDeployRequest;
 import io.harness.delegate.task.k8s.K8sRollingDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.delegate.task.k8s.client.K8sClient;
+import io.harness.delegate.task.utils.ServiceHookDTO;
+import io.harness.delegate.utils.ServiceHookHandler;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.K8sCliCommandType;
@@ -60,6 +62,8 @@ import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.k8s.model.ServiceHookAction;
+import io.harness.k8s.model.ServiceHookType;
 import io.harness.k8s.releasehistory.IK8sRelease;
 import io.harness.k8s.releasehistory.IK8sRelease.Status;
 import io.harness.k8s.releasehistory.IK8sReleaseHistory;
@@ -124,11 +128,18 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
 
     LogCallback logCallback = k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, FetchFiles,
         k8sRollingDeployRequest.isShouldOpenFetchFilesLogStream(), commandUnitsProgress);
-
+    ServiceHookDTO serviceHookTaskParams = new ServiceHookDTO(k8sDelegateTaskParams);
+    ServiceHookHandler serviceHookHandler = new ServiceHookHandler(
+        k8sRollingDeployRequest.getServiceHooks(), serviceHookTaskParams, steadyStateTimeoutInMillis);
+    serviceHookHandler.applyServiceHooks(ServiceHookType.PRE_HOOK, ServiceHookAction.FETCH_FILES,
+        k8sDelegateTaskParams.getWorkingDirectory(), logCallback, manifestFilesDirectory);
     logCallback.saveExecutionLog(color("\nStarting Kubernetes Rolling Deployment", LogColor.White, LogWeight.Bold));
     k8sTaskHelperBase.fetchManifestFilesAndWriteToDirectory(k8sRollingDeployRequest.getManifestDelegateConfig(),
-        manifestFilesDirectory, logCallback, steadyStateTimeoutInMillis, k8sRollingDeployRequest.getAccountId());
+        manifestFilesDirectory, logCallback, steadyStateTimeoutInMillis, k8sRollingDeployRequest.getAccountId(), false);
 
+    serviceHookHandler.applyServiceHooks(ServiceHookType.POST_HOOK, ServiceHookAction.FETCH_FILES,
+        k8sDelegateTaskParams.getWorkingDirectory(), logCallback, manifestFilesDirectory);
+    logCallback.saveExecutionLog("Done.", INFO, SUCCESS);
     init(k8sRollingDeployRequest, k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress));
 

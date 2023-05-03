@@ -40,11 +40,11 @@ import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.YamlDiffResponseDTO;
 import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
 import io.harness.rule.Owner;
-import io.harness.template.beans.PermissionTypes;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntityGetResponse;
 import io.harness.template.helpers.TemplateInputsRefreshHelper;
 import io.harness.template.helpers.TemplateInputsValidator;
+import io.harness.template.resources.beans.PermissionTypes;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
