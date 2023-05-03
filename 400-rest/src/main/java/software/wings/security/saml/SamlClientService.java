@@ -82,14 +82,17 @@ public class SamlClientService {
     return getSamlClient(ssoSettingService.getSamlSettingsByAccountId(account.getUuid()));
   }
 
-  public Map<String, SamlClientFriendlyName> getSamlClientListFromSamlSettingList(List<SamlSettings> samlSettings)
+  private Map<String, SamlClientFriendlyName> getSamlClientListFromSamlSettingList(List<SamlSettings> samlSettings)
       throws SamlException {
     Map<String, SamlClientFriendlyName> samlClientMap = new HashMap<>();
     if (isNotEmpty(samlSettings)) {
       samlSettings.forEach(setting -> {
         try {
-          samlClientMap.put(
-              setting.getUuid(), new SamlClientFriendlyName(getSamlClient(setting), setting.getFriendlySamlName(), setting.getSamlProviderType()));
+          if (setting != null && setting.isAuthenticationEnabled()) {
+            samlClientMap.put(setting.getUuid(),
+                new SamlClientFriendlyName(
+                    getSamlClient(setting), setting.getFriendlySamlName(), setting.getSamlProviderType()));
+          }
         } catch (SamlException se) {
           log.warn("Error generating saml client for saml setting id {} in account {}", setting.getUuid(),
               setting.getAccountId());
