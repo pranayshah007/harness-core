@@ -9,6 +9,7 @@ package io.harness.delegate.task.git;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHINAV2;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -43,6 +44,7 @@ import io.harness.rule.Owner;
 import io.harness.shell.SshSessionConfig;
 
 import java.io.IOException;
+import java.nio.file.FileSystemException;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -144,6 +146,20 @@ public class GitFetchTaskNGTest {
   @Category(UnitTests.class)
   public void testFetchFilesFromRepoWithNonExistentFile() throws IOException {
     doThrow(new InvalidRequestException(TEST_INPUT_ID, new NoSuchFileException(TEST_INPUT_ID)))
+        .when(ngGitService)
+        .fetchFilesByPath(anyString(), any(GitStoreDelegateConfig.class), anyString(), any(SshSessionConfig.class),
+            any(GitConfigDTO.class));
+    when(gitDecryptionHelper.getSSHSessionConfig(any(), any())).thenReturn(mock(SshSessionConfig.class));
+
+    GitFetchResponse response = gitFetchTaskNG.run(taskParameters);
+    assertThat(response.getTaskStatus()).isEqualTo(TaskStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testFetchFilesFromRepoWithNonExistentFile2() throws IOException {
+    doThrow(new InvalidRequestException(TEST_INPUT_ID, new FileSystemException(TEST_INPUT_ID)))
         .when(ngGitService)
         .fetchFilesByPath(anyString(), any(GitStoreDelegateConfig.class), anyString(), any(SshSessionConfig.class),
             any(GitConfigDTO.class));

@@ -49,7 +49,7 @@ import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
 import java.io.IOException;
-import java.nio.file.NoSuchFileException;
+import java.nio.file.FileSystemException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,7 +111,7 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
           String exceptionMsg = gitFetchFilesTaskHelper.extractErrorMessage(ex);
 
           // Values.yaml in service spec is optional.
-          if (ex.getCause() instanceof NoSuchFileException && gitFetchFilesConfig.isSucceedIfFileNotFound()) {
+          if (ex.getCause() instanceof FileSystemException && gitFetchFilesConfig.isSucceedIfFileNotFound()) {
             log.info("file not found. " + exceptionMsg, ex);
             executionLogCallback.saveExecutionLog(color(
                 format("No values.yaml found for manifest with identifier: %s.", gitFetchFilesConfig.getIdentifier()),
