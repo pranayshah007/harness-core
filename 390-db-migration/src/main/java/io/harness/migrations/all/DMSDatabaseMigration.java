@@ -53,9 +53,9 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
   @Override
   public void migrate() throws DelegateDBMigrationFailed {
     // Ignore migration for SAAS
-    if (!DeployMode.isOnPrem(DEPLOY_MODE)) {
-      return;
-    }
+    //    if (!DeployMode.isOnPrem(DEPLOY_MODE)) {
+    //      return;
+    //    }
 
     log.info("DMS DB Migration started");
 
