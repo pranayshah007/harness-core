@@ -12,5 +12,5 @@ if [ "${PLATFORM}" == "jenkins" ]; then
 fi
 BAZEL_DIRS=${HOME}/.bazel-dirs
 BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_symlinks=normal --remote_download_outputs=all --symlink_prefix=${BAZEL_DIRS}/"
-ASSESSMENT_MODULE="//assessment-service/service:module //assessment-service/service:module_deploy.jar"
+ASSESSMENT_MODULE="//assessment-service/service/src/main/java/io/harness/assessment/app:module //assessment-service/service:module_deploy.jar"
 bazel ${bazelrc} build $ASSESSMENT_MODULE ${BAZEL_ARGUMENTS}
