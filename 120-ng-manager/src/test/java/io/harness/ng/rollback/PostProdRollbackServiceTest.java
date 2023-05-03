@@ -28,6 +28,7 @@ import io.harness.dtos.rollback.PostProdRollbackCheckDTO;
 import io.harness.dtos.rollback.PostProdRollbackResponseDTO;
 import io.harness.entities.Instance;
 import io.harness.entities.InstanceType;
+import io.harness.entities.RollbackStatus;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.contracts.execution.Status;
@@ -79,6 +80,7 @@ public class PostProdRollbackServiceTest extends CategoryTest {
     doReturn(Instance.builder()
                  .lastPipelineExecutionId(planExecutionId)
                  .stageStatus(Status.FAILED)
+                 .rollbackStatus(RollbackStatus.STARTED)
                  .infrastructureMappingId(infraMappingId)
                  .id(instanceKey)
                  .build())
@@ -92,6 +94,7 @@ public class PostProdRollbackServiceTest extends CategoryTest {
     doReturn(Instance.builder()
                  .stageStatus(Status.SUCCEEDED)
                  .instanceType(InstanceType.ASG_INSTANCE)
+                 .rollbackStatus(RollbackStatus.STARTED)
                  .instanceKey(instanceKey)
                  .infrastructureMappingId(infraMappingId)
                  .build())
@@ -104,6 +107,19 @@ public class PostProdRollbackServiceTest extends CategoryTest {
                  .stageStatus(Status.SUCCEEDED)
                  .instanceType(InstanceType.K8S_INSTANCE)
                  .instanceKey(instanceKey)
+                 .rollbackStatus(RollbackStatus.STARTED)
+                 .infrastructureMappingId(infraMappingId)
+                 .build())
+        .when(instanceRepository)
+        .getInstanceByInstanceKeyAndInfrastructureMappingId(instanceKey, infraMappingId);
+    response = postProdRollbackService.checkIfRollbackAllowed(accountId, instanceKey, infraMappingId);
+    assertThat(response.isRollbackAllowed()).isFalse();
+
+    doReturn(Instance.builder()
+                 .stageStatus(Status.SUCCEEDED)
+                 .instanceType(InstanceType.K8S_INSTANCE)
+                 .instanceKey(instanceKey)
+                 .rollbackStatus(RollbackStatus.NOT_STARTED)
                  .infrastructureMappingId(infraMappingId)
                  .build())
         .when(instanceRepository)

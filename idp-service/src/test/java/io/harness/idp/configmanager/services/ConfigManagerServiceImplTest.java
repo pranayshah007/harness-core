@@ -24,6 +24,7 @@ import io.harness.idp.configmanager.beans.entity.MergedAppConfigEntity;
 import io.harness.idp.configmanager.repositories.AppConfigRepository;
 import io.harness.idp.configmanager.repositories.MergedAppConfigRepository;
 import io.harness.idp.configmanager.service.ConfigEnvVariablesService;
+import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.configmanager.service.ConfigManagerServiceImpl;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.k8s.client.K8sClient;
@@ -81,8 +82,21 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   static final String TEST_SECRET_ID = "test-secret-id";
   static final String TEST_SECRET_ENV_NAME = "test-env-name";
 
-  static final String TEST_VALID_MERGED_APP_CONFIG =
-      "---\nproxy:\n  /harness/prod:\n    target: https://app.harness.io/\n    pathRewrite:\n      api/proxy/harness/prod/?: /\nkafka:\n  clientId: backstage\n  clusters:\n  - name: cluster\n    dashboardUrl: https://akhq.io/\n    brokers:\n    - localhost:9092\n";
+  static final String TEST_VALID_MERGED_APP_CONFIG = "---\n"
+      + "proxy:\n"
+      + "  /harness/prod:\n"
+      + "    target: https://app.harness.io/\n"
+      + "    pathRewrite:\n"
+      + "      api/proxy/harness/prod/?: /\n"
+      + "    allowedHeaders:\n"
+      + "    - authorization\n"
+      + "kafka:\n"
+      + "  clientId: backstage\n"
+      + "  clusters:\n"
+      + "  - name: cluster\n"
+      + "    dashboardUrl: https://akhq.io/\n"
+      + "    brokers:\n"
+      + "    - localhost:9092\n";
   static final String TEST_NAMESPACE_FOR_ACCOUNT = "test-namespace";
 
   static final String TEST_EXPECTED_CONFIG_VALUE_AFTER_MERGE = "---\n"
@@ -274,6 +288,41 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
     assertEquals(mergedPluginConfigs.getConfig(), TEST_EXPECTED_CONFIG_VALUE_AFTER_MERGE);
     assertEquals(mergedPluginConfigs.getEnvVariables().get(0).getEnvName(), TEST_SECRET_ENV_NAME);
     assertEquals(mergedPluginConfigs.getEnvVariables().get(0).getHarnessSecretIdentifier(), TEST_SECRET_ID);
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testToggleConfigForAccount() throws Exception {
+    AppConfigEntity appConfigEntity = getTestAppConfigEntity();
+    when(appConfigRepository.updateConfigEnablement(any(), any(), any(), any())).thenReturn(null);
+    doNothing().when(configEnvVariablesService).deleteConfigEnvVariables(any(), any());
+    Exception exception = null;
+    try {
+      configManagerServiceImpl.toggleConfigForAccount(
+          TEST_ACCOUNT_IDENTIFIER, TEST_CONFIG_ID, false, TEST_PLUGIN_CONFIG_TYPE);
+    } catch (InvalidRequestException e) {
+      exception = e;
+    }
+    assertNotNull(exception);
+
+    when(appConfigRepository.findByAccountIdentifierAndConfigId(any(), any())).thenReturn(appConfigEntity);
+    when(appConfigRepository.save(any())).thenReturn(appConfigEntity);
+    when(appConfigRepository.updateConfigEnablement(any(), any(), any(), any())).thenReturn(appConfigEntity);
+    AppConfig returnedAppConfig = configManagerServiceImpl.toggleConfigForAccount(
+        TEST_ACCOUNT_IDENTIFIER, TEST_CONFIG_ID, true, TEST_PLUGIN_CONFIG_TYPE);
+    assertEquals(returnedAppConfig.getConfigId(), TEST_CONFIG_ID);
+    assertEquals(returnedAppConfig.getConfigs(), TEST_CONFIG_VALUE);
+    assertEquals(returnedAppConfig.getConfigName(), TEST_CONFIG_NAME);
+
+    when(appConfigRepository.findByAccountIdentifierAndConfigId(any(), any())).thenReturn(null);
+    when(appConfigRepository.save(any())).thenReturn(appConfigEntity);
+    when(appConfigRepository.updateConfigEnablement(any(), any(), any(), any())).thenReturn(appConfigEntity);
+    returnedAppConfig = configManagerServiceImpl.toggleConfigForAccount(
+        TEST_ACCOUNT_IDENTIFIER, TEST_CONFIG_ID, true, TEST_PLUGIN_CONFIG_TYPE);
+    assertEquals(returnedAppConfig.getConfigId(), TEST_CONFIG_ID);
+    assertEquals(returnedAppConfig.getConfigs(), TEST_CONFIG_VALUE);
+    assertEquals(returnedAppConfig.getConfigName(), TEST_CONFIG_NAME);
   }
 
   private AppConfigEntity getTestAppConfigEntity() {

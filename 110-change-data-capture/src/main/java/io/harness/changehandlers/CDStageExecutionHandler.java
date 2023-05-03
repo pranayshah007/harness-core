@@ -40,6 +40,9 @@ public class CDStageExecutionHandler extends AbstractChangeDataHandler {
 
     BasicDBObject executionSummaryDetails =
         (BasicDBObject) dbObject.get(StageExecutionInfoKeys.executionSummaryDetails);
+    if (executionSummaryDetails == null) {
+      return null;
+    }
     BasicDBObject serviceInfo = (BasicDBObject) executionSummaryDetails.get("serviceInfo");
     if (serviceInfo == null) {
       return null;

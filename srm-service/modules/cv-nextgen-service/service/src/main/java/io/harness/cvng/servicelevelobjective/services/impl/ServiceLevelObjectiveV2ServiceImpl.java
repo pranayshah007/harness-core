@@ -15,6 +15,7 @@ import static io.harness.cvng.notification.utils.NotificationRuleConstants.PROJE
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.REMAINING_MINUTES;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.REMAINING_PERCENTAGE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_NAME;
+import static io.harness.cvng.utils.ScopedInformation.getScopedInformation;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -162,7 +163,6 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Inject private SLIRecordServiceImpl sliRecordService;
   @Inject private CompositeSLORecordServiceImpl compositeSLORecordService;
   @Inject private AnnotationService annotationService;
-  private Query<AbstractServiceLevelObjective> sloQuery;
   @Inject SLOTimeScaleService sloTimeScaleService;
   @Inject private NotificationClient notificationClient;
 
@@ -575,11 +575,6 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   }
 
   @Override
-  public List<AbstractServiceLevelObjective> getAllSLOs(ProjectParams projectParams) {
-    return get(projectParams, Filter.builder().build());
-  }
-
-  @Override
   public List<AbstractServiceLevelObjective> getAllSLOs(ProjectParams projectParams, ServiceLevelObjectiveType type) {
     return get(projectParams, Filter.builder().sloType(type).build());
   }
@@ -844,9 +839,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
 
   @Override
   public List<AbstractServiceLevelObjective> getAllReferredSLOs(
-      ProjectParams projectParams, CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec) {
-    List<ServiceLevelObjectiveDetailsDTO> serviceLevelObjectiveDetailDTOList =
-        compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails();
+      ProjectParams projectParams, Set<ServiceLevelObjectivesDetail> serviceLevelObjectiveDetailDTOList) {
     List<String> identifierList =
         serviceLevelObjectiveDetailDTOList.stream()
             .map(serviceLevelObjectivesDetail -> serviceLevelObjectivesDetail.getServiceLevelObjectiveRef())
@@ -854,37 +847,45 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     List<AbstractServiceLevelObjective> serviceLevelObjectiveList =
         getSimpleSLOWithChildResource(projectParams, identifierList);
 
-    Set<String> scopedIdentifierSet =
-        serviceLevelObjectiveDetailDTOList.stream()
-            .map(serviceLevelObjectiveDetailsDTO
-                -> ScopedInformation.getScopedInformation(serviceLevelObjectiveDetailsDTO.getAccountId(),
-                    serviceLevelObjectiveDetailsDTO.getOrgIdentifier(),
-                    serviceLevelObjectiveDetailsDTO.getProjectIdentifier(),
-                    serviceLevelObjectiveDetailsDTO.getServiceLevelObjectiveRef()))
-            .collect(Collectors.toSet());
+    Set<String> scopedIdentifierSet = serviceLevelObjectiveDetailDTOList.stream()
+                                          .map(serviceLevelObjectiveDetailsDTO
+                                              -> getScopedInformation(serviceLevelObjectiveDetailsDTO.getAccountId(),
+                                                  serviceLevelObjectiveDetailsDTO.getOrgIdentifier(),
+                                                  serviceLevelObjectiveDetailsDTO.getProjectIdentifier(),
+                                                  serviceLevelObjectiveDetailsDTO.getServiceLevelObjectiveRef()))
+                                          .collect(Collectors.toSet());
 
     return serviceLevelObjectiveList.stream()
         .filter(serviceLevelObjective -> scopedIdentifierSet.contains(getScopedIdentifier(serviceLevelObjective)))
         .collect(Collectors.toList());
   }
 
+  public List<AbstractServiceLevelObjective> getAllReferredSLOs(
+      ProjectParams projectParams, List<CompositeServiceLevelObjective> compositeServiceLevelObjectives) {
+    Set<ServiceLevelObjectivesDetail> serviceLevelObjectiveDetailDTOList =
+        compositeServiceLevelObjectives.stream()
+            .flatMap(compositeServiceLevelObjective
+                -> compositeServiceLevelObjective.getServiceLevelObjectivesDetails().stream())
+            .collect(Collectors.toSet());
+    return getAllReferredSLOs(projectParams, serviceLevelObjectiveDetailDTOList);
+  }
+
   @Override
   public String getScopedIdentifier(AbstractServiceLevelObjective serviceLevelObjective) {
-    return ScopedInformation.getScopedInformation(serviceLevelObjective.getAccountId(),
-        serviceLevelObjective.getOrgIdentifier(), serviceLevelObjective.getProjectIdentifier(),
-        serviceLevelObjective.getIdentifier());
+    return getScopedInformation(serviceLevelObjective.getAccountId(), serviceLevelObjective.getOrgIdentifier(),
+        serviceLevelObjective.getProjectIdentifier(), serviceLevelObjective.getIdentifier());
   }
 
   @Override
   public String getScopedIdentifier(ServiceLevelObjectivesDetail serviceLevelObjectivesDetail) {
-    return ScopedInformation.getScopedInformation(serviceLevelObjectivesDetail.getAccountId(),
+    return getScopedInformation(serviceLevelObjectivesDetail.getAccountId(),
         serviceLevelObjectivesDetail.getOrgIdentifier(), serviceLevelObjectivesDetail.getProjectIdentifier(),
         serviceLevelObjectivesDetail.getServiceLevelObjectiveRef());
   }
 
   @Override
   public String getScopedIdentifierForSLI(SimpleServiceLevelObjective simpleServiceLevelObjective) {
-    return ScopedInformation.getScopedInformation(simpleServiceLevelObjective.getAccountId(),
+    return getScopedInformation(simpleServiceLevelObjective.getAccountId(),
         simpleServiceLevelObjective.getOrgIdentifier(), simpleServiceLevelObjective.getProjectIdentifier(),
         simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
   }
@@ -1086,8 +1087,13 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
           serviceLevelObjectiveDTO.getIdentifier(), sum));
     }
 
-    List<AbstractServiceLevelObjective> serviceLevelObjectiveList =
-        getAllReferredSLOs(projectParams, compositeServiceLevelObjectiveSpec);
+    List<AbstractServiceLevelObjective> serviceLevelObjectiveList = getAllReferredSLOs(projectParams,
+        compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
+            .stream()
+            .map(serviceLevelObjectiveDetailsDTO
+                -> serviceLevelObjectiveDetailsTransformer.getServiceLevelObjectiveDetails(
+                    serviceLevelObjectiveDetailsDTO))
+            .collect(Collectors.toSet()));
     serviceLevelObjectiveList.stream().forEach(serviceLevelObjective -> {
       if (serviceLevelObjective.getSliEvaluationType() != compositeServiceLevelObjectiveSpec.getEvaluationType()) {
         throw new InvalidRequestException(String.format(
@@ -1100,7 +1106,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
         compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
             .stream()
             .map(serviceLevelObjectiveDetailsDTO
-                -> ScopedInformation.getScopedInformation(serviceLevelObjectiveDetailsDTO.getAccountId(),
+                -> getScopedInformation(serviceLevelObjectiveDetailsDTO.getAccountId(),
                     serviceLevelObjectiveDetailsDTO.getOrgIdentifier(),
                     serviceLevelObjectiveDetailsDTO.getProjectIdentifier(),
                     serviceLevelObjectiveDetailsDTO.getServiceLevelObjectiveRef()))
@@ -1286,18 +1292,17 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
               .filter(serviceLevelObjective -> serviceLevelObjective.getSliEvaluationType() == filter.sliEvaluationType)
               .collect(Collectors.toList());
     }
-    List<String> accessibleProjects =
-        nextGenService.listAccessibleProjects(projectParams.getAccountIdentifier())
-            .stream()
-            .map(projectDTO
-                -> ScopedInformation.getScopedInformation(
-                    projectParams.getAccountIdentifier(), projectDTO.getOrgIdentifier(), projectDTO.getIdentifier()))
-            .collect(Collectors.toList());
+    List<String> accessibleProjects = nextGenService.listAccessibleProjects(projectParams.getAccountIdentifier())
+                                          .stream()
+                                          .map(projectDTO
+                                              -> getScopedInformation(projectParams.getAccountIdentifier(),
+                                                  projectDTO.getOrgIdentifier(), projectDTO.getIdentifier()))
+                                          .collect(Collectors.toList());
     return serviceLevelObjectiveList.stream()
         .filter(slo
             -> slo.getType().equals(ServiceLevelObjectiveType.COMPOSITE)
-                || accessibleProjects.contains(ScopedInformation.getScopedInformation(
-                    slo.getAccountId(), slo.getOrgIdentifier(), slo.getProjectIdentifier())))
+                || accessibleProjects.contains(
+                    getScopedInformation(slo.getAccountId(), slo.getOrgIdentifier(), slo.getProjectIdentifier())))
         .collect(Collectors.toList());
   }
 
@@ -1333,8 +1338,16 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .collect(Collectors.toList());
 
     return sloDetailsList.stream()
-        .filter(sloDetailsToAbstractServiceLevelObjectiveMap::containsKey)
-        .map(sloDetailsToAbstractServiceLevelObjectiveMap::get)
+        .map(sloDetail
+            -> sloDetailsToAbstractServiceLevelObjectiveMap.containsKey(sloDetail)
+                ? sloDetailsToAbstractServiceLevelObjectiveMap.get(sloDetail)
+                : AbstractServiceLevelObjective.getDeletedAbstractServiceLevelObjective(
+                    ProjectParams.builder()
+                        .accountIdentifier(sloDetail.getAccountId())
+                        .orgIdentifier(sloDetail.getOrgIdentifier())
+                        .projectIdentifier(sloDetail.getProjectIdentifier())
+                        .build(),
+                    sloDetail.getServiceLevelObjectiveRef()))
         .collect(Collectors.toList());
   }
 

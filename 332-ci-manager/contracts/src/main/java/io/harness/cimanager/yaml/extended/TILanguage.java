@@ -23,7 +23,8 @@ public enum TILanguage {
   @JsonProperty("Java") JAVA("Java"),
   @JsonProperty("Kotlin") KOTLIN("Kotlin"),
   @JsonProperty("Scala") SCALA("Scala"),
-  @JsonProperty("Csharp") CSHARP("Csharp");
+  @JsonProperty("Csharp") CSHARP("Csharp"),
+  @JsonProperty("Python") PYTHON("Python");
 
   private final String yamlName;
 

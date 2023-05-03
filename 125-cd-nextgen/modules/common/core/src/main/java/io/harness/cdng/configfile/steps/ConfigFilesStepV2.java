@@ -86,6 +86,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
@@ -105,7 +106,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
                                                .build();
   private static final String CONFIG_FILES_STEP_V2 = "CONFIG_FILES_STEP_V2";
   static final String CONFIG_FILE_COMMAND_UNIT = "configFiles";
-  static final int CONFIG_FILE_GIT_TASK_TIMEOUT = 10;
+  private static final long CONFIG_FILE_GIT_TASK_TIMEOUT = TimeUnit.MINUTES.toMillis(10);
   private static final String CONFIG_FILES_STEP_DETAIL_KEY = "ConfigFilesStepDetailKey";
 
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
@@ -234,9 +235,6 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
     logCallback.saveExecutionLog(LogHelper.color(
         format("Starting delegate task to fetch git config files: %s", filePaths), LogColor.Cyan, LogWeight.Bold));
 
-    final List<TaskSelector> delegateSelectors =
-        getDelegateSelectorsFromGitConnector(configFileOutcome.getStore(), ambiance);
-
     GitTaskNGRequest gitTaskNGRequest = GitTaskNGRequest.builder()
                                             .accountId(AmbianceUtils.getAccountId(ambiance))
                                             .gitRequestFileConfigs(Collections.singletonList(gitRequestFileConfig))
@@ -254,10 +252,10 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
 
     TaskRequest taskRequest = TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData,
         referenceFalseKryoSerializer, TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), false,
-        TaskType.GIT_TASK_NG.getDisplayName(), delegateSelectors);
+        TaskType.GIT_TASK_NG.getDisplayName(), new ArrayList<>());
 
-    final DelegateTaskRequest delegateTaskRequest = cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest,
-        taskData, delegateSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toSet()), "", false);
+    final DelegateTaskRequest delegateTaskRequest =
+        cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, new HashSet<>(), "", false);
 
     return delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
   }

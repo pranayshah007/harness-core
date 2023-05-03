@@ -26,6 +26,7 @@ import software.wings.service.impl.instance.CompareEnvironmentAggregationRespons
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import org.hibernate.validator.constraints.NotEmpty;
 
@@ -82,6 +83,13 @@ public interface DashboardStatisticsService {
    */
   @Nonnull List<Instance> getAppInstancesForAccount(@NotEmpty String accountId, long timestamp);
 
+  /**
+   * Search instances for the given account. This API is used by the stats cron job.
+   *
+   * @return total of retrieved instances
+   */
+  int consumeAppInstancesForAccount(@NotEmpty String accountId, long timestamp, Consumer<Instance> instanceConsumer);
+
   List<InstanceStatsByEnvironment> getServiceInstances(String accountId, String serviceId, long timestamp);
 
   PageResponse<InstanceSummaryStatsByService> getAppInstanceSummaryStatsByService(
@@ -113,4 +121,6 @@ public interface DashboardStatisticsService {
 
   ServiceInstanceDashboard getServiceInstanceDashboardFiltered(
       String accountId, String appId, String serviceId, PageRequest<WorkflowExecution> pageRequest);
+
+  boolean isInstanceConsumerEnabled(String accountId);
 }

@@ -34,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class RuntimeInputValuesValidator {
-  public String validateStaticValues(Object templateObject, Object inputSetObject) {
+  public String validateStaticValues(Object templateObject, Object inputSetObject, String expressionFqn) {
     /*
       This if block is to validate static values inside an array of primitive values.
       For example, the pipeline can have something like `a: <+input>.regex(a.*a)`, and the input set provides
@@ -45,7 +45,7 @@ public class RuntimeInputValuesValidator {
       ArrayNode inputSetValueArray = (ArrayNode) inputSetObject;
       List<JsonNode> invalidJsonNodes = new ArrayList<>();
       for (JsonNode element : inputSetValueArray) {
-        String error = validateStaticValues(templateObject, element);
+        String error = validateStaticValues(templateObject, element, expressionFqn);
         if (EmptyPredicate.isNotEmpty(error)) {
           invalidJsonNodes.add(element);
         }
@@ -81,7 +81,8 @@ public class RuntimeInputValuesValidator {
               NGExpressionUtils.matchesPattern(Pattern.compile(inputSetValidator.getParameters()), inputSetFieldValue);
           error = matchesPattern
               ? ""
-              : String.format("The value provided %s does not match the required regex pattern", inputSetFieldValue);
+              : String.format("The value provided for [%s: %s] does not match the required regex pattern",
+                  expressionFqn, inputSetFieldValue);
         } else if (inputSetValidator.getValidatorType() == ALLOWED_VALUES) {
           String[] allowedValues = inputSetValidator.getParameters().split(", *");
           boolean matches = false;
@@ -94,9 +95,9 @@ public class RuntimeInputValuesValidator {
           }
           String result = String.join(",", allowedValues);
           error = matches ? ""
-                          : String.format("The value provided %s does not match any of the allowed values "
+                          : String.format("The value provided for [%s: %s] does not match any of the allowed values "
                                   + "[%s]",
-                              inputSetFieldValue, result);
+                              expressionFqn, inputSetFieldValue, result);
         }
       } catch (IOException e) {
         throw new InvalidRequestException(

@@ -17,8 +17,8 @@ import static io.harness.gitaware.helper.TemplateMoveConfigOperationType.INLINE_
 import static io.harness.gitaware.helper.TemplateMoveConfigOperationType.getMoveConfigType;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
-import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
-import static io.harness.template.beans.PermissionTypes.TEMPLATE_VIEW_PERMISSION;
+import static io.harness.template.resources.beans.NGTemplateConstants.STABLE_VERSION;
+import static io.harness.template.resources.beans.PermissionTypes.TEMPLATE_VIEW_PERMISSION;
 
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
@@ -84,14 +84,6 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.springdata.TransactionHelper;
 import io.harness.template.TemplateFilterPropertiesDTO;
-import io.harness.template.beans.FilterParamsDTO;
-import io.harness.template.beans.PageParamsDTO;
-import io.harness.template.beans.PermissionTypes;
-import io.harness.template.beans.TemplateImportRequestDTO;
-import io.harness.template.beans.TemplateListRepoResponse;
-import io.harness.template.beans.TemplateMoveConfigResponse;
-import io.harness.template.beans.UpdateGitDetailsParams;
-import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
@@ -99,7 +91,14 @@ import io.harness.template.gitsync.TemplateGitSyncBranchContextGuard;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
 import io.harness.template.helpers.TemplateReferenceHelper;
 import io.harness.template.mappers.NGTemplateDtoMapper;
-import io.harness.template.resources.NGTemplateResource;
+import io.harness.template.resources.beans.FilterParamsDTO;
+import io.harness.template.resources.beans.PageParamsDTO;
+import io.harness.template.resources.beans.PermissionTypes;
+import io.harness.template.resources.beans.TemplateImportRequestDTO;
+import io.harness.template.resources.beans.TemplateListRepoResponse;
+import io.harness.template.resources.beans.TemplateMoveConfigResponse;
+import io.harness.template.resources.beans.UpdateGitDetailsParams;
+import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.template.utils.TemplateUtils;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
@@ -160,6 +159,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       "Template [%s] of versionLabel [%s] under Project[%s], Organization [%s] already exists";
 
   private static final int MAX_LIST_SIZE = 1000;
+
+  private static final String TEMPLATE = "TEMPLATE";
 
   private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
 
@@ -896,7 +897,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         }
         accessControlClient.checkForAccessOrThrow(
             ResourceScope.of(accountId, templateOrgIdentifier, templateProjIdentifier),
-            Resource.of(NGTemplateResource.TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_ACCESS_PERMISSION);
+            Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_ACCESS_PERMISSION);
       }
     }
   }

@@ -810,7 +810,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
                     + "in the pipeline yaml, but the trigger has it as " + value.toString());
           }
         } else {
-          String error = validateStaticValues(templateValue, value);
+          String error = validateStaticValues(templateValue, value, key.getExpressionFqn());
           if (isNotEmpty(error)) {
             errorMap.put(key, error);
           }
@@ -911,7 +911,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       if (!validationResult.isSuccess()) {
         ngTriggerEntity.setEnabled(false);
       }
-      return updateTriggerWithValidationStatus(ngTriggerEntity, validationResult);
+      return updateTriggerWithValidationStatus(ngTriggerEntity, validationResult, false);
     } catch (Exception e) {
       log.error(String.format("Failed in trigger validation for Trigger: %s", ngTriggerEntity.getIdentifier()), e);
     }
@@ -923,7 +923,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   failure in Polling, etc
    */
   public NGTriggerEntity updateTriggerWithValidationStatus(
-      NGTriggerEntity ngTriggerEntity, ValidationResult validationResult) {
+      NGTriggerEntity ngTriggerEntity, ValidationResult validationResult, boolean whileExecution) {
     String identifier = ngTriggerEntity.getIdentifier();
     Criteria criteria = getTriggerEqualityCriteriaWithoutDbVersion(ngTriggerEntity, false);
     boolean needsUpdate = false;
@@ -947,7 +947,9 @@ public class NGTriggerServiceImpl implements NGTriggerService {
                                                                  .statusResult(StatusResult.FAILED)
                                                                  .detailedMessage(validationResult.getMessage())
                                                                  .build());
-      ngTriggerEntity.setEnabled(false);
+      if (!whileExecution) {
+        ngTriggerEntity.setEnabled(false);
+      }
       needsUpdate = true;
     }
 
@@ -1015,7 +1017,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
             toUpdateTriggerPipelineFQNToValueMap.put(key, templateValue);
           } else {
             // If key is variable value, validate its value type
-            String error = validateStaticValues(templateValue, triggerValue);
+            String error = validateStaticValues(templateValue, triggerValue, key.getExpressionFqn());
             if (isNotEmpty(error)) {
               // Replace by empty variable value if validation fails (user will need to provide the value)
               toUpdateTriggerPipelineFQNToValueMap.put(key, "");

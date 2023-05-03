@@ -800,7 +800,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                   .envRef(env)
                   .envRuntimeInputYaml(inputYaml)
                   .servicesOverrides(serviceOverridesMetadataList)
-                  .envYaml(environment.get().getYaml())
+                  .envYaml(environment.get().fetchNonEmptyYaml())
                   .build());
         }
       }

@@ -2230,6 +2230,7 @@ components:
           format: int64
           description: Last modification timestamp for IP Allowlist config.
       required:
+        - ip_allowlist_config
         - created
         - updated
     IPAllowlistConfigValidateResponse:

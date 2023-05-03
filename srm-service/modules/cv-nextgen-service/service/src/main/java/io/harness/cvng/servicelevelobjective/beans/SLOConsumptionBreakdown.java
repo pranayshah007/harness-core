@@ -18,10 +18,10 @@ import lombok.Value;
 public class SLOConsumptionBreakdown {
   @NotNull String sloIdentifier;
   @NotNull String sloName;
-  @NotNull String monitoredServiceIdentifier;
-  @NotNull String serviceName;
-  @NotNull String environmentIdentifier;
-  @NotNull ServiceLevelIndicatorType sliType;
+  String monitoredServiceIdentifier;
+  String serviceName;
+  String environmentIdentifier;
+  ServiceLevelIndicatorType sliType;
   @NotNull double weightagePercentage;
   @NotNull double sloTargetPercentage;
   @NotNull double sliStatusPercentage;

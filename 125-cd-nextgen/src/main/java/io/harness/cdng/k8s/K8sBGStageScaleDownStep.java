@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDP)
 public class K8sBGStageScaleDownStep extends CdTaskExecutable<K8sDeployResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
-                                               .setType(ExecutionNodeType.K8S_BG_STAGE_SCALE_DOWN.getYamlType())
+                                               .setType(ExecutionNodeType.K8S_BLUE_GREEN_STAGE_SCALE_DOWN.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
@@ -45,7 +45,7 @@ public class K8sBGStageScaleDownStep extends CdTaskExecutable<K8sDeployResponse>
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
-    // TODO: complete obtainTaskAfterRbac for K8S_BG_STAGE_SCALE_DOWN
+    // TODO: complete obtainTaskAfterRbac for K8S_BLUE_GREEN_STAGE_SCALE_DOWN
     return TaskRequest.newBuilder().build();
   }
 
@@ -53,7 +53,7 @@ public class K8sBGStageScaleDownStep extends CdTaskExecutable<K8sDeployResponse>
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
       StepElementParameters stepElementParameters, ThrowingSupplier<K8sDeployResponse> responseSupplier)
       throws Exception {
-    // TODO: complete handleTaskResultWithSecurityContext for K8S_BG_STAGE_SCALE_DOWN
+    // TODO: complete handleTaskResultWithSecurityContext for K8S_BLUE_GREEN_STAGE_SCALE_DOWN
     return StepResponse.builder().build();
   }
 }

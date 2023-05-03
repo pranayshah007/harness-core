@@ -8,7 +8,7 @@
 package io.harness.template.services;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.template.beans.PermissionTypes.TEMPLATE_VIEW_PERMISSION;
+import static io.harness.template.resources.beans.PermissionTypes.TEMPLATE_VIEW_PERMISSION;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 

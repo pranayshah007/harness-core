@@ -118,8 +118,8 @@ public class NexusClientImpl {
     }
   }
 
-  public List<BuildDetailsInternal> getDockerArtifactVersions(NexusRequest nexusConfig, String repositoryName,
-      String port, String artifactName, String repoFormat, int maxBuilds) {
+  public List<BuildDetailsInternal> getDockerArtifactVersions(
+      NexusRequest nexusConfig, String repositoryName, String port, String artifactName, String repoFormat) {
     if (isNexusVersion2(nexusConfig)) {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Please check your Nexus connector and/or artifact configuration. Please use the 3.x connector version.",

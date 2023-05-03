@@ -27,12 +27,15 @@ import io.harness.repositories.instance.InstanceRepository;
 
 import com.google.inject.Inject;
 import java.util.Map;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
 public class PostProdRollbackServiceImpl implements PostProdRollbackService {
   // Each instanceType will have its own separate FF.
   private static final Map<InstanceType, FeatureName> INSTANCE_TYPE_TO_FF_MAP =
       Map.of(InstanceType.K8S_INSTANCE, POST_PROD_ROLLBACK);
+  private static final Set<RollbackStatus> ALLOWED_ROLLBACK_START_STATUSES =
+      Set.of(RollbackStatus.NOT_STARTED, RollbackStatus.UNAVAILABLE);
   @Inject private PipelineServiceClient pipelineServiceClient;
   @Inject private InstanceRepository instanceRepository;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
@@ -60,6 +63,12 @@ public class PostProdRollbackServiceImpl implements PostProdRollbackService {
       rollbackCheckDTO.isRollbackAllowed(false);
       rollbackCheckDTO.message(
           String.format("The given instanceType %s is not supported for rollback.", instance.getInstanceType().name()));
+    }
+    if (!ALLOWED_ROLLBACK_START_STATUSES.contains(instance.getRollbackStatus())) {
+      rollbackCheckDTO.isRollbackAllowed(false);
+      rollbackCheckDTO.message(String.format(
+          "Can not start the Rollback. Rollback has already been triggered and the previous rollback status is: %s",
+          instance.getRollbackStatus()));
     }
     return rollbackCheckDTO.build();
   }
