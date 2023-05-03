@@ -185,7 +185,6 @@ public class ConfigFilesStepV2Test extends CategoryTest {
   public void executeSyncConnectorNotFound() {
     doReturn(Optional.empty()).when(connectorService).get(anyString(), anyString(), anyString(), anyString());
     ConfigFileWrapper file1 = sampleConfigFile("file404");
-
     doReturn(OptionalSweepingOutput.builder()
                  .found(true)
                  .output(NgConfigFilesMetadataSweepingOutput.builder()
