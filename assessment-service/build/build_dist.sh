@@ -25,7 +25,7 @@ then
     echo ${PURPOSE} > purpose.txt
 fi
 
-cp ${HOME}/.bazel-dirs/bin/assessment-service/service/module_deploy.jar assessment-service-capsule.jar
+cp ${HOME}/.bazel-dirs/bin/assessment-service/service/src/main/java/io/harness/assessment/app/module_deploy.jar assessment-service-capsule.jar
 cp ../../assessment-service/config/config.yml .
 cp ../../assessment-service/config/keystore.jks .
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
