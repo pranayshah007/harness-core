@@ -1808,6 +1808,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                                            .build();
       try {
         final DelegateParams delegateParams = isEcsDelegate() ? delegateParamsECS : delegatesParams;
+        log.info("ECS Delegate Params: {}", delegateParams);
         HTimeLimiter.callInterruptible21(
             delegateHealthTimeLimiter, Duration.ofSeconds(15), () -> socket.fire(JsonUtils.asJson(delegateParams)));
         lastHeartbeatSentAt.set(clock.millis());
