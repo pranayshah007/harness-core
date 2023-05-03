@@ -51,7 +51,7 @@ public class SRMTelemetrySentStatus implements UuidAware, PersistentEntity {
         .add(CompoundMongoIndex.builder()
                  .name("no_dup")
                  .unique(true)
-                 .field(SRMTelemetrySentStatus.SRMTelemetrySentStatusKeys.accountId)
+                 .field(SRMTelemetrySentStatusKeys.accountId)
                  .build())
         .build();
   }

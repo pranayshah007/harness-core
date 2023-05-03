@@ -11,13 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.CV;
 import static io.harness.telemetry.Destination.ALL;
 
 import io.harness.ModuleType;
-import io.harness.account.AccountClient;
+import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.usage.impl.SRMLicenseUsageDTO;
 import io.harness.cvng.usage.impl.SRMLicenseUsageImpl;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.ng.core.dto.AccountDTO;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.telemetry.TelemetryOption;
 import io.harness.telemetry.TelemetryReporter;
 
@@ -33,8 +31,8 @@ import lombok.extern.slf4j.Slf4j;
 public class SrmTelemetryPublisher {
   @Inject private SRMLicenseUsageImpl srmLicenseUsageService;
   @Inject private TelemetryReporter telemetryReporter;
-  @Inject private AccountClient accountClient;
 
+  @Inject AccountUtils accountUtils;
   @Inject private SrmTelemetryStatusRepository srmTelemetryStatusRepository;
 
   private static final String COUNT_ACTIVE_SERVICES_LICENSES = "srm_license_services_monitored";
@@ -49,9 +47,8 @@ public class SrmTelemetryPublisher {
   public void recordTelemetry() {
     log.info("SrmTelemetryPublisher recordTelemetry execute started.");
     try {
-      List<AccountDTO> accountDTOList = getAllAccounts();
-      for (AccountDTO accountDTO : accountDTOList) {
-        String accountId = accountDTO.getIdentifier();
+      List<String> accountIdList = accountUtils.getAllAccountIds();
+      for (String accountId : accountIdList) {
         try {
           sendEvent(accountId);
         } catch (Exception e) {
@@ -84,9 +81,5 @@ public class SrmTelemetryPublisher {
         log.info("Skipping already sent account {} in past 24 hours", accountId);
       }
     }
-  }
-
-  List<AccountDTO> getAllAccounts() {
-    return CGRestUtils.getResponse(accountClient.getAllAccounts());
   }
 }

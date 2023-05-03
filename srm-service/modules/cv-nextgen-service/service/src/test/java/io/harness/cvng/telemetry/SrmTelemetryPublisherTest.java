@@ -23,7 +23,7 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.ModuleType;
-import io.harness.account.AccountClient;
+import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.usage.impl.SRMLicenseUsageDTO;
@@ -52,9 +52,9 @@ public class SrmTelemetryPublisherTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   private SRMLicenseUsageImpl licenseUsageInterface = mock(SRMLicenseUsageImpl.class);
   @Mock private TelemetryReporter telemetryReporter;
-  @Mock private AccountClient accountClient;
-  @Mock private SrmTelemetryStatusRepository srmTelemetryStatusRepository;
 
+  @Mock private AccountUtils accountUtils;
+  @Mock private SrmTelemetryStatusRepository srmTelemetryStatusRepository;
   @InjectMocks @Spy SrmTelemetryPublisher telemetryPublisher;
 
   @Test
@@ -73,7 +73,10 @@ public class SrmTelemetryPublisherTest extends CategoryTest {
     List<AccountDTO> accountDTOList = new ArrayList<>();
     accountDTOList.add(accountDTO1);
     accountDTOList.add(accountDTO2);
-    doReturn(accountDTOList).when(telemetryPublisher).getAllAccounts();
+    List<String> accountIdList = new ArrayList<>();
+    accountIdList.add("acc1");
+    accountIdList.add("acc2");
+    doReturn(accountIdList).when(accountUtils).getAllAccountIds();
 
     HashMap<String, Object> firstAccountExpectedMap = new HashMap<>();
     firstAccountExpectedMap.put("group_type", "Account");
@@ -110,7 +113,10 @@ public class SrmTelemetryPublisherTest extends CategoryTest {
     List<AccountDTO> accountDTOList = new ArrayList<>();
     accountDTOList.add(accountDTO1);
     accountDTOList.add(accountDTO2);
-    doReturn(accountDTOList).when(telemetryPublisher).getAllAccounts();
+    List<String> accountIdList = new ArrayList<>();
+    accountIdList.add("acc1");
+    accountIdList.add("acc2");
+    doReturn(accountIdList).when(accountUtils).getAllAccountIds();
 
     telemetryPublisher.recordTelemetry();
     verify(telemetryReporter, times(0)).sendGroupEvent(anyString(), anyString(), any(), anyMap(), any());

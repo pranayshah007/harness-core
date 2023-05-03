@@ -8,6 +8,7 @@
 package io.harness.cvng.telemetry;
 
 import io.harness.cvng.core.entities.SRMTelemetrySentStatus;
+import io.harness.cvng.core.entities.SRMTelemetrySentStatus.SRMTelemetrySentStatusKeys;
 
 import com.google.inject.Inject;
 import lombok.AccessLevel;
@@ -26,11 +27,11 @@ public class SRMTelemetryStatusRepositoryCustomImpl implements SRMTelemetryStatu
   @Override
   public boolean updateTimestampIfOlderThan(String accountId, long olderThanTime, long updateToTime) {
     Query query = new Query().addCriteria(new Criteria()
-                                              .and(SRMTelemetrySentStatus.SRMTelemetrySentStatusKeys.accountId)
+                                              .and(SRMTelemetrySentStatusKeys.accountId)
                                               .is(accountId)
-                                              .and(SRMTelemetrySentStatus.SRMTelemetrySentStatusKeys.lastSent)
+                                              .and(SRMTelemetrySentStatusKeys.lastSent)
                                               .lte(olderThanTime));
-    Update update = new Update().set(SRMTelemetrySentStatus.SRMTelemetrySentStatusKeys.lastSent, updateToTime);
+    Update update = new Update().set(SRMTelemetrySentStatusKeys.lastSent, updateToTime);
     FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true).upsert(true);
     SRMTelemetrySentStatus result;
     try {
