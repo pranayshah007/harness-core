@@ -16,6 +16,7 @@ import static software.wings.settings.SettingVariableTypes.SSO_SAML;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.authenticationservice.beans.SAMLProviderType;
 import io.harness.encryption.Encrypted;
 
 import software.wings.annotation.EncryptableSetting;

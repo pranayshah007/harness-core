@@ -32,4 +32,5 @@ public class SSORequest {
   private List<OauthProviderType> oauthProviderTypes;
   private String ssoId;
   private String friendlySamlName;
+  private SAMLProviderType samlProviderType;
 }

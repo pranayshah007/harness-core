@@ -60,7 +60,7 @@ import software.wings.beans.sso.LdapGroupSettings;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.LdapUserSettings;
 import software.wings.beans.sso.OauthSettings;
-import software.wings.beans.sso.SAMLProviderType;
+import io.harness.authenticationservice.beans.SAMLProviderType;
 import software.wings.security.authentication.SSOConfig;
 import software.wings.security.saml.SamlClientService;
 import software.wings.service.impl.security.auth.AuthHandler;

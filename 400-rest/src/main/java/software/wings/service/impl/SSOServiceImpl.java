@@ -51,7 +51,7 @@ import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.LdapSettingsMapper;
 import software.wings.beans.sso.LdapTestResponse;
 import software.wings.beans.sso.OauthSettings;
-import software.wings.beans.sso.SAMLProviderType;
+import io.harness.authenticationservice.beans.SAMLProviderType;
 import software.wings.beans.sso.SSOSettings;
 import software.wings.beans.sso.SamlSettings;
 import software.wings.delegatetasks.DelegateProxyFactory;

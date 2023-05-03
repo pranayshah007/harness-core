@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package software.wings.beans.sso;
+package io.harness.authenticationservice.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 

@@ -17,6 +17,7 @@ import static com.google.common.base.Charsets.UTF_8;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.authenticationservice.beans.SAMLProviderType;
 import io.harness.authenticationservice.beans.SSORequest;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
@@ -88,7 +89,7 @@ public class SamlClientService {
       samlSettings.forEach(setting -> {
         try {
           samlClientMap.put(
-              setting.getUuid(), new SamlClientFriendlyName(getSamlClient(setting), setting.getFriendlySamlName()));
+              setting.getUuid(), new SamlClientFriendlyName(getSamlClient(setting), setting.getFriendlySamlName(), setting.getSamlProviderType()));
         } catch (SamlException se) {
           log.warn("Error generating saml client for saml setting id {} in account {}", setting.getUuid(),
               setting.getAccountId());
@@ -187,6 +188,7 @@ public class SamlClientService {
           populateRedirectUriValueInSSORequest(entry.getValue().getSamlClient(), isTestConnectionRequest, ssoRequest);
           ssoRequest.setFriendlySamlName(entry.getValue().getFriendlySamlName());
           ssoRequest.setSsoId(entry.getKey());
+          ssoRequest.setSamlProviderType(entry.getValue().getSamlProviderType());
           ssoRequests.add(ssoRequest);
         }
       }
@@ -238,5 +240,6 @@ public class SamlClientService {
   public static class SamlClientFriendlyName {
     SamlClient samlClient;
     String friendlySamlName;
+    SAMLProviderType samlProviderType;
   }
 }
