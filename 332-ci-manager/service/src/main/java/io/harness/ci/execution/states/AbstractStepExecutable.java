@@ -192,9 +192,9 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
     String logKey = getLogKey(ambiance);
     String stepGroupIdentifier = AmbianceUtils.obtainStepGroupIdentifier(ambiance);
     String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
-    if (Strings.isNotBlank(stepGroupIdentifier)) {
-      stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
-    }
+    //    if (Strings.isNotBlank(stepGroupIdentifier)) {
+    //      stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
+    //    }
     String accountId = AmbianceUtils.getAccountId(ambiance);
     ParameterField<String> timeout = stepParameters.getTimeout();
     String stepParametersName = stepParameters.getName();
