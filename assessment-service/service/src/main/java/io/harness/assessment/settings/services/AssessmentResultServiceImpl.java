@@ -127,20 +127,19 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                 .build());
         sectionResultResponseMap.get(sectionId).getUserResponses().add(userResponse);
       });
-      AssessmentSectionResultResponse sectionResultResponse =
-          AssessmentSectionResultResponse.builder()
-              .sectionResultResponses(new HashSet<>(sectionResultResponseMap.values()))
-              .assessmentName(resultsResponse.getAssessmentName())
-              .assessmentId(resultsResponse.getAssessmentId())
-              .resultLink(resultsResponse.getResultLink())
-              .majorVersion(resultsResponse.getMajorVersion())
-              .minorVersion(resultsResponse.getMinorVersion())
-              .status(resultsResponse.getStatus())
-              .userScores(resultsResponse.getUserScores())
-              .organizationScores(resultsResponse.getOrganizationScores())
-              .benchmarks(resultsResponse.getBenchmarks())
-              .scoreOverview(resultsResponse.getScoreOverview())
-              .build();
+      return AssessmentSectionResultResponse.builder()
+          .sectionResultResponses(new HashSet<>(sectionResultResponseMap.values()))
+          .assessmentName(resultsResponse.getAssessmentName())
+          .assessmentId(resultsResponse.getAssessmentId())
+          .resultLink(resultsResponse.getResultLink())
+          .majorVersion(resultsResponse.getMajorVersion())
+          .minorVersion(resultsResponse.getMinorVersion())
+          .status(resultsResponse.getStatus())
+          .userScores(resultsResponse.getUserScores())
+          .organizationScores(resultsResponse.getOrganizationScores())
+          .benchmarks(resultsResponse.getBenchmarks())
+          .scoreOverview(resultsResponse.getScoreOverview())
+          .build();
     }
     return null;
   }
