@@ -774,7 +774,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     Map<String, Object> environmentInputYaml = new HashMap<>();
     environmentInputYaml.put(YamlTypes.ENVIRONMENT_YAML, environmentInputs);
     String resolvedYaml = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
-        identifier, YamlPipelineUtils.writeYamlString(environmentInputYaml), true, true);
+        yaml, YamlPipelineUtils.writeYamlString(environmentInputYaml), true, true);
 
     validateEnvironmentYamlSchemaAndLogResults(accountId, yaml, identifier);
 
