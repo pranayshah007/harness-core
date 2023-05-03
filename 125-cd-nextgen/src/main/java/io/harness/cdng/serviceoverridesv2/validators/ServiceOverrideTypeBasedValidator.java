@@ -11,11 +11,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
+
+import javax.inject.Singleton;
 import lombok.NonNull;
 
 @OwnedBy(HarnessTeam.CDC)
+@Singleton
 public interface ServiceOverrideTypeBasedValidator {
-    void validateRequest(@NonNull ServiceOverrideRequestDTOV2 requestDTOV2);
+  void validateRequest(@NonNull ServiceOverrideRequestDTOV2 requestDTOV2);
 
-    String generateServiceOverrideIdentifier(NGServiceOverridesEntity serviceOverridesEntity);
+  String generateServiceOverrideIdentifier(@NonNull NGServiceOverridesEntity serviceOverridesEntity);
 }

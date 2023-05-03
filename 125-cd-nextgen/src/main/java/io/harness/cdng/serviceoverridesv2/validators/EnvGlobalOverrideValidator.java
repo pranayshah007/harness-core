@@ -9,6 +9,8 @@ package io.harness.cdng.serviceoverridesv2.validators;
 
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
+
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 public class EnvGlobalOverrideValidator implements ServiceOverrideTypeBasedValidator {
@@ -16,7 +18,7 @@ public class EnvGlobalOverrideValidator implements ServiceOverrideTypeBasedValid
   public void validateRequest(@NotNull ServiceOverrideRequestDTOV2 requestDTOV2) {}
 
   @Override
-  public String generateServiceOverrideIdentifier(NGServiceOverridesEntity serviceOverridesEntity) {
+  public String generateServiceOverrideIdentifier(@NonNull NGServiceOverridesEntity serviceOverridesEntity) {
     return String.join("_", serviceOverridesEntity.getEnvironmentRef()).replace(".", "_");
   }
 }
