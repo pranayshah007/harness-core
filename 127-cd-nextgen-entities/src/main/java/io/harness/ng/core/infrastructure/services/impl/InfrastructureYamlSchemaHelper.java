@@ -4,7 +4,7 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
-package io.harness.ng.core.infrastructure.resource;
+package io.harness.ng.core.infrastructure.services.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -12,10 +12,10 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.utils.YamlPipelineUtils;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 import io.harness.yaml.validator.InvalidYamlException;
 import io.harness.yaml.validator.YamlSchemaValidator;
 
@@ -34,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class InfrastructureYamlSchemaHelper {
-  private NGFeatureFlagHelperService featureFlagHelperService;
+  private CDFeatureFlagHelper featureFlagHelperService;
   private YamlSchemaValidator yamlSchemaValidator;
 
   public void validateSchema(String accountId, String yaml) {

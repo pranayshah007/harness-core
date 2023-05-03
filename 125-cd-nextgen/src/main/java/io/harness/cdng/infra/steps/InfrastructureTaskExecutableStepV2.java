@@ -72,8 +72,8 @@ import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
-import io.harness.ng.core.infrastructure.resource.InfrastructureYamlSchemaHelper;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.infrastructure.services.impl.InfrastructureYamlSchemaHelper;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -402,7 +402,8 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     } catch (Exception ex) {
       log.error(
           String.format(
-              "Infrastructure %s failed schema validation in the InfrastructureTaskExecutableStepV2 step", infraRef),
+              "Infrastructure yaml failed schema validation in the InfrastructureTaskExecutableStepV2 step for infrastructure [%s]",
+              infraRef),
           ex);
     }
   }

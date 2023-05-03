@@ -19,6 +19,7 @@ import io.harness.CategoryTest;
 import io.harness.EntityType;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.ng.core.environment.services.impl.EnvironmentEntityYamlSchemaHelper;
 import io.harness.rule.Owner;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 import io.harness.yaml.validator.InvalidYamlException;

@@ -19,6 +19,7 @@ import io.harness.CategoryTest;
 import io.harness.EntityType;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.ng.core.service.services.impl.ServiceEntityYamlSchemaHelper;
 import io.harness.rule.Owner;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 import io.harness.yaml.validator.YamlSchemaValidator;

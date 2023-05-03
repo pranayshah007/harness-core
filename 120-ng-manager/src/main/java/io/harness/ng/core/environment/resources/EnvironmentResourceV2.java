@@ -76,6 +76,7 @@ import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.environment.mappers.EnvironmentFilterHelper;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.environment.services.impl.EnvironmentEntityYamlSchemaHelper;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.remote.utils.ScopeAccessHelper;
 import io.harness.ng.core.service.ServiceEntityValidationHelper;
@@ -186,7 +187,7 @@ public class EnvironmentResourceV2 {
   private final CDOverviewDashboardService cdOverviewDashboardService;
   private final NGFeatureFlagHelperService featureFlagHelperService;
   private final ScopeAccessHelper scopeAccessHelper;
-  private EnvironmentEntityYamlSchemaHelper environmentEntityYamlSchemaHelper;
+  private final EnvironmentEntityYamlSchemaHelper environmentEntityYamlSchemaHelper;
   private EnvironmentRbacHelper environmentRbacHelper;
 
   public static final String ENVIRONMENT_YAML_METADATA_INPUT_PARAM_MESSAGE =

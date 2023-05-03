@@ -61,12 +61,12 @@ import io.harness.logging.LogLevel;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.beans.Environment;
-import io.harness.ng.core.environment.resources.EnvironmentEntityYamlSchemaHelper;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.environment.services.impl.EnvironmentEntityYamlSchemaHelper;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.service.entity.ServiceEntity;
-import io.harness.ng.core.service.resources.ServiceEntityYamlSchemaHelper;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.services.impl.ServiceEntityYamlSchemaHelper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
@@ -153,7 +153,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Inject private ServiceCustomSweepingOutputHelper serviceCustomSweepingOutputHelper;
   @Inject private ServiceEntityYamlSchemaHelper serviceEntityYamlSchemaHelper;
   @Inject private EnvironmentEntityYamlSchemaHelper environmentEntityYamlSchemaHelper;
-
   private static final Pattern serviceVariablePattern = Pattern.compile(SERVICE_VARIABLES_PATTERN_REGEX);
   private static final Pattern envVariablePattern = Pattern.compile(ENV_VARIABLES_PATTERN_REGEX);
 
@@ -712,22 +711,10 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     }
 
     // ToDo: Remove once we see logs in production
-    try {
-      serviceEntityYamlSchemaHelper.validateSchema(serviceEntity.getAccountId(), mergedServiceYaml);
-    } catch (Exception ex) {
-      log.error(
-          String.format("Service %s failed schema validation in the service step", serviceOpt.get().getIdentifier()),
-          ex);
-    }
+    validateServiceYamlSchemaAndLogResults(serviceEntity, mergedServiceYaml);
 
-    final NGServiceConfig ngServiceConfig;
-    try {
-      ngServiceConfig = YamlUtils.read(mergedServiceYaml, NGServiceConfig.class);
-    } catch (IOException e) {
-      throw new InvalidRequestException(format("Unable to read yaml for service [Name: %s, Identifier: %s]",
-                                            serviceEntity.getName(), serviceEntity.getIdentifier()),
-          e);
-    }
+    final NGServiceConfig ngServiceConfig =
+        getNgServiceConfig(mergedServiceYaml, serviceEntity.getName(), serviceEntity.getIdentifier());
 
     sweepingOutputService.consume(ambiance, ServiceStepV3Constants.SERVICE_SWEEPING_OUTPUT,
         ServiceSweepingOutput.builder().finalServiceYaml(mergedServiceYaml).build(), "");
@@ -753,12 +740,22 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
     entityMap.put(FreezeEntityType.PIPELINE, Lists.newArrayList(AmbianceUtils.getPipelineIdentifier(ambiance)));
 
-    // Add the reason in serviceOutcome;
     ServiceStepOutcome outcome = ServiceStepOutcome.fromServiceStepV2(serviceEntity, ngServiceV2InfoConfig);
 
     sweepingOutputService.consume(ambiance, OutcomeExpressionConstants.SERVICE, outcome, StepCategory.STAGE.name());
 
     return ServicePartResponse.builder().ngServiceConfig(ngServiceConfig).build();
+  }
+
+  private static NGServiceConfig getNgServiceConfig(String mergedServiceYaml, String name, String identifier) {
+    final NGServiceConfig ngServiceConfig;
+    try {
+      ngServiceConfig = YamlUtils.read(mergedServiceYaml, NGServiceConfig.class);
+    } catch (IOException e) {
+      throw new InvalidRequestException(
+          format("Unable to read yaml for service [Name: %s, Identifier: %s]", name, identifier), e);
+    }
+    return ngServiceConfig;
   }
 
   private String mergeServiceInputsIntoService(String originalServiceYaml, Map<String, Object> serviceInputs) {
@@ -771,14 +768,15 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   private NGEnvironmentConfig mergeEnvironmentInputs(String accountId, String identifier, String yaml,
       ParameterField<Map<String, Object>> environmentInputs) throws IOException {
     if (ParameterField.isNull(environmentInputs) || isEmpty(environmentInputs.getValue())) {
-      return YamlUtils.read(identifier, NGEnvironmentConfig.class);
+      validateEnvironmentYamlSchemaAndLogResults(accountId, yaml, identifier);
+      return YamlUtils.read(yaml, NGEnvironmentConfig.class);
     }
     Map<String, Object> environmentInputYaml = new HashMap<>();
     environmentInputYaml.put(YamlTypes.ENVIRONMENT_YAML, environmentInputs);
     String resolvedYaml = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
         identifier, YamlPipelineUtils.writeYamlString(environmentInputYaml), true, true);
 
-    validateEnvironmentSchemaAndLog(accountId, yaml, identifier);
+    validateEnvironmentYamlSchemaAndLogResults(accountId, yaml, identifier);
 
     return YamlUtils.read(resolvedYaml, NGEnvironmentConfig.class);
   }
@@ -925,11 +923,55 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     return null;
   }
 
-  private void validateEnvironmentSchemaAndLog(String accountId, String resolvedYaml, String environmentRef) {
+  private void validateServiceYamlSchemaAndLogResults(ServiceEntity serviceEntity, String mergedServiceYaml) {
+    try {
+      serviceEntityYamlSchemaHelper.validateSchema(serviceEntity.getAccountId(), mergedServiceYaml);
+    } catch (Exception ex) {
+      // if yaml scheme validation failed, we want to make sure that it is failing the step today or not
+      boolean invalidNGServiceConfig = false;
+      try {
+        getNgServiceConfig(mergedServiceYaml, serviceEntity.getName(), serviceEntity.getIdentifier());
+      } catch (Exception yamlException) {
+        log.error("Failed to convert service yaml to service config", yamlException);
+        invalidNGServiceConfig = true;
+      }
+      if (!invalidNGServiceConfig) {
+        log.error(
+            String.format("[UNEXPECTED] Service yaml schema validation failed in the service step for service [%s]",
+                serviceEntity.getIdentifier()),
+            ex);
+      } else {
+        log.error(String.format("[EXPECTED] Service yaml schema validation failed in the service step for service [%s]",
+                      serviceEntity.getIdentifier()),
+            ex);
+      }
+    }
+  }
+
+  private void validateEnvironmentYamlSchemaAndLogResults(
+      String accountId, String resolvedYaml, String environmentRef) {
     try {
       environmentEntityYamlSchemaHelper.validateSchema(accountId, resolvedYaml);
     } catch (Exception ex) {
-      log.error(String.format("Environment %s failed schema validation in the service step", environmentRef), ex);
+      // if yaml scheme validation failed, we want to make sure that it is failing the step today or not
+      boolean invalidNGEnvironmentConfig = false;
+      try {
+        YamlUtils.read(resolvedYaml, NGEnvironmentConfig.class);
+      } catch (Exception yamlException) {
+        log.error("Failed to convert environment yaml to environment config", yamlException);
+        invalidNGEnvironmentConfig = true;
+      }
+      if (!invalidNGEnvironmentConfig) {
+        log.error(String.format(
+                      "[UNEXPECTED] Environment yaml failed schema validation in the service step for environment [%s]",
+                      environmentRef),
+            ex);
+      } else {
+        log.error(String.format(
+                      "[EXPECTED] Environment yaml failed schema validation in the service step for environment [%s]",
+                      environmentRef),
+            ex);
+      }
     }
   }
 
