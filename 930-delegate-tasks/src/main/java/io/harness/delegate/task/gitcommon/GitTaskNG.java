@@ -53,7 +53,7 @@ import software.wings.beans.LogWeight;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.io.IOException;
-import java.nio.file.NoSuchFileException;
+import java.nio.file.FileSystemException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;
@@ -106,7 +106,7 @@ public class GitTaskNG extends AbstractDelegateRunnableTask {
             gitFetchFilesResults.add(gitFetchFilesResult);
           } catch (Exception ex) {
             String exceptionMsg = gitFetchFilesTaskHelper.extractErrorMessage(ex);
-            if (ex.getCause() instanceof NoSuchFileException && gitRequestFileConfig.isSucceedIfFileNotFound()) {
+            if (ex.getCause() instanceof FileSystemException && gitRequestFileConfig.isSucceedIfFileNotFound()) {
               log.info("file not found. " + exceptionMsg, ex);
               executionLogCallback.saveExecutionLog(color(
                   format("No manifest file found with identifier: %s.", gitRequestFileConfig.getIdentifier()), White));
