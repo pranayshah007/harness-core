@@ -12,7 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 
-import javax.inject.Singleton;
+import com.google.inject.Singleton;
 import lombok.NonNull;
 
 @OwnedBy(HarnessTeam.CDC)
