@@ -2549,8 +2549,10 @@ public class DelegateServiceImpl implements DelegateService {
           .migrateUrl(accountService.get(delegateParams.getAccountId()).getMigratedToClusterUrl())
           .build();
     }
-
-    final Delegate existingDelegate = getExistingDelegate(delegateParams.getAccountId(), delegateParams.getHostName(),
+    final String hostName = ECS.equals(delegateParams.getDelegateType())
+        ? getHostNameToBeUsedForECSDelegate(delegateParams.getHostName(), delegateParams.getSequenceNum())
+        : delegateParams.getHostName();
+    final Delegate existingDelegate = getExistingDelegate(delegateParams.getAccountId(), hostName,
         delegateParams.isNg(), delegateParams.getDelegateType(), delegateParams.getIp());
 
     // this code is to mark all the task in running as failed if same delegate registration for immutable
