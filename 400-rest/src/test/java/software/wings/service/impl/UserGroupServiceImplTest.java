@@ -20,6 +20,7 @@ import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.HANTANG;
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.MEHUL;
 import static io.harness.rule.OwnerRule.MOHIT;
 import static io.harness.rule.OwnerRule.NAMANG;
@@ -103,6 +104,7 @@ import io.harness.exception.UserGroupAlreadyExistException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.limits.LimitCheckerFactory;
 import io.harness.ng.core.account.AuthenticationMechanism;
+import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
@@ -1141,6 +1143,17 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
     assertThat(prunedAppIds.size()).isEqualTo(3);
     assertThat(prunedAppIds.containsAll(Arrays.asList("111", "333", "444"))).isTrue();
     assertThat(prunedAppIds.contains("222")).isFalse();
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testPruneByApplication_accountIdIsNull() {
+    String appId = "appid";
+    when(appService.getAccountIdByAppId(any())).thenReturn(null);
+    ArgumentCaptor<HIterator<UserGroup>> iteratorArgumentCaptor = ArgumentCaptor.forClass(HIterator.class);
+    userGroupService.pruneByApplication(appId);
+    iteratorArgumentCaptor.getValue();
   }
 
   @Test
