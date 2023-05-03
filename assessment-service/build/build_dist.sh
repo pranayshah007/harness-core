@@ -25,15 +25,15 @@ then
     echo ${PURPOSE} > purpose.txt
 fi
 
-cp ${HOME}/.bazel-dirs/bin/access-control/service/module_deploy.jar accesscontrol-service-capsule.jar
-cp ../../access-control/config/config.yml .
-cp ../../access-control/config/keystore.jks .
+cp ${HOME}/.bazel-dirs/bin/assessment-service/service/module_deploy.jar assessment-service-capsule.jar
+cp ../../assessment-service/config/config.yml .
+cp ../../assessment-service/config/keystore.jks .
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
-cp ../../access-control/build/container/Dockerfile-accesscontrol-service-cie-jdk ./Dockerfile-cie-jdk
-cp -r ../../access-control/build/container/scripts/ .
-cp ../../access-control/config/jfr/default.jfc .
-cp ../../access-control/config/jfr/profile.jfc .
-java -jar accesscontrol-service-capsule.jar scan-classpath-metadata
+cp ../../assessment-service/build/container/Dockerfile-assessment-service-cie-jdk ./Dockerfile-cie-jdk
+cp -r ../../assessment-service/build/container/scripts/ .
+cp ../../assessment-service/config/jfr/default.jfc .
+cp ../../assessment-service/config/jfr/profile.jfc .
+java -jar assessment-service-capsule.jar scan-classpath-metadata
 
 cd ../..
