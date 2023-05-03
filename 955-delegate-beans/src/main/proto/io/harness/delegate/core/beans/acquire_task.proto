@@ -8,6 +8,7 @@ syntax = "proto3";
 package io.harness.delegate.core.beans;
 
 import "955-delegate-beans/src/main/proto/io/harness/delegate/core/beans/plugin.proto";
+import "955-delegate-beans/src/main/proto/io/harness/delegate/core/beans/infra.proto";
 
 option java_multiple_files = true;
 
@@ -17,4 +18,5 @@ option java_multiple_files = true;
 message AcquireTasksResponse {
   string id = 1;
   repeated TaskDescriptor tasks = 2;
+  ExecutionInfrastructure infra = 3;
 }

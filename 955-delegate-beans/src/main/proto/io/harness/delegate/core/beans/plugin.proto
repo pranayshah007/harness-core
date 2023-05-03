@@ -23,9 +23,9 @@ message TaskDescriptor {
   ExecutionEnvironment runtime = 5;       // Environment in which the task should run
   TaskInput input = 6;                    // Task inputs
   repeated TaskSecret input_secrets = 7;  // Task secrets. One instance can contain multiple secrets from same provider
-  repeated Resource resources = 8;        // Any additional resources the task might need (e.g. shared locations)
-  string logging_token = 9;               // Token for sending logs to logging service
-  string callback_token = 10;             // Token for sending notify event to the service that initiated a task
+  //  repeated Resource resources = 8;        // Any additional resources the task might need (e.g. shared locations)
+  string logging_token = 9;    // Token for sending logs to logging service
+  string callback_token = 10;  // Token for sending notify event to the service that initiated a task
 }
 
 /*
@@ -72,19 +72,11 @@ message ExecutionEnvironment {
                     // can be left out if plugin can execute a single type of task
   PluginSource source = 2;
   string uses = 3;  // source dependant location of the plugin (e.g. docker image tag, git repo etc...)
-  ExecutionInfrastructure infra =
-      4;                        // Infra under which plugin should run. If left out delegate will use default runner
-  TaskSecret infra_secret = 5;  // Secret needed to setup execution environment (e.g. imagePullSecrets)
   ResourceRequirements resource = 6;  // Resource requirements for infra types that need it (e.g. K8S CPU/Mem)
   PluginInit init = 7;                // Any kind of init that needs to happen for the plugin (e.g. init script)
   map<string, string> env = 8;
-  // TODO: below three are only used to correctly setup ports on LE by CI manager. That should move to runner. Check if
-  // still needed.
-  repeated string command = 9;            // TODO: hardcode (/addon/bin/ci-addon)
-  repeated string arg = 10;               // TODO: hardcode (--port <port_num>)
-  repeated int32 port = 11;               // FixMe - should be removed
-  SecurityContext security_context = 12;  // Startup user id for the execution infra
-  string working_dir = 13;
+  repeated string command = 9;
+  repeated string arg = 10;
   ExecutionSchedule schedule = 14;  // Schedule on which the plugin runs, applies only for MODE_PERPETUAL
 }
 
@@ -106,16 +98,6 @@ enum PluginSource {
   SOURCE_UNKNOWN = 0;
   SOURCE_IMAGE = 1;
   SOURCE_GIT = 2;
-}
-
-/*
-  Defines where will the job be executed by delegate. By default delegate will run it inside the same infra where it's
-  running
- */
-message ExecutionInfrastructure {
-  // TODO: apart from basic infra details we need some sort of credentials or connector information here
-  // e.g. imagePullSecret for pulling private images (not sure connector is useful for that since it's not delegate that
-  // pull image, it provides them for K8S) or GH credentials to do git clone etc...
 }
 
 /*
@@ -173,20 +155,4 @@ message TaskInput {
     google.protobuf.Any proto_data = 1;  // for executions with proto spec.
     bytes binary_data = 2;               // for executions with any unstructured data formats including legacy kryo
   }
-}
-
-/*
-  Intended for defining any additional resources the plugin should use, e.g. additional volume
- */
-message Resource {
-  string path = 1;
-  ResourceType type = 2;
-}
-
-/*
-  Supported resource types. UNKNOWN resource type should not be used
- */
-enum ResourceType {
-  RES_UNKNOWN = 0;
-  RES_VOLUME = 1;
 }

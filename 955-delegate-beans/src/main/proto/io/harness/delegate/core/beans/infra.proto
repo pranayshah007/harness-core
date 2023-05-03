@@ -1,0 +1,41 @@
+// Copyright 2022 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.delegate.core.beans;
+
+import "google/protobuf/any.proto";
+import "955-delegate-beans/src/main/proto/io/harness/delegate/core/beans/plugin.proto";
+import "955-delegate-beans/src/main/proto/io/harness/delegate/core/beans/resource.proto";
+
+option java_multiple_files = true;
+
+/*
+  Defines where will the job be executed by delegate. By default delegate will run it inside the same infra where it's
+  running
+ */
+message ExecutionInfrastructure {
+  google.protobuf.Any spec = 1;
+  InfraType type = 2;  // Should it just be string
+}
+
+/*
+  Supported infra types. UNKNOWN infra type should not be used
+ */
+enum InfraType {
+  INFRA_UNKNOWN = 0;
+  INFRA_K8S = 1;
+}
+
+message K8S {
+  TaskSecret infra_secret = 1;        // Secret needed to setup execution environment (e.g. imagePullSecrets)
+  ResourceRequirements resource = 2;  // Resource requirements for infra types that need it (e.g. K8S CPU/Mem)
+  PluginInit init = 3;                // Any kind of init that needs to happen for the plugin (e.g. init script)
+  map<string, string> env = 4;
+  SecurityContext security_context = 5;  // Startup user id for the execution infra
+  string working_dir = 6;
+  repeated Resource resources = 7;
+}

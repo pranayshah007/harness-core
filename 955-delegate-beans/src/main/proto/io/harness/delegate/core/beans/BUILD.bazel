@@ -12,6 +12,7 @@ proto_library(
         "acquire_task.proto",
         "plugin.proto",
         "plugin_execution_status.proto",
+        "resource.proto",
     ],
     visibility = ["//visibility:public"],
     deps = [
