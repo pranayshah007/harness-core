@@ -146,6 +146,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1148,12 +1149,32 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = MEENAKSHI)
   @Category(UnitTests.class)
-  public void testPruneByApplication_accountIdIsNull() {
-    String appId = "appid";
-    when(appService.getAccountIdByAppId(any())).thenReturn(null);
-    ArgumentCaptor<HIterator<UserGroup>> iteratorArgumentCaptor = ArgumentCaptor.forClass(HIterator.class);
-    userGroupService.pruneByApplication(appId);
-    iteratorArgumentCaptor.getValue();
+  public void createQueryForUserGroup_accountIdIsNull() {
+    String appId = "appId1";
+    Query<UserGroup> expectedQuery = persistence.createQuery(UserGroup.class)
+                                         .field(UserGroupKeys.appIds)
+                                         .in(Set.of(appId))
+                                         .project(UserGroup.ID_KEY2, true)
+                                         .project(UserGroupKeys.accountId, true)
+                                         .project(UserGroupKeys.appPermissions, true)
+                                         .project(UserGroupKeys.memberIds, true);
+    Query<UserGroup> query = userGroupService.createQueryForUserGroup(null, Set.of(appId));
+    assertThat(query).isEqualTo(expectedQuery);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void createQueryForUserGroup_accountIdNotNull() {
+    String appId = "appId1";
+    Query<UserGroup> expectedQuery = persistence.createQuery(UserGroup.class)
+                                         .filter(UserGroupKeys.accountId, accountId)
+                                         .project(UserGroup.ID_KEY2, true)
+                                         .project(UserGroupKeys.accountId, true)
+                                         .project(UserGroupKeys.appPermissions, true)
+                                         .project(UserGroupKeys.memberIds, true);
+    Query<UserGroup> query = userGroupService.createQueryForUserGroup(accountId, Set.of(appId));
+    assertThat(query).isEqualTo(expectedQuery);
   }
 
   @Test
