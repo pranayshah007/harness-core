@@ -13,7 +13,7 @@ java_library(
     deps = [
         "//:lombok",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng:module",
-        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/customDeployment/beans:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/customDeployment:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/execution:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/execution/azure/webapps:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/execution/service:module",

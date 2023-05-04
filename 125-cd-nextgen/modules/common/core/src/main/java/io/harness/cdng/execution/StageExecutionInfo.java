@@ -60,9 +60,9 @@ public class StageExecutionInfo implements PersistentEntity, UuidAware {
   @Nullable private String infraIdentifier;
   @Nullable private String serviceIdentifier;
   @NotNull private String stageExecutionId;
-  @NotNull private String planExecutionId;
+  private String planExecutionId;
   @NotNull private StageStatus stageStatus;
-  @NotNull private Status status;
+  private Status status;
   @Nullable private String deploymentIdentifier;
   @Nullable private ExecutionSummaryDetails executionSummaryDetails;
   @Nullable private Long rollbackDuration;
