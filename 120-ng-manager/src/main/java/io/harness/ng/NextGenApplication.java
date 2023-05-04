@@ -65,7 +65,7 @@ import io.harness.connector.ConnectorDTO;
 import io.harness.connector.entities.Connector;
 import io.harness.connector.gitsync.ConnectorGitSyncHelper;
 import io.harness.controller.PrimaryVersionChangeScheduler;
-import io.harness.credit.schedular.CreditExpiryIteratorHandler;
+import io.harness.credit.schedular.CICreditExpiryIteratorHandler;
 import io.harness.enforcement.client.CustomRestrictionRegisterConfiguration;
 import io.harness.enforcement.client.RestrictionUsageRegisterConfiguration;
 import io.harness.enforcement.client.custom.CustomRestrictionInterface;
@@ -167,6 +167,7 @@ import io.harness.pms.expressions.functors.ImagePullSecretFunctor;
 import io.harness.pms.expressions.functors.InstanceFunctor;
 import io.harness.pms.expressions.functors.KubernetesReleaseFunctor;
 import io.harness.pms.governance.EnvironmentExpansionHandler;
+import io.harness.pms.governance.EnvironmentGroupExpandedHandler;
 import io.harness.pms.governance.EnvironmentRefExpansionHandler;
 import io.harness.pms.governance.MultiEnvironmentExpansionHandler;
 import io.harness.pms.governance.ServiceRefExpansionHandler;
@@ -645,7 +646,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     injector.getInstance(GitlabSCMOAuthTokenRefresher.class)
         .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
     injector.getInstance(NGVaultUnsetRenewalHandler.class).registerIterators(5);
-    injector.getInstance(CreditExpiryIteratorHandler.class).registerIterator(2);
+    injector.getInstance(CICreditExpiryIteratorHandler.class).registerIterator(2);
   }
 
   public void registerJobs(Injector injector) {
@@ -814,11 +815,23 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
                                                                .expansionHandler(MultiEnvironmentExpansionHandler.class)
                                                                .build();
 
+    JsonExpansionInfo environmentGroupInfo =
+        JsonExpansionInfo.newBuilder()
+            .setKey("stage/spec/environmentGroup")
+            .setExpansionType(ExpansionRequestType.LOCAL_FQN)
+            .setStageType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).setType("Deployment").build())
+            .build();
+    JsonExpansionHandlerInfo environmentGroupHandlerInfo = JsonExpansionHandlerInfo.builder()
+                                                               .jsonExpansionInfo(environmentGroupInfo)
+                                                               .expansionHandler(EnvironmentGroupExpandedHandler.class)
+                                                               .build();
+
     jsonExpansionHandlers.add(connRefHandlerInfo);
     jsonExpansionHandlers.add(serviceRefHandlerInfo);
     jsonExpansionHandlers.add(envRefHandlerInfo);
     jsonExpansionHandlers.add(envHandlerInfo);
     jsonExpansionHandlers.add(multiEnvironmentHandlerInfo);
+    jsonExpansionHandlers.add(environmentGroupHandlerInfo);
     return jsonExpansionHandlers;
   }
 

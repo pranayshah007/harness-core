@@ -394,26 +394,31 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
         metadata.put(t, packageName);
       }
 
-      String tag = tags.get(0);
+      String tag = null;
+      if (tags.size() > 0) {
+        tag = tags.get(0);
+      }
 
       String artifactPath = "ghcr.io";
 
-      if (EmptyPredicate.isEmpty(org)) {
-        artifactPath += "/" + username + "/" + packageName + ":" + tag;
-      } else {
-        artifactPath += "/" + org + "/" + packageName + ":" + tag;
+      if (tag != null) {
+        if (EmptyPredicate.isEmpty(org)) {
+          artifactPath += "/" + username + "/" + packageName + ":" + tag;
+        } else {
+          artifactPath += "/" + org + "/" + packageName + ":" + tag;
+        }
+
+        build.setBuildDisplayName(packageName + ": " + tag);
+        build.setUiDisplayName("Tag# " + tag);
+        build.setNumber(tag);
+        build.setBuildUrl(v.getVersionHtmlUrl());
+        build.setStatus(BuildDetails.BuildStatus.SUCCESS);
+        build.setBuildFullDisplayName(v.getVersionName());
+        build.setMetadata(metadata);
+        build.setArtifactPath(artifactPath);
+
+        buildDetails.add(build);
       }
-
-      build.setBuildDisplayName(packageName + ": " + tag);
-      build.setUiDisplayName("Tag# " + tag);
-      build.setNumber(tag);
-      build.setBuildUrl(v.getVersionHtmlUrl());
-      build.setStatus(BuildDetails.BuildStatus.SUCCESS);
-      build.setBuildFullDisplayName(v.getVersionName());
-      build.setMetadata(metadata);
-      build.setArtifactPath(artifactPath);
-
-      buildDetails.add(build);
     }
 
     return buildDetails;

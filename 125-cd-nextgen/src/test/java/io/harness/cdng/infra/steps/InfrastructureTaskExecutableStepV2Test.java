@@ -403,7 +403,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
                                 .build(),
                             null))
         .withMessageContaining(
-            "The value provided for [infrastructureDefinition.spec.credentialsRef: prod] does not match any of the allowed values [dev,qa]");
+            "The values provided for infrastructureDefinition.spec.credentialsRef: [\\'prod\\'] do not match any of the allowed values [\\'dev\\', \\'qa\\']");
   }
 
   @Test

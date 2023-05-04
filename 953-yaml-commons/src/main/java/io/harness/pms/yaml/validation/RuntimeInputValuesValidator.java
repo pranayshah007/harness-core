@@ -84,20 +84,32 @@ public class RuntimeInputValuesValidator {
               : String.format("The value provided for [%s: %s] does not match the required regex pattern",
                   expressionFqn, inputSetFieldValue);
         } else if (inputSetValidator.getValidatorType() == ALLOWED_VALUES) {
-          String[] allowedValues = inputSetValidator.getParameters().split(", *");
-          boolean matches = false;
-          for (String allowedValue : allowedValues) {
-            if (NGExpressionUtils.isRuntimeOrExpressionField(allowedValue)) {
-              return error;
-            } else if (allowedValue.equals(inputSetFieldValue)) {
-              matches = true;
+          List<String> allowedValues = AllowedValuesHelper.split(inputSetValidator.getParameters());
+          List<String> inputFields = AllowedValuesHelper.split(inputSetFieldValue);
+          List<String> invalidInputs = new ArrayList<>();
+          boolean isValid = true;
+          for (String inputField : inputFields) {
+            boolean matches = false;
+            for (String allowedValue : allowedValues) {
+              if (NGExpressionUtils.isRuntimeOrExpressionField(allowedValue)) {
+                return error;
+              } else if (allowedValue.equals(inputField)) {
+                matches = true;
+              }
+            }
+            if (!matches) {
+              invalidInputs.add(inputField);
+              isValid = false;
             }
           }
-          String result = String.join(",", allowedValues);
-          error = matches ? ""
-                          : String.format("The value provided for [%s: %s] does not match any of the allowed values "
+          String result = allowedValues.stream().map(s -> "\\'" + s + "\\'").collect(Collectors.joining(", "));
+          String invalidInputValues =
+              invalidInputs.stream().map(s -> "\\'" + s + "\\'").collect(Collectors.joining(", "));
+
+          error = isValid ? ""
+                          : String.format("The values provided for %s: [%s] do not match any of the allowed values "
                                   + "[%s]",
-                              expressionFqn, inputSetFieldValue, result);
+                              expressionFqn, invalidInputValues, result);
         }
       } catch (IOException e) {
         throw new InvalidRequestException(

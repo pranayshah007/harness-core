@@ -91,9 +91,9 @@ PR_FILES=$($GIT_DIFF | tr '\r\n' ',' | rev | cut -c2- | rev)
 check_cmd_status "$?" "Failed to get diff between commits."
 #echo "PR_FILES: $PR_FILES"
 
-PR_MODULES=$($GIT_DIFF | awk -F/ '{print $1}' | sort -u | tr '\r\n' ' ')
+PR_MODULES=$($GIT_DIFF | awk -F/ '{print $1}' | sort -u | grep -v 'product\|commons' | tr '\r\n' ' ')
 check_cmd_status "$?" "Failed to get modules from commits."
-#echo "PR_MODULES: $PR_MODULES"
+echo "PR_MODULES: $PR_MODULES"
 
 for file in $($GIT_DIFF | tr '\r\n' ' ')
   do

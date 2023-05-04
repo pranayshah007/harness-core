@@ -1,5 +1,5 @@
 {
-  "envGroupRef": "env_group_1",
+  "envGroupRef": "account.env_group_1",
   "metadata": {
     "parallel": true
   },

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANKIT;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
 
@@ -25,6 +26,7 @@ import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -79,6 +81,7 @@ import software.wings.beans.Application;
 import software.wings.beans.AwsAmiInfrastructureMapping;
 import software.wings.beans.CodeDeployInfrastructureMapping.CodeDeployInfrastructureMappingBuilder;
 import software.wings.beans.EcsInfrastructureMapping;
+import software.wings.beans.Environment;
 import software.wings.beans.GcpKubernetesInfrastructureMapping;
 import software.wings.beans.HelmExecutionSummary;
 import software.wings.beans.InfrastructureMapping;
@@ -107,6 +110,7 @@ import software.wings.service.impl.workflow.WorkflowServiceHelper;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamServiceBindingService;
+import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.HostService;
 import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.ServiceResourceService;
@@ -165,6 +169,7 @@ public class InstanceHelperTest extends WingsBaseTest {
   @Mock private AppService appService;
   @Mock private ArtifactService artifactService;
   @Mock private ServiceResourceService serviceResourceService;
+  @Mock private EnvironmentService environmentService;
   @Mock private QueuePublisher<DeploymentEvent> deploymentEventQueue;
   @Mock private ExecutionContext context;
   @Mock private ContainerSync containerSync;
@@ -1198,6 +1203,34 @@ public class InstanceHelperTest extends WingsBaseTest {
     verify(instanceSyncPerpetualTaskService, times(1)).deletePerpetualTasks(ACCOUNT_ID, INFRA_MAPPING_ID);
   }
 
+  @Test(expected = GeneralException.class)
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void test_processInstanceSyncResponseFromPerpetualTaskIfServiceNotPresent() {
+    String perpetualTaskId = "PtId";
+    PerpetualTaskRecord perpetualTaskRecord = getPerpetualTaskRecord(perpetualTaskId);
+    when(perpetualTaskService.getTaskRecord(perpetualTaskId)).thenReturn(perpetualTaskRecord);
+    when(serviceResourceService.get(any())).thenReturn(null);
+    doReturn(Environment.Builder.anEnvironment().accountId(ACCOUNT_ID).uuid(ENV_ID).build())
+        .when(environmentService)
+        .get(APP_ID, ENV_ID, false);
+    featureFlagService.enableAccount(FeatureName.MOVE_PCF_INSTANCE_SYNC_TO_PERPETUAL_TASK, ACCOUNT_ID);
+
+    when(infraMappingService.get(anyString(), anyString()))
+        .thenReturn(GcpKubernetesInfrastructureMapping.Builder.aGcpKubernetesInfrastructureMapping()
+                        .withUuid(INFRA_MAP_ID)
+                        .withEnvId(ENV_ID)
+                        .withServiceId(SERVICE_ID)
+                        .withInfraMappingType(InfrastructureMappingType.GCP_KUBERNETES.getName())
+                        .withAppId(APP_ID)
+                        .withClusterName(CLUSTER_NAME)
+                        .build());
+
+    instanceHelper.processInstanceSyncResponseFromPerpetualTask(perpetualTaskId, mock(DelegateResponseData.class));
+
+    verify(instanceSyncPerpetualTaskService, times(1)).deletePerpetualTasks(ACCOUNT_ID, INFRA_MAPPING_ID);
+  }
+
   @Test
   @Owner(developers = ANKIT)
   @Category(UnitTests.class)
@@ -1205,7 +1238,8 @@ public class InstanceHelperTest extends WingsBaseTest {
     String perpetualTaskId = "PtId";
     PerpetualTaskRecord perpetualTaskRecord = getPerpetualTaskRecord(perpetualTaskId);
     when(perpetualTaskService.getTaskRecord(perpetualTaskId)).thenReturn(perpetualTaskRecord);
-
+    doReturn(Mockito.mock(Service.class)).when(serviceResourceService).getWithDetails(anyString(), anyString());
+    doReturn(Mockito.mock(Environment.class)).when(environmentService).get(anyString(), anyString(), anyBoolean());
     featureFlagService.enableAccount(FeatureName.MOVE_PCF_INSTANCE_SYNC_TO_PERPETUAL_TASK, ACCOUNT_ID);
 
     InfrastructureMapping infrastructureMapping = getMockInfrastructureMapping();
@@ -1253,6 +1287,8 @@ public class InstanceHelperTest extends WingsBaseTest {
     when(infrastructureMapping.getUuid()).thenReturn(INFRA_MAPPING_ID);
     when(infrastructureMapping.getAccountId()).thenReturn(WingsTestConstants.ACCOUNT_ID);
     when(infrastructureMapping.getAppId()).thenReturn(WingsTestConstants.APP_ID);
+    when(infrastructureMapping.getEnvId()).thenReturn(ENV_ID);
+    when(infrastructureMapping.getServiceId()).thenReturn(SERVICE_ID);
     when(infrastructureMapping.getInfraMappingType()).thenReturn(InfrastructureMappingType.PCF_PCF.getName());
     return infrastructureMapping;
   }

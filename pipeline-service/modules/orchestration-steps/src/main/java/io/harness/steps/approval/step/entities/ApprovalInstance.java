@@ -19,6 +19,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.logging.AutoLogContext;
 import io.harness.mongo.index.FdIndex;
+import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
@@ -39,6 +40,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
+import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +71,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Entity(value = "approvalInstances", noClassnameStored = true)
 @Persistent
 public abstract class ApprovalInstance implements PersistentEntity, PersistentRegularIterable {
+  public static final long TTL_MONTHS = 6;
+
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(SortCompoundMongoIndex.builder()
@@ -87,6 +92,9 @@ public abstract class ApprovalInstance implements PersistentEntity, PersistentRe
   @Id @dev.morphia.annotations.Id String id;
 
   @NotNull Ambiance ambiance;
+
+  // TTL index
+  @FdTtlIndex Date validUntil;
 
   // preferably use these ambiance fields saved at first-level
   @FdIndex @NotNull String nodeExecutionId;
@@ -143,6 +151,7 @@ public abstract class ApprovalInstance implements PersistentEntity, PersistentRe
     setType(ApprovalType.fromName(stepParameters.getType()));
     setStatus(ApprovalStatus.WAITING);
     setDeadline(calculateDeadline(stepParameters.getTimeout()));
+    setValidUntil(Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant()));
   }
 
   @Override

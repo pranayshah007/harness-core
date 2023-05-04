@@ -6,21 +6,18 @@
  */
 package io.harness.credit.schedular;
 
-import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
-
 import static java.time.Duration.ofHours;
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.credit.entities.CICredit;
 import io.harness.credit.entities.Credit;
 import io.harness.credit.entities.Credit.CreditsKeys;
 import io.harness.credit.services.CreditService;
 import io.harness.credit.utils.CreditStatus;
 import io.harness.iterator.PersistenceIteratorFactory;
-import io.harness.mongo.iterator.MongoPersistenceIterator;
+import io.harness.iterator.PersistentIterable;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
@@ -32,53 +29,28 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.GTM)
-public class CreditExpiryIteratorHandler implements Handler<CICredit> {
-  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(60);
-  private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(15);
-  private static final Duration TARGET_INTERVAL = ofSeconds(31);
-  private static final Duration INTERVAL = ofHours(6);
+public abstract class CreditExpiryIteratorHandler<T extends Credit & PersistentIterable> implements Handler<T> {
+  protected static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(60);
+  protected static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(15);
+  protected static final Duration TARGET_INTERVAL = ofSeconds(31);
+  protected static final Duration INTERVAL = ofHours(6);
 
-  private final PersistenceIteratorFactory persistenceIteratorFactory;
-  private final MorphiaPersistenceProvider<CICredit> persistenceProvider;
-  private CreditService creditService;
+  protected final PersistenceIteratorFactory persistenceIteratorFactory;
+  protected final MorphiaPersistenceProvider<T> persistenceProvider;
+  protected CreditService creditService;
 
   @Inject
   public CreditExpiryIteratorHandler(PersistenceIteratorFactory persistenceIteratorFactory,
-      MorphiaPersistenceProvider<CICredit> persistenceProvider, CreditService creditService) {
+      MorphiaPersistenceProvider<T> persistenceProvider, CreditService creditService) {
     this.persistenceIteratorFactory = persistenceIteratorFactory;
     this.persistenceProvider = persistenceProvider;
     this.creditService = creditService;
   }
 
-  public void registerIterator(int threadPoolSize) {
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
-        PersistenceIteratorFactory.PumpExecutorOptions.builder()
-            .name(this.getClass().getName())
-            .poolSize(threadPoolSize)
-            .interval(INTERVAL)
-            .build(),
-        Credit.class,
-        MongoPersistenceIterator.<CICredit, MorphiaFilterExpander<CICredit>>builder()
-            .clazz(CICredit.class)
-            .fieldName(CreditsKeys.creditExpiryCheckIteration)
-            .targetInterval(TARGET_INTERVAL)
-            .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
-            .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
-            .handler(this)
-            .filterExpander(query
-                -> query.field(CreditsKeys.creditStatus)
-                       .equal(CreditStatus.ACTIVE)
-                       .field(CreditsKeys.expiryTime)
-                       .greaterThan(0)
-                       .field(CreditsKeys.expiryTime)
-                       .lessThan(Instant.now().toEpochMilli()))
-            .schedulingType(REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
-  }
+  public abstract void registerIterator(int threadPoolSize);
 
   @Override
-  public void handle(CICredit entity) {
+  public void handle(T entity) {
     if (entity == null) {
       log.warn("Credit entity is null for credit expiry check");
       return;
@@ -88,5 +60,15 @@ public class CreditExpiryIteratorHandler implements Handler<CICredit> {
     } catch (Exception ex) {
       log.error("Error while handling credit expiry check", ex);
     }
+  }
+
+  protected MorphiaFilterExpander<T> getFilterQuery() {
+    return query
+        -> query.field(CreditsKeys.creditStatus)
+               .equal(CreditStatus.ACTIVE)
+               .field(CreditsKeys.expiryTime)
+               .greaterThan(0)
+               .field(CreditsKeys.expiryTime)
+               .lessThan(Instant.now().toEpochMilli());
   }
 }

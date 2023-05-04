@@ -92,7 +92,7 @@ public class EnvironmentGroupExpandedHandlerTest extends CategoryTest {
     doReturn(
         Optional.of(EnvironmentGroupEntity.builder().identifier("env_group_1").name("my environment group").build()))
         .when(environmentGroupService)
-        .get("accountId", "orgId", "projectId", "env_group_1", false);
+        .get("accountId", "orgId", "projectId", "account.env_group_1", false);
 
     doReturn(
         List.of(ConnectorResponseDTO.builder()
@@ -111,14 +111,12 @@ public class EnvironmentGroupExpandedHandlerTest extends CategoryTest {
                              .identifier("my_environment")
                              .name("dev_environment")
                              .description("description")
-                             .projectIdentifier(PROJECT_ID)
-                             .orgIdentifier(ORG_ID)
                              .accountId(ACCOUNT_ID)
                              .tag(NGTag.builder().key("prod").value("false").build())
                              .type(EnvironmentType.PreProduction)
                              .build()))
         .when(environmentService)
-        .get(anyString(), anyString(), anyString(), eq("my_environment"), anyBoolean());
+        .get(anyString(), anyString(), anyString(), eq("account.my_environment"), anyBoolean());
   }
 
   @After
@@ -190,6 +188,7 @@ public class EnvironmentGroupExpandedHandlerTest extends CategoryTest {
                      .yaml(YamlUtils.write(config1))
                      .build()))
         .when(infrastructureEntityService)
-        .getAllInfrastructureFromIdentifierList(anyString(), anyString(), anyString(), eq("my_environment"), anyList());
+        .getAllInfrastructureFromIdentifierList(
+            anyString(), anyString(), anyString(), eq("account.my_environment"), anyList());
   }
 }

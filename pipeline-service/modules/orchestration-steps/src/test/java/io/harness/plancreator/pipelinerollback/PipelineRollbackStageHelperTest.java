@@ -58,7 +58,7 @@ public class PipelineRollbackStageHelperTest extends CategoryTest {
   public void testBuildPipelineRollbackStageJsonNode() {
     JsonNode jsonNode = PipelineRollbackStageHelper.buildPipelineRollbackStageJsonNode();
     assertThat(jsonNode.get("stage")).isNotNull();
-    assertThat(jsonNode.get("stage").get("name").asText()).isEqualTo("Pipeline Rollback Stage");
+    assertThat(jsonNode.get("stage").get("name").asText()).isEqualTo("Pipeline Rollback");
     assertThat(jsonNode.get("stage").get("identifier")).isNotNull();
     assertThat(jsonNode.get("stage").get("__uuid")).isNotNull();
     assertThat(jsonNode.get("stage").get("type").asText()).isEqualTo("PipelineRollback");

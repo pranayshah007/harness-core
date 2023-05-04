@@ -49,6 +49,7 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
+import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogTag;
@@ -120,7 +121,6 @@ import io.harness.cvng.events.monitoredservice.MonitoredServiceToggleEvent;
 import io.harness.cvng.events.monitoredservice.MonitoredServiceUpdateEvent;
 import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.notification.beans.ChangeObservedConditionSpec;
-import io.harness.cvng.notification.beans.MonitoredServiceChangeEventType;
 import io.harness.cvng.notification.beans.NotificationRuleCondition;
 import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
@@ -2803,7 +2803,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         Arrays.asList(NotificationRuleCondition.builder()
                           .type(NotificationRuleConditionType.CHANGE_OBSERVED)
                           .spec(ChangeObservedConditionSpec.builder()
-                                    .changeEventTypes(Arrays.asList(MonitoredServiceChangeEventType.DEPLOYMENT))
+                                    .changeCategories(Arrays.asList(ChangeCategory.DEPLOYMENT))
                                     .build())
                           .build()));
     NotificationRuleResponse notificationRuleResponseTwo =
@@ -2925,9 +2925,39 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
     createActivity(monitoredServiceDTO);
 
+    MonitoredServiceChangeObservedCondition condition = MonitoredServiceChangeObservedCondition.builder()
+                                                            .changeCategories(Arrays.asList(ChangeCategory.DEPLOYMENT))
+                                                            .build();
+
+    assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
+                   .getChangeObservedNotificationData(monitoredService, condition)
+                   .shouldSendNotification())
+        .isTrue();
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testShouldSendNotification_withChangeObservedCondition_forFFActivity() throws IllegalAccessException {
+    FieldUtils.writeField(monitoredServiceService, "clock", clock, true);
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
+    monitoredServiceDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
+    createFFActivity(monitoredServiceDTO);
+
     MonitoredServiceChangeObservedCondition condition =
         MonitoredServiceChangeObservedCondition.builder()
-            .changeEventTypes(Arrays.asList(MonitoredServiceChangeEventType.DEPLOYMENT))
+            .changeCategories(Arrays.asList(ChangeCategory.FEATURE_FLAG))
             .build();
 
     assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
@@ -2958,12 +2988,11 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     createHeatMaps(monitoredServiceDTO);
     createActivity(monitoredServiceDTO);
 
-    MonitoredServiceChangeImpactCondition condition =
-        MonitoredServiceChangeImpactCondition.builder()
-            .changeEventTypes(Arrays.asList(MonitoredServiceChangeEventType.DEPLOYMENT))
-            .threshold(20.0)
-            .period(600000)
-            .build();
+    MonitoredServiceChangeImpactCondition condition = MonitoredServiceChangeImpactCondition.builder()
+                                                          .changeCategories(Arrays.asList(ChangeCategory.DEPLOYMENT))
+                                                          .threshold(20.0)
+                                                          .period(600000)
+                                                          .build();
     assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
                    .getChangeImpactNotificationData(monitoredService, condition)
                    .shouldSendNotification())
@@ -3155,6 +3184,16 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     useMockedPersistentLocker();
     Activity activity = builderFactory.getDeploymentActivityBuilder()
                             .monitoredServiceIdentifier(monitoredServiceDTO.getIdentifier())
+                            .activityStartTime(clock.instant().minus(5, ChronoUnit.MINUTES))
+                            .build();
+    activityService.upsert(activity);
+  }
+
+  private void createFFActivity(MonitoredServiceDTO monitoredServiceDTO) {
+    useMockedPersistentLocker();
+    Activity activity = builderFactory.getInternalChangeActivity_FFBuilder()
+                            .monitoredServiceIdentifier(monitoredServiceDTO.getIdentifier())
+                            .eventTime(clock.instant().minus(5, ChronoUnit.MINUTES))
                             .activityStartTime(clock.instant().minus(5, ChronoUnit.MINUTES))
                             .build();
     activityService.upsert(activity);

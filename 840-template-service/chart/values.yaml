@@ -1,0 +1,156 @@
+# Default values for template-service
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  loadbalancerURL: ""
+  database:
+    postgres:
+      ## - installed = true if installed within cluster
+      installed: true
+      ## - protocol to use for connection
+      protocol: postgres
+      ## - host array for external
+      hosts:
+        - postgres:5432
+      ## - secret name containing external values
+      secretName: ""
+      ## - key within secret containing username
+      userKey: ""
+      ## - key within secret containing password
+      passwordKey: ""
+      ## - extra arguments set to connection string
+      extraArgs: ""
+    mongo:
+      installed: true
+      protocol: mongodb
+      # --  provide default values if mongo.installed is set to false
+      hosts: []
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
+      extraArgs: ""
+    timescaledb:
+      installed: true
+      protocol: "jdbc:postgresql"
+      # --  provide default values if mongo.installed is set to false
+      hosts:
+        - timescaledb-single-chart:5432
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
+      extraArgs: ""
+  imagePullSecrets: []
+  ingress:
+    # -- create ingress objects
+    enabled: false
+    # -- set ingress object classname
+    className: harness
+    # -- set host of ingressObjects
+    hosts:
+      - my-host.example.org
+    # -- set tls for ingress objects
+    tls:
+      enabled: true
+      secretName: ''
+    # -- add annotations to ingress objects
+    objects:
+      annotations: { }
+  istio:
+    # -- create virtualServices objects
+    enabled: false
+    # -- create gateway and use in virtualservice
+    gateway:
+      create: false
+    # -- if gateway not created, use specified gateway and host
+    virtualService:
+      gateways:
+      hosts:
+replicaCount: 1
+maxSurge: 1
+maxUnavailable: 0
+
+image:
+  registry: docker.io
+  repository: harness/template-service-signed
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "76019"
+  digest: ""
+  imagePullSecrets: []
+
+mongoSecrets:
+  userName:
+    name: harness-secrets
+    key: mongodbUsername
+  password:
+    name: mongodb-replicaset-chart
+    key: mongodb-root-password
+
+timescaleSecret:
+  password:
+    name: harness-secrets
+    key: timescaledbPostgresPassword
+
+waitForInitContainer:
+  image:
+    registry: docker.io
+    repository: harness/helm-init-container
+    pullPolicy: IfNotPresent
+    tag: "latest"
+    digest: ""
+
+appLogLevel: INFO
+
+java:
+  memory: "1024m"
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "harness-default"
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext:
+  runAsUser: 65534
+  runAsNonRoot: true
+
+service:
+  type: ClusterIP
+  protocol: TCP
+  port: 15002
+  grpcport: 15011
+  gitsyncgrpcport: 16002
+
+resources:
+  limits:
+    cpu: 1
+    memory: 1400Mi
+  requests:
+    cpu: 1
+    memory: 1400Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+imagePullSecrets: {}

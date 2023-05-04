@@ -244,14 +244,16 @@ public class AsgSdkManager {
 
   public void updateASG(
       String asgName, String launchTemplateVersion, CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
-    LaunchTemplateSpecification launchTemplateSpecification =
-        new LaunchTemplateSpecification().withLaunchTemplateName(asgName).withVersion(launchTemplateVersion);
-
     UpdateAutoScalingGroupRequest updateAutoScalingGroupRequest =
         createAsgRequestToUpdateAsgRequestMapper(createAutoScalingGroupRequest);
 
     updateAutoScalingGroupRequest.setAutoScalingGroupName(asgName);
-    updateAutoScalingGroupRequest.setLaunchTemplate(launchTemplateSpecification);
+
+    if (isNotEmpty(launchTemplateVersion)) {
+      LaunchTemplateSpecification launchTemplateSpecification =
+          new LaunchTemplateSpecification().withLaunchTemplateName(asgName).withVersion(launchTemplateVersion);
+      updateAutoScalingGroupRequest.setLaunchTemplate(launchTemplateSpecification);
+    }
     asgCall(asgClient -> asgClient.updateAutoScalingGroup(updateAutoScalingGroupRequest));
 
     updateTags(asgName, createAutoScalingGroupRequest);

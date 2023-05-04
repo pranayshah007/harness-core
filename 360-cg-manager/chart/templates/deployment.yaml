@@ -1,0 +1,151 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harness-manager
+  namespace: {{ .Release.Namespace }}
+  labels:
+        {{- include "harness-manager.labels" . | nindent 4 }}
+  annotations: {}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "harness-manager.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{.Values.maxSurge}}
+      maxUnavailable: {{.Values.maxUnavailable}}
+  template:
+    metadata:
+      annotations:
+        rollme: {{ randAlphaNum 5 | quote }}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: harness-manager
+        {{- include "harness-manager.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- include "harness-manager.pullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "harness-manager.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+      {{- if .Values.global.database.mongo.installed }}
+      - name: wait-for-mongo
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=mongodb-replicaset"
+      {{- end }}    
+      - name: wait-for-timescale
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=timescaledb-single-chart"
+      - name: wait-for-redis
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=redis-sentinel"
+      containers:
+        - envFrom:
+            - configMapRef:
+                name: harness-manager-config
+            {{- if .Values.global.smtpCreateSecret.enabled }}
+            - secretRef:
+                name: smtp-secret
+            {{- end }}
+          env:
+            {{- include "harnesscommon.dbconnection.mongoEnv" . | indent 12 }}
+            - name : TIMESCALEDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.timescaleSecret.password.name }}
+                  key: {{ .Values.timescaleSecret.password.key }}
+            - name: TIMESCALEDB_USERNAME
+              value: postgres
+            - name: MONGO_URI
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "harness" "context" $) }}
+            - name: TIMESCALEDB_URI
+              value: 'jdbc:postgresql://timescaledb-single-chart.{{ .Release.Namespace }}:5432/harness'
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - touch
+                  - shutdown
+          livenessProbe:
+            failureThreshold: 20
+            initialDelaySeconds: 180
+            httpGet:
+              path: /api/version
+              port: {{.Values.service.port}}
+              scheme: HTTP
+            periodSeconds: 20
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: manager
+          ports:
+            - containerPort: {{.Values.service.grpcport}}
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 6
+            httpGet:
+              path: /api/health
+              port: {{.Values.service.port}}
+              scheme: HTTP
+            initialDelaySeconds: 90
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 1
+          volumeMounts:
+            - name: dynamic-iterator-config
+              mountPath: /opt/harness/config
+          {{- if .Values.global.mongoSSL }}
+            - name: mongo-ssl-certs
+              mountPath: /mongo
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: dynamic-iterator-config
+          configMap:
+            name: iterator-config
+            defaultMode: 420
+      {{- if .Values.global.mongoSSL }}
+        - name: mongo-ssl-certs
+          secret:
+            secretName: mongodb-replicaset-ssl-cert
+      {{- end }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - harness-manager
+            topologyKey: "kubernetes.io/hostname"
+      {{- with .Values.affinity }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

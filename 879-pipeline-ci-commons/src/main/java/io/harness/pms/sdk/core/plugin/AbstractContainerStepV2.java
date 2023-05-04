@@ -7,17 +7,12 @@
 
 package io.harness.pms.sdk.core.plugin;
 
-import static io.harness.ci.commonconstants.ContainerExecutionConstants.LITE_ENGINE_PORT;
-import static io.harness.ci.commonconstants.ContainerExecutionConstants.TMP_PATH;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.beans.ci.k8s.CIK8ExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
@@ -32,7 +27,6 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.product.ci.engine.proto.ExecuteStepRequest;
 import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
@@ -41,6 +35,7 @@ import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.steps.plugin.ContainerStepConstants;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.PluginUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
@@ -67,6 +62,8 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
   @Inject ContainerPortHelper containerPortHelper;
   @Inject Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
+
+  @Inject PluginUtils pluginUtils;
   public static String DELEGATE_SVC_ENDPOINT = "delegate-service:8080";
 
   @Override
@@ -139,14 +136,6 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
   public TaskData getStepTask(
       Ambiance ambiance, T containerStepInfo, String accountId, String logKey, long timeout, String parkedTaskId) {
     UnitStep unitStep = getSerialisedStep(ambiance, containerStepInfo, accountId, logKey, timeout, parkedTaskId);
-    LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome = (LiteEnginePodDetailsOutcome) outcomeService.resolve(
-        ambiance, RefObjectUtils.getOutcomeRefObject(LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME));
-    String ip = liteEnginePodDetailsOutcome.getIpAddress();
-    String runtimeId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-
-    ExecuteStepRequest executeStepRequest =
-        ExecuteStepRequest.newBuilder().setExecutionId(runtimeId).setStep(unitStep).setTmpFilePath(TMP_PATH).build();
-
     boolean isLocal = false;
     String delegateSvcEndpoint = DELEGATE_SVC_ENDPOINT;
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
@@ -156,15 +145,12 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
       isLocal = output.isLocal();
       delegateSvcEndpoint = output.getDelegateServiceEndpointVariableValue();
     }
-
-    CIK8ExecuteStepTaskParams params = CIK8ExecuteStepTaskParams.builder()
-                                           .ip(ip)
-                                           .port(LITE_ENGINE_PORT)
-                                           .serializedStep(executeStepRequest.toByteArray())
-                                           .isLocal(isLocal)
-                                           .delegateSvcEndpoint(delegateSvcEndpoint)
-                                           .build();
-    return containerDelegateTaskHelper.getDelegateTaskDataForExecuteStep(ambiance, timeout, params);
+    return pluginUtils.getDelegateTaskForPluginStep(ambiance, unitStep,
+        PluginStepMetadata.builder()
+            .delegateServiceEndpoint(delegateSvcEndpoint)
+            .isLocal(isLocal)
+            .timeout(timeout)
+            .build());
   }
 
   public Integer getPort(Ambiance ambiance, String stepIdentifier) {

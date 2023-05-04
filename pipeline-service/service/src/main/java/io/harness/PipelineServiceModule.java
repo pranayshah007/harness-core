@@ -314,6 +314,7 @@ public class PipelineServiceModule extends AbstractModule {
             .licenseClientServiceSecret(configuration.getNgManagerServiceSecret())
             .licenseClientConfig(configuration.getNgManagerServiceHttpClientConfig())
             .licenseClientId(PIPELINE_SERVICE.getServiceId())
+            .expandedJsonLockConfig(configuration.getExpandedJsonLockConfig())
             .build()));
     install(OrchestrationStepsModule.getInstance(configuration.getOrchestrationStepConfig()));
     install(FeatureFlagModule.getInstance());

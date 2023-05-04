@@ -137,7 +137,8 @@ public class ScmFacilitatorResource {
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "This contains a list of Branches specific to Referenced Connector Id")
-      })
+      },
+      hidden = true)
   public ResponseDTO<List<String>>
   listBranchesForRepo(@Parameter(description = "Connector Identifier Reference") @QueryParam(
                           NGCommonEntityConstants.CONNECTOR_IDENTIFIER_REF) String connectorIdentifierRef,
@@ -169,7 +170,8 @@ public class ScmFacilitatorResource {
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "This contains a list of Branches specific to Git Sync Config Id")
-      })
+      },
+      hidden = true)
   public ResponseDTO<List<String>>
   listBranchesForRepo(@Parameter(description = GitSyncApiConstants.REPOID_PARAM_MESSAGE) @QueryParam(
                           YamlConstants.YAML_GIT_CONFIG) String yamlGitConfigIdentifier,
@@ -200,7 +202,8 @@ public class ScmFacilitatorResource {
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "Git File Content including: object Id and content")
-      })
+      },
+      hidden = true)
   public ResponseDTO<GitFileContent>
   getFileContent(@Parameter(description = GitSyncApiConstants.REPOID_PARAM_MESSAGE, required = true) @NotBlank @NotNull
                  @QueryParam(YamlConstants.YAML_GIT_CONFIG) String yamlGitConfigIdentifier,
@@ -239,7 +242,8 @@ public class ScmFacilitatorResource {
   @Path("createPR")
   @ApiOperation(value = "creates a pull request", nickname = "createPR")
   @Operation(operationId = "createPR", summary = "creates a Pull Request",
-      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Successfully created a PR") })
+      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Successfully created a PR") },
+      hidden = true)
   public ResponseDTO<CreatePRDTO>
   createPR(@RequestBody(
       description = "Details to create a PR", required = true) @Valid @NotNull GitPRCreateRequest gitCreatePRRequest) {
@@ -254,7 +258,8 @@ public class ScmFacilitatorResource {
   @Path("create-pull-request")
   @ApiOperation(value = "creates a pull request", nickname = "createPRV2")
   @Operation(operationId = "createPR", summary = "creates a Pull Request",
-      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Successfully created a PR") })
+      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Successfully created a PR") },
+      hidden = true)
   public ResponseDTO<CreatePRResponse>
   createPRV2(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotBlank @NotNull @QueryParam(
                  NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,

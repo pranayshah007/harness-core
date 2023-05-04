@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PIPELINE)
 public class PipelineRollbackStageHelper {
-  public final String PIPELINE_ROLLBACK_STAGE_NAME = "Pipeline Rollback Stage";
+  public final String PIPELINE_ROLLBACK_STAGE_NAME = "Pipeline Rollback";
 
   public void addPipelineRollbackStageDependency(
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField stagesField) {

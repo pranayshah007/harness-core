@@ -228,6 +228,7 @@ import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO;
+import io.harness.delegate.beans.connector.signalfxconnector.SignalFXConnectorDTO;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
@@ -507,5 +508,6 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(AwsSdkClientBackoffStrategyDTO.class, 10000458);
     kryo.register(AwsSdkClientBackoffStrategySpecDTO.class, 10000459);
     kryo.register(AwsSdkClientBackoffStrategyType.class, 10000460);
+    kryo.register(SignalFXConnectorDTO.class, 10000461);
   }
 }

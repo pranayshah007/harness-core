@@ -55,6 +55,7 @@ import io.harness.cvng.migration.list.UpdateActivityStatusMigration;
 import io.harness.cvng.migration.list.UpdateApdexMetricCriteria;
 import io.harness.cvng.migration.list.UpdateCvConfigPerpetualTasksMigration;
 import io.harness.cvng.migration.list.UpdateELKCVConfigToNextGenCVConfig;
+import io.harness.cvng.migration.list.UpdateMSNotificationChangeCategoriesMigration;
 import io.harness.cvng.migration.list.UpdateRiskIntToRiskEnum;
 import io.harness.cvng.migration.list.UpdateTagsInServiceLevelObjectiveV2;
 import io.harness.cvng.migration.list.WriteServiceLevelObjectivesToV2;
@@ -138,6 +139,7 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(61, AddSLIEvaluationTypeToSLOMigration.class))
         .add(Pair.of(62, OrphanMonitoredServicesCleanup.class))
         .add(Pair.of(63, ActivityCleanupAndBucketMigration.class))
+        .add(Pair.of(64, UpdateMSNotificationChangeCategoriesMigration.class))
         .build();
   }
 }

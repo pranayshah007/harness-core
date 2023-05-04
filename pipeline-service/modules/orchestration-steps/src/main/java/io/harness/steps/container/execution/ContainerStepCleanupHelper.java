@@ -74,7 +74,7 @@ public class ContainerStepCleanupHelper {
         ContainerCleanupDetails podCleanupDetails = (ContainerCleanupDetails) executionSweepingOutputService.resolve(
             ambiance, RefObjectUtils.getSweepingOutputRefObject(CLEANUP_DETAILS));
         if (podCleanupDetails == null) {
-          log.info("No pod found for cleanup for plan execution id {}", ambiance.getPlanExecutionId());
+          return;
         }
         CICleanupTaskParams ciCleanupTaskParams = buildK8CleanupParameters(ambiance, podCleanupDetails);
 
