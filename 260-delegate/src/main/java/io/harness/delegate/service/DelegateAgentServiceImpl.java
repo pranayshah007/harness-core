@@ -295,6 +295,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private static final String HOST_NAME = getLocalHostName();
   private static String DELEGATE_NAME =
       isNotBlank(System.getenv().get("DELEGATE_NAME")) ? System.getenv().get("DELEGATE_NAME") : "";
+  private static String METRICS_DELEGATE_NAME =
+      isNotBlank(System.getenv().get("DELEGATE_NAME")) ? System.getenv().get("DELEGATE_NAME").replaceAll("-", "_") : "";
 
   private static String DELEGATE_TYPE = System.getenv().get("DELEGATE_TYPE");
   private static final boolean IsEcsDelegate = "ECS".equals(DELEGATE_TYPE);
@@ -744,8 +746,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           currentRSSMB, maxProcessRSSThresholdMB);
       rejectRequest.compareAndSet(false, true);
       metricRegistry.recordGaugeValue(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME}, 1.0);
-      metricRegistry.registerCounterMetric(
-          TASK_REJECTED, new String[] {DELEGATE_NAME}, "Total number of task rejected");
+      metricRegistry.recordCounterInc(TASK_REJECTED, DELEGATE_NAME);
       return;
     }
 
@@ -756,8 +757,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           currentPodRSSMB, maxPodRSSThresholdMB);
       rejectRequest.compareAndSet(false, true);
       metricRegistry.recordGaugeValue(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME}, 1.0);
-      metricRegistry.registerCounterMetric(
-          TASK_REJECTED, new String[] {DELEGATE_NAME}, "Total number of task rejected");
+      metricRegistry.recordCounterInc(TASK_REJECTED, DELEGATE_NAME);
       return;
     }
     log.debug("Process info CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
@@ -767,8 +767,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       log.warn("CPU consumption above threshold, {}%", BigDecimal.valueOf(cpuLoad));
       rejectRequest.compareAndSet(false, true);
       metricRegistry.recordGaugeValue(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME}, 1.0);
-      metricRegistry.registerCounterMetric(
-          TASK_REJECTED, new String[] {DELEGATE_NAME}, "Total number of task rejected");
+      metricRegistry.recordCounterInc(TASK_REJECTED, DELEGATE_NAME);
       return;
     }
 
@@ -2759,7 +2758,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         if (response != null && response.code() >= 200 && response.code() <= 299) {
           log.debug("Task {} type {},  response sent to manager", taskId, taskResponse.getTaskTypeName());
           metricRegistry.registerCounterMetric(TASK_COMPLETED,
-              new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()}, "Total number of task completed");
+              new String[] {METRICS_DELEGATE_NAME, taskResponse.getTaskTypeName()}, "Total number of task completed");
           break;
         }
         log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId,
@@ -2776,8 +2775,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
     } catch (IOException e) {
       log.error("Unable to send response to manager", e);
-      metricRegistry.registerCounterMetric(
-          TASK_FAILED, new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()}, "Total number of task failed");
     } finally {
       if (response != null && response.errorBody() != null && !response.isSuccessful()) {
         response.errorBody().close();
@@ -2802,8 +2799,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             .responseCode(DelegateTaskResponse.ResponseCode.FAILED)
             .response(ErrorNotifyResponseData.builder().errorMessage(ExceptionUtils.getMessage(exception)).build())
             .build();
-    metricRegistry.registerCounterMetric(
-        TASK_FAILED, new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()}, "Total number of task failed");
+    metricRegistry.recordCounterInc(TASK_FAILED, new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()});
     log.error("Sending error response for task{} due to exception", taskId, exception);
     try {
       Response<ResponseBody> resp;

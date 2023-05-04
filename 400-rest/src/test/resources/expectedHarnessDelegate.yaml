@@ -155,6 +155,5 @@ spec:
           value: "false"
         - name: GRPC_SERVICE_CONNECTOR_PORT
           value: "0"
-        - name:
       restartPolicy: Always
 
