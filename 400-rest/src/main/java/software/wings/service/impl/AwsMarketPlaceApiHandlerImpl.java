@@ -161,6 +161,13 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
 
     String dimensionModule = getDimensionModule(dimension);
 
+    if (isManuallyProvisioned(dimension)) {
+      final String manuallyProvisionedMessage =
+          "Instructions to get started should be provided. If not, please contact Harness at support@harness.io";
+
+      log.info("Manually provision license for Dimension=[{}], EntitlementResult=[{}]", dimension, entitlements);
+      return generateMessageResponse(manuallyProvisionedMessage, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
+    }
     if (awsMarketPlaceV2ProductCodes.contains(productCode)) {
       orderQuantity = getDimensionQuantity(dimension);
     }
@@ -293,6 +300,16 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
       default:
         return 50;
     }
+  }
+
+  // User will manually provision working closely with Harness
+  private boolean isManuallyProvisioned(String dimension) {
+    boolean shouldManuallyProvision = false;
+    String escapeProvisionKey = "x";
+    if (StringUtils.isNotBlank(dimension) && dimension.toLowerCase().endsWith(escapeProvisionKey)) {
+      shouldManuallyProvision = true;
+    }
+    return shouldManuallyProvision;
   }
 
   // Gets module from dimension string
