@@ -836,3 +836,4 @@ io.harness.cdng.provision.terraform.TerraformCliOptionFlag
 io.harness.cdng.infra.yaml.K8sRancherInfrastructure
 io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome
 io.harness.cdng.infra.beans.K8sRancherInfraMapping
+io.harness.cdng.configfile.steps.ConfigFilesStepV2SweepingOutput

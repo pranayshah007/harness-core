@@ -19,10 +19,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.configfile.ConfigFileOutcome;
-import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.configfile.ConfigFilesOutcome;
+import io.harness.cdng.configfile.ConfigGitFile;
+import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.common.ParameterFieldHelper;
+import io.harness.data.encoding.EncodingUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluatorUtils;
@@ -42,6 +46,7 @@ public class ConfigFileFunctor implements SdkFunctor {
   private static final int CONFIG_FILE_IDENTIFIER = 1;
 
   @Inject private CDStepHelper cdStepHelper;
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   @Override
   public Object get(Ambiance ambiance, String... args) {
@@ -72,19 +77,50 @@ public class ConfigFileFunctor implements SdkFunctor {
 
   private String getConfigFileContent(Ambiance ambiance, ConfigFileOutcome configFileOutcome, final String methodName) {
     String configFileIdentifier = configFileOutcome.getIdentifier();
-    StoreConfig harnessStore = configFileOutcome.getStore();
-    if (harnessStore == null || !HARNESS_STORE_TYPE.equals(harnessStore.getKind())) {
+    StoreConfig storeConfig = configFileOutcome.getStore();
+    if (storeConfig == null) {
       throw new InvalidRequestException(
-          format("Not added Harness file source to config file, configFileIdentifier: %s", configFileIdentifier));
+          format("Not added Harness file source to config file, configFileIdentifier: %s, store kind: %s",
+              configFileIdentifier, storeConfig.getKind()));
     }
 
-    List<String> files = ParameterFieldHelper.getParameterFieldValue(((HarnessStore) harnessStore).getFiles());
-    List<String> secretFiles =
-        ParameterFieldHelper.getParameterFieldValue(((HarnessStore) harnessStore).getSecretFiles());
-    validateConfigFileAttachedFilesAndEncryptedFiles(configFileIdentifier, files, secretFiles);
+    if (HARNESS_STORE_TYPE.equals(storeConfig.getKind())) {
+      List<String> files = ParameterFieldHelper.getParameterFieldValue(((HarnessStore) storeConfig).getFiles());
+      List<String> secretFiles =
+          ParameterFieldHelper.getParameterFieldValue(((HarnessStore) storeConfig).getSecretFiles());
+      validateConfigFileAttachedFilesAndEncryptedFiles(configFileIdentifier, files, secretFiles);
 
-    return isNotEmpty(files) ? getFileContent(ambiance, methodName, files.get(0))
-                             : getSecretFileContent(ambiance, methodName, secretFiles.get(0));
+      return isNotEmpty(files) ? getFileStoreFileContent(ambiance, methodName, files.get(0))
+                               : getSecretFileContent(ambiance, methodName, secretFiles.get(0));
+    } else if (ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
+      validateConfigGitFiles(configFileOutcome.getIdentifier(), configFileOutcome.getGitFiles());
+      return getGitFileContent(ambiance, methodName, configFileOutcome.getGitFiles().get(0).getFileContent());
+    } else {
+      throw new InvalidRequestException(
+          format("Invalid store kind for config file, configFileIdentifier: %s", configFileIdentifier));
+    }
+  }
+
+  private String getGitFileContent(Ambiance ambiance, final String methodName, String content) {
+    content = cdExpressionResolver.renderExpression(ambiance, content);
+    if (FUNCTOR_STRING_METHOD_NAME.equals(methodName)) {
+      return content;
+    } else if (FUNCTOR_BASE64_METHOD_NAME.equals(methodName)) {
+      return EncodingUtils.encodeBase64(content);
+    } else {
+      throw new InvalidArgumentsException(format("Unsupported configFile functor method: %s", methodName));
+    }
+  }
+
+  private void validateConfigGitFiles(String configFileIdentifier, List<ConfigGitFile> configGitFileList) {
+    if (isEmpty(configGitFileList)) {
+      throw new InvalidArgumentsException(
+          format("Not added file to config file, configFileIdentifier: %s", configFileIdentifier));
+    }
+    if (configGitFileList.size() > 1) {
+      throw new InvalidArgumentsException(
+          format("Found more files attached to config file, configFileIdentifier: %s", configFileIdentifier));
+    }
   }
 
   private void validateConfigFileAttachedFilesAndEncryptedFiles(
@@ -111,7 +147,7 @@ public class ConfigFileFunctor implements SdkFunctor {
     }
   }
 
-  private String getFileContent(Ambiance ambiance, final String methodName, final String scopedFilePath) {
+  private String getFileStoreFileContent(Ambiance ambiance, final String methodName, final String scopedFilePath) {
     if (FUNCTOR_STRING_METHOD_NAME.equals(methodName)) {
       return cdStepHelper.getFileContentAsString(ambiance, scopedFilePath, MAX_CONFIG_FILE_SIZE);
     } else if (FUNCTOR_BASE64_METHOD_NAME.equals(methodName)) {
