@@ -13,6 +13,12 @@ import "google/protobuf/any.proto";
 
 message InstanceSyncTaskDetails {
   repeated DeploymentReleaseDetails details = 1;
+  ResponseBatchConfig response_batch_config = 2;
+}
+
+message ResponseBatchConfig {
+  int32 instance_count = 1;
+  int32 release_count = 2;
 }
 
 message DeploymentReleaseDetails {

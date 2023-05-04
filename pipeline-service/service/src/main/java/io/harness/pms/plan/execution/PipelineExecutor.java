@@ -14,12 +14,15 @@ import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.ORG
 import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.PIPELINE_ID;
 import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.PROJECT_IDENTIFIER;
 
+import io.harness.OrchestrationStepTypes;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.retry.RetryExecutionParameters;
 import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
@@ -49,6 +52,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -69,6 +73,7 @@ public class PipelineExecutor {
   PlanExecutionService planExecutionService;
   RollbackModeExecutionHelper rollbackModeExecutionHelper;
   PMSExecutionService pmsExecutionService;
+  NodeExecutionService nodeExecutionService;
 
   public PlanExecutionResponseDto runPipelineWithInputSetPipelineYaml(@NotNull String accountId,
       @NotNull String orgIdentifier, @NotNull String projectIdentifier, @NotNull String pipelineIdentifier,
@@ -170,8 +175,15 @@ public class PipelineExecutor {
 
   public PlanExecution startPipelineRollback(String accountId, String orgIdentifier, String projectIdentifier,
       String originalExecutionId, PipelineStageInfo parentStageInfo) {
-    return startRollbackModeExecution(accountId, orgIdentifier, projectIdentifier, originalExecutionId, null,
-        ExecutionMode.PIPELINE_ROLLBACK, parentStageInfo, null);
+    List<String> stageExecutionIds =
+        nodeExecutionService.fetchStageExecutions(originalExecutionId)
+            .stream()
+            .filter(n -> !n.getGroup().equals("STRATEGY"))
+            .filter(n -> !n.getStepType().getType().equals(OrchestrationStepTypes.PIPELINE_ROLLBACK_STAGE))
+            .map(NodeExecution::getUuid)
+            .collect(Collectors.toList());
+    return startRollbackModeExecution(accountId, orgIdentifier, projectIdentifier, originalExecutionId,
+        stageExecutionIds, ExecutionMode.PIPELINE_ROLLBACK, parentStageInfo, null);
   }
 
   PlanExecution startRollbackModeExecution(String accountId, String orgIdentifier, String projectIdentifier,

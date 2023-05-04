@@ -120,32 +120,29 @@ public class EnvironmentExpansionUtils {
   }
 
   SingleEnvironmentExpandedValue toSingleEnvironmentExpandedValue(
-      ExpansionRequestMetadata metadata, JsonNode envYamlV2Node) {
+      ExpansionRequestMetadata metadata, JsonNode envYamlV2Node, String scopedEnvironmentRef) {
     final String accountId = metadata.getAccountId();
     final String orgId = metadata.getOrgId();
     final String projectId = metadata.getProjectId();
 
-    final Optional<String> envRefOpt = getEnvRefFromEnvYamlV2Node(envYamlV2Node);
-    if (envRefOpt.isEmpty()) {
-      return SingleEnvironmentExpandedValue.builder().build();
-    }
-
-    if (NGExpressionUtils.matchesGenericExpressionPattern(envRefOpt.get())) {
-      log.warn(String.format("Environment Ref %s is an expression. Skipping policy expansion for it", envRefOpt.get()));
-      return SingleEnvironmentExpandedValue.builder().environmentRef(envRefOpt.get()).build();
+    if (NGExpressionUtils.matchesGenericExpressionPattern(scopedEnvironmentRef)) {
+      log.warn(
+          String.format("Environment Ref %s is an expression. Skipping policy expansion for it", scopedEnvironmentRef));
+      return SingleEnvironmentExpandedValue.builder().environmentRef(scopedEnvironmentRef).build();
     }
 
     final Optional<Environment> environmentOpt =
-        environmentService.get(accountId, orgId, projectId, envRefOpt.get(), false);
+        environmentService.get(accountId, orgId, projectId, scopedEnvironmentRef, false);
     if (environmentOpt.isEmpty()) {
-      log.warn(String.format("Environment %s does not exist", envRefOpt.get()));
+      log.warn(String.format("Environment %s does not exist", scopedEnvironmentRef));
       return SingleEnvironmentExpandedValue.builder().build();
     }
     final Environment environment = environmentOpt.get();
     final SingleEnvironmentExpandedValue envExpandedValue =
-        buildSingleEnvironmentExpandedValue(envRefOpt.get(), environment);
+        buildSingleEnvironmentExpandedValue(scopedEnvironmentRef, environment);
 
-    envExpandedValue.setInfrastructures(buildInfrastructureList(metadata, environment, envRefOpt.get(), envYamlV2Node));
+    envExpandedValue.setInfrastructures(
+        buildInfrastructureList(metadata, environment, scopedEnvironmentRef, envYamlV2Node));
 
     return envExpandedValue;
   }
@@ -240,8 +237,8 @@ public class EnvironmentExpansionUtils {
             .filter(p -> !p.isExpression())
             .map(ParameterField::getValue)
             .filter(EmptyPredicate::isNotEmpty)
-            .collect(Collectors.toMap(
-                Function.identity(), ref -> getFullyQualifiedIdentifierFromRef(accountId, orgId, projectId, ref)));
+            .collect(Collectors.toMap(Function.identity(),
+                ref -> getFullyQualifiedIdentifierFromRef(accountId, orgId, projectId, ref), (c1, c2) -> c1));
 
     List<ConnectorResponseDTO> connectors =
         connectorService.listbyFQN(accountId, new ArrayList<>(connectorRefToFQNMap.values()));

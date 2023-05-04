@@ -23,6 +23,7 @@ public class PcfStepFunctor extends StepExpressionFunctor {
   private final Workflow workflow;
   private final GraphNode graphNode;
   public PcfStepFunctor(StepOutput stepOutput, Workflow workflow, GraphNode graphNode) {
+    super(stepOutput);
     this.stepOutput = stepOutput;
     this.workflow = workflow;
     this.graphNode = graphNode;
@@ -87,10 +88,5 @@ public class PcfStepFunctor extends StepExpressionFunctor {
       }
     }
     return false;
-  }
-
-  @Override
-  public String getCgExpression() {
-    return stepOutput.getExpression();
   }
 }

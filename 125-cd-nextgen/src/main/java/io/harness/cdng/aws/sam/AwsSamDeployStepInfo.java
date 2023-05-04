@@ -7,9 +7,13 @@
 
 package io.harness.cdng.aws.sam;
 
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
+import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.aws.sam.AwsSamDeployStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -21,11 +25,15 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.YamlSchemaTypes;
+import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -41,7 +49,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.AWS_SAM_DEPLOY)
 @TypeAlias("awsSamDeployStepInfo")
 @RecasterAlias("io.harness.cdng.aws.sam.AwsSamDeployStepInfo")
-public class AwsSamDeployStepInfo extends AwsSamDeployBaseStepInfo implements CDAbstractStepInfo, Visitable {
+public class AwsSamDeployStepInfo extends AwsSamBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -49,9 +57,17 @@ public class AwsSamDeployStepInfo extends AwsSamDeployBaseStepInfo implements CD
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  ParameterField<List<String>> deployCommandOptions;
+
   @Builder(builderMethodName = "infoBuilder")
-  public AwsSamDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(delegateSelectors);
+  public AwsSamDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
+      ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
+      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy) {
+    super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
+        imagePullPolicy);
   }
   @Override
   public StepType getStepType() {
@@ -60,12 +76,16 @@ public class AwsSamDeployStepInfo extends AwsSamDeployBaseStepInfo implements CD
 
   @Override
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
+    return OrchestrationFacilitatorType.ASYNC;
   }
 
   @Override
   public SpecParameters getSpecParameters() {
-    return AwsSamDeployStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
+    return AwsSamDeployStepParameters.infoBuilder()
+        .image(getImage())
+        .envVariables(getEnvVariables())
+        .delegateSelectors(this.getDelegateSelectors())
+        .build();
   }
 
   @Override

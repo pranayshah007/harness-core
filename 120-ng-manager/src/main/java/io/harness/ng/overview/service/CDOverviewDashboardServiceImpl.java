@@ -187,6 +187,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Inject CustomDeploymentYamlHelper customDeploymentYamlHelper;
 
   private String tableNameCD = "pipeline_execution_summary_cd";
+  private String EMPTY_ARTIFACT = "";
   private String CUSTOM_DEPLOYMENT = "CustomDeployment";
   private String tableNameServiceAndInfra = "service_infra_info";
   private static final String PIPELINE_EXECUTION_SUMMARY_CD_ID = "pipeline_execution_summary_cd_id";
@@ -2778,6 +2779,9 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList =
         instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(
             accountIdentifier, orgIdentifier, projectIdentifier, environmentId, serviceId, null, isGitOps, false);
+
+    updateNullArtifact(activeServiceInstanceInfoList);
+
     DashboardServiceHelper.sortActiveServiceInstanceInfoWithEnvTypeList(activeServiceInstanceInfoList);
 
     List<String> envIds = new ArrayList<>();
@@ -2797,6 +2801,15 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     return DashboardServiceHelper.getInstanceGroupedByEnvironmentListHelper(
         envGrpId, activeServiceInstanceInfoList, isGitOps, environmentGroupEntitiesPage);
   }
+
+  private void updateNullArtifact(List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList) {
+    for (ActiveServiceInstanceInfoWithEnvType activeServiceInstanceInfoWithEnvType : activeServiceInstanceInfoList) {
+      if (isNull(activeServiceInstanceInfoWithEnvType.getDisplayName())) {
+        activeServiceInstanceInfoWithEnvType.setDisplayName(EMPTY_ARTIFACT);
+      }
+    }
+  }
+
   private String convertIdToRef(String accountId, String orgId, String projectId, String id) {
     return IdentifierRefHelper.getIdentifierRefWithScope(accountId, orgId, projectId, id).buildScopedIdentifier();
   }
@@ -2830,9 +2843,25 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       String projectIdentifier, String serviceId, String environmentId, String envGrpId, String displayName,
       boolean filterOnArtifact) {
     boolean isGitOps = isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
-    List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList =
-        instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(accountIdentifier, orgIdentifier,
-            projectIdentifier, environmentId, serviceId, displayName, isGitOps, filterOnArtifact);
+
+    List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList = new ArrayList<>();
+    if (filterOnArtifact && isEmpty(displayName)) {
+      activeServiceInstanceInfoList.addAll(
+          instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(accountIdentifier, orgIdentifier,
+              projectIdentifier, environmentId, serviceId, EMPTY_ARTIFACT, isGitOps, filterOnArtifact));
+
+      activeServiceInstanceInfoList.addAll(
+          instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(accountIdentifier, orgIdentifier,
+              projectIdentifier, environmentId, serviceId, null, isGitOps, filterOnArtifact));
+
+    } else {
+      activeServiceInstanceInfoList =
+          instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(accountIdentifier, orgIdentifier,
+              projectIdentifier, environmentId, serviceId, displayName, isGitOps, filterOnArtifact);
+    }
+
+    updateNullArtifact(activeServiceInstanceInfoList);
+
     DashboardServiceHelper.sortActiveServiceInstanceInfoWithEnvTypeList(activeServiceInstanceInfoList);
 
     List<String> envIds = new ArrayList<>();
@@ -3426,7 +3455,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   private List<EnvironmentGroupEntity> fetchEnvGrpList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, Set<String> envIds) {
     Criteria criteria = environmentGroupService.formCriteria(
-        accountIdentifier, orgIdentifier, projectIdentifier, false, "", "", null, true);
+        accountIdentifier, orgIdentifier, projectIdentifier, false, "", "", null, false);
     Page<EnvironmentGroupEntity> environmentGroupEntitiesPage =
         environmentGroupService.list(criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier);
 
@@ -3557,12 +3586,26 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       String envIdentifier, EnvironmentType environmentType, String infraIdentifier, String clusterIdentifier,
       String displayName) {
     boolean isGitOps = isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
-    List<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>
-        instanceDetailGroupedByPipelineExecutionList =
-            instanceDashboardService.getActiveInstanceDetailGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
-                projectIdentifier, serviceIdentifier, envIdentifier, environmentType, infraIdentifier,
-                clusterIdentifier, displayName, isGitOps);
 
+    List<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>
+        instanceDetailGroupedByPipelineExecutionList = new ArrayList<>();
+
+    if (isEmpty(displayName)) {
+      instanceDetailGroupedByPipelineExecutionList.addAll(
+          instanceDashboardService.getActiveInstanceDetailGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
+              projectIdentifier, serviceIdentifier, envIdentifier, environmentType, infraIdentifier, clusterIdentifier,
+              EMPTY_ARTIFACT, isGitOps));
+
+      instanceDetailGroupedByPipelineExecutionList.addAll(
+          instanceDashboardService.getActiveInstanceDetailGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
+              projectIdentifier, serviceIdentifier, envIdentifier, environmentType, infraIdentifier, clusterIdentifier,
+              null, isGitOps));
+    } else {
+      instanceDetailGroupedByPipelineExecutionList.addAll(
+          instanceDashboardService.getActiveInstanceDetailGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
+              projectIdentifier, serviceIdentifier, envIdentifier, environmentType, infraIdentifier, clusterIdentifier,
+              displayName, isGitOps));
+    }
     // sort based on last deployed time
 
     Collections.sort(instanceDetailGroupedByPipelineExecutionList,

@@ -30,7 +30,6 @@ import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
-import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.iacm.execution.IACMStepsUtils;
 import io.harness.iacmserviceclient.IACMServiceUtils;
@@ -106,11 +105,12 @@ public class IACMStepUtilTest extends CategoryTest {
     when(connectorUtils.getConnectorDetails(any(), any()))
         .thenReturn(ConnectorDetails.builder().connectorType(ConnectorType.AWS).build());
 
-    VmPluginStep vmPluginStep = iacmStepsUtils.injectIACMInfo(ambiance, stepInfo, null, null);
-    assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(6);
-    assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_ROOT_DIR")).isEqualTo("root");
-    assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_TF_VERSION")).isEqualTo("1.2.3");
-    assertThat(vmPluginStep.getConnector().getConnectorType()).isEqualTo(ConnectorType.AWS);
+    Map<String, String> envVariables = iacmStepsUtils.getIACMEnvVariables(ambiance, stepInfo);
+    assertThat(envVariables).hasSize(6);
+    assertThat(envVariables.get("PLUGIN_ROOT_DIR")).isEqualTo("root");
+    assertThat(envVariables.get("PLUGIN_TF_VERSION")).isEqualTo("1.2.3");
+    ConnectorDetails connector = iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, stepInfo);
+    assertThat(connector.getConnectorType()).isEqualTo(ConnectorType.AWS);
   }
 
   @Test
@@ -154,25 +154,25 @@ public class IACMStepUtilTest extends CategoryTest {
                                       .envVariables(ParameterField.createValueField(stepVars))
                                       .settings(ParameterField.createValueField(setting))
                                       .build();
-        VmPluginStep vmPluginStep = iacmStepsUtils.injectIACMInfo(ambiance, stepInfo, null, null);
+        Map<String, String> vmPluginStep = iacmStepsUtils.getIACMEnvVariables(ambiance, stepInfo);
         if (i == 0) {
-          assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(6);
-          assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("initialise");
+          assertThat(vmPluginStep.size()).isEqualTo(6);
+          assertThat(vmPluginStep.get("PLUGIN_OPERATIONS")).isEqualTo("initialise");
         }
         if (i == 1) {
-          assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(6);
+          assertThat(vmPluginStep.size()).isEqualTo(6);
           if (j == 0) {
-            assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("evaluate-plan");
+            assertThat(vmPluginStep.get("PLUGIN_OPERATIONS")).isEqualTo("evaluate-plan");
           } else {
-            assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("evaluate-plan-destroy");
+            assertThat(vmPluginStep.get("PLUGIN_OPERATIONS")).isEqualTo("evaluate-plan-destroy");
           }
         }
         if (i == 2) {
-          assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(6);
+          assertThat(vmPluginStep.size()).isEqualTo(6);
           if (j == 0) {
-            assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("execute-apply");
+            assertThat(vmPluginStep.get("PLUGIN_OPERATIONS")).isEqualTo("execute-apply");
           } else {
-            assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("execute-destroy");
+            assertThat(vmPluginStep.get("PLUGIN_OPERATIONS")).isEqualTo("execute-destroy");
           }
         }
       }
@@ -296,9 +296,52 @@ public class IACMStepUtilTest extends CategoryTest {
 
     for (int i = 0; i < testCases.length; i++) {
       when(iacmServiceUtils.getIacmStackEnvs(any(), any(), any(), any())).thenReturn(testCases[i]);
-      VmPluginStep vmPluginStep = iacmStepsUtils.injectIACMInfo(ambiance, stepInfo, null, null);
-      assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_ENV_VARS")).isEqualTo(expectedResults[i][0]);
-      assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_VARS")).isEqualTo(expectedResults[i][1]);
+      Map<String, String> vmPluginStep = iacmStepsUtils.getIACMEnvVariables(ambiance, stepInfo);
+      assertThat(vmPluginStep.get("PLUGIN_ENV_VARS")).isEqualTo(expectedResults[i][0]);
+      assertThat(vmPluginStep.get("PLUGIN_VARS")).isEqualTo(expectedResults[i][1]);
     }
+  }
+
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testImageSelection() {
+    PluginStepInfo.builder().image(ParameterField.<String>builder().value("testImage").build());
+    String image = iacmStepsUtils.retrieveIACMPluginImage(
+        ambiance, PluginStepInfo.builder().image(ParameterField.<String>builder().value("testImage").build()).build());
+    assertThat(image).isEqualTo("testImage");
+    Map<String, ParameterField<String>> stepVars = new HashMap<>();
+    stepVars.put("STACK_ID", ParameterField.createValueField("stackID"));
+    stepVars.put("WORKFLOW", ParameterField.createValueField("provision"));
+    Map<String, JsonNode> setting = new HashMap<>();
+    ObjectMapper mapper = new ObjectMapper();
+    setting.put("operation", mapper.valueToTree("initialise"));
+    PluginStepInfo stepInfo = PluginStepInfo.builder()
+                                  .envVariables(ParameterField.createValueField(stepVars))
+                                  .settings(ParameterField.createValueField(setting))
+                                  .build();
+    when(ciExecutionConfigService.getPluginVersionForVM(any(), any())).thenReturn("terraform");
+    image = iacmStepsUtils.retrieveIACMPluginImage(ambiance, stepInfo);
+    assertThat(image).isEqualTo("terraform");
+  }
+
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testIsIACMStep() {
+    Map<String, ParameterField<String>> stepVars = new HashMap<>();
+    stepVars.put("STACK_ID", ParameterField.createValueField("stackID"));
+    stepVars.put("WORKFLOW", ParameterField.createValueField("provision"));
+    Map<String, JsonNode> setting = new HashMap<>();
+    ObjectMapper mapper = new ObjectMapper();
+    setting.put("operation", mapper.valueToTree("initialise"));
+    PluginStepInfo stepInfo = PluginStepInfo.builder()
+                                  .envVariables(ParameterField.createValueField(stepVars))
+                                  .settings(ParameterField.createValueField(setting))
+                                  .build();
+    assertThat(iacmStepsUtils.isIACMStep(stepInfo)).isTrue();
+
+    PluginStepInfo stepInfo2 = PluginStepInfo.builder().settings(ParameterField.createValueField(setting)).build();
+    assertThat(iacmStepsUtils.isIACMStep(stepInfo2)).isFalse();
   }
 }

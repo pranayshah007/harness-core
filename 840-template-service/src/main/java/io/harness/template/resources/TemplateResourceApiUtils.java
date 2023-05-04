@@ -44,12 +44,12 @@ import io.harness.spec.server.template.v1.model.TemplateImportResponseBody;
 import io.harness.spec.server.template.v1.model.TemplateMetadataSummaryResponse;
 import io.harness.spec.server.template.v1.model.TemplateUpdateStableResponse;
 import io.harness.template.TemplateFilterPropertiesDTO;
-import io.harness.template.beans.FilterParamsDTO;
-import io.harness.template.beans.PageParamsDTO;
-import io.harness.template.beans.PermissionTypes;
-import io.harness.template.beans.TemplateFilterProperties;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.mappers.NGTemplateDtoMapper;
+import io.harness.template.resources.beans.FilterParamsDTO;
+import io.harness.template.resources.beans.PageParamsDTO;
+import io.harness.template.resources.beans.PermissionTypes;
+import io.harness.template.resources.beans.TemplateFilterProperties;
 import io.harness.template.services.NGTemplateService;
 import io.harness.utils.ApiUtils;
 
@@ -159,8 +159,8 @@ public class TemplateResourceApiUtils {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(account, org, project), Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
 
-    io.harness.template.beans.TemplateImportRequestDTO templateImportRequestDTO =
-        io.harness.template.beans.TemplateImportRequestDTO.builder()
+    io.harness.template.resources.beans.TemplateImportRequestDTO templateImportRequestDTO =
+        io.harness.template.resources.beans.TemplateImportRequestDTO.builder()
             .templateVersion(templateImportRequest.getTemplateVersion())
             .templateDescription(templateImportRequest.getTemplateVersion())
             .templateName(templateImportRequest.getTemplateName())

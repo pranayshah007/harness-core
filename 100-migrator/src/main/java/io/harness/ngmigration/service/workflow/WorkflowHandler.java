@@ -1025,4 +1025,52 @@ public abstract class WorkflowHandler {
     }
     return true;
   }
+
+  public List<StepExpressionFunctor> getExpressionFunctors(MigrationContext migrationContext, Workflow workflow) {
+    WorkflowMigrationContext context = WorkflowMigrationContext.newInstance(migrationContext, workflow);
+    PhaseStep prePhaseStep = getPreDeploymentPhase(workflow);
+    List<WorkflowPhase> phases = getPhases(workflow);
+    PhaseStep postPhaseStep = getPostDeploymentPhase(workflow);
+    List<WorkflowPhase> rollbackPhases = getRollbackPhases(workflow);
+
+    List<StepExpressionFunctor> stepExpressionFunctors = new ArrayList<>();
+
+    if (prePhaseStep != null && EmptyPredicate.isNotEmpty(prePhaseStep.getSteps())) {
+      WorkflowPhase prePhase = WorkflowPhaseBuilder.aWorkflowPhase().name("Pre Deployment").build();
+      prePhaseStep.setName("Pre Deployment");
+      stepExpressionFunctors.addAll(getFunctorForPhase(context, prePhase));
+    }
+
+    if (EmptyPredicate.isNotEmpty(phases)) {
+      phases.stream()
+          .map(phase -> getFunctorForPhase(context, phase))
+          .forEach(functors -> stepExpressionFunctors.addAll(functors));
+    }
+
+    if (postPhaseStep != null && EmptyPredicate.isNotEmpty(postPhaseStep.getSteps())) {
+      WorkflowPhase postPhase = WorkflowPhaseBuilder.aWorkflowPhase().name("Post Deployment").build();
+      postPhaseStep.setName("Post Deployment");
+      stepExpressionFunctors.addAll(getFunctorForPhase(context, postPhase));
+    }
+
+    return stepExpressionFunctors;
+  }
+
+  private List<StepExpressionFunctor> getFunctorForPhase(
+      WorkflowMigrationContext migrationContext, WorkflowPhase phase) {
+    if (phase == null || EmptyPredicate.isEmpty(phase.getPhaseSteps())) {
+      return Collections.emptyList();
+    }
+
+    List<StepExpressionFunctor> functors = new ArrayList<>();
+    for (PhaseStep phaseStep : phase.getPhaseSteps()) {
+      if (EmptyPredicate.isNotEmpty(phaseStep.getSteps())) {
+        for (GraphNode step : phaseStep.getSteps()) {
+          StepMapper factory = stepMapperFactory.getStepMapper(step.getType());
+          functors.addAll(factory.getExpressionFunctor(migrationContext, phase, phaseStep, step));
+        }
+      }
+    }
+    return functors;
+  }
 }

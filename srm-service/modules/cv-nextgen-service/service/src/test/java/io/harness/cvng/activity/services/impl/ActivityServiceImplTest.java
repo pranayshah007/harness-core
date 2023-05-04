@@ -11,6 +11,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eraro.ErrorCode.FAILED_TO_ACQUIRE_PERSISTENT_LOCK;
 import static io.harness.exception.WingsException.SRE;
 import static io.harness.rule.OwnerRule.ABHIJITH;
+import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -26,10 +27,18 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.beans.ActivityVerificationSummary;
 import io.harness.cvng.activity.entities.Activity;
+import io.harness.cvng.activity.entities.ActivityBucket;
+import io.harness.cvng.activity.entities.DeploymentActivity;
+import io.harness.cvng.activity.entities.KubernetesClusterActivity;
+import io.harness.cvng.activity.entities.PagerDutyActivity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.analysis.beans.Risk;
+import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.Sensitivity;
+import io.harness.cvng.core.beans.dependency.KubernetesDependencyMetadata;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
+import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.verificationjob.entities.CanaryVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -41,9 +50,11 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -61,7 +72,7 @@ public class ActivityServiceImplTest extends CvNextGenTestBase {
   @Inject private ActivityService activityService;
   @Mock private VerificationJobInstanceService verificationJobInstanceService;
   @Mock private PersistentLocker mockedPersistentLocker;
-
+  @Inject private MonitoredServiceService monitoredServiceService;
   private String projectIdentifier;
   private String orgIdentifier;
   private String accountId;
@@ -95,6 +106,99 @@ public class ActivityServiceImplTest extends CvNextGenTestBase {
     String activityUuid = activityService.upsert(activity);
     Activity activityFromDb = activityService.get(activityUuid);
     assertThat(activityFromDb).isEqualTo(activity);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testUpsert_createMultipleDeploymentActivity() {
+    useMockedPersistentLocker();
+    DeploymentActivity activity = builderFactory.getDeploymentActivityBuilder().build();
+    String activityUuid = activityService.upsert(activity);
+    Activity activityFromDb = activityService.get(activityUuid);
+    assertThat(activityFromDb).isEqualTo(activity);
+    activity = builderFactory.getDeploymentActivityBuilder().build();
+    activity.setEventTime(activity.getEventTime().plus(10, ChronoUnit.SECONDS));
+    activity.setPlanExecutionId(generateUuid());
+    activityUuid = activityService.upsert(activity);
+    activityFromDb = activityService.get(activityUuid);
+    assertThat(activityFromDb).isEqualTo(activity);
+    List<ActivityBucket> activityBuckets = hPersistence.createQuery(ActivityBucket.class).find().toList();
+    assertThat(activityBuckets.size()).isEqualTo(1);
+    assertThat(activityBuckets.get(0).getCount()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testUpsert_createMultiplePagerDutyActivity() {
+    useMockedPersistentLocker();
+    PagerDutyActivity activity = builderFactory.getPagerDutyActivityBuilder().build();
+    String activityUuid = activityService.upsert(activity);
+    Activity activityFromDb = activityService.get(activityUuid);
+    assertThat(activityFromDb).isEqualTo(activity);
+    activity = builderFactory.getPagerDutyActivityBuilder().build();
+    activity.setEventTime(activity.getEventTime().plus(10, ChronoUnit.SECONDS));
+    activity.setEventId(generateUuid());
+    activityUuid = activityService.upsert(activity);
+    activityFromDb = activityService.get(activityUuid);
+    assertThat(activityFromDb).isEqualTo(activity);
+    List<ActivityBucket> activityBuckets = hPersistence.createQuery(ActivityBucket.class).find().toList();
+    assertThat(activityBuckets.size()).isEqualTo(1);
+    assertThat(activityBuckets.get(0).getCount()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testUpsert_createMultipleKubernetesActivity() {
+    useMockedPersistentLocker();
+    KubernetesClusterActivity activity = builderFactory.getKubernetesClusterActivityBuilder().build();
+    setMonitoredService(activity);
+    String activityUuid = activityService.upsert(activity);
+    Activity activityFromDb = activityService.get(activityUuid);
+    assertThat(activityFromDb).isEqualTo(activity);
+    activity = builderFactory.getKubernetesClusterActivityBuilder().build();
+    activity.setEventTime(activity.getEventTime().plus(10, ChronoUnit.SECONDS));
+    activityUuid = activityService.upsert(activity);
+    activityFromDb = activityService.get(activityUuid);
+    assertThat(activityFromDb).isEqualTo(activity);
+    List<ActivityBucket> activityBuckets = hPersistence.createQuery(ActivityBucket.class).find().toList();
+    assertThat(activityBuckets.size()).isEqualTo(1);
+    assertThat(activityBuckets.get(0).getCount()).isEqualTo(2);
+  }
+
+  private void setMonitoredService(KubernetesClusterActivity clusterActivity) {
+    MonitoredServiceDTO infraService = builderFactory.monitoredServiceDTOBuilder()
+                                           .type(MonitoredServiceType.INFRASTRUCTURE)
+                                           .serviceRef(builderFactory.getContext().getServiceIdentifier() + "infra")
+                                           .environmentRef(builderFactory.getContext().getEnvIdentifier())
+                                           .build();
+    infraService.getSources().setHealthSources(null);
+    infraService.getSources().setChangeSources(
+        Sets.newHashSet(builderFactory.getKubernetesChangeSourceDTOBuilder().build()));
+
+    monitoredServiceService.create(clusterActivity.getAccountId(), infraService);
+
+    MonitoredServiceDTO appService =
+        builderFactory.monitoredServiceDTOBuilder()
+            .identifier(generateUuid())
+            .serviceRef(serviceIdentifier)
+            .environmentRef(envIdentifier)
+            .dependencies(Sets.newHashSet(
+                MonitoredServiceDTO.ServiceDependencyDTO.builder()
+                    .monitoredServiceIdentifier(
+                        builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier())
+                    .dependencyMetadata(KubernetesDependencyMetadata.builder()
+                                            .namespace(clusterActivity.getNamespace())
+                                            .workload(clusterActivity.getWorkload())
+                                            .build())
+                    .build()))
+            .build();
+    appService.getSources().setHealthSources(null);
+    appService.getSources().setChangeSources(
+        Sets.newHashSet(builderFactory.getHarnessCDChangeSourceDTOBuilder().build()));
+    monitoredServiceService.create(clusterActivity.getAccountId(), appService);
   }
 
   @Test

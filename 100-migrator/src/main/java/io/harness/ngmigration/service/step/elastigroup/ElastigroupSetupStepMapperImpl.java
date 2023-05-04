@@ -158,13 +158,16 @@ public class ElastigroupSetupStepMapperImpl extends StepMapper {
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     SpotInstServiceSetup state1 = (SpotInstServiceSetup) getState(stepYaml1);
     SpotInstServiceSetup state2 = (SpotInstServiceSetup) getState(stepYaml2);
-    return CompareUtils.compareObjects(state1.getCurrentRunningCount(), state2.getCurrentRunningCount())
+    boolean similar = CompareUtils.compareObjects(state1.getCurrentRunningCount(), state2.getCurrentRunningCount())
         && state1.isUseCurrentRunningCount() == state2.isUseCurrentRunningCount()
-        && StringUtils.equals(state1.getMaxInstances(), state2.getMaxInstances())
-        && StringUtils.equals(state1.getMinInstances(), state2.getMinInstances())
-        && StringUtils.equals(state1.getTargetInstances(), state2.getTargetInstances())
         && StringUtils.equals(state1.getElastiGroupNamePrefix(), state2.getElastiGroupNamePrefix())
         && compareLb(state1.getAwsLoadBalancerConfigs(), state2.getAwsLoadBalancerConfigs());
+    if (similar && !state1.isUseCurrentRunningCount()) {
+      similar = StringUtils.equals(state1.getMaxInstances(), state2.getMaxInstances())
+          && StringUtils.equals(state1.getMinInstances(), state2.getMinInstances())
+          && StringUtils.equals(state1.getTargetInstances(), state2.getTargetInstances());
+    }
+    return similar;
   }
 
   private boolean compareLb(List<LoadBalancerDetailsForBGDeployment> awsLoadBalancerConfigs,

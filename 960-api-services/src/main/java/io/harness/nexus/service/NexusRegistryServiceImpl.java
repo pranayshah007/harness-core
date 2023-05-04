@@ -50,8 +50,8 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
       String classifier, String packageName, String group, int maxBuilds) {
     List<BuildDetailsInternal> buildDetails;
     if (RepositoryFormat.docker.name().equalsIgnoreCase(repositoryFormat)) {
-      buildDetails = nexusClient.getDockerArtifactVersions(
-          nexusConfig, repositoryName, port, artifactName, repositoryFormat, maxBuilds);
+      buildDetails =
+          nexusClient.getDockerArtifactVersions(nexusConfig, repositoryName, port, artifactName, repositoryFormat);
       return buildDetails;
     } else if (RepositoryFormat.maven.name().equalsIgnoreCase(repositoryFormat)) {
       buildDetails = nexusClient.getArtifactsVersions(

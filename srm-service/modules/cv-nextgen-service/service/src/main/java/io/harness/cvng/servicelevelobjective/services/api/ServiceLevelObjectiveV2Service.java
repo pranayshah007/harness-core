@@ -60,8 +60,6 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
 
   SLORiskCountResponse getRiskCount(ProjectParams projectParams, SLODashboardApiFilter serviceLevelObjectiveFilter);
 
-  List<AbstractServiceLevelObjective> getAllSLOs(ProjectParams projectParams);
-
   List<AbstractServiceLevelObjective> getAllSLOs(
       ProjectParams projectParams, ServiceLevelObjectiveType serviceLevelObjectiveType);
 
@@ -100,7 +98,10 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
   SLIEvaluationType getEvaluationType(AbstractServiceLevelObjective serviceLevelObjective);
 
   List<AbstractServiceLevelObjective> getAllReferredSLOs(
-      ProjectParams projectParams, CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec);
+      ProjectParams projectParams, Set<ServiceLevelObjectivesDetail> serviceLevelObjectiveDetailDTOList);
+
+  List<AbstractServiceLevelObjective> getAllReferredSLOs(
+      ProjectParams projectParams, List<CompositeServiceLevelObjective> compositeServiceLevelObjectives);
 
   String getScopedIdentifier(AbstractServiceLevelObjective abstractServiceLevelObjective);
 

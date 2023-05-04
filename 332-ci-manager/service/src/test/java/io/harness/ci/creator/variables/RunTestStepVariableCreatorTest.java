@@ -103,7 +103,9 @@ public class RunTestStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.run_test.spec.execution.steps.ti.spec.testSplitStrategy",
             "pipeline.stages.run_test.spec.execution.steps.ti.spec.enableTestSplitting",
             "pipeline.stages.run_test.spec.execution.steps.ti.spec.testGlobs",
-            "pipeline.stages.run_test.spec.execution.steps.ti.when");
+            "pipeline.stages.run_test.spec.execution.steps.ti.when",
+            "pipeline.stages.run_test.spec.execution.steps.ti.spec.testRoot",
+            "pipeline.stages.run_test.spec.execution.steps.ti.spec.pythonVersion");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()

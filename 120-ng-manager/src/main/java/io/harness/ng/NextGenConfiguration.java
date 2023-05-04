@@ -19,6 +19,7 @@ import io.harness.account.AccountConfig;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
+import io.harness.cdng.plugininfoproviders.PluginExecutionConfig;
 import io.harness.cf.CfClientConfig;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
@@ -53,6 +54,7 @@ import io.harness.threading.ThreadPoolConfig;
 import io.harness.timescaledb.TimeScaleDBConfig;
 
 import software.wings.security.authentication.oauth.AzureRepoConfig;
+import software.wings.security.authentication.oauth.BitbucketConfig;
 import software.wings.security.authentication.oauth.GitlabConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -238,6 +240,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty(value = "signupTargetEnv") private String signupTargetEnv;
   @JsonProperty(value = "delegateStatusEndpoint") private String delegateStatusEndpoint;
   @JsonProperty(value = "gitlabConfig") private GitlabConfig gitlabConfig;
+  @JsonProperty(value = "bitbucketConfig") private BitbucketConfig bitbucketConfig;
   @JsonProperty(value = "azureRepoConfig") private AzureRepoConfig azureRepoConfig;
   @JsonProperty(value = "oauthRefreshFrequency") private long oauthRefreshFrequency;
   @JsonProperty(value = "oauthRefreshEnabled") private boolean oauthRefreshEnabled;
@@ -255,6 +258,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   @JsonProperty("gitService") private GitServiceConfiguration gitServiceConfiguration;
   @JsonProperty(value = "disableFreezeNotificationTemplate") private boolean disableFreezeNotificationTemplate;
+  @JsonProperty(value = "pluginExecutionConfig") private PluginExecutionConfig pluginExecutionConfig;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;

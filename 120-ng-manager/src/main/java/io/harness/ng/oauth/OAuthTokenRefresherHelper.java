@@ -13,12 +13,12 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
-import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.api.SecretCrudService;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.Principal;
@@ -28,12 +28,16 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class OAuthTokenRefresherHelper {
   @Inject private SecretManagerClientService ngSecretService;
+  @Inject private SecretCrudService ngSecretCrudService;
+
   List<EncryptedDataDetail> getEncryptionDetails(
-      DecryptableEntity gitlabOauthDTO, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+      DecryptableEntity decryptableEntity, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     NGAccess ngAccess = BaseNGAccess.builder()
                             .accountIdentifier(accountIdentifier)
                             .orgIdentifier(orgIdentifier)
@@ -43,7 +47,7 @@ public class OAuthTokenRefresherHelper {
     List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
 
     List<EncryptedDataDetail> authenticationEncryptedDataDetails =
-        ngSecretService.getEncryptionDetails(ngAccess, gitlabOauthDTO);
+        ngSecretService.getEncryptionDetails(ngAccess, decryptableEntity);
     if (isNotEmpty(authenticationEncryptedDataDetails)) {
       encryptedDataDetails.addAll(authenticationEncryptedDataDetails);
     }

@@ -7,6 +7,7 @@
 
 package io.harness.cvng.servicelevelobjective.services.api;
 
+import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
@@ -14,11 +15,17 @@ import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.tuple.Pair;
 
 public interface SLIRecordService {
   void create(List<SLIRecordParam> sliRecordList, String sliId, String verificationTaskId, int sliVersion);
   void delete(List<String> sliIds);
 
+  Pair<Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecord>>,
+      Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>>
+  getSLODetailsSLIRecordsAndSLIMissingDataType(
+      List<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList,
+      Instant startTime, Instant endTime);
   List<SLIRecord> getSLIRecordsOfMinutes(String sliId, List<Instant> minutes);
 
   Map<String, SLIRecord> getLastCompositeSLOsSLIRecord(

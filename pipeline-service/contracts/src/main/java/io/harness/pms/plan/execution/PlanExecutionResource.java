@@ -676,7 +676,6 @@ public interface PlanExecutionResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns execution details")
       })
-  @Hidden
   ResponseDTO<PlanExecutionResponseDto>
   retryPipelineWithInputSetPipelineYaml(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @Parameter(
@@ -710,7 +709,6 @@ public interface PlanExecutionResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns retry history execution details")
       })
-  @Hidden
   ResponseDTO<RetryHistoryResponseDto>
   getRetryHistory(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @Parameter(

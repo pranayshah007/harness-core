@@ -29,6 +29,7 @@ public class CIExecutionConstants extends ContainerExecutionConstants {
   public static final String GIT_SSL_NO_VERIFY = "GIT_SSL_NO_VERIFY";
   public static final String GIT_URL_SUFFIX = ".git";
   public static final String PATH_SEPARATOR = "/";
+  public static final String UNDERSCORE_SEPARATOR = "_";
 
   // Constants for implict cache steps
   public static final String RESTORE_CACHE_STEP_ID = "restore-cache-harness";

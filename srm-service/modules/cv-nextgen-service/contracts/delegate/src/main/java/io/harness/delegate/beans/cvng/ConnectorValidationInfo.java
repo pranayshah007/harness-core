@@ -20,6 +20,7 @@ import io.harness.delegate.beans.connector.errortracking.ErrorTrackingConnectorD
 import io.harness.delegate.beans.connector.newrelic.NewRelicConnectorDTO;
 import io.harness.delegate.beans.connector.pagerduty.PagerDutyConnectorDTO;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
+import io.harness.delegate.beans.connector.signalfxconnector.SignalFXConnectorDTO;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
 import io.harness.delegate.beans.cvng.appd.AppDynamicsConnectorValidationInfo;
@@ -31,6 +32,7 @@ import io.harness.delegate.beans.cvng.errortracking.ErrorTrackingConnectorValida
 import io.harness.delegate.beans.cvng.newrelic.NewRelicConnectorValidationInfo;
 import io.harness.delegate.beans.cvng.pagerduty.PagerDutyConnectorValidationInfo;
 import io.harness.delegate.beans.cvng.prometheus.PrometheusConnectorValidationInfo;
+import io.harness.delegate.beans.cvng.signalfx.SignalFXConnectorValidationInfo;
 import io.harness.delegate.beans.cvng.splunk.SplunkConnectorValidationInfo;
 import io.harness.delegate.beans.cvng.sumologic.SumoLogicConnectorValidationInfo;
 
@@ -71,6 +73,8 @@ public abstract class ConnectorValidationInfo<T extends ConnectorConfigDTO> {
       connectorValidationInfo = ErrorTrackingConnectorValidationInfo.builder().build();
     } else if (connectorConfigDTO instanceof ELKConnectorDTO) {
       connectorValidationInfo = ELKConnectorValidationInfo.builder().build();
+    } else if (connectorConfigDTO instanceof SignalFXConnectorDTO) {
+      connectorValidationInfo = SignalFXConnectorValidationInfo.builder().build();
     } else {
       throw new IllegalStateException(
           "Class: " + connectorConfigDTO.getClass().getSimpleName() + " does not have ValidationInfo object");

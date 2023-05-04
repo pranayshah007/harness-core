@@ -38,7 +38,7 @@ import org.apache.commons.lang3.StringUtils;
 @UtilityClass
 public class ServiceOverridesMapper {
   public NGServiceOverridesEntity toServiceOverridesEntity(
-      String accountId, ServiceOverrideRequestDTO serviceOverrideRequestDTO, boolean isOverrideV2) {
+      String accountId, ServiceOverrideRequestDTO serviceOverrideRequestDTO) {
     NGServiceOverridesEntity serviceOverridesEntity =
         NGServiceOverridesEntity.builder()
             .accountId(accountId)
@@ -53,12 +53,10 @@ public class ServiceOverridesMapper {
     NGServiceOverrideConfig ngServiceOverrideConfig =
         NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig(serviceOverridesEntity);
 
-    if (isOverrideV2) {
-      String updatedYaml =
-          getUpdatedYamlIfEnvRefIsNotQualifiedRef(accountId, serviceOverrideRequestDTO, ngServiceOverrideConfig);
-      if (isNotBlank(updatedYaml)) {
-        serviceOverridesEntity.setYaml(updatedYaml);
-      }
+    String updatedYaml =
+        getUpdatedYamlIfEnvRefIsNotQualifiedRef(accountId, serviceOverrideRequestDTO, ngServiceOverrideConfig);
+    if (isNotBlank(updatedYaml)) {
+      serviceOverridesEntity.setYaml(updatedYaml);
     }
 
     return serviceOverridesEntity;

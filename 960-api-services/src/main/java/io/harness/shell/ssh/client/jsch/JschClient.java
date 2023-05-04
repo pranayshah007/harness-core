@@ -14,9 +14,7 @@ import static io.harness.eraro.ErrorCode.SSH_RETRY;
 import static io.harness.eraro.ErrorCode.UNKNOWN_ERROR;
 import static io.harness.eraro.ErrorCode.UNKNOWN_EXECUTOR_TYPE_ERROR;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
-import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
-import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.shell.AccessType.USER_PASSWORD;
 import static io.harness.shell.AuthenticationScheme.KERBEROS;
 import static io.harness.shell.SshHelperUtils.normalizeError;
@@ -32,7 +30,6 @@ import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.emptyMap;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.eraro.ErrorCode;
@@ -45,6 +42,7 @@ import io.harness.security.EncryptionUtils;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.SshUserInfo;
 import io.harness.shell.ssh.client.SshClient;
+import io.harness.shell.ssh.client.SshClientType;
 import io.harness.shell.ssh.client.SshConnection;
 import io.harness.shell.ssh.connection.ExecRequest;
 import io.harness.shell.ssh.connection.ExecResponse;
@@ -54,7 +52,6 @@ import io.harness.shell.ssh.sftp.SftpRequest;
 import io.harness.shell.ssh.sftp.SftpResponse;
 import io.harness.shell.ssh.xfer.ScpRequest;
 import io.harness.shell.ssh.xfer.ScpResponse;
-import io.harness.ssh.SshHelperUtils;
 import io.harness.stream.BoundedInputStream;
 
 import com.google.common.base.Charsets;
@@ -76,6 +73,7 @@ import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
@@ -139,7 +137,6 @@ public class JschClient extends SshClient {
 
           if (channel.isClosed()) {
             commandExecutionStatus = channel.getExitStatus() == 0 ? SUCCESS : FAILURE;
-            saveExecutionLog("Command finished with status " + commandExecutionStatus, commandExecutionStatus);
             return ExecResponse.builder()
                 .output(output.toString())
                 .exitCode(channel.getExitStatus())
@@ -424,10 +421,6 @@ public class JschClient extends SshClient {
     }
   }
 
-  protected void saveExecutionLogError(String line) {
-    getLogCallback().saveExecutionLog(line, ERROR, RUNNING);
-  }
-
   private String processStreamData(String text, boolean finishedReading, OutputStream outputStream) throws IOException {
     if (text == null || text.length() == 0) {
       return text;
@@ -529,6 +522,12 @@ public class JschClient extends SshClient {
     }
   }
 
+  @Override
+  protected Object getScpSession(SshConnection sshConnection) throws SshClientException {
+    // SCP in JSCH is done via exec channel so this is not required.
+    throw new NotImplementedException();
+  }
+
   private Session getJschSession() {
     SshSessionConfig config = getSshSessionConfig();
 
@@ -558,6 +557,7 @@ public class JschClient extends SshClient {
         session = fetchSSHSession(config, getLogCallback());
       } catch (InterruptedException ie) {
         log.error("exception while fetching ssh session", ie);
+        Thread.currentThread().interrupt();
       } catch (JSchException jse) {
         if (retryCount == 6) {
           return fetchSSHSession(config, getLogCallback());
@@ -653,18 +653,6 @@ public class JschClient extends SshClient {
     return session;
   }
 
-  private void generateTGTUsingSshConfig(SshSessionConfig config, LogCallback logCallback) throws JSchException {
-    if (config.getKerberosConfig() == null) {
-      return;
-    }
-    log.info("Do we need to generate Ticket Granting Ticket(TGT)? " + config.getKerberosConfig().isGenerateTGT());
-    if (config.getKerberosConfig().isGenerateTGT()) {
-      SshHelperUtils.generateTGT(config.getKerberosConfig().getPrincipalWithRealm(),
-          config.getPassword() != null ? new String(config.getPassword()) : null,
-          config.getKerberosConfig().getKeyTabFilePath(), logCallback, emptyMap());
-    }
-  }
-
   private ProxyHTTP getProxy() {
     String host = Http.getProxyHostName();
     String port = Http.getProxyPort();
@@ -691,5 +679,15 @@ public class JschClient extends SshClient {
                                      .withUseSshClient(config.isUseSshClient())
                                      .build();
     return getSSHSessionWithRetry(newConfig);
+  }
+
+  @Override
+  public SshClientType getType() {
+    return SshClientType.JSCH;
+  }
+
+  @Override
+  public void createDirectoryForScp(ScpRequest request) {
+    // not required
   }
 }

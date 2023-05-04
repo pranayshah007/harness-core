@@ -371,6 +371,18 @@ if [[ "" != "$GITLAB_OAUTH_CALLBACK_URL" ]]; then
   export GITLAB_OAUTH_CALLBACK_URL; yq -i '.gitlabConfig.callbackUrl=env(GITLAB_OAUTH_CALLBACK_URL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$BITBUCKET_OAUTH_CLIENT" ]]; then
+  export BITBUCKET_OAUTH_CLIENT; yq -i '.bitbucketConfig.clientId=env(BITBUCKET_OAUTH_CLIENT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BITBUCKET_OAUTH_SECRET" ]]; then
+  export BITBUCKET_OAUTH_SECRET; yq -i '.bitbucketConfig.clientSecret=env(BITBUCKET_OAUTH_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BITBUCKET_OAUTH_CALLBACK_URL" ]]; then
+  export BITBUCKET_OAUTH_CALLBACK_URL; yq -i '.bitbucketConfig.callbackUrl=env(BITBUCKET_OAUTH_CALLBACK_URL)' $CONFIG_FILE
+fi
+
 if [[ "" != "$OAUTH_REFRESH_FREQUECY" ]]; then
   export OAUTH_REFRESH_FREQUECY; yq -i '.oauthRefreshFrequency=env(OAUTH_REFRESH_FREQUECY)' $CONFIG_FILE
 fi

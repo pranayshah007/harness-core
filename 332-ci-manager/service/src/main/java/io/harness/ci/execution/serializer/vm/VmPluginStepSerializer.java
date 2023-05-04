@@ -29,7 +29,6 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_JSON_KEY
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_SECRET_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.RESTORE_CACHE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SAVE_CACHE_STEP_ID;
-import static io.harness.ci.commonconstants.CIExecutionConstants.STACK_ID;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -81,7 +80,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -99,14 +97,15 @@ public class VmPluginStepSerializer {
   public VmStepInfo serialize(PluginStepInfo pluginStepInfo, StageInfraDetails stageInfraDetails, String identifier,
       ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance, List<CIRegistry> registries,
       ExecutionSource executionSource) {
-    if (pluginStepInfo.getEnvVariables() != null && pluginStepInfo.getEnvVariables().getValue() != null
-        && pluginStepInfo.getEnvVariables().getValue().get(STACK_ID) != null
-        && !Objects.equals(pluginStepInfo.getEnvVariables().getValue().get(STACK_ID).getValue(), "")) {
-      return iacmStepsUtils.injectIACMInfo(ambiance, pluginStepInfo, stageInfraDetails, parameterFieldTimeout);
+    Map<String, String> envVars = new HashMap<>();
+    String image = "";
+
+    if (iacmStepsUtils.isIACMStep(pluginStepInfo)) {
+      image = iacmStepsUtils.retrieveIACMPluginImage(ambiance, pluginStepInfo);
+      envVars = iacmStepsUtils.getIACMEnvVariables(ambiance, pluginStepInfo);
     }
     Map<String, JsonNode> settings =
         resolveJsonNodeMapParameter("settings", "Plugin", identifier, pluginStepInfo.getSettings(), false);
-    Map<String, String> envVars = new HashMap<>();
     if (executionSource != null && executionSource.getType() == ExecutionSource.Type.MANUAL) {
       if (identifier.equals(GIT_CLONE_STEP_ID) && settings != null
           && !settings.containsKey(GIT_CLONE_DEPTH_ATTRIBUTE)) {
@@ -124,8 +123,10 @@ public class VmPluginStepSerializer {
     }
     envVars.putAll(resolveMapParameterV2("envVars", "pluginStep", identifier, pluginStepInfo.getEnvVariables(), false));
 
-    String image =
-        RunTimeInputHandler.resolveStringParameter("Image", stepName, identifier, pluginStepInfo.getImage(), false);
+    if (isEmpty(image)) {
+      image =
+          RunTimeInputHandler.resolveStringParameter("Image", stepName, identifier, pluginStepInfo.getImage(), false);
+    }
     String connectorIdentifier;
     if (isNotEmpty(registries)) {
       connectorIdentifier = ciStepInfoUtils.resolveConnectorFromRegistries(registries, image).orElse(null);
@@ -165,8 +166,13 @@ public class VmPluginStepSerializer {
           return convertContainerlessStep(identifier, entrypoint, envVars, timeout, pluginStepInfo);
         }
       }
+      if (iacmStepsUtils.isIACMStep(pluginStepInfo)) {
+        ConnectorDetails iacmConnector = iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, pluginStepInfo);
+        return convertContainerStep(ambiance, identifier, image, connectorIdentifier, envVars, timeout,
+            stageInfraDetails, pluginStepInfo, iacmConnector);
+      }
       return convertContainerStep(
-          ambiance, identifier, image, connectorIdentifier, envVars, timeout, stageInfraDetails, pluginStepInfo);
+          ambiance, identifier, image, connectorIdentifier, envVars, timeout, stageInfraDetails, pluginStepInfo, null);
     } else if (isNotEmpty(uses)) {
       if (stageInfraDetails.getType() != StageInfraDetails.Type.DLITE_VM) {
         throw new CIStageExecutionException(format("uses field is applicable only for cloud builds"));
@@ -180,7 +186,7 @@ public class VmPluginStepSerializer {
 
   private VmPluginStep convertContainerStep(Ambiance ambiance, String identifier, String image,
       String connectorIdentifier, Map<String, String> envVars, long timeout, StageInfraDetails stageInfraDetails,
-      PluginStepInfo pluginStepInfo) {
+      PluginStepInfo pluginStepInfo, ConnectorDetails connectorDetails) {
     VmPluginStepBuilder pluginStepBuilder =
         VmPluginStep.builder().image(image).envVariables(envVars).timeoutSecs(timeout);
 
@@ -195,9 +201,9 @@ public class VmPluginStepSerializer {
       pluginStepBuilder.imageConnector(harnessInternalImageConnector);
     } else if (!StringUtils.isEmpty(image) && !StringUtils.isEmpty(connectorIdentifier)) {
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-      ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorIdentifier);
+      ConnectorDetails imageConnectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorIdentifier);
       pluginStepBuilder.image(image);
-      pluginStepBuilder.imageConnector(connectorDetails);
+      pluginStepBuilder.imageConnector(imageConnectorDetails);
     }
 
     if (pluginStepInfo.getReports().getValue() != null) {
@@ -211,6 +217,9 @@ public class VmPluginStepSerializer {
     pluginStepBuilder.privileged(RunTimeInputHandler.resolveBooleanParameter(pluginStepInfo.getPrivileged(), false));
     if (pluginStepInfo.getRunAsUser() != null && pluginStepInfo.getRunAsUser().getValue() != null) {
       pluginStepBuilder.runAsUser(pluginStepInfo.getRunAsUser().getValue().toString());
+    }
+    if (connectorDetails != null) {
+      pluginStepBuilder.connector(connectorDetails);
     }
     return pluginStepBuilder.build();
   }

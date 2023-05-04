@@ -63,6 +63,7 @@ public class NGCommonEntityConstants {
   public static final String REPO_URL = "repoURL";
   public static final String REPO_NAME = "repoName";
   public static final String PLAN_KEY = "planExecutionId";
+  public static final String STAGE_KEY = "stageExecutionId";
   public static final String TYPE_KEY = "type";
   public static final String TOKEN_KEY = "tokenId";
   public static final String REFERRED_ENTITY_TYPE = "referredEntityType";
@@ -150,6 +151,8 @@ public class NGCommonEntityConstants {
   // Environment Group
   public static final String ENVIRONMENT_GROUP_KEY = "envGroupIdentifier";
   public static final String ENV_PARAM_MESSAGE = "Environment Identifier for the Entity.";
+
+  public static final String SERVICE_OVERRIDES_IDENTIFIER = "Service Overrides Identifier for Entity.";
 
   public static final String ENV_REF_PARAM_MESSAGE = "Environment Reference for the Entity.";
 

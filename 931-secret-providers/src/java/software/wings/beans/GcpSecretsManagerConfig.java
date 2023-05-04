@@ -62,9 +62,11 @@ public class GcpSecretsManagerConfig extends SecretManagerConfig {
   private static final String TASK_SELECTORS = "Task Selectors";
   @Attributes(title = "Name", required = true) private String name;
 
-  @Attributes(title = "GCP Service Account Credentials", required = true)
+  @Attributes(title = "GCP Service Account Credentials")
   @Encrypted(fieldName = "gcp_service_account_credentials")
   private char[] credentials;
+
+  @Attributes(title = "Assume Credentials On Delegate") private Boolean assumeCredentialsOnDelegate;
 
   @Attributes(title = "delegateSelectors") private Set<String> delegateSelectors;
 
@@ -117,8 +119,10 @@ public class GcpSecretsManagerConfig extends SecretManagerConfig {
 
   @Override
   public SecretManagerConfigDTO toDTO(boolean maskSecrets) {
-    GcpSecretManagerConfigDTO configDTO =
-        GcpSecretManagerConfigDTO.builder().delegateSelectors(getDelegateSelectors()).build();
+    GcpSecretManagerConfigDTO configDTO = GcpSecretManagerConfigDTO.builder()
+                                              .delegateSelectors(getDelegateSelectors())
+                                              .assumeCredentialsOnDelegate(getAssumeCredentialsOnDelegate())
+                                              .build();
     if (!maskSecrets) {
       configDTO.setCredentials(getCredentials());
     }

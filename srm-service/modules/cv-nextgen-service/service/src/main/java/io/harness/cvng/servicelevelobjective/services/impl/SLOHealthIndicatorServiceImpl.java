@@ -7,6 +7,8 @@
 
 package io.harness.cvng.servicelevelobjective.services.impl;
 
+import static io.harness.cvng.utils.ScopedInformation.getScopedInformation;
+
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.DataCollectionTask;
@@ -193,5 +195,11 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
     Instant currentTimeMinute = DateTimeUtils.roundDownTo1MinBoundary(clock.instant());
     return graphDataService.getGraphData(serviceLevelObjective,
         timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes, 0L);
+  }
+
+  @Override
+  public String getScopedIdentifier(SLOHealthIndicator sloHealthIndicator) {
+    return getScopedInformation(sloHealthIndicator.getAccountId(), sloHealthIndicator.getOrgIdentifier(),
+        sloHealthIndicator.getProjectIdentifier(), sloHealthIndicator.getServiceLevelObjectiveIdentifier());
   }
 }

@@ -68,6 +68,7 @@ public class HttpStepInfo extends HttpBaseStepInfo implements PMSStepInfo, Visit
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @VariableExpression(skipVariableExpression = true) List<NGVariable> outputVariables;
+  List<NGVariable> inputVariables;
   List<HttpHeaderConfig> headers;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> certificate;
@@ -118,6 +119,7 @@ public class HttpStepInfo extends HttpBaseStepInfo implements PMSStepInfo, Visit
         .certificateKey(getCertificateKey())
         .method(getMethod())
         .outputVariables(NGVariablesUtils.getMapOfVariables(outputVariables, 0L))
+        .inputVariables(NGVariablesUtils.getMapOfVariables(inputVariables, 0L))
         .requestBody(getRequestBody())
         .delegateSelectors(ParameterField.createValueField(
             CollectionUtils.emptyIfNull(delegateSelectors != null ? delegateSelectors.getValue() : null)))

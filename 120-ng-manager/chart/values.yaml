@@ -1,0 +1,219 @@
+# Default values for ng-manager
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  loadbalancerURL: ""
+  database:
+    postgres:
+      ## - installed = true if installed within cluster
+      installed: true
+      ## - protocol to use for connection
+      protocol: postgres
+      ## - host array for external
+      hosts:
+        - postgres:5432
+      ## - secret name containing external values
+      secretName: ""
+      ## - key within secret containing username
+      userKey: ""
+      ## - key within secret containing password
+      passwordKey: ""
+      ## - extra arguments set to connection string
+      extraArgs: ""
+    mongo:
+      installed: true
+      protocol: mongodb
+      # --  provide default values if mongo.installed is set to false
+      hosts: []
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
+      extraArgs: ""
+    timescaledb:
+      installed: true
+      protocol: "jdbc:postgresql"
+      # --  provide default values if mongo.installed is set to false
+      hosts:
+        - timescaledb-single-chart:5432
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
+      extraArgs: ""
+  license:
+    cg: ''
+    ng: ''
+  ccm:
+    enabled: false
+  opa:
+    enabled: false
+  chaos:
+    enabled: false
+  ingress:
+    # -- create ingress objects
+    enabled: false
+    # -- set ingress object classname
+    className: harness
+    # -- set host of ingressObjects
+    hosts:
+      - my-host.example.org
+    # -- set tls for ingress objects
+    tls:
+      enabled: true
+      secretName: ''
+    # -- add annotations to ingress objects
+    objects:
+      annotations: { }
+  istio:
+    # -- create virtualServices objects
+    enabled: false
+    # -- create gateway and use in virtualservice
+    gateway:
+      create: false
+    # -- if gateway not created, use specified gateway and host
+    virtualService:
+      gateways:
+      hosts:
+replicaCount: 1
+maxSurge: 1
+maxUnavailable: 0
+
+appLogLevel: "INFO"
+
+image:
+  registry: docker.io
+  repository: harness/ng-manager-signed
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "76019"
+  digest: ""
+  imagePullSecrets: []
+
+initContainer:
+  image:
+    registry: docker.io
+    repository: busybox
+    tag: "1.35.0"
+    digest: ""
+    imagePullSecrets: []
+
+waitForInitContainer:
+  image:
+    registry: docker.io
+    repository: harness/helm-init-container
+    pullPolicy: IfNotPresent
+    tag: "latest"
+    digest: ""
+    imagePullSecrets: []
+
+mongoSecrets:
+  userName:
+    name: harness-secrets
+    key: mongodbUsername
+  password:
+    name: mongodb-replicaset-chart
+    key: mongodb-root-password
+
+ceSecret:
+  access_key:
+    name: nextgen-ce
+    key: AWS_ACCESS_KEY
+  secret_key:
+    name: nextgen-ce
+    key: AWS_SECRET_KEY
+  destination_bucket:
+    name: nextgen-ce
+    key: AWS_DESTINATION_BUCKET
+  template_url:
+    name: nextgen-ce
+    key: AWS_TEMPLATE_LINK
+
+ceGcpSetupConfigGcpProjectId: "placeHolderGcpProjectId"
+
+timescaleSecret:
+  password:
+    name: harness-secrets
+    key: timescaledbPostgresPassword
+
+java:
+  memory: "4096m"
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "harness-default"
+
+podAnnotations: {}
+
+imagePullSecrets: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext:
+  runAsUser: 65534
+  runAsNonRoot: true
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+probes:
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: http-ng-manager
+    timeoutSeconds: 2
+    periodSeconds: 10
+    failureThreshold: 5
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: http-ng-manager
+    timeoutSeconds: 2
+    periodSeconds: 10
+    failureThreshold: 5
+  startupProbe:
+    httpGet:
+      path: /health
+      port: http-ng-manager
+    timeoutSeconds: 2
+    periodSeconds: 10
+    failureThreshold: 25
+
+service:
+  type: ClusterIP
+  protocol: TCP
+  port: 7090
+  grpcport: 9979
+  gitsyncgrpcport: 13002
+
+
+resources:
+  limits:
+    cpu: 2
+    memory: 8192Mi
+  requests:
+    cpu: 2
+    memory: 200Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

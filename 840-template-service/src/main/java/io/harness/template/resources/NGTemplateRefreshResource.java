@@ -28,8 +28,8 @@ import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.YamlDiffResponseDTO;
 import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.template.beans.PermissionTypes;
 import io.harness.template.mappers.NGTemplateDtoMapper;
+import io.harness.template.resources.beans.PermissionTypes;
 import io.harness.template.services.TemplateRefreshService;
 
 import com.google.inject.Inject;

@@ -77,6 +77,7 @@ public abstract class DataCollectionTask
                  .name("verificationTaskIdQueryIdx")
                  .unique(false)
                  .field(DataCollectionTaskKeys.verificationTaskId)
+                 .field(DataCollectionTaskKeys.status)
                  .descSortField(DataCollectionTaskKeys.startTime)
                  .build())
         // TODO: Update the index to not use lastUpdatedAt once getNextTask logic is improved.

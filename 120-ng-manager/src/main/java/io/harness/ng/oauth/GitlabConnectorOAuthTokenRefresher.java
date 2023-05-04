@@ -31,14 +31,12 @@ import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
 import io.harness.mongo.iterator.provider.SpringPersistenceProvider;
 import io.harness.ng.NextGenConfiguration;
-import io.harness.ng.core.api.SecretCrudService;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
-import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
-import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
-import io.harness.ng.core.models.Secret;
 import io.harness.product.ci.scm.proto.RefreshTokenResponse;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.ScmClient;
+
+import software.wings.security.authentication.oauth.OAuthConstants;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -55,7 +53,6 @@ public class GitlabConnectorOAuthTokenRefresher implements Handler<GitlabConnect
   @Inject private ScmClient scmClient;
   private final MongoTemplate mongoTemplate;
   @Inject DecryptionHelper decryptionHelper;
-  @Inject private SecretCrudService ngSecretCrudService;
   @Inject NextGenConfiguration configuration;
   @Inject private OAuthTokenRefresherHelper oAuthTokenRefresherHelper;
 
@@ -90,27 +87,15 @@ public class GitlabConnectorOAuthTokenRefresher implements Handler<GitlabConnect
       orgIdentifier = entity.getOrgIdentifier();
       projectIdentifier = entity.getProjectIdentifier();
     }
-
-    SecretResponseWrapper tokenWrapper =
-        ngSecretCrudService.get(entity.getAccountIdentifier(), orgIdentifier, projectIdentifier, token.getIdentifier())
-            .orElse(null);
-
-    if (tokenWrapper == null) {
-      log.info("[OAuth refresh]" + entity.toString() + "Error in secret");
-      return null;
-    }
-
-    return tokenWrapper.getSecret();
+    return oAuthTokenRefresherHelper.getSecretSecretValue(
+        io.harness.beans.Scope.of(entity.getAccountIdentifier(), orgIdentifier, projectIdentifier), token);
   }
 
   private void updateSecretSecretValue(GitlabConnector entity, SecretDTOV2 secretDTOV2, String newSecret) {
-    SecretTextSpecDTO secretSpecDTO = (SecretTextSpecDTO) secretDTOV2.getSpec();
-    secretSpecDTO.setValue(newSecret);
-    secretDTOV2.setSpec(secretSpecDTO);
-
-    Secret secret = Secret.fromDTO(secretDTOV2);
-    ngSecretCrudService.update(entity.getAccountIdentifier(), secret.getOrgIdentifier(), secret.getProjectIdentifier(),
-        secretDTOV2.getIdentifier(), secretDTOV2);
+    oAuthTokenRefresherHelper.updateSecretSecretValue(
+        io.harness.beans.Scope.of(
+            entity.getAccountIdentifier(), secretDTOV2.getOrgIdentifier(), secretDTOV2.getProjectIdentifier()),
+        secretDTOV2, newSecret);
   }
 
   @Override
@@ -137,7 +122,7 @@ public class GitlabConnectorOAuthTokenRefresher implements Handler<GitlabConnect
       String clientSecretShort = clientSecret.substring(0, Math.min(clientSecret.length(), 3));
 
       try {
-        refreshTokenResponse = scmClient.refreshToken(null, clientId, clientSecret, "https://gitlab.com/oauth/token",
+        refreshTokenResponse = scmClient.refreshToken(null, clientId, clientSecret, OAuthConstants.GITLAB_ENDPOINT,
             String.valueOf(gitlabOauthDTO.getRefreshTokenRef().getDecryptedValue()));
       } catch (Exception e) {
         log.error(

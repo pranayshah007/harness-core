@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.entities.AccountEntity;
 import io.harness.entities.CDCEntity;
+import io.harness.entities.CDStageExecutionCDCEntity;
 import io.harness.entities.CECloudAccountCDCEntity;
 import io.harness.entities.ConnectorCDCEntity;
 import io.harness.entities.EnvironmentCDCEntity;
@@ -96,6 +97,7 @@ public class ChangeDataCaptureModule extends AbstractModule {
     cdcEntityMultibinder.addBinding().to(EnvironmentCDCEntity.class);
     cdcEntityMultibinder.addBinding().to(InfrastructureEntityTimeScale.class);
     cdcEntityMultibinder.addBinding().to(UserEntity.class);
+    cdcEntityMultibinder.addBinding().to(CDStageExecutionCDCEntity.class);
   }
 
   @Provides

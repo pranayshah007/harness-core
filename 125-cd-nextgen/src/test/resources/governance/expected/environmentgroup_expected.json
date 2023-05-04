@@ -22,5 +22,6 @@
       }
     } ]
   } ],
-  "name" : "wave1"
+  "name" : "wave1",
+  "envGroupRef" : "account.wave1"
 }

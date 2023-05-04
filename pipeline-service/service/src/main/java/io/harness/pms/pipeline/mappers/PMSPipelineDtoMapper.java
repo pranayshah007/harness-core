@@ -85,14 +85,7 @@ public class PMSPipelineDtoMapper {
 
   public CacheResponseMetadataDTO getCacheResponse(PipelineEntity pipelineEntity) {
     if (pipelineEntity.getStoreType() == StoreType.REMOTE) {
-      CacheResponse cacheResponse = GitAwareContextHelper.getCacheResponseFromScmGitMetadata();
-      if (cacheResponse != null) {
-        return CacheResponseMetadataDTO.builder()
-            .cacheState(cacheResponse.getCacheState())
-            .ttlLeft(cacheResponse.getTtlLeft())
-            .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
-            .build();
-      }
+      return getCacheResponseFromGitContext();
     }
     return null;
   }
@@ -467,5 +460,17 @@ public class PMSPipelineDtoMapper {
         .endTs(event.getEndTs())
         .templateValidationResponse(event.getResult().getTemplateValidationResponse())
         .build();
+  }
+
+  public CacheResponseMetadataDTO getCacheResponseFromGitContext() {
+    CacheResponse cacheResponse = GitAwareContextHelper.getCacheResponseFromScmGitMetadata();
+    if (cacheResponse != null) {
+      return CacheResponseMetadataDTO.builder()
+          .cacheState(cacheResponse.getCacheState())
+          .ttlLeft(cacheResponse.getTtlLeft())
+          .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+          .build();
+    }
+    return null;
   }
 }

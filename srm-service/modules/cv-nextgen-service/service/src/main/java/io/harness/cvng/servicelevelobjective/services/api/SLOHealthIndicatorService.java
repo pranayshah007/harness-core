@@ -28,4 +28,6 @@ public interface SLOHealthIndicatorService {
   SLOGraphData getGraphData(ProjectParams projectParams, AbstractServiceLevelObjective serviceLevelObjective);
 
   boolean getFailedState(ProjectParams projectParams, AbstractServiceLevelObjective serviceLevelObjective);
+
+  String getScopedIdentifier(SLOHealthIndicator sloHealthIndicator);
 }

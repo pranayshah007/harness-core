@@ -34,7 +34,6 @@ import javax.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
-import lombok.Value;
 
 @OwnedBy(HarnessTeam.CDC)
 @Data

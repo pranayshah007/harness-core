@@ -27,6 +27,7 @@ import io.harness.rule.Owner;
 
 import software.wings.dl.WingsPersistence;
 import software.wings.security.authentication.BatchQueryConfig;
+import software.wings.security.authentication.BulkOperationBatchQueryConfig;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Timestamp;
@@ -57,6 +58,8 @@ public class InstanceDataBulkWriteServiceImplTest extends BatchProcessingTestBas
   @Before
   public void setUp() throws Exception {
     when(config.getBatchQueryConfig()).thenReturn(BatchQueryConfig.builder().queryBatchSize(10).build());
+    when(config.getBulkOperationBatchQueryConfig())
+        .thenReturn(BulkOperationBatchQueryConfig.builder().queryBatchSize(10).build());
     when(wingsPersistence.getCollection(any()).initializeUnorderedBulkOperation().execute().isAcknowledged())
         .thenReturn(true);
   }
