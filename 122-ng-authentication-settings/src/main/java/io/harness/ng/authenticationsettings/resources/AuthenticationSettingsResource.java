@@ -441,12 +441,12 @@ public class AuthenticationSettingsResource {
   }
 
   @PUT
-  @Path("/authentication/{samlSSOId}")
-  @ApiOperation(value = "Enables or disables authentication through the given SAML sso id",
+  @Path("/saml-metadata-upload/{samlSSOId}/authentication")
+  @ApiOperation(value = "Enables or disables authentication for the given SAML sso id",
       nickname = "enableDisableAuthenticationForSAMLSetting")
   @Operation(operationId = "enableDisableAuthenticationForSAMLSetting",
       summary = "Update authentication enabled or not for given SAML setting",
-      description = "Updates if authentication is enabled or not for given SAML setting in Account ID.",
+      description = "Updates if authentication is enabled or not for given SAML setting in an Account.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
