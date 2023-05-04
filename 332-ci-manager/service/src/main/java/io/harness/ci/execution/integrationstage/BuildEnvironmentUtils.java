@@ -7,35 +7,7 @@
 
 package io.harness.ci.integrationstage;
 
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BRANCH;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_ACTION;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_EVENT;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_NUMBER;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_AFTER;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_AUTHOR;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_AUTHOR_AVATAR;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_AUTHOR_EMAIL;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_AUTHOR_NAME;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BEFORE;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_LINK;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_MESSAGE;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_REF;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_SHA;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_GIT_HTTP_URL;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_GIT_SSH_URL;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REPO;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REPO_BRANCH;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REPO_LINK;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REPO_NAME;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REPO_NAMESPACE;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REPO_OWNER;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REPO_PRIVATE;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REPO_SCM;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_SOURCE_BRANCH;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_TAG;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_TARGET_BRANCH;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.*;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -56,8 +28,11 @@ import io.harness.beans.execution.WebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.executionargs.CIExecutionArgs;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CI)
@@ -72,6 +47,8 @@ public class BuildEnvironmentUtils {
       return envVarMap;
     }
 
+    envVarMap.putAll(getDroneTimestampVars());
+
     try {
       envVarMap.put(DRONE_BUILD_NUMBER, ciExecutionArgs.getRunSequence());
     } catch (Exception ex) {
@@ -81,21 +58,26 @@ public class BuildEnvironmentUtils {
       return envVarMap;
     }
 
+    // TODO we should still set base env vars if build is manually kicked off... and repo aswell
+    // tag webhooks are being treated as manually executed builds... the code doesn't seem to have been written
     if (ciExecutionArgs.getExecutionSource().getType() == ExecutionSource.Type.WEBHOOK) {
       WebhookExecutionSource webhookExecutionSource = (WebhookExecutionSource) ciExecutionArgs.getExecutionSource();
       if (webhookExecutionSource.getWebhookEvent().getType() == WebhookEvent.Type.BRANCH) {
         BranchWebhookEvent branchWebhookEvent = (BranchWebhookEvent) webhookExecutionSource.getWebhookEvent();
         envVarMap.putAll(getBaseEnvVars(branchWebhookEvent.getBaseAttributes()));
-        envVarMap.putAll(getBuildRepoEnvvars(branchWebhookEvent.getRepository()));
+        envVarMap.putAll(getBuildRepoEnvVars(branchWebhookEvent.getRepository()));
         if (branchWebhookEvent.getBranchName().startsWith("refs/tags/")) {
-          envVarMap.put(DRONE_TAG, branchWebhookEvent.getBranchName().replaceFirst("refs/tags/", ""));
+          String droneTag = branchWebhookEvent.getBranchName().replaceFirst("refs/tags/", "");
+          envVarMap.put(DRONE_TAG, droneTag);
+          envVarMap.putAll(getSemverEnvVars(droneTag));
+          envVarMap.putAll(getCalverEnvVars(droneTag));
         }
         envVarMap.put(DRONE_BUILD_EVENT, "push");
       }
       if (webhookExecutionSource.getWebhookEvent().getType() == WebhookEvent.Type.PR) {
         PRWebhookEvent prWebhookEvent = (PRWebhookEvent) webhookExecutionSource.getWebhookEvent();
         envVarMap.putAll(getBaseEnvVars(prWebhookEvent.getBaseAttributes()));
-        envVarMap.putAll(getBuildRepoEnvvars(prWebhookEvent.getRepository()));
+        envVarMap.putAll(getBuildRepoEnvVars(prWebhookEvent.getRepository()));
 
         setBitbucketCloudCommitRef(prWebhookEvent, envVarMap);
 
@@ -126,7 +108,7 @@ public class BuildEnvironmentUtils {
     return envVarMap;
   }
 
-  private static Map<String, String> getBuildRepoEnvvars(Repository repository) {
+  private static Map<String, String> getBuildRepoEnvVars(Repository repository) {
     Map<String, String> envVarMap = new HashMap<>();
     setEnvironmentVariable(envVarMap, DRONE_REPO, repository.getSlug());
     setEnvironmentVariable(envVarMap, DRONE_REPO_SCM, REPO_SCM);
@@ -138,6 +120,7 @@ public class BuildEnvironmentUtils {
     setEnvironmentVariable(envVarMap, DRONE_GIT_HTTP_URL, repository.getHttpURL());
     setEnvironmentVariable(envVarMap, DRONE_GIT_SSH_URL, repository.getSshURL());
     setEnvironmentVariable(envVarMap, DRONE_REPO_PRIVATE, String.valueOf(repository.isPrivate()));
+    setEnvironmentVariable(envVarMap, DRONE_REPO_VISIBILITY, repository.isPrivate() ? "private" : "public");
     return envVarMap;
   }
 
@@ -161,6 +144,105 @@ public class BuildEnvironmentUtils {
     if (isNotEmpty(baseAttributes.getAction())) {
       envVarMap.put(DRONE_BUILD_ACTION, baseAttributes.getAction());
     }
+    return envVarMap;
+  }
+
+  private static Map<String, String> getDroneTimestampVars() {
+    // even drone can't tell the finished timestamp when running so sets it to the start time
+    String unixTimestamp = String.valueOf(Instant.now().getEpochSecond());
+    Map<String, String> envVarMap = new HashMap<>();
+    setEnvironmentVariable(envVarMap, DRONE_BUILD_CREATED, unixTimestamp);
+    setEnvironmentVariable(envVarMap, DRONE_BUILD_STARTED, unixTimestamp);
+    setEnvironmentVariable(envVarMap, DRONE_BUILD_FINISHED, unixTimestamp);
+    setEnvironmentVariable(envVarMap, DRONE_STAGE_STARTED, unixTimestamp);
+    setEnvironmentVariable(envVarMap, DRONE_BUILD_FINISHED, unixTimestamp);
+    return envVarMap;
+  }
+
+  private static Map<String, String> getCalverEnvVars(String droneTag) {
+    Map<String, String> envVarMap = new HashMap<>();
+
+    droneTag = droneTag.startsWith("v") ? droneTag.substring(1) : droneTag;
+    String[] p = droneTag.split("\\.", 3);
+    if (p.length < 2) {
+      return null;
+    }
+
+    String major = p[0];
+    String minor = p[1];
+    String micro = p.length > 2 ? p[2] : "";
+    String modifier = "";
+
+    if (micro.contains("-")) {
+      String[] parts = micro.split("-", 2);
+      micro = parts[0];
+      modifier = parts[1];
+    }
+
+    try {
+      Integer.parseInt(major);
+      Integer.parseInt(minor);
+    } catch (NumberFormatException e) {
+      return null;
+    }
+
+    int year = Integer.parseInt(major);
+    boolean isValidYear = (year > 18 && year < 100) || (year > 2018 && year < 9999);
+    if (!isValidYear) {
+      return envVarMap;
+    }
+
+    Boolean microIsEmpty = micro.isEmpty();
+    String droneCalver = major + "." + minor + (microIsEmpty ? "" : "." + micro) + (modifier.isEmpty() ? "" : "-" + modifier);
+    setEnvironmentVariable(envVarMap, DRONE_CALVER, droneCalver);
+    setEnvironmentVariable(envVarMap, DRONE_CALVER_MAJOR_MINOR, major + "." + minor);
+    setEnvironmentVariable(envVarMap, DRONE_CALVER_MAJOR, major);
+    setEnvironmentVariable(envVarMap, DRONE_CALVER_MINOR, minor);
+    setEnvironmentVariable(envVarMap, DRONE_CALVER_MICRO, micro);
+    if (!modifier.isEmpty()) {
+      setEnvironmentVariable(envVarMap, DRONE_CALVER_MODIFIER, modifier);
+    }
+
+    String droneCalverShort = major + "." + minor + (microIsEmpty ? "" : "." + micro);
+    setEnvironmentVariable(envVarMap, DRONE_CALVER_SHORT, droneCalverShort);
+
+    return envVarMap;
+  }
+
+  private static Map<String, String> getSemverEnvVars(String droneTag) {
+    Map<String, String> envVarMap = new HashMap<>();
+
+    droneTag = droneTag.startsWith("v") ? droneTag.substring(1) : droneTag;
+    Pattern pattern = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)(?:-([\\w.]+))?(?:\\+([\\w.]+))?$");
+    Matcher matcher = pattern.matcher(droneTag);
+
+    if (!matcher.matches()) {
+      setEnvironmentVariable(envVarMap, DRONE_SEMVER_ERROR, "Invalid semver format");
+      return envVarMap;
+    }
+
+    String major = matcher.group(1);
+    String minor = matcher.group(2);
+    String patch = matcher.group(3);
+    String prerelease = matcher.group(4) != null ? matcher.group(4) : "";
+    String metadata = matcher.group(5) != null ? matcher.group(5) : "";
+
+    setEnvironmentVariable(envVarMap, DRONE_SEMVER, droneTag);
+    setEnvironmentVariable(envVarMap, DRONE_SEMVER_MAJOR, major);
+    setEnvironmentVariable(envVarMap, DRONE_SEMVER_MINOR, minor);
+    setEnvironmentVariable(envVarMap, DRONE_SEMVER_PATCH, patch);
+
+    if (!prerelease.isEmpty()) {
+      setEnvironmentVariable(envVarMap, DRONE_SEMVER_PRERELEASE, prerelease);
+    }
+
+    if (!metadata.isEmpty()) {
+      setEnvironmentVariable(envVarMap, DRONE_SEMVER_BUILD, metadata);
+    }
+
+    String shortVersion = major + "." + minor + "." + patch;
+    setEnvironmentVariable(envVarMap, DRONE_SEMVER_SHORT, shortVersion);
+
     return envVarMap;
   }
 

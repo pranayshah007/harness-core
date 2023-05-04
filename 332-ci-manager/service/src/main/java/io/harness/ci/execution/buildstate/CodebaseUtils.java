@@ -8,25 +8,8 @@
 package io.harness.ci.buildstate;
 
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_AWS_REGION;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_EVENT;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_LINK;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_AUTHOR;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_AUTHOR_AVATAR;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_AUTHOR_EMAIL;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BEFORE;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_MESSAGE;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_REF;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_SHA;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_MACHINE;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_PORT;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_USERNAME;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_PULL_REQUEST_TITLE;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REMOTE_URL;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_SOURCE_BRANCH;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_TAG;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_TARGET_BRANCH;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.*;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_SYSTEM_VERSION;
 import static io.harness.ci.commonconstants.CIExecutionConstants.AWS_CODE_COMMIT_URL_REGEX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_URL_SUFFIX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
@@ -90,6 +73,9 @@ import io.harness.yaml.extended.ci.codebase.CodeBase;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -108,8 +94,18 @@ public class CodebaseUtils {
   public Map<String, String> getCodebaseVars(
       Ambiance ambiance, CIExecutionArgs ciExecutionArgs, ConnectorDetails gitConnectorDetails) {
     Map<String, String> envVars = BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs);
+    envVars.putAll(getDroneSystemEnvVars());
     envVars.putAll(getRuntimeCodebaseVars(ambiance, gitConnectorDetails));
     return envVars;
+  }
+
+  private static Map<String, String> getDroneSystemEnvVars() {
+    Map<String, String> envVarMap = new HashMap<>();
+    envVarMap.put(CI, "true"); // hardcoded to true in drone
+    envVarMap.put(DRONE, "true"); // actually false but possibly required in some plugin - hardcoded to true in drone
+    envVarMap.put(DRONE_SYSTEM_VERSION, "2.0.0"); // we aren't using drone... so not sure what to do here - maybe just 2.0.0?
+
+    return envVarMap;
   }
 
   public Map<String, String> getRuntimeCodebaseVars(Ambiance ambiance, ConnectorDetails gitConnectorDetails) {
@@ -148,6 +144,14 @@ public class CodebaseUtils {
     String buildLink = gitBuildStatusUtility.getBuildDetailsUrl(ambiance);
     if (isNotEmpty(buildLink)) {
       codebaseRuntimeVars.put(DRONE_BUILD_LINK, buildLink);
+      try {
+        URL url = new URL(buildLink);
+        codebaseRuntimeVars.put(DRONE_SYSTEM_PROTO, url.getProtocol());
+        codebaseRuntimeVars.put(DRONE_SYSTEM_HOST, url.getHost());
+        codebaseRuntimeVars.put(DRONE_SYSTEM_HOSTNAME, url.getHost());
+      } catch (MalformedURLException e) {
+        e.printStackTrace();
+      }
     }
 
     if (isNotEmpty(codebaseSweeping.getPrTitle())) {
