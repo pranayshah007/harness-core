@@ -254,7 +254,7 @@ public class InfrastructureMapper {
                 .credentialsRef(getParameterFieldValue(sshWinRmAzureInfrastructure.getCredentialsRef()))
                 .hostTags(
                     getParameterFieldValueOrEvaluateProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        sshWinRmAzureInfrastructure.getInfraTags(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED))
+                        sshWinRmAzureInfrastructure.getTags(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED))
                 .hostConnectionType(getParameterFieldValue(sshWinRmAzureInfrastructure.getHostConnectionType()))
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
