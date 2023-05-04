@@ -51,11 +51,11 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
   private final List<String> failSafeCollection = Arrays.asList("delegateConnectionResults");
 
   @Override
-  public void migrate() throws DelegateDBMigrationFailed {
-    // Ignore migration for SAAS
-    //    if (!DeployMode.isOnPrem(DEPLOY_MODE)) {
-    //      return;
-    //    }
+  public void migrate() {
+    //     Ignore migration for SAAS
+    if (!DeployMode.isOnPrem(DEPLOY_MODE)) {
+      return;
+    }
 
     log.info("DMS DB Migration started");
 
@@ -66,11 +66,11 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
       return;
     }
 
-    // Create indexes and collections in DMS DB
-    indexManager.ensureIndexes(
-        IndexManager.Mode.AUTO, persistence.getDatastore(Store.builder().name(DMS).build()), morphia, dmsStore);
-
     try {
+      // Create indexes and collections in DMS DB
+      // If we enter wrong DMS_MONGO_URI in config, ensureIndexes function will fail to create indexes.
+      indexManager.ensureIndexes(
+          IndexManager.Mode.AUTO, persistence.getDatastore(Store.builder().name(DMS).build()), morphia, dmsStore);
       for (String collection : entityList) {
         log.info("working for entity {}", collection);
         if (collection.equals(DELEGATE_TASK)) {
@@ -95,7 +95,8 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
       }
     } catch (Exception ex) {
       rollback();
-      throw new DelegateDBMigrationFailed(String.format("Delegate DB migration failed, exception %s", ex));
+      log.error(String.format("Delegate DB migration failed, exception %s", ex));
+      System.exit(1);
     }
     finishMigration();
   }
@@ -103,7 +104,7 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
   private void migrateCollection(String collection) throws DelegateDBMigrationFailed {
     Class<?> collectionClass = getClassForCollectionName(collection);
     if (persistToNewDatabase(collection)) {
-      log.info("Going to toggle flag");
+      log.info("Toggling flag for collection {}", collection);
       toggleFlag(collectionClass.getCanonicalName(), true);
       if (!postToggleCorrectness(collectionClass)) {
         throw new DelegateDBMigrationFailed(String.format(MIGRATION_FAIL_EXCEPTION_FORMAT, collection));
@@ -187,7 +188,7 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
 
     long documentsInNewDB = persistence.getCollection(dmsStore, collection).count();
 
-    log.info("verifyWriteOperation, documents in new db and old db {}, {}", documentsInNewDB, insertCount);
+    log.info("documents in new db and old db {}, {} for collection {}", documentsInNewDB, insertCount, collection);
     boolean insertSuccessful = documentsInNewDB == insertCount;
     boolean isIndexCountSame = checkIndexCount(collection);
 
@@ -210,12 +211,9 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
     final DBCollection newCollection = persistence.getCollection(dmsStore, collection);
     final DBCollection oldCollection = persistence.getCollection(harnessStore, collection);
 
-    log.info("Value of new index and old are {}, {}", newCollection.getIndexInfo().size(),
-        oldCollection.getIndexInfo().size());
+    log.info("Value of new index and old are {}, {} for collection {}", newCollection.getIndexInfo().size(),
+        oldCollection.getIndexInfo().size(), collection);
 
-    if (newCollection.getIndexInfo().size() != oldCollection.getIndexInfo().size()) {
-      return false;
-    }
-    return true;
+    return newCollection.getIndexInfo().size() == oldCollection.getIndexInfo().size();
   }
 }
