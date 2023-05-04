@@ -326,7 +326,7 @@ mongo:
     mongoTagValue: none
   aliasDBName: harness
   maxOperationTimeInMillis: 300000
-  maxDocumentsToBeFetched: 2147483647
+  maxDocumentsToBeFetched: 100000000
 
 events-mongo:
   uri: mongodb://localhost:27017/events
