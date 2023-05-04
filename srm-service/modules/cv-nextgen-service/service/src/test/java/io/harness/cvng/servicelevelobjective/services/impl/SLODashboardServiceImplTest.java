@@ -70,7 +70,6 @@ import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
-import io.harness.cvng.servicelevelobjective.beans.UnavailabilityInstancesResponse;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsResponse;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
@@ -1769,33 +1768,6 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardDetail.getSloDashboardWidget().getSloIdentifier())
         .isEqualTo(serviceLevelObjectiveV2DTO.getIdentifier());
     assertThat(sloDashboardDetail.getSloDashboardWidget().getSloError()).isEqualTo(SLOError.getNoError());
-  }
-
-  @Test
-  @Owner(developers = VARSHA_LALWANI)
-  @Category(UnitTests.class)
-  public void testGetUnavailabilityInstancesForSimpleSLO() {
-    long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
-    long endTime = startTime + Duration.ofDays(365).toSeconds();
-
-    DowntimeDTO downtimeDTO = builderFactory.getRecurringDowntimeDTO();
-    downtimeDTO.setEntitiesRule(
-        EntityIdentifiersRule.builder()
-            .entityIdentifiers(Collections.singletonList(
-                EntityDetails.builder().entityRef(monitoredServiceIdentifier).enabled(true).build()))
-            .build());
-    downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
-
-    List<UnavailabilityInstancesResponse> unavailabilityInstancesResponses =
-        sloDashboardService.getUnavailabilityInstances(builderFactory.getProjectParams(), startTime * 1000,
-            endTime * 1000, serviceLevelObjectiveV2DTO.getIdentifier());
-    assertThat(unavailabilityInstancesResponses.size()).isEqualTo(53);
-    assertThat(unavailabilityInstancesResponses.get(0).getEntityIdentifier()).isEqualTo(downtimeDTO.getIdentifier());
-    assertThat(unavailabilityInstancesResponses.get(0).getEntityType()).isEqualTo(EntityType.MAINTENANCE_WINDOW);
-
-    unavailabilityInstancesResponses = sloDashboardService.getUnavailabilityInstances(builderFactory.getProjectParams(),
-        startTime * 1000, startTime * 1000 + Duration.ofDays(6).toMillis(), serviceLevelObjectiveV2DTO.getIdentifier());
-    assertThat(unavailabilityInstancesResponses.size()).isEqualTo(1);
   }
 
   @Test

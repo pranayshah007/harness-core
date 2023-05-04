@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: platform-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+        {{- include "platform-service.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  progressDeadlineSeconds: 600
+  selector:
+    matchLabels:
+      {{- include "platform-service.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{.Values.maxSurge}}
+      maxUnavailable: {{.Values.maxUnavailable}}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "platform-service.selectorLabels" . | nindent 8 }}
+    spec:
+      {{ include "platform-service.pullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "platform-service.serviceAccountName" . }}
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+      {{- if .Values.global.database.mongo.installed }}
+      - name: wait-for-mongo
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=mongodb-replicaset"
+      {{- end }}
+      containers:
+      - name: platform-service
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        ports:
+        - name: http
+          containerPort: {{.Values.service.port}}
+          protocol: "TCP"
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+        env:
+          {{- include "harnesscommon.dbconnection.mongoEnv" . | indent 10 }}
+          - name: MONGO_URI
+            value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "notifications" "context" $) }}
+          - name: AUDIT_MONGO_URI
+            value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "audits" "context" $) }}
+          - name: RESOURCE_GROUP_MONGO_URI
+            value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "resource-groups" "context" $) }}
+        envFrom:
+        - configMapRef:
+            name: platform-service
+        {{- if .Values.global.smtpCreateSecret.enabled }}
+        - secretRef:
+            name: smtp-secret
+        {{- end }}
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: {{.Values.service.port}}
+          initialDelaySeconds: 100
+          timeoutSeconds: 10
+          periodSeconds: 10
+          failureThreshold: 20
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: {{.Values.service.port}}
+          initialDelaySeconds: 300
+          timeoutSeconds: 10
+          periodSeconds: 10
+          failureThreshold: 20
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - platform-service
+            topologyKey: "kubernetes.io/hostname"
+      {{- with .Values.affinity }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

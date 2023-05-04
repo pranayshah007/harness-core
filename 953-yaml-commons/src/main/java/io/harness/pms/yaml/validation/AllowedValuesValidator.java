@@ -12,7 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -60,7 +60,7 @@ public class AllowedValuesValidator implements RuntimeValidator {
       parameters = engineExpressionEvaluator.renderExpression(parameters, expressionMode);
     }
 
-    String[] parametersList = parameters.split(",");
+    List<String> parametersList = AllowedValuesHelper.split(parameters);
 
     if (checkIfPrimitiveType(currentValue)) {
       return checkIsPrimitiveTypeValid(currentValue, parametersList);
@@ -94,7 +94,7 @@ public class AllowedValuesValidator implements RuntimeValidator {
     return currentValue instanceof String || currentValue instanceof Number;
   }
 
-  private RuntimeValidatorResponse checkIsPrimitiveTypeValid(Object currentValue, String[] parametersList) {
+  private RuntimeValidatorResponse checkIsPrimitiveTypeValid(Object currentValue, List<String> parametersList) {
     if (currentValue instanceof String) {
       return isStringValueAllowed((String) currentValue, parametersList);
     } else if (currentValue instanceof Number) {
@@ -106,20 +106,40 @@ public class AllowedValuesValidator implements RuntimeValidator {
     }
   }
 
-  private RuntimeValidatorResponse isStringValueAllowed(String currentValue, String[] parametersList) {
-    Set<String> parametersSet = Arrays.stream(parametersList).map(String::trim).collect(Collectors.toSet());
-    return isAllowedValuesFromSet(currentValue.trim(), parametersSet);
+  private RuntimeValidatorResponse isStringValueAllowed(String currentValue, List<String> parametersList) {
+    Set<String> parametersSet = parametersList.stream().map(String::trim).collect(Collectors.toSet());
+    List<String> inputValues = AllowedValuesHelper.split(currentValue.trim());
+    return isAllowedStringsFromSet(inputValues, parametersSet);
   }
 
-  private RuntimeValidatorResponse isNumberValueAllowed(String currentValue, String[] parametersList) {
-    Set<Double> parametersSet = Arrays.stream(parametersList).map(Double::valueOf).collect(Collectors.toSet());
-    return isAllowedValuesFromSet(Double.valueOf(currentValue), parametersSet);
+  private RuntimeValidatorResponse isNumberValueAllowed(String currentValue, List<String> parametersList) {
+    Set<Double> parametersSet = parametersList.stream().map(Double::valueOf).collect(Collectors.toSet());
+    return isAllowedNumbersFromSet(Double.valueOf(currentValue), parametersSet);
   }
 
-  private <T> RuntimeValidatorResponse isAllowedValuesFromSet(T currentValue, Set<T> allowedValues) {
+  private RuntimeValidatorResponse isAllowedNumbersFromSet(Double currentValue, Set<Double> allowedValues) {
     if (!allowedValues.contains(currentValue)) {
       return RuntimeValidatorResponse.builder()
           .errorMessage("Current value " + currentValue + " is not in allowed values list")
+          .build();
+    }
+    return RuntimeValidatorResponse.builder().isValid(true).build();
+  }
+
+  private RuntimeValidatorResponse isAllowedStringsFromSet(List<String> inputValues, Set<String> allowedValues) {
+    boolean isValid = true;
+    List<String> invalidValues = new ArrayList<>();
+    for (String inputValue : inputValues) {
+      if (!allowedValues.contains(inputValue)) {
+        isValid = false;
+        invalidValues.add(inputValue);
+      }
+    }
+    if (!isValid) {
+      return RuntimeValidatorResponse.builder()
+          .errorMessage("Current values "
+              + invalidValues.stream().map(s -> "\\'" + s + "\\'").collect(Collectors.joining(", "))
+              + " are not in allowed values list")
           .build();
     }
     return RuntimeValidatorResponse.builder().isValid(true).build();

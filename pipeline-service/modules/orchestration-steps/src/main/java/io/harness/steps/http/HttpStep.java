@@ -107,6 +107,7 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
           (int) NGTimeConversionHelper.convertTimeStringToMilliseconds(stepParameters.getTimeout().getValue());
     }
     HttpStepParameters httpStepParameters = (HttpStepParameters) stepParameters.getSpec();
+
     HttpTaskParametersNgBuilder httpTaskParametersNgBuilder =
         HttpTaskParametersNg.builder()
             .url((String) httpStepParameters.getUrl().fetchFinalValue())
@@ -115,8 +116,8 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
 
     if (EmptyPredicate.isNotEmpty(httpStepParameters.getHeaders())) {
       List<HttpHeaderConfig> headers = new ArrayList<>();
-      httpStepParameters.getHeaders().keySet().forEach(key
-          -> headers.add(HttpHeaderConfig.builder().key(key).value(httpStepParameters.getHeaders().get(key)).build()));
+      httpStepParameters.getHeaders().forEach(
+          (key, value) -> headers.add(HttpHeaderConfig.builder().key(key).value(value).build()));
       httpTaskParametersNgBuilder.requestHeader(headers);
     }
 
@@ -180,9 +181,8 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
       HttpStepResponse httpStepResponse = responseSupplier.get();
 
       HttpStepParameters httpStepParameters = (HttpStepParameters) stepParameters.getSpec();
-
       logCallback.saveExecutionLog(
-          String.format("Successfully executed the http request %s .", httpStepParameters.url.getValue()));
+          String.format("Successfully executed the http request %s .", fetchFinalValue(httpStepParameters.getUrl())));
 
       Map<String, Object> outputVariables =
           httpStepParameters.getOutputVariables() == null ? null : httpStepParameters.getOutputVariables().getValue();
@@ -192,8 +192,8 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
       logCallback.saveExecutionLog("Validating the assertions...");
       boolean assertionSuccessful = validateAssertions(httpStepResponse, httpStepParameters);
       HttpOutcome executionData = HttpOutcome.builder()
-                                      .httpUrl(httpStepParameters.getUrl().getValue())
-                                      .httpMethod(httpStepParameters.getMethod().getValue())
+                                      .httpUrl(fetchFinalValue(httpStepParameters.getUrl()))
+                                      .httpMethod(fetchFinalValue(httpStepParameters.getMethod()))
                                       .httpResponseCode(httpStepResponse.getHttpResponseCode())
                                       .httpResponseBody(httpStepResponse.getHttpResponseBody())
                                       .status(httpStepResponse.getCommandExecutionStatus())
@@ -216,6 +216,10 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     } finally {
       closeLogStream(ambiance);
     }
+  }
+
+  private String fetchFinalValue(ParameterField<String> field) {
+    return (String) field.fetchFinalValue();
   }
 
   private void closeLogStream(Ambiance ambiance) {
@@ -282,7 +286,6 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     Map<String, String> contextMap = new HashMap<>();
     contextMap.put("httpResponseBody", httpStepResponse.getHttpResponseBody());
     contextMap.put("httpResponseCode", String.valueOf(httpStepResponse.getHttpResponseCode()));
-
     return contextMap;
   }
 

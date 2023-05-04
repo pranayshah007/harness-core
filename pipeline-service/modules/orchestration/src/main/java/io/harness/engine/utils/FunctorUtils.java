@@ -9,6 +9,7 @@ package io.harness.engine.utils;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 
 import lombok.experimental.UtilityClass;
 
@@ -16,6 +17,9 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class FunctorUtils {
   public String getSecretExpression(long expressionFunctorToken, String secretIdentifier) {
+    if (secretIdentifier.startsWith("${ngSecretManager.obtain(")) {
+      throw new InvalidRequestException("Secret referencing inside a secret is not supported.");
+    }
     return "${ngSecretManager.obtain(\"" + secretIdentifier + "\", " + expressionFunctorToken + ")}";
   }
 }

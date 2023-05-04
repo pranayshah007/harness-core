@@ -39,6 +39,7 @@ public class EnvGroupExpandedValueTest extends CategoryTest {
     EnvGroupExpandedValue value =
         EnvGroupExpandedValue.builder()
             .name("wave1")
+            .envGroupRef("account.wave1")
             .identifier("xyz")
             .environments(
                 List.of(SingleEnvironmentExpandedValue.builder()

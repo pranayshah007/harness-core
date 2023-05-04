@@ -20,13 +20,16 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.SneakyThrows;
+import lombok.experimental.FieldNameConstants;
 
 @Data
 @Builder
+@FieldNameConstants(innerTypeName = "EnvGroupExpandedValueKeys")
 public class EnvGroupExpandedValue implements ExpandedValue {
   private static final String ENVIRONMENTS = "environments";
   private String name;
   private String identifier;
+  private String envGroupRef;
   private Map<String, Object> metadata;
   private Boolean deployToAll;
   private List<SingleEnvironmentExpandedValue> environments;
@@ -41,14 +44,15 @@ public class EnvGroupExpandedValue implements ExpandedValue {
     Map<String, Object> map = new HashMap<>();
     map.put(EnvironmentGroupKeys.name, name);
     map.put(EnvironmentGroupKeys.identifier, identifier);
-    map.put("metadata", metadata);
-    map.put("deployToAll", deployToAll);
+    map.put(EnvGroupExpandedValueKeys.envGroupRef, envGroupRef);
+    map.put(EnvGroupExpandedValueKeys.metadata, metadata);
+    map.put(EnvGroupExpandedValueKeys.deployToAll, deployToAll);
     map.put(ENVIRONMENTS, environments);
     String json = JsonPipelineUtils.writeJsonString(map);
     YamlConfig yamlConfig = new YamlConfig(json);
     JsonNode parentNode = yamlConfig.getYamlMap();
     JsonNode node = parentNode.get(ENVIRONMENTS);
-    if (node.isArray() && node.size() > 0) {
+    if (node != null && node.isArray() && node.size() > 0) {
       node.forEach(EnvironmentExpansionUtils::processSingleEnvNode);
       return parentNode.toPrettyString();
     }

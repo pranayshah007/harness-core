@@ -41,7 +41,6 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsR
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
-import io.harness.cvng.servicelevelobjective.beans.UnavailabilityInstancesResponse;
 import io.harness.cvng.servicelevelobjective.beans.UserJourneyDTO;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsResponse;
@@ -73,7 +72,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -592,31 +590,6 @@ public class SLODashboardServiceImpl implements SLODashboardService {
             .collect(Collectors.toList());
 
     return PageUtils.offsetAndLimit(msDropdownResponseList, pageParams.getPage(), pageParams.getSize());
-  }
-
-  @Override
-  public List<UnavailabilityInstancesResponse> getUnavailabilityInstances(
-      ProjectParams projectParams, long startTime, long endTime, String identifier) {
-    ServiceLevelObjectiveV2Response sloResponse = serviceLevelObjectiveV2Service.get(projectParams, identifier);
-    ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO = sloResponse.getServiceLevelObjectiveV2DTO();
-    if (serviceLevelObjectiveV2DTO.getType().equals(ServiceLevelObjectiveType.COMPOSITE)) {
-      return new ArrayList<>();
-    }
-    List<EntityUnavailabilityStatuses> failureInstances =
-        getFailureInstances(projectParams, serviceLevelObjectiveV2DTO, startTime, endTime);
-
-    return failureInstances.stream()
-        .map(instance
-            -> UnavailabilityInstancesResponse.builder()
-                   .orgIdentifier(instance.getOrgIdentifier())
-                   .projectIdentifier(instance.getProjectIdentifier())
-                   .entityType(instance.getEntityType())
-                   .entityIdentifier(instance.getEntityIdentifier())
-                   .status(instance.getStatus())
-                   .startTime(instance.getStartTime())
-                   .endTime(instance.getEndTime())
-                   .build())
-        .collect(Collectors.toList());
   }
 
   @Override

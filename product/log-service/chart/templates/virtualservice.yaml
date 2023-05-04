@@ -1,0 +1,36 @@
+{{- if .Values.global.istio.enabled }}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: log-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  gateways:
+    {{- if .Values.global.istio.gateway.create }}
+    - istio-system/public
+    {{- else }}
+    {{- range .Values.global.istio.virtualService.gateways }}
+    - {{ . }}
+    {{- end }}
+    {{- end }}
+  hosts:
+    {{- range .Values.global.istio.virtualService.hosts }}
+    - {{ . }}
+    {{- end }}
+  http:
+  - name: log-service
+    match:
+    - uri:
+        prefix: /log-service/
+    - uri:
+        prefix: /log-service
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        port:
+          number: {{ .Values.service.port }}
+        host: log-service
+{{ end }}

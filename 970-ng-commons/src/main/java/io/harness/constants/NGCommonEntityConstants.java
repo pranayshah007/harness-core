@@ -152,6 +152,8 @@ public class NGCommonEntityConstants {
   public static final String ENVIRONMENT_GROUP_KEY = "envGroupIdentifier";
   public static final String ENV_PARAM_MESSAGE = "Environment Identifier for the Entity.";
 
+  public static final String SERVICE_OVERRIDES_IDENTIFIER = "Service Overrides Identifier for Entity.";
+
   public static final String ENV_REF_PARAM_MESSAGE = "Environment Reference for the Entity.";
 
   public static final String INFRADEF_PARAM_MESSAGE = "Infrastructure Definition Identifier for the Entity.";

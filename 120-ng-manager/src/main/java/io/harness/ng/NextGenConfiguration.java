@@ -53,6 +53,7 @@ import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.threading.ThreadPoolConfig;
 import io.harness.timescaledb.TimeScaleDBConfig;
 
+import software.wings.security.authentication.oauth.BitbucketConfig;
 import software.wings.security.authentication.oauth.GitlabConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -238,6 +239,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty(value = "signupTargetEnv") private String signupTargetEnv;
   @JsonProperty(value = "delegateStatusEndpoint") private String delegateStatusEndpoint;
   @JsonProperty(value = "gitlabConfig") private GitlabConfig gitlabConfig;
+  @JsonProperty(value = "bitbucketConfig") private BitbucketConfig bitbucketConfig;
   @JsonProperty(value = "oauthRefreshFrequency") private long oauthRefreshFrequency;
   @JsonProperty(value = "oauthRefreshEnabled") private boolean oauthRefreshEnabled;
   @JsonProperty(value = "opaConnectivityEnabled") private boolean opaConnectivityEnabled;

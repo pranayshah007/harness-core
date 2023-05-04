@@ -1,0 +1,155 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: migrator
+  namespace: {{ .Release.Namespace }}
+  labels:
+        {{- include "migrator.labels" . | nindent 4 }}
+  annotations: {}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "migrator.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{.Values.maxSurge}}
+      maxUnavailable: {{.Values.maxUnavailable}}
+  template:
+    metadata:
+      annotations:
+        rollme: {{ randAlphaNum 5 | quote }}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: migrator
+        {{- include "migrator.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- include "migrator.pullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "migrator.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+      {{- if .Values.global.database.mongo.installed }}
+      - name: wait-for-mongo
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=mongodb-replicaset"
+      {{- end }}
+      {{- if .Values.global.database.timescaledb.installed }}
+      - name: wait-for-timescale
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=timescaledb-single-chart"
+      {{- end }}
+      - name: wait-for-redis
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=redis-sentinel"
+      containers:
+        - envFrom:
+            - configMapRef:
+                name: migrator-config
+            {{- if .Values.global.smtpCreateSecret.enabled }}
+            - secretRef:
+                name: smtp-secret
+            {{- end }}
+          env:
+            {{- include "migrator.mongoEnv" . | nindent 12 }}
+            {{- include "harnesscommon.dbconnection.timescaleEnv" . | nindent 12 }}
+            - name: MONGO_URI
+              value: {{ include "migrator.mongoConnection" . }}
+            - name: TIMESCALEDB_URI
+              value: {{ include "harnesscommon.dbconnection.timescaleConnection" (dict "context" $) }}
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - touch
+                  - shutdown
+          livenessProbe:
+            failureThreshold: 20
+            httpGet:
+              path: /api/ng-migration/version
+              port: migrator
+              scheme: HTTP
+            initialDelaySeconds: 300
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          name: migrator-prod
+          ports:
+          - containerPort: 9080
+            name: migrator
+            protocol: TCP
+          - containerPort: 9879
+            name: migrator-grpc
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 6
+            httpGet:
+              path: /api/ng-migration/health
+              port: migrator
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: dynamic-iterator-config
+              mountPath: /opt/harness/config
+            - mountPath: /heapdump
+              name: heap-dumps
+          {{- if .Values.global.mongoSSL }}
+            - name: mongo-ssl-certs
+              mountPath: /mongo
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: dynamic-iterator-config
+          configMap:
+            name: migrator-iterator-config
+            defaultMode: 420
+        - emptyDir: {}
+          name: heap-dumps
+      {{- if .Values.global.mongoSSL }}
+        - name: mongo-ssl-certs
+          secret:
+            secretName: mongodb-replicaset-ssl-cert
+      {{- end }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - migrator
+            topologyKey: "kubernetes.io/hostname"
+      {{- with .Values.affinity }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

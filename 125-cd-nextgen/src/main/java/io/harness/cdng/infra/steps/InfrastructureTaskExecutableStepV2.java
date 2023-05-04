@@ -25,6 +25,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.common.beans.StepDelegateInfo;
+import io.harness.cdng.common.beans.StepDetailsDelegateInfo;
 import io.harness.cdng.elastigroup.output.ElastigroupConfigurationOutput;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
@@ -32,7 +34,6 @@ import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
-import io.harness.cdng.infra.beans.InfrastructureStepDetails;
 import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
@@ -128,7 +129,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
                                                .setType(ExecutionNodeType.INFRASTRUCTURE_TASKSTEP_V2.getName())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
-  private static final String INFRASTRUCTURE_STEP_DETAIL_KEY = "InfrastructureStepDetailKey";
+  private static final String INFRASTRUCTURE_STEP = "Infrastructure Step";
 
   @Inject private InfrastructureEntityService infrastructureEntityService;
   @Inject private InfrastructureStepHelper infrastructureStepHelper;
@@ -179,9 +180,10 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
                   .map(TaskSelectorYaml::getDelegateSelectors)
                   .collect(Collectors.toSet()));
       String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
+      List<StepDelegateInfo> stepDelegateInfos =
+          Collections.singletonList(StepDelegateInfo.builder().taskName("Infrastructure Task").taskId(taskId).build());
       sdkGraphVisualizationDataService.publishStepDetailInformation(ambiance,
-          InfrastructureStepDetails.builder().taskIds(Collections.singletonList(taskId)).build(),
-          INFRASTRUCTURE_STEP_DETAIL_KEY);
+          StepDetailsDelegateInfo.builder().stepDelegateInfos(stepDelegateInfos).build(), INFRASTRUCTURE_STEP);
       return AsyncExecutableResponse.newBuilder()
           .addCallbackIds(taskId)
           .addAllLogKeys(StepUtils.generateLogKeys(ambiance, List.of(LOG_SUFFIX)))
