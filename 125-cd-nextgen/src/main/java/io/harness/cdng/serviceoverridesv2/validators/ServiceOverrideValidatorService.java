@@ -24,8 +24,8 @@ public interface ServiceOverrideValidatorService {
   void validateServiceOverrideRequestBasicChecks(
       @NonNull ServiceOverrideRequestDTOV2 serviceOverrideRequestDTOV2, @NonNull String accountId);
 
-  public void validateEnvironmentRBAC(@NonNull Environment environment);
+  void validateEnvironmentRBAC(@NonNull Environment environment);
 
-  public void validateEnvUsedInServiceOverrideRequest(
+  void validateEnvUsedInServiceOverrideRequest(
       @NotNull String accountId, String orgId, String projectId, String environmentRef);
 }
