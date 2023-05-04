@@ -66,7 +66,8 @@ public class BitbucketSCMMapper extends UserSourceCodeManagerMapper<BitbucketSCM
     }
   }
 
-  BitbucketApiAccessDTO toApiAccessDTO(BitbucketApiAccessType apiAccessType, BitbucketApiAccess bitbucketApiAccess) {
+  public static BitbucketApiAccessDTO toApiAccessDTO(
+      BitbucketApiAccessType apiAccessType, BitbucketApiAccess bitbucketApiAccess) {
     BitbucketApiAccessSpecDTO apiAccessSpecDTO = null;
     switch (apiAccessType) {
       case OAUTH:

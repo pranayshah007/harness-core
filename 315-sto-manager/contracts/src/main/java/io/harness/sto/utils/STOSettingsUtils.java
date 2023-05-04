@@ -481,6 +481,7 @@ public final class STOSettingsUtils {
     Map<String, String> map = new HashMap<>();
 
     map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
+    map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
 
     STOYamlMendToolData toolData = stepInfo.getTool();
 

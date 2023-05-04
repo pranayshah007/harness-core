@@ -102,5 +102,6 @@ public class AddExecutableResponseRequestProcessorTest extends CategoryTest {
             .build());
     verify(nodeExecutionService)
         .updateStatusWithOps(eq(nodeExecutionId), eq(Status.QUEUED_LICENSE_LIMIT_REACHED), any(), any());
+    verify(nodeExecutionService).update(eq(nodeExecutionId), any());
   }
 }

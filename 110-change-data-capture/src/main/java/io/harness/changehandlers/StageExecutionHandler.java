@@ -35,7 +35,11 @@ public class StageExecutionHandler extends AbstractChangeDataHandler {
     DBObject dbObject = changeEvent.getFullDocument();
 
     if (dbObject == null) {
-      return columnValueMapping;
+      return null;
+    }
+
+    if (dbObject.get(StageExecutionInfoKeys.startts) == null) {
+      return null;
     }
 
     addBasicStageLevelDataToColumnValueMap(dbObject, columnValueMapping);

@@ -82,6 +82,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -374,14 +375,14 @@ public class ProjectServiceImplTest extends CategoryTest {
     String orgIdentifier = randomAlphabetic(10);
     String searchTerm = randomAlphabetic(5);
     ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
-    when(projectRepository.findAllProjects(any(Criteria.class))).thenReturn(Collections.emptyList());
+    when(projectRepository.findAll(any(Criteria.class))).thenReturn(Collections.emptyList());
     when(projectRepository.findAll(any(Criteria.class), any(Pageable.class))).thenReturn(getPage(emptyList(), 0));
 
     Set<String> orgIdentifiers = Collections.singleton(orgIdentifier);
     Page<Project> projectPage = projectService.listPermittedProjects(accountIdentifier, unpaged(),
         ProjectFilterDTO.builder().orgIdentifiers(orgIdentifiers).searchTerm(searchTerm).moduleType(CD).build());
 
-    verify(projectRepository, times(1)).findAllProjects(criteriaArgumentCaptor.capture());
+    verify(projectRepository, times(1)).findAll(criteriaArgumentCaptor.capture());
 
     Criteria criteria = criteriaArgumentCaptor.getValue();
     Document criteriaObject = criteria.getCriteriaObject();
@@ -393,6 +394,46 @@ public class ProjectServiceImplTest extends CategoryTest {
     assertTrue(criteriaObject.containsKey(ProjectKeys.modules));
 
     assertEquals(0, projectPage.getTotalElements());
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testlistPermittedProjects() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String searchTerm = randomAlphabetic(5);
+    Project project = Project.builder()
+                          .id(randomAlphabetic(10))
+                          .identifier(randomAlphabetic(10))
+                          .accountIdentifier(accountIdentifier)
+                          .orgIdentifier(orgIdentifier)
+                          .build();
+    Scope scope = Scope.builder()
+                      .accountIdentifier(accountIdentifier)
+                      .orgIdentifier(orgIdentifier)
+                      .projectIdentifier(project.getIdentifier())
+                      .build();
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(projectRepository.findAll(any(Criteria.class))).thenReturn(List.of(project));
+    when(projectRepository.findAll(any(Criteria.class), any(Pageable.class))).thenReturn(getPage(List.of(project), 1));
+    when(scopeAccessHelper.getPermittedScopes(any())).thenReturn(List.of(scope));
+
+    Set<String> orgIdentifiers = Collections.singleton(orgIdentifier);
+    Page<Project> projectPage = projectService.listPermittedProjects(accountIdentifier, unpaged(),
+        ProjectFilterDTO.builder().orgIdentifiers(orgIdentifiers).searchTerm(searchTerm).moduleType(CD).build());
+
+    verify(projectRepository, times(1)).findAll(any(Criteria.class));
+    verify(projectRepository, times(1)).findAll(criteriaArgumentCaptor.capture(), any(Pageable.class));
+
+    Criteria criteria = criteriaArgumentCaptor.getValue();
+    Document criteriaObject = criteria.getCriteriaObject();
+    assertThat(criteriaObject).hasSize(1).containsKey("id");
+    Document query = (Document) criteriaObject.get("id");
+    assertThat(query).hasSize(1).containsExactly(Map.entry("$in", List.of(project.getId())));
+    System.out.println(criteriaObject);
+
+    assertEquals(1, projectPage.getTotalElements());
   }
 
   @Test

@@ -31,8 +31,8 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.SCMGitSyncHelper;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.rule.Owner;
-import io.harness.template.beans.TemplateImportRequestDTO;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.resources.beans.TemplateImportRequestDTO;
 
 import java.io.IOException;
 import org.junit.Before;

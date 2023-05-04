@@ -76,6 +76,10 @@ if [[ "" != "$QUERY_BATCH_SIZE" ]]; then
   export QUERY_BATCH_SIZE; yq -i '.batchQueryConfig.queryBatchSize=env(QUERY_BATCH_SIZE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$BULK_OPERATION_QUERY_BATCH_SIZE" ]]; then
+  export BULK_OPERATION_QUERY_BATCH_SIZE; yq -i '.bulkOperationBatchQueryConfig.queryBatchSize=env(BULK_OPERATION_QUERY_BATCH_SIZE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$SYNC_JOB_DISABLED" ]]; then
   export SYNC_JOB_DISABLED; yq -i '.batchQueryConfig.syncJobDisabled=env(SYNC_JOB_DISABLED)' $CONFIG_FILE
 fi

@@ -41,11 +41,13 @@ import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.service.MigrationTemplateUtils;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.step.ApprovalStepMapperImpl;
 import io.harness.ngmigration.service.workflow.WorkflowHandler;
+import io.harness.ngmigration.service.workflow.WorkflowHandlerFactory;
 import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pipeline.remote.PipelineServiceClient;
@@ -65,8 +67,8 @@ import io.harness.steps.approval.stage.ApprovalStageNode;
 import io.harness.steps.pipelinestage.PipelineStageConfig;
 import io.harness.steps.pipelinestage.PipelineStageNode;
 import io.harness.steps.template.stage.TemplateStageNode;
-import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.template.yaml.TemplateLinkConfig;
 import io.harness.when.beans.StageWhenCondition;
 import io.harness.when.beans.WhenConditionStatus;
@@ -126,13 +128,14 @@ public class PipelineMigrationService extends NgMigrationService {
   private static final String INFRASTRUCTURE_DEFINITIONS = "infrastructureDefinitions";
   private static final Pattern VARIABLE_PATTERN = Pattern.compile("[a-zA-Z_]+\\w*");
 
+  @Inject PipelineServiceClient pipelineServiceClient;
+  @Inject ApprovalStepMapperImpl approvalStepMapper;
   @Inject private PipelineService pipelineService;
   @Inject private WorkflowMigrationService workflowMigrationService;
   @Inject private TemplateResourceClient templateResourceClient;
   @Inject private MigrationTemplateUtils migrationTemplateUtils;
-  @Inject PipelineServiceClient pipelineServiceClient;
-  @Inject ApprovalStepMapperImpl approvalStepMapper;
   @Inject private WorkflowService workflowService;
+  @Inject private WorkflowHandlerFactory workflowHandlerFactory;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -282,6 +285,7 @@ public class PipelineMigrationService extends NgMigrationService {
     List<StageElementWrapperConfig> ngStages = new ArrayList<>();
     List<StageElementWrapperConfig> parallelStages = null;
     List<NGVariable> pipelineVariables = getPipelineVariables(migrationContext, pipeline);
+    List<StepExpressionFunctor> allFunctors = new ArrayList<>();
     Map<String, String> serviceToStageMap = new HashMap<>();
     for (int i = 0; i < pipeline.getPipelineStages().size(); ++i) {
       PipelineStage pipelineStage = pipeline.getPipelineStages().get(i);
@@ -303,7 +307,7 @@ public class PipelineMigrationService extends NgMigrationService {
               return YamlGenerationDetails.builder().skipDetails(Collections.singletonList(skipDetail)).build();
             }
             stage = buildWorkflowStage(
-                migrationContext, stageElement, inputDTO.getIdentifierCaseFormat(), serviceToStageMap);
+                migrationContext, stageElement, inputDTO.getIdentifierCaseFormat(), serviceToStageMap, allFunctors);
           }
         } else {
           stage = buildApprovalStage(migrationContext, stageElement, inputDTO.getIdentifierCaseFormat());
@@ -508,7 +512,9 @@ public class PipelineMigrationService extends NgMigrationService {
   }
 
   private StageElementWrapperConfig buildWorkflowStage(MigrationContext migrationContext,
-      PipelineStageElement stageElement, CaseFormat caseFormat, Map<String, String> serviceToStageMap) {
+      PipelineStageElement stageElement, CaseFormat caseFormat, Map<String, String> serviceToStageMap,
+      List<StepExpressionFunctor> allExpFunctors) {
+    String stageIdentifier = MigratorUtility.generateIdentifier(stageElement.getName(), caseFormat);
     Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
     Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     // TODO: Handle Skip condition
@@ -522,6 +528,14 @@ public class PipelineMigrationService extends NgMigrationService {
 
     NGYamlFile migratedWorkflow = migratedEntities.get(workflowEntityId);
     Workflow workflow = (Workflow) entities.get(workflowEntityId).getEntity();
+
+    // Steps - Get all expressions from CG workflows
+    // Map of NG contexts like `context_var_1` to their FQN
+    // Add functors that we get from current stage/workflow for next set of steps
+    Set<String> allExpressions = MigratorExpressionUtils.getExpressions(workflow.getOrchestrationWorkflow());
+    Map<String, String> extraWorkflowVariables =
+        getStageContextOutputs(migrationContext, stageIdentifier, allExpFunctors, allExpressions);
+    allExpFunctors.addAll(getStepFunctors(migrationContext, workflow, stageIdentifier));
 
     // Case where CG workflow is being migrated as Pipeline in NG. Chained Pipeline scenario
     if (migratedWorkflow.getYaml() instanceof PipelineConfig) {
@@ -592,6 +606,9 @@ public class PipelineMigrationService extends NgMigrationService {
         for (JsonNode node : variablesArray) {
           String key = node.get("name").asText();
           String value = workflowVariables.get(key);
+          if (StringUtils.isNotBlank(extraWorkflowVariables.getOrDefault(key, null))) {
+            ((ObjectNode) node).put("value", extraWorkflowVariables.get(key));
+          }
           if (isExpression(value)) {
             String pipelineVar = value.substring(2, value.length() - 1);
             if (VARIABLE_PATTERN.matcher(pipelineVar).matches()) {
@@ -630,7 +647,6 @@ public class PipelineMigrationService extends NgMigrationService {
 
     TemplateStageNode templateStageNode = new TemplateStageNode();
     templateStageNode.setName(MigratorUtility.generateName(stageElement.getName()));
-    String stageIdentifier = MigratorUtility.generateIdentifier(stageElement.getName(), caseFormat);
     templateStageNode.setIdentifier(stageIdentifier);
     templateStageNode.setDescription("");
     templateStageNode.setTemplate(templateLinkConfig);
@@ -661,6 +677,36 @@ public class PipelineMigrationService extends NgMigrationService {
         service.set(SERVICE_INPUTS, serviceInputs);
       }
     }
+  }
+
+  private List<StepExpressionFunctor> getStepFunctors(
+      MigrationContext migrationContext, Workflow workflow, String newStageIdentifier) {
+    WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
+    List<StepExpressionFunctor> stepExpressionFunctors =
+        workflowHandler.getExpressionFunctors(migrationContext, workflow);
+    return stepExpressionFunctors.stream()
+        .peek(stepExpressionFunctor -> stepExpressionFunctor.getStepOutput().setStageIdentifier(newStageIdentifier))
+        .collect(Collectors.toList());
+  }
+
+  private Map<String, String> getStageContextOutputs(MigrationContext context, String stageIdentifier,
+      List<StepExpressionFunctor> functors, Set<String> unresolvedExpressions) {
+    if (EmptyPredicate.isEmpty(functors) || EmptyPredicate.isEmpty(unresolvedExpressions)) {
+      return Collections.emptyMap();
+    }
+
+    Map<String, String> stageExpressionsMap = new HashMap<>();
+
+    unresolvedExpressions =
+        unresolvedExpressions.stream().filter(exp -> exp.startsWith("context.")).collect(Collectors.toSet());
+
+    for (String exp : unresolvedExpressions) {
+      String varName = exp.replace('.', '_');
+      stageExpressionsMap.put(varName,
+          (String) MigratorExpressionUtils.render(
+              context, String.format("${%s}", exp), MigratorUtility.getExpressions(stageIdentifier, functors)));
+    }
+    return stageExpressionsMap;
   }
 
   private StageElementWrapperConfig getChainedPipeline(MigrationContext migrationContext,

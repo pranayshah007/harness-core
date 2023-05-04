@@ -15,6 +15,8 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 
 import io.harness.beans.steps.stepinfo.security.BlackDuckStepInfo;
+import io.harness.beans.steps.stepinfo.security.MendStepInfo;
+import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlAdvancedSettings;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlImage;
 import io.harness.category.element.UnitTests;
@@ -34,24 +36,49 @@ import org.junit.experimental.categories.Category;
 
 @Slf4j
 public class STOSettingsUtilsTest {
+  static final String PRODUCT_NAME = "product_name";
+
   @Test
   @Owner(developers = SERGEY)
   @Category(UnitTests.class)
-  public void getBlackduckEnvVariablesTest() {
+  public void getBlackDuckEnvVariablesTest() {
     BlackDuckStepInfo emptyStep = new BlackDuckStepInfo();
-    STOYamlAdvancedSettings advanced = new STOYamlAdvancedSettings();
-    advanced.setIncludeRaw(ParameterField.createValueField(true));
-
     STOYamlImage imageData = new STOYamlImage();
     imageData.setType(STOYamlImageType.AWS_ECR);
 
-    emptyStep.setAdvanced(advanced);
     emptyStep.setImage(imageData);
+    assertContainerScanEnvVariables(emptyStep);
+  }
+
+  @Test
+  @Owner(developers = SERGEY)
+  @Category(UnitTests.class)
+  public void getMendEnvVariablesTest() {
+    MendStepInfo emptyStep = new MendStepInfo();
+    STOYamlImage imageData = new STOYamlImage();
+    imageData.setType(STOYamlImageType.AWS_ECR);
+
+    emptyStep.setImage(imageData);
+    assertContainerScanEnvVariables(emptyStep);
+  }
+
+  @Test
+  @Owner(developers = SERGEY)
+  @Category(UnitTests.class)
+  public void getSTOKeyTest() {
+    assertEquals(getSTOKey(PRODUCT_NAME), "SECURITY_PRODUCT_NAME");
+  }
+
+  private void assertContainerScanEnvVariables(STOGenericStepInfo emptyStep) {
+    STOYamlAdvancedSettings advanced = new STOYamlAdvancedSettings();
+    advanced.setIncludeRaw(ParameterField.createValueField(true));
+    emptyStep.setAdvanced(advanced);
+
     Map<String, String> actual = getSTOPluginEnvVariables(emptyStep, "1");
     Map<String, String> expected = new HashMap<>();
     expected.put(getSTOKey("product_config_name"), STOYamlGenericConfig.DEFAULT.getYamlName());
     expected.put(getSTOKey("policy_type"), STOYamlScanMode.ORCHESTRATION.getPluginName());
-    expected.put(getSTOKey("product_name"), emptyStep.getProductName());
+    expected.put(getSTOKey(PRODUCT_NAME), emptyStep.getProductName());
     expected.put(getSTOKey("include_raw"), "true");
     expected.put(getSTOKey("container_type"), STOYamlImageType.AWS_ECR.getYamlName());
     expected.put(getSTOKey("fail_on_severity"), "0");
@@ -65,12 +92,5 @@ public class STOSettingsUtilsTest {
     }
     assertTrue(difference.entriesOnlyOnLeft().isEmpty());
     assertTrue(difference.entriesOnlyOnRight().isEmpty());
-  }
-
-  @Test
-  @Owner(developers = SERGEY)
-  @Category(UnitTests.class)
-  public void getSTOKeyTest() {
-    assertEquals(getSTOKey("product_name"), "SECURITY_PRODUCT_NAME");
   }
 }

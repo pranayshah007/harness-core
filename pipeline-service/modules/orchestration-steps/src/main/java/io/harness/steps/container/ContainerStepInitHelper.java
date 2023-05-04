@@ -82,7 +82,6 @@ import io.harness.yaml.core.variables.SecretNGVariable;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -445,12 +444,7 @@ public class ContainerStepInitHelper {
   private ContainerDefinitionInfo createPluginStepContainerDefinition(
       PluginStep pluginStep, PortFinder portFinder, String accountId, OSType os, Ambiance ambiance) {
     Integer port = portFinder.getNextPort();
-    String stepGroupIdentifier = AmbianceUtils.obtainStepGroupIdentifier(ambiance);
-    String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
-    if (Strings.isNotBlank(stepGroupIdentifier)) {
-      stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
-    }
-    String identifier = ContainerUnitStepUtils.getKubernetesStandardPodName(stepIdentifier);
+    String identifier = ContainerUnitStepUtils.getKubernetesStandardPodName(pluginStep.getIdentifier());
     String containerName = format("%s%s", STEP_PREFIX, identifier).toLowerCase();
 
     Map<String, String> envMap =

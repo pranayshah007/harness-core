@@ -13,6 +13,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 
 import io.harness.CategoryTest;
+import io.harness.OrchestrationModuleConfig;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
@@ -21,6 +22,7 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.data.PmsOutcome;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
+import io.harness.repositories.planExecutionJson.ExpandedJsonLockConfig;
 import io.harness.repositories.planExecutionJson.PlanExecutionExpansionRepository;
 import io.harness.rule.Owner;
 import io.harness.utils.PmsFeatureFlagService;
@@ -49,11 +51,15 @@ public class PlanExpansionServiceImplTest extends CategoryTest {
   @Mock PlanExecutionMetadataService planExecutionMetadataService;
   @Mock PmsFeatureFlagService pmsFeatureFlagService;
 
+  @Mock OrchestrationModuleConfig orchestrationModuleConfig;
+
   @InjectMocks PlanExpansionServiceImpl planExpansionService;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+    Mockito.when(orchestrationModuleConfig.getExpandedJsonLockConfig())
+        .thenReturn(ExpandedJsonLockConfig.builder().lockTimeOutInMinutes(1).build());
   }
 
   @Test
@@ -105,7 +111,9 @@ public class PlanExpansionServiceImplTest extends CategoryTest {
     ArgumentCaptor<Update> updateCaptor = ArgumentCaptor.forClass(Update.class);
     planExpansionService.updateStatus(ambiance, Status.SUCCEEDED);
     ArgumentCaptor<String> planExecutionCaptor = ArgumentCaptor.forClass(String.class);
-    Mockito.verify(planExecutionExpansionRepository).update(planExecutionCaptor.capture(), updateCaptor.capture());
+    ArgumentCaptor<Long> lockTimeoutCaptor = ArgumentCaptor.forClass(Long.class);
+    Mockito.verify(planExecutionExpansionRepository)
+        .update(planExecutionCaptor.capture(), updateCaptor.capture(), lockTimeoutCaptor.capture());
     Update update = updateCaptor.getValue();
     Set<String> fieldsUpdated = new HashSet<>();
     if (update.getUpdateObject().containsKey("$set")) {
@@ -141,7 +149,10 @@ public class PlanExpansionServiceImplTest extends CategoryTest {
     ArgumentCaptor<Update> updateCaptor = ArgumentCaptor.forClass(Update.class);
     planExpansionService.addOutcomes(ambiance, "name", PmsOutcome.parse(new HashMap<>()));
     ArgumentCaptor<String> planExecutionCaptor = ArgumentCaptor.forClass(String.class);
-    Mockito.verify(planExecutionExpansionRepository).update(planExecutionCaptor.capture(), updateCaptor.capture());
+    ArgumentCaptor<Long> lockTimeout = ArgumentCaptor.forClass(Long.class);
+
+    Mockito.verify(planExecutionExpansionRepository)
+        .update(planExecutionCaptor.capture(), updateCaptor.capture(), lockTimeout.capture());
     Update update = updateCaptor.getValue();
     Set<String> fieldsUpdated = new HashSet<>();
     if (update.getUpdateObject().containsKey("$set")) {
@@ -177,7 +188,10 @@ public class PlanExpansionServiceImplTest extends CategoryTest {
     ArgumentCaptor<Update> updateCaptor = ArgumentCaptor.forClass(Update.class);
     planExpansionService.addStepInputs(ambiance, PmsStepParameters.parse(Maps.newHashMap("a", "b")));
     ArgumentCaptor<String> planExecutionCaptor = ArgumentCaptor.forClass(String.class);
-    Mockito.verify(planExecutionExpansionRepository).update(planExecutionCaptor.capture(), updateCaptor.capture());
+    ArgumentCaptor<Long> lockCaptor = ArgumentCaptor.forClass(Long.class);
+
+    Mockito.verify(planExecutionExpansionRepository)
+        .update(planExecutionCaptor.capture(), updateCaptor.capture(), lockCaptor.capture());
     Update update = updateCaptor.getValue();
     Set<String> fieldsUpdated = new HashSet<>();
     if (update.getUpdateObject().containsKey("$set")) {

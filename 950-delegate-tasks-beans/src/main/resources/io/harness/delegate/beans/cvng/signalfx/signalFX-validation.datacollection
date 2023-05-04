@@ -1,0 +1,5 @@
+Var validateQuery = "v2/metric"
+Var fullQuery = concat(Env:baseUrl, Var:validateQuery)
+Var result = sync-call(url=Var:fullQuery, header=Env:commonHeaders)
+Var t = "true"
+return Var:t

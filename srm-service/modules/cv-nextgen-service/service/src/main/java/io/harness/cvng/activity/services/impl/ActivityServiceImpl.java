@@ -16,6 +16,8 @@ import io.harness.cvng.activity.beans.ActivityVerificationSummary;
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.Activity.ActivityKeys;
 import io.harness.cvng.activity.entities.Activity.ActivityUpdatableEntity;
+import io.harness.cvng.activity.entities.ActivityBucket;
+import io.harness.cvng.activity.entities.ActivityBucket.ActivityBucketKeys;
 import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.activity.entities.DeploymentActivity.DeploymentActivityKeys;
 import io.harness.cvng.activity.services.api.ActivityService;
@@ -23,6 +25,7 @@ import io.harness.cvng.activity.services.api.ActivityUpdateHandler;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
+import io.harness.cvng.core.transformer.changeEvent.ChangeEventEntityAndDTOTransformer;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
@@ -31,6 +34,7 @@ import io.harness.persistence.HPersistence;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.mongodb.ReadPreference;
+import dev.morphia.FindAndModifyOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
@@ -51,6 +55,7 @@ public class ActivityServiceImpl implements ActivityService {
   @Inject private Map<ActivityType, ActivityUpdatableEntity> activityUpdatableEntityMap;
   @Inject private Map<ActivityType, ActivityUpdateHandler> activityUpdateHandlerMap;
   @Inject private PersistentLocker persistentLocker;
+  @Inject ChangeEventEntityAndDTOTransformer transformer;
 
   @Override
   public Activity get(String activityId) {
@@ -178,11 +183,28 @@ public class ActivityServiceImpl implements ActivityService {
           handler.handleCreate(activity);
         }
         hPersistence.save(activity);
+        saveActivityBucket(activity);
       }
       log.info("Registered an activity of type {} for account {}, project {}, org {}", activity.getType(),
           activity.getAccountId(), activity.getProjectIdentifier(), activity.getOrgIdentifier());
       return activity.getUuid();
     }
+  }
+
+  @Override
+  public void saveActivityBucket(Activity activity) {
+    ActivityBucket activityBucket = transformer.getActivityBucket(activity);
+    Query<ActivityBucket> upsertActivityBucket =
+        hPersistence.createQuery(ActivityBucket.class)
+            .filter(ActivityBucketKeys.accountId, activityBucket.getAccountId())
+            .filter(ActivityBucketKeys.orgIdentifier, activityBucket.getOrgIdentifier())
+            .filter(ActivityBucketKeys.projectIdentifier, activityBucket.getProjectIdentifier())
+            .filter(ActivityBucketKeys.monitoredServiceIdentifiers, activityBucket.getMonitoredServiceIdentifiers())
+            .filter(ActivityBucketKeys.bucketTime, activityBucket.getBucketTime());
+    UpdateOperations<ActivityBucket> updateOperations = hPersistence.createUpdateOperations(ActivityBucket.class);
+    updateOperations.inc(ActivityBucketKeys.count);
+    FindAndModifyOptions findAndModifyOptions = new FindAndModifyOptions().upsert(true);
+    hPersistence.upsert(upsertActivityBucket, updateOperations, findAndModifyOptions);
   }
 
   @Override

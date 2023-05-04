@@ -4,14 +4,12 @@
     "parallel" : true
   },
   "environments" : [ {
-    "environmentRef" : "my_environment",
+    "environmentRef" : "account.my_environment",
     "identifier" : "my_environment",
     "name" : "dev_environment",
     "description" : "description",
     "type" : "PreProduction",
     "accountIdentifier" : "accountId",
-    "orgIdentifier" : "orgId",
-    "projectIdentifier" : "projectId",
     "tags" : {
       "prod" : "false"
     },
@@ -43,5 +41,6 @@
     } ]
   }, { } ],
   "name" : "my environment group",
+  "envGroupRef" : "account.env_group_1",
   "deployToAll" : false
 }

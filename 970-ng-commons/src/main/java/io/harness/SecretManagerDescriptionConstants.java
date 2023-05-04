@@ -14,6 +14,8 @@ public class SecretManagerDescriptionConstants {
       "Boolean value to indicate if the Secret Manager is your default Secret Manager.";
   public static final String DELEGATE_SELECTORS =
       "List of Delegate Selectors that belong to the same Delegate and are used to connect to the Secret Manager.";
+  public static final String ASSUME_CREDENTIALS_ON_DELEGATE =
+      "Boolean value to indicate that Credentials are taken from the Delegate.";
   public static final String BASE_PATH = "This is the location of the Vault directory where Secret will be stored.";
   public static final String AUTH_TOKEN = "This is the authentication token for Vault.";
   public static final String NAMESPACE = "This is the Vault namespace where Secret will be created.";

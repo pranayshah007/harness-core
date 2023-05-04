@@ -55,6 +55,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.jetbrains.annotations.NotNull;
 import org.threeten.bp.Duration;
 
@@ -97,8 +98,7 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
     GoogleCredentials googleCredentials = getGoogleCredentials(gcpSecretsManagerConfig);
     String projectId = getProjectId(googleCredentials);
     String secretId = existingRecord.getEncryptionKey();
-    try (
-        SecretManagerServiceClient client = getGcpSecretsManagerClient(getGoogleCredentials(gcpSecretsManagerConfig))) {
+    try (SecretManagerServiceClient client = getGcpSecretsManagerClient(gcpSecretsManagerConfig)) {
       // get secret name
       if (isNotEmpty(projectId) && isNotEmpty(secretId)) {
         SecretName secretName = SecretName.of(projectId, secretId);
@@ -136,7 +136,7 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
     GcpSecretsManagerConfig gcpSecretsManagerConfig = (GcpSecretsManagerConfig) encryptionConfig;
     GoogleCredentials googleCredentials = getGoogleCredentials(gcpSecretsManagerConfig);
     String projectId = getProjectId(googleCredentials);
-    try (SecretManagerServiceClient gcpSecretsManagerClient = getGcpSecretsManagerClient(googleCredentials)) {
+    try (SecretManagerServiceClient gcpSecretsManagerClient = getGcpSecretsManagerClient(gcpSecretsManagerConfig)) {
       SecretVersionName secretVersionName = null;
       if (isNotEmpty(encryptedRecord.getPath())) {
         String secretName;
@@ -185,7 +185,7 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
     GcpSecretsManagerConfig gcpSecretsManagerConfig = (GcpSecretsManagerConfig) encryptionConfig;
     GoogleCredentials googleCredentials = getGoogleCredentials(gcpSecretsManagerConfig);
     String region = getRegionInformation(secretText);
-    try (SecretManagerServiceClient gcpSecretsManagerClient = getGcpSecretsManagerClient(googleCredentials)) {
+    try (SecretManagerServiceClient gcpSecretsManagerClient = getGcpSecretsManagerClient(gcpSecretsManagerConfig)) {
       Replication replication = getReplication(region);
       Secret secret = Secret.newBuilder().setReplication(replication).build();
       String projectId = getProjectId(googleCredentials);
@@ -213,7 +213,7 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
     checkIfSecretCanBeUpdated(secretText, existingRecord);
     GoogleCredentials googleCredentials = getGoogleCredentials(gcpSecretsManagerConfig);
     String region = getRegionInformation(secretText);
-    try (SecretManagerServiceClient gcpSecretsManagerClient = getGcpSecretsManagerClient(googleCredentials)) {
+    try (SecretManagerServiceClient gcpSecretsManagerClient = getGcpSecretsManagerClient(gcpSecretsManagerConfig)) {
       Replication replication = getReplication(region);
       String projectId = getProjectId(googleCredentials);
       SecretName secretName = SecretName.of(projectId, existingRecord.getEncryptionKey());
@@ -281,10 +281,9 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
   }
 
   @VisibleForTesting
-  public SecretManagerServiceClient getGcpSecretsManagerClient(GoogleCredentials credentials) throws IOException {
-    FixedCredentialsProvider credentialsProvider = FixedCredentialsProvider.create(credentials);
+  public SecretManagerServiceClient getGcpSecretsManagerClient(GcpSecretsManagerConfig gcpSecretsManagerConfig)
+      throws IOException {
     SecretManagerServiceSettings.Builder settingsBuilder = SecretManagerServiceSettings.newBuilder();
-    settingsBuilder.setCredentialsProvider(credentialsProvider);
     settingsBuilder.createSecretSettings()
         .getRetrySettings()
         .toBuilder()
@@ -309,17 +308,25 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
         .setMaxAttempts(MAX_RETRY_ATTEMPTS)
         .setTotalTimeout(Duration.ofSeconds(TOTAL_TIMEOUT_IN_SECONDS))
         .build();
+    if (BooleanUtils.isFalse(gcpSecretsManagerConfig.getAssumeCredentialsOnDelegate())) {
+      FixedCredentialsProvider credentialsProvider =
+          FixedCredentialsProvider.create(getGoogleCredentials(gcpSecretsManagerConfig));
+      settingsBuilder.setCredentialsProvider(credentialsProvider);
+    }
     SecretManagerServiceSettings settings = settingsBuilder.build();
     return SecretManagerServiceClient.create(settings);
   }
 
   @VisibleForTesting
   public GoogleCredentials getGoogleCredentials(GcpSecretsManagerConfig gcpSecretsManagerConfig) {
-    if (gcpSecretsManagerConfig.getCredentials() == null) {
-      throw new SecretManagementException(GCP_SECRET_OPERATION_ERROR,
-          "GCP Secret Manager credentials are missing. Please check if the credentials secret exists.", USER);
-    }
     try {
+      if (BooleanUtils.isTrue(gcpSecretsManagerConfig.getAssumeCredentialsOnDelegate())) {
+        return GoogleCredentials.getApplicationDefault();
+      }
+      if (gcpSecretsManagerConfig.getCredentials() == null) {
+        throw new SecretManagementException(GCP_SECRET_OPERATION_ERROR,
+            "GCP Secret Manager credentials are missing. Please check if the credentials secret exists.", USER);
+      }
       return GoogleCredentials
           .fromStream(new ByteArrayInputStream(String.valueOf(gcpSecretsManagerConfig.getCredentials()).getBytes()))
           .createScoped(Lists.newArrayList("https://www.googleapis.com/auth/cloud-platform"));
@@ -348,7 +355,7 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
     GcpSecretsManagerConfig gcpSecretsManagerConfig = (GcpSecretsManagerConfig) encryptionConfig;
     try {
       GoogleCredentials credentials = getGoogleCredentials(gcpSecretsManagerConfig);
-      SecretManagerServiceClient client = getGcpSecretsManagerClient(credentials);
+      SecretManagerServiceClient client = getGcpSecretsManagerClient(gcpSecretsManagerConfig);
       String projectId = getProjectId(credentials);
       ProjectName projectName = ProjectName.of(projectId);
       // Get all secrets.

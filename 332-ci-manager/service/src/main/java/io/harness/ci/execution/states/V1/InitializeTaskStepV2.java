@@ -333,7 +333,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     return ciDelegateTaskExecutor.queueTask(abstractions, task,
         taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()), new ArrayList<>(),
         executeOnHarnessHostedDelegates, emitEvent, stageExecutionId, generateLogAbstractions(ambiance),
-        ambiance.getExpressionFunctorToken(), true);
+        ambiance.getExpressionFunctorToken(), true, taskSelectors);
   }
 
   @Override

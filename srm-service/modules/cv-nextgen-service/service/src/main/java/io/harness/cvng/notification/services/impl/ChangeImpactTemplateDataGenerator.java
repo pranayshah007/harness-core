@@ -13,6 +13,7 @@ import static io.harness.cvng.notification.utils.NotificationRuleConstants.CURRE
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.NO_METRIC_ASSIGNED_TO_MONITORED_SERVICE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.N_TOP_MOST_ANOMALOUS_METRICS;
 
+import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -20,7 +21,6 @@ import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.filterParams.TimeSeriesAnalysisFilter;
 import io.harness.cvng.dashboard.beans.TimeSeriesMetricDataDTO;
 import io.harness.cvng.dashboard.services.api.TimeSeriesDashboardService;
-import io.harness.cvng.notification.beans.MonitoredServiceChangeEventType;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeImpactCondition;
 
 import com.google.inject.Inject;
@@ -40,10 +40,8 @@ public class ChangeImpactTemplateDataGenerator
 
   @Override
   public String getTriggerMessage(MonitoredServiceChangeImpactCondition condition) {
-    String changeEventTypeString = condition.getChangeEventTypes()
-                                       .stream()
-                                       .map(MonitoredServiceChangeEventType::getDisplayName)
-                                       .collect(Collectors.joining(", "));
+    String changeEventTypeString =
+        condition.getChangeCategories().stream().map(ChangeCategory::getDisplayName).collect(Collectors.joining(", "));
     String durationAsString = getDurationAsStringWithoutSuffix(condition.getPeriod());
     return "When service health score drops below " + condition.getThreshold().intValue() + " for longer than "
         + durationAsString + " minutes due to a change in " + changeEventTypeString;

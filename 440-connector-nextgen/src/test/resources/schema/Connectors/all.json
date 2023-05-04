@@ -2325,7 +2325,8 @@
             "Tas",
             "Spot",
             "Bamboo",
-            "TerraformCloud"
+            "TerraformCloud",
+            "SignalFX"
           ]
         }
       },
@@ -2983,6 +2984,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ServiceNowConnector"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "SignalFX"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SignalFXConnectorDTO"
               }
             }
           }
@@ -3668,10 +3685,10 @@
         },
         {
           "type": "object",
-          "required": [
-            "credentialsRef"
-          ],
           "properties": {
+            "assumeCredentialsOnDelegate": {
+              "type": "boolean"
+            },
             "credentialsRef": {
               "type": "string"
             },
@@ -5985,6 +6002,36 @@
               ]
             }
           ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SignalFXConnectorDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "apiTokenRef",
+            "url"
+          ],
+          "properties": {
+            "apiTokenRef": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "url": {
+              "type": "string"
+            }
+          }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"

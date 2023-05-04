@@ -162,8 +162,8 @@ public class MergeHelper {
           }
         }
         if (appendInputSetValidator) {
-          valueFromRuntimeInputYaml =
-              checkForRuntimeInputExpressions(valueFromRuntimeInputYaml, pipelineYamlFQNMap.get(key));
+          valueFromRuntimeInputYaml = checkForRuntimeInputExpressions(
+              valueFromRuntimeInputYaml, pipelineYamlFQNMap.get(key), key.getExpressionFqn());
         }
         mergedYamlFQNMap.put(key, valueFromRuntimeInputYaml);
       } else {
@@ -247,8 +247,9 @@ public class MergeHelper {
     return nonIgnorableKeys;
   }
 
-  private Object checkForRuntimeInputExpressions(Object inputSetValue, Object pipelineValue) {
-    String validationMsg = RuntimeInputValuesValidator.validateStaticValues(pipelineValue, inputSetValue);
+  private Object checkForRuntimeInputExpressions(Object inputSetValue, Object pipelineValue, String expressionFqn) {
+    String validationMsg =
+        RuntimeInputValuesValidator.validateStaticValues(pipelineValue, inputSetValue, expressionFqn);
     if (EmptyPredicate.isNotEmpty(validationMsg)) {
       throw new InvalidRequestException(validationMsg);
     }

@@ -34,8 +34,8 @@ import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
 import io.harness.rule.Owner;
-import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 
 import com.google.common.io.Resources;
 import io.dropwizard.jersey.validation.JerseyViolationException;

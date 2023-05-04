@@ -14,6 +14,7 @@ import io.harness.credit.beans.credits.CreditDTO;
 import io.harness.credit.entities.Credit;
 import io.harness.credit.mappers.CreditObjectConverter;
 import io.harness.credit.services.CreditService;
+import io.harness.credit.utils.CreditStatus;
 import io.harness.repositories.CreditRepository;
 
 import com.google.inject.Inject;
@@ -48,5 +49,11 @@ public class CreditServiceImpl implements CreditService {
     credit.setAccountIdentifier(accountIdentifier);
     Credit savedCredit = creditRepository.save(credit);
     return creditObjectConverter.toDTO(savedCredit);
+  }
+
+  @Override
+  public void setCreditStatusExpired(Credit entity) {
+    entity.setCreditStatus(CreditStatus.EXPIRED);
+    creditRepository.save(entity);
   }
 }

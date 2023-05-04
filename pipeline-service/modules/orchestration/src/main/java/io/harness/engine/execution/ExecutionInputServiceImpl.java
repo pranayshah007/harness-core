@@ -169,7 +169,7 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
                     + "in the pipeline yaml, but the input set has it as " + value.toString());
           }
         } else {
-          String error = validateStaticValues(templateValue, value);
+          String error = validateStaticValues(templateValue, value, key.getExpressionFqn());
           if (EmptyPredicate.isNotEmpty(error)) {
             errorMap.put(key, error);
           }

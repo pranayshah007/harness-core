@@ -24,6 +24,7 @@ import io.harness.beans.yaml.extended.TIBuildTool;
 import io.harness.beans.yaml.extended.TIDotNetBuildEnvName;
 import io.harness.beans.yaml.extended.TIDotNetVersion;
 import io.harness.beans.yaml.extended.TILanguage;
+import io.harness.beans.yaml.extended.TIPythonVersion;
 import io.harness.beans.yaml.extended.TISplitStrategy;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;
@@ -148,6 +149,14 @@ public class RunTimeInputHandler extends BaseRunTimeInputHandler {
       return null;
     } else {
       return TIDotNetVersion.fromString(version.fetchFinalValue().toString()).getYamlName();
+    }
+  }
+
+  public static String resolvePythonVersion(ParameterField<TIPythonVersion> version) {
+    if (version == null || version.isExpression() || version.getValue() == null) {
+      return null;
+    } else {
+      return TIPythonVersion.fromString(version.fetchFinalValue().toString()).getYamlName();
     }
   }
 

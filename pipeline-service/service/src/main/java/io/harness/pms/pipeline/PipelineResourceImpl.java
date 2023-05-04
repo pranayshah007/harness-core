@@ -212,6 +212,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
               .governanceMetadata(pe.getGovernanceMetadata())
               .entityValidityDetails(EntityValidityDetails.builder().valid(true).invalidYaml(pe.getYaml()).build())
               .gitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata())
+              .cacheResponse(PMSPipelineDtoMapper.getCacheResponseFromGitContext())
               .build());
     } catch (InvalidYamlException e) {
       return ResponseDTO.newResponse(
@@ -220,6 +221,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
               .entityValidityDetails(EntityValidityDetails.builder().valid(false).invalidYaml(e.getYaml()).build())
               .gitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata())
               .yamlSchemaErrorWrapper((YamlSchemaErrorWrapperDTO) e.getMetadata())
+              .cacheResponse(PMSPipelineDtoMapper.getCacheResponseFromGitContext())
               .build());
     }
 

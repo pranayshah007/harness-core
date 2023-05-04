@@ -631,10 +631,15 @@ public class MigratorUtility {
 
   public static Map<String, Object> getExpressions(
       WorkflowPhase phase, List<StepExpressionFunctor> functors, CaseFormat caseFormat) {
+    String stageIdentifier = MigratorUtility.generateIdentifier(phase.getName(), caseFormat);
+    return getExpressions(stageIdentifier, functors);
+  }
+
+  public static Map<String, Object> getExpressions(String phaseIdentifier, List<StepExpressionFunctor> functors) {
     Map<String, Object> expressions = new HashMap<>();
 
     for (StepExpressionFunctor functor : functors) {
-      functor.setCurrentStageIdentifier(MigratorUtility.generateIdentifier(phase.getName(), caseFormat));
+      functor.setCurrentStageIdentifier(phaseIdentifier);
       expressions.put(functor.getCgExpression(), functor);
     }
     return expressions;

@@ -22,7 +22,6 @@ import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.contracts.execution.TaskChainExecutableResponse;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -98,12 +97,6 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, TaskChainExecutableResponse executableResponse) {
-    containerStepCleanupHelper.sendCleanupRequest(ambiance);
-  }
-
-  @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
     ContainerStepInfo containerStepInfo = (ContainerStepInfo) stepParameters.getSpec();
     containerStepRbacHelper.validateResources(containerStepInfo, ambiance);
@@ -136,7 +129,6 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
-    containerStepCleanupHelper.sendCleanupRequest(ambiance);
     ResponseData responseData = responseDataSupplier.get();
     executionResponseHelper.finalizeStepResponse(ambiance, stepParameters, responseData, null);
     return StepResponse.builder().status(Status.SUCCEEDED).build();

@@ -27,18 +27,25 @@ import org.apache.commons.lang3.time.StopWatch;
 public class HIterator<T> implements AutoCloseable, Iterable<T>, Iterator<T> {
   private static final long SLOW_PROCESSING = 1000;
   private static final long DANGEROUSLY_SLOW_PROCESSING = 5000;
+  private static final int NO_LIMIT = Integer.MAX_VALUE;
 
   private final MorphiaIterator<T, T> iterator;
 
   private final StopWatch watch = new StopWatch();
   private final long slowProcessing;
   private final long dangerouslySlowProcessing;
+  private final boolean shouldPrintLogForTotalCount;
 
   private long count;
 
   public HIterator(MorphiaIterator<T, T> iterator, long slowProcessing, long dangerouslySlowProcessing) {
     watch.start();
     count = 0;
+    if (isNoLimitSetting(iterator)) {
+      shouldPrintLogForTotalCount = false;
+    } else {
+      shouldPrintLogForTotalCount = true;
+    }
     this.iterator = iterator;
     this.slowProcessing = slowProcessing;
     this.dangerouslySlowProcessing = dangerouslySlowProcessing;
@@ -46,6 +53,13 @@ public class HIterator<T> implements AutoCloseable, Iterable<T>, Iterator<T> {
 
   public HIterator(MorphiaIterator<T, T> iterator) {
     this(iterator, SLOW_PROCESSING, DANGEROUSLY_SLOW_PROCESSING);
+  }
+
+  private boolean isNoLimitSetting(MorphiaIterator<T, T> iterator) {
+    if (iterator == null || iterator.getCursor() == null) {
+      return false;
+    }
+    return NO_LIMIT == iterator.getCursor().getLimit();
   }
 
   @Override
@@ -65,7 +79,7 @@ public class HIterator<T> implements AutoCloseable, Iterable<T>, Iterator<T> {
       }
     }
 
-    if (count > 20000) {
+    if (count > 20000 && shouldPrintLogForTotalCount) {
       log.warn("Iterator query {} returns {} items for collection {}.", iterator.getCursor().getQuery().toString(),
           count, iterator.getCollection(), new Exception());
     }
