@@ -114,6 +114,7 @@ import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
+import io.harness.delegate.beans.DelegateWebsocketAPIEvent;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.SecretDetail;
@@ -125,13 +126,17 @@ import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.message.Message;
 import io.harness.delegate.message.MessageService;
+import io.harness.delegate.service.common.AcquireTaskHelper;
 import io.harness.delegate.service.common.DelegateTaskExecutionData;
+import io.harness.delegate.service.common.ManagerCallHelper;
+import io.harness.delegate.service.wsapi.WebsocketAPIServer;
 import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.Cd1ApplicationAccess;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.common.DelegateRunnableTask;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
+import io.harness.delegate.task.tasklogging.WebsocketAPILogContext;
 import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
 import io.harness.event.client.impl.tailer.ChronicleEventTailer;
 import io.harness.exception.ExceptionUtils;
@@ -286,6 +291,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   // Marker string to indicate task events.
   private static final String TASK_EVENT_MARKER = "{\"eventType\":\"DelegateTaskEvent\"";
+  private static final String WEBSOCKET_API_EVENT_MARKER = "{\"eventType\":\"DelegateWebsocketAPIEvent\"";
   private static final String ABORT_EVENT_MARKER = "{\"eventType\":\"DelegateTaskAbortEvent\"";
   private static final String HEARTBEAT_RESPONSE = "{\"eventType\":\"DelegateHeartbeatResponseStreaming\"";
 
@@ -309,7 +315,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private boolean delegateNg = isNotBlank(System.getenv().get("DELEGATE_SESSION_IDENTIFIER"))
       || (isNotBlank(System.getenv().get("NEXT_GEN")) && Boolean.parseBoolean(System.getenv().get("NEXT_GEN")));
   public static final String JAVA_VERSION = "java.version";
-  private final double RESOURCE_USAGE_THRESHOLD = 0.90;
   private String MANAGER_PROXY_CURL = System.getenv().get("MANAGER_PROXY_CURL");
   private String MANAGER_HOST_AND_PORT = System.getenv().get("MANAGER_HOST_AND_PORT");
   private static final String DEFAULT_PATCH_VERSION = "000";
@@ -318,7 +323,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private static volatile String delegateId;
   private static final String delegateInstanceId = generateUuid();
-  private final int MAX_ATTEMPTS = 3;
+//  private final int MAX_ATTEMPTS = 3;
 
   @Inject
   @Getter(value = PACKAGE, onMethod = @__({ @VisibleForTesting }))
@@ -355,10 +360,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @Inject private KryoSerializer kryoSerializer;
   @Nullable @Inject(optional = true) private ChronicleEventTailer chronicleEventTailer;
   @Inject HarnessMetricRegistry metricRegistry;
+  @Inject WebsocketAPIServer websocketAPIServer;
+  @Inject AcquireTaskHelper acquireTaskHelper;
 
   private final AtomicBoolean waiter = new AtomicBoolean(true);
 
-  private final Set<String> currentlyAcquiringTasks = ConcurrentHashMap.newKeySet();
   private final Map<String, DelegateTaskPackage> currentlyValidatingTasks = new ConcurrentHashMap<>();
   private final Map<String, DelegateTaskPackage> currentlyExecutingTasks = new ConcurrentHashMap<>();
   private final Map<String, DelegateTaskExecutionData> currentlyExecutingFutures = new ConcurrentHashMap<>();
@@ -372,7 +378,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private final AtomicLong frozenAt = new AtomicLong(-1);
   private final AtomicLong lastHeartbeatReceivedAt = new AtomicLong(System.currentTimeMillis());
   private final AtomicBoolean restartNeeded = new AtomicBoolean(false);
-  private final AtomicBoolean acquireTasks = new AtomicBoolean(true);
+  //private final AtomicBoolean acquireTasks = new AtomicBoolean(true);
   private final AtomicBoolean frozen = new AtomicBoolean(false);
   private final AtomicBoolean executingProfile = new AtomicBoolean(false);
   private final AtomicBoolean selfDestruct = new AtomicBoolean(false);
@@ -381,6 +387,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private final AtomicBoolean closingSocket = new AtomicBoolean(false);
   private final AtomicBoolean sentFirstHeartbeat = new AtomicBoolean(false);
   private final Set<String> supportedTaskTypes = new HashSet<>();
+  private final AtomicBoolean rejectRequest = new AtomicBoolean(false);
+  private double maxProcessRSSThresholdMB;
+  private double maxPodRSSThresholdMB;
+  private final double RESOURCE_USAGE_THRESHOLD = 0.90;
+
+
 
   private Client client;
   private Socket socket;
@@ -404,9 +416,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       || TRUE.toString().equals(System.getenv().get("MULTI_VERSION"));
   private boolean isImmutableDelegate;
 
-  private double maxProcessRSSThresholdMB;
-  private double maxPodRSSThresholdMB;
-  private final AtomicBoolean rejectRequest = new AtomicBoolean(false);
+  //private final AtomicBoolean rejectRequest = new AtomicBoolean(false);
 
   public static Optional<String> getDelegateId() {
     return Optional.ofNullable(delegateId);
@@ -729,33 +739,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     return delegateConfig;
   }
 
-  private void maybeUpdateTaskRejectionStatus() {
-    final long currentRSSMB = MemoryHelper.getProcessMemoryMB();
-    if (currentRSSMB >= maxProcessRSSThresholdMB) {
-      log.warn(
-          "Reached resource threshold, temporarily reject incoming task request. CurrentProcessRSSMB {} ThresholdMB {}",
-          currentRSSMB, maxProcessRSSThresholdMB);
-      rejectRequest.compareAndSet(false, true);
-      return;
-    }
 
-    final long currentPodRSSMB = MemoryHelper.getPodRSSFromCgroupMB();
-    if (currentPodRSSMB >= maxPodRSSThresholdMB) {
-      log.warn(
-          "Reached resource threshold, temporarily reject incoming task request. CurrentPodRSSMB {} ThresholdMB {}",
-          currentPodRSSMB, maxPodRSSThresholdMB);
-      rejectRequest.compareAndSet(false, true);
-      return;
-    }
-    log.debug("Process info CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
-        currentRSSMB, maxProcessRSSThresholdMB, currentPodRSSMB, maxPodRSSThresholdMB);
-
-    if (rejectRequest.compareAndSet(true, false)) {
-      log.info(
-          "Accepting incoming task request. CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
-          currentRSSMB, maxProcessRSSThresholdMB, currentPodRSSMB, maxPodRSSThresholdMB);
-    }
-  }
 
   private void clearData() {
     log.info("Clearing data for delegate process {}", getProcessId());
@@ -815,6 +799,57 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
 
     return delegateConfiguration.isPollForTasks();
+  }
+
+  private void maybeUpdateTaskRejectionStatus() {
+    final long currentRSSMB = MemoryHelper.getProcessMemoryMB();
+    if (currentRSSMB >= maxProcessRSSThresholdMB) {
+      log.warn(
+          "Reached resource threshold, temporarily reject incoming task request. CurrentProcessRSSMB {} ThresholdMB {}",
+          currentRSSMB, maxProcessRSSThresholdMB);
+      rejectRequest.compareAndSet(false, true);
+      return;
+    }
+
+    final long currentPodRSSMB = MemoryHelper.getPodRSSFromCgroupMB();
+    if (currentPodRSSMB >= maxPodRSSThresholdMB) {
+      log.warn(
+          "Reached resource threshold, temporarily reject incoming task request. CurrentPodRSSMB {} ThresholdMB {}",
+          currentPodRSSMB, maxPodRSSThresholdMB);
+      rejectRequest.compareAndSet(false, true);
+      return;
+    }
+    log.debug("Process info CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
+        currentRSSMB, maxProcessRSSThresholdMB, currentPodRSSMB, maxPodRSSThresholdMB);
+
+    if (rejectRequest.compareAndSet(true, false)) {
+      log.info(
+          "Accepting incoming task request. CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
+          currentRSSMB, maxProcessRSSThresholdMB, currentPodRSSMB, maxPodRSSThresholdMB);
+    }
+  }
+
+  private void startDynamicHandlingOfTasks() {
+    log.info("Starting dynamic handling of tasks tp {} ms", 1000);
+    try {
+      maxProcessRSSThresholdMB = MemoryHelper.getProcessMaxMemoryMB() * RESOURCE_USAGE_THRESHOLD;
+      maxPodRSSThresholdMB = MemoryHelper.getPodMaxMemoryMB() * RESOURCE_USAGE_THRESHOLD;
+
+      if (maxPodRSSThresholdMB < 1 || maxProcessRSSThresholdMB < 1) {
+        log.error("Error while fetching memory information, will not enable dynamic handling of tasks");
+        return;
+      }
+
+      healthMonitorExecutor.scheduleAtFixedRate(() -> {
+        try {
+          maybeUpdateTaskRejectionStatus();
+        } catch (Exception ex) {
+          log.error("Exception while determining delegate behaviour", ex);
+        }
+      }, 0, 5, TimeUnit.SECONDS);
+    } catch (Exception ex) {
+      log.error("Error while fetching memory information, will not enable dynamic handling of tasks");
+    }
   }
 
   private void logProxyConfiguration() {
@@ -890,8 +925,63 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       return;
     }
 
+    // Hnandle websocket API events
+    if (StringUtils.startsWith(message, WEBSOCKET_API_EVENT_MARKER)) {
+      log.info("New websocket api event received: %s", message);
+      try {
+        DelegateWebsocketAPIEvent apiEvent = JsonUtils.asObject(message, DelegateWebsocketAPIEvent.class);
+        final String uri = apiEvent.getUri();
+        final String method = apiEvent.getMethod();
+        try (WebsocketAPILogContext ignore =
+                 new WebsocketAPILogContext(
+                     apiEvent.getStateMachineId(), uri, method, OVERRIDE_ERROR)) {
+          if (!shouldProceedProcessingStateMachineEvent(apiEvent.getStateMachineId())) {
+            return;
+          }
+          taskExecutor.submit(() -> {
+            try {
+              websocketAPIServer.serve(apiEvent, delegateId, delegateInstanceId, this::handleErrorResponse);
+            } catch (IOException e) {
+              e.printStackTrace();
+            }
+          });
+        }
+      } catch (Exception e) {
+        log.error("Exception while decoding task", e);
+      }
+    }
+
+
     // Handle other messages in task executor thread-pool.
     taskExecutor.submit(() -> handleMessage(message));
+  }
+
+  private boolean shouldProceedProcessingStateMachineEvent(String stateMachineEntityId) {
+    if (stateMachineEntityId == null) {
+      log.warn("Delegate state machine id cannot be null");
+      return false;
+    }
+    if (!shouldContactManager()) {
+      log.info("Dropping task, self destruct in progress");
+      return false;
+    }
+
+    if (rejectRequest.get()) {
+      log.info("Delegate running out of resources, dropping this request");
+      return false;
+    }
+
+    if (currentlyExecutingFutures.containsKey(stateMachineEntityId)) {
+      log.info("Task [DelegateTaskEvent: {}] already queued, dropping this request ", stateMachineEntityId);
+      return false;
+    }
+
+    if (frozen.get()) {
+      log.info(
+          "Delegate process with detected time out of sync or with revoked token is running. Won't acquire tasks.");
+      return false;
+    }
+    return true;
   }
 
   @SuppressWarnings("PMD")
@@ -951,7 +1041,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void startGrpcService() {
-    if (delegateConfiguration.isGrpcServiceEnabled() && acquireTasks.get() && !restartableServiceManager.isRunning()) {
+    if (delegateConfiguration.isGrpcServiceEnabled() && acquireTaskHelper.getAcquireTaskBoolean() && !restartableServiceManager.isRunning()) {
       grpcServiceExecutor.submit(() -> { restartableServiceManager.start(); });
     }
   }
@@ -994,7 +1084,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         perpetualTaskWorker.start();
       }
       restartNeeded.set(false);
-      acquireTasks.set(true);
+      acquireTaskHelper.getAndSetAcquireTaskBoolean(true);
     } catch (IOException e) {
       log.error("Failed to resume.", e);
       stop();
@@ -1009,78 +1099,51 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
   }
 
-  private <T> T executeRestCall(Call<T> call) throws IOException {
-    Response<T> response = null;
-    try {
-      response = call.execute();
-      return response.body();
-    } catch (Exception e) {
-      log.error("error executing rest call", e);
-      throw e;
-    } finally {
-      handleResponse(response);
-    }
-  }
-
-  private <T> T executeCallWithRetryableException(Call<T> call, String failureMessage) throws IOException {
-    T responseBody = null;
-    Response<T> response = null;
-    int attempt = 1;
-    while (attempt <= MAX_ATTEMPTS && responseBody == null) {
-      try {
-        response = call.clone().execute();
-        responseBody = response.body();
-      } catch (Exception exception) {
-        if (exception instanceof StreamResetException && attempt < MAX_ATTEMPTS) {
-          attempt++;
-          log.warn(String.format("%s : Attempt: %d", failureMessage, attempt));
-        } else {
-          throw exception;
-        }
-      }
-    }
-    return responseBody;
-  }
-
-  private <T> T executeAcquireCallWithRetry(Call<T> call, String failureMessage) throws IOException {
-    Response<T> response = null;
-    try {
-      return executeCallWithRetryableException(call, failureMessage);
-    } catch (Exception e) {
-      log.error("error executing rest call", e);
-      throw e;
-    } finally {
-      handleResponse(response);
-    }
-  }
-
-  private <T> void handleResponse(Response<T> response) throws IOException {
+//  private <T> T executeRestCall(Call<T> call) throws IOException {
+//    Response<T> response = null;
+//    try {
+//      response = call.execute();
+//      return response.body();
+//    } catch (Exception e) {
+//      log.error("error executing rest call", e);
+//      throw e;
+//    } finally {
+//      handleResponse(response);
+//    }
+//  }
+//
+  private <T> void handleErrorResponse(Response<T> response) {
     if (response != null && !response.isSuccessful()) {
-      String errorResponse = response.errorBody().string();
+      String errorResponse = null;
+      try {
+        errorResponse = response.errorBody().string();
 
-      log.warn("Received Error Response: {}", errorResponse);
+        log.warn("Received Error Response: {}", errorResponse);
 
-      if (errorResponse.contains(INVALID_TOKEN.name())) {
-        log.warn("Delegate used invalid token. Self destruct procedure will be initiated.");
-        initiateSelfDestruct();
-      } else if (errorResponse.contains(format(DUPLICATE_DELEGATE_ERROR_MESSAGE, delegateId, delegateConnectionId))) {
-        initiateSelfDestruct();
-      } else if (errorResponse.contains(EXPIRED_TOKEN.name())) {
-        log.warn("Delegate used expired token. It will be frozen and drained.");
-        freeze();
-      } else if (errorResponse.contains(REVOKED_TOKEN.name()) || errorResponse.contains("Revoked Delegate Token")) {
-        log.warn("Delegate used revoked token. It will be frozen and drained.");
-        freeze();
+        if (errorResponse.contains(INVALID_TOKEN.name())) {
+          log.warn("Delegate used invalid token. Self destruct procedure will be initiated.");
+          initiateSelfDestruct();
+        } else if (errorResponse.contains(format(DUPLICATE_DELEGATE_ERROR_MESSAGE, delegateId, delegateConnectionId))) {
+          initiateSelfDestruct();
+        } else if (errorResponse.contains(EXPIRED_TOKEN.name())) {
+          log.warn("Delegate used expired token. It will be frozen and drained.");
+          freeze();
+        } else if (errorResponse.contains(REVOKED_TOKEN.name()) || errorResponse.contains("Revoked Delegate Token")) {
+          log.warn("Delegate used revoked token. It will be frozen and drained.");
+          freeze();
+        }
+
+        response.errorBody().close();
+      } catch (IOException e) {
+        log.error("Failed to process unsuccessful http response.", e);
       }
-
-      response.errorBody().close();
     }
   }
 
   private String registerDelegate(final DelegateParamsBuilder builder) {
     updateBuilderIfEcsDelegate(builder);
     AtomicInteger attempts = new AtomicInteger(0);
-    while (acquireTasks.get() && shouldContactManager()) {
+    while (acquireTaskHelper.getAcquireTaskBoolean() && shouldContactManager()) {
       RestResponse<DelegateRegisterResponse> restResponse;
       try {
         attempts.incrementAndGet();
@@ -1096,7 +1159,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                                             .ceEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CE")))
                                             .heartbeatAsObject(true)
                                             .build();
-        restResponse = executeRestCall(delegateAgentManagerClient.registerDelegate(accountId, delegateParams));
+        restResponse = ManagerCallHelper.executeRestCall(delegateAgentManagerClient.registerDelegate(accountId, delegateParams), this::handleErrorResponse);
       } catch (Exception e) {
         String msg = "Unknown error occurred while registering Delegate [" + accountId + "] with manager";
         log.error(msg, e);
@@ -1139,7 +1202,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         DELEGATE_TYPE, getLocalHostAddress(), delegateOrgIdentifier, delegateProjectIdentifier);
     try {
       log.info("Unregistering delegate {}", delegateId);
-      executeRestCall(delegateAgentManagerClient.unregisterDelegate(accountId, request));
+      ManagerCallHelper.executeRestCall(delegateAgentManagerClient.unregisterDelegate(accountId, request), this::handleErrorResponse);
     } catch (final IOException e) {
       log.error("Failed unregistering delegate {}", delegateId, e);
     }
@@ -1165,8 +1228,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         RestResponse<DelegateProfileParams> response =
             HTimeLimiter.callInterruptible21(delegateHealthTimeLimiter, Duration.ofSeconds(15),
                 ()
-                    -> executeRestCall(
-                        delegateAgentManagerClient.checkForProfile(delegateId, accountId, profileId, updated)));
+                    -> ManagerCallHelper.executeRestCall(
+                        delegateAgentManagerClient.checkForProfile(delegateId, accountId, profileId, updated),
+                    this::handleErrorResponse));
         if (response != null) {
           applyProfile(response.getResource());
         }
@@ -1295,8 +1359,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     Part part = Part.createFormData("file", profileResult.getName(), requestFile);
     HTimeLimiter.callInterruptible21(delegateHealthTimeLimiter, Duration.ofSeconds(15),
         ()
-            -> executeRestCall(delegateAgentManagerClient.saveProfileResult(
-                delegateId, accountId, exitCode != 0, FileBucket.PROFILE_RESULTS, part)));
+            -> ManagerCallHelper.executeRestCall(delegateAgentManagerClient.saveProfileResult(
+                delegateId, accountId, exitCode != 0, FileBucket.PROFILE_RESULTS, part), this::handleErrorResponse));
   }
 
   private void startInputCheck() {
@@ -1322,7 +1386,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void shutdownExecutors() throws InterruptedException {
     log.info("Initiating delegate shutdown");
-    acquireTasks.set(false);
+    acquireTaskHelper.getAndSetAcquireTaskBoolean(false);
 
     final long shutdownStart = clock.millis();
     log.info("Stopping executors");
@@ -1354,7 +1418,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void handleStopAcquiringMessage(String sender) {
     log.info("Got stop-acquiring message from watcher {}", sender);
-    if (acquireTasks.getAndSet(false)) {
+    if (acquireTaskHelper.getAndSetAcquireTaskBoolean(false)) {
       stoppedAcquiringAt = clock.millis();
       Map<String, Object> shutdownData = new HashMap<>();
       shutdownData.put(DELEGATE_SHUTDOWN_PENDING, true);
@@ -1400,7 +1464,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       try {
         DelegateTaskEventsResponse taskEventsResponse =
             HTimeLimiter.callInterruptible21(delegateTaskTimeLimiter, Duration.ofSeconds(15),
-                () -> executeRestCall(delegateAgentManagerClient.pollTaskEvents(delegateId, accountId)));
+                () -> ManagerCallHelper.executeRestCall(delegateAgentManagerClient.pollTaskEvents(delegateId, accountId), this::handleErrorResponse));
         if (shouldProcessDelegateTaskEvents(taskEventsResponse)) {
           List<DelegateTaskEvent> taskEvents = taskEventsResponse.getDelegateTaskEvents();
           log.info("Processing DelegateTaskEvents {}", taskEvents);
@@ -1434,28 +1498,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
   }
 
-  private void startDynamicHandlingOfTasks() {
-    log.info("Starting dynamic handling of tasks tp {} ms", 1000);
-    try {
-      maxProcessRSSThresholdMB = MemoryHelper.getProcessMaxMemoryMB() * RESOURCE_USAGE_THRESHOLD;
-      maxPodRSSThresholdMB = MemoryHelper.getPodMaxMemoryMB() * RESOURCE_USAGE_THRESHOLD;
-
-      if (maxPodRSSThresholdMB < 1 || maxProcessRSSThresholdMB < 1) {
-        log.error("Error while fetching memory information, will not enable dynamic handling of tasks");
-        return;
-      }
-
-      healthMonitorExecutor.scheduleAtFixedRate(() -> {
-        try {
-          maybeUpdateTaskRejectionStatus();
-        } catch (Exception ex) {
-          log.error("Exception while determining delegate behaviour", ex);
-        }
-      }, 0, 5, TimeUnit.SECONDS);
-    } catch (Exception ex) {
-      log.error("Error while fetching memory information, will not enable dynamic handling of tasks");
-    }
-  }
 
   private void startHeartbeat(DelegateParamsBuilder builder, Socket socket) {
     log.debug("Starting heartbeat at interval {} ms", delegateConfiguration.getHeartbeatIntervalMs());
@@ -1521,7 +1563,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       statusData.put(DELEGATE_VERSION, getVersionWithPatch());
       statusData.put(DELEGATE_IS_NEW, false);
       statusData.put(DELEGATE_RESTART_NEEDED, doRestartDelegate());
-      statusData.put(DELEGATE_SHUTDOWN_PENDING, !acquireTasks.get());
+      statusData.put(DELEGATE_SHUTDOWN_PENDING, !acquireTaskHelper.getAcquireTaskBoolean());
       // dont pass null delegateId, instead pass "Unregistered" as delegateId
       statusData.put(DELEGATE_ID, getDelegateId().orElse(UNREGISTERED));
       statusData.put(DELEGATE_TOKEN_NAME, DelegateAgentCommonVariables.getDelegateTokenName());
@@ -1534,7 +1576,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         statusData.put(DELEGATE_JRE_VERSION, System.getProperty(JAVA_VERSION));
         statusData.put(MIGRATE_TO_JRE_VERSION, migrateToJreVersion);
       }
-      if (!acquireTasks.get()) {
+      if (!acquireTaskHelper.getAcquireTaskBoolean()) {
         if (stoppedAcquiringAt == 0) {
           stoppedAcquiringAt = clock.millis();
         }
@@ -1633,14 +1675,14 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         log.info("Calling getDelegateScripts with version{}}", version);
         restResponse = HTimeLimiter.callInterruptible21(delegateHealthTimeLimiter, Duration.ofMinutes(1),
             ()
-                -> executeRestCall(delegateAgentManagerClient.getDelegateScripts(
-                    accountId, version, DEFAULT_PATCH_VERSION, DELEGATE_NAME)));
+                -> ManagerCallHelper.executeRestCall(delegateAgentManagerClient.getDelegateScripts(
+                    accountId, version, DEFAULT_PATCH_VERSION, DELEGATE_NAME), this::handleErrorResponse));
       } else {
         log.info("Calling getDelegateScriptsNg with version{}}", version);
         restResponse = HTimeLimiter.callInterruptible21(delegateHealthTimeLimiter, Duration.ofMinutes(1),
             ()
-                -> executeRestCall(delegateAgentManagerClient.getDelegateScriptsNg(
-                    accountId, version, DEFAULT_PATCH_VERSION, DELEGATE_NAME)));
+                -> ManagerCallHelper.executeRestCall(delegateAgentManagerClient.getDelegateScriptsNg(
+                    accountId, version, DEFAULT_PATCH_VERSION, DELEGATE_NAME), this::handleErrorResponse));
       }
 
       if (restResponse == null) {
@@ -1678,7 +1720,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     if (multiVersion) {
       try {
         RestResponse<String> restResponse =
-            executeRestCall(delegateAgentManagerClient.getWatcherVersion(delegateConfiguration.getAccountId()));
+            ManagerCallHelper.executeRestCall(delegateAgentManagerClient.getWatcherVersion(delegateConfiguration.getAccountId()), this::handleErrorResponse);
         if (restResponse != null) {
           return restResponse.getResource();
         }
@@ -1697,7 +1739,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private boolean doRestartDelegate() {
-    if (!acquireTasks.get()) {
+    if (!acquireTaskHelper.getAcquireTaskBoolean()) {
       // Skip checking other cases if Delegate isn't acquiring tasks.
       return true;
     }
@@ -1744,7 +1786,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void sendHeartbeat(DelegateParamsBuilder builder, Socket socket) {
-    if (!shouldContactManager() || !acquireTasks.get() || frozen.get()) {
+    if (!shouldContactManager() || !acquireTaskHelper.getAcquireTaskBoolean() || frozen.get()) {
       return;
     }
     log.info("Last heartbeat received at {} and sent to manager at {}", lastHeartbeatReceivedAt.get(),
@@ -1800,7 +1842,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void sendHeartbeat(DelegateParamsBuilder builder) {
-    if (!shouldContactManager() || !acquireTasks.get() || frozen.get()) {
+    if (!shouldContactManager() || !acquireTaskHelper.getAcquireTaskBoolean() || frozen.get()) {
       return;
     }
     try {
@@ -1817,7 +1859,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       lastHeartbeatSentAt.set(clock.millis());
       sentFirstHeartbeat.set(true);
       RestResponse<DelegateHeartbeatResponse> delegateParamsResponse =
-          executeRestCall(delegateAgentManagerClient.delegateHeartbeat(accountId, delegateParams));
+          ManagerCallHelper.executeRestCall(delegateAgentManagerClient.delegateHeartbeat(accountId, delegateParams), this::handleErrorResponse);
       long now = clock.millis();
       log.info("[Polling]: Delegate {} received heartbeat response {} after sending at {}. {} since last response.",
           delegateId, getDurationString(lastHeartbeatSentAt.get(), now), now,
@@ -1867,7 +1909,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       updateBuilderIfEcsDelegate(builder);
       DelegateParams delegateParams =
           builder.build().toBuilder().keepAlivePacket(true).pollingModeEnabled(true).build();
-      executeRestCall(delegateAgentManagerClient.registerDelegate(accountId, delegateParams));
+      ManagerCallHelper.executeRestCall(delegateAgentManagerClient.registerDelegate(accountId, delegateParams), this::handleErrorResponse);
     } catch (UncheckedTimeoutException ex) {
       log.warn("Timed out sending Keep Alive Request", ex);
     } catch (Exception e) {
@@ -1933,23 +1975,27 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void dispatchDelegateTaskAsync(DelegateTaskEvent delegateTaskEvent) {
     final String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
-    if (delegateTaskId == null) {
-      log.warn("Delegate task id cannot be null");
-      return;
-    }
+//    if (delegateTaskId == null) {
+//      log.warn("Delegate task id cannot be null");
+//      return;
+//    }
+//
+//    if (!shouldContactManager()) {
+//      log.info("Dropping task, self destruct in progress");
+//      return;
+//    }
+//
+//    if (rejectRequest.get()) {
+//      log.info("Delegate running out of resources, dropping this request");
+//      return;
+//    }
+//
+//    if (currentlyExecutingFutures.containsKey(delegateTaskEvent.getDelegateTaskId())) {
+//      log.info("Task [DelegateTaskEvent: {}] already queued, dropping this request ", delegateTaskEvent);
+//      return;
+//    }
 
-    if (!shouldContactManager()) {
-      log.info("Dropping task, self destruct in progress");
-      return;
-    }
-
-    if (rejectRequest.get()) {
-      log.info("Delegate running out of resources, dropping this request");
-      return;
-    }
-
-    if (currentlyExecutingFutures.containsKey(delegateTaskEvent.getDelegateTaskId())) {
-      log.info("Task [DelegateTaskEvent: {}] already queued, dropping this request ", delegateTaskEvent);
+    if (!shouldProceedProcessingStateMachineEvent(delegateTaskId)) {
       return;
     }
 
@@ -1978,35 +2024,38 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
 
       try {
-        if (frozen.get()) {
-          log.info(
-              "Delegate process with detected time out of sync or with revoked token is running. Won't acquire tasks.");
-          return;
-        }
+//        if (frozen.get()) {
+//          log.info(
+//              "Delegate process with detected time out of sync or with revoked token is running. Won't acquire tasks.");
+//          return;
+//        }
 
-        if (!acquireTasks.get()) {
-          log.info("[Old] Upgraded process is running. Won't acquire task while completing other tasks");
-          return;
-        }
-
-        if (currentlyAcquiringTasks.contains(delegateTaskId)) {
-          log.info("Task [DelegateTaskEvent: {}] currently acquiring. Don't acquire again", delegateTaskEvent);
-          return;
-        }
+//        if (!acquireTasks.get()) {
+//          log.info("[Old] Upgraded process is running. Won't acquire task while completing other tasks");
+//          return;
+//        }
+//
+//        if (currentlyAcquiringTasks.contains(delegateTaskId)) {
+//          log.info("Task [DelegateTaskEvent: {}] currently acquiring. Don't acquire again", delegateTaskEvent);
+//          return;
+//        }
 
         if (currentlyValidatingTasks.containsKey(delegateTaskId)) {
           log.info("Task [DelegateTaskEvent: {}] already validating. Don't validate again", delegateTaskEvent);
           return;
         }
 
-        currentlyAcquiringTasks.add(delegateTaskId);
+//        currentlyAcquiringTasks.add(delegateTaskId);
 
-        log.debug("Try to acquire DelegateTask - accountId: {}", accountId);
-        Call<DelegateTaskPackage> acquireCall =
-            delegateAgentManagerClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId);
+//        log.debug("Try to acquire DelegateTask - accountId: {}", accountId);
+//        Call<DelegateTaskPackage> acquireCall =
+//            delegateAgentManagerClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId);
+//
+//        DelegateTaskPackage delegateTaskPackage = executeAcquireCallWithRetry(
+//            acquireCall, String.format("Failed acquiring delegate task %s by delegate %s", delegateTaskId, delegateId));
 
-        DelegateTaskPackage delegateTaskPackage = executeAcquireCallWithRetry(
-            acquireCall, String.format("Failed acquiring delegate task %s by delegate %s", delegateTaskId, delegateId));
+        DelegateTaskPackage delegateTaskPackage = acquireTaskHelper.acquireKryo(accountId, delegateId, delegateInstanceId, delegateTaskId,
+            this::handleErrorResponse);
 
         if (delegateTaskPackage == null || delegateTaskPackage.getData() == null) {
           if (delegateTaskPackage == null) {
@@ -2019,6 +2068,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           log.debug("received task package {} for delegateInstance {}", delegateTaskPackage, delegateInstanceId);
         }
 
+        // Delegate assignment protocol implicitly use instance id (set or not) to determine if a task has been assigned.
+        // This is not a good way of design. Good way is to use delegate id, or precisely one of delegate id or instance id
         if (isEmpty(delegateTaskPackage.getDelegateInstanceId())) {
           // Not whitelisted. Perform validation.
           // TODO: Remove this once TaskValidation does not use secrets
@@ -2040,7 +2091,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       } catch (Exception e) {
         log.error("Unable to get task for validation", e);
       } finally {
-        currentlyAcquiringTasks.remove(delegateTaskId);
         currentlyExecutingFutures.remove(delegateTaskId);
       }
     }
@@ -2482,7 +2532,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void initiateSelfDestruct() {
     log.info("Self destruct sequence initiated...");
-    acquireTasks.set(false);
+    acquireTaskHelper.getAndSetAcquireTaskBoolean(false);
     restartNeeded.set(false);
     selfDestruct.set(true);
 

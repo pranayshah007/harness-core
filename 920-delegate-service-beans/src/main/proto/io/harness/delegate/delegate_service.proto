@@ -50,6 +50,71 @@ service DelegateService {
   rpc ObtainDocument(ObtainDocumentRequest) returns (ObtainDocumentResponse);
 
   rpc isTaskTypeSupported(SupportedTaskTypeRequest) returns (SupportedTaskTypeResponse);
+
+  // This is prototype of plugin delegate apis
+  rpc CreateWebsocketAPIRequest(WebsocketAPIRequest) returns (SubmitTaskResponse);
+}
+
+message WebsocketAPIRequest {
+  TaskNetworkMetadata taskNetworkMetadata = 1;
+  bytes data = 2;
+  // TODO: We can remove any expression evaluation related information once we move it out of manager.
+  // Below all are expression evaluation related fields
+  enum SERIALIZATION_METHOD {
+    KRYO = 0;
+    JSON = 1;
+    PROTO = 2;
+  }
+  SERIALIZATION_METHOD serialization = 3;
+  // string json_taskType = 4;
+  // The delegate system offers JIT secret decryption. This token allows for making sure that the expressions for
+  // obtaining secrets are system generated, and not a hack from customers input.
+  int64 expression_functor_token = 4;
+}
+
+message TaskNetworkMetadata {
+  // Scheduling related
+  // The time the task should stay in the queue. To set the execution time out, fill out
+  // details.execution_timeout
+  google.protobuf.Duration execution_timeout = 1;
+  // queue timeout is not being used
+  google.protobuf.Duration queue_timeout = 2;
+  bool force_execute = 3;
+  // DMS fails sync task immediately if there is no connected active delegates
+  bool async = 4;
+
+  // This map provides a list of key-vals used filter delegates during assignment process.
+  // This is anti-pattern because we already have selectors framework. This map gives an open-ended way for different product modules
+  // to write customized codes in assignment instead of using the framework delegate provides.
+  // Keep it in new APIs for backward compatibility, but tend to remove it in the future.
+  TaskSetupAbstractions setup_abstractions = 5;
+
+  // Routing related
+  repeated TaskSelector selectors = 6;
+  // Runner's type
+  string runnerType = 7;
+  repeated string eligibleToExecuteDelegateIds = 8;
+
+  bool selectionTrackingLogEnabled = 9;
+  AccountId account_id = 10;
+
+  // Manager will emit event or not upon task state change. The below two only used by CI today
+  bool emitEvent = 11;
+  string stageId = 12;
+  // Used for hosted builds
+  bool execute_on_harness_hosted_delegates = 13;
+
+  // Represents the callback driver to send task response by DMS
+  callback.DelegateCallbackToken callback_token = 14;
+
+  string uri = 15;
+  string method = 16;
+
+// below one should put in runner's metadata, not task network layer data
+  // baseLogKey used to construct a log stream client.
+  // In old definition, there is log stream abstraction message. This message is used to provide baseLogKey in two ways.
+  //  1. directly provided 2. a hashmap which delegate will use to construct the key.
+//  string baseLogKey = 15;
 }
 
 // Next ID: 11

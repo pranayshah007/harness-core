@@ -28,6 +28,16 @@ message TaskDescriptor {
 }
 
 /*
+ All data that is needed to execute the job
+ */
+message WebsocketRequestPayload {
+  string id = 1;  // Id for the task
+  string callback_token = 2;              // Token for sending notify event to the service that initiated a task
+  repeated TaskSecret input_secrets = 3;  // Task secrets. One instance can contain multiple secrets from same provider
+  bytes data = 4;                   // binary data for runner as well as tasks. Payload of websocket api request
+}
+
+/*
  Specifies the execution mode of the Job. Delegate doesn't really care about sync/async (everything is async), but cares
  about how many times the job runs and at which priority. UNKNOWN mode should not be used
  */

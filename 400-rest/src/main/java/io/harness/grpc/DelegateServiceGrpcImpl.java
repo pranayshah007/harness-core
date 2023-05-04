@@ -35,6 +35,7 @@ import io.harness.delegate.SendTaskProgressRequest;
 import io.harness.delegate.SendTaskProgressResponse;
 import io.harness.delegate.SendTaskStatusRequest;
 import io.harness.delegate.SendTaskStatusResponse;
+import io.harness.delegate.WebsocketAPIRequest;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.SubmitTaskResponse;
 import io.harness.delegate.SupportedTaskTypeRequest;
@@ -43,6 +44,7 @@ import io.harness.delegate.TaskDetails;
 import io.harness.delegate.TaskExecutionStage;
 import io.harness.delegate.TaskId;
 import io.harness.delegate.TaskMode;
+import io.harness.delegate.TaskNetworkMetadata;
 import io.harness.delegate.TaskProgressRequest;
 import io.harness.delegate.TaskProgressResponse;
 import io.harness.delegate.TaskProgressUpdatesRequest;
@@ -51,6 +53,7 @@ import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.DelegateProgressData;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.beans.DelegateWebsocketAPIEvent;
 import io.harness.delegate.beans.NoDelegatesException;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskDataV2;
@@ -67,6 +70,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateCallbackRegistry;
 import io.harness.service.intfc.DelegateTaskService;
 
+import io.harness.websocketapiclient.DelegateAPIClient;
 import software.wings.beans.SerializationFormat;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.DelegateTaskServiceClassic;
@@ -80,6 +84,7 @@ import com.google.protobuf.util.Durations;
 import com.google.protobuf.util.Timestamps;
 import io.grpc.stub.StreamObserver;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -104,13 +109,17 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
   private DelegateTaskServiceClassic delegateTaskServiceClassic;
 
   private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
+  private DelegateAPIClient delegateAPIClient;
 
   @Inject
   public DelegateServiceGrpcImpl(DelegateCallbackRegistry delegateCallbackRegistry,
       PerpetualTaskService perpetualTaskService, DelegateService delegateService,
       DelegateTaskService delegateTaskService, KryoSerializer kryoSerializer,
       @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer,
-      DelegateTaskServiceClassic delegateTaskServiceClassic, DelegateTaskMigrationHelper delegateTaskMigrationHelper) {
+      DelegateTaskServiceClassic delegateTaskServiceClassic,
+      DelegateTaskMigrationHelper delegateTaskMigrationHelper,
+      DelegateAPIClient delegateAPIClient) {
+
     this.delegateCallbackRegistry = delegateCallbackRegistry;
     this.perpetualTaskService = perpetualTaskService;
     this.delegateService = delegateService;
@@ -119,6 +128,69 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
     this.delegateTaskService = delegateTaskService;
     this.delegateTaskServiceClassic = delegateTaskServiceClassic;
     this.delegateTaskMigrationHelper = delegateTaskMigrationHelper;
+    this.delegateAPIClient = delegateAPIClient;
+  }
+
+  @Override
+  public void createWebsocketAPIRequest(
+      WebsocketAPIRequest request, StreamObserver<SubmitTaskResponse> responseObserver) {
+    try {
+      String taskId = delegateTaskMigrationHelper.generateDelegateTaskUUID();
+      final TaskNetworkMetadata networkMetadata = request.getTaskNetworkMetadata();
+      Map<String, String> setupAbstractions = networkMetadata.getSetupAbstractions().getValuesMap();
+
+      List<ExecutionCapability> capabilities = new ArrayList<>();
+
+      if (isNotEmpty(networkMetadata.getSelectorsList())) {
+        capabilities = networkMetadata.getSelectorsList()
+            .stream()
+            .filter(s -> isNotEmpty(s.getSelector()))
+            .map(this::toSelectorCapability)
+            .collect(Collectors.toList());
+      }
+
+      DelegateTaskBuilder taskBuilder =
+          DelegateTask.builder()
+              .uuid(taskId)
+              .runnerType(networkMetadata.getRunnerType())
+              .driverId(networkMetadata.hasCallbackToken() ? networkMetadata.getCallbackToken().getToken() : null)
+              .waitId(taskId)
+              .accountId(networkMetadata.getAccountId().getId())
+              .setupAbstractions(setupAbstractions)
+              .workflowExecutionId(setupAbstractions.get(DelegateTaskKeys.workflowExecutionId))
+              .executionCapabilities(capabilities)
+              .selectionLogsTrackingEnabled(networkMetadata.getSelectionTrackingLogEnabled())
+              .eligibleToExecuteDelegateIds(new LinkedList<>(networkMetadata.getEligibleToExecuteDelegateIdsList()))
+              .executeOnHarnessHostedDelegates(networkMetadata.getExecuteOnHarnessHostedDelegates())
+              .emitEvent(networkMetadata.getEmitEvent())
+              .async(networkMetadata.getAsync())
+              .stageId(networkMetadata.getStageId())
+              .forceExecute(networkMetadata.getForceExecute())
+              .dataCombined(request.getData().toByteArray())
+              .serializationFormat(request.getSerialization().name())
+              .websocketAPIUri(networkMetadata.getUri())
+              .websocketAPMethod(networkMetadata.getMethod())
+              .executionTimeout(Durations.toMillis(networkMetadata.getExecutionTimeout()))
+              // TODO: Remove after expression evaluation is moved out of manager
+              .expressionFunctorToken(request.getExpressionFunctorToken());
+
+      DelegateTask task = taskBuilder.build();
+      delegateAPIClient.sendAPIRequest(task, DelegateWebsocketAPIEvent.Method.POST, networkMetadata.getUri());
+      responseObserver.onNext(SubmitTaskResponse.newBuilder()
+          .setTaskId(TaskId.newBuilder().setId(taskId).build())
+          .setTotalExpiry(Timestamps.fromMillis(task.getExpiry() + task.getExecutionTimeout()))
+          .build());
+      responseObserver.onCompleted();
+
+    } catch (Exception ex) {
+      if (ex instanceof NoDelegatesException) {
+        log.warn("No delegate exception found while processing submit task request. reason {}",
+            ExceptionUtils.getMessage(ex));
+      } else {
+        log.error("Unexpected error occurred while processing submit task request.", ex);
+      }
+      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
+    }
   }
 
   @Override
@@ -266,6 +338,10 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
               .baseLogKey(baseLogKey)
               .shouldSkipOpenStream(shouldSkipOpenStream)
               .taskDataV2(createTaskDataV2(taskDetails));
+
+      if (request.hasQueueTimeout()) {
+        taskBuilder.expiry(System.currentTimeMillis() + Durations.toMillis(request.getQueueTimeout()));
+      }
 
       if (request.hasQueueTimeout()) {
         taskBuilder.expiry(System.currentTimeMillis() + Durations.toMillis(request.getQueueTimeout()));

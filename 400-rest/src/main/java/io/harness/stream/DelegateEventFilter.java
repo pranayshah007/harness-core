@@ -21,6 +21,7 @@ import io.harness.logging.AutoLogContext;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.DelegateTaskBroadcast;
+import software.wings.beans.DelegateWebsocketAPIBroadcast;
 import software.wings.beans.PerpetualTaskBroadcastEvent;
 import software.wings.logcontext.WebsocketLogContext;
 import software.wings.service.intfc.DelegateService;
@@ -78,6 +79,10 @@ public class DelegateEventFilter extends BroadcastFilterAdapter {
       }
     }
 
+    if (message instanceof DelegateWebsocketAPIBroadcast) {
+      return processWebsocketAPIEvent((DelegateWebsocketAPIBroadcast) message, delegateId, broadcasterId, r.uuid());
+    }
+
     if (message instanceof DelegateTaskAbortEvent) {
       DelegateTaskAbortEvent abortEvent = (DelegateTaskAbortEvent) message;
       if (!delegateTaskServiceClassic.filter(delegateId, abortEvent)) {
@@ -120,6 +125,31 @@ public class DelegateEventFilter extends BroadcastFilterAdapter {
     }
     log.info("Broadcasting generic event to delegate: {} by {}", delegateId, broadcasterId);
     return continueWith(message);
+  }
+
+  private BroadcastAction processWebsocketAPIEvent(
+      DelegateWebsocketAPIBroadcast broadcast, String requestingDelegateId, String broadcasterId, String resourceUuid) {
+
+    try (AutoLogContext ignore1 = new AccountLogContext(broadcast.getAccountId(), OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new DelegateLogContext(requestingDelegateId, OVERRIDE_ERROR);
+         AutoLogContext ignore3 = new WebsocketLogContext(resourceUuid, OVERRIDE_ERROR)) {
+
+      if (isEmpty(broadcast.getBroadcastToDelegatesIds())) {
+        return abort(broadcast);
+      }
+
+      if (!broadcast.getBroadcastToDelegatesIds().contains(requestingDelegateId)) {
+        return abort(broadcast);
+      }
+
+      if (!delegateService.filter(broadcast.getAccountId(), requestingDelegateId)) {
+        return abort(broadcast);
+      }
+
+      log.info("Broadcasting api request {} to account: {} delegate: {} by {}", broadcast.getStateMachineId(),
+          broadcast.getAccountId(), requestingDelegateId, broadcasterId);
+      return new BroadcastAction(broadcast.getMessage());
+    }
   }
 
   @NotNull

@@ -285,6 +285,9 @@ import io.harness.utils.featureflaghelper.CGFeatureFlagHelperServiceImpl;
 import io.harness.utils.featureflaghelper.FeatureFlagHelperService;
 import io.harness.version.VersionModule;
 
+import io.harness.websocketapiclient.DelegateAPIClient;
+import io.harness.websocketapiclient.DelegateAPIClientImpl;
+import lombok.RequiredArgsConstructor;
 import software.wings.DataStorageMode;
 import software.wings.alerts.AlertModule;
 import software.wings.backgroundjobs.AccountBackgroundJobService;
@@ -1095,6 +1098,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(DelegateInstallationCommandService.class).to(DelegateInstallationCommandServiceImpl.class);
     bind(DelegateStackdriverLogService.class).to(DelegateStackdriverLogServiceImpl.class);
     bind(DelegateSelectionLogsService.class).to(DelegateSelectionLogsServiceImpl.class);
+    bind(DelegateAPIClient.class).to(DelegateAPIClientImpl.class);
     bind(BarrierService.class).to(BarrierServiceImpl.class);
     bind(DownloadTokenService.class).to(DownloadTokenServiceImpl.class);
     bind(CloudWatchService.class).to(CloudWatchServiceImpl.class);

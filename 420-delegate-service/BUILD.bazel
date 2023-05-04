@@ -24,6 +24,8 @@ java_library(
         "//clients/queue-service/java-client:module",
         "@maven//:io_dropwizard_modules_dropwizard_protobuf",
         "@maven//:ru_vyarus_guice_validator",
+    ] + [
+        "//955-delegate-beans/src/main/proto/io/harness/delegate/core/beans:955_delegate_core_task_java_proto",
     ],
 )
 
@@ -54,7 +56,6 @@ java_library(
         "//953-events-api:module",
         "//955-alert-beans:module",
         "//955-delegate-beans:module",
-        "//955-delegate-beans/src/main/proto/io/harness/delegate/core/beans:955_delegate_core_task_java_proto",
         "//955-filters-sdk:module",
         "//955-outbox-sdk:module",
         "//956-feature-flag-beans:module",

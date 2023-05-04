@@ -19,6 +19,7 @@ import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
+import io.harness.delegate.core.beans.WebsocketRequestPayload;
 import io.harness.validation.Create;
 
 import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
@@ -49,6 +50,8 @@ public interface DelegateTaskServiceClassic extends OwnedByAccount {
 
   @VisibleForTesting void processDelegateTaskV2(DelegateTask task, DelegateTask.Status taskStatus);
 
+  void processWebsocketAPIRequest(DelegateTask task, DelegateTask.Status taskStatus);
+
   String queueParkedTask(String accountId, String taskId);
 
   String queueParkedTaskV2(String accountId, String taskId);
@@ -56,6 +59,9 @@ public interface DelegateTaskServiceClassic extends OwnedByAccount {
   byte[] getParkedTaskResults(String accountId, String taskId, String driverId);
 
   DelegateTaskPackage acquireDelegateTask(
+      String accountId, String delegateId, String taskId, String delegateInstanceId);
+
+  Optional<WebsocketRequestPayload> acquireWebsocketAPIRequestPayload(
       String accountId, String delegateId, String taskId, String delegateInstanceId);
 
   DelegateTaskPackage reportConnectionResults(String accountId, String delegateId, String taskId,

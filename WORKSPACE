@@ -7,9 +7,9 @@ workspace(name = "harness_monorepo")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
-load("//tools/bazel/pmd:dependencies.bzl", "rules_pmd_dependencies")
+#load("//tools/bazel/pmd:dependencies.bzl", "rules_pmd_dependencies")
 
-rules_pmd_dependencies()
+#rules_pmd_dependencies()
 
 http_archive(
     name = "com_github_bazelbuild_buildtools",
@@ -4904,6 +4904,7 @@ plain_artifacts = [
     "guru.nidi.com.kitfox:svgSalamander:1.1.3",
     "guru.nidi:graphviz-java:0.16.3",
     "guru.nidi:graphviz-rough:0.16.3",
+    "tv.cntt:jauter:1.7",
     "io.cloudsoft.windows:winrm4j-client:0.12.3",
     "io.cloudsoft.windows:winrm4j:0.12.3",
     "io.confluent:common-config:5.5.1",
@@ -5687,9 +5688,9 @@ java_runtime(
     urls = ["https://harness-artifactory.harness.io/artifactory/adoptjdk8u242-b08-github/download/jdk8u242-b08/OpenJDK8U-jdk_x64_mac_hotspot_8u242b08.tar.gz"],
 )
 
-load("//tools/bazel/pmd:toolchains.bzl", "rules_pmd_toolchains")
+#load("//tools/bazel/pmd:toolchains.bzl", "rules_pmd_toolchains")
 
-rules_pmd_toolchains()
+#rules_pmd_toolchains()
 
 #========== Python Configuration Begin=========================
 

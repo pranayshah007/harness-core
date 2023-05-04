@@ -10,10 +10,13 @@ package io.harness.grpc;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.System.currentTimeMillis;
+import static java.lang.System.err;
 import static java.util.stream.Collectors.toList;
 
+import com.google.gson.Gson;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DelegateInitiateInfrastructureRequest;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
@@ -39,11 +42,13 @@ import io.harness.delegate.TaskExecutionStage;
 import io.harness.delegate.TaskId;
 import io.harness.delegate.TaskLogAbstractions;
 import io.harness.delegate.TaskMode;
+import io.harness.delegate.TaskNetworkMetadata;
 import io.harness.delegate.TaskProgressRequest;
 import io.harness.delegate.TaskProgressResponse;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.TaskSetupAbstractions;
 import io.harness.delegate.TaskType;
+import io.harness.delegate.WebsocketAPIRequest;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
@@ -60,6 +65,7 @@ import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.tasks.ResponseData;
 
+import io.harness.beans.WebsocketAPIResources;
 import software.wings.beans.SerializationFormat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -71,12 +77,16 @@ import com.google.protobuf.util.Durations;
 import com.google.protobuf.util.Timestamps;
 import io.fabric8.utils.Strings;
 import io.grpc.StatusRuntimeException;
+
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -110,6 +120,59 @@ public class DelegateServiceGrpcClient {
     this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
     this.delegateSyncService = delegateSyncService;
     this.isDriverInstalledInNgService = isDriverInstalledInNgService.getAsBoolean();
+  }
+
+  public String initializeExecutionInfrastructure(DelegateInitiateInfrastructureRequest initiateInfrastructureRequest,
+                                                  DelegateCallbackToken delegateCallbackToken) {
+    WebsocketAPIRequest.Builder request = WebsocketAPIRequest.newBuilder()
+        .setTaskNetworkMetadata(TaskNetworkMetadata.newBuilder()
+            .addAllEligibleToExecuteDelegateIds(initiateInfrastructureRequest.getEligibleToExecuteDelegateIds())
+            .addAllSelectors(initiateInfrastructureRequest.getTaskSelectors().stream()
+                .map(selector -> TaskSelector.newBuilder().setSelector(selector).build())
+                .collect(toList()))
+            .setSetupAbstractions(TaskSetupAbstractions.newBuilder()
+                .putAllValues(MapUtils.emptyIfNull(initiateInfrastructureRequest.getTaskSetupAbstractions()))
+                .build())
+            .setRunnerType(initiateInfrastructureRequest.getRunnerType())
+            .setAccountId(AccountId.newBuilder().setId(initiateInfrastructureRequest.getAccountId()).build())
+            .setStageId(initiateInfrastructureRequest.getStageId())
+            .setExecutionTimeout(Durations.fromSeconds(initiateInfrastructureRequest.getExecutionTimeout().getSeconds()))
+            .setEmitEvent(initiateInfrastructureRequest.isEmitEvent())
+            .setForceExecute(initiateInfrastructureRequest.isForceExecute())
+            .setSelectionTrackingLogEnabled(initiateInfrastructureRequest.isSelectionLogEnabled())
+            .setExecuteOnHarnessHostedDelegates(initiateInfrastructureRequest.isExecuteOnHarnessHostedDelegates())
+            .setMethod("POST")
+            .setUri(WebsocketAPIResources.getInitiateExecutionInfrastructureUri(initiateInfrastructureRequest.getRunnerType()))
+            .setCallbackToken(delegateCallbackToken)
+          .build())
+        .setExpressionFunctorToken(initiateInfrastructureRequest.getExpressionFunctorToken());
+    if (Objects.nonNull(initiateInfrastructureRequest.getKryoExecutionInfraData())) {
+      request.setSerialization(WebsocketAPIRequest.SERIALIZATION_METHOD.KRYO);
+      byte[] kryoData = kryoSerializer.asDeflatedBytes(initiateInfrastructureRequest.getKryoExecutionInfraData());
+      request.setData(ByteString.copyFrom(kryoData));
+    } else if (Objects.nonNull(initiateInfrastructureRequest.getInfraConfig())) {
+      request.setSerialization(WebsocketAPIRequest.SERIALIZATION_METHOD.JSON);
+      try {
+        request.setData(ByteString.copyFrom(objectMapper.writeValueAsBytes(initiateInfrastructureRequest.getInfraConfig())));
+      } catch (JsonProcessingException e) {
+        final String errMsg =
+            String.format("Serialize json failed for execution infra initialization request. AccountId: %s, RunnerType: %s, StageId: %s",
+                initiateInfrastructureRequest.getAccountId(),
+                initiateInfrastructureRequest.getRunnerType(),
+                initiateInfrastructureRequest.getStageId());
+        log.error(errMsg);
+        throw new DelegateServiceDriverException(errMsg, e);
+      }
+    }
+    try {
+      var response = delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS).createWebsocketAPIRequest(request.build());
+      return response.getTaskId().getId();
+    } catch (StatusRuntimeException ex) {
+      if (ex.getStatus() != null && isNotEmpty(ex.getStatus().getDescription())) {
+        throw new DelegateServiceDriverException(ex.getStatus().getDescription());
+      }
+      throw new DelegateServiceDriverException("Unexpected error occurred while submitting task.", ex);
+    }
   }
 
   public String submitAsyncTask(DelegateTaskRequest taskRequest, DelegateCallbackToken delegateCallbackToken,

@@ -45,6 +45,7 @@ java_library(
         "@maven//:org_codehaus_janino_commons_compiler",
         "@maven//:org_codehaus_janino_janino",
         "@maven//:org_springframework_boot_spring_boot_loader",
+        "@maven//:tv_cntt_jauter"
     ],
 )
 

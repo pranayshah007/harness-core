@@ -54,6 +54,7 @@ java_library(
         "//950-ng-project-n-orgs:module",
         "//950-telemetry:module",
         "//950-wait-engine:module",
+        "//955-delegate-beans/src/main/proto/io/harness/delegate/core/beans:955_delegate_core_task_java_proto",
         "//952-remote-observers:module",
         "//953-events-api:module",
         "//954-connector-beans:module",
