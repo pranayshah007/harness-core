@@ -14,4 +14,5 @@ import io.harness.annotations.dev.OwnedBy;
 public final class OAuthConstants {
   public static String BITBUCKET_ENDPOINT = "https://bitbucket.org/site/oauth2/access_token";
   public static String GITLAB_ENDPOINT = "https://gitlab.com/oauth/token";
+  public static String AZURE_REPO_ENDPOINT = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
 }
