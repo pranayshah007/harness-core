@@ -67,8 +67,9 @@ public class NGLdapGroupSyncHelper {
 
   private void reconcileUserGroupWithLdapGroup(
       UserGroup userGroup, LdapGroupResponse ldapGroup, String ssoId, List<UserGroup> failedUserGroups) {
-    log.info("NGLDAP: Starting sync for user group {}, in account {}, with corresponding ldap group dn {}",
-        userGroup.getIdentifier(), userGroup.getAccountIdentifier(), ldapGroup.getDn());
+    log.info(
+        "NGLDAP: Starting sync for user group {}, in account {}, with corresponding ldap group dn {}. The number of users returned for LdapGroup is: {}",
+        userGroup.getIdentifier(), userGroup.getAccountIdentifier(), ldapGroup.getDn(), ldapGroup.getTotalMembers());
     try {
       syncUserGroupMetadata(userGroup, ldapGroup);
       Set<String> ldapUserEmails = ldapGroup.getUsers()
@@ -76,6 +77,9 @@ public class NGLdapGroupSyncHelper {
                                        .map(LdapUserResponse::getEmail)
                                        .filter(Objects::nonNull)
                                        .collect(Collectors.toSet());
+
+      log.info("NGLDAP: Users email list received from LDAP on group dn {}, linked to user group {} are {}",
+          ldapGroup.getDn(), userGroup.getIdentifier(), getStringBuilderForEmails(ldapUserEmails).toString());
       List<UserInfo> usersInfo = new ArrayList<>();
 
       // can cause issue, check if our APIs support querying ~1K list of users
@@ -95,6 +99,11 @@ public class NGLdapGroupSyncHelper {
           userGroupUserEmails.add(info.getEmail().toLowerCase());
         }
       }
+
+      log.info(
+          "NGLDAP: Users email after getting user records from CG for user group {}, has received count: {} and are having emails as {}",
+          userGroup.getIdentifier(), userGroupUserEmails.size(),
+          getStringBuilderForEmails(userGroupUserEmails).toString());
 
       Set<String> usersToRemove = SetUtils.difference(userGroupUserEmails, ldapUserEmails);
       Set<String> usersToAdd = SetUtils.difference(ldapUserEmails, userGroupUserEmails);
@@ -176,16 +185,16 @@ public class NGLdapGroupSyncHelper {
           || !checkUserPartOfAccountInNg(userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(),
               userGroup.getProjectIdentifier(), userOptional.get())) {
         log.warn(
-            "NGLDAP: Invite user with id {} and with externalUserId {}, or adding user to scope- account: {}, organization: {}, project: {} failed",
-            userOptional.get().getUuid(), userResponse.getUserId(), userGroup.getAccountIdentifier(),
-            userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier());
+            "NGLDAP: Invite user with ldap externalUserId {}, or adding user to scope- account: {}, organization: {}, project: {} failed",
+            userResponse.getUserId(), userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(),
+            userGroup.getProjectIdentifier());
         // throw here to be caught above and added to 'failedUserGroups' count
         throw new IllegalStateException("NGLDAP: Illegal state value of user to be added as member to user group");
       }
 
-      log.info("NGLDAP: adding new user {}, to group: {} in account {} and externalUserId {}",
-          userOptional.get().getUuid(), userGroup.getIdentifier(), userGroup.getAccountIdentifier(),
-          userResponse.getUserId());
+      log.info("NGLDAP: adding new user {} having email: {} to group: {} in account {} and externalUserId {}",
+          userOptional.get().getUuid(), userOptional.get().getEmail(), userGroup.getIdentifier(),
+          userGroup.getAccountIdentifier(), userResponse.getUserId());
       userGroupService.addMember(userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(),
           userGroup.getProjectIdentifier(), userGroup.getIdentifier(), userOptional.get().getUuid());
     }
@@ -235,5 +244,13 @@ public class NGLdapGroupSyncHelper {
     log.info("NGLDAP: Updating user group {} in account {} with name: {}", userGroup.getIdentifier(),
         userGroup.getAccountIdentifier(), groupResponse.getName());
     userGroupService.update(userGroupDTO);
+  }
+
+  private StringBuilder getStringBuilderForEmails(Set<String> emails) {
+    StringBuilder sb = new StringBuilder();
+    if (isNotEmpty(emails)) {
+      emails.forEach(id -> sb.append(id).append(" "));
+    }
+    return sb;
   }
 }
