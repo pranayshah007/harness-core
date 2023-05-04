@@ -434,8 +434,8 @@ public class NexusClientImplTest extends CategoryTest {
                                     .build();
 
     assertThatThrownBy(()
-                           -> nexusClient.getDockerArtifactVersions(nexusConfig1, REPOSITORY, null, ARTIFACT,
-                               RepositoryFormat.docker.name(), Integer.MAX_VALUE))
+                           -> nexusClient.getDockerArtifactVersions(
+                               nexusConfig1, REPOSITORY, null, ARTIFACT, RepositoryFormat.docker.name()))
         .isInstanceOf(HintException.class);
 
     NexusRequest nexusConfig2 = NexusRequest.builder()
@@ -451,8 +451,8 @@ public class NexusClientImplTest extends CategoryTest {
         .when(nexusThreeService)
         .getArtifactsVersions(nexusConfig2, REPOSITORY, null, ARTIFACT, RepositoryFormat.docker.name());
 
-    List<BuildDetailsInternal> response = nexusClient.getDockerArtifactVersions(
-        nexusConfig2, REPOSITORY, null, ARTIFACT, RepositoryFormat.docker.name(), Integer.MAX_VALUE);
+    List<BuildDetailsInternal> response =
+        nexusClient.getDockerArtifactVersions(nexusConfig2, REPOSITORY, null, ARTIFACT, RepositoryFormat.docker.name());
 
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(3);
@@ -472,8 +472,8 @@ public class NexusClientImplTest extends CategoryTest {
                                     .build();
 
     assertThatThrownBy(()
-                           -> nexusClient.getDockerArtifactVersions(nexusConfig1, REPOSITORY, null, ARTIFACT,
-                               RepositoryFormat.docker.name(), Integer.MAX_VALUE))
+                           -> nexusClient.getDockerArtifactVersions(
+                               nexusConfig1, REPOSITORY, null, ARTIFACT, RepositoryFormat.docker.name()))
         .isInstanceOf(HintException.class);
 
     NexusRequest nexusConfig2 = NexusRequest.builder()
@@ -491,7 +491,7 @@ public class NexusClientImplTest extends CategoryTest {
 
     try {
       List<BuildDetailsInternal> response = nexusClient.getDockerArtifactVersions(
-          nexusConfig2, REPOSITORY, null, ARTIFACT, RepositoryFormat.docker.name(), Integer.MAX_VALUE);
+          nexusConfig2, REPOSITORY, null, ARTIFACT, RepositoryFormat.docker.name());
     } catch (NexusRegistryException | HintException ex) {
       assertThat(ex).isInstanceOf(NexusRegistryException.class);
     }
@@ -513,8 +513,7 @@ public class NexusClientImplTest extends CategoryTest {
     when(nexusThreeService.getPackageVersions(nexusConfig2, REPOSITORY, null)).thenThrow(NexusRegistryException.class);
 
     try {
-      nexusClient.getDockerArtifactVersions(
-          nexusConfig2, REPOSITORY, null, ARTIFACT, RepositoryFormat.docker.name(), Integer.MAX_VALUE);
+      nexusClient.getDockerArtifactVersions(nexusConfig2, REPOSITORY, null, ARTIFACT, RepositoryFormat.docker.name());
     } catch (NexusRegistryException | HintException ex) {
       assertThat(ex).isInstanceOf(NexusRegistryException.class);
     }

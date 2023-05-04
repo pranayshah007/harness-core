@@ -105,7 +105,7 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
   @Override
   public void handleAbort(
       Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    containerStepCleanupHelper.sendCleanupRequest(ambiance);
+    // Do Nothing
   }
 
   @Override
@@ -129,7 +129,6 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
   @Override
   public StepResponse handleAsyncResponse(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    containerStepCleanupHelper.sendCleanupRequest(ambiance);
     StepResponse.StepOutcome outcome = produceOutcome(ambiance, stepParameters);
     return containerStepExecutionResponseHelper.handleAsyncResponseInternal(ambiance, responseDataMap, outcome);
   }

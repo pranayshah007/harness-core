@@ -125,6 +125,8 @@ public final class HelmConstants {
     public static final String HELM_CACHE_HOME_PATH = "${HELM_CACHE_HOME}/repo-${REPO_NAME}";
     public static final String HELM_CHART_VERSION_FLAG = " --version ${CHART_VERSION}";
     public static final String HELM_REPO_ADD_FORCE_UPDATE = " --force-update";
+    public static final String REGISTRY_CONFIG_SUFFIX = "--registry-config ${REGISTRY_CONFIG}";
+    public static final String REGISTRY_CONFIG = "${REGISTRY_CONFIG}";
 
     private V3Commands() {
       throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");

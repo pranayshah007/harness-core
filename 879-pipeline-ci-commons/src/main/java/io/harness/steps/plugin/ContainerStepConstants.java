@@ -15,4 +15,6 @@ public interface ContainerStepConstants {
   long DEFAULT_TIMEOUT = Duration.ofHours(2).toMillis();
   String CONTAINER_STEP_OUTCOME = "containerStepOutcome";
   String CONTAINER_EXECUTION_CONFIG = "ContainerExecutionConfig";
+
+  String PLUGIN = "plugin";
 }

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-service
+  namespace: {{ .Release.Namespace }}
+data:
+  LOG_SERVICE_S3_BUCKET: {{ .Values.s3.bucketName }}
+  LOG_SERVICE_S3_REGION: {{ .Values.s3.region }}
+  {{- if .Values.s3.endpoint }}
+  LOG_SERVICE_S3_ENDPOINT: {{ .Values.s3.endpoint | default .Values.s3.defaultMinioUrl }}
+  {{- else }}
+  LOG_SERVICE_S3_ENDPOINT: 'http://minio.{{ .Release.Namespace }}.svc.cluster.local:9000'
+  {{- end }}
+  LOG_SERVICE_S3_PATH_STYLE: "true"
+  LOG_SERVICE_DISABLE_AUTH: "true"
+  LOG_SERVICE_GLOBAL_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
+  LOG_SERVICE_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM

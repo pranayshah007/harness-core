@@ -15,7 +15,7 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.PipelineVersion;
-import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.container.ContainerStepSpecTypeConstants;
 import io.harness.steps.plugin.ContainerStepNode;
 
 import java.util.Collections;
@@ -32,7 +32,7 @@ public class ContainerStepPlanCreator extends AbstractContainerStepPlanCreator<C
 
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
-    return Collections.singletonMap(STEP, Collections.singleton(StepSpecTypeConstants.CONTAINER_STEP));
+    return Collections.singletonMap(STEP, Collections.singleton(ContainerStepSpecTypeConstants.CONTAINER_STEP));
   }
 
   @Override

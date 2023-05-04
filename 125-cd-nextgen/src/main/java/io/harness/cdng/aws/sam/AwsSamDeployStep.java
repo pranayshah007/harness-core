@@ -24,6 +24,7 @@ import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AwsSamDeployStep extends AbstractContainerStepV2<StepElementParameters> {
   @Inject Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
+
+  @Inject AwsSamStepHelper awsSamStepHelper;
+
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.AWS_SAM_DEPLOY.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -51,14 +55,17 @@ public class AwsSamDeployStep extends AbstractContainerStepV2<StepElementParamet
   public UnitStep getSerialisedStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId,
       String logKey, long timeout, String parkedTaskId) {
     // Todo: Add entrypoint
-    //    AwsSamBuildStepParameters awsSamBuildStepParameters = (AwsSamBuildStepParameters)
-    //    stepElementParameters.getSpec(); stepElementParameters.getSpec();
-    // todo: add env variable and image and entrypoint
+    AwsSamDeployStepParameters awsSamDeployStepParameters =
+        (AwsSamDeployStepParameters) stepElementParameters.getSpec();
+
+    // Check if image exists
+    awsSamStepHelper.verifyPluginImageIsProvider(awsSamDeployStepParameters.getImage());
+
     return ContainerUnitStepUtils.serializeStepWithStepParameters(
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
         stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
-        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, Collections.emptyMap(), "",
-        Collections.EMPTY_LIST);
+        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, new HashMap<>(),
+        awsSamDeployStepParameters.getImage().getValue(), Collections.EMPTY_LIST);
   }
 
   @Override

@@ -32,6 +32,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SortOrder;
+import io.harness.beans.SortOrder.OrderType;
 import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
 import io.harness.connector.ConnectorCatalogueResponseDTO;
 import io.harness.connector.ConnectorCategory;
@@ -41,6 +42,7 @@ import io.harness.connector.ConnectorRegistryFactory;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.accesscontrol.ResourceTypes;
+import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.helper.ConnectorRbacHelper;
 import io.harness.connector.services.ConnectorHeartbeatService;
 import io.harness.connector.services.ConnectorService;
@@ -291,7 +293,7 @@ public class ConnectorResource {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
     if (isEmpty(pageRequest.getSortOrders())) {
-      SortOrder order = SortOrder.Builder.aSortOrder().withField("lastModifiedAt", SortOrder.OrderType.DESC).build();
+      SortOrder order = SortOrder.Builder.aSortOrder().withField(ConnectorKeys.lastModifiedAt, OrderType.DESC).build();
       pageRequest.setSortOrders(List.of(order));
     }
     return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(accountIdentifier, connectorListFilter,
@@ -336,7 +338,7 @@ public class ConnectorResource {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
     if (isEmpty(pageRequest.getSortOrders())) {
-      SortOrder order = SortOrder.Builder.aSortOrder().withField("lastModifiedAt", SortOrder.OrderType.DESC).build();
+      SortOrder order = SortOrder.Builder.aSortOrder().withField(ConnectorKeys.lastModifiedAt, OrderType.DESC).build();
       pageRequest.setSortOrders(List.of(order));
     }
     return ResponseDTO.newResponse(getNGPageResponse(connectorService.listCcmK8S(accountIdentifier, connectorListFilter,

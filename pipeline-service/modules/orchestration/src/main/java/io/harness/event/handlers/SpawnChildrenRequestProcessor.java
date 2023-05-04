@@ -30,19 +30,20 @@ import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.contracts.execution.events.SpawnChildrenRequest;
-import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.PostExecutionRollbackInfo;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.utils.ExecutionModeUtils;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
@@ -94,7 +95,7 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
           nodeExecutionId);
       List<PostExecutionRollbackInfo> postExecutionRollbackInfos =
           ambiance.getMetadata().getPostExecutionRollbackInfoList();
-      Map<String, StrategyMetadata> strategyMetadataMap = new HashMap<>();
+      Multimap<String, StrategyMetadata> strategyMetadataMap = HashMultimap.create();
       postExecutionRollbackInfos.forEach(
           o -> strategyMetadataMap.put(o.getPostExecutionRollbackStageId(), o.getRollbackStageStrategyMetadata()));
       String parentNodeId = AmbianceUtils.obtainCurrentSetupId(ambiance);
@@ -103,11 +104,11 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
         String uuid = childrenIds.get(currentChild);
         StrategyMetadata strategyMetadata = child.hasStrategyMetadata() ? child.getStrategyMetadata() : null;
 
-        if (ambiance.getMetadata().getExecutionMode() == ExecutionMode.POST_EXECUTION_ROLLBACK) {
+        if (ExecutionModeUtils.isRollbackMode(ambiance.getMetadata().getExecutionMode())) {
           // If the parentNodeId is present in the list of stages being rolledBack. Then initiate the child only if its
           // strategyMetadata matches the strategyMetadata of stage being rolledBack.
           if (strategyMetadataMap.containsKey(parentNodeId)
-              && !strategyMetadataMap.get(parentNodeId).equals(child.getStrategyMetadata())) {
+              && !strategyMetadataMap.get(parentNodeId).contains(child.getStrategyMetadata())) {
             continue;
           }
         }

@@ -137,6 +137,8 @@ public class DashboardServiceHelper {
               .lastPlanExecutionId(activeServiceInstanceInfo.getLastPipelineExecutionId())
               .pipelineIdentifier(activeServiceInstanceInfo.getLastPipelineExecutionName())
               .stageNodeExecutionId(activeServiceInstanceInfo.getStageNodeExecutionId())
+              .stageSetupId(activeServiceInstanceInfo.getStageSetupId())
+              .rollbackStatus(activeServiceInstanceInfo.getRollbackStatus())
               .lastDeployedAt(activeServiceInstanceInfo.getLastDeployedAt())
               .count(activeServiceInstanceInfo.getCount())
               .artifact(activeServiceInstanceInfo.getDisplayName())

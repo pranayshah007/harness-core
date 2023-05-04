@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -36,8 +37,10 @@ import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.ApprovalStepNGException;
 import io.harness.exception.HarnessJiraException;
 import io.harness.jira.JiraIssueNG;
+import io.harness.logging.LogLevel;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
@@ -52,6 +55,9 @@ import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.LogColor;
+import software.wings.beans.LogHelper;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.After;
@@ -61,6 +67,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -73,6 +80,7 @@ public class JiraApprovalCallbackTest extends CategoryTest {
   @Mock private KryoSerializer kryoSerializer;
   @Mock private KryoSerializer referenceFalseKryoSerializer;
   private static String approvalInstanceId = "approvalInstanceId";
+  private static String issueKey = "issueKey";
   @Mock ILogStreamingStepClient iLogStreamingStepClient;
   @Mock NGErrorHelper ngErrorHelper;
   @InjectMocks private JiraApprovalCallback jiraApprovalCallback;
@@ -186,12 +194,31 @@ public class JiraApprovalCallbackTest extends CategoryTest {
 
     doReturn(JiraTaskNGResponse.builder().build()).when(referenceFalseKryoSerializer).asInflatedObject(any());
     jiraApprovalCallback.push(response);
-    // To test case of error in kryo serialization
+
+    // To test case of error in kryo serialization; also validate that in such case log callback
+    // is called with a non-terminal command execution status
     doReturn(ErrorNotifyResponseData.builder().build()).when(referenceFalseKryoSerializer).asInflatedObject(any());
-    jiraApprovalCallback.push(response);
+
+    try (MockedConstruction<NGLogCallback> mocked = mockConstruction(NGLogCallback.class)) {
+      jiraApprovalCallback.push(response);
+      NGLogCallback logCallback = mocked.constructed().get(0);
+      verify(logCallback).saveExecutionLog(any(), eq(LogLevel.ERROR));
+    }
+
     // To throw exception while casting the response to ResponseData and catch the exception
     doReturn(null).when(referenceFalseKryoSerializer).asInflatedObject(any());
     jiraApprovalCallback.push(response);
+
+    // Case when issue key is invalid
+    instance.setDeadline(Long.MAX_VALUE);
+    doReturn(JiraTaskNGResponse.builder().build()).when(referenceFalseKryoSerializer).asInflatedObject(any());
+    try (MockedConstruction<NGLogCallback> mocked = mockConstruction(NGLogCallback.class)) {
+      jiraApprovalCallback.push(response);
+      NGLogCallback logCallback = mocked.constructed().get(0);
+      verify(logCallback)
+          .saveExecutionLog(
+              LogHelper.color(String.format("Invalid issue key: %s", issueKey), LogColor.Red), LogLevel.ERROR);
+    }
   }
 
   @Test
@@ -267,6 +294,7 @@ public class JiraApprovalCallbackTest extends CategoryTest {
             .build();
     instance.setAmbiance(ambiance);
     instance.setType(ApprovalType.JIRA_APPROVAL);
+    instance.setIssueKey(issueKey);
     return instance;
   }
 

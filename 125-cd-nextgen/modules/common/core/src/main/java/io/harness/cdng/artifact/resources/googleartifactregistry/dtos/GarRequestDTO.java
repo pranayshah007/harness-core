@@ -24,13 +24,13 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GarRequestDTO {
   /** Pass to get the build number*/
-  String tag;
+  String version;
 
   /** Pass to get the last successful build matching this regex.*/
-  String tagRegex;
+  String versionRegex;
 
   /** List of tags to get the labels for.*/
-  List<String> tagsList;
+  List<String> versionList;
 
   /** Runtime input Yaml for expression resolution.*/
   String runtimeInputYaml;

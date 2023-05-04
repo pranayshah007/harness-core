@@ -36,6 +36,7 @@ import io.harness.common.NGTimeConversionHelper;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.dto.PollingResponseDTO;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -77,12 +78,14 @@ import io.harness.ngtriggers.events.TriggerDeleteEvent;
 import io.harness.ngtriggers.events.TriggerUpdateEvent;
 import io.harness.ngtriggers.helpers.TriggerCatalogHelper;
 import io.harness.ngtriggers.helpers.TriggerHelper;
+import io.harness.ngtriggers.helpers.TriggerSetupUsageHelper;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.mapper.TriggerFilterHelper;
 import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.ngtriggers.service.NGTriggerWebhookRegistrationService;
 import io.harness.ngtriggers.service.NGTriggerYamlSchemaService;
 import io.harness.ngtriggers.utils.PollingSubscriptionHelper;
+import io.harness.ngtriggers.utils.TriggerReferenceHelper;
 import io.harness.ngtriggers.validations.TriggerValidationHandler;
 import io.harness.ngtriggers.validations.ValidationResult;
 import io.harness.outbox.api.OutboxService;
@@ -175,6 +178,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   private final PmsFeatureFlagService pmsFeatureFlagService;
   private final BuildTriggerHelper validationHelper;
   private final NGTriggerYamlSchemaService ngTriggerYamlSchemaService;
+  private final TriggerReferenceHelper triggerReferenceHelper;
+  private final TriggerSetupUsageHelper triggerSetupUsageHelper;
   private static final String TRIGGER = "trigger";
   private static final String INPUT_YAML = "inputYaml";
 
@@ -192,6 +197,15 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       performPostUpsertFlow(savedNgTriggerEntity, false);
       outboxService.save(new TriggerCreateEvent(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
           ngTriggerEntity.getProjectIdentifier(), savedNgTriggerEntity));
+      try {
+        List<EntityDetailProtoDTO> referredEntities = triggerReferenceHelper.getReferences(
+            ngTriggerEntity.getAccountId(), ngTriggerElementMapper.toTriggerConfigV2(ngTriggerEntity));
+        triggerSetupUsageHelper.publishSetupUsageEvent(ngTriggerEntity, referredEntities);
+      } catch (Exception ex) {
+        log.error("Error publishing the setup usages for the trigger with the identifier {}, in project {} in org {}",
+            ngTriggerEntity.getAccountId(), ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getOrgIdentifier(),
+            ex);
+      }
       return savedNgTriggerEntity;
     } catch (DuplicateKeyException e) {
       throw new DuplicateFieldException(
@@ -365,6 +379,15 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     NGTriggerEntity updatedTriggerEntity = updateTriggerEntity(ngTriggerEntity, criteria);
     outboxService.save(new TriggerUpdateEvent(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
         ngTriggerEntity.getProjectIdentifier(), updatedTriggerEntity, ngTriggerEntity));
+    try {
+      List<EntityDetailProtoDTO> referredEntities = triggerReferenceHelper.getReferences(
+          updatedTriggerEntity.getAccountId(), ngTriggerElementMapper.toTriggerConfigV2(updatedTriggerEntity));
+      triggerSetupUsageHelper.publishSetupUsageEvent(updatedTriggerEntity, referredEntities);
+    } catch (Exception ex) {
+      log.error("Error publishing the setup usages for the trigger with the identifier {} in project {} in org {}",
+          updatedTriggerEntity.getIdentifier(), updatedTriggerEntity.getProjectIdentifier(),
+          updatedTriggerEntity.getOrgIdentifier(), ex);
+    }
     return updatedTriggerEntity;
   }
 
@@ -424,6 +447,14 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         log.info("Submitting unsubscribe request after delete for Trigger :"
             + TriggerHelper.getTriggerRef(foundTriggerEntity));
         submitUnsubscribeAsync(foundTriggerEntity);
+        try {
+          triggerSetupUsageHelper.deleteExistingSetupUsages(foundTriggerEntity);
+        } catch (Exception ex) {
+          log.error(
+              "Error while deleting the setup usages for the trigger with the identifier {} in project {} in org {}",
+              foundTriggerEntity.getIdentifier(), foundTriggerEntity.getProjectIdentifier(),
+              foundTriggerEntity.getOrgIdentifier(), ex);
+        }
       }
     }
     return true;
@@ -810,7 +841,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
                     + "in the pipeline yaml, but the trigger has it as " + value.toString());
           }
         } else {
-          String error = validateStaticValues(templateValue, value);
+          String error = validateStaticValues(templateValue, value, key.getExpressionFqn());
           if (isNotEmpty(error)) {
             errorMap.put(key, error);
           }
@@ -911,7 +942,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       if (!validationResult.isSuccess()) {
         ngTriggerEntity.setEnabled(false);
       }
-      return updateTriggerWithValidationStatus(ngTriggerEntity, validationResult);
+      return updateTriggerWithValidationStatus(ngTriggerEntity, validationResult, false);
     } catch (Exception e) {
       log.error(String.format("Failed in trigger validation for Trigger: %s", ngTriggerEntity.getIdentifier()), e);
     }
@@ -923,7 +954,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   failure in Polling, etc
    */
   public NGTriggerEntity updateTriggerWithValidationStatus(
-      NGTriggerEntity ngTriggerEntity, ValidationResult validationResult) {
+      NGTriggerEntity ngTriggerEntity, ValidationResult validationResult, boolean whileExecution) {
     String identifier = ngTriggerEntity.getIdentifier();
     Criteria criteria = getTriggerEqualityCriteriaWithoutDbVersion(ngTriggerEntity, false);
     boolean needsUpdate = false;
@@ -947,7 +978,9 @@ public class NGTriggerServiceImpl implements NGTriggerService {
                                                                  .statusResult(StatusResult.FAILED)
                                                                  .detailedMessage(validationResult.getMessage())
                                                                  .build());
-      ngTriggerEntity.setEnabled(false);
+      if (!whileExecution) {
+        ngTriggerEntity.setEnabled(false);
+      }
       needsUpdate = true;
     }
 
@@ -1015,7 +1048,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
             toUpdateTriggerPipelineFQNToValueMap.put(key, templateValue);
           } else {
             // If key is variable value, validate its value type
-            String error = validateStaticValues(templateValue, triggerValue);
+            String error = validateStaticValues(templateValue, triggerValue, key.getExpressionFqn());
             if (isNotEmpty(error)) {
               // Replace by empty variable value if validation fails (user will need to provide the value)
               toUpdateTriggerPipelineFQNToValueMap.put(key, "");

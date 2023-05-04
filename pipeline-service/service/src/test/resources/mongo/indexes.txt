@@ -6,6 +6,7 @@
 approvalInstances {"name": "nodeExecutionId_1", "background": true} {"nodeExecutionId": 1}
 approvalInstances {"name": "status_deadline", "background": true} {"status": 1, "deadline": 1}
 approvalInstances {"name": "status_type_nextIteration", "background": true} {"status": 1, "type": 1, "nextIteration": -1}
+approvalInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 barrierExecutionInstances {"name": "createdAt_1", "background": true} {"createdAt": 1}
 barrierExecutionInstances {"name": "next_iteration_idx", "background": true} {"barrierState": 1, "nextIteration": 1}
 barrierExecutionInstances {"name": "planExecutionId_barrierState_stagesIdentifier_idx", "background": true} {"planExecutionId": 1, "barrierState": 1, "setupInfo.stages.identifier": 1}

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ngtriggers.Constants.ARTIFACT_BUILD_EXPR;
 import static io.harness.ngtriggers.Constants.ARTIFACT_EXPR;
+import static io.harness.ngtriggers.Constants.ARTIFACT_METADATA_EXPR;
 import static io.harness.ngtriggers.Constants.ARTIFACT_TYPE;
 import static io.harness.ngtriggers.Constants.BASE_COMMIT_SHA;
 import static io.harness.ngtriggers.Constants.BRANCH;
@@ -130,6 +131,7 @@ public class TriggerHelper {
     if (triggerPayload.hasArtifactData()) {
       // <+trigger.artifact.build>
       map.put(ARTIFACT_BUILD_EXPR, triggerPayload.getArtifactData().getBuild());
+      map.put(ARTIFACT_METADATA_EXPR, triggerPayload.getArtifactData().getMetadataMap());
       jsonObject.put(TYPE, ARTIFACT_TYPE);
       jsonObject.remove(SOURCE_TYPE);
       jsonObject.put(ARTIFACT_EXPR, map);

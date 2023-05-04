@@ -1289,12 +1289,12 @@ public class TerraformStepHelper {
     cdStepHelper.validateManifest(storeKind, connectorDTO, validationMessage);
   }
 
-  public void validateSecretManager(
-      Ambiance ambiance, String accountId, String orgIdentifier, String projectIdentifier, String secretManagerRef) {
+  public void validateSecretManager(Ambiance ambiance, IdentifierRef identifierRef) {
     if (cdFeatureFlagHelper.isEnabled(
             AmbianceUtils.getAccountId(ambiance), CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN)) {
       boolean isSecretManagerReadOnly =
-          ngEncryptedDataService.isSecretManagerReadOnly(accountId, orgIdentifier, projectIdentifier, secretManagerRef);
+          ngEncryptedDataService.isSecretManagerReadOnly(identifierRef.getAccountIdentifier(),
+              identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
       if (isSecretManagerReadOnly) {
         throw new InvalidRequestException(
             "Please configure a secret manager which allows to store terraform plan as a secret. Read-only secret manager is not allowed.");

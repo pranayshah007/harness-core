@@ -439,18 +439,18 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
 
   @Override
   public List<StepExpressionFunctor> getExpressionFunctor(
-      WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
+      WorkflowMigrationContext migrationContext, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
     String sweepingOutputName = "terraform";
     return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
         .stream()
         .map(exp
             -> StepOutput.builder()
                    .stageIdentifier(
-                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
-                   .stepIdentifier(
-                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
-                   .stepGroupIdentifier(
-                       MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
+                       MigratorUtility.generateIdentifier(phase.getName(), migrationContext.getIdentifierCaseFormat()))
+                   .stepIdentifier(MigratorUtility.generateIdentifier(
+                       graphNode.getName(), migrationContext.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(MigratorUtility.generateIdentifier(
+                       phaseStep.getName(), migrationContext.getIdentifierCaseFormat()))
                    .expression(exp)
                    .build())
         .map(TerraformStepFunctor::new)

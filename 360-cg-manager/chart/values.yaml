@@ -1,0 +1,262 @@
+# Default values for harness-manager
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  loadbalancerURL: ""
+  database:
+    postgres:
+      ## - installed = true if installed within cluster
+      installed: true
+      ## - protocol to use for connection
+      protocol: postgres
+      ## - host array for external
+      hosts:
+        - postgres:5432
+      ## - secret name containing external values
+      secretName: ""
+      ## - key within secret containing username
+      userKey: ""
+      ## - key within secret containing password
+      passwordKey: ""
+      ## - extra arguments set to connection string
+      extraArgs: ""
+    mongo:
+      installed: true
+      protocol: mongodb
+      # --  provide default values if mongo.installed is set to false
+      hosts: []
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
+      extraArgs: ""
+    timescaledb:
+      installed: true
+      protocol: "jdbc:postgresql"
+      # --  provide default values if mongo.installed is set to false
+      hosts:
+        - timescaledb-single-chart:5432
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
+      extraArgs: ""
+  mongoSSL: false
+  license:
+    cg: ''
+    ng: ''
+  cd:
+    enabled: false
+  ci:
+    enabled: false
+  sto:
+    enabled: false
+  srm:
+    enabled: false
+  ngcustomdashboard:
+    enabled: false
+  ff:
+    enabled: false
+  ccm:
+    enabled: false
+  saml:
+    autoaccept: false
+  gitops:
+    enabled: false
+  opa:
+    enabled: false
+  ng:
+    enabled: true
+  cg:
+    enabled: false
+  ngGitSync:
+    enabled: false
+  chaos:
+    enabled: false
+  useImmutableDelegate: "false"
+  smtpCreateSecret:
+    enabled: false
+    SMTP_PASSWORD: ""
+    SMTP_HOST: ""
+    SMTP_USERNAME: ""
+    SMTP_USE_SSL: "true"
+    SMTP_PORT: "465"
+  ingress:
+    # -- create ingress objects
+    enabled: false
+    # -- set ingress object classname
+    className: harness
+    # -- set host of ingressObjects
+    hosts:
+      - my-host.example.org
+    # -- set tls for ingress objects
+    tls:
+      enabled: true
+      secretName: ''
+    # -- add annotations to ingress objects
+    objects:
+      annotations: {}
+  istio:
+    # -- create virtualServices objects
+    enabled: false
+    # -- create gateway and use in virtualservice
+    gateway:
+      create: false
+    # -- if gateway not created, use specified gateway and host
+    virtualService:
+      gateways:
+      hosts:
+
+replicaCount: 1
+maxSurge: 1
+maxUnavailable: 0
+
+image:
+  registry: docker.io
+  repository: harness/manager-signed
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "77126"
+  digest: ""
+  imagePullSecrets: []
+
+waitForInitContainer:
+  image:
+    registry: docker.io
+    repository: harness/helm-init-container
+    pullPolicy: IfNotPresent
+    tag: "latest"
+    digest: ""
+    imagePullSecrets: []
+
+initContainer:
+  image:
+    registry: docker.io
+    repository: busybox
+    pullPolicy: IfNotPresent
+    tag: latest
+    digest: ""
+
+mongoSecrets:
+  userName:
+    name: harness-secrets
+    key: mongodbUsername
+  password:
+    name: mongodb-replicaset-chart
+    key: mongodb-root-password
+
+timescaleSecret:
+  password:
+    name: harness-secrets
+    key: timescaledbPostgresPassword
+
+version: 1.0.76019
+
+delegate_docker_image:
+  image:
+    registry: docker.io
+    repository: harness/delegate
+    tag: latest
+    digest: ""
+
+immutable_delegate_docker_image:
+  image:
+    registry: docker.io
+    repository: harness/delegate
+    tag: 22.12.77617
+    digest: ""
+
+upgrader_docker_image:
+  image:
+    registry: docker.io
+    repository: harness/upgrader
+    tag: latest
+    digest: ""
+
+appLogLevel: INFO
+
+java:
+  memory: "2048"
+
+external_graphql_rate_limit: "500"
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "harness-default"
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext:
+  runAsUser: 65534
+  runAsNonRoot: true
+
+service:
+  type: ClusterIP
+  port: 9090
+  grpcport: 9879
+
+resources:
+  limits:
+    cpu: 2
+    memory: 8192Mi
+  requests:
+    cpu: 2
+    memory: 3000Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+### These flags are used by the helper function to create the FEATURES config value based off the global.<feature>.enabled boolean
+# -- Feature Flags
+featureFlags:
+  # -- Base flags for all modules
+  Base: "LDAP_SSO_PROVIDER,ASYNC_ARTIFACT_COLLECTION,JIRA_INTEGRATION,AUDIT_TRAIL_UI,GDS_TIME_SERIES_SAVE_PER_MINUTE,STACKDRIVER_SERVICEGUARD,BATCH_SECRET_DECRYPTION,TIME_SERIES_SERVICEGUARD_V2,TIME_SERIES_WORKFLOW_V2,CUSTOM_DASHBOARD,GRAPHQL,CV_FEEDBACKS,LOGS_V2_247,UPGRADE_JRE,LOG_STREAMING_INTEGRATION,NG_HARNESS_APPROVAL,GIT_SYNC_NG,NG_SHOW_DELEGATE,NG_CG_TASK_ASSIGNMENT_ISOLATION,CI_OVERVIEW_PAGE,AZURE_CLOUD_PROVIDER_VALIDATION_ON_DELEGATE,TERRAFORM_AWS_CP_AUTHENTICATION,NG_TEMPLATES,NEW_DEPLOYMENT_FREEZE,HELM_CHART_AS_ARTIFACT,RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION,WEBHOOK_TRIGGER_AUTHORIZATION,GITHUB_WEBHOOK_AUTHENTICATION,CUSTOM_MANIFEST,GIT_ACCOUNT_SUPPORT,AZURE_WEBAPP,PRUNE_KUBERNETES_RESOURCES,LDAP_GROUP_SYNC_JOB_ITERATOR,POLLING_INTERVAL_CONFIGURABLE,APPLICATION_DROPDOWN_MULTISELECT,USER_GROUP_AS_EXPRESSION,RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED,NG_TEMPLATE_GITX,ELK_HEALTH_SOURCE,NG_ENABLE_LDAP_CHECK,CVNG_METRIC_THRESHOLD,SRM_HOST_SAMPLING_ENABLE,SRM_ENABLE_HEALTHSOURCE_CLOUDWATCH_METRICS"
+  # -- NG Specific Feature Flags
+  NG: "ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM,NEXT_GEN_ENABLED,NEW_LEFT_NAVBAR_SETTINGS,SPG_SIDENAV_COLLAPSE"
+  # -- Disable OLD_GIT_SYNC if ngGitSync is enabled
+  OLDGITSYNC : "USE_OLD_GIT_SYNC"
+  # -- STO Feature Flags
+  CD: "CDNG_ENABLED"
+  # -- STO Feature Flags
+  CI: "CING_ENABLED,CI_INDIRECT_LOG_UPLOAD,CI_LE_STATUS_REST_ENABLED"
+  # -- STO Feature Flags
+  STO: "SECURITY,SECURITY_STAGE,STO_CI_PIPELINE_SECURITY,STO_API_V2"
+  # -- SRM Flags
+  SRM: "CVNG_ENABLED,ERROR_TRACKING_ENABLED"
+  # -- Custom Dashboard Flags
+  CDB: "NG_DASHBOARDS"
+  # -- AutoAccept Feature Flags
+  SAMLAutoAccept: "AUTO_ACCEPT_SAML_ACCOUNT_INVITES,PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES"
+  # -- FF Feature Flags
+  FF: "CFNG_ENABLED"
+  # -- CCM Feature Flags
+  CCM: "CENG_ENABLED,CCM_MICRO_FRONTEND,NODE_RECOMMENDATION_AGGREGATE"
+  # -- GitOps Feature Flags
+  GitOps: "GITOPS_ONPREM_ENABLED,CDS_SHOW_CREATE_PR,GITOPS_BYO_ARGO,ARGO_PHASE1,ARGO_PHASE2_MANAGED,CUSTOM_ARIFACT_NG,SERVICE_DASHBOARD_V2,OPTIMIZED_GIT_FETCH_FILES,MULTI_SERVICE_INFRA,ENV_GROUP,NG_SVC_ENV_REDESIGN,OPTIMIZED_GIT_FETCH_FILES,NG_GITOPS"
+  # -- Licensing flags
+  LICENSE: "NG_LICENSES_ENABLED,VIEW_USAGE_ENABLED"
+  # -- OPA
+  OPA: "OPA_PIPELINE_GOVERNANCE,OPA_FEATURE_GOVERNANCE,OPA_FF_GOVERNANCE"
+  # -- CHAOS Feature Flags
+  CHAOS: "CHAOS_ENABLED"
+  # -- Additional Feature Flag
+  ADDITIONAL: ""

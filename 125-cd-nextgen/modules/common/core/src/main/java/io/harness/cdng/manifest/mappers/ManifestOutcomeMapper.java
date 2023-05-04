@@ -14,6 +14,7 @@ import static io.harness.cdng.manifest.ManifestType.AsgScalingPolicy;
 import static io.harness.cdng.manifest.ManifestType.AsgScheduledUpdateGroupAction;
 import static io.harness.cdng.manifest.ManifestType.AwsLambdaFunctionAliasDefinition;
 import static io.harness.cdng.manifest.ManifestType.AwsLambdaFunctionDefinition;
+import static io.harness.cdng.manifest.ManifestType.AwsSamDirectory;
 import static io.harness.cdng.manifest.ManifestType.DeploymentRepo;
 import static io.harness.cdng.manifest.ManifestType.EcsScalableTargetDefinition;
 import static io.harness.cdng.manifest.ManifestType.EcsScalingPolicyDefinition;
@@ -44,6 +45,7 @@ import io.harness.cdng.manifest.yaml.AsgScheduledUpdateGroupActionManifestOutcom
 import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
 import io.harness.cdng.manifest.yaml.AwsLambdaAliasDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AwsLambdaDefinitionManifestOutcome;
+import io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome;
 import io.harness.cdng.manifest.yaml.DeploymentRepoManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsScalableTargetDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsScalingPolicyDefinitionManifestOutcome;
@@ -71,6 +73,7 @@ import io.harness.cdng.manifest.yaml.kinds.AsgScheduledUpdateGroupActionManifest
 import io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest;
 import io.harness.cdng.manifest.yaml.kinds.AwsLambdaDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.AwsLambdaFunctionAliasDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.AwsSamDirectoryManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalableTargetDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalingPolicyDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsServiceDefinitionManifest;
@@ -159,6 +162,8 @@ public class ManifestOutcomeMapper {
         return getAwsLambdaDefinitionManifestOutcome(manifestAttributes);
       case AwsLambdaFunctionAliasDefinition:
         return getAwsLambdaAliasDefinitionManifestOutcome(manifestAttributes);
+      case AwsSamDirectory:
+        return getAwsSamDirectoryManifestOutcome(manifestAttributes);
       case GoogleCloudFunctionGenOneDefinition:
         return getGoogleCloudFunctionGenOneDefinitionManifestOutcome(manifestAttributes);
       default:
@@ -413,6 +418,14 @@ public class ManifestOutcomeMapper {
       ManifestAttributes manifestAttributes) {
     AwsLambdaFunctionAliasDefinitionManifest attributes = (AwsLambdaFunctionAliasDefinitionManifest) manifestAttributes;
     return AwsLambdaAliasDefinitionManifestOutcome.builder()
+        .identifier(attributes.getIdentifier())
+        .store(attributes.getStoreConfig())
+        .build();
+  }
+
+  private AwsSamDirectoryManifestOutcome getAwsSamDirectoryManifestOutcome(ManifestAttributes manifestAttributes) {
+    AwsSamDirectoryManifest attributes = (AwsSamDirectoryManifest) manifestAttributes;
+    return AwsSamDirectoryManifestOutcome.builder()
         .identifier(attributes.getIdentifier())
         .store(attributes.getStoreConfig())
         .build();

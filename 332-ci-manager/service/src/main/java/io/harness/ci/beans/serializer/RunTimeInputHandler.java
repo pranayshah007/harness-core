@@ -24,12 +24,13 @@ import io.harness.beans.yaml.extended.TIBuildTool;
 import io.harness.beans.yaml.extended.TIDotNetBuildEnvName;
 import io.harness.beans.yaml.extended.TIDotNetVersion;
 import io.harness.beans.yaml.extended.TILanguage;
+import io.harness.beans.yaml.extended.TIPythonVersion;
 import io.harness.beans.yaml.extended.TISplitStrategy;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;
 import io.harness.beans.yaml.extended.platform.ArchType;
+import io.harness.ci.serializer.BaseRunTimeInputHandler;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.encryption.SecretRefData;
 import io.harness.exception.ngexception.CIStageExecutionUserException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.extended.ci.codebase.Build;
@@ -44,8 +45,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(CI)
-public class RunTimeInputHandler {
+public class RunTimeInputHandler extends BaseRunTimeInputHandler {
   public static String UNRESOLVED_PARAMETER = "UNRESOLVED_PARAMETER";
+
   public static boolean resolveGitClone(ParameterField<Boolean> cloneRepository) {
     if (cloneRepository == null || cloneRepository.isExpression() || cloneRepository.getValue() == null) {
       return true;
@@ -150,6 +152,14 @@ public class RunTimeInputHandler {
     }
   }
 
+  public static String resolvePythonVersion(ParameterField<TIPythonVersion> version) {
+    if (version == null || version.isExpression() || version.getValue() == null) {
+      return null;
+    } else {
+      return TIPythonVersion.fromString(version.fetchFinalValue().toString()).getYamlName();
+    }
+  }
+
   public static boolean resolveBooleanParameter(ParameterField<Boolean> booleanParameterField, Boolean defaultValue) {
     if (booleanParameterField == null || booleanParameterField.isExpression()
         || booleanParameterField.getValue() == null) {
@@ -243,21 +253,6 @@ public class RunTimeInputHandler {
     }
 
     return (String) parameterField.fetchFinalValue();
-  }
-
-  public static SecretRefData resolveSecretRefWithDefaultValue(String fieldName, String stepType, String stepIdentifier,
-      ParameterField<SecretRefData> parameterField, boolean isMandatory) {
-    if (parameterField == null || parameterField.getValue() == null) {
-      if (isMandatory) {
-        throw new CIStageExecutionUserException(
-            format("Failed to resolve mandatory field %s in step type %s with identifier %s", fieldName, stepType,
-                stepIdentifier));
-      } else {
-        return null;
-      }
-    }
-
-    return parameterField.getValue();
   }
 
   public static String resolveStringParameterWithDefaultValue(String fieldName, String stepType, String stepIdentifier,

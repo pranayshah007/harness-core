@@ -157,11 +157,23 @@ public class StatsCollectorImpl implements StatsCollector {
   boolean createStats(String accountId, Instant timestamp) {
     List<Instance> instances = null;
     try {
-      instances = dashboardStatisticsService.getAppInstancesForAccount(accountId, timestamp.toEpochMilli());
-      log.info("Fetched instances. Count: {}, Account: {}, Time: {}", instances.size(), accountId, timestamp);
+      InstanceStatsSnapshot stats;
+      int count = 0;
 
-      Mapper<Collection<Instance>, InstanceStatsSnapshot> instanceMapper = new InstanceMapper(timestamp, accountId);
-      InstanceStatsSnapshot stats = instanceMapper.map(instances);
+      if (dashboardStatisticsService.isInstanceConsumerEnabled(accountId)) {
+        InstanceMapperConsumer instanceMapper = new InstanceMapperConsumer(timestamp, accountId);
+        count = dashboardStatisticsService.consumeAppInstancesForAccount(
+            accountId, timestamp.toEpochMilli(), instanceMapper);
+        log.info("Fetched instances. Count: {}, Account: {}, Time: {}", count, accountId, timestamp);
+
+        stats = instanceMapper.map(null);
+      } else {
+        instances = dashboardStatisticsService.getAppInstancesForAccount(accountId, timestamp.toEpochMilli());
+        log.info("Fetched instances. Count: {}, Account: {}, Time: {}", instances.size(), accountId, timestamp);
+
+        Mapper<Collection<Instance>, InstanceStatsSnapshot> instanceMapper = new InstanceMapper(timestamp, accountId);
+        stats = instanceMapper.map(instances);
+      }
       boolean saved = statService.save(stats);
       if (!saved) {
         log.error("Error saving instance usage stats. AccountId: {}, Timestamp: {}", accountId, timestamp);

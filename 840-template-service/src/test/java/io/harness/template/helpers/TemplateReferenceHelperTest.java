@@ -10,11 +10,11 @@ package io.harness.template.helpers;
 import static io.harness.ng.core.template.TemplateEntityConstants.STAGE;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
-import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.ACCOUNT_ID;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.ORG_ID;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.PROJECT_ID;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.generateIdentifierRefWithUnknownScope;
+import static io.harness.template.resources.beans.NGTemplateConstants.STABLE_VERSION;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;

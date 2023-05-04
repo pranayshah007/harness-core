@@ -8,9 +8,9 @@
 package io.harness.template.services;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_REF;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_VERSION_LABEL;
+import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE;
+import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE_REF;
+import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE_VERSION_LABEL;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;

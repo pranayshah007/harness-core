@@ -40,5 +40,7 @@ public interface ActivityService {
 
   String upsert(Activity activity);
 
+  void saveActivityBucket(Activity activity);
+
   boolean deleteByMonitoredServiceIdentifier(MonitoredServiceParams monitoredServiceParams);
 }

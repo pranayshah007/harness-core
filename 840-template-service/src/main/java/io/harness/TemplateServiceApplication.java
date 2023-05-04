@@ -59,11 +59,11 @@ import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
 import io.harness.template.GenerateOpenApiSpecCommand;
 import io.harness.template.InspectCommand;
-import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.event.TemplateEventConsumerService;
 import io.harness.template.gitsync.TemplateEntityGitSyncHandler;
 import io.harness.template.migration.TemplateMigrationProvider;
+import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.remote.TokenClient;
@@ -112,7 +112,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
-import org.glassfish.jersey.server.model.Resource;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
 @Slf4j
@@ -256,9 +255,7 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
 
   private void registerResources(Environment environment, Injector injector) {
     for (Class<?> resource : getResourceClasses()) {
-      if (Resource.isAcceptable(resource)) {
-        environment.jersey().register(injector.getInstance(resource));
-      }
+      environment.jersey().register(injector.getInstance(resource));
     }
     environment.jersey().register(injector.getInstance(VersionInfoResource.class));
   }

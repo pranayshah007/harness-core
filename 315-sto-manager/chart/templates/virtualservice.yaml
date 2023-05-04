@@ -1,0 +1,34 @@
+{{- if .Values.global.istio.enabled }}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ include "sto-manager.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  gateways:
+    {{- if .Values.global.istio.gateway.create }}
+    - istio-system/public
+    {{- else }}
+    {{- range .Values.global.istio.virtualService.gateways }}
+    - {{ . }}
+    {{- end }}
+    {{- end }}
+  hosts:
+    {{- range .Values.global.istio.virtualService.hosts }}
+    - {{ . }}
+    {{- end }}
+  http:
+    - name: sto-manager
+    match:
+    - uri:
+        prefix: /sto-manager/
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        port:
+          number: 7090
+        host: sto-manager
+  {{ end }}

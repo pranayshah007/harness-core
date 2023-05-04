@@ -29,4 +29,5 @@ message CloudClusterConfig {
   string cluster_name = 1;
   string subscription_id = 2;
   string resource_group = 3;
+  bool use_cluster_admin_credentials = 4;
 }

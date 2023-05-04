@@ -9,7 +9,6 @@ package io.harness.template.services;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
-import static io.harness.template.resources.NGTemplateResource.TEMPLATE;
 
 import io.harness.NgAutoLogContextForMethod;
 import io.harness.accesscontrol.acl.api.Resource;
@@ -27,12 +26,12 @@ import io.harness.ng.core.template.refresh.ErrorNodeSummary;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.YamlDiffResponseDTO;
 import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
-import io.harness.template.beans.PermissionTypes;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntityGetResponse;
 import io.harness.template.helpers.TemplateInputsRefreshHelper;
 import io.harness.template.helpers.TemplateInputsValidator;
 import io.harness.template.mappers.NGTemplateDtoMapper;
+import io.harness.template.resources.beans.PermissionTypes;
 import io.harness.template.utils.TemplateUtils;
 
 import com.google.inject.Inject;
@@ -55,6 +54,8 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
   private TemplateInputsValidator templateInputsValidator;
 
   private AccessControlClient accessControlClient;
+
+  private static final String TEMPLATE = "TEMPLATE";
 
   @Override
   public void refreshAndUpdateTemplate(String accountId, String orgId, String projectId, String templateIdentifier,

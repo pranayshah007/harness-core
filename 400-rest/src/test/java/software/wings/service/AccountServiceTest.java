@@ -1695,8 +1695,9 @@ public class AccountServiceTest extends WingsBaseTest {
                           .withGlobalDelegateAccount(false)
                           .build();
     wingsPersistence.save(account);
-    assertThat(accountService.getAllAccounts().get(0).getDefaultExperience()).isEqualTo(DefaultExperience.CG);
-    assertThat(accountService.getAllAccounts().get(0).getCompanyName()).isEqualTo(HARNESS_NAME);
+    assertThat(accountService.listAccounts(0, 2).size()).isEqualTo(1);
+    assertThat(accountService.listAccounts(0, 2).getResponse().get(0).getCompanyName()).isEqualTo(HARNESS_NAME);
+    assertThat(accountService.listAccounts(1, 2).size()).isEqualTo(0);
   }
 
   @Test

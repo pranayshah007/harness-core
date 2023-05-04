@@ -8,10 +8,10 @@
 package io.harness.template.handler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.template.beans.NGTemplateConstants.IDENTIFIER;
-import static io.harness.template.beans.NGTemplateConstants.NAME;
-import static io.harness.template.beans.NGTemplateConstants.STAGES;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
+import static io.harness.template.resources.beans.NGTemplateConstants.IDENTIFIER;
+import static io.harness.template.resources.beans.NGTemplateConstants.NAME;
+import static io.harness.template.resources.beans.NGTemplateConstants.STAGES;
+import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE_INPUTS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ngexception.NGTemplateException;

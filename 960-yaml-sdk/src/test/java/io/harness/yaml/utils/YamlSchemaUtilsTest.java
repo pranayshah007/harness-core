@@ -260,7 +260,7 @@ public class YamlSchemaUtilsTest extends CategoryTest {
         yamlSchemaWithDetailsList, ModuleType.CD, Collections.singleton("FF1"),
         Collections.singletonMap("TEST1", true));
     oneOfNode = getOneOfNodeFromSchema(schema);
-    assertEquals(oneOfNode.size(), 2);
+    assertEquals(oneOfNode.size(), 1);
   }
 
   private String getResource(String resource) throws IOException {

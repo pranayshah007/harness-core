@@ -48,10 +48,13 @@ import static io.harness.delegate.message.MessageConstants.WATCHER_VERSION;
 import static io.harness.delegate.message.MessengerType.DELEGATE;
 import static io.harness.delegate.message.MessengerType.WATCHER;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_CONNECTED;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_DISCONNECTED;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.RESOURCE_CONSUMPTION_ABOVE_THRESHOLD;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_CURRENTLY_EXECUTING;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_IN_QUEUE;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_COMPLETED;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_EXECUTION_TIME;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_FAILED;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_REJECTED;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_TIMEOUT;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
 import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
@@ -309,7 +312,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private boolean delegateNg = isNotBlank(System.getenv().get("DELEGATE_SESSION_IDENTIFIER"))
       || (isNotBlank(System.getenv().get("NEXT_GEN")) && Boolean.parseBoolean(System.getenv().get("NEXT_GEN")));
   public static final String JAVA_VERSION = "java.version";
-  private final double RESOURCE_USAGE_THRESHOLD = 0.90;
+  public static final int DEFAULT_MAX_THRESHOLD = 80;
+  private final double RESOURCE_USAGE_THRESHOLD = isNotBlank(System.getenv().get("DELEGATE_RESOURCE_THRESHOLD"))
+      ? (Integer.parseInt(System.getenv().get("DELEGATE_RESOURCE_THRESHOLD")))
+      : DEFAULT_MAX_THRESHOLD;
+  private final boolean dynamicRequestHandling = isNotBlank(System.getenv().get("DYNAMIC_REQUEST_HANDLING"))
+      && Boolean.parseBoolean(System.getenv().get("DYNAMIC_REQUEST_HANDLING"));
   private String MANAGER_PROXY_CURL = System.getenv().get("MANAGER_PROXY_CURL");
   private String MANAGER_HOST_AND_PORT = System.getenv().get("MANAGER_HOST_AND_PORT");
   private static final String DEFAULT_PATCH_VERSION = "000";
@@ -625,9 +633,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       DelegateAgentCommonVariables.setDelegateId(delegateId);
       log.info("[New] Delegate registered in {} ms", clock.millis() - start);
       DelegateStackdriverLogAppender.setDelegateId(delegateId);
-      if (delegateConfiguration.isDynamicHandlingOfRequestEnabled()
-          && DeployMode.KUBERNETES.name().equals(System.getenv().get(DeployMode.DEPLOY_MODE))) {
-        // Enable dynamic throttling of requests only for kubernetes pod(s)
+      if (isImmutableDelegate && dynamicRequestHandling) {
+        // Enable dynamic throttling of requests only for immutable and FF enabled
         startDynamicHandlingOfTasks();
       }
 
@@ -736,6 +743,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           "Reached resource threshold, temporarily reject incoming task request. CurrentProcessRSSMB {} ThresholdMB {}",
           currentRSSMB, maxProcessRSSThresholdMB);
       rejectRequest.compareAndSet(false, true);
+      metricRegistry.recordGaugeValue(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME}, 1.0);
+      metricRegistry.registerCounterMetric(
+          TASK_REJECTED, new String[] {DELEGATE_NAME}, "Total number of task rejected");
       return;
     }
 
@@ -745,15 +755,28 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           "Reached resource threshold, temporarily reject incoming task request. CurrentPodRSSMB {} ThresholdMB {}",
           currentPodRSSMB, maxPodRSSThresholdMB);
       rejectRequest.compareAndSet(false, true);
+      metricRegistry.recordGaugeValue(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME}, 1.0);
+      metricRegistry.registerCounterMetric(
+          TASK_REJECTED, new String[] {DELEGATE_NAME}, "Total number of task rejected");
       return;
     }
     log.debug("Process info CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
         currentRSSMB, maxProcessRSSThresholdMB, currentPodRSSMB, maxPodRSSThresholdMB);
+    final double cpuLoad = getCPULoadAverage();
+    if (cpuLoad > RESOURCE_USAGE_THRESHOLD) {
+      log.warn("CPU consumption above threshold, {}%", BigDecimal.valueOf(cpuLoad));
+      rejectRequest.compareAndSet(false, true);
+      metricRegistry.recordGaugeValue(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME}, 1.0);
+      metricRegistry.registerCounterMetric(
+          TASK_REJECTED, new String[] {DELEGATE_NAME}, "Total number of task rejected");
+      return;
+    }
 
     if (rejectRequest.compareAndSet(true, false)) {
       log.info(
           "Accepting incoming task request. CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
           currentRSSMB, maxProcessRSSThresholdMB, currentPodRSSMB, maxPodRSSThresholdMB);
+      metricRegistry.recordGaugeValue(RESOURCE_CONSUMPTION_ABOVE_THRESHOLD, new String[] {DELEGATE_NAME}, 0.0);
     }
   }
 
@@ -841,17 +864,17 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void handleOpen(Object o) {
     log.info("Event:{}, message:[{}]", Event.OPEN.name(), o.toString());
-    metricRegistry.recordGaugeInc(DELEGATE_CONNECTED, new String[] {DELEGATE_NAME});
+    metricRegistry.recordGaugeValue(DELEGATE_CONNECTED, new String[] {DELEGATE_NAME}, 1.0);
   }
 
   private void handleClose(Object o) {
     log.info("Event:{}, trying to reconnect, message:[{}]", Event.CLOSE.name(), o);
-    metricRegistry.recordGaugeInc(DELEGATE_DISCONNECTED, new String[] {DELEGATE_NAME});
+    metricRegistry.recordGaugeValue(DELEGATE_CONNECTED, new String[] {DELEGATE_NAME}, 0.0);
   }
 
   private void handleError(final Exception e) {
     log.info("Event:{}", Event.ERROR.name(), e);
-    metricRegistry.recordGaugeInc(DELEGATE_DISCONNECTED, new String[] {DELEGATE_NAME});
+    metricRegistry.recordGaugeValue(DELEGATE_CONNECTED, new String[] {DELEGATE_NAME}, 0.0);
   }
 
   private void finalizeSocket() {
@@ -1437,8 +1460,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private void startDynamicHandlingOfTasks() {
     log.info("Starting dynamic handling of tasks tp {} ms", 1000);
     try {
-      maxProcessRSSThresholdMB = MemoryHelper.getProcessMaxMemoryMB() * RESOURCE_USAGE_THRESHOLD;
-      maxPodRSSThresholdMB = MemoryHelper.getPodMaxMemoryMB() * RESOURCE_USAGE_THRESHOLD;
+      maxProcessRSSThresholdMB = MemoryHelper.getProcessMaxMemoryMB() * RESOURCE_USAGE_THRESHOLD * 100;
+      maxPodRSSThresholdMB = MemoryHelper.getPodMaxMemoryMB() * RESOURCE_USAGE_THRESHOLD * 100;
 
       if (maxPodRSSThresholdMB < 1 || maxProcessRSSThresholdMB < 1) {
         log.error("Error while fetching memory information, will not enable dynamic handling of tasks");
@@ -1910,6 +1933,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     memoryUsage(builder, "non-heap-", memoryMXBean.getNonHeapMemoryUsage());
 
     return builder.build();
+  }
+
+  public double getCPULoadAverage() {
+    double loadAvg = ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage();
+    int cores = ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors();
+    return (loadAvg / cores) * 100;
   }
 
   private void logCurrentTasks() {
@@ -2728,7 +2757,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       for (int attempt = 0; attempt < retries; attempt++) {
         response = delegateAgentManagerClient.sendTaskStatus(delegateId, taskId, accountId, taskResponse).execute();
         if (response != null && response.code() >= 200 && response.code() <= 299) {
-          log.debug("Task {} response sent to manager", taskId);
+          log.debug("Task {} type {},  response sent to manager", taskId, taskResponse.getTaskTypeName());
+          metricRegistry.registerCounterMetric(TASK_COMPLETED,
+              new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()}, "Total number of task completed");
           break;
         }
         log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId,
@@ -2745,6 +2776,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
     } catch (IOException e) {
       log.error("Unable to send response to manager", e);
+      metricRegistry.registerCounterMetric(
+          TASK_FAILED, new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()}, "Total number of task failed");
     } finally {
       if (response != null && response.errorBody() != null && !response.isSuccessful()) {
         response.errorBody().close();
@@ -2765,9 +2798,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     DelegateTaskResponse taskResponse =
         DelegateTaskResponse.builder()
             .accountId(delegateTaskPackage.getAccountId())
+            .taskTypeName(delegateTaskPackage.getData().getTaskType())
             .responseCode(DelegateTaskResponse.ResponseCode.FAILED)
             .response(ErrorNotifyResponseData.builder().errorMessage(ExceptionUtils.getMessage(exception)).build())
             .build();
+    metricRegistry.registerCounterMetric(
+        TASK_FAILED, new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()}, "Total number of task failed");
     log.error("Sending error response for task{} due to exception", taskId, exception);
     try {
       Response<ResponseBody> resp;
