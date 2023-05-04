@@ -33,6 +33,7 @@ import io.harness.yaml.utils.JsonPipelineUtils;
 import software.wings.beans.template.Template;
 import software.wings.beans.template.artifactsource.ArtifactSourceTemplate;
 import software.wings.beans.template.artifactsource.CustomArtifactSourceTemplate;
+import software.wings.beans.template.artifactsource.CustomRepositoryMapping;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
@@ -82,11 +83,14 @@ public class CustomArtifactSourceTemplateService implements NgTemplateService {
                             .build()));
     }
 
+    CustomRepositoryMapping customRepositoryMapping = artifactSource.getCustomRepositoryMapping();
+    if (customRepositoryMapping == null) {
+      customRepositoryMapping = CustomRepositoryMapping.builder().artifactRoot("").buildNoPath(".").build();
+    }
     List<NGVariable> attributes = new ArrayList<>();
-    if (isNotEmpty(artifactSource.getCustomRepositoryMapping().getArtifactAttributes())) {
+    if (isNotEmpty(customRepositoryMapping.getArtifactAttributes())) {
       attributes =
-          artifactSource.getCustomRepositoryMapping()
-              .getArtifactAttributes()
+          customRepositoryMapping.getArtifactAttributes()
               .stream()
               .map(attribute
                   -> StringNGVariable.builder()
@@ -102,26 +106,26 @@ public class CustomArtifactSourceTemplateService implements NgTemplateService {
             .version(ParameterField.createValueField("<+input>"))
             .timeout(ParameterField.createValueField(Timeout.fromString(artifactSource.getTimeoutSeconds() + "s")))
             .inputs(inputs)
-            .scripts(CustomArtifactScripts.builder()
-                         .fetchAllArtifacts(FetchAllArtifacts.builder()
-                                                .artifactsArrayPath(ParameterField.createValueField(
-                                                    artifactSource.getCustomRepositoryMapping().getArtifactRoot()))
-                                                .versionPath(ParameterField.createValueField(
-                                                    artifactSource.getCustomRepositoryMapping().getBuildNoPath()))
-                                                .attributes(attributes)
-                                                .shellScriptBaseStepInfo(
-                                                    CustomArtifactScriptInfo.builder()
-                                                        .shell(ShellType.Bash)
-                                                        .source(CustomArtifactScriptSourceWrapper.builder()
-                                                                    .type("Inline")
-                                                                    .spec(CustomScriptInlineSource.builder()
-                                                                              .script(ParameterField.createValueField(
-                                                                                  artifactSource.getScript()))
-                                                                              .build())
-                                                                    .build())
-                                                        .build())
-                                                .build())
-                         .build())
+            .scripts(
+                CustomArtifactScripts.builder()
+                    .fetchAllArtifacts(
+                        FetchAllArtifacts.builder()
+                            .artifactsArrayPath(
+                                ParameterField.createValueField(customRepositoryMapping.getArtifactRoot()))
+                            .versionPath(ParameterField.createValueField(customRepositoryMapping.getBuildNoPath()))
+                            .attributes(attributes)
+                            .shellScriptBaseStepInfo(CustomArtifactScriptInfo.builder()
+                                                         .shell(ShellType.Bash)
+                                                         .source(CustomArtifactScriptSourceWrapper.builder()
+                                                                     .type("Inline")
+                                                                     .spec(CustomScriptInlineSource.builder()
+                                                                               .script(ParameterField.createValueField(
+                                                                                   artifactSource.getScript()))
+                                                                               .build())
+                                                                     .build())
+                                                         .build())
+                            .build())
+                    .build())
             .build();
     return JsonPipelineUtils.asTree(customArtifactConfig);
   }

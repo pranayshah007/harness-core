@@ -31,7 +31,9 @@ import io.harness.azure.utility.AzureUtils;
 import io.harness.exception.AzureServiceException;
 import io.harness.exception.ClusterNotFoundException;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.k8s.KubeConfigHelper;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -206,7 +208,9 @@ public class AzureDelegateHelperService {
       } else {
         log.error("Error occurred while getting Tags from subscriptionId : " + subscriptionId
             + " Response: " + response.raw());
-        throw new AzureServiceException(response.message(), AZURE_SERVICE_EXCEPTION, USER);
+        throw NestedExceptionUtils.hintWithExplanationException("Failed to list tags " + response.message(),
+            "Check if the permissions are scoped for the authenticated user",
+            new InvalidArtifactServerException(response.message(), USER));
       }
     } catch (Exception e) {
       handleAzureAuthenticationException(e);
@@ -227,7 +231,9 @@ public class AzureDelegateHelperService {
       } else {
         log.error("Error occurred while getting Tags from subscriptionId : " + subscriptionId
             + " Response: " + response.raw());
-        throw new AzureServiceException(response.message(), AZURE_SERVICE_EXCEPTION, USER);
+        throw NestedExceptionUtils.hintWithExplanationException("Failed to list tags " + response.message(),
+            "Check if the permissions are scoped for the authenticated user",
+            new InvalidArtifactServerException(response.message(), USER));
       }
     } catch (Exception e) {
       handleAzureAuthenticationException(e);
@@ -265,8 +271,9 @@ public class AzureDelegateHelperService {
       log.error("Error occurred while getting repositories from subscriptionId/registryName :" + subscriptionId + "/"
               + registryName,
           e);
-      throw new AzureServiceException(
-          "Failed to list repositories " + ExceptionUtils.getMessage(e), AZURE_SERVICE_EXCEPTION, USER);
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Failed to list repositories " + ExceptionUtils.getMessage(e),
+          "Check if the permissions are scoped for the authenticated user", e);
     }
   }
 
@@ -309,8 +316,9 @@ public class AzureDelegateHelperService {
       log.error("Error occurred while getting repositories from subscriptionId/registryName/repositoryName :"
               + subscriptionId + "/" + registryName + "/" + repositoryName,
           e);
-      throw new AzureServiceException(
-          "Failed to retrieve repository tags " + ExceptionUtils.getMessage(e), AZURE_SERVICE_EXCEPTION, USER);
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Failed to retrieve repository tags " + ExceptionUtils.getMessage(e),
+          "Check if the permissions are scoped for the authenticated user", e);
     }
   }
 
@@ -327,8 +335,9 @@ public class AzureDelegateHelperService {
           .getTags();
     } catch (Exception e) {
       log.error("Error occurred while getting Tags for Repository :" + registryHostName + "/" + repositoryName, e);
-      throw new AzureServiceException(
-          "Failed to retrieve repository tags " + ExceptionUtils.getMessage(e), AZURE_SERVICE_EXCEPTION, USER);
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Failed to retrieve repository tags " + ExceptionUtils.getMessage(e),
+          "Check if the permissions are scoped for the authenticated user", e);
     }
   }
 
