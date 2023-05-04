@@ -12,14 +12,12 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
-import io.harness.annotations.dev.HarnessTeam;
-import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType;
-import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
-import io.harness.gitsync.common.beans.GitlabSCM;
-import io.harness.gitsync.common.beans.GitlabSCM.GitlabSCMKeys;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessType;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketOAuthDTO;
+import io.harness.gitsync.common.beans.BitbucketSCM;
+import io.harness.gitsync.common.beans.BitbucketSCM.BitbucketSCMKeys;
 import io.harness.gitsync.common.beans.UserSourceCodeManager.UserSourceCodeManagerKeys;
-import io.harness.gitsync.common.mappers.GitlabSCMMapper;
+import io.harness.gitsync.common.mappers.BitbucketSCMMapper;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
@@ -36,10 +34,9 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 @Singleton
 @Slf4j
-@OwnedBy(HarnessTeam.PIPELINE)
-public class GitlabSCMOAuthTokenRefresher extends AbstractSCMOAuthTokenRefresher<GitlabSCM> {
+public class BitbucketSCMOAuthTokenRefresher extends AbstractSCMOAuthTokenRefresher<BitbucketSCM> {
   @Inject
-  public GitlabSCMOAuthTokenRefresher(
+  public BitbucketSCMOAuthTokenRefresher(
       PersistenceIteratorFactory persistenceIteratorFactory, MongoTemplate mongoTemplate) {
     this.persistenceIteratorFactory = persistenceIteratorFactory;
     this.mongoTemplate = mongoTemplate;
@@ -47,8 +44,8 @@ public class GitlabSCMOAuthTokenRefresher extends AbstractSCMOAuthTokenRefresher
 
   public void registerIterators(int threadPoolSize) {
     log.info("Register Enabled:{}, Frequency:{}, clientID:{}, clientSecret:{}", configuration.isOauthRefreshEnabled(),
-        configuration.getOauthRefreshFrequency(), configuration.getGitlabConfig().getClientId(),
-        configuration.getGitlabConfig().getClientSecret());
+        configuration.getOauthRefreshFrequency(), configuration.getBitbucketConfig().getClientId(),
+        configuration.getBitbucketConfig().getClientSecret());
 
     if (configuration.isOauthRefreshEnabled()) {
       SpringFilterExpander springFilterExpander = getFilterQuery();
@@ -59,10 +56,10 @@ public class GitlabSCMOAuthTokenRefresher extends AbstractSCMOAuthTokenRefresher
               .poolSize(threadPoolSize)
               .interval(ofSeconds(10))
               .build(),
-          GitlabSCM.class,
-          MongoPersistenceIterator.<GitlabSCM, SpringFilterExpander>builder()
-              .clazz(GitlabSCM.class)
-              .fieldName(GitlabSCMKeys.nextTokenRenewIteration)
+          BitbucketSCM.class,
+          MongoPersistenceIterator.<BitbucketSCM, SpringFilterExpander>builder()
+              .clazz(BitbucketSCM.class)
+              .fieldName(BitbucketSCMKeys.nextTokenRenewIteration)
               .targetInterval(ofMinutes(configuration.getOauthRefreshFrequency()))
               .acceptableExecutionTime(ofMinutes(1))
               .acceptableNoAlertDelay(ofMinutes(1))
@@ -74,35 +71,35 @@ public class GitlabSCMOAuthTokenRefresher extends AbstractSCMOAuthTokenRefresher
     }
   }
 
-  @Override
-  OAuthRef getOAuthDecrypted(GitlabSCM entity) {
-    GitlabOauthDTO gitlabOauthDTO =
-        (GitlabOauthDTO) GitlabSCMMapper.toApiAccessDTO(entity.getApiAccessType(), entity.getGitlabApiAccess())
-            .getSpec();
-    gitlabOauthDTO = (GitlabOauthDTO) getOAuthDecryptedInternal(gitlabOauthDTO, entity.getAccountIdentifier());
-    return OAuthRef.builder()
-        .tokenRef(gitlabOauthDTO.getTokenRef())
-        .refreshTokenRef(gitlabOauthDTO.getRefreshTokenRef())
-        .build();
-  }
-
   private SpringFilterExpander getFilterQuery() {
     return query -> {
       Criteria criteria = Criteria.where(UserSourceCodeManagerKeys.type)
-                              .is(SCMType.GITLAB)
-                              .and(GitlabSCMKeys.apiAccessType)
-                              .is(GitlabApiAccessType.OAUTH);
+                              .is(SCMType.BITBUCKET)
+                              .and(BitbucketSCMKeys.apiAccessType)
+                              .is(BitbucketApiAccessType.OAUTH);
 
       query.addCriteria(criteria);
     };
   }
 
   @Override
+  public OAuthRef getOAuthDecrypted(BitbucketSCM entity) {
+    BitbucketOAuthDTO bitbucketOAuthDTO =
+        (BitbucketOAuthDTO) BitbucketSCMMapper.toApiAccessDTO(entity.getApiAccessType(), entity.getBitbucketApiAccess())
+            .getSpec();
+    bitbucketOAuthDTO = (BitbucketOAuthDTO) getOAuthDecryptedInternal(bitbucketOAuthDTO, entity.getAccountIdentifier());
+    return OAuthRef.builder()
+        .tokenRef(bitbucketOAuthDTO.getTokenRef())
+        .refreshTokenRef(bitbucketOAuthDTO.getRefreshTokenRef())
+        .build();
+  }
+
+  @Override
   public OAuthConfig getOAuthConfig() {
     return OAuthConfig.builder()
-        .endpoint(OAuthConstants.GITLAB_ENDPOINT)
-        .clientSecret(configuration.getGitlabConfig().getClientSecret())
-        .clientId(configuration.getGitlabConfig().getClientId())
+        .endpoint(OAuthConstants.BITBUCKET_ENDPOINT)
+        .clientSecret(configuration.getBitbucketConfig().getClientSecret())
+        .clientId(configuration.getBitbucketConfig().getClientId())
         .build();
   }
 }

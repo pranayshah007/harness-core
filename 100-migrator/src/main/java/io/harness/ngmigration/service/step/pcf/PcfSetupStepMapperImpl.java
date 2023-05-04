@@ -30,6 +30,8 @@ import software.wings.sm.State;
 import software.wings.sm.states.pcf.PcfSetupState;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -93,14 +95,17 @@ public class PcfSetupStepMapperImpl extends PcfAbstractStepMapper {
     } else {
       TasCanaryAppSetupStepNode tasCanaryAppSetupStepNode = new TasCanaryAppSetupStepNode();
       baseSetup(state, tasCanaryAppSetupStepNode, context.getIdentifierCaseFormat());
-
+      ParameterField<List<String>> additionalRoutes = ParameterField.createValueField(Collections.emptyList());
+      if (state.getFinalRouteMap() != null) {
+        additionalRoutes =
+            ParameterField.createValueField(Arrays.stream(state.getFinalRouteMap()).collect(Collectors.toList()));
+      }
       TasCanaryAppSetupStepInfo tasCanaryAppSetupStepInfo =
           TasCanaryAppSetupStepInfo.infoBuilder()
               .resizeStrategy(ParameterField.createValueField(
                   state.getResizeStrategy() == DOWNSIZE_OLD_FIRST ? DOWNSCALE_OLD_FIRST : UPSCALE_NEW_FIRST))
               .instanceCountType(getInstanceCountType(state.isUseCurrentRunningCount()))
-              .additionalRoutes(
-                  ParameterField.createValueField(Arrays.stream(state.getFinalRouteMap()).collect(Collectors.toList())))
+              .additionalRoutes(additionalRoutes)
               .existingVersionToKeep(
                   new ParameterField(state.getOlderActiveVersionCountToKeep(), null, false, true, null, null, false))
               .delegateSelectors(MigratorUtility.getDelegateSelectors(state.getTags()))

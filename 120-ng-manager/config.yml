@@ -448,6 +448,11 @@ gitlabConfig:
   clientSecret: "1234"
   callbackUrl: "https://gitlab.com/oauth/token"
 
+bitbucketConfig:
+  clientId: "1234"
+  clientSecret: "1234"
+  callbackUrl: "https://bitbucket.com/oauth/token"
+
 basePathPrefix: ${BASE_PATH_PREFIX:-""}
 
 enforcementClientConfiguration:

@@ -41,6 +41,7 @@ import io.harness.waiter.WaitNotifyEngine;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import io.fabric8.utils.Strings;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -154,6 +155,10 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
   }
 
   public Integer getPort(Ambiance ambiance, String stepIdentifier) {
+    String stepGroupIdentifier = AmbianceUtils.obtainStepGroupIdentifier(ambiance);
+    if (Strings.isNotBlank(stepGroupIdentifier)) {
+      stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
+    }
     return containerPortHelper.getPort(ambiance, stepIdentifier);
   }
 

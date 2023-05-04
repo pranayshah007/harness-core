@@ -91,6 +91,7 @@ public class UserGroupMigrationService extends NgMigrationService {
   public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
       MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     UserGroupDTO userGroupDTO = ((UserGroupYamlDTO) yamlFile.getYaml()).getUserGroupDTO();
+    userGroupDTO.setAccountIdentifier(inputDTO.getDestinationAccountIdentifier());
     try {
       Response<ResponseDTO<UserGroupDTO>> resp =
           ngClient

@@ -140,6 +140,8 @@ public class MigratorExpressionUtils {
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.fileName", "<+ARTIFACT_PLACEHOLDER.metadata.fileName>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.key", "<+artifact.metadata.key>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.bucketName", "<+ARTIFACT_PLACEHOLDER.metadata.bucketName>");
+    artifactExpressions.put(
+        "ARTIFACT_PLACEHOLDER.source.repositoryName", "<+ARTIFACT_PLACEHOLDER.metadata.repositoryName>");
 
     artifactExpressions.forEach((k, v) -> {
       // Artifact Expressions
@@ -155,6 +157,7 @@ public class MigratorExpressionUtils {
     context.put("pipeline.name", "<+pipeline.name>");
     context.put("workflow.name", "<+stage.name>");
     context.put("workflow.releaseNo", "<+pipeline.sequenceId>");
+    context.put("workflow.pipelineResumeUuid", "<+pipeline.executionId>");
 
     // Variables
     context.put("workflow.variables",

@@ -732,6 +732,25 @@ public class GovernanceRuleResource {
   }
 
   @NextGenManagerAuth
+  @GET
+  @Path("ruleSchema")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Get Schema for entity", nickname = "ruleSchema")
+  @Operation(operationId = "ruleSchema", description = "Get Schema for entity", summary = "Get Schema for entity",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "ruleSchema", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<String>
+  getEntityYamlSchemaCustodian(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier) {
+    return ResponseDTO.newResponse(governanceRuleService.getSchema());
+  }
+
+  @NextGenManagerAuth
   @POST
   @Path("ruleValidate")
   @Timed

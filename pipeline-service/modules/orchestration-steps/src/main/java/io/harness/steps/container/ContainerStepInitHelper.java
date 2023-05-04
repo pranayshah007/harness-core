@@ -226,7 +226,8 @@ public class ContainerStepInitHelper {
       List<SecretVariableDetails> secretVariableDetails, List<CIK8ContainerParams> containerParams) {
     List<ContainerDefinitionInfo> stepCtrDefinitions =
         getStepContainerDefinitions(containerStepInfo, infrastructure, ambiance);
-    Map<String, List<ConnectorConversionInfo>> stepConnectorMap = getStepConnectorRefs(containerStepInfo);
+    Map<String, List<ConnectorConversionInfo>> stepConnectorMap =
+        getStepConnectorRefsV2(containerStepInfo, AmbianceUtils.obtainStepGroupIdentifier(ambiance));
     for (ContainerDefinitionInfo containerDefinitionInfo : stepCtrDefinitions) {
       CIK8ContainerParams cik8ContainerParams =
           createCIK8ContainerParams(ngAccess, containerDefinitionInfo, harnessInternalImageConnector, commonEnvVars,
@@ -266,6 +267,48 @@ public class ContainerStepInitHelper {
                   .collect(toList());
           stepConnectorMap.put(ContainerUnitStepUtils.getKubernetesStandardPodName(stepinfo.getStepIdentifier()),
               connectorConversionInfo);
+        }
+      });
+    }
+    return stepConnectorMap;
+  }
+
+  private Map<String, List<ConnectorConversionInfo>> getStepConnectorRefsV2(
+      ContainerStepSpec containerStepInfo, String stepGroupIdentifier) {
+    Map<String, List<ConnectorConversionInfo>> stepConnectorMap = new HashMap<>();
+    if (containerStepInfo instanceof PluginStep) {
+      PluginStep pluginStep = (PluginStep) containerStepInfo;
+      String identifier = containerStepInfo.getIdentifier();
+      if (EmptyPredicate.isNotEmpty(stepGroupIdentifier)) {
+        identifier = stepGroupIdentifier + "_" + identifier;
+      }
+      stepConnectorMap.put(identifier, new ArrayList<>());
+      String connectorRef = PluginUtils.getConnectorRef(pluginStep);
+      if (EmptyPredicate.isEmpty(connectorRef)) {
+        return stepConnectorMap;
+      }
+      Map<EnvVariableEnum, String> envToSecretMap = PluginUtils.getConnectorSecretEnvMap(pluginStep.getType());
+      stepConnectorMap.get(identifier)
+          .add(ConnectorConversionInfo.builder().connectorRef(connectorRef).envToSecretsMap(envToSecretMap).build());
+    } else if (containerStepInfo instanceof InitContainerV2StepInfo) {
+      InitContainerV2StepInfo initContainerV2StepInfo = (InitContainerV2StepInfo) containerStepInfo;
+      initContainerV2StepInfo.getPluginsData().forEach((stepinfo, pluginCreationResponse) -> {
+        List<io.harness.pms.contracts.plan.ConnectorDetails> connectorsForStepList =
+            pluginCreationResponse.getPluginDetails().getConnectorsForStepList();
+        if (isNotEmpty(connectorsForStepList)) {
+          List<ConnectorConversionInfo> connectorConversionInfo =
+              connectorsForStepList.stream()
+                  .map(detail
+                      -> ConnectorConversionInfo.builder()
+                             .connectorRef(detail.getConnectorRef())
+                             .envToSecretsMap(new HashMap<>(convertDetailMap(detail.getConnectorSecretEnvMapMap())))
+                             .build())
+                  .collect(toList());
+          String identifier = stepinfo.getStepIdentifier();
+          if (EmptyPredicate.isNotEmpty(stepGroupIdentifier)) {
+            identifier = stepGroupIdentifier + "_" + identifier;
+          }
+          stepConnectorMap.put(identifier, connectorConversionInfo);
         }
       });
     }
