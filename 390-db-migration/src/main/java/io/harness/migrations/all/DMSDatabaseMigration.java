@@ -148,6 +148,8 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
           bulkWriteOperation.insert(morphia.toDBObject(record));
           if (insertDocCount % 1000 == 0) {
             bulkWriteOperation.execute();
+            // re-intialize bulk write object
+            bulkWriteOperation = persistence.getCollection(dmsStore, collection).initializeUnorderedBulkOperation();
           }
         } catch (Exception ex) {
           log.warn("Exception occured while copying data", ex);
