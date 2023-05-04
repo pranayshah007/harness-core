@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.template;
+package io.harness.template.resources.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.filter.FilterConstants.TEMPLATE_FILTER;

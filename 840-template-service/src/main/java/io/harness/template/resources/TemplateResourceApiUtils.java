@@ -43,13 +43,13 @@ import io.harness.spec.server.template.v1.model.TemplateImportRequestDTO;
 import io.harness.spec.server.template.v1.model.TemplateImportResponseBody;
 import io.harness.spec.server.template.v1.model.TemplateMetadataSummaryResponse;
 import io.harness.spec.server.template.v1.model.TemplateUpdateStableResponse;
-import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.resources.beans.FilterParamsDTO;
 import io.harness.template.resources.beans.PageParamsDTO;
 import io.harness.template.resources.beans.PermissionTypes;
 import io.harness.template.resources.beans.TemplateFilterProperties;
+import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 import io.harness.template.services.NGTemplateService;
 import io.harness.utils.ApiUtils;
 
