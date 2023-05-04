@@ -24,4 +24,5 @@ import lombok.experimental.FieldDefaults;
 public class PluginExecutionConfig {
   StepImageConfig samBuildStepImageConfig;
   StepImageConfig samDeployStepImageConfig;
+  StepImageConfig gitCloneConfig;
 }

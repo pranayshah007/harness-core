@@ -145,6 +145,7 @@ import io.harness.cdng.tas.TasRollingRollbackStep;
 import io.harness.cdng.tas.TasRouteMappingStep;
 import io.harness.cdng.tas.TasSwapRollbackStep;
 import io.harness.cdng.tas.TasSwapRoutesStep;
+import io.harness.plugin.GitCloneStep;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
@@ -307,6 +308,9 @@ public class NgStepRegistrar {
 
     // Blue Green Stage Scale Down
     engineSteps.put(K8sBGStageScaleDownStep.STEP_TYPE, K8sBGStageScaleDownStep.class);
+
+    engineSteps.put(GitCloneStep.STEP_TYPE, GitCloneStep.class);
+
     return engineSteps;
   }
 }
