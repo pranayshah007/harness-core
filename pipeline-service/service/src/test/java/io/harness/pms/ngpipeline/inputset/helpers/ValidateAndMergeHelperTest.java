@@ -37,6 +37,7 @@ import io.harness.rule.Owner;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -200,8 +201,11 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         .when(pmsPipelineService)
         .getPipeline(accountId, orgId, projectId, "has_runtime", false, false, false, false);
     doReturn(true).when(pmsInputSetService).checkForInputSetsForPipeline(accountId, orgId, projectId, "has_runtime");
+    List<String> selectedStages = new ArrayList<>();
+    selectedStages.add("customstage");
+    selectedStages.add("cistage2");
     InputSetTemplateResponseDTOPMS responseWithRuntime = validateAndMergeHelper.getInputSetTemplateResponseDTO(
-        accountId, orgId, projectId, "has_runtime", Arrays.asList("customstage", "cistage2"), false);
+        accountId, orgId, projectId, "has_runtime", selectedStages, false);
     assertThat(responseWithRuntime.getHasInputSets()).isTrue();
     assertThat(responseWithRuntime.getInputSetTemplateYaml()).isEqualTo(getRuntimeTemplateWithoutProperties());
   }
@@ -220,10 +224,74 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         accountId, orgId, projectId, "has_runtime", Collections.singletonList("cistage1"), false);
     assertThat(responseWithRuntime.getHasInputSets()).isTrue();
     assertThat(responseWithRuntime.getInputSetTemplateYaml()).isEqualTo(getRuntimeTemplateWithProperties());
+    List<String> selectedStages = new ArrayList<>();
+    selectedStages.add("cistage1");
+    selectedStages.add("cistage2");
     responseWithRuntime = validateAndMergeHelper.getInputSetTemplateResponseDTO(
-        accountId, orgId, projectId, "has_runtime", Arrays.asList("cistage1", "cistage2"), false);
+        accountId, orgId, projectId, "has_runtime", selectedStages, false);
     assertThat(responseWithRuntime.getHasInputSets()).isTrue();
     assertThat(responseWithRuntime.getInputSetTemplateYaml()).isEqualTo(getRuntimeTemplateWithProperties());
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetInputSetTemplateResponseDTOWithSelectedStagesWithCodebasePropertiesAndNoRuntimeInput() {
+    String pipelineYamlWithRuntime = readFile("pipeline-yaml-multiple-stages-no-runtime.yaml");
+    PipelineEntity pipelineEntityWithRuntime = PipelineEntity.builder().yaml(pipelineYamlWithRuntime).build();
+    doReturn(Optional.of(pipelineEntityWithRuntime))
+        .when(pmsPipelineService)
+        .getPipeline(accountId, orgId, projectId, "has_runtime", false, false, false, false);
+    doReturn(true).when(pmsInputSetService).checkForInputSetsForPipeline(accountId, orgId, projectId, "has_runtime");
+    InputSetTemplateResponseDTOPMS responseWithRuntime = validateAndMergeHelper.getInputSetTemplateResponseDTO(
+        accountId, orgId, projectId, "has_runtime", Collections.singletonList("cistage1"), false);
+    String expectedResponse = "pipeline:\n"
+        + "  identifier: \"temppipeline\"\n"
+        + "  properties:\n"
+        + "    ci:\n"
+        + "      codebase:\n"
+        + "        repoName: \"<+input>\"\n"
+        + "        build: \"<+input>\"\n";
+    assertThat(responseWithRuntime.getHasInputSets()).isTrue();
+    assertThat(responseWithRuntime.getInputSetTemplateYaml()).isEqualTo(expectedResponse);
+    List<String> selectedStages = new ArrayList<>();
+    selectedStages.add("cistage1");
+    selectedStages.add("cistage2");
+    responseWithRuntime = validateAndMergeHelper.getInputSetTemplateResponseDTO(
+        accountId, orgId, projectId, "has_runtime", selectedStages, false);
+    assertThat(responseWithRuntime.getHasInputSets()).isTrue();
+    assertThat(responseWithRuntime.getInputSetTemplateYaml()).isEqualTo(expectedResponse);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetInputSetTemplateResponseDTOWithSelectedStagesWithoutCodebasePropertiesAndNoRuntimeInput() {
+    String pipelineYamlWithRuntime = readFile("pipeline-yaml-multiple-stages-no-runtime.yaml");
+    PipelineEntity pipelineEntityWithRuntime = PipelineEntity.builder().yaml(pipelineYamlWithRuntime).build();
+    doReturn(Optional.of(pipelineEntityWithRuntime))
+        .when(pmsPipelineService)
+        .getPipeline(accountId, orgId, projectId, "has_runtime", false, false, false, false);
+    doReturn(true).when(pmsInputSetService).checkForInputSetsForPipeline(accountId, orgId, projectId, "has_runtime");
+    InputSetTemplateResponseDTOPMS responseWithRuntime = validateAndMergeHelper.getInputSetTemplateResponseDTO(
+        accountId, orgId, projectId, "has_runtime", Collections.singletonList("cistage1"), false);
+    String expectedResponse = "pipeline:\n"
+        + "  identifier: \"temppipeline\"\n"
+        + "  properties:\n"
+        + "    ci:\n"
+        + "      codebase:\n"
+        + "        repoName: \"<+input>\"\n"
+        + "        build: \"<+input>\"\n";
+    assertThat(responseWithRuntime.getHasInputSets()).isTrue();
+    assertThat(responseWithRuntime.getInputSetTemplateYaml()).isEqualTo(expectedResponse);
+    List<String> selectedStages = new ArrayList<>();
+    selectedStages.add("customstage");
+    selectedStages.add("cistage2");
+    responseWithRuntime = validateAndMergeHelper.getInputSetTemplateResponseDTO(
+        accountId, orgId, projectId, "has_runtime", selectedStages, false);
+    expectedResponse = "pipeline:\n  identifier: \"temppipeline\"\n";
+    assertThat(responseWithRuntime.getHasInputSets()).isTrue();
+    assertThat(responseWithRuntime.getInputSetTemplateYaml()).isEqualTo(expectedResponse);
   }
 
   @Test
