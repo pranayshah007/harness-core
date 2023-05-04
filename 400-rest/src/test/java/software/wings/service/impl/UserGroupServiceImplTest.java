@@ -104,7 +104,6 @@ import io.harness.exception.UserGroupAlreadyExistException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.limits.LimitCheckerFactory;
 import io.harness.ng.core.account.AuthenticationMechanism;
-import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
