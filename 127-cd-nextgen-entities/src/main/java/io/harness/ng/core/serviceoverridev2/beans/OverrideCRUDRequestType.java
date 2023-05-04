@@ -7,9 +7,4 @@
 
 package io.harness.ng.core.serviceoverridev2.beans;
 
-public enum OverrideCRUDRequestType {
-    CREATE,
-    VIEW,
-    UPDATE,
-    DELETE
-}
+public enum OverrideCRUDRequestType { CREATE, VIEW, UPDATE, DELETE }

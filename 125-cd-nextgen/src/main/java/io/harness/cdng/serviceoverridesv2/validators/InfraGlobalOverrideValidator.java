@@ -24,10 +24,8 @@ public class InfraGlobalOverrideValidator implements ServiceOverrideTypeBasedVal
   public void validateRequest(@NotNull ServiceOverrideRequestDTOV2 requestDTOV2) {}
 
   @Override
-  public String generateServiceOverrideIdentifier(
-      NGServiceOverridesEntity serviceOverridesEntity) {
-    return String
-        .join("_", serviceOverridesEntity.getEnvironmentRef(), serviceOverridesEntity.getInfraIdentifier())
+  public String generateServiceOverrideIdentifier(NGServiceOverridesEntity serviceOverridesEntity) {
+    return String.join("_", serviceOverridesEntity.getEnvironmentRef(), serviceOverridesEntity.getInfraIdentifier())
         .replace(".", "_");
   }
 }

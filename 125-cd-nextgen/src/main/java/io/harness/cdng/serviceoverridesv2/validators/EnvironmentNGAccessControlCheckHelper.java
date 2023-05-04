@@ -27,47 +27,47 @@ import javax.inject.Inject;
 
 @Singleton
 public class EnvironmentNGAccessControlCheckHelper {
-    @Inject private AccessControlClient accessControlClient;
+  @Inject private AccessControlClient accessControlClient;
 
-    public void checkForEnvAndAttributesAccessOrThrow(
-            ResourceScope resourceScope, String identifier, String permission, String environmentType) {
-        Map<String, String> environmentAttributes = getEnvironmentAttributesMap(environmentType);
-        List<PermissionCheckDTO> permissionChecks =
-                getPermissionChecksDTOForEnvironment(environmentAttributes, resourceScope, identifier, permission);
-        AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
-        List<AccessControlDTO> accessControlDTOList = accessCheckResponse.getAccessControlList();
+  public void checkForEnvAndAttributesAccessOrThrow(
+      ResourceScope resourceScope, String identifier, String permission, String environmentType) {
+    Map<String, String> environmentAttributes = getEnvironmentAttributesMap(environmentType);
+    List<PermissionCheckDTO> permissionChecks =
+        getPermissionChecksDTOForEnvironment(environmentAttributes, resourceScope, identifier, permission);
+    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
+    List<AccessControlDTO> accessControlDTOList = accessCheckResponse.getAccessControlList();
 
-        final boolean isActionAllowed =
-                CollectionUtils.emptyIfNull(accessControlDTOList).stream().anyMatch(AccessControlDTO::isPermitted);
-        if (!isActionAllowed) {
-            throw new NGAccessDeniedException(
-                    String.format("Missing permission %s on %s with identifier %s", permission, ENVIRONMENT, identifier), USER,
-                    permissionChecks);
-        }
+    final boolean isActionAllowed =
+        CollectionUtils.emptyIfNull(accessControlDTOList).stream().anyMatch(AccessControlDTO::isPermitted);
+    if (!isActionAllowed) {
+      throw new NGAccessDeniedException(
+          String.format("Missing permission %s on %s with identifier %s", permission, ENVIRONMENT, identifier), USER,
+          permissionChecks);
     }
+  }
 
-    private List<PermissionCheckDTO> getPermissionChecksDTOForEnvironment(
-            Map<String, String> environmentAttributes, ResourceScope resourceScope, String identifier, String permission) {
-        List<PermissionCheckDTO> permissionChecks = new ArrayList<>();
-        permissionChecks.add(PermissionCheckDTO.builder()
-                .permission(permission)
-                .resourceIdentifier(identifier)
-                .resourceScope(resourceScope)
-                .resourceType(ENVIRONMENT)
-                .build());
-        permissionChecks.add(PermissionCheckDTO.builder()
-                .permission(permission)
-                .resourceAttributes(environmentAttributes)
-                .resourceScope(resourceScope)
-                .resourceType(ENVIRONMENT)
-                .build());
+  private List<PermissionCheckDTO> getPermissionChecksDTOForEnvironment(
+      Map<String, String> environmentAttributes, ResourceScope resourceScope, String identifier, String permission) {
+    List<PermissionCheckDTO> permissionChecks = new ArrayList<>();
+    permissionChecks.add(PermissionCheckDTO.builder()
+                             .permission(permission)
+                             .resourceIdentifier(identifier)
+                             .resourceScope(resourceScope)
+                             .resourceType(ENVIRONMENT)
+                             .build());
+    permissionChecks.add(PermissionCheckDTO.builder()
+                             .permission(permission)
+                             .resourceAttributes(environmentAttributes)
+                             .resourceScope(resourceScope)
+                             .resourceType(ENVIRONMENT)
+                             .build());
 
-        return permissionChecks;
-    }
+    return permissionChecks;
+  }
 
-    private Map<String, String> getEnvironmentAttributesMap(String environmentType) {
-        Map<String, String> environmentAttributes = new HashMap<>();
-        environmentAttributes.put("type", environmentType);
-        return environmentAttributes;
-    }
+  private Map<String, String> getEnvironmentAttributesMap(String environmentType) {
+    Map<String, String> environmentAttributes = new HashMap<>();
+    environmentAttributes.put("type", environmentType);
+    return environmentAttributes;
+  }
 }
