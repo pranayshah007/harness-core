@@ -13,12 +13,18 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.Scope;
+import io.harness.encryption.SecretRefData;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.api.SecretCrudService;
+import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
+import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
+import io.harness.ng.core.models.Secret;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.Principal;
@@ -64,6 +70,34 @@ public class OAuthTokenRefresherHelper {
     final GitEntityInfo emptyInfo = GitEntityInfo.builder().build();
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard()) {
       GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(emptyInfo).build());
+    }
+  }
+
+  public SecretDTOV2 getSecretSecretValue(Scope scope, SecretRefData token) {
+    SecretResponseWrapper tokenWrapper = ngSecretCrudService
+                                             .get(scope.getAccountIdentifier(), scope.getOrgIdentifier(),
+                                                 scope.getProjectIdentifier(), token.getIdentifier())
+                                             .orElse(null);
+
+    if (tokenWrapper == null) {
+      log.error("Error in secret with identifier: {}", token.getIdentifier());
+      return null;
+    }
+
+    return tokenWrapper.getSecret();
+  }
+
+  public void updateSecretSecretValue(Scope scope, SecretDTOV2 secretDTOV2, String newSecret) {
+    SecretTextSpecDTO secretSpecDTO = (SecretTextSpecDTO) secretDTOV2.getSpec();
+    secretSpecDTO.setValue(newSecret);
+    secretDTOV2.setSpec(secretSpecDTO);
+
+    Secret secret = Secret.fromDTO(secretDTOV2);
+    try {
+      ngSecretCrudService.update(scope.getAccountIdentifier(), secret.getOrgIdentifier(), secret.getProjectIdentifier(),
+          secretDTOV2.getIdentifier(), secretDTOV2);
+    } catch (Exception ex) {
+      log.error("Failed to update token in DB, secretDTO: {}", secretDTOV2, ex);
     }
   }
 }
