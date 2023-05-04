@@ -47,10 +47,13 @@ public class ManagedAccountDataResource {
 
   @GET
   @Path("entity-values")
-  @ApiOperation(value = "Get margin details", nickname = "getMarginDetails")
-  @Operation(operationId = "getMarginDetails", summary = "Get Margin details",
+  @ApiOperation(value = "Get entity list", nickname = "getEntityList")
+  @Operation(operationId = "getEntityList", summary = "Get Entity list",
       responses =
-      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns margin details for given uuid") })
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns entity list for given child account and entity")
+      })
   public ResponseDTO<List<String>>
   getEntityList(@Parameter(description = "Account id of the msp account") @QueryParam("accountIdentifier")
                 @AccountIdentifier String accountIdentifier, @QueryParam("managedAccountId") String managedAccountId,
