@@ -1394,18 +1394,10 @@ public class TasStepHelperTest extends CategoryTest {
     verify(cdStepHelper, Mockito.times(0)).getConnector(any(), any());
     doReturn(encryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(NGAccess.class), any());
 
-    TasArtifactConfig tasArtifactConfig = tasStepHelper.getPrimaryArtifactConfig(ambiance, nexusArtifactOutcome);
-    assertThat(tasArtifactConfig.getArtifactType()).isEqualTo(TasArtifactType.PACKAGE);
-    TasPackageArtifactConfig packageArtifactConfig = (TasPackageArtifactConfig) tasArtifactConfig;
-
-    CustomArtifactTasRequestDetails customArtifactTasRequestDetails =
-        (CustomArtifactTasRequestDetails) packageArtifactConfig.getArtifactDetails();
-    assertThat(packageArtifactConfig.getConnectorConfig()).isNull();
-    assertThat(customArtifactTasRequestDetails.getArtifactPath()).isEqualTo("tmp");
-    assertThat(customArtifactTasRequestDetails.getIdentifier()).isEqualTo("primary");
-    assertThat(customArtifactTasRequestDetails.getImage()).isEqualTo("nginx");
-    assertThat(customArtifactTasRequestDetails.getDisplayName()).isEqualTo("nginx");
-    assertThat(customArtifactTasRequestDetails.getMetadata()).isEqualTo(metadata);
+    InvalidArgumentsException exceptionToBeThrown =
+        new InvalidArgumentsException(Pair.of("artifacts", "Artifact type CustomArtifact is not yet supported in TAS"));
+    assertThatThrownBy(() -> tasStepHelper.getPrimaryArtifactConfig(ambiance, nexusArtifactOutcome))
+        .isEqualToComparingFieldByField(exceptionToBeThrown);
   }
 
   @Test

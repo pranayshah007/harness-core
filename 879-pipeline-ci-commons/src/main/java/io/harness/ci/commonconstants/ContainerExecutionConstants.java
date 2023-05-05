@@ -54,6 +54,7 @@ public class ContainerExecutionConstants {
   public static final String DELEGATE_SERVICE_ID_VARIABLE_VALUE = "delegate-grpc-service";
 
   public static final String HARNESS_ACCOUNT_ID_VARIABLE = "HARNESS_ACCOUNT_ID";
+  public static final String HARNESS_USER_ID_VARIABLE = "HARNESS_USER_ID";
   public static final String HARNESS_PROJECT_ID_VARIABLE = "HARNESS_PROJECT_ID";
   public static final String HARNESS_ORG_ID_VARIABLE = "HARNESS_ORG_ID";
   public static final String HARNESS_BUILD_ID_VARIABLE = "HARNESS_BUILD_ID";

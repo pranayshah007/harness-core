@@ -18,6 +18,7 @@ import static io.harness.k8s.K8sCommandUnitConstants.Prepare;
 import static io.harness.k8s.K8sCommandUnitConstants.WaitForSteadyState;
 import static io.harness.k8s.K8sCommandUnitConstants.WrapUp;
 import static io.harness.k8s.K8sConstants.MANIFEST_FILES_DIR;
+import static io.harness.k8s.model.ServiceHookContext.MANIFEST_FILES_DIRECTORY;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.INFO;
 
@@ -105,18 +106,18 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
     ServiceHookDTO serviceHookTaskParams = new ServiceHookDTO(k8sDelegateTaskParams);
     ServiceHookHandler serviceHookHandler =
         new ServiceHookHandler(k8sApplyRequest.getServiceHooks(), serviceHookTaskParams, timeoutInMillis);
-    serviceHookHandler.applyServiceHooks(ServiceHookType.PRE_HOOK, ServiceHookAction.FETCH_FILES,
-        k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback,
-        k8sApplyHandlerConfig.getManifestFilesDirectory());
+    serviceHookHandler.addToContext(
+        MANIFEST_FILES_DIRECTORY.getContextName(), k8sApplyHandlerConfig.getManifestFilesDirectory());
+    serviceHookHandler.execute(ServiceHookType.PRE_HOOK, ServiceHookAction.FETCH_FILES,
+        k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
     k8sTaskHelperBase.fetchManifestFilesAndWriteToDirectory(k8sApplyRequest.getManifestDelegateConfig(),
         k8sApplyHandlerConfig.getManifestFilesDirectory(), executionLogCallback, timeoutInMillis,
         k8sApplyRequest.getAccountId(), false);
-    serviceHookHandler.applyServiceHooks(ServiceHookType.POST_HOOK, ServiceHookAction.FETCH_FILES,
-        k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback,
-        k8sApplyHandlerConfig.getManifestFilesDirectory());
+    serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.FETCH_FILES,
+        k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
     executionLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
     init(k8sApplyRequest, k8sDelegateTaskParams,
-        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress));
+        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress), serviceHookHandler);
 
     k8sApplyBaseHandler.prepare(
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Prepare, true, commandUnitsProgress),
@@ -129,23 +130,26 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
         isErrorFrameworkSupported(), commandFlags);
     final LogCallback waitForSteadyStateLogCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress);
-
     if (!k8sApplyRequest.isSkipSteadyStateCheck() && isNotEmpty(k8sApplyHandlerConfig.getWorkloads())) {
       List<KubernetesResourceId> kubernetesResourceIds = k8sApplyHandlerConfig.getWorkloads()
                                                              .stream()
                                                              .map(KubernetesResource::getResourceId)
                                                              .collect(Collectors.toList());
 
-      K8sSteadyStateDTO k8sSteadyStateDTO =
-          K8sSteadyStateDTO.builder()
-              .request(k8sDeployRequest)
-              .resourceIds(kubernetesResourceIds)
-              .executionLogCallback(waitForSteadyStateLogCallback)
-              .k8sDelegateTaskParams(k8sDelegateTaskParams)
-              .namespace(k8sApplyRequest.getK8sInfraDelegateConfig().getNamespace())
-              .denoteOverallSuccess(k8sApplyHandlerConfig.getCustomWorkloads().isEmpty())
-              .isErrorFrameworkEnabled(true)
-              .build();
+      serviceHookHandler.addWorkloadContextForHooks(
+          k8sApplyHandlerConfig.getWorkloads(), k8sApplyHandlerConfig.getCustomWorkloads());
+      serviceHookHandler.execute(ServiceHookType.PRE_HOOK, ServiceHookAction.STEADY_STATE_CHECK,
+          k8sDelegateTaskParams.getWorkingDirectory(), waitForSteadyStateLogCallback);
+
+      K8sSteadyStateDTO k8sSteadyStateDTO = K8sSteadyStateDTO.builder()
+                                                .request(k8sDeployRequest)
+                                                .resourceIds(kubernetesResourceIds)
+                                                .executionLogCallback(waitForSteadyStateLogCallback)
+                                                .k8sDelegateTaskParams(k8sDelegateTaskParams)
+                                                .namespace(k8sApplyRequest.getK8sInfraDelegateConfig().getNamespace())
+                                                .denoteOverallSuccess(false)
+                                                .isErrorFrameworkEnabled(true)
+                                                .build();
 
       K8sClient k8sClient = k8sTaskHelperBase.getKubernetesClient(k8sApplyRequest.isUseK8sApiForSteadyStateCheck());
       k8sClient.performSteadyStateCheck(k8sSteadyStateDTO);
@@ -153,8 +157,12 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
 
     k8sApplyBaseHandler.steadyStateCheck(k8sApplyRequest.isSkipSteadyStateCheck(),
         k8sApplyRequest.getK8sInfraDelegateConfig().getNamespace(), k8sDelegateTaskParams, timeoutInMillis,
-        waitForSteadyStateLogCallback, k8sApplyHandlerConfig, isErrorFrameworkSupported(), true);
+        waitForSteadyStateLogCallback, k8sApplyHandlerConfig, isErrorFrameworkSupported(), true, false);
 
+    serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.STEADY_STATE_CHECK,
+        k8sDelegateTaskParams.getWorkingDirectory(), waitForSteadyStateLogCallback);
+
+    waitForSteadyStateLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
     k8sApplyBaseHandler.wrapUp(k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WrapUp, true, commandUnitsProgress),
         k8sApplyHandlerConfig.getClient());
@@ -167,8 +175,8 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
     return true;
   }
 
-  private void init(K8sApplyRequest request, K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback logCallback)
-      throws Exception {
+  private void init(K8sApplyRequest request, K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback logCallback,
+      ServiceHookHandler serviceHookHandler) throws Exception {
     logCallback.saveExecutionLog("Initializing..\n");
     logCallback.saveExecutionLog(color(String.format("Release Name: [%s]", request.getReleaseName()), Yellow, Bold));
 
@@ -199,7 +207,8 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
     KubernetesReleaseDetails releaseDetails = KubernetesReleaseDetails.builder().releaseNumber(1).build();
 
     List<String> manifestOverrideFiles = getManifestOverrideFlies(request, releaseDetails.toContextMap());
-
+    serviceHookHandler.execute(ServiceHookType.PRE_HOOK, ServiceHookAction.TEMPLATE_MANIFEST,
+        k8sDelegateTaskParams.getWorkingDirectory(), logCallback);
     k8sApplyHandlerConfig.setResources(
         k8sTaskHelperBase.getResourcesFromManifests(k8sDelegateTaskParams, request.getManifestDelegateConfig(),
             k8sApplyHandlerConfig.getManifestFilesDirectory(), applyFilePaths, manifestOverrideFiles,
@@ -208,6 +217,9 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
 
     logCallback.saveExecutionLog(color("\nManifests [Post template rendering] :\n", White, Bold));
     logCallback.saveExecutionLog(ManifestHelper.toYamlForLogs(k8sApplyHandlerConfig.getResources()));
+
+    serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.TEMPLATE_MANIFEST,
+        k8sDelegateTaskParams.getWorkingDirectory(), logCallback);
 
     if (request.isSkipDryRun()) {
       logCallback.saveExecutionLog(color("\nSkipping Dry Run", Yellow, Bold), INFO);

@@ -30,6 +30,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -45,7 +46,7 @@ public class ArtifactPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
   private final ArtifactRepositoryServiceImpl artifactRepositoryService;
   private final PollingResponsePublisher pollingResponsePublisher;
   private final KryoSerializer kryoSerializer;
-  private final KryoSerializer referenceFalseKryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private final KryoSerializer referenceFalseKryoSerializer;
 
   private final @Getter Cache<String, ArtifactsCollectionCache> cache = Caffeine.newBuilder().build();
   private static final long TIMEOUT_IN_MILLIS = 90L * 1000;

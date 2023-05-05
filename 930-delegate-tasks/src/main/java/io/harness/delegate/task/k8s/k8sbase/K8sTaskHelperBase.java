@@ -1188,7 +1188,6 @@ public class K8sTaskHelperBase {
       return false;
     }
   }
-
   public boolean dryRunManifests(Kubectl client, List<KubernetesResource> resources,
       K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback, boolean isErrorFrameworkEnabled,
       boolean useKubectlNewVersion) throws Exception {
@@ -2145,7 +2144,7 @@ public class K8sTaskHelperBase {
       return true;
     }
 
-    executionLogCallback.saveExecutionLog("Performing steady check for managed workloads \n");
+    executionLogCallback.saveExecutionLog("Performing steady check for custom workloads \n");
     int maxResourceNameLength = 0;
     for (KubernetesResourceId kubernetesResourceId : resourceIds) {
       maxResourceNameLength = Math.max(maxResourceNameLength, kubernetesResourceId.getName().length());

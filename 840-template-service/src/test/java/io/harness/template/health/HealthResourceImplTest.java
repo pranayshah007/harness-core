@@ -35,15 +35,15 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(CDC)
 @RunWith(MockitoJUnitRunner.class)
-public class HealthResourceTest extends CategoryTest {
-  private HealthResource healthResource;
+public class HealthResourceImplTest extends CategoryTest {
+  private HealthResourceImpl healthResource;
   private HealthService healthService;
   private MockedStatic<MaintenanceController> aStatic;
 
   @Before
   public void setup() {
     healthService = mock(HealthService.class);
-    healthResource = new HealthResource(healthService);
+    healthResource = new HealthResourceImpl(healthService);
     aStatic = mockStatic(MaintenanceController.class);
   }
 

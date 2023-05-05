@@ -139,6 +139,26 @@ if [[ "" != "$CACHE_SERVICE_KEY" ]]; then
   export CACHE_SERVICE_KEY; yq -i '.ciExecutionServiceConfig.cacheIntelligenceConfig.serviceKey=env(CACHE_SERVICE_KEY)' $CONFIG_FILE
 fi
 
+if [[ "" != "$DLC_S3_ENDPOINT" ]]; then
+  export DLC_S3_ENDPOINT; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingConfig.endpoint=env(DLC_S3_ENDPOINT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_S3_BUCKET" ]]; then
+  export DLC_S3_BUCKET; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingConfig.bucket=env(DLC_S3_BUCKET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_S3_ACCESS_KEY" ]]; then
+  export DLC_S3_ACCESS_KEY; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingConfig.accessKey=env(DLC_S3_ACCESS_KEY)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_S3_SECRET_KEY" ]]; then
+  export DLC_S3_SECRET_KEY; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingConfig.secretKey=env(DLC_S3_SECRET_KEY)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_S3_REGION" ]]; then
+  export DLC_S3_REGION; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingConfig.region=env(DLC_S3_REGION)' $CONFIG_FILE
+fi
+
 if [[ "" != "$HOSTED_VM_SPLIT_LINUX_AMD64_POOL" ]]; then
   export HOSTED_VM_SPLIT_LINUX_AMD64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitLinuxAmd64Pool=env(HOSTED_VM_SPLIT_LINUX_AMD64_POOL)' $CONFIG_FILE
 fi

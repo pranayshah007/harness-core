@@ -76,9 +76,15 @@ import io.harness.template.handler.SecretManagerTemplateYamlConversionHandler;
 import io.harness.template.handler.StepGroupTemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandlerRegistry;
+import io.harness.template.health.HealthResource;
+import io.harness.template.health.HealthResourceImpl;
 import io.harness.template.mappers.TemplateFilterPropertiesMapper;
+import io.harness.template.resources.NGTemplateRefreshResource;
+import io.harness.template.resources.NGTemplateRefreshResourceImpl;
 import io.harness.template.resources.NGTemplateResource;
 import io.harness.template.resources.NGTemplateResourceImpl;
+import io.harness.template.resources.NGTemplateSchemaResource;
+import io.harness.template.resources.NGTemplateSchemaResourceImpl;
 import io.harness.template.services.NGTemplateSchemaService;
 import io.harness.template.services.NGTemplateSchemaServiceImpl;
 import io.harness.template.services.NGTemplateService;
@@ -218,6 +224,9 @@ public class TemplateServiceModule extends AbstractModule {
     bind(NGTemplateSchemaService.class).to(NGTemplateSchemaServiceImpl.class);
     bind(TemplateRefreshService.class).to(TemplateRefreshServiceImpl.class);
     bind(NGTemplateResource.class).to(NGTemplateResourceImpl.class);
+    bind(NGTemplateRefreshResource.class).to(NGTemplateRefreshResourceImpl.class);
+    bind(NGTemplateSchemaResource.class).to(NGTemplateSchemaResourceImpl.class);
+    bind(HealthResource.class).to(HealthResourceImpl.class);
     bind(TemplateMergeService.class).to(TemplateMergeServiceImpl.class).in(Singleton.class);
     bind(TemplateGitXService.class).to(TemplateGitXServiceImpl.class).in(Singleton.class);
     install(new NGSettingsClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),

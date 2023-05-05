@@ -21,6 +21,7 @@ io.harness.beans.sweepingoutputs.CodeBaseConnectorRefSweepingOutput
 io.harness.yaml.core.failurestrategy.FailureStrategyConfig
 io.harness.beans.steps.nodes.ArtifactoryUploadNode
 io.harness.beans.steps.stepinfo.security.FossaStepInfo
+io.harness.beans.steps.stepinfo.security.SemgrepStepInfo
 io.harness.plancreator.steps.common.StageElementParameters
 io.harness.yaml.core.failurestrategy.ignore.IgnoreFailureActionConfig
 io.harness.steps.plugin.infrastructure.ContainerInfraYamlSpec
@@ -130,6 +131,7 @@ io.harness.beans.steps.stepinfo.security.CustomIngestStepInfo
 io.harness.plancreator.steps.StepElementConfig
 io.harness.beans.quantity.unit.StorageQuantityUnit
 io.harness.beans.steps.nodes.security.FossaScanNode
+io.harness.beans.steps.nodes.security.SemgrepScanNode
 io.harness.plancreator.execution.ExecutionElementConfig
 io.harness.beans.yaml.extended.platform.ArchType
 io.harness.ci.pipeline.executions.beans.CIBuildAuthor

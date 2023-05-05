@@ -61,13 +61,20 @@ public class AwsSamDeployStepInfo extends AwsSamBaseStepInfo implements CDAbstra
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<String>> deployCommandOptions;
 
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  ParameterField<String> stackName;
+
   @Builder(builderMethodName = "infoBuilder")
   public AwsSamDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
       ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
-      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy) {
+      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
+      ParameterField<List<String>> deployCommandOptions, ParameterField<String> stackName) {
     super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
         imagePullPolicy);
+    this.deployCommandOptions = deployCommandOptions;
+    this.stackName = stackName;
   }
   @Override
   public StepType getStepType() {

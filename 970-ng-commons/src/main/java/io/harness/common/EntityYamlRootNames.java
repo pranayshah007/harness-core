@@ -127,6 +127,8 @@ public class EntityYamlRootNames {
   public static final String PROWLER = "Prowler";
   public static final String QUALYS = "Qualys";
   public static final String REAPSAW = "Reapsaw";
+
+  public static final String SEMGREP = "Semgrep";
   public static final String SHIFT_LEFT = "ShiftLeft";
   public static final String SNIPER = "Sniper";
   public static final String SNYK = "Snyk";
