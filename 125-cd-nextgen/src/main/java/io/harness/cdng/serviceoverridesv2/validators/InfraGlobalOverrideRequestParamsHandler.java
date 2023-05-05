@@ -7,18 +7,24 @@
 
 package io.harness.cdng.serviceoverridesv2.validators;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 
-import lombok.NonNull;
+import com.google.inject.Inject;
+import lombok.AllArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
-public class EnvGlobalOverrideValidator implements ServiceOverrideTypeBasedValidator {
+@OwnedBy(HarnessTeam.CDC)
+@AllArgsConstructor(onConstructor = @__({ @Inject }))
+public class InfraGlobalOverrideRequestParamsHandler implements ServiceOverrideTypeBasedRequestParamsHandler {
   @Override
   public void validateRequest(@NotNull ServiceOverrideRequestDTOV2 requestDTOV2) {}
 
   @Override
-  public String generateServiceOverrideIdentifier(@NonNull NGServiceOverridesEntity serviceOverridesEntity) {
-    return String.join("_", serviceOverridesEntity.getEnvironmentRef()).replace(".", "_");
+  public String generateServiceOverrideIdentifier(NGServiceOverridesEntity serviceOverridesEntity) {
+    return String.join("_", serviceOverridesEntity.getEnvironmentRef(), serviceOverridesEntity.getInfraIdentifier())
+        .replace(".", "_");
   }
 }

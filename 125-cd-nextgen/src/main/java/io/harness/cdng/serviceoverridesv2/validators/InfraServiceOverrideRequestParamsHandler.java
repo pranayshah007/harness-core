@@ -19,13 +19,15 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(HarnessTeam.CDC)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 
-public class InfraGlobalOverrideValidator implements ServiceOverrideTypeBasedValidator {
+public class InfraServiceOverrideRequestParamsHandler implements ServiceOverrideTypeBasedRequestParamsHandler {
   @Override
   public void validateRequest(@NotNull ServiceOverrideRequestDTOV2 requestDTOV2) {}
 
   @Override
   public String generateServiceOverrideIdentifier(NGServiceOverridesEntity serviceOverridesEntity) {
-    return String.join("_", serviceOverridesEntity.getEnvironmentRef(), serviceOverridesEntity.getInfraIdentifier())
+    return String
+        .join("_", serviceOverridesEntity.getEnvironmentRef(), serviceOverridesEntity.getServiceRef(),
+            serviceOverridesEntity.getInfraIdentifier())
         .replace(".", "_");
   }
 }

@@ -20,7 +20,6 @@ import io.harness.data.structure.CollectionUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +27,8 @@ import java.util.Map;
 @Singleton
 public class EnvironmentNGAccessControlCheckHelper {
   @Inject private AccessControlClient accessControlClient;
+
+  public static final String ENVIRONMENT_TYPE = "type";
 
   public void checkForEnvAndAttributesAccessOrThrow(
       ResourceScope resourceScope, String identifier, String permission, String environmentType) {
@@ -48,26 +49,25 @@ public class EnvironmentNGAccessControlCheckHelper {
 
   private List<PermissionCheckDTO> getPermissionChecksDTOForEnvironment(
       Map<String, String> environmentAttributes, ResourceScope resourceScope, String identifier, String permission) {
-    List<PermissionCheckDTO> permissionChecks = new ArrayList<>();
-    permissionChecks.add(PermissionCheckDTO.builder()
-                             .permission(permission)
-                             .resourceIdentifier(identifier)
-                             .resourceScope(resourceScope)
-                             .resourceType(ENVIRONMENT)
-                             .build());
-    permissionChecks.add(PermissionCheckDTO.builder()
-                             .permission(permission)
-                             .resourceAttributes(environmentAttributes)
-                             .resourceScope(resourceScope)
-                             .resourceType(ENVIRONMENT)
-                             .build());
+    return List.of(PermissionCheckDTO.builder()
+                       .permission(permission)
+                       .resourceIdentifier(identifier)
+                       .resourceScope(resourceScope)
+                       .resourceType(ENVIRONMENT)
+                       .build(),
+        PermissionCheckDTO.builder()
+            .permission(permission)
+            .resourceAttributes(environmentAttributes)
+            .resourceScope(resourceScope)
+            .resourceType(ENVIRONMENT)
+            .build()
 
-    return permissionChecks;
+    );
   }
 
   private Map<String, String> getEnvironmentAttributesMap(String environmentType) {
     Map<String, String> environmentAttributes = new HashMap<>();
-    environmentAttributes.put("type", environmentType);
+    environmentAttributes.put(ENVIRONMENT_TYPE, environmentType);
     return environmentAttributes;
   }
 }
