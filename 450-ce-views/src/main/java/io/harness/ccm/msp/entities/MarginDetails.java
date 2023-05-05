@@ -52,7 +52,7 @@ public class MarginDetails implements PersistentEntity, UuidAware, CreatedAtAwar
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder().name("accountId").unique(true).field(MarginDetailsKeys.accountId).build())
+        .add(CompoundMongoIndex.builder().name("accountId").field(MarginDetailsKeys.accountId).build())
         .build();
   }
 }
