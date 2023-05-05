@@ -324,7 +324,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
         + httpServletRequest.getServerPort();
     DelegateScripts delegateScripts = DelegateScripts.builder().build();
     when(delegateService.getDelegateScripts(ACCOUNT_ID, version,
-             subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID), verificationUrl, null))
+             subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID), verificationUrl, null, null))
         .thenReturn(delegateScripts);
     RestResponse<DelegateScripts> restResponse = RESOURCES.client()
                                                      .target("/agent/delegates/" + DELEGATE_ID + "/upgrade?delegateId="
@@ -335,7 +335,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
 
     verify(delegateService, atLeastOnce())
         .getDelegateScripts(ACCOUNT_ID, version, subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID),
-            verificationUrl, null);
+            verificationUrl, null, null);
     assertThat(restResponse.getResource()).isInstanceOf(DelegateScripts.class).isNotNull();
   }
 
@@ -433,7 +433,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
         + httpServletRequest.getServerPort();
     DelegateScripts delegateScripts = DelegateScripts.builder().build();
     when(delegateService.getDelegateScripts(ACCOUNT_ID, delegateVersion,
-             subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID), verificationUrl, null))
+             subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID), verificationUrl, null, null))
         .thenReturn(delegateScripts);
 
     RestResponse<DelegateScripts> restResponse =
@@ -444,7 +444,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
 
     verify(delegateService, atLeastOnce())
         .getDelegateScripts(ACCOUNT_ID, delegateVersion,
-            subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID), verificationUrl, null);
+            subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID), verificationUrl, null, null);
     assertThat(restResponse.getResource()).isInstanceOf(DelegateScripts.class).isNotNull();
   }
 
@@ -458,7 +458,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
         + httpServletRequest.getServerPort();
     DelegateScripts delegateScripts = DelegateScripts.builder().build();
     when(delegateService.getDelegateScripts(ACCOUNT_ID, delegateVersion,
-             subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID), verificationUrl, delegateName))
+             subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID), verificationUrl, delegateName, null))
         .thenReturn(delegateScripts);
 
     RestResponse<DelegateScripts> restResponse =
@@ -470,7 +470,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
 
     verify(delegateService, atLeastOnce())
         .getDelegateScripts(ACCOUNT_ID, delegateVersion,
-            subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID), verificationUrl, delegateName);
+            subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID), verificationUrl, delegateName, null);
     assertThat(restResponse.getResource()).isInstanceOf(DelegateScripts.class).isNotNull();
   }
 

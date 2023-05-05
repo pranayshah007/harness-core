@@ -393,7 +393,7 @@ public class DelegateAgentResource {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
       return new RestResponse<>(delegateService.getDelegateScripts(accountId, version,
-          subdomainUrlHelper.getManagerUrl(request, accountId), getVerificationUrl(request), delegateName));
+          subdomainUrlHelper.getManagerUrl(request, accountId), getVerificationUrl(request), delegateName, null));
     }
   }
 
@@ -421,11 +421,11 @@ public class DelegateAgentResource {
   public RestResponse<DelegateScripts> getDelegateScripts(@Context HttpServletRequest request,
       @QueryParam("accountId") @NotEmpty String accountId,
       @QueryParam("delegateVersion") @NotEmpty String delegateVersion, @QueryParam("patchVersion") String patchVersion,
-      @QueryParam("delegateName") String delegateName) throws IOException {
+      @QueryParam("delegateName") String delegateName, @QueryParam("delegateType") String delegateType) throws IOException {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       String fullVersion = isNotEmpty(patchVersion) ? delegateVersion + "-" + patchVersion : delegateVersion;
       return new RestResponse<>(delegateService.getDelegateScripts(accountId, fullVersion,
-          subdomainUrlHelper.getManagerUrl(request, accountId), getVerificationUrl(request), delegateName));
+          subdomainUrlHelper.getManagerUrl(request, accountId), getVerificationUrl(request), delegateName, delegateType));
     }
   }
 

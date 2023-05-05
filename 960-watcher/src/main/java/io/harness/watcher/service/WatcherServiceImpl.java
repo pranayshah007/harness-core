@@ -1020,7 +1020,7 @@ public class WatcherServiceImpl implements WatcherService {
       restResponse = callInterruptible21(timeLimiter, ofMinutes(1),
           ()
               -> SafeHttpCall.execute(managerClient.getDelegateScripts(
-                  watcherConfiguration.getAccountId(), updatedVersion, patchVersion, DELEGATE_NAME)));
+                  watcherConfiguration.getAccountId(), updatedVersion, patchVersion, DELEGATE_NAME, DELEGATE_TYPE)));
     } else {
       log.info(format("Calling getDelegateScriptsNg with version %s and patch %s", updatedVersion, patchVersion));
       restResponse = callInterruptible21(timeLimiter, ofMinutes(1),

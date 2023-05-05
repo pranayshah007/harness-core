@@ -107,7 +107,7 @@ public interface DelegateService extends OwnedByAccount {
       String delegateType) throws IOException;
 
   DelegateScripts getDelegateScripts(String accountId, String version, String managerHost, String verificationHost,
-      String delegateName) throws IOException;
+      String delegateName, String delegateType) throws IOException;
 
   String getLatestDelegateVersion(String accountId);
 

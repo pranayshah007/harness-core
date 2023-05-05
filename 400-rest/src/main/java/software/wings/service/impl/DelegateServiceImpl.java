@@ -1300,6 +1300,7 @@ public class DelegateServiceImpl implements DelegateService {
             .verificationHost(verificationHost)
             .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getExternalUrl())
             .delegateXmx(getDelegateXmx(delegateType))
+            .delegateType(delegateType)
             .delegateTokenName(delegateTokenName.orElse(null))
             .build(),
         true);
@@ -1311,6 +1312,7 @@ public class DelegateServiceImpl implements DelegateService {
             .verificationHost(verificationHost)
             .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getExternalUrl())
             .delegateXmx(getDelegateXmx(delegateType))
+            .delegateType(delegateType)
             .delegateTokenName(delegateTokenName.orElse(null))
             .watcher(true)
             .build(),
@@ -1328,7 +1330,7 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public DelegateScripts getDelegateScripts(String accountId, String version, String managerHost,
-      String verificationHost, String delegateName) throws IOException {
+      String verificationHost, String delegateName, String delegateType) throws IOException {
     Optional<String> delegateTokenName = getDelegateTokenNameFromGlobalContext();
     ImmutableMap<String, String> scriptParams = getJarAndScriptRunTimeParamMap(
         TemplateParameters.builder()
@@ -1338,6 +1340,7 @@ public class DelegateServiceImpl implements DelegateService {
             .verificationHost(verificationHost)
             .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getExternalUrl())
             .delegateTokenName(delegateTokenName.orElse(null))
+            .delegateType(delegateType)
             .delegateName(StringUtils.defaultString(delegateName))
             .build(),
         false);
@@ -1349,6 +1352,7 @@ public class DelegateServiceImpl implements DelegateService {
             .verificationHost(verificationHost)
             .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getExternalUrl())
             .delegateTokenName(delegateTokenName.orElse(null))
+            .delegateType(delegateType)
             .delegateName(StringUtils.defaultString(delegateName))
             .watcher(true)
             .build(),
