@@ -34,7 +34,7 @@ public class ContainerPortHelper {
     ContainerPortDetails containerPortDetails = (ContainerPortDetails) executionSweepingOutputService.resolve(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(PORT_DETAILS));
 
-    List<Integer> ports = containerPortDetails.getPortDetails().get(getKubernetesStandardPodName(stepIdentifier));
+    List<Integer> ports = containerPortDetails.getPortDetails().get(stepIdentifier);
 
     if (ports.size() != 1) {
       throw new ContainerStepExecutionException(format("Step [%s] should map to single port", stepIdentifier));
