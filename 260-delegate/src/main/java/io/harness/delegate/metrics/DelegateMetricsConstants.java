@@ -19,7 +19,6 @@ public class DelegateMetricsConstants {
   public static final String TASKS_CURRENTLY_EXECUTING = "tasks_currently_executing";
   public static final String TASKS_IN_QUEUE = "tasks_in_queue";
   public static final String TASK_TIMEOUT = "task_timeout";
-  public static final String TASK_COMPLETED = "task_completed";
   public static final String TASK_FAILED = "task_failed";
   public static final String TASK_REJECTED = "task_rejected";
   public static final String DELEGATE_CONNECTED = "delegate_connected";
@@ -33,7 +32,6 @@ public class DelegateMetricsConstants {
     put(TASKS_CURRENTLY_EXECUTING, create("Number of tasks in execution.", DELEGATE_NAME_LABEL));
     put(TASKS_IN_QUEUE, create("Number of tasks in the queue.", DELEGATE_NAME_LABEL));
     put(TASK_TIMEOUT, create("Number of tasks timed out.", DELEGATE_NAME_LABEL, TASK_TYPE_LABEL));
-    put(TASK_COMPLETED, create("Number of tasks completed.", DELEGATE_NAME_LABEL, TASK_TYPE_LABEL));
     put(TASK_FAILED, create("Number of tasks failed.", DELEGATE_NAME_LABEL, TASK_TYPE_LABEL));
     put(TASK_REJECTED,
         create("Number of tasks rejected due to high load on delegate.", DELEGATE_NAME_LABEL, TASK_TYPE_LABEL));
