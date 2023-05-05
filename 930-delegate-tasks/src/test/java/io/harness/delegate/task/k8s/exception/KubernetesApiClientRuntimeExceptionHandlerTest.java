@@ -41,9 +41,9 @@ public class KubernetesApiClientRuntimeExceptionHandlerTest extends CategoryTest
     WingsException result = handler.handleException(
         new KubernetesApiClientRuntimeException("failed", new CertificateException("failed cert exception")));
     assertThat(ExceptionUtils.cause(HintException.class, result))
-        .hasMessageContaining(KubernetesExceptionHints.API_CLIENT_CA_CERT_INVALID_FORMAT);
+        .hasMessageContaining(KubernetesExceptionHints.API_CLIENT_CERT_INVALID);
     assertThat(ExceptionUtils.cause(ExplanationException.class, result))
-        .hasMessageContaining(KubernetesExceptionExplanation.API_CLIENT_CA_CERT_INVALID_FORMAT);
+        .hasMessageContaining(KubernetesExceptionExplanation.API_CLIENT_CERT_INVALID);
     assertThat(ExceptionUtils.cause(KubernetesTaskException.class, result))
         .hasMessageContaining("failed cert exception");
   }
@@ -55,9 +55,9 @@ public class KubernetesApiClientRuntimeExceptionHandlerTest extends CategoryTest
     WingsException result = handler.handleException(
         new KubernetesApiClientRuntimeException("failed", new IOException("failed io exception")));
     assertThat(ExceptionUtils.cause(HintException.class, result))
-        .hasMessageContaining(KubernetesExceptionHints.API_CLIENT_CA_CERT_INCOMPLETE);
+        .hasMessageContaining(KubernetesExceptionHints.API_CLIENT_CERT_INCOMPLETE);
     assertThat(ExceptionUtils.cause(ExplanationException.class, result))
-        .hasMessageContaining(KubernetesExceptionExplanation.API_CLIENT_CA_CERT_INCOMPLETE);
+        .hasMessageContaining(KubernetesExceptionExplanation.API_CLIENT_CERT_INCOMPLETE);
     assertThat(ExceptionUtils.cause(KubernetesTaskException.class, result)).hasMessageContaining("failed io exception");
   }
 
