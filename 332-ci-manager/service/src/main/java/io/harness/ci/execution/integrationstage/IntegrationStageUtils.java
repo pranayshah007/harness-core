@@ -115,6 +115,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.utils.CiIntegrationStageUtils;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
@@ -429,34 +430,7 @@ public class IntegrationStageUtils {
   }
 
   public static String getGitURL(String repoName, GitConnectionType connectionType, String url) {
-    String gitUrl = retrieveGenericGitConnectorURL(repoName, connectionType, url);
-
-    if (!gitUrl.endsWith(GIT_URL_SUFFIX) && !gitUrl.contains(AZURE_REPO_BASE_URL)) {
-      gitUrl += GIT_URL_SUFFIX;
-    }
-    return gitUrl;
-  }
-
-  public static String retrieveGenericGitConnectorURL(String repoName, GitConnectionType connectionType, String url) {
-    String gitUrl = "";
-    if (connectionType == GitConnectionType.REPO) {
-      gitUrl = url;
-    } else if (connectionType == GitConnectionType.PROJECT || connectionType == GitConnectionType.ACCOUNT) {
-      if (isEmpty(repoName)) {
-        throw new IllegalArgumentException("Repo name is not set in CI codebase spec");
-      }
-      if (connectionType == GitConnectionType.PROJECT) {
-        gitUrl = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(url, repoName);
-      } else {
-        gitUrl = StringUtils.join(StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR,
-            StringUtils.stripStart(repoName, PATH_SEPARATOR));
-      }
-    } else {
-      throw new InvalidArgumentsException(
-          format("Invalid connection type for git connector: %s", connectionType.toString()), WingsException.USER);
-    }
-
-    return gitUrl;
+    return CiIntegrationStageUtils.getGitURL(repoName, connectionType, url);
   }
 
   public static String getGitURLFromConnector(ConnectorDetails gitConnector, CodeBase ciCodebase) {
