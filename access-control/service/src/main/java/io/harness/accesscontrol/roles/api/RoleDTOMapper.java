@@ -7,9 +7,11 @@
 
 package io.harness.accesscontrol.roles.api;
 
+import static io.harness.accesscontrol.roles.api.RoleDTO.ScopeLevel.valueOf;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.accesscontrol.roles.Role;
+import io.harness.accesscontrol.roles.api.RoleDTO.ScopeLevel;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.harness.ScopeMapper;
@@ -18,6 +20,8 @@ import io.harness.annotations.dev.OwnedBy;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @OwnedBy(PL)
 @Singleton
@@ -38,7 +42,7 @@ public class RoleDTOMapper {
         .role(RoleDTO.builder()
                   .identifier(object.getIdentifier())
                   .name(object.getName())
-                  .allowedScopeLevels(object.getAllowedScopeLevels())
+                  .allowedScopeLevels(toAllowedScopeLevelsEnum(object.getAllowedScopeLevels()))
                   .permissions(object.getPermissions())
                   .description(object.getDescription())
                   .tags(object.getTags())
@@ -55,11 +59,27 @@ public class RoleDTOMapper {
         .identifier(object.getIdentifier())
         .scopeIdentifier(scopeIdentifier)
         .name(object.getName())
-        .allowedScopeLevels(object.getAllowedScopeLevels())
+        .allowedScopeLevels(fromAllowedScopeLevelsEnum(object.getAllowedScopeLevels()))
         .permissions(object.getPermissions() == null ? new HashSet<>() : object.getPermissions())
         .description(object.getDescription())
         .tags(object.getTags())
         .managed(false)
         .build();
+  }
+
+  public static Set<String> fromAllowedScopeLevelsEnum(Set<ScopeLevel> scopeLevels) {
+    return scopeLevels.stream().map(RoleDTOMapper::fromAllowedScopeLevelEnum).collect(Collectors.toSet());
+  }
+
+  public static String fromAllowedScopeLevelEnum(ScopeLevel scopeLevel) {
+    return scopeLevel.toString();
+  }
+
+  public static Set<ScopeLevel> toAllowedScopeLevelsEnum(Set<String> scopeLevels) {
+    return scopeLevels.stream().map(RoleDTOMapper::toAllowedScopeLevelEnum).collect(Collectors.toSet());
+  }
+
+  public static ScopeLevel toAllowedScopeLevelEnum(String scopeLevel) {
+    return valueOf(scopeLevel);
   }
 }

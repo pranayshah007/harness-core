@@ -45,10 +45,25 @@ public class RoleDTO {
   @Schema(
       description = "List of the permission identifiers (Subset of the list returned by GET /authz/api/permissions)")
   final Set<String> permissions;
-  @Schema(description = "The scope levels at which this role can be used",
-      allowableValues = {"account", "organization", "project"})
-  @Setter
-  Set<String> allowedScopeLevels;
+  @Schema(description = "The scope levels at which this role can be used") @Setter Set<ScopeLevel> allowedScopeLevels;
   @Schema(description = "Description of the role") final String description;
   @Schema(description = "Tags") final Map<String, String> tags;
+
+  @Schema(type = "string", allowableValues = {"account", "organization", "project"})
+  public enum ScopeLevel {
+    ACCOUNT("account"),
+    ORGANIZATION("organization"),
+    PROJECT("project");
+
+    String name;
+
+    ScopeLevel(String name) {
+      this.name = name;
+    }
+
+    @Override
+    public String toString() {
+      return name;
+    }
+  }
 }

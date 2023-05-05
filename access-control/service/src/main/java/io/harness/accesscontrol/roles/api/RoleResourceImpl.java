@@ -13,6 +13,7 @@ import static io.harness.accesscontrol.AccessControlPermissions.VIEW_ROLE_PERMIS
 import static io.harness.accesscontrol.AccessControlResourceTypes.ROLE;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.NO_FILTER;
 import static io.harness.accesscontrol.roles.api.RoleDTOMapper.fromDTO;
+import static io.harness.accesscontrol.roles.api.RoleDTOMapper.toAllowedScopeLevelEnum;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
@@ -144,7 +145,7 @@ public class RoleResourceImpl implements RoleResource {
         Resource.of(ROLE, null), EDIT_ROLE_PERMISSION);
     Scope scope = scopeService.getOrCreate(ScopeMapper.fromParams(harnessScopeParams));
     if (isEmpty(roleDTO.getAllowedScopeLevels())) {
-      roleDTO.setAllowedScopeLevels(Sets.newHashSet(scope.getLevel().toString()));
+      roleDTO.setAllowedScopeLevels(Sets.newHashSet(toAllowedScopeLevelEnum(scope.getLevel().toString())));
     }
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       RoleResponseDTO response = roleDTOMapper.toResponseDTO(roleService.create(fromDTO(scope.toString(), roleDTO)));
