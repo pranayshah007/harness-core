@@ -14,7 +14,6 @@ import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DET
 import static io.harness.ci.commonconstants.CIExecutionConstants.LITE_ENGINE_PORT;
 import static io.harness.ci.commonconstants.CIExecutionConstants.TMP_PATH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.UNDERSCORE_SEPARATOR;
-import static io.harness.ci.states.InitializeTaskStep.LE_STATUS_TASK_TYPE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
@@ -77,7 +76,6 @@ import io.harness.delegate.task.HDelegateTask;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
 import io.harness.delegate.task.stepstatus.StepStatus;
-import io.harness.delegate.task.stepstatus.StepStatusTaskParameters;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadata;
 import io.harness.encryption.Scope;
@@ -86,6 +84,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.ngexception.CILiteEngineException;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
@@ -254,7 +253,7 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
   private AsyncExecutableResponse executeK8AsyncAfterRbac(Ambiance ambiance, String stepIdentifier, String runtimeId,
       CIStepInfo ciStepInfo, String stepParametersName, String accountId, String logKey, long timeoutInMillis,
       String stringTimeout, K8StageInfraDetails k8StageInfraDetails, StageDetails stageDetails) {
-    String parkedTaskId = queueParkedDelegateTask(ambiance, timeoutInMillis, accountId, ciDelegateTaskExecutor);
+    String parkedTaskId = ciDelegateTaskExecutor.queueParkedDelegateTask(ambiance, timeoutInMillis, accountId);
     OSType os = IntegrationStageUtils.getK8OS(k8StageInfraDetails.getInfrastructure());
     UnitStep unitStep = serialiseStep(ciStepInfo, parkedTaskId, logKey, stepIdentifier,
         getPort(ambiance, stepIdentifier), accountId, stepParametersName, stringTimeout, os, ambiance, stageDetails);
@@ -678,22 +677,6 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
 
     return executor.queueTask(
         abstractions, task, taskSelectors, eligibleToExecuteDelegateIds, executeOnHarnessHostedDelegates);
-  }
-
-  private String queueParkedDelegateTask(
-      Ambiance ambiance, long timeout, String accountId, CIDelegateTaskExecutor executor) {
-    final TaskData taskData = TaskData.builder()
-                                  .async(true)
-                                  .parked(true)
-                                  .taskType(LE_STATUS_TASK_TYPE)
-                                  .parameters(new Object[] {StepStatusTaskParameters.builder().build()})
-                                  .timeout(timeout)
-                                  .build();
-
-    Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
-    HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
-
-    return executor.queueTask(abstractions, task, new ArrayList<>(), new ArrayList<>(), false);
   }
 
   private String getLogKey(Ambiance ambiance) {

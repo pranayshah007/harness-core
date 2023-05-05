@@ -15,9 +15,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.k8s.CIK8ExecuteStepTaskParams;
+import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.plugin.ContainerDelegateTaskHelper;
 import io.harness.pms.sdk.core.plugin.PluginStepMetadata;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PluginUtils {
-  @Inject ContainerDelegateTaskHelper containerDelegateTaskHelper;
+  @Inject CIDelegateTaskExecutor taskExecutor;
   @Inject OutcomeService outcomeService;
 
   /**
@@ -64,7 +64,6 @@ public class PluginUtils {
                                            .isLocal(pluginStepMetadata.isLocal())
                                            .delegateSvcEndpoint(pluginStepMetadata.getDelegateServiceEndpoint())
                                            .build();
-    return containerDelegateTaskHelper.getDelegateTaskDataForExecuteStep(
-        ambiance, pluginStepMetadata.getTimeout(), params);
+    return taskExecutor.getDelegateTaskDataForExecuteStep(ambiance, pluginStepMetadata.getTimeout(), params);
   }
 }

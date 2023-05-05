@@ -14,6 +14,7 @@ import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
+import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
@@ -56,7 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class AbstractContainerStepV2<T extends StepParameters> implements AsyncExecutableWithRbac<T> {
   @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
   @Inject private WaitNotifyEngine waitNotifyEngine;
-  @Inject private ContainerDelegateTaskHelper containerDelegateTaskHelper;
+  @Inject private CIDelegateTaskExecutor taskExecutor;
   @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject OutcomeService outcomeService;
@@ -76,11 +77,11 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
     long timeout = getTimeout(ambiance, stepElementParameters);
     timeout = Math.max(timeout, 100);
 
-    String parkedTaskId = containerDelegateTaskHelper.queueParkedDelegateTask(ambiance, timeout, accountId);
+    String parkedTaskId = taskExecutor.queueParkedDelegateTask(ambiance, timeout, accountId);
 
     TaskData runStepTaskData = getStepTask(ambiance, stepElementParameters, AmbianceUtils.getAccountId(ambiance),
         getLogPrefix(ambiance), timeout, parkedTaskId);
-    String liteEngineTaskId = containerDelegateTaskHelper.queueTask(ambiance, runStepTaskData, accountId);
+    String liteEngineTaskId = taskExecutor.queueTask(ambiance, runStepTaskData, accountId);
     log.info("Created parked task {} and lite engine task {}", parkedTaskId, liteEngineTaskId);
 
     return AsyncExecutableResponse.newBuilder()
