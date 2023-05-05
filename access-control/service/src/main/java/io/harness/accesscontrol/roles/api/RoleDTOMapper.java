@@ -7,8 +7,11 @@
 
 package io.harness.accesscontrol.roles.api;
 
-import static io.harness.accesscontrol.roles.api.RoleDTO.ScopeLevel.valueOf;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+
+import static com.google.common.collect.Sets.newHashSet;
+import static org.apache.commons.collections.CollectionUtils.isEmpty;
+import static org.apache.commons.lang3.EnumUtils.getEnum;
 
 import io.harness.accesscontrol.roles.Role;
 import io.harness.accesscontrol.roles.api.RoleDTO.ScopeLevel;
@@ -68,6 +71,9 @@ public class RoleDTOMapper {
   }
 
   public static Set<String> fromAllowedScopeLevelsEnum(Set<ScopeLevel> scopeLevels) {
+    if (isEmpty(scopeLevels)) {
+      return newHashSet();
+    }
     return scopeLevels.stream().map(RoleDTOMapper::fromAllowedScopeLevelEnum).collect(Collectors.toSet());
   }
 
@@ -76,10 +82,13 @@ public class RoleDTOMapper {
   }
 
   public static Set<ScopeLevel> toAllowedScopeLevelsEnum(Set<String> scopeLevels) {
+    if (isEmpty(scopeLevels)) {
+      return newHashSet();
+    }
     return scopeLevels.stream().map(RoleDTOMapper::toAllowedScopeLevelEnum).collect(Collectors.toSet());
   }
 
   public static ScopeLevel toAllowedScopeLevelEnum(String scopeLevel) {
-    return valueOf(scopeLevel);
+    return getEnum(ScopeLevel.class, scopeLevel);
   }
 }
