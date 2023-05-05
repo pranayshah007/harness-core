@@ -51,9 +51,7 @@ import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_CONN
 import static io.harness.delegate.metrics.DelegateMetricsConstants.RESOURCE_CONSUMPTION_ABOVE_THRESHOLD;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_CURRENTLY_EXECUTING;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_IN_QUEUE;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_COMPLETED;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_EXECUTION_TIME;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_FAILED;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_REJECTED;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_TIMEOUT;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
@@ -2758,8 +2756,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         response = delegateAgentManagerClient.sendTaskStatus(delegateId, taskId, accountId, taskResponse).execute();
         if (response != null && response.code() >= 200 && response.code() <= 299) {
           log.debug("Task {} type {},  response sent to manager", taskId, taskResponse.getTaskTypeName());
-          metricRegistry.registerCounterMetric(TASK_COMPLETED,
-              new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()}, "Total number of task completed");
           break;
         }
         log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId,
@@ -2776,8 +2772,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
     } catch (IOException e) {
       log.error("Unable to send response to manager", e);
-      metricRegistry.registerCounterMetric(
-          TASK_FAILED, new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()}, "Total number of task failed");
     } finally {
       if (response != null && response.errorBody() != null && !response.isSuccessful()) {
         response.errorBody().close();
@@ -2802,8 +2796,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             .responseCode(DelegateTaskResponse.ResponseCode.FAILED)
             .response(ErrorNotifyResponseData.builder().errorMessage(ExceptionUtils.getMessage(exception)).build())
             .build();
-    metricRegistry.registerCounterMetric(
-        TASK_FAILED, new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()}, "Total number of task failed");
     log.error("Sending error response for task{} due to exception", taskId, exception);
     try {
       Response<ResponseBody> resp;

@@ -11,7 +11,6 @@ import static io.harness.exception.WingsException.ExecutionContext.DELEGATE;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.lang.String.format;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -68,9 +67,6 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
   @Inject HarnessMetricRegistry metricRegistry;
 
   @Inject private DataCollectionExecutorService dataCollectionService;
-  public static final String TASK_FAILED = "task_failed";
-  private static String DELEGATE_NAME =
-      isNotBlank(System.getenv().get("DELEGATE_NAME")) ? System.getenv().get("DELEGATE_NAME") : "";
 
   public AbstractDelegateRunnableTask(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
@@ -143,8 +139,6 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
                                   .errorMessage(errorMessage)
                                   .build());
         taskResponse.responseCode(ResponseCode.FAILED);
-        metricRegistry.registerCounterMetric(
-            TASK_FAILED, new String[] {DELEGATE_NAME, taskType}, "Total number of task failed");
       }
       log.debug("Completed executing task {}", taskId);
     } catch (DelegateRetryableException exception) {
@@ -162,7 +156,6 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
       taskResponse.response(delegateExceptionManager.getResponseData(
           throwable, errorNotifyResponseDataBuilder, isSupportingErrorFramework()));
       taskResponse.responseCode(ResponseCode.FAILED);
-      metricRegistry.recordGaugeInc(TASK_FAILED, new String[] {delegateHostname, taskType});
     } finally {
       GlobalContextManager.unset();
       if (consumer != null) {
