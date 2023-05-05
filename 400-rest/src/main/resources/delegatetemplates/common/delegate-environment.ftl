@@ -55,7 +55,6 @@
           value: "${grpcServiceEnabled}"
         - name: GRPC_SERVICE_CONNECTOR_PORT
           value: "${grpcServiceConnectorPort}"
-        - name:
 </#macro>
 <#macro immutable>
         - name: CLIENT_TOOLS_DOWNLOAD_DISABLED
