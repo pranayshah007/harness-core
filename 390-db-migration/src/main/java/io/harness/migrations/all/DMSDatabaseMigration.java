@@ -6,6 +6,7 @@ import static io.harness.ng.DbAliases.HARNESS;
 import io.harness.configuration.DeployMode;
 import io.harness.delegate.utils.DelegateDBMigrationFailed;
 import io.harness.migration.DelegateMigrationFlag;
+import io.harness.migration.DelegateMigrationFlag.DelegateMigrationFlagKeys;
 import io.harness.migrations.Migration;
 import io.harness.migrations.SeedDataMigration;
 import io.harness.mongo.IndexManager;
@@ -40,10 +41,9 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
   long startTime;
 
   // agentMTLS, delegateRing collection are not used smp.
-  private final List<String> entityList =
-      Arrays.asList("versionOverride", "delegateConnectionResults", "delegateGroups", "delegateProfiles",
-          "delegateRing", "delegateScopes", "delegateSequenceConfig", "delegateTokens", "delegates", "perpetualTask",
-          "perpetualTaskScheduleConfig", "taskSelectorMaps", "delegateTasks");
+  private final List<String> entityList = Arrays.asList("versionOverride", "taskSelectorMaps",
+      "perpetualTaskScheduleConfig", "delegateConnectionResults", "delegateProfiles", "delegateRing", "delegateScopes",
+      "delegateSequenceConfig", "delegateTokens", "delegates", "perpetualTask", "delegateGroups", "delegateTasks");
 
   private final String DELEGATE_TASK = "delegateTasks";
 
@@ -73,10 +73,18 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
           IndexManager.Mode.AUTO, persistence.getDatastore(Store.builder().name(DMS).build()), morphia, dmsStore);
       for (String collection : entityList) {
         log.info("working for entity {}", collection);
+        // Check if the migratian if already toggled. If yes, don't proceed.
+        Class<?> collectionClass = getClassForCollectionName(collection);
+        DelegateMigrationFlag delegateMigrationFlag =
+            persistence.createQuery(DelegateMigrationFlag.class)
+                .filter(DelegateMigrationFlagKeys.className, collectionClass.getCanonicalName())
+                .get();
+        if (delegateMigrationFlag != null && delegateMigrationFlag.isEnabled()) {
+          continue;
+        }
         if (collection.equals(DELEGATE_TASK)) {
           if (checkIndexCount(collection)) {
             toggleFlag("delegateTask", true);
-            Class<?> collectionClass = getClassForCollectionName(collection);
             if (!postToggleCorrectness(collectionClass)) {
               throw new DelegateDBMigrationFailed(String.format(MIGRATION_FAIL_EXCEPTION_FORMAT, collection));
             }
@@ -132,6 +140,9 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
       // Drop the collection from DMS DB.
       persistence.getCollection(dmsStore, collection).drop();
     }
+    // reverting ON_PREM_MIGRATION_DONE flag to false.
+    DelegateMigrationFlag onPremMigrationFlag = new DelegateMigrationFlag(ON_PREM_MIGRATION_DONE, false);
+    persistence.save(onPremMigrationFlag);
   }
 
   private boolean persistToNewDatabase(String collection) {
