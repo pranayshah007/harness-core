@@ -150,7 +150,7 @@ public class SshEntityHelper {
             .encryptionDataDetails(sshKeySpecDTOHelper.getSSHKeyEncryptionDetails(sshKeySpecDto, ngAccess))
             .subscriptionId(azureInfrastructureOutcome.getSubscriptionId())
             .resourceGroup(azureInfrastructureOutcome.getResourceGroup())
-            .tags(filterInfraTags(azureInfrastructureOutcome.getTags()))
+            .tags(filterInfraTags(azureInfrastructureOutcome.getHostTags()))
             .hostConnectionType(azureInfrastructureOutcome.getHostConnectionType())
             .build();
       case SSH_WINRM_AWS:
@@ -168,7 +168,7 @@ public class SshEntityHelper {
             .sshKeySpecDto(sshKeySpecDto)
             .encryptionDataDetails(sshKeySpecDTOHelper.getSSHKeyEncryptionDetails(sshKeySpecDto, ngAccess))
             .region(awsInfrastructureOutcome.getRegion())
-            .tags(filterInfraTags(awsInfrastructureOutcome.getTags()))
+            .tags(filterInfraTags(awsInfrastructureOutcome.getHostTags()))
             .build();
 
       case CUSTOM_DEPLOYMENT:
@@ -217,7 +217,7 @@ public class SshEntityHelper {
             .encryptionDataDetails(winRmCredentialsSpecDTOHelper.getWinRmEncryptionDetails(winRmCredentials, ngAccess))
             .subscriptionId(azureInfrastructureOutcome.getSubscriptionId())
             .resourceGroup(azureInfrastructureOutcome.getResourceGroup())
-            .tags(filterInfraTags(azureInfrastructureOutcome.getTags()))
+            .tags(filterInfraTags(azureInfrastructureOutcome.getHostTags()))
             .hostConnectionType(azureInfrastructureOutcome.getHostConnectionType())
             .build();
       case SSH_WINRM_AWS:
@@ -235,7 +235,7 @@ public class SshEntityHelper {
             .winRmCredentials(winRmCredentials)
             .encryptionDataDetails(winRmCredentialsSpecDTOHelper.getWinRmEncryptionDetails(winRmCredentials, ngAccess))
             .region(awsInfrastructureOutcome.getRegion())
-            .tags(filterInfraTags(awsInfrastructureOutcome.getTags()))
+            .tags(filterInfraTags(awsInfrastructureOutcome.getHostTags()))
             .build();
       default:
         throw new UnsupportedOperationException(

@@ -332,7 +332,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                      .credentialsRef("credentials-ref")
                                                      .resourceGroup("res-group")
                                                      .subscriptionId("sub-id")
-                                                     .tags(Collections.singletonMap("tag", "val"))
+                                                     .hostTags(Collections.singletonMap("tag", "val"))
                                                      .hostConnectionType("Hostname")
                                                      .environment(environment)
                                                      .build();
