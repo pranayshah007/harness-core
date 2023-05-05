@@ -1365,9 +1365,9 @@ public class UserGroupServiceImpl implements UserGroupService {
     deletedIds.add(appId);
 
     String accountId = appService.getAccountIdByAppId(appId);
-    log.info("[USERGROUP-DEBUG]: deleted appId {} with app {} for account {}", deletedIds, appId, accountId);
+    log.error("[USERGROUP-DEBUG]: deleted appId {} with app {} for account {}", deletedIds, appId, accountId);
     Query<UserGroup> query = createQueryForUserGroup(accountId, deletedIds);
-    log.info("[USERGROUP-DEBUG]: appId {} query {}", appId, query);
+    log.error("[USERGROUP-DEBUG]: appId {} query {}", appId, query);
     try (HIterator<UserGroup> userGroupIterator = new HIterator<>(query.fetch())) {
       while (userGroupIterator.hasNext()) {
         final UserGroup userGroup = userGroupIterator.next();
@@ -1378,22 +1378,13 @@ public class UserGroupServiceImpl implements UserGroupService {
 
   @VisibleForTesting
   protected Query<UserGroup> createQueryForUserGroup(String accountId, Set<String> deletedIds) {
-    if (isNotEmpty(accountId)) {
-      return wingsPersistence.createQuery(UserGroup.class)
-          .filter(UserGroupKeys.accountId, accountId)
-          .project(UserGroup.ID_KEY2, true)
-          .project(UserGroupKeys.accountId, true)
-          .project(UserGroupKeys.appPermissions, true)
-          .project(UserGroupKeys.memberIds, true);
-    } else {
-      return wingsPersistence.createQuery(UserGroup.class)
-          .field(UserGroupKeys.appIds)
-          .in(deletedIds)
-          .project(UserGroup.ID_KEY2, true)
-          .project(UserGroupKeys.accountId, true)
-          .project(UserGroupKeys.appPermissions, true)
-          .project(UserGroupKeys.memberIds, true);
-    }
+    return wingsPersistence.createQuery(UserGroup.class)
+        .field(UserGroupKeys.appIds)
+        .in(deletedIds)
+        .project(UserGroup.ID_KEY2, true)
+        .project(UserGroupKeys.accountId, true)
+        .project(UserGroupKeys.appPermissions, true)
+        .project(UserGroupKeys.memberIds, true);
   }
 
   @Override
