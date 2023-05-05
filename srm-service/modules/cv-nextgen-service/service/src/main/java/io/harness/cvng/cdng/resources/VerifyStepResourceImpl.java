@@ -90,6 +90,17 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
         .collect(Collectors.toList());
   }
 
+  private void sendTelemetryEvent(String verifyStepResult, String projectId, String orgId) {
+    UserPrincipal userPrincipal = (UserPrincipal) SecurityContextBuilder.getPrincipal();
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put("verifyStepResult", verifyStepResult);
+    properties.put("projectId", projectId);
+    properties.put("orgId", orgId);
+    properties.put("userId", userPrincipal.getEmail());
+    telemetryReporter.sendTrackEvent("Verify Step Result", properties,
+        ImmutableMap.<Destination, Boolean>builder().put(Destination.AMPLITUDE, true).build(), Category.GLOBAL);
+  }
+
   @Override
   public VerificationOverview getVerificationOverviewForVerifyStepExecutionId(
       VerifyStepPathParams verifyStepPathParams) {
@@ -108,14 +119,8 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
         getAppliedDeploymentAnalysisType(deploymentVerificationJobInstanceSummary);
     if (featureFlagService.isFeatureFlagEnabled(
             verifyStepPathParams.getAccountIdentifier(), FeatureName.SRM_TELEMETRY.toString())) {
-      UserPrincipal userPrincipal = (UserPrincipal) SecurityContextBuilder.getPrincipal();
-      HashMap<String, Object> properties = new HashMap<>();
-      properties.put("verifyStepResult", deploymentVerificationJobInstanceSummary.getStatus().toString());
-      properties.put("projectId", verifyStepPathParams.getProjectIdentifier());
-      properties.put("orgId", verifyStepPathParams.getOrgIdentifier());
-      properties.put("userId", userPrincipal.getEmail());
-      telemetryReporter.sendTrackEvent("Verify Step Result", properties,
-          ImmutableMap.<Destination, Boolean>builder().put(Destination.AMPLITUDE, true).build(), Category.GLOBAL);
+      sendTelemetryEvent(deploymentVerificationJobInstanceSummary.getStatus().toString(),
+          verifyStepPathParams.getProjectIdentifier(), verifyStepPathParams.getOrgIdentifier());
     }
     return VerificationOverview.builder()
         .spec(getVerificationSpec(verificationJobInstance, deploymentVerificationJobInstanceSummary))
