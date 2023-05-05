@@ -539,7 +539,7 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 	// Environment variables
 	outputVarCmd := ""
 	for _, o := range r.envVarOutputs {
-		outputVarCmd += fmt.Sprintf("\necho %s=$%s >> %s", o, o, outputVarFile)
+		outputVarCmd += fmt.Sprintf("\necho %s $%s >> %s", o, o, outputVarFile)
 	}
 
 	// Config file
@@ -612,7 +612,7 @@ func (r *runTestsTask) execute(ctx context.Context) (map[string]string, error) {
 		agentPath = csharpAgentPath
 	}
 
-	outputFile := filepath.Join(r.tmpFilePath, fmt.Sprintf("%s%s", r.id, outputDotEnvSuffix))
+	outputFile := filepath.Join(r.tmpFilePath, fmt.Sprintf("%s%s", r.id, outputEnvSuffix))
 	cmdToExecute, err := r.getCmd(ctx, agentPath, outputFile)
 	if err != nil {
 		r.log.Errorw("could not create run command", zap.Error(err))
@@ -636,7 +636,7 @@ func (r *runTestsTask) execute(ctx context.Context) (map[string]string, error) {
 	stepOutput := make(map[string]string)
 	if len(r.envVarOutputs) != 0 {
 		var err error
-		outputVars, err := fetchOutputVariablesFromDotEnv(outputFile, r.log)
+		outputVars, err := fetchOutputVariables(outputFile, r.fs, r.log)
 		if err != nil {
 			logCommandExecErr(r.log, "error encountered while fetching output of runtest step from .env File", r.id, cmdToExecute, retryCount, start, err)
 			return nil, err

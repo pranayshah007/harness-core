@@ -24,6 +24,7 @@ import io.harness.delegate.task.HDelegateTask;
 import io.harness.delegate.task.SimpleHDelegateTask;
 import io.harness.delegate.task.stepstatus.StepStatusTaskParameters;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.rule.Owner;
 

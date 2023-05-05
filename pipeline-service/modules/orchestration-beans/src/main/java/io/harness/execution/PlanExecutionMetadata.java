@@ -69,6 +69,7 @@ public class PlanExecutionMetadata implements PersistentEntity, UuidAware, PmsNo
   @Wither private TriggerPayload triggerPayload;
   private Boolean notifyOnlyUser;
   @With String notes;
+  RetryStagesMetadata retryStagesMetadata;
 
   @Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
 

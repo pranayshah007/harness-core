@@ -6,12 +6,16 @@
  */
 
 package io.harness.ccm.views.dao;
-
 import static io.harness.persistence.HQuery.excludeValidate;
 
 import io.harness.ccm.commons.entities.CCMTimeFilter;
 import io.harness.ccm.views.entities.RuleExecution;
 import io.harness.ccm.views.entities.RuleExecution.RuleExecutionKeys;
+import io.harness.ccm.views.entities.RuleRecommendation;
+import io.harness.ccm.views.entities.RuleRecommendation.RuleRecommendationId;
+import io.harness.ccm.views.helper.ExecutionSummary;
+import io.harness.ccm.views.helper.GovernanceRuleFilter;
+import io.harness.ccm.views.helper.OverviewExecutionDetails;
 import io.harness.ccm.views.helper.RuleExecutionFilter;
 import io.harness.ccm.views.helper.RuleExecutionList;
 import io.harness.exception.InvalidRequestException;
@@ -22,6 +26,7 @@ import com.google.inject.Singleton;
 import dev.morphia.query.CriteriaContainer;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,6 +34,8 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class RuleExecutionDAO {
   @Inject private HPersistence hPersistence;
+  @Inject private RuleDAO ruleDAO;
+  @Inject private RuleEnforcementDAO ruleEnforcementDAO;
 
   public String save(RuleExecution ruleExecution) {
     return hPersistence.save(ruleExecution);
@@ -94,5 +101,28 @@ public class RuleExecutionDAO {
                                            .asList());
 
     return ruleExecutionList;
+  }
+
+  public OverviewExecutionDetails getOverviewExecutionDetails(
+      String accountId, RuleExecutionFilter ruleExecutionFilter) {
+    OverviewExecutionDetails overviewExecutionDetails = OverviewExecutionDetails.builder().build();
+    overviewExecutionDetails.setTotalRules(
+        ruleDAO.list(GovernanceRuleFilter.builder().accountId(accountId).build()).getRules().size());
+    overviewExecutionDetails.setTotalRuleEnforcements(ruleEnforcementDAO.list(accountId).size());
+    return overviewExecutionDetails;
+  }
+
+  public RuleExecutionList getRuleRecommendationDetails(String ruleRecommendationId, String accountId) {
+    RuleRecommendation ruleRecommendation = hPersistence.createQuery(RuleRecommendation.class)
+                                                .field(RuleRecommendationId.uuid)
+                                                .equal(ruleRecommendationId)
+                                                .get();
+    List<String> executionIds = new ArrayList<>();
+    for (ExecutionSummary executionSummary : ruleRecommendation.getExecutions()) {
+      executionIds.add(executionSummary.getRuleExecutionID());
+    }
+    RuleExecutionFilter ruleExecutionFilter =
+        RuleExecutionFilter.builder().executionIds(executionIds).accountId(accountId).build();
+    return filterExecution(ruleExecutionFilter);
   }
 }

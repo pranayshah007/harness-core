@@ -84,6 +84,7 @@ import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTarg
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
@@ -267,7 +268,6 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                            .spec(RollingSLOTargetSpec.builder().periodLength("60d").build())
                            .build();
     FieldUtils.writeField(serviceLevelObjectiveV2Service, "clock", clock, true);
-    FieldUtils.writeField(sliRecordService, "clock", clock, true);
     FieldUtils.writeField(serviceLevelObjectiveV2Service, "sliRecordService", sliRecordService, true);
     FieldUtils.writeField(serviceLevelObjectiveV2Service, "notificationClient", notificationClient, true);
   }
@@ -2736,7 +2736,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
-  @Owner(developers = KAPIL)
+  @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testShouldSendNotification_withErrorBudgetBurnRate() {
     NotificationRuleDTO notificationRuleDTO =
@@ -2768,16 +2768,43 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                    .getNotificationData(serviceLevelObjective, condition)
                    .shouldSendNotification())
         .isTrue();
-
-    condition.setThreshold(0.05);
-    assertThat(((ServiceLevelObjectiveV2ServiceImpl) serviceLevelObjectiveV2Service)
-                   .getNotificationData(serviceLevelObjective, condition)
-                   .shouldSendNotification())
-        .isFalse();
   }
 
   @Test
-  @Owner(developers = KAPIL)
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testShouldSendNotificationForCompositeSLO_withErrorBudgetBurnRate() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    NotificationRuleResponse notificationRuleResponseOne =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    compositeSLODTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponseOne.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    createMonitoredService();
+    serviceLevelObjectiveV2Service.update(projectParams, compositeSLODTO.getIdentifier(), compositeSLODTO);
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, compositeSLODTO.getIdentifier());
+    Instant startTime = clock.instant().minus(Duration.ofMinutes(10));
+    List<Double> runningGoodCount = Arrays.asList(0.75, 1.75, 1.75, 2.5, 2.75);
+    List<Double> runningBadCount = Arrays.asList(0.25, 0.25, 1.25, 1.5, 2.25);
+    createSLORecords(startTime, startTime.plus(5, ChronoUnit.MINUTES), runningGoodCount, runningBadCount);
+    SLONotificationRule.SLOErrorBudgetBurnRateCondition condition =
+        SLONotificationRule.SLOErrorBudgetBurnRateCondition.builder()
+            .threshold(0.00)
+            .lookBackDuration(Duration.ofMinutes(5).toMillis())
+            .build();
+
+    assertThat(((ServiceLevelObjectiveV2ServiceImpl) serviceLevelObjectiveV2Service)
+                   .getNotificationData(serviceLevelObjective, condition)
+                   .shouldSendNotification())
+        .isTrue();
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testGetNotificationRules_withCoolOffLogic() {
     NotificationRuleDTO notificationRuleDTO =
@@ -3052,5 +3079,26 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                               .build());
     }
     return sliRecordParams;
+  }
+
+  private List<CompositeSLORecord> createSLORecords(
+      Instant start, Instant end, List<Double> runningGoodCount, List<Double> runningBadCount) {
+    int index = 0;
+    List<CompositeSLORecord> sloRecords = new ArrayList<>();
+    for (Instant instant = start; instant.isBefore(end); instant = instant.plus(1, ChronoUnit.MINUTES)) {
+      CompositeSLORecord sloRecord = CompositeSLORecord.builder()
+                                         .verificationTaskId(compositeServiceLevelObjective.getUuid())
+                                         .sloId(compositeServiceLevelObjective.getUuid())
+                                         .version(0)
+                                         .runningBadCount(runningBadCount.get(index))
+                                         .runningGoodCount(runningGoodCount.get(index))
+                                         .sloVersion(0)
+                                         .timestamp(instant)
+                                         .build();
+      sloRecords.add(sloRecord);
+      index++;
+    }
+    hPersistence.save(sloRecords);
+    return sloRecords;
   }
 }

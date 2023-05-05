@@ -224,8 +224,6 @@ public class CfCommandTaskHelperNG {
         case GOOGLE_CLOUD_STORAGE_ARTIFACT:
           artifactStream = downloadFromGoogleCloudStorage(artifactConfig, artifactResponseBuilder, logCallback);
           break;
-        case CUSTOM_ARTIFACT:
-          break;
         default:
           throw NestedExceptionUtils.hintWithExplanationException("Use supported artifact registry",
               format("Registry of type '%s' is not supported yet", artifactConfig.getSourceType().getDisplayName()),

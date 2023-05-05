@@ -440,7 +440,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
         pmsExecutionService.getPipelineExecutionSummaryEntity(
             accountId, orgIdentifier, projectIdentifier, planExecutionId, false);
     String rootParentId = pipelineExecutionSummaryEntity.getRetryExecutionMetadata().getRootExecutionId();
-    return ResponseDTO.newResponse(retryExecutionHelper.getRetryHistory(rootParentId));
+    return ResponseDTO.newResponse(retryExecutionHelper.getRetryHistory(rootParentId, planExecutionId));
   }
 
   @Override

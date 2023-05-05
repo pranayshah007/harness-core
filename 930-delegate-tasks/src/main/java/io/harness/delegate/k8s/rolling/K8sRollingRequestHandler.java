@@ -23,6 +23,7 @@ import static io.harness.k8s.K8sConstants.MANIFEST_FILES_DIR;
 import static io.harness.k8s.manifest.ManifestHelper.getCustomResourceDefinitionWorkloads;
 import static io.harness.k8s.manifest.ManifestHelper.getWorkloads;
 import static io.harness.k8s.manifest.VersionUtils.markVersionedResources;
+import static io.harness.k8s.model.ServiceHookContext.MANIFEST_FILES_DIRECTORY;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Failed;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Succeeded;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -131,17 +132,18 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
     ServiceHookDTO serviceHookTaskParams = new ServiceHookDTO(k8sDelegateTaskParams);
     ServiceHookHandler serviceHookHandler = new ServiceHookHandler(
         k8sRollingDeployRequest.getServiceHooks(), serviceHookTaskParams, steadyStateTimeoutInMillis);
-    serviceHookHandler.applyServiceHooks(ServiceHookType.PRE_HOOK, ServiceHookAction.FETCH_FILES,
-        k8sDelegateTaskParams.getWorkingDirectory(), logCallback, manifestFilesDirectory);
+    serviceHookHandler.addToContext(MANIFEST_FILES_DIRECTORY.getContextName(), manifestFilesDirectory);
+    serviceHookHandler.execute(ServiceHookType.PRE_HOOK, ServiceHookAction.FETCH_FILES,
+        k8sDelegateTaskParams.getWorkingDirectory(), logCallback);
     logCallback.saveExecutionLog(color("\nStarting Kubernetes Rolling Deployment", LogColor.White, LogWeight.Bold));
     k8sTaskHelperBase.fetchManifestFilesAndWriteToDirectory(k8sRollingDeployRequest.getManifestDelegateConfig(),
         manifestFilesDirectory, logCallback, steadyStateTimeoutInMillis, k8sRollingDeployRequest.getAccountId(), false);
 
-    serviceHookHandler.applyServiceHooks(ServiceHookType.POST_HOOK, ServiceHookAction.FETCH_FILES,
-        k8sDelegateTaskParams.getWorkingDirectory(), logCallback, manifestFilesDirectory);
+    serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.FETCH_FILES,
+        k8sDelegateTaskParams.getWorkingDirectory(), logCallback);
     logCallback.saveExecutionLog("Done.", INFO, SUCCESS);
     init(k8sRollingDeployRequest, k8sDelegateTaskParams,
-        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress));
+        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress), serviceHookHandler);
 
     LogCallback prepareLogCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Prepare, true, commandUnitsProgress);
@@ -167,7 +169,6 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
         k8sRollingBaseHandler.setCustomWorkloadsInRelease(customWorkloads, (K8sLegacyRelease) release);
       }
     }
-
     if (isEmpty(managedWorkloads) && isEmpty(customWorkloads)) {
       k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress)
           .saveExecutionLog("Skipping Status Check since there is no Managed Workload.", INFO, SUCCESS);
@@ -177,20 +178,25 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
 
       List<KubernetesResourceId> managedWorkloadKubernetesResourceIds =
           managedWorkloads.stream().map(KubernetesResource::getResourceId).collect(Collectors.toList());
+      serviceHookHandler.addWorkloadContextForHooks(managedWorkloads, customWorkloads);
       LogCallback waitForeSteadyStateLogCallback =
           k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress);
-
+      serviceHookHandler.execute(ServiceHookType.PRE_HOOK, ServiceHookAction.STEADY_STATE_CHECK,
+          k8sDelegateTaskParams.getWorkingDirectory(), waitForeSteadyStateLogCallback);
       try {
-        K8sSteadyStateDTO k8sSteadyStateDTO = k8sTaskHelperBase.createSteadyStateCheckRequest(k8sDeployRequest,
-            managedWorkloadKubernetesResourceIds, waitForeSteadyStateLogCallback, k8sDelegateTaskParams,
-            kubernetesConfig.getNamespace(), customWorkloads.isEmpty(), true);
+        K8sSteadyStateDTO k8sSteadyStateDTO =
+            k8sTaskHelperBase.createSteadyStateCheckRequest(k8sDeployRequest, managedWorkloadKubernetesResourceIds,
+                waitForeSteadyStateLogCallback, k8sDelegateTaskParams, kubernetesConfig.getNamespace(), false, true);
 
         K8sClient k8sClient =
             k8sTaskHelperBase.getKubernetesClient(k8sRollingDeployRequest.isUseK8sApiForSteadyStateCheck());
         k8sClient.performSteadyStateCheck(k8sSteadyStateDTO);
 
         k8sTaskHelperBase.doStatusCheckForAllCustomResources(client, customWorkloads, k8sDelegateTaskParams,
-            waitForeSteadyStateLogCallback, true, steadyStateTimeoutInMillis, true);
+            waitForeSteadyStateLogCallback, false, steadyStateTimeoutInMillis, true);
+        serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.STEADY_STATE_CHECK,
+            k8sDelegateTaskParams.getWorkingDirectory(), waitForeSteadyStateLogCallback);
+        waitForeSteadyStateLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
       } finally {
         // We have to update the DeploymentConfig revision again as the rollout history command sometimes gives the
         // older revision. There seems to be delay in handling of the DeploymentConfig where it still gives older
@@ -282,7 +288,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
 
   @VisibleForTesting
   void init(K8sRollingDeployRequest request, K8sDelegateTaskParams k8sDelegateTaskParams,
-      LogCallback executionLogCallback) throws Exception {
+      LogCallback executionLogCallback, ServiceHookHandler serviceHookHandler) throws Exception {
     executionLogCallback.saveExecutionLog("Initializing..\n");
     executionLogCallback.saveExecutionLog(color(String.format("Release Name: [%s]", releaseName), Yellow, Bold));
     kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
@@ -301,11 +307,15 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
         KubernetesReleaseDetails.builder().releaseNumber(currentReleaseNumber).build();
 
     List<String> manifestOverrideFiles = getManifestOverrideFlies(request, releaseDetails.toContextMap());
-
+    serviceHookHandler.execute(ServiceHookType.PRE_HOOK, ServiceHookAction.TEMPLATE_MANIFEST,
+        k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
     this.resources =
         k8sRollingBaseHandler.prepareResourcesAndRenderTemplate(request, k8sDelegateTaskParams, manifestOverrideFiles,
             this.kubernetesConfig, this.manifestFilesDirectory, this.releaseName, request.isLocalOverrideFeatureFlag(),
             isErrorFrameworkSupported(), request.isInCanaryWorkflow(), executionLogCallback);
+
+    serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.TEMPLATE_MANIFEST,
+        k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
 
     if (request.isSkipDryRun()) {
       executionLogCallback.saveExecutionLog(color("\nSkipping Dry Run", Yellow, Bold), INFO);

@@ -21,10 +21,8 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.template.services.NGTemplateSchemaService;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -40,16 +38,12 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
 @Api("templates")
 @Path("templates/schema")
 @Produces({"application/json", "application/yaml"})
 @Consumes({"application/json", "application/yaml"})
-@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @ApiResponses(value =
     {
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
@@ -77,10 +71,7 @@ import lombok.extern.slf4j.Slf4j;
               schema = @Schema(implementation = ErrorDTO.class))
     })
 @NextGenManagerAuth
-@Slf4j
-public class NGTemplateSchemaResource {
-  private final NGTemplateSchemaService ngTemplateSchemaService;
-
+public interface NGTemplateSchemaResource {
   @GET
   @Path("/templateSchema")
   @ApiOperation(value = "Get Template Schema", nickname = "getTemplateSchema")
@@ -91,14 +82,9 @@ public class NGTemplateSchemaResource {
         ApiResponse(responseCode = "default", description = "Returns the Template schema")
       })
   @Hidden
-  public ResponseDTO<JsonNode>
+  ResponseDTO<JsonNode>
   getTemplateSchema(@QueryParam("templateEntityType") @NotNull TemplateEntityType templateEntityType,
       @QueryParam(PROJECT_KEY) String projectIdentifier, @QueryParam(ORG_KEY) String orgIdentifier,
       @QueryParam("scope") Scope scope, @NotNull @QueryParam(ACCOUNT_KEY) String accountIdentifier,
-      @QueryParam(ENTITY_TYPE) String templateChildType) {
-    JsonNode schema = null;
-    schema = ngTemplateSchemaService.getTemplateSchema(
-        accountIdentifier, projectIdentifier, orgIdentifier, scope, templateChildType, templateEntityType);
-    return ResponseDTO.newResponse(schema);
-  }
+      @QueryParam(ENTITY_TYPE) String templateChildType);
 }

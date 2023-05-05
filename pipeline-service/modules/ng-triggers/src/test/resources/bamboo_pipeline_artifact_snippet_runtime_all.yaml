@@ -16,6 +16,7 @@ pipeline:
                     type: Bamboo
                     spec:
                       connectorRef: <+input>
-                      artifactPaths: <+input>
+                      artifactPaths:
+                        - us-east-1
                       planKey: <+input>
                       build: <+input>

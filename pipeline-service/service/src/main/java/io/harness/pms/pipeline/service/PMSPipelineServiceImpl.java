@@ -976,6 +976,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   void applyGitXSettingsIfApplicable(String accountIdentifier, String orgIdentifier, String projIdentifier) {
     gitXSettingsHelper.enforceGitExperienceIfApplicable(accountIdentifier, orgIdentifier, projIdentifier);
     gitXSettingsHelper.setConnectorRefForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
-    gitXSettingsHelper.setDefaultStoreTypeForEntities(accountIdentifier, orgIdentifier, projIdentifier);
+    gitXSettingsHelper.setDefaultStoreTypeForEntities(
+        accountIdentifier, orgIdentifier, projIdentifier, EntityType.PIPELINES);
   }
 }

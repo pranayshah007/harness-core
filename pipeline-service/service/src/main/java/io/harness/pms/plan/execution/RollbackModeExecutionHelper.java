@@ -105,6 +105,8 @@ public class RollbackModeExecutionHelper {
       stageId = AmbianceUtils.obtainCurrentSetupId(ambiance);
     }
     builder.setPostExecutionRollbackStageId(stageId);
+    String stageExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    builder.setOriginalStageExecutionId(stageExecutionId);
     return builder.build();
   }
 

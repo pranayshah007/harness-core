@@ -135,7 +135,7 @@ func (r *runTask) execute(ctx context.Context, retryCount int32) (map[string]str
 	ctx, cancel := context.WithTimeout(ctx, time.Second*time.Duration(r.timeoutSecs))
 	defer cancel()
 
-	outputFile := filepath.Join(r.tmpFilePath, fmt.Sprintf("%s%s", r.id, outputDotEnvSuffix))
+	outputFile := filepath.Join(r.tmpFilePath, fmt.Sprintf("%s%s", r.id, outputEnvSuffix))
 	cmdToExecute, err := r.getScript(ctx, outputFile)
 	if err != nil {
 		return nil, err
@@ -175,7 +175,7 @@ func (r *runTask) execute(ctx context.Context, retryCount int32) (map[string]str
 	stepOutput := make(map[string]string)
 	if len(r.envVarOutputs) != 0 {
 		var err error
-		outputVars, err := fetchOutputVariablesFromDotEnv(outputFile, r.log)
+		outputVars, err := fetchOutputVariables(outputFile, r.fs, r.log)
 		if err != nil {
 			logCommandExecErr(r.log, "error encountered while fetching output of run step", r.id, cmdToExecute, retryCount, start, err)
 			return nil, err
@@ -283,11 +283,11 @@ func (r *runTask) getOutputVarCmd(outputVars []string, outputFile string) string
 
 	for _, o := range outputVars {
 		if isPsh {
-			cmd += fmt.Sprintf("\n$val = \"%s=$Env:%s\" \nAdd-Content -Path %s -Value $val", o, o, outputFile)
+			cmd += fmt.Sprintf("\n$val = \"%s $Env:%s\" \nAdd-Content -Path %s -Value $val", o, o, outputFile)
 		} else if isPython {
-			cmd += fmt.Sprintf("with open('%s', 'a') as out_file:\n\tout_file.write('%s=' + os.getenv('%s') + '\\n')\n", outputFile, o, o)
+			cmd += fmt.Sprintf("with open('%s', 'a') as out_file:\n\tout_file.write('%s ' + os.getenv('%s') + '\\n')\n", outputFile, o, o)
 		} else {
-			cmd += fmt.Sprintf("\necho \"%s=$%s\" >> %s", o, o, outputFile)
+			cmd += fmt.Sprintf("\necho \"%s $%s\" >> %s", o, o, outputFile)
 		}
 	}
 

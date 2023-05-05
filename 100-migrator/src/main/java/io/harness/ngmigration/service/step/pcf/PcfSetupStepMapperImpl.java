@@ -75,12 +75,15 @@ public class PcfSetupStepMapperImpl extends PcfAbstractStepMapper {
     if (state.isBlueGreen()) {
       TasBGAppSetupStepNode tasBGAppSetupStepNode = new TasBGAppSetupStepNode();
       baseSetup(state, tasBGAppSetupStepNode, context.getIdentifierCaseFormat());
-
+      ParameterField<List<String>> additionalRoutes = ParameterField.createValueField(Collections.emptyList());
+      if (state.getFinalRouteMap() != null) {
+        additionalRoutes =
+            ParameterField.createValueField(Arrays.stream(state.getFinalRouteMap()).collect(Collectors.toList()));
+      }
       TasBGAppSetupStepInfo tasBGAppSetupStepInfo =
           TasBGAppSetupStepInfo.infoBuilder()
               .tasInstanceCountType(getInstanceCountType(state.isUseCurrentRunningCount()))
-              .additionalRoutes(
-                  ParameterField.createValueField(Arrays.stream(state.getFinalRouteMap()).collect(Collectors.toList())))
+              .additionalRoutes(additionalRoutes)
               .existingVersionToKeep(
                   new ParameterField(state.getOlderActiveVersionCountToKeep(), null, false, true, null, null, false))
               .tempRoutes(

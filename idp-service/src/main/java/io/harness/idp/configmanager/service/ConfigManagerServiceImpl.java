@@ -186,6 +186,9 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   @Override
   public MergedPluginConfigs mergeEnabledPluginConfigsForAccount(String accountIdentifier) throws Exception {
     List<String> allEnabledPluginConfigs = getAllEnabledPluginConfigs(accountIdentifier);
+    if (allEnabledPluginConfigs.isEmpty()) {
+      throw new InvalidRequestException(String.format(NO_PLUGIN_ENABLED_FOR_ACCOUNT, accountIdentifier));
+    }
     Iterator<String> itr = allEnabledPluginConfigs.iterator();
     String config = itr.next();
     itr.remove();

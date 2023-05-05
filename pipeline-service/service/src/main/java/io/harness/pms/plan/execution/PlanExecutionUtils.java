@@ -15,10 +15,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.dto.LevelDTO;
 import io.harness.plan.Plan;
 import io.harness.plan.PlanNode;
-import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.plan.PlanCreationBlobResponse;
 import io.harness.pms.contracts.plan.PlanNodeProto;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
 
 import java.util.ArrayList;
@@ -58,26 +56,11 @@ public class PlanExecutionUtils {
   public String getFQNUsingLevelDTOs(List<LevelDTO> levels) {
     List<String> fqnList = new ArrayList<>();
     for (LevelDTO level : levels) {
-      if (shouldIncludeInQualifiedName(level.getIdentifier(), level.getSetupId(), level.isSkipExpressionChain())) {
+      if (YamlUtils.shouldIncludeInQualifiedName(
+              level.getIdentifier(), level.getSetupId(), level.isSkipExpressionChain())) {
         fqnList.add(level.getIdentifier());
       }
     }
     return String.join(".", fqnList);
-  }
-
-  public String getFQNUsingLevels(List<Level> levels) {
-    List<String> fqnList = new ArrayList<>();
-    for (Level level : levels) {
-      if (shouldIncludeInQualifiedName(level.getIdentifier(), level.getSetupId(), level.getSkipExpressionChain())) {
-        fqnList.add(level.getIdentifier());
-      }
-    }
-    return String.join(".", fqnList);
-  }
-
-  private static boolean shouldIncludeInQualifiedName(
-      final String identifier, final String setupId, boolean skipExpressionChain) {
-    return !YamlUtils.shouldNotIncludeInQualifiedName(identifier)
-        && !identifier.equals(YAMLFieldNameConstants.PARALLEL + setupId) && !skipExpressionChain;
   }
 }

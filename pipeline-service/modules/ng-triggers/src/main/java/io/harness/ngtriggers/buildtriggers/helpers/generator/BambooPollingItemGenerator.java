@@ -38,7 +38,7 @@ public class BambooPollingItemGenerator implements PollingItemGenerator {
     String connectorRef = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.connectorRef");
     String planKey = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.planKey");
     List<String> artifactPath =
-        buildTriggerHelper.validateAndFetchStringListFromJsonNode(buildTriggerOpsData, "spec.artifactPath");
+        buildTriggerHelper.validateAndFetchStringListFromJsonNode(buildTriggerOpsData, "spec.artifactPaths");
 
     return builder
         .setPollingPayloadData(PollingPayloadData.newBuilder()

@@ -13,9 +13,6 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
-import io.harness.accesscontrol.acl.api.Resource;
-import io.harness.accesscontrol.acl.api.ResourceScope;
-import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
@@ -28,11 +25,7 @@ import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.YamlDiffResponseDTO;
 import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.template.mappers.NGTemplateDtoMapper;
-import io.harness.template.resources.beans.PermissionTypes;
-import io.harness.template.services.TemplateRefreshService;
 
-import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -52,9 +45,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import retrofit2.http.Body;
 
 @OwnedBy(CDC)
@@ -62,7 +52,6 @@ import retrofit2.http.Body;
 @Path("refresh-template")
 @Produces({"application/json", "application/yaml"})
 @Consumes({"application/json", "application/yaml"})
-@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @ApiResponses(value =
     {
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
@@ -90,18 +79,14 @@ import retrofit2.http.Body;
               schema = @Schema(implementation = ErrorDTO.class))
     })
 @NextGenManagerAuth
-@Slf4j
-public class NGTemplateRefreshResource {
-  private static final String TEMPLATE_PARAM_MESSAGE = "Template Identifier for the entity";
-  private static final String TEMPLATE = "TEMPLATE";
-  private final TemplateRefreshService templateRefreshService;
-  private final AccessControlClient accessControlClient;
+public interface NGTemplateRefreshResource {
+  String TEMPLATE_PARAM_MESSAGE = "Template Identifier for the entity";
 
   @POST
   @ApiOperation(
       value = "This refreshes and update template inputs in template", nickname = "refreshAndUpdateTemplateInputs")
   @Hidden
-  public ResponseDTO<Boolean>
+  ResponseDTO<Boolean>
   refreshAndUpdateTemplate(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                                NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -113,19 +98,13 @@ public class NGTemplateRefreshResource {
       @Parameter(description = "Template version") @NotNull @QueryParam(
           NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
       String templateLabel, @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
-      @BeanParam GitEntityUpdateInfoDTO gitEntityUpdateInfoDTO) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
-        Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
-    templateRefreshService.refreshAndUpdateTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel,
-        NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
-    return ResponseDTO.newResponse(true);
-  }
+      @BeanParam GitEntityUpdateInfoDTO gitEntityUpdateInfoDTO);
 
   @POST
   @Path("refreshed-yaml")
   @ApiOperation(value = "This refreshes and update template inputs in given yaml", nickname = "getRefreshedYaml")
   @Hidden
-  public ResponseDTO<RefreshResponseDTO> getRefreshedYaml(
+  ResponseDTO<RefreshResponseDTO> getRefreshedYaml(
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -134,19 +113,13 @@ public class NGTemplateRefreshResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
-      @Parameter(description = "YAML") @NotNull @Body RefreshRequestDTO refreshRequestDTO) {
-    return ResponseDTO.newResponse(
-        RefreshResponseDTO.builder()
-            .refreshedYaml(templateRefreshService.refreshLinkedTemplateInputs(accountId, orgId, projectId,
-                refreshRequestDTO.getYaml(), NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache)))
-            .build());
-  }
+      @Parameter(description = "YAML") @NotNull @Body RefreshRequestDTO refreshRequestDTO);
 
   @GET
   @Path("validate-template-inputs")
   @ApiOperation(value = "This validates whether yaml of template is valid or not", nickname = "validateTemplateInputs")
   @Hidden
-  public ResponseDTO<ValidateTemplateInputsResponseDTO> validateTemplateInputsForTemplate(
+  ResponseDTO<ValidateTemplateInputsResponseDTO> validateTemplateInputsForTemplate(
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -157,17 +130,14 @@ public class NGTemplateRefreshResource {
           "templateIdentifier") @NotNull String templateIdentifier,
       @Parameter(description = "Template version") @NotNull @QueryParam(NGCommonEntityConstants.VERSION_LABEL_KEY)
       String versionLabel, @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
-    return ResponseDTO.newResponse(templateRefreshService.validateTemplateInputsInTemplate(accountId, orgId, projectId,
-        templateIdentifier, versionLabel, NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache)));
-  }
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
 
   @POST
   @Path("validate-template-inputs/internal")
   @ApiOperation(value = "This validates whether yaml provided is valid or not. This is to be used for pipeline service",
       nickname = "validateTemplateInputs", hidden = true)
   @Hidden
-  public ResponseDTO<ValidateTemplateInputsResponseDTO>
+  ResponseDTO<ValidateTemplateInputsResponseDTO>
   validateTemplateInputsForYaml(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull
                                 @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -176,16 +146,13 @@ public class NGTemplateRefreshResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
-      @Parameter(description = "YAML") @NotNull @Body RefreshRequestDTO refreshRequestDTO) {
-    return ResponseDTO.newResponse(templateRefreshService.validateTemplateInputsForYaml(accountId, orgId, projectId,
-        refreshRequestDTO.getYaml(), NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache)));
-  }
+      @Parameter(description = "YAML") @NotNull @Body RefreshRequestDTO refreshRequestDTO);
 
   @GET
   @Path("show-diff")
   @ApiOperation(value = "This returns original yaml and refresh yaml of template", nickname = "getYamlDiff")
   @Hidden
-  public ResponseDTO<YamlDiffResponseDTO> getYamlDiff(
+  ResponseDTO<YamlDiffResponseDTO> getYamlDiff(
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -196,16 +163,13 @@ public class NGTemplateRefreshResource {
           "templateIdentifier") @NotNull String templateIdentifier,
       @Parameter(description = "Template version") @NotNull @QueryParam(NGCommonEntityConstants.VERSION_LABEL_KEY)
       String versionLabel, @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
-    return ResponseDTO.newResponse(templateRefreshService.getYamlDiffOnRefreshingTemplate(accountId, orgId, projectId,
-        templateIdentifier, versionLabel, NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache)));
-  }
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
 
   @POST
   @Path("refresh-all")
   @ApiOperation(value = "This does recursive refresh and update template inputs in template", nickname = "refreshAll")
   @Hidden
-  public ResponseDTO<Boolean> refreshAllTemplates(
+  ResponseDTO<Boolean> refreshAllTemplates(
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -216,18 +180,14 @@ public class NGTemplateRefreshResource {
           "templateIdentifier") @NotNull String templateIdentifier,
       @Parameter(description = "Template version") @NotNull @QueryParam(NGCommonEntityConstants.VERSION_LABEL_KEY)
       String versionLabel, @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
-      @BeanParam GitEntityUpdateInfoDTO gitEntityUpdateInfoDTO) {
-    templateRefreshService.recursivelyRefreshTemplates(accountId, orgId, projectId, templateIdentifier, versionLabel,
-        NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
-    return ResponseDTO.newResponse(true);
-  }
+      @BeanParam GitEntityUpdateInfoDTO gitEntityUpdateInfoDTO);
 
   @POST
   @Path("refresh-all/internal")
   @ApiOperation(value = "This does recursive refresh and update template inputs in template for given yaml",
       nickname = "refreshAll", hidden = true)
   @Hidden
-  public ResponseDTO<YamlFullRefreshResponseDTO>
+  ResponseDTO<YamlFullRefreshResponseDTO>
   refreshAllTemplatesForYaml(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull
                              @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -236,8 +196,5 @@ public class NGTemplateRefreshResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
-      @Parameter(description = "YAML") @NotNull @Body RefreshRequestDTO refreshRequestDTO) {
-    return ResponseDTO.newResponse(templateRefreshService.recursivelyRefreshTemplatesForYaml(accountId, orgId,
-        projectId, refreshRequestDTO.getYaml(), NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache)));
-  }
+      @Parameter(description = "YAML") @NotNull @Body RefreshRequestDTO refreshRequestDTO);
 }

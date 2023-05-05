@@ -100,7 +100,7 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty("errorTrackingClientConfig") private ErrorTrackingClientConfig errorTrackingClientConfig;
   @JsonProperty("webhookConfig") private WebhookConfig webhookConfig;
   @JsonProperty("distributedLockImplementation")
-  private DistributedLockImplementation distributedLockImplementation = DistributedLockImplementation.MONGO;
+  private DistributedLockImplementation distributedLockImplementation = DistributedLockImplementation.REDIS;
   private ServiceHttpClientConfig templateServiceClientConfig;
   private String templateServiceSecret;
   @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;

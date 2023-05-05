@@ -10,6 +10,8 @@ package io.harness.delegate.utils;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.k8s.model.ServiceHookContext.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.k8s.model.ServiceHookContext.KUBE_CONFIG;
+import static io.harness.k8s.model.ServiceHookContext.MANAGED_WORKLOADS;
+import static io.harness.k8s.model.ServiceHookContext.WORKLOADS_LIST;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,6 +21,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.utils.ServiceHookDTO;
 import io.harness.k8s.model.K8sDelegateTaskParams;
+import io.harness.k8s.model.KubernetesResource;
+import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.model.ServiceHookAction;
 import io.harness.k8s.model.ServiceHookType;
 import io.harness.rule.Owner;
@@ -26,6 +30,7 @@ import io.harness.rule.Owner;
 import software.wings.beans.ServiceHookDelegateConfig;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
@@ -77,5 +82,65 @@ public class ServiceHookHandlerTest extends CategoryTest {
         .isEqualTo("sample/gcp/key/path");
     assertThat(serviceHookHandler.getContext().get(KUBE_CONFIG.getContextName())).isEqualTo("kube/config/sample/path");
     assertThat(serviceHookHandler.getContext().get("PATH")).contains("kubectl/path");
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testPrepareWorkloadContext() {
+    List<KubernetesResource> resources = new ArrayList<>();
+    resources.add(
+        KubernetesResource.builder()
+            .resourceId(
+                KubernetesResourceId.builder().name("resource1").kind("Deployment").namespace("default").build())
+            .build());
+    resources.add(
+        KubernetesResource.builder()
+            .resourceId(
+                KubernetesResourceId.builder().name("resource2").kind("Deployment").namespace("default").build())
+            .build());
+    serviceHookHandler.addWorkloadContextForHooks(resources, Collections.emptyList());
+    assertThat((serviceHookHandler.getContext()).get(MANAGED_WORKLOADS.getContextName()))
+        .isEqualTo("resource1,resource2");
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testPrepareWorkloadContextWithCustom() {
+    List<KubernetesResource> resources = new ArrayList<>();
+    resources.add(
+        KubernetesResource.builder()
+            .resourceId(
+                KubernetesResourceId.builder().name("resource1").kind("Deployment").namespace("default").build())
+            .build());
+    resources.add(
+        KubernetesResource.builder()
+            .resourceId(
+                KubernetesResourceId.builder().name("resource2").kind("Deployment").namespace("default").build())
+            .build());
+    List<KubernetesResource> customResources = new ArrayList<>();
+    customResources.add(
+        KubernetesResource.builder()
+            .resourceId(
+                KubernetesResourceId.builder().name("resource3").kind("Deployment").namespace("default").build())
+            .build());
+    serviceHookHandler.addWorkloadContextForHooks(resources, customResources);
+    assertThat((serviceHookHandler.getContext()).get(WORKLOADS_LIST.getContextName()))
+        .isEqualTo("resource1,resource2,resource3");
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testPrepareWorkloadContextOnlyCustom() {
+    List<KubernetesResource> customResources = new ArrayList<>();
+    customResources.add(
+        KubernetesResource.builder()
+            .resourceId(
+                KubernetesResourceId.builder().name("resource3").kind("Deployment").namespace("default").build())
+            .build());
+    serviceHookHandler.addWorkloadContextForHooks(Collections.emptyList(), customResources);
+    assertThat((serviceHookHandler.getContext()).get(WORKLOADS_LIST.getContextName())).isEqualTo("resource3");
   }
 }

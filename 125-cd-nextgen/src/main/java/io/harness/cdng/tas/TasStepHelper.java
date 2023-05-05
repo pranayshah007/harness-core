@@ -19,7 +19,6 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AZURE_ARTIFACTS_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.BAMBOO_ARTIFACTS_NAME;
-import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAME;
@@ -1750,7 +1749,6 @@ public class TasStepHelper {
       case AMAZON_S3_NAME:
       case JENKINS_NAME:
       case AZURE_ARTIFACTS_NAME:
-      case CUSTOM_ARTIFACT_NAME:
       case GITHUB_PACKAGES_NAME:
       case BAMBOO_ARTIFACTS_NAME:
       case GOOGLE_CLOUD_STORAGE_ARTIFACT_NAME:
@@ -1783,8 +1781,6 @@ public class TasStepHelper {
         return artifactOutcome instanceof BambooArtifactOutcome;
       case GOOGLE_CLOUD_STORAGE_ARTIFACT_NAME:
         return artifactOutcome instanceof GoogleCloudStorageArtifactOutcome;
-      case CUSTOM_ARTIFACT_NAME:
-        return true;
       default:
         return false;
     }
@@ -1900,17 +1896,6 @@ public class TasStepHelper {
                 .artifactPaths(new ArrayList<>(singletonList(artifactoryArtifactOutcome.getArtifactPath())))
                 .build());
         connectorInfoDTO = cdStepHelper.getConnector(artifactoryArtifactOutcome.getConnectorRef(), ambiance);
-        break;
-      case CUSTOM_ARTIFACT_NAME:
-        CustomArtifactOutcome customArtifactOutcome = (CustomArtifactOutcome) artifactOutcome;
-        artifactConfigBuilder.sourceType(ArtifactSourceType.CUSTOM_ARTIFACT);
-        artifactConfigBuilder.artifactDetails(CustomArtifactTasRequestDetails.builder()
-                                                  .identifier(customArtifactOutcome.getIdentifier())
-                                                  .artifactPath(customArtifactOutcome.getArtifactPath())
-                                                  .image(customArtifactOutcome.getImage())
-                                                  .displayName(customArtifactOutcome.getDisplayName())
-                                                  .metadata(customArtifactOutcome.getMetadata())
-                                                  .build());
         break;
       case AMAZON_S3_NAME:
         S3ArtifactOutcome s3ArtifactOutcome = (S3ArtifactOutcome) artifactOutcome;

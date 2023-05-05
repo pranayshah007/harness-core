@@ -4,7 +4,7 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
-package io.harness.ng.core.environment.resources;
+package io.harness.ng.core.environment.services.impl;
 
 import static io.harness.rule.OwnerRule.vivekveman;
 
@@ -19,8 +19,8 @@ import io.harness.CategoryTest;
 import io.harness.EntityType;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.rule.Owner;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 import io.harness.yaml.validator.InvalidYamlException;
 import io.harness.yaml.validator.YamlSchemaValidator;
 
@@ -37,7 +37,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class EnvironmentEntityYamlSchemaHelperTest extends CategoryTest {
-  @Mock NGFeatureFlagHelperService featureFlagHelperService;
+  @Mock CDFeatureFlagHelper featureFlagHelperService;
   @Mock YamlSchemaValidator yamlSchemaValidator;
   @InjectMocks EnvironmentEntityYamlSchemaHelper environmentEntityYamlSchemaHelper;
   private final String ACCOUNT_ID = "account_id";
