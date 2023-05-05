@@ -101,12 +101,11 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
           }
         }
       }
+      finishMigration();
     } catch (Exception ex) {
       rollback();
       log.error(String.format("Delegate DB migration failed, exception %s", ex));
-      System.exit(1);
     }
-    finishMigration();
   }
 
   private void migrateCollection(String collection) throws DelegateDBMigrationFailed {
