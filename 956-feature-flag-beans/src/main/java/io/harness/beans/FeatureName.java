@@ -736,7 +736,6 @@ public enum FeatureName {
       HarnessTeam.PL),
   CDS_SUPPORT_TICKET_DEFLECTION("Enable api to create zendesk ticket and for generating coveo token", HarnessTeam.CDP),
   CI_PYTHON_TI("Enable Test Intelligence for Python", HarnessTeam.CI),
-  SRM_SPLUNK_SIGNALFX("Will enable SignalFX metric health source in SRM", HarnessTeam.CV),
   CI_USE_S3_FOR_CACHE("Use S3 bucket for cache intelligence instead of GCP", HarnessTeam.CI),
   BUILD_CREDITS_VIEW(
       "Enable build credit dashboard in UI, FF will be removed once the Free credits allocation for all users are introduced",
@@ -744,6 +743,8 @@ public enum FeatureName {
   SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG(
       "Will fire the artifact and manifest triggers for all the versions in the polling response instead of the latest only",
       HarnessTeam.SPG),
+  SRM_SPLUNK_SIGNALFX("Will enable SignalFX metric health source in SRM", HarnessTeam.CV),
+  SRM_TELEMETRY("Will enable telemetry for verify step result", HarnessTeam.CV),
   PIE_MULTISELECT_AND_COMMA_IN_ALLOWED_VALUES(
       "Will allow comma and multi-selection in runtime input allowed values", PIPELINE),
   PL_USE_CREDENTIALS_FROM_DELEGATE_FOR_GCP_SM(
