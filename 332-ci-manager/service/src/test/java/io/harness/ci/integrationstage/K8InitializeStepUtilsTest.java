@@ -196,6 +196,38 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
   }
 
   @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testNestedStepGroup() throws Exception {
+    List<ExecutionWrapperConfig> steps = K8InitializeStepUtilsHelper.getExecutionWrapperConfigListWithNestedStepGroup();
+    IntegrationStageNode stageNode = K8InitializeStepUtilsHelper.getIntegrationStageNodeWithStepGroup1();
+    PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
+    CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
+    InitializeStepInfo initializeStepInfo =
+        InitializeStepInfo.builder()
+            .executionElementConfig(ExecutionElementConfig.builder().steps(steps).build())
+            .build();
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
+        initializeStepInfo, stageNode, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
+
+    HashMap<String, ContainerResourceParams> map = populateMap(stepContainers);
+    assertThat(map.get("step_g_run2").getResourceLimitMemoryMiB()).isEqualTo(150);
+    assertThat(map.get("step_g_run2").getResourceLimitMilliCpu()).isEqualTo(200);
+    assertThat(map.get("step_g_sg1_run3").getResourceLimitMemoryMiB()).isEqualTo(150);
+    assertThat(map.get("step_g_sg1_run3").getResourceLimitMilliCpu()).isEqualTo(200);
+
+    ExecutionElementConfig executionElementConfig = ExecutionElementConfig.builder().steps(steps).build();
+    IntegrationStageConfig integrationStageConfig =
+        IntegrationStageConfigImpl.builder().execution(executionElementConfig).build();
+    List<String> identifiers =
+        IntegrationStageStepParametersPMS.getStepIdentifiers(integrationStageConfig.getExecution().getSteps());
+    assertThat(identifiers).isNotEmpty();
+    assertThat(identifiers.get(0)).isEqualTo("step_g_run2");
+    assertThat(identifiers.get(1)).isEqualTo("step_g_sg1_run3");
+  }
+
+  @Test
   @Owner(developers = DEV_MITTAL)
   @Category(UnitTests.class)
   public void testParallelStepGroups() throws Exception {

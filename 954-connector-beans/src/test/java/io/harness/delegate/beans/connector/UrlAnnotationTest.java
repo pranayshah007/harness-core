@@ -26,6 +26,7 @@ import io.harness.delegate.beans.connector.newrelic.NewRelicConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
+import io.harness.delegate.beans.connector.signalfxconnector.SignalFXConnectorDTO;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
@@ -223,6 +224,16 @@ public class UrlAnnotationTest {
     testClassField(clazz, field);
   }
 
+  @Test
+  @Owner(developers = SHREYAS)
+  @Category(UnitTests.class)
+  public void test_SignalFXConnectorDTO_url()
+      throws NoSuchFieldException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+    Class<? extends ConnectorConfigDTO> clazz = SignalFXConnectorDTO.class;
+    Field field = clazz.getDeclaredField("url");
+    testClassField(clazz, field);
+  }
+
   public void testClassField(Class<? extends ConnectorConfigDTO> clazz, Field field)
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
     assertThat(field.isAnnotationPresent(URL.class)).isTrue();
@@ -270,6 +281,6 @@ public class UrlAnnotationTest {
             -> Arrays.stream(aClass.getDeclaredFields())
                    .filter(field -> field.isAnnotationPresent(URL.class))
                    .forEach(field -> classUrlFieldPairList.add(new Pair<>(aClass, field))));
-    assertThat(classUrlFieldPairList.size()).isEqualTo(19);
+    assertThat(classUrlFieldPairList.size()).isEqualTo(20);
   }
 }

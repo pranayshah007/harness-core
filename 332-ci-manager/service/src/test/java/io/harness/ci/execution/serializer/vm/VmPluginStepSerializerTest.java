@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
+import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.category.element.UnitTests;
@@ -29,11 +30,14 @@ import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.serializer.vm.VmPluginStepSerializer;
 import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
+import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
+import io.harness.delegate.beans.ci.vm.steps.VmStepInfo;
 import io.harness.iacm.execution.IACMStepsUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import java.util.HashMap;
 import java.util.Map;
 import org.apache.groovy.util.Maps;
 import org.junit.Before;
@@ -115,7 +119,6 @@ public class VmPluginStepSerializerTest extends CategoryTest {
                             .build();
     PluginStepInfo pluginStepInfo =
         PluginStepInfo.builder()
-            .image(ParameterField.createValueField("image"))
             .privileged(ParameterField.createValueField(true))
             .connectorRef(ParameterField.createValueField("connectorRef"))
             .reports(ParameterField.createValueField(null))
@@ -123,10 +126,45 @@ public class VmPluginStepSerializerTest extends CategoryTest {
                 STACK_ID, ParameterField.createValueField("val1"), WORKFLOW, ParameterField.createValueField("val2"))))
             .build();
 
-    when(iacmStepsUtils.injectIACMInfo(any(), any(), any(), any()))
-        .thenReturn(VmPluginStep.builder().image("terraform").build());
-    VmPluginStep vmPluginStep =
-        (VmPluginStep) vmPluginStepSerializer.serialize(pluginStepInfo, null, "id", null, null, ambiance, null, null);
+    when(iacmStepsUtils.getIACMEnvVariables(any(), any())).thenReturn(new HashMap<>() {
+      { put("KEY", "VALUE"); }
+    });
+    when(iacmStepsUtils.isIACMStep(any())).thenReturn(true);
+    when(iacmStepsUtils.retrieveIACMPluginImage(any(), any())).thenReturn("terraform");
+
+    VmStepInfo vmStepInfo =
+        vmPluginStepSerializer.serialize(pluginStepInfo, null, "id", null, null, ambiance, null, null);
+    assertThat(vmStepInfo).isInstanceOf(VmPluginStep.class);
+    VmPluginStep vmPluginStep = (VmPluginStep) vmStepInfo;
     assertThat(vmPluginStep.getImage()).isEqualTo("terraform");
+    assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(3);
+  }
+
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testPluginStepSerializerWithUsesCreatesIACMPluginStep() {
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putAllSetupAbstractions(Maps.of("accountId", "accountId", "projectIdentifier",
+                                "projectIdentfier", "orgIdentifier", "orgIdentifier"))
+                            .build();
+    PluginStepInfo pluginStepInfo =
+        PluginStepInfo.builder()
+            .privileged(ParameterField.createValueField(true))
+            .uses(ParameterField.createValueField("faaa"))
+            .connectorRef(ParameterField.createValueField("connectorRef"))
+            .reports(ParameterField.createValueField(null))
+            .envVariables(ParameterField.createValueField(Map.of(
+                STACK_ID, ParameterField.createValueField("val1"), WORKFLOW, ParameterField.createValueField("val2"))))
+            .build();
+
+    when(iacmStepsUtils.getIACMEnvVariables(any(), any())).thenReturn(new HashMap<>() {
+      { put("KEY", "VALUE"); }
+    });
+    when(iacmStepsUtils.retrieveIACMPluginImage(any(), any())).thenReturn("");
+
+    VmStepInfo vmStepInfo = vmPluginStepSerializer.serialize(
+        pluginStepInfo, DliteVmStageInfraDetails.builder().build(), "id", null, null, ambiance, null, null);
+    assertThat(vmStepInfo).isInstanceOf(VmRunStep.class);
   }
 }

@@ -44,6 +44,7 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
         (CompositeServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec();
     SLOTarget sloTarget = sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveV2DTO.getSloTarget().getType())
                               .getSLOTarget(serviceLevelObjectiveV2DTO.getSloTarget().getSpec());
+    long currentTime = System.currentTimeMillis();
     return CompositeServiceLevelObjective.builder()
         .type(ServiceLevelObjectiveType.COMPOSITE)
         .sliEvaluationType(
@@ -67,9 +68,11 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
                         serviceLevelObjectiveDetailsDTO))
                 .collect(Collectors.toList()))
         .sloTargetPercentage(serviceLevelObjectiveV2DTO.getSloTarget().getSloTargetPercentage())
-        .startedAt(System.currentTimeMillis())
+        .startedAt(currentTime)
         .version(0)
         .enabled(isEnabled)
+        .createdAt(currentTime)
+        .lastUpdatedAt(currentTime)
         .build();
   }
 

@@ -12,10 +12,10 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
+import static io.harness.k8s.model.ServiceHookContext.CUSTOM_WORKLOADS;
 import static io.harness.k8s.model.ServiceHookContext.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.k8s.model.ServiceHookContext.KUBE_CONFIG;
-import static io.harness.k8s.model.ServiceHookContext.MANIFEST_FILES_DIRECTORY;
-import static io.harness.k8s.model.ServiceHookContext.MANIFEST_FILE_OUTPUT_PATH;
+import static io.harness.k8s.model.ServiceHookContext.MANAGED_WORKLOADS;
 import static io.harness.k8s.model.ServiceHookContext.WORKLOADS_LIST;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.LogLevel.ERROR;
@@ -30,6 +30,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.utils.ServiceHookDTO;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.k8s.model.KubernetesResource;
+import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.model.ServiceHookAction;
 import io.harness.k8s.model.ServiceHookType;
 import io.harness.logging.LogCallback;
@@ -56,6 +58,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.ListUtils;
 import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.stream.LogOutputStream;
@@ -65,7 +68,7 @@ import org.zeroturnaround.exec.stream.LogOutputStream;
 public class ServiceHookHandler {
   @Getter private Map<String, String> context;
   @Getter private List<ServiceHookDelegateConfig> hooks;
-  private static String failureMessage =
+  private static final String failureMessage =
       "Failed to apply hook of type: %s , identifier: %s for action: %s in directory: %s";
   private long commandTimeout;
   private static final String HOOKS_FOLDER = ".__harness_internal_hooks";
@@ -80,33 +83,6 @@ public class ServiceHookHandler {
     context.put(KUBE_CONFIG.getContextName(),
         isNotEmpty(serviceHookTaskParams.getKubeconfigPath()) ? serviceHookTaskParams.getKubeconfigPath() : null);
     commandTimeout = timeout;
-  }
-
-  public void addToContext(String key, String value) {
-    context.put(key, value);
-  }
-
-  public void addToContext(String key, List<String> value) {
-    String commaSeparatedValues = String.join(",", value);
-    context.put(key, commaSeparatedValues);
-  }
-
-  public void applyServiceHooks(ServiceHookType type, ServiceHookAction action, String workingDirectory,
-      LogCallback logCallback, String contextDirectory) throws InterruptedException {
-    switch (action) {
-      case FETCH_FILES:
-        addToContext(MANIFEST_FILES_DIRECTORY.getContextName(), contextDirectory);
-        break;
-      case TEMPLATE_MANIFEST:
-        addToContext(MANIFEST_FILE_OUTPUT_PATH.getContextName(), contextDirectory);
-        break;
-      case STEADY_STATE_CHECK:
-        addToContext(WORKLOADS_LIST.getContextName(), contextDirectory);
-        break;
-      default:
-        break;
-    }
-    execute(type, action, workingDirectory, logCallback);
   }
 
   public void execute(ServiceHookType type, ServiceHookAction action, String workingDirectory, LogCallback logCallback)
@@ -249,5 +225,27 @@ public class ServiceHookHandler {
                          .map(Optional::get)
                          .collect(Collectors.joining(":"));
     return format("%s:%s", envPath, isNotEmpty(System.getenv("PATH")) ? System.getenv("PATH") : "");
+  }
+
+  public void addWorkloadContextForHooks(
+      List<KubernetesResource> managedWorkloads, List<KubernetesResource> customWorkloads) {
+    addToContext(MANAGED_WORKLOADS.getContextName(), managedWorkloads);
+    addToContext(CUSTOM_WORKLOADS.getContextName(), customWorkloads);
+    addToContext(WORKLOADS_LIST.getContextName(), ListUtils.union(managedWorkloads, customWorkloads));
+  }
+
+  public void addToContext(String key, List<KubernetesResource> workloads) {
+    if (isEmpty(workloads)) {
+      return;
+    }
+    String workloadContext = workloads.stream()
+                                 .map(KubernetesResource::getResourceId)
+                                 .map(KubernetesResourceId::getName)
+                                 .collect(Collectors.joining(","));
+    context.put(key, workloadContext);
+  }
+
+  public void addToContext(String key, String value) {
+    context.put(key, value);
   }
 }

@@ -30,6 +30,16 @@
      ]
    },
    {
+     "moduleName": "CHAOS",
+     "displayName": "Chaos Engineering",
+     "version": "",
+     "lastModifiedAt": "",
+     "versionUrl": "",
+     "releaseNotesLink": "https://developer.harness.io/release-notes/chaos-engineering",
+     "microservicesVersionInfo": [
+     ]
+   },
+   {
      "moduleName": "FF",
      "displayName": "Feature Flags",
      "version": "Coming Soon",

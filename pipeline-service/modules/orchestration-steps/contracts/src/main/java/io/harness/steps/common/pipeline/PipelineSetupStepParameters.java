@@ -51,7 +51,6 @@ public class PipelineSetupStepParameters implements StepParameters {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   String executionId;
-  int sequenceId;
 
   @Builder(builderMethodName = "newBuilder")
   public PipelineSetupStepParameters(String childNodeID, String name, String identifier, FlowControlConfig flowControl,
@@ -67,7 +66,6 @@ public class PipelineSetupStepParameters implements StepParameters {
     this.properties = ParameterField.createValueField(NGVariablesUtils.getMapOfNGProperties(properties));
     this.variables = ParameterField.createValueField(NGVariablesUtils.getMapOfVariables(originalVariables));
     this.executionId = executionId;
-    this.sequenceId = sequenceId;
     this.delegateSelectors = delegateSelectors;
   }
 
@@ -77,7 +75,6 @@ public class PipelineSetupStepParameters implements StepParameters {
       return PipelineSetupStepParameters.newBuilder()
           .childNodeID(childNodeID)
           .executionId(ctx.getExecutionUuid())
-          .sequenceId(ctx.getRunSequence())
           .build();
     }
 

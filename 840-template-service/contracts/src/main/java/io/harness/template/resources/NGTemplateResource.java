@@ -334,7 +334,6 @@ public interface NGTemplateResource {
 
   @POST
   @Path("/list-metadata")
-  @Hidden
   @ApiOperation(value = "Gets all template list", nickname = "getTemplateMetadataList")
   @Operation(operationId = "getTemplateMetadataList", summary = "Gets all metadata of template list",
       responses =

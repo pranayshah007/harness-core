@@ -57,6 +57,7 @@ import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.delegate.task.k8s.KustomizeManifestDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
 import io.harness.delegate.task.k8s.client.K8sClient;
+import io.harness.delegate.utils.ServiceHookHandler;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
@@ -108,6 +109,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
   @Mock ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
   @Mock K8sTaskHelperBase k8sTaskHelperBase;
   @Mock KubernetesContainerService kubernetesContainerService;
+  @Mock ServiceHookHandler serviceHookHandler;
 
   @Mock LogCallback logCallback;
   @Mock ILogStreamingTaskClient logStreamingTaskClient;
@@ -119,7 +121,6 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
 
   @Spy @InjectMocks K8sBGBaseHandler k8sBGBaseHandler;
   @Spy @InjectMocks K8sBGRequestHandler k8sBGRequestHandler;
-
   K8sDelegateTaskParams k8sDelegateTaskParams;
   CommandUnitsProgress commandUnitsProgress;
   final String workingDirectory = "/tmp";
@@ -292,7 +293,6 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
         .when(k8sBGBaseHandler)
         .getAllPods(anyLong(), eq(kubernetesConfig), any(KubernetesResource.class), eq(HarnessLabelValues.colorBlue),
             eq(HarnessLabelValues.colorGreen), eq("releaseName"));
-
     K8sDeployResponse response = k8sBGRequestHandler.executeTaskInternal(
         k8sBGDeployRequest, k8sDelegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
 
@@ -343,7 +343,8 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
         .isSameAs(thrownException);
 
     verify(k8sBGRequestHandler, never())
-        .init(any(K8sBGDeployRequest.class), any(K8sDelegateTaskParams.class), any(LogCallback.class));
+        .init(any(K8sBGDeployRequest.class), any(K8sDelegateTaskParams.class), any(LogCallback.class),
+            any(ServiceHookHandler.class));
   }
 
   @Test
@@ -354,7 +355,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
         K8sBGDeployRequest.builder().skipResourceVersioning(true).releaseName("releaseName").build();
     final RuntimeException runtimeException = new RuntimeException("failed");
 
-    doThrow(runtimeException).when(k8sBGRequestHandler).init(k8sBGDeployRequest, k8sDelegateTaskParams, logCallback);
+    doThrow(runtimeException).when(k8sBGRequestHandler).init(any(), any(), any(), any());
 
     assertThatThrownBy(()
                            -> k8sBGRequestHandler.executeTaskInternal(
@@ -374,7 +375,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
         K8sBGDeployRequest.builder().skipResourceVersioning(true).releaseName("releaseName").build();
     final RuntimeException thrownException = new RuntimeException("failed");
 
-    doNothing().when(k8sBGRequestHandler).init(k8sBGDeployRequest, k8sDelegateTaskParams, logCallback);
+    doNothing().when(k8sBGRequestHandler).init(any(), any(), any(), any());
     doThrow(thrownException)
         .when(k8sBGRequestHandler)
         .prepareForBlueGreen(k8sDelegateTaskParams, logCallback, true, false);
@@ -524,10 +525,11 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
     }
 
     if (throwException) {
-      assertThatThrownBy(() -> k8sBGRequestHandler.init(k8sBGDeployRequest, k8sDelegateTaskParams, logCallback))
+      assertThatThrownBy(
+          () -> k8sBGRequestHandler.init(k8sBGDeployRequest, k8sDelegateTaskParams, logCallback, serviceHookHandler))
           .isSameAs(thrownException);
     } else {
-      k8sBGRequestHandler.init(k8sBGDeployRequest, k8sDelegateTaskParams, logCallback);
+      k8sBGRequestHandler.init(k8sBGDeployRequest, k8sDelegateTaskParams, logCallback, serviceHookHandler);
     }
 
     verify(containerDeploymentDelegateBaseHelper)

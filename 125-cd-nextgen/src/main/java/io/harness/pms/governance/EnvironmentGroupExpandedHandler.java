@@ -7,16 +7,19 @@
 
 package io.harness.pms.governance;
 
+import static io.harness.pms.governance.EnvironmentExpansionUtils.getEnvRefFromEnvYamlV2Node;
+
+import io.harness.beans.IdentifierRef;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupMetadata;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupMetadata.environmentGroupMetadataKeys;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml.environmentGroupYamlKeys;
-import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.governance.ExpansionPlacementStrategy;
 import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
 import io.harness.pms.sdk.core.governance.ExpansionResponse;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandler;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -89,13 +92,15 @@ public class EnvironmentGroupExpandedHandler implements JsonExpansionHandler {
           environmentGroupMetadata != null && environmentGroupMetadata.getParallel() != null
           ? Map.of(environmentGroupMetadataKeys.parallel, environmentGroupMetadata.getParallel())
           : Map.of();
-      final EnvGroupExpandedValue value = EnvGroupExpandedValue.builder()
-                                              .name(environmentGroupEntity.get().getName())
-                                              .identifier(environmentGroupEntity.get().getIdentifier())
-                                              .environments(generateEnvironmentsExpansion(metadata, fieldValue))
-                                              .metadata(metadataMap)
-                                              .deployToAll(deployToAll)
-                                              .build();
+      final EnvGroupExpandedValue value =
+          EnvGroupExpandedValue.builder()
+              .envGroupRef(envGroupRef)
+              .name(environmentGroupEntity.get().getName())
+              .identifier(environmentGroupEntity.get().getIdentifier())
+              .environments(generateEnvironmentsExpansion(metadata, fieldValue, envGroupRef))
+              .metadata(metadataMap)
+              .deployToAll(deployToAll)
+              .build();
       return ExpansionResponse.builder()
           .key(value.getKey())
           .value(value)
@@ -103,20 +108,36 @@ public class EnvironmentGroupExpandedHandler implements JsonExpansionHandler {
           .placement(ExpansionPlacementStrategy.REPLACE)
           .build();
     } catch (Exception ex) {
+      log.warn("Exception in environment group expansion", ex);
       return ExpansionResponse.builder().success(false).errorMessage(ex.getMessage()).build();
     }
   }
 
   private List<SingleEnvironmentExpandedValue> generateEnvironmentsExpansion(
-      ExpansionRequestMetadata metadata, JsonNode fieldValue) {
+      ExpansionRequestMetadata metadata, JsonNode fieldValue, String envGroupRef) {
     final JsonNode environments = fieldValue.get(environmentGroupYamlKeys.environments);
-    if (!environments.isArray()) {
-      throw new InvalidRequestException("environments field is not an array");
+    if (environments == null || !environments.isArray()) {
+      log.debug("environments field is not an array");
+      return List.of();
     }
 
     final List<SingleEnvironmentExpandedValue> values = new ArrayList<>();
-    environments.forEach(
-        environmentNode -> values.add(utils.toSingleEnvironmentExpandedValue(metadata, environmentNode)));
+
+    IdentifierRef envGroupIdentifierRef = IdentifierRefHelper.getIdentifierRef(
+        envGroupRef, metadata.getAccountId(), metadata.getOrgId(), metadata.getProjectId());
+
+    environments.forEach(environmentNode -> {
+      final Optional<String> environmentRefOpt = getEnvRefFromEnvYamlV2Node(environmentNode);
+      if (environmentRefOpt.isPresent()) {
+        // derive environment scope from environment groups's scope
+        String scopedEnvironmentRef = IdentifierRefHelper.getRefFromIdentifierOrRef(
+            envGroupIdentifierRef.getAccountIdentifier(), envGroupIdentifierRef.getOrgIdentifier(),
+            envGroupIdentifierRef.getProjectIdentifier(), environmentRefOpt.get());
+        values.add(utils.toSingleEnvironmentExpandedValue(metadata, environmentNode, scopedEnvironmentRef));
+      } else {
+        values.add(SingleEnvironmentExpandedValue.builder().build());
+      }
+    });
     return values;
   }
 }

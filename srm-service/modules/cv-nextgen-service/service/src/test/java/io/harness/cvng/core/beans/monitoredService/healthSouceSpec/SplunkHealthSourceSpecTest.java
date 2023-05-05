@@ -49,7 +49,7 @@ public class SplunkHealthSourceSpecTest extends CvNextGenTestBase {
   String identifier;
   String name;
   String monitoredServiceIdentifier;
-  List<SplunkHealthSourceSpec.QueryDTO> queryDTOS;
+  List<SplunkHealthSourceSpec.SplunkHealthSourceQueryDTO> queryDTOS;
   BuilderFactory builderFactory;
 
   @Inject MetricPackService metricPackService;
@@ -67,8 +67,10 @@ public class SplunkHealthSourceSpecTest extends CvNextGenTestBase {
     monitoredServiceIdentifier = generateUuid();
     identifier = "identifier";
     name = "some-name";
-    queryDTOS = Lists.newArrayList(
-        SplunkHealthSourceSpec.QueryDTO.builder().name(randomAlphabetic(10)).query(randomAlphabetic(10)).build());
+    queryDTOS = Lists.newArrayList(SplunkHealthSourceSpec.SplunkHealthSourceQueryDTO.builder()
+                                       .name(randomAlphabetic(10))
+                                       .query(randomAlphabetic(10))
+                                       .build());
     splunkHealthSourceSpec =
         SplunkHealthSourceSpec.builder().connectorRef(connectorIdentifier).feature(feature).queries(queryDTOS).build();
   }
@@ -103,8 +105,10 @@ public class SplunkHealthSourceSpecTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void getCVConfigUpdateResult_checkDeleted() {
     List<CVConfig> cvConfigs = new ArrayList<>();
-    cvConfigs.add(createCVConfig(
-        SplunkHealthSourceSpec.QueryDTO.builder().name(randomAlphabetic(10)).query(randomAlphabetic(10)).build()));
+    cvConfigs.add(createCVConfig(SplunkHealthSourceSpec.SplunkHealthSourceQueryDTO.builder()
+                                     .name(randomAlphabetic(10))
+                                     .query(randomAlphabetic(10))
+                                     .build()));
     HealthSource.CVConfigUpdateResult result =
         splunkHealthSourceSpec.getCVConfigUpdateResult(accountId, orgIdentifier, projectIdentifier, envIdentifier,
             serviceIdentifier, monitoredServiceIdentifier, identifier, name, cvConfigs, metricPackService);
@@ -118,8 +122,10 @@ public class SplunkHealthSourceSpecTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void getCVConfigUpdateResult_checkAdded() {
     List<CVConfig> cvConfigs = new ArrayList<>();
-    cvConfigs.add(createCVConfig(
-        SplunkHealthSourceSpec.QueryDTO.builder().name(randomAlphabetic(10)).query(randomAlphabetic(10)).build()));
+    cvConfigs.add(createCVConfig(SplunkHealthSourceSpec.SplunkHealthSourceQueryDTO.builder()
+                                     .name(randomAlphabetic(10))
+                                     .query(randomAlphabetic(10))
+                                     .build()));
     HealthSource.CVConfigUpdateResult result =
         splunkHealthSourceSpec.getCVConfigUpdateResult(accountId, orgIdentifier, projectIdentifier, envIdentifier,
             serviceIdentifier, monitoredServiceIdentifier, identifier, name, cvConfigs, metricPackService);
@@ -134,7 +140,7 @@ public class SplunkHealthSourceSpecTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void getCVConfigUpdateResult_checkUpdated() {
     List<CVConfig> cvConfigs = new ArrayList<>();
-    cvConfigs.add(createCVConfig(SplunkHealthSourceSpec.QueryDTO.builder()
+    cvConfigs.add(createCVConfig(SplunkHealthSourceSpec.SplunkHealthSourceQueryDTO.builder()
                                      .name(queryDTOS.get(0).getName())
                                      .query(randomAlphabetic(10))
                                      .build()));
@@ -151,8 +157,10 @@ public class SplunkHealthSourceSpecTest extends CvNextGenTestBase {
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testValidate() {
-    queryDTOS.add(
-        SplunkHealthSourceSpec.QueryDTO.builder().name(queryDTOS.get(0).getName()).query(randomAlphabetic(10)).build());
+    queryDTOS.add(SplunkHealthSourceSpec.SplunkHealthSourceQueryDTO.builder()
+                      .name(queryDTOS.get(0).getName())
+                      .query(randomAlphabetic(10))
+                      .build());
     assertThatThrownBy(() -> splunkHealthSourceSpec.validate())
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageStartingWith("Duplicate query name present");
@@ -171,7 +179,7 @@ public class SplunkHealthSourceSpecTest extends CvNextGenTestBase {
     assertThat(cvConfig.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
   }
 
-  private CVConfig createCVConfig(SplunkHealthSourceSpec.QueryDTO queryDTO) {
+  private CVConfig createCVConfig(SplunkHealthSourceSpec.SplunkHealthSourceQueryDTO queryDTO) {
     return builderFactory.splunkCVConfigBuilder()
         .queryName(queryDTO.getName())
         .query(queryDTO.getQuery())

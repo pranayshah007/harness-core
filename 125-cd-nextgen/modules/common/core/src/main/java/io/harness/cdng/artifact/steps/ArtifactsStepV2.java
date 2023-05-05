@@ -25,6 +25,7 @@ import io.harness.cdng.artifact.outcome.ArtifactsOutcome.ArtifactsOutcomeBuilder
 import io.harness.cdng.artifact.outcome.SidecarsOutcome;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
+import io.harness.cdng.common.beans.StepDelegateInfo;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
@@ -103,7 +104,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParameters> {
   private static final long DEFAULT_TIMEOUT = TimeUnit.MINUTES.toMillis(3);
   static final String ARTIFACTS_STEP_V_2 = "artifacts_step_v2";
-  private static final String ARTIFACT_STEP_DETAIL_KEY = "ArtifactStepDetailKey";
+  private static final String ARTIFACT_STEP = "Artifact Step";
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private ServiceStepsHelper serviceStepsHelper;
   @Inject private ArtifactStepHelper artifactStepHelper;
@@ -177,6 +178,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
 
     checkForAccessOrThrow(ambiance, artifacts);
     final Set<String> taskIds = new HashSet<>();
+    List<StepDelegateInfo> stepDelegateInfos = new ArrayList<>();
     final Map<String, ArtifactConfig> artifactConfigMap = new HashMap<>();
     final List<ArtifactConfig> artifactConfigMapForNonDelegateTaskTypes = new ArrayList<>();
     String primaryArtifactTaskId = null;
@@ -190,6 +192,10 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
             artifacts.getPrimary().getSpec().getIdentifier(), "Primary", logCallback);
         primaryArtifactTaskId = createDelegateTask(
             ambiance, logCallback, artifacts.getPrimary().getSpec(), artifacts.getPrimary().getSourceType(), true);
+        stepDelegateInfos.add(StepDelegateInfo.builder()
+                                  .taskId(primaryArtifactTaskId)
+                                  .taskName("Artifact Task: " + artifacts.getPrimary().getSpec().getIdentifier())
+                                  .build());
         taskIds.add(primaryArtifactTaskId);
         artifactConfigMap.put(primaryArtifactTaskId, artifacts.getPrimary().getSpec());
       } else if (ACTION.RUN_SYNC.equals(actionForPrimaryArtifact)) {
@@ -209,6 +215,10 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
               sidecar.getSidecar().getSpec().getIdentifier(), "Sidecar", logCallback);
           String taskId = createDelegateTask(
               ambiance, logCallback, sidecar.getSidecar().getSpec(), sidecar.getSidecar().getSourceType(), false);
+          stepDelegateInfos.add(StepDelegateInfo.builder()
+                                    .taskId(primaryArtifactTaskId)
+                                    .taskName("Artifact Task: " + sidecar.getSidecar().getSpec().getIdentifier())
+                                    .build());
           taskIds.add(taskId);
           artifactConfigMap.put(taskId, sidecar.getSidecar().getSpec());
         } else if (ACTION.RUN_SYNC.equals(actionForSidecar)) {
@@ -222,7 +232,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
         new ArtifactsStepV2SweepingOutput(
             primaryArtifactTaskId, artifactConfigMap, artifactConfigMapForNonDelegateTaskTypes),
         "");
-    serviceStepsHelper.publishTaskIdsStepDetailsForServiceStep(ambiance, taskIds, ARTIFACT_STEP_DETAIL_KEY);
+    serviceStepsHelper.publishTaskIdsStepDetailsForServiceStep(ambiance, stepDelegateInfos, ARTIFACT_STEP);
     return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
   }
 

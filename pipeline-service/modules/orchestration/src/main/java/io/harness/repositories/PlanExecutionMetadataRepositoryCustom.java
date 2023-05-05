@@ -11,11 +11,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.PlanExecutionMetadata;
 
+import java.util.Set;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PlanExecutionMetadataRepositoryCustom {
-  PlanExecutionMetadata getExecutionNotes(Criteria criteria);
   PlanExecutionMetadata updateExecutionNotes(Criteria criteria, Update update);
+  PlanExecutionMetadata getWithFieldsIncluded(String planExecutionId, Set<String> fieldsToInclude);
 }

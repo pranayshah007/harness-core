@@ -30,7 +30,6 @@ public class GitBaseRequest {
   private Boolean disableUserGitConfig;
 
   private boolean unsureOrNonExistentBranch;
-  private Integer cloneDepth;
 
   public boolean useBranch() {
     return isNotEmpty(branch);

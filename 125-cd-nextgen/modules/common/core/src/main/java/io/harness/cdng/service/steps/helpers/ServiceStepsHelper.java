@@ -15,11 +15,12 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.common.beans.StepDelegateInfo;
+import io.harness.cdng.common.beans.StepDetailsDelegateInfo;
 import io.harness.cdng.execution.ServiceExecutionSummaryDetails;
 import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.service.beans.ServiceDefinition;
-import io.harness.cdng.service.beans.ServiceStepDetails;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.service.steps.constants.ServiceConfigStepConstants;
 import io.harness.cdng.service.steps.constants.ServiceSectionStepConstants;
@@ -209,10 +210,11 @@ public class ServiceStepsHelper {
     return ServiceExecutionSummaryDetails.builder().build();
   }
 
-  public void publishTaskIdsStepDetailsForServiceStep(Ambiance ambiance, Set<String> taskIds, String name) {
-    if (isNotEmpty(taskIds)) {
-      sdkGraphVisualizationDataService.publishStepDetailInformation(
-          prepareServiceAmbiance(ambiance), ServiceStepDetails.builder().taskIds(taskIds).build(), name);
+  public void publishTaskIdsStepDetailsForServiceStep(
+      Ambiance ambiance, List<StepDelegateInfo> stepDelegateInfos, String name) {
+    if (isNotEmpty(stepDelegateInfos)) {
+      sdkGraphVisualizationDataService.publishStepDetailInformation(prepareServiceAmbiance(ambiance),
+          StepDetailsDelegateInfo.builder().stepDelegateInfos(stepDelegateInfos).build(), name);
     }
   }
 }

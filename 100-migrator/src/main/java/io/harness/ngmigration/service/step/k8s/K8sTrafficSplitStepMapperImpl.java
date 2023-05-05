@@ -22,7 +22,7 @@ import software.wings.beans.GraphNode;
 import software.wings.sm.State;
 import software.wings.sm.states.k8s.K8sTrafficSplitState;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
 
 public class K8sTrafficSplitStepMapperImpl extends StepMapper {
@@ -53,7 +53,7 @@ public class K8sTrafficSplitStepMapperImpl extends StepMapper {
     K8sApplyStepInfo k8sApplyStepInfo =
         K8sApplyStepInfo.infoBuilder()
             .delegateSelectors(MigratorUtility.getDelegateSelectors(state.getDelegateSelectors()))
-            .filePaths(ParameterField.createValueField(new ArrayList<>()))
+            .filePaths(ParameterField.createValueField(Collections.singletonList("/")))
             .skipDryRun(ParameterField.createValueField(false))
             .skipSteadyStateCheck(ParameterField.createValueField(false))
             .skipRendering(ParameterField.createValueField(false))
