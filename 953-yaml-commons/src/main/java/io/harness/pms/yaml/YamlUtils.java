@@ -504,6 +504,12 @@ public class YamlUtils {
     return name;
   }
 
+  public static boolean shouldIncludeInQualifiedName(
+      final String identifier, final String setupId, boolean skipExpressionChain) {
+    return !shouldNotIncludeInQualifiedName(identifier) && !identifier.equals(YAMLFieldNameConstants.PARALLEL + setupId)
+        && !skipExpressionChain;
+  }
+
   public boolean shouldNotIncludeInQualifiedName(String fieldName) {
     return ignorableStringForQualifiedName.contains(fieldName);
   }

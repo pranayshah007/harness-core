@@ -81,9 +81,10 @@ public class FeatureFlagYamlServiceImpl implements FeatureFlagYamlService {
     // This should be above the if condition - CDS-68202
     yamlSchemaGenerator.modifyRefsNamespace(featureFlagStageSchema, FEATURE_FLAG_NAMESPACE);
 
+    // false is added to support cross service steps schema
     if (yamlSchemaWithDetailsList != null) {
       YamlSchemaUtils.addOneOfInExecutionWrapperConfig(featureFlagStageSchema.get(DEFINITIONS_NODE),
-          yamlSchemaWithDetailsList, ModuleType.PMS, enabledFeatureFlags, featureRestrictionsMap);
+          yamlSchemaWithDetailsList, ModuleType.PMS, enabledFeatureFlags, featureRestrictionsMap, false);
     }
 
     ObjectMapper mapper = SchemaGeneratorUtils.getObjectMapperForSchemaGeneration();

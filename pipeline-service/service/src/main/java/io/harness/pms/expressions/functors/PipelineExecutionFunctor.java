@@ -62,6 +62,10 @@ public class PipelineExecutionFunctor implements LateBindingValue {
         pipelineExecutionSummaryEntity.getExecutionTriggerInfo().getTriggeredBy().getExtraInfoMap().get("email"));
     jsonObject.put("triggeredBy", triggeredByMap);
 
+    // Removed run sequence From PipelineStepParameter as run sequence is set just before start of execution and not
+    // during plan creation
+    jsonObject.put("sequenceId", pipelineExecutionSummaryEntity.getRunSequence());
+
     // block to add selected stages identifier
     try {
       // If Selective stage execution is allowed, add from StagesExecutionMetadata

@@ -97,6 +97,11 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.YamlPipelineUtils;
 
+import com.cronutils.model.Cron;
+import com.cronutils.model.CronType;
+import com.cronutils.model.definition.CronDefinitionBuilder;
+import com.cronutils.model.time.ExecutionTime;
+import com.cronutils.parser.CronParser;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -108,6 +113,7 @@ import com.google.common.io.Resources;
 import com.mongodb.client.result.DeleteResult;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -341,6 +347,44 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Cron expression contains 5 parts but we expect one of [6, 7]");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testCronTriggerWithFiringTimeDifferenceLessThan5Minutes() {
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder()
+            .ngTriggerEntity(NGTriggerEntity.builder().identifier("id").name("name").build())
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(
+                        NGTriggerSourceV2.builder()
+                            .type(NGTriggerType.SCHEDULED)
+                            .spec(ScheduledTriggerConfig.builder()
+                                      .type("Cron")
+                                      .spec(CronTriggerSpec.builder().type("UNIX").expression("0/4 0 * * *").build())
+                                      .build())
+                            .build())
+                    .build())
+            .build();
+    CronParser cronParser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.UNIX));
+    Cron cron = cronParser.parse("0/4 0 * * *");
+    ExecutionTime executionTime = ExecutionTime.forCron(cron);
+    Optional<ZonedDateTime> firstExecutionTimeOptional = executionTime.nextExecution(ZonedDateTime.now());
+    if (firstExecutionTimeOptional.isPresent()) {
+      ZonedDateTime firstExecutionTime = firstExecutionTimeOptional.get();
+      Optional<ZonedDateTime> secondExecutionTimeOptional = executionTime.nextExecution(firstExecutionTime);
+      if (secondExecutionTimeOptional.isPresent()) {
+        ZonedDateTime secondExecutionTime = secondExecutionTimeOptional.get();
+        assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails))
+            .isInstanceOf(InvalidArgumentsException.class)
+            .hasMessage(
+                "Cron interval must be greater than or equal to 5 minutes. The next two execution times when this trigger is suppose to fire are "
+                + firstExecutionTime.toLocalTime().toString() + " and " + secondExecutionTime.toLocalTime().toString()
+                + " which do not have a difference of 5 minutes between them.");
+      }
+    }
   }
 
   @Test

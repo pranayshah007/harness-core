@@ -67,6 +67,7 @@ public enum CIStepInfoType {
   PROWLER(CI_LITE_ENGINE, "Prowler"),
   QUALYS(CI_LITE_ENGINE, "Qualys"),
   REAPSAW(CI_LITE_ENGINE, "Reapsaw"),
+  SEMGREP(CI_LITE_ENGINE, "Semgrep"),
   SHIFT_LEFT(CI_LITE_ENGINE, "ShiftLeft"),
   SNIPER(CI_LITE_ENGINE, "Sniper"),
   SNYK(CI_LITE_ENGINE, "Snyk"),

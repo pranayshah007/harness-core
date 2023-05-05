@@ -16,6 +16,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.polling.bean.ArtifactInfo;
 
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
 
@@ -24,7 +25,7 @@ import lombok.Value;
 @Builder
 public class BambooArtifactInfo implements ArtifactInfo {
   String connectorRef;
-  String planKey;
+  @NotNull String planKey;
   List<String> artifactPaths;
 
   @Override

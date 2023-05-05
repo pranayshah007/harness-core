@@ -9,6 +9,7 @@ package io.harness.freeze;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static com.google.common.collect.Lists.newArrayList;
@@ -30,6 +31,10 @@ import io.harness.freeze.beans.FreezeWindow;
 import io.harness.freeze.beans.Recurrence;
 import io.harness.freeze.beans.RecurrenceSpec;
 import io.harness.freeze.beans.RecurrenceType;
+import io.harness.freeze.beans.response.FreezeBannerDetails;
+import io.harness.freeze.beans.response.FreezeDetailedResponseDTO;
+import io.harness.freeze.beans.response.FreezeResponseDTO;
+import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.beans.yaml.FreezeConfig;
 import io.harness.freeze.beans.yaml.FreezeInfoConfig;
 import io.harness.freeze.entity.FreezeConfigEntity;
@@ -167,5 +172,72 @@ public class NGFreezeDtoMapperTest extends CategoryTest {
                            -> NGFreezeDtoMapper.validateFreezeYaml(
                                freezeConfig, ORG_IDENTIFIER, PROJ_IDENTIFIER, FreezeType.MANUAL, Scope.PROJECT))
         .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testUpdateOldfreezeConfig() {
+    FreezeConfigEntity newfreezeConfig = freezeConfigEntity;
+    newfreezeConfig.setStatus(FreezeStatus.DISABLED);
+    newfreezeConfig.setName("fr1");
+    NGFreezeDtoMapper.updateOldFreezeConfig(newfreezeConfig, freezeConfigEntity);
+
+    assertThat(freezeConfigEntity.getStatus()).isEqualTo(FreezeStatus.DISABLED);
+    assertThat(freezeConfigEntity.getName()).isEqualTo("fr1");
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testPrepareFreezeResponseDTO() {
+    FreezeResponseDTO freezeResponseDTO = NGFreezeDtoMapper.prepareFreezeResponseDto(freezeConfigEntity);
+
+    assertThat(freezeResponseDTO.getType()).isEqualTo(FreezeType.MANUAL);
+    assertThat(freezeResponseDTO.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(freezeResponseDTO.getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
+    assertThat(freezeResponseDTO.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
+    assertThat(freezeResponseDTO.getYaml()).isEqualTo(yaml);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testPrepareFreezeResponseSummaryDTO() {
+    FreezeSummaryResponseDTO freezeResponseDTO = NGFreezeDtoMapper.prepareFreezeResponseSummaryDto(freezeConfigEntity);
+
+    assertThat(freezeResponseDTO.getType()).isEqualTo(FreezeType.MANUAL);
+    assertThat(freezeResponseDTO.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(freezeResponseDTO.getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
+    assertThat(freezeResponseDTO.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
+    assertThat(freezeResponseDTO.getYaml()).isEqualTo(yaml);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testPrepareBanner() {
+    FreezeResponseDTO freezeResponseDTO = NGFreezeDtoMapper.prepareFreezeResponseDto(freezeConfigEntity);
+    FreezeBannerDetails freezeBannerDetails = NGFreezeDtoMapper.prepareBanner(freezeResponseDTO);
+
+    assertThat(freezeBannerDetails.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(freezeBannerDetails.getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
+    assertThat(freezeBannerDetails.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
+    assertThat(freezeBannerDetails.getFreezeScope()).isEqualTo(Scope.PROJECT);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testPrepareDetailedFreezeResponseDto() {
+    FreezeResponseDTO freezeResponseDTO = NGFreezeDtoMapper.prepareFreezeResponseDto(freezeConfigEntity);
+    FreezeDetailedResponseDTO freezeDetailedResponseDTO =
+        NGFreezeDtoMapper.prepareDetailedFreezeResponseDto(freezeResponseDTO);
+
+    assertThat(freezeDetailedResponseDTO.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(freezeDetailedResponseDTO.getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
+    assertThat(freezeDetailedResponseDTO.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
+    assertThat(freezeDetailedResponseDTO.getFreezeScope()).isEqualTo(Scope.PROJECT);
+    assertThat(freezeDetailedResponseDTO.getYaml()).isEqualTo(yaml);
   }
 }

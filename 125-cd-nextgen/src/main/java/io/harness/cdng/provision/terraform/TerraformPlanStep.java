@@ -276,13 +276,14 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
           helper.saveTerraformPlanExecutionDetails(
               ambiance, terraformTaskNGResponse, provisionerIdentifier, planStepParameters);
 
+          String stepFqn = AmbianceUtils.getFQNUsingLevels(ambiance.getLevelsList());
           if (exportHumanReadablePlan) {
             String humanReadableOutputName =
                 helper.saveTerraformPlanHumanReadableOutput(ambiance, terraformTaskNGResponse, provisionerIdentifier);
 
             if (humanReadableOutputName != null) {
-              tfPlanOutcomeBuilder.humanReadableFilePath(TerraformHumanReadablePlanFunctor.getExpression(
-                  planStepParameters.getStepFqn(), humanReadableOutputName));
+              tfPlanOutcomeBuilder.humanReadableFilePath(
+                  TerraformHumanReadablePlanFunctor.getExpression(stepFqn, humanReadableOutputName));
             }
           }
 
@@ -291,8 +292,7 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
                 helper.saveTerraformPlanJsonOutput(ambiance, terraformTaskNGResponse, provisionerIdentifier);
 
             if (planJsonOutputName != null) {
-              tfPlanOutcomeBuilder.jsonFilePath(
-                  TerraformPlanJsonFunctor.getExpression(planStepParameters.getStepFqn(), planJsonOutputName));
+              tfPlanOutcomeBuilder.jsonFilePath(TerraformPlanJsonFunctor.getExpression(stepFqn, planJsonOutputName));
             }
           }
         }

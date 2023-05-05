@@ -28,6 +28,7 @@ import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -95,6 +96,20 @@ public class VmStepSerializer {
       default:
         //                log.info("serialisation is not implemented");
         return null;
+    }
+  }
+
+  public Set<String> preProcessStep(
+      Ambiance ambiance, CIStepInfo stepInfo, StageInfraDetails stageInfraDetails, String identifier) {
+    switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
+      case DOCKER:
+        return vmPluginCompatibleStepSerializer.preProcessStep(
+            ambiance, (PluginCompatibleStep) stepInfo, stageInfraDetails, identifier);
+      case GCR:
+      case ECR:
+      case ACR:
+      default:
+        return new HashSet<>();
     }
   }
 }

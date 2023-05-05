@@ -11,7 +11,8 @@
     "proxy",
     "kubernetes",
     "kafka",
-    "integrations"
+    "integrations",
+    "lighthouse"
   ],
   "properties": {
     "app": {
@@ -37,6 +38,10 @@
     "integrations": {
       "$id": "#root/integrations",
       "title": "Integrations"
+    },
+    "integrations": {
+      "$id": "#root/lighthouse",
+      "title": "Lighthouse"
     }
   }
 }

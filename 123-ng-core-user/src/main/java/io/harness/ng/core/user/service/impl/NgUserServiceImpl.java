@@ -322,7 +322,7 @@ public class NgUserServiceImpl implements NgUserService {
 
   public Optional<UserMetadataDTO> getUserByEmail(String email, boolean fetchFromCurrentGen) {
     if (!fetchFromCurrentGen) {
-      Optional<UserMetadata> user = userMetadataRepository.findDistinctByEmail(email);
+      Optional<UserMetadata> user = userMetadataRepository.findDistinctByEmailIgnoreCase(email);
       return user.map(UserMetadataMapper::toDTO);
     } else {
       Optional<UserInfo> userInfo = CGRestUtils.getResponse(userClient.getUserByEmailId(email));

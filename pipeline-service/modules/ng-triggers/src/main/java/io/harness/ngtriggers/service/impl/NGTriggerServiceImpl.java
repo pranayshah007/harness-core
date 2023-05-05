@@ -744,8 +744,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         if (secondExecutionTimeOptional.isPresent()) {
           ZonedDateTime secondExecutionTime = secondExecutionTimeOptional.get();
           if (Duration.between(firstExecutionTime, secondExecutionTime).getSeconds() < MIN_INTERVAL_MINUTES * 60) {
-            throw new InvalidArgumentsException(
-                "Cron interval must be greater than or equal to " + MIN_INTERVAL_MINUTES + " minutes.");
+            throw new InvalidArgumentsException("Cron interval must be greater than or equal to " + MIN_INTERVAL_MINUTES
+                + " minutes. The next two execution times when this trigger is suppose to fire are "
+                + firstExecutionTime.toLocalTime().toString() + " and " + secondExecutionTime.toLocalTime().toString()
+                + " which do not have a difference of " + MIN_INTERVAL_MINUTES + " minutes between them.");
           }
         }
         return;

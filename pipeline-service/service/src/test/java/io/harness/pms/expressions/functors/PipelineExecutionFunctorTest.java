@@ -162,6 +162,7 @@ public class PipelineExecutionFunctorTest extends CategoryTest {
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
         PipelineExecutionSummaryEntity.builder()
             .allowStagesExecution(false)
+            .runSequence(32)
             .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
                                       .setTriggerType(TriggerType.WEBHOOK)
                                       .setTriggeredBy(TriggeredBy.newBuilder().setIdentifier("system").build())
@@ -214,5 +215,7 @@ public class PipelineExecutionFunctorTest extends CategoryTest {
     ArrayList<String> selectedStages = (ArrayList<String>) response.get("selectedStages");
     assertEquals(selectedStages.size(), 4);
     assertEquals(selectedStages.get(0), "Test1");
+
+    assertEquals(response.get("sequenceId"), pipelineExecutionSummaryEntity.getRunSequence());
   }
 }

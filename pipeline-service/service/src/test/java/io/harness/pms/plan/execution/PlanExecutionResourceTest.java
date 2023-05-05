@@ -178,7 +178,7 @@ public class PlanExecutionResourceTest extends CategoryTest {
                 .build());
     planExecutionResource.getRetryHistory(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "planExecutionId");
-    verify(retryExecutionHelper, times(1)).getRetryHistory("rootExecutionId");
+    verify(retryExecutionHelper, times(1)).getRetryHistory("rootExecutionId", "planExecutionId");
   }
 
   @Test

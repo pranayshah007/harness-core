@@ -286,10 +286,13 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
 
     logBackgroundStepForBackwardCompatibility(
         ciStepInfo, completeStepIdentifier, stepIdentifier, ambiance.getPlanExecutionId());
+    Set<String> stepPreProcessSecrets =
+        vmStepSerializer.preProcessStep(ambiance, ciStepInfo, stageInfraDetails, stepIdentifier);
     VmStepInfo vmStepInfo = vmStepSerializer.serialize(ambiance, ciStepInfo, stageInfraDetails, stepIdentifier,
         ParameterField.createValueField(Timeout.fromString(stringTimeout)), stageDetails.getRegistries(),
         stageDetails.getExecutionSource());
     Set<String> secrets = vmStepSerializer.getStepSecrets(vmStepInfo, ambiance);
+    secrets.addAll(stepPreProcessSecrets);
     CIExecuteStepTaskParams params = getVmTaskParams(ambiance, vmStepInfo, secrets, stageInfraDetails, stageDetails,
         vmDetailsOutcome, runtimeId, stepIdentifier, logKey);
 

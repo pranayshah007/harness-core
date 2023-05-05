@@ -452,6 +452,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                                       .build();
     updateOperations.set(MonitoredServiceKeys.notificationRuleRefs,
         getNotificationRuleRefs(projectParams, monitoredService, monitoredServiceDTO));
+    updateOperations.set(MonitoredServiceKeys.lastUpdatedAt, clock.millis());
     validateDependencyMetadata(projectParams, monitoredServiceDTO.getDependencies());
     serviceDependencyService.updateDependencies(
         projectParams, monitoredService.getIdentifier(), monitoredServiceDTO.getDependencies());
@@ -969,6 +970,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   private void saveMonitoredServiceEntity(ProjectParams projectParams, MonitoredServiceDTO monitoredServiceDTO) {
+    long currentTime = System.currentTimeMillis();
     MonitoredService monitoredServiceEntity =
         MonitoredService.builder()
             .name(monitoredServiceDTO.getName())
@@ -987,6 +989,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
             .notificationRuleRefs(notificationRuleService.getNotificationRuleRefs(projectParams,
                 monitoredServiceDTO.getNotificationRuleRefs(), NotificationRuleType.MONITORED_SERVICE,
                 Instant.ofEpochSecond(0)))
+            .createdAt(currentTime)
+            .lastUpdatedAt(currentTime)
             .build();
     if (monitoredServiceDTO.getTemplate() != null) {
       monitoredServiceEntity.setTemplateIdentifier(monitoredServiceDTO.getTemplate().getTemplateRef());
@@ -1371,7 +1375,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         hPersistence.createQuery(MonitoredService.class).filter(MonitoredServiceKeys.uuid, monitoredService.getUuid()),
         hPersistence.createUpdateOperations(MonitoredService.class)
             .set(MonitoredServiceKeys.enabled, enable)
-            .set(MonitoredServiceKeys.lastDisabledAt, clock.millis()));
+            .set(MonitoredServiceKeys.lastDisabledAt, clock.millis())
+            .set(MonitoredServiceKeys.lastUpdatedAt, clock.millis()));
 
     MonitoredServiceDTO newMonitoredServiceDTO = getMonitoredServiceDTO(monitoredServiceParams);
     MonitoredService newMonitoredService = getMonitoredService(projectParams, identifier);
