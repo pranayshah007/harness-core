@@ -34,15 +34,14 @@ public class KubernetesApiClientRuntimeExceptionHandler implements ExceptionHand
     if (exception.getCause() != null) {
       Throwable cause = exception.getCause();
       if (cause instanceof CertificateException) {
-        return NestedExceptionUtils.hintWithExplanationException(
-            KubernetesExceptionHints.API_CLIENT_CA_CERT_INVALID_FORMAT,
-            KubernetesExceptionExplanation.API_CLIENT_CA_CERT_INVALID_FORMAT + ": " + cause.getMessage(),
+        return NestedExceptionUtils.hintWithExplanationException(KubernetesExceptionHints.API_CLIENT_CERT_INVALID,
+            KubernetesExceptionExplanation.API_CLIENT_CERT_INVALID + ": " + cause.getMessage(),
             new KubernetesTaskException(cause.getMessage()));
       }
 
       if (cause instanceof IOException) {
-        return NestedExceptionUtils.hintWithExplanationException(KubernetesExceptionHints.API_CLIENT_CA_CERT_INCOMPLETE,
-            KubernetesExceptionExplanation.API_CLIENT_CA_CERT_INCOMPLETE + ": " + cause.getMessage(),
+        return NestedExceptionUtils.hintWithExplanationException(KubernetesExceptionHints.API_CLIENT_CERT_INCOMPLETE,
+            KubernetesExceptionExplanation.API_CLIENT_CERT_INCOMPLETE + ": " + cause.getMessage(),
             new KubernetesTaskException(cause.getMessage()));
       }
     }
