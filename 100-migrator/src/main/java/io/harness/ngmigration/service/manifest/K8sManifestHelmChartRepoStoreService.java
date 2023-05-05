@@ -76,6 +76,11 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
                 CgEntityId.builder().type(NGMigrationEntityType.SERVICE).id(applicationManifest.getServiceId()).build())
             .getEntity();
     String identifier = MigratorUtility.generateIdentifier(name, identifierCaseFormat);
+    ParameterField<String> chartVersion = MigratorUtility.RUNTIME_INPUT;
+    if (StringUtils.isNotBlank(helmChartConfig.getChartVersion())) {
+      chartVersion = ParameterField.createValueField(helmChartConfig.getChartVersion());
+    }
+
     HelmChartManifestBuilder helmChartManifest =
         HelmChartManifest.builder()
             .identifier(identifier)
@@ -83,7 +88,7 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
             .skipResourceVersioning(ParameterField.createValueField(
                 Boolean.TRUE.equals(applicationManifest.getSkipVersioningForAllK8sObjects())))
             .chartName(ParameterField.createValueField(helmChartConfig.getChartName()))
-            .chartVersion(ParameterField.createValueField("<+input>"));
+            .chartVersion(chartVersion);
 
     helmChartManifest.commandFlags(getCommandFlags(applicationManifest));
 

@@ -170,8 +170,7 @@ public class PmsStepPlanCreatorUtils {
     return null;
   }
 
-  @VisibleForTesting
-  List<AdviserObtainment> getAdviserObtainmentForFailureStrategy(
+  public List<AdviserObtainment> getAdviserObtainmentForFailureStrategy(
       KryoSerializer kryoSerializer, YamlField currentField, boolean isStepInsideRollback, boolean isPipelineStage) {
     List<AdviserObtainment> adviserObtainmentList = new ArrayList<>();
     List<FailureStrategyConfig> stageFailureStrategies =

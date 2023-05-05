@@ -153,7 +153,7 @@ public class InputSetErrorsHelperTest extends CategoryTest {
     assertThat(oneError).containsKey("pipeline.field2.child1");
     assertThat(oneError.get("pipeline.field2.child1").getErrors().get(0).getMessage())
         .isEqualTo(
-            "The value provided for [pipeline.field2.child1: d] does not match any of the allowed values [a,b,c]");
+            "The values provided for pipeline.field2.child1: [\\'d\\'] do not match any of the allowed values [\\'a\\', \\'b\\', \\'c\\']");
   }
 
   @Test

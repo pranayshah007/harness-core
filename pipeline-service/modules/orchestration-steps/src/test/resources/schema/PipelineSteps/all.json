@@ -1242,6 +1242,22 @@
                 "$ref": "#/definitions/HttpHeaderConfig"
               }
             },
+            "inputVariables": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/NumberNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/SecretNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/StringNGVariable"
+                  }
+                ]
+              }
+            },
             "method": {
               "type": "string"
             },

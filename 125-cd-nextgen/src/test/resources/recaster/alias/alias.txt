@@ -31,7 +31,6 @@ io.harness.beans.outcomes.LiteEnginePodDetailsOutcome
 io.harness.cdng.provision.azure.AzureARMRollbackStepParameters
 io.harness.cdng.ecs.EcsBlueGreenCreateServiceStepNode
 io.harness.cdng.provision.cloudformation.CloudformationRollbackStepInfo
-io.harness.cdng.infra.beans.InfrastructureStepDetails
 io.harness.cdng.infra.steps.InfraSectionStepParameters
 io.harness.cdng.tas.TasAppResizeStepInfo
 io.harness.cdng.tas.TasRollingDeployStepInfo
@@ -610,7 +609,6 @@ io.harness.yaml.core.failurestrategy.rollback.StageRollbackFailureActionConfig
 io.harness.cdng.manifest.yaml.GcsStoreConfig
 io.harness.cdng.ssh.CommandStepNode
 io.harness.cdng.ssh.CommandStepOutcome
-io.harness.cdng.service.beans.ServiceStepDetails
 io.harness.cdng.ssh.CommandStepInfo
 io.harness.ngpipeline.artifact.bean.GoogleCloudSourceArtifactOutcome
 io.harness.cdng.aws.asg.AsgExecutionPassThroughData
@@ -934,3 +932,6 @@ io.harness.cdng.aws.sam.AwsSamBuildStepParameters
 io.harness.cdng.aws.sam.AwsSamBuildStepInfo
 io.harness.cdng.aws.sam.AwsSamBuildStepNode
 io.harness.cdng.k8s.K8sBGStageScaleDownStepNode
+io.harness.cdng.common.beans.StepDetailsDelegateInfo
+io.harness.cdng.infra.beans.InfrastructureStepDetails
+io.harness.cdng.service.beans.ServiceStepDetails

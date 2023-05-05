@@ -11,6 +11,7 @@ import io.harness.k8s.model.KubernetesConfig;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Secret;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,7 @@ import java.util.Map;
 public interface K8sClient {
   V1Secret updateSecretData(String namespace, String secretName, Map<String, byte[]> data, boolean replace);
   V1ConfigMap updateConfigMapData(String namespace, String configMapName, Map<String, String> data, boolean replace);
+  V1PodList getBackstagePodList(String namespace);
   void removeSecretData(String namespace, String backstageSecret, List<String> envNames);
   KubernetesConfig getKubernetesConfig();
   V1Namespace createNamespace(String namespace);

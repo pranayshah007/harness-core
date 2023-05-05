@@ -16,6 +16,7 @@ import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
@@ -28,7 +29,8 @@ public class PollingResponsePublisher {
   private final DelegateAgentManagerClient delegateAgentManagerClient;
 
   @Inject
-  public PollingResponsePublisher(KryoSerializer kryoSerializer, KryoSerializer referenceFalseKryoSerializer,
+  public PollingResponsePublisher(KryoSerializer kryoSerializer,
+      @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer,
       DelegateAgentManagerClient delegateAgentManagerClient) {
     this.kryoSerializer = kryoSerializer;
     this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;

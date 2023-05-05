@@ -7,11 +7,14 @@
 
 package io.harness.cvng.notification.transformer;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.notification.beans.ChangeImpactConditionSpec;
 import io.harness.cvng.notification.beans.ChangeObservedConditionSpec;
 import io.harness.cvng.notification.beans.ErrorTrackingConditionSpec;
 import io.harness.cvng.notification.beans.HealthScoreConditionSpec;
+import io.harness.cvng.notification.beans.MonitoredServiceChangeEventType;
 import io.harness.cvng.notification.beans.NotificationRuleCondition;
 import io.harness.cvng.notification.beans.NotificationRuleConditionSpec;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
@@ -50,19 +53,14 @@ public class MonitoredServiceNotificationRuleConditionTransformer
         .notificationMethod(notificationChannelTypeNotificationMethodTransformerMap
                                 .get(notificationRuleDTO.getNotificationMethod().getType())
                                 .getEntityNotificationMethod(notificationRuleDTO.getNotificationMethod().getSpec()))
-        .conditions(notificationRuleDTO.getConditions()
-                        .stream()
-                        .map(condition -> getEntityCondition(condition))
-                        .collect(Collectors.toList()))
+        .conditions(
+            notificationRuleDTO.getConditions().stream().map(this::getEntityCondition).collect(Collectors.toList()))
         .build();
   }
 
   @Override
   protected List<NotificationRuleConditionSpec> getSpec(MonitoredServiceNotificationRule notificationRule) {
-    return notificationRule.getConditions()
-        .stream()
-        .map(condition -> getDTOCondition(condition))
-        .collect(Collectors.toList());
+    return notificationRule.getConditions().stream().map(this::getDTOCondition).collect(Collectors.toList());
   }
 
   private MonitoredServiceNotificationRuleCondition getEntityCondition(NotificationRuleCondition condition) {
@@ -70,7 +68,12 @@ public class MonitoredServiceNotificationRuleConditionTransformer
       case CHANGE_IMPACT:
         ChangeImpactConditionSpec changeImpactConditionSpec = (ChangeImpactConditionSpec) condition.getSpec();
         return MonitoredServiceChangeImpactCondition.builder()
-            .changeEventTypes(changeImpactConditionSpec.getChangeEventTypes())
+            .changeCategories(isNotEmpty(changeImpactConditionSpec.getChangeCategories())
+                    ? changeImpactConditionSpec.getChangeCategories()
+                    : changeImpactConditionSpec.getChangeEventTypes()
+                          .stream()
+                          .map(MonitoredServiceChangeEventType::convertMonitoredServiceChangeEventTypeToChangeCategory)
+                          .collect(Collectors.toList()))
             .threshold(changeImpactConditionSpec.getThreshold())
             .period(NotificationRuleCommonUtils.getDurationInMillis(changeImpactConditionSpec.getPeriod()))
             .build();
@@ -83,7 +86,12 @@ public class MonitoredServiceNotificationRuleConditionTransformer
       case CHANGE_OBSERVED:
         ChangeObservedConditionSpec changeObservedConditionSpec = (ChangeObservedConditionSpec) condition.getSpec();
         return MonitoredServiceChangeObservedCondition.builder()
-            .changeEventTypes(changeObservedConditionSpec.getChangeEventTypes())
+            .changeCategories(isNotEmpty(changeObservedConditionSpec.getChangeCategories())
+                    ? changeObservedConditionSpec.getChangeCategories()
+                    : changeObservedConditionSpec.getChangeEventTypes()
+                          .stream()
+                          .map(MonitoredServiceChangeEventType::convertMonitoredServiceChangeEventTypeToChangeCategory)
+                          .collect(Collectors.toList()))
             .build();
       case CODE_ERRORS:
         ErrorTrackingConditionSpec errorTrackingConditionSpec = (ErrorTrackingConditionSpec) condition.getSpec();
@@ -102,7 +110,12 @@ public class MonitoredServiceNotificationRuleConditionTransformer
       case CHANGE_IMPACT:
         MonitoredServiceChangeImpactCondition changeImpactCondition = (MonitoredServiceChangeImpactCondition) condition;
         return ChangeImpactConditionSpec.builder()
-            .changeEventTypes(changeImpactCondition.getChangeEventTypes())
+            .changeEventTypes(
+                changeImpactCondition.getChangeCategories()
+                    .stream()
+                    .map(MonitoredServiceChangeEventType::convertChangeCategoryToMonitoredServiceChangeEventType)
+                    .collect(Collectors.toList()))
+            .changeCategories(changeImpactCondition.getChangeCategories())
             .threshold(changeImpactCondition.getThreshold())
             .period(NotificationRuleCommonUtils.getDurationAsString(changeImpactCondition.getPeriod()))
             .build();
@@ -116,7 +129,12 @@ public class MonitoredServiceNotificationRuleConditionTransformer
         MonitoredServiceChangeObservedCondition changeObservedCondition =
             (MonitoredServiceChangeObservedCondition) condition;
         return ChangeObservedConditionSpec.builder()
-            .changeEventTypes(changeObservedCondition.getChangeEventTypes())
+            .changeEventTypes(
+                changeObservedCondition.getChangeCategories()
+                    .stream()
+                    .map(MonitoredServiceChangeEventType::convertChangeCategoryToMonitoredServiceChangeEventType)
+                    .collect(Collectors.toList()))
+            .changeCategories(changeObservedCondition.getChangeCategories())
             .build();
       case CODE_ERRORS:
         MonitoredServiceCodeErrorCondition codeErrorCondition = (MonitoredServiceCodeErrorCondition) condition;

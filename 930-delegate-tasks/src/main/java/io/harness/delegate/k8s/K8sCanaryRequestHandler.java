@@ -18,6 +18,7 @@ import static io.harness.k8s.K8sCommandUnitConstants.Prepare;
 import static io.harness.k8s.K8sCommandUnitConstants.WaitForSteadyState;
 import static io.harness.k8s.K8sCommandUnitConstants.WrapUp;
 import static io.harness.k8s.K8sConstants.MANIFEST_FILES_DIR;
+import static io.harness.k8s.model.ServiceHookContext.MANIFEST_FILES_DIRECTORY;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.INFO;
 
@@ -109,18 +110,18 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     ServiceHookDTO serviceHookTaskParams = new ServiceHookDTO(k8sDelegateTaskParams);
     ServiceHookHandler serviceHookHandler =
         new ServiceHookHandler(k8sCanaryDeployRequest.getServiceHooks(), serviceHookTaskParams, timeoutInMillis);
-    serviceHookHandler.applyServiceHooks(ServiceHookType.PRE_HOOK, ServiceHookAction.FETCH_FILES,
-        k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback,
-        k8sCanaryHandlerConfig.getManifestFilesDirectory());
+    serviceHookHandler.addToContext(
+        MANIFEST_FILES_DIRECTORY.getContextName(), k8sCanaryHandlerConfig.getManifestFilesDirectory());
+    serviceHookHandler.execute(ServiceHookType.PRE_HOOK, ServiceHookAction.FETCH_FILES,
+        k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
     k8sTaskHelperBase.fetchManifestFilesAndWriteToDirectory(k8sCanaryDeployRequest.getManifestDelegateConfig(),
         k8sCanaryHandlerConfig.getManifestFilesDirectory(), executionLogCallback, timeoutInMillis,
         k8sCanaryDeployRequest.getAccountId(), false);
-    serviceHookHandler.applyServiceHooks(ServiceHookType.POST_HOOK, ServiceHookAction.FETCH_FILES,
-        k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback,
-        k8sCanaryHandlerConfig.getManifestFilesDirectory());
+    serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.FETCH_FILES,
+        k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
     executionLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
     init(k8sCanaryDeployRequest, k8sDelegateTaskParams,
-        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress));
+        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress), serviceHookHandler);
 
     prepareForCanary(k8sCanaryDeployRequest, k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Prepare, true, commandUnitsProgress));
@@ -139,14 +140,16 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     LogCallback steadyStateLogCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress);
     KubernetesResource canaryWorkload = k8sCanaryHandlerConfig.getCanaryWorkload();
-
+    serviceHookHandler.addWorkloadContextForHooks(Collections.singletonList(canaryWorkload), Collections.emptyList());
+    serviceHookHandler.execute(ServiceHookType.PRE_HOOK, ServiceHookAction.STEADY_STATE_CHECK,
+        k8sDelegateTaskParams.getWorkingDirectory(), steadyStateLogCallback);
     K8sSteadyStateDTO k8sSteadyStateDTO = K8sSteadyStateDTO.builder()
                                               .request(k8sDeployRequest)
                                               .resourceIds(Collections.singletonList(canaryWorkload.getResourceId()))
                                               .executionLogCallback(steadyStateLogCallback)
                                               .k8sDelegateTaskParams(k8sDelegateTaskParams)
                                               .namespace(canaryWorkload.getResourceId().getNamespace())
-                                              .denoteOverallSuccess(true)
+                                              .denoteOverallSuccess(false)
                                               .isErrorFrameworkEnabled(true)
                                               .build();
 
@@ -154,6 +157,9 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
         k8sTaskHelperBase.getKubernetesClient(k8sCanaryDeployRequest.isUseK8sApiForSteadyStateCheck());
     k8sClient.performSteadyStateCheck(k8sSteadyStateDTO);
 
+    serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.STEADY_STATE_CHECK,
+        k8sDelegateTaskParams.getWorkingDirectory(), steadyStateLogCallback);
+    steadyStateLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
     LogCallback wrapUpLogCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WrapUp, true, commandUnitsProgress);
 
@@ -212,8 +218,8 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
   }
 
   @VisibleForTesting
-  void init(K8sCanaryDeployRequest request, K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback logCallback)
-      throws Exception {
+  void init(K8sCanaryDeployRequest request, K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback logCallback,
+      ServiceHookHandler serviceHookHandler) throws Exception {
     logCallback.saveExecutionLog("Initializing..\n");
     logCallback.saveExecutionLog(color(String.format("Release Name: [%s]", request.getReleaseName()), Yellow, Bold));
     k8sCanaryHandlerConfig.setKubernetesConfig(containerDeploymentDelegateBaseHelper.createKubernetesConfig(
@@ -245,7 +251,8 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
         request.getManifestDelegateConfig(), k8sCanaryHandlerConfig.getManifestFilesDirectory(), manifestOverrideFiles,
         request.getReleaseName(), k8sCanaryHandlerConfig.getKubernetesConfig().getNamespace(), logCallback,
         request.getTimeoutIntervalInMin());
-
+    serviceHookHandler.execute(ServiceHookType.PRE_HOOK, ServiceHookAction.TEMPLATE_MANIFEST,
+        k8sDelegateTaskParams.getWorkingDirectory(), logCallback);
     List<KubernetesResource> resources =
         k8sTaskHelperBase.readManifests(manifestFiles, logCallback, isErrorFrameworkSupported());
     k8sTaskHelperBase.setNamespaceToKubernetesResourcesIfRequired(
@@ -259,6 +266,9 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
 
     logCallback.saveExecutionLog(color("\nManifests [Post template rendering] :\n", White, Bold));
     logCallback.saveExecutionLog(ManifestHelper.toYamlForLogs(k8sCanaryHandlerConfig.getResources()));
+
+    serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.TEMPLATE_MANIFEST,
+        k8sDelegateTaskParams.getWorkingDirectory(), logCallback);
 
     if (request.isSkipDryRun()) {
       logCallback.saveExecutionLog(color("\nSkipping Dry Run", Yellow, Bold), INFO);

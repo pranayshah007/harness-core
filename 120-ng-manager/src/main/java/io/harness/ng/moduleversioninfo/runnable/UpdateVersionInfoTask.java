@@ -51,6 +51,7 @@ public class UpdateVersionInfoTask {
   private static final String COMING_SOON = "Coming Soon";
   private static final String VERSION = "version";
   private static final String JOB_INTERRUPTED = "UpdateVersionInfoTask Sync job was interrupted due to: ";
+  public static final String CHAOS_MANAGER_API = "manager/api/";
   @Inject private MongoTemplate mongoTemplate;
   @Inject NextGenConfiguration nextGenConfiguration;
   List<ModuleVersionInfo> moduleVersionInfos;
@@ -95,6 +96,11 @@ public class UpdateVersionInfoTask {
       return nextGenConfiguration.getCiManagerClientConfig().getBaseUrl();
     } else if (ModuleType.SRM.name().equals(moduleName)) {
       return nextGenConfiguration.getCvngClientConfig().getBaseUrl();
+    } else if (ModuleType.CHAOS.name().equalsIgnoreCase(moduleName)) {
+      StringBuilder chaosManagerUrl = new StringBuilder();
+      chaosManagerUrl.append(nextGenConfiguration.getChaosServiceClientConfig().getBaseUrl()).append(CHAOS_MANAGER_API);
+
+      return chaosManagerUrl.toString();
     } else {
       return "";
     }

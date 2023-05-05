@@ -16,6 +16,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.common.beans.StepDelegateInfo;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.configfile.ConfigFileWrapper;
@@ -107,7 +108,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
   private static final String CONFIG_FILES_STEP_V2 = "CONFIG_FILES_STEP_V2";
   static final String CONFIG_FILE_COMMAND_UNIT = "configFiles";
   private static final long CONFIG_FILE_GIT_TASK_TIMEOUT = TimeUnit.MINUTES.toMillis(10);
-  private static final String CONFIG_FILES_STEP_DETAIL_KEY = "ConfigFilesStepDetailKey";
+  private static final String CONFIG_FILES_STEP = "Config Files Step";
 
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private CDExpressionResolver cdExpressionResolver;
@@ -198,11 +199,16 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
     }
 
     Set<String> taskIds = new HashSet<>();
+    List<StepDelegateInfo> stepDelegateInfos = new ArrayList<>();
     Map<String, ConfigFileOutcome> gitConfigFileOutcomesMapTaskIds = new HashMap<>();
     if (isNotEmpty(gitConfigFilesOutcome)) {
       for (ConfigFileOutcome gitConfigFileOutcome : gitConfigFilesOutcome) {
         String taskId = createGitDelegateTask(ambiance, gitConfigFileOutcome, logCallback);
         taskIds.add(taskId);
+        stepDelegateInfos.add(StepDelegateInfo.builder()
+                                  .taskName("Config File Task: " + gitConfigFileOutcome.getIdentifier())
+                                  .taskId(taskId)
+                                  .build());
         gitConfigFileOutcomesMapTaskIds.put(taskId, gitConfigFileOutcome);
       }
     }
@@ -220,7 +226,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
           ambiance, OutcomeExpressionConstants.CONFIG_FILES, configFilesOutcomes, StepCategory.STAGE.name());
     }
 
-    serviceStepsHelper.publishTaskIdsStepDetailsForServiceStep(ambiance, taskIds, CONFIG_FILES_STEP_DETAIL_KEY);
+    serviceStepsHelper.publishTaskIdsStepDetailsForServiceStep(ambiance, stepDelegateInfos, CONFIG_FILES_STEP);
 
     return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
   }

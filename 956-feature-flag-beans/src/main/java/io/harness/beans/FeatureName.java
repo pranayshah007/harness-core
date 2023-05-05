@@ -370,7 +370,6 @@ public enum FeatureName {
       "Customers started facing NPE due to migration of usergroup reference, removed null check behind FF - ticket ID - CDS-39770, CG",
       HarnessTeam.SPG),
 
-  STO_STEP_PALETTE_V1("Enable first iteration of individual steps for STO", HarnessTeam.STO),
   STO_STEP_PALETTE_Q1_2023(
       "Enable following steps for STO: AWSECR, AWSSecurityHub, Brakeman, CustomIngest, OWASP, Nikto, Nmap, Prowler",
       HarnessTeam.STO),
@@ -382,7 +381,8 @@ public enum FeatureName {
   STO_STEP_PALETTE_CODEQL("Enable CodeQL step for STO", HarnessTeam.STO),
   STO_STEP_PALETTE_GIT_LEAKS("Enable Gitleaks step for STO", HarnessTeam.STO),
 
-  DONT_ENABLE_STO_STEP_PALETTE_V3(
+  STO_STEP_PALETTE_SEMGREP("Enable Semgrep step for STO", HarnessTeam.STO),
+  STO_STEPS_TEST_MODE(
       "Enable the rest of STO Steps Q2 2023 and beyond, NOT READY for use in PRODUCTION", HarnessTeam.STO),
 
   STO_JIRA_INTEGRATION("Enable Jira integration for STO", HarnessTeam.STO),
@@ -685,6 +685,8 @@ public enum FeatureName {
       HarnessTeam.CDP),
   CDS_NG_TRIGGER_AUTHENTICATION_WITH_DELEGATE_SELECTOR(
       "Make NG Trigger authentication use the same delegate selectors as the secret's manager", HarnessTeam.CDC),
+
+  CDS_TRIGGER_ACTIVITY_PAGE("NG Triggers Activity page", HarnessTeam.CDC),
   CDS_PROJECT_SCOPED_RESOURCE_CONSTRAINT_QUEUE(
       "With enabling this FF with serviceV2 setup, pipeline in different projects but having the same infra key can be executed parallely",
       HarnessTeam.CDC),
@@ -742,7 +744,12 @@ public enum FeatureName {
       "Will fire the artifact and manifest triggers for all the versions in the polling response instead of the latest only",
       HarnessTeam.SPG),
   SRM_SPLUNK_SIGNALFX("Will enable SignalFX metric health source in SRM", HarnessTeam.CV),
-  SRM_TELEMETRY("Will enable telemetry for verify step result", HarnessTeam.CV);
+  SRM_TELEMETRY("Will enable telemetry for verify step result", HarnessTeam.CV),
+  PIE_MULTISELECT_AND_COMMA_IN_ALLOWED_VALUES(
+      "Will allow comma and multi-selection in runtime input allowed values", PIPELINE),
+  PL_USE_CREDENTIALS_FROM_DELEGATE_FOR_GCP_SM(
+      "Enables the use of credentials from Delegate in GCP Secret Manager", HarnessTeam.PL),
+  CI_ENABLE_DLC("Enable docker layer caching", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {

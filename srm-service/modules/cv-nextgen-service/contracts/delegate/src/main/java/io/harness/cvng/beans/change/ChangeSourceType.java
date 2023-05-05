@@ -41,7 +41,6 @@ public enum ChangeSourceType {
   @JsonProperty("CustomFF") CUSTOM_FF("CustomFF", ChangeCategory.FEATURE_FLAG, ActivityType.CUSTOM_FF, false);
 
   private static Map<ActivityType, ChangeSourceType> ACTIVITY_TO_CHANGE_SOURCE_TYPE_MAP;
-  private static Map<String, ChangeSourceType> STRING_TO_CHANGE_SOURCE_TYPE_MAP;
   private static Map<ChangeCategory, List<ChangeSourceType>> CATEGORY_TO_CHANGE_SOURCE_TYPES_MAP;
 
   private String value;
@@ -52,6 +51,11 @@ public enum ChangeSourceType {
   @JsonValue
   public String getValue() {
     return value;
+  }
+
+  @Override
+  public String toString() {
+    return this.value;
   }
 
   public static List<ChangeSourceType> getForCategory(ChangeCategory changeCategory) {
@@ -72,19 +76,5 @@ public enum ChangeSourceType {
       throw new IllegalStateException("Activity type:" + activityType + " not mapped to ChangeSourceType");
     }
     return ACTIVITY_TO_CHANGE_SOURCE_TYPE_MAP.get(activityType);
-  }
-
-  public static ChangeSourceType fromString(String stringValue) {
-    if (MapUtils.isEmpty(STRING_TO_CHANGE_SOURCE_TYPE_MAP)) {
-      STRING_TO_CHANGE_SOURCE_TYPE_MAP =
-          Arrays.stream(ChangeSourceType.values())
-              .collect(Collectors.toMap(ChangeSourceType::getValue, Function.identity()));
-      // TODO: Remove this once UI migrated to jsonValues for queryParams
-      Arrays.asList(ChangeSourceType.values()).forEach(cst -> STRING_TO_CHANGE_SOURCE_TYPE_MAP.put(cst.name(), cst));
-    }
-    if (!STRING_TO_CHANGE_SOURCE_TYPE_MAP.containsKey(stringValue)) {
-      throw new IllegalStateException("Change source type should be in : " + STRING_TO_CHANGE_SOURCE_TYPE_MAP.keySet());
-    }
-    return STRING_TO_CHANGE_SOURCE_TYPE_MAP.get(stringValue);
   }
 }

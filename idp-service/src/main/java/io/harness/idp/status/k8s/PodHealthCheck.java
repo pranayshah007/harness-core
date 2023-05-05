@@ -7,21 +7,12 @@
 
 package io.harness.idp.status.k8s;
 
-import static io.harness.exception.WingsException.USER;
-
-import static java.lang.String.format;
-
-import io.harness.exception.InvalidRequestException;
 import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.service.NamespaceService;
-import io.harness.k8s.KubernetesHelperService;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 import io.harness.spec.server.idp.v1.model.StatusInfo;
+import io.harness.spec.server.idp.v1.model.StatusInfo.CurrentStatusEnum;
 
-import com.google.inject.name.Named;
-import io.kubernetes.client.openapi.ApiClient;
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
@@ -35,41 +26,36 @@ import org.apache.commons.collections.CollectionUtils;
 
 @Slf4j
 public class PodHealthCheck implements HealthCheck {
-  @Inject private KubernetesHelperService kubernetesHelperService;
   @Inject private NamespaceService namespaceService;
   @Inject private K8sClient k8sClient;
-  @Inject @Named("backstagePodLabel") private String backstagePodLabel;
   public static final String MESSAGE_SEPARATOR = ". ";
 
   @Override
   public Optional<StatusInfo> getCurrentStatus(String accountId) {
     StatusInfo statusInfo = new StatusInfo();
-    try {
-      String namespace = getNamespaceForAccountId(accountId);
-      ApiClient apiClient = kubernetesHelperService.getApiClient(k8sClient.getKubernetesConfig());
-      CoreV1Api api = new CoreV1Api(apiClient);
-      // TODO: Implement logic for pod restart scenarios
-      V1PodList podList =
-          api.listNamespacedPod(namespace, null, null, null, null, backstagePodLabel, null, null, null, null, false);
-      if (CollectionUtils.isEmpty(podList.getItems())) {
-        statusInfo.setCurrentStatus(StatusInfo.CurrentStatusEnum.NOT_FOUND);
-        statusInfo.setReason("No pod exists for namespace: " + namespace);
-      } else if (podList.getItems().size() == 1) {
-        V1Pod pod = podList.getItems().get(0);
-        if (!isPodInPendingPhase(pod) && !isPodInWaitingState(pod)) {
-          statusInfo.setCurrentStatus(StatusInfo.CurrentStatusEnum.RUNNING);
-        } else if (isPodInPendingPhase(pod)) {
-          statusInfo.setCurrentStatus(StatusInfo.CurrentStatusEnum.PENDING);
-          statusInfo.setReason(getPodMessage(pod));
-        } else {
-          statusInfo.setCurrentStatus(StatusInfo.CurrentStatusEnum.FAILED);
-          statusInfo.setReason(getPodMessage(pod));
+    String namespace = getNamespaceForAccountId(accountId);
+    V1PodList podList = k8sClient.getBackstagePodList(namespace);
+    if (CollectionUtils.isEmpty(podList.getItems())) {
+      statusInfo.setCurrentStatus(CurrentStatusEnum.NOT_FOUND);
+      statusInfo.setReason("No pod exists for namespace: " + namespace);
+    } else {
+      int failedPods = 0;
+      for (V1Pod pod : podList.getItems()) {
+        if (isPodInRunningPhase(pod) && isContainerInRunningState(pod) && isPodInReadyCondition(pod) != null) {
+          statusInfo.setCurrentStatus(CurrentStatusEnum.RUNNING);
+          break;
+        } else if (isPodInFailedPhase(pod) || isContainerInTerminatedState(pod)) {
+          failedPods++;
         }
       }
-    } catch (ApiException e) {
-      String err = format("Could not check for pod status. Code: %s, message: %s", e.getCode(), e.getMessage());
-      log.error(err, e);
-      throw new InvalidRequestException(err, e, USER);
+
+      if (failedPods == podList.getItems().size()) {
+        statusInfo.setCurrentStatus(CurrentStatusEnum.FAILED);
+        statusInfo.setReason(getPodMessage(podList.getItems().get(0)));
+      } else if (statusInfo.getCurrentStatus() == null) {
+        statusInfo.setCurrentStatus(CurrentStatusEnum.PENDING);
+        statusInfo.setReason(getPodMessage(podList.getItems().get(0)));
+      }
     }
     return Optional.of(statusInfo);
   }
@@ -79,35 +65,57 @@ public class PodHealthCheck implements HealthCheck {
     return namespace.getNamespace();
   }
 
-  private boolean isPodInPendingPhase(V1Pod pod) {
-    return StatusInfo.CurrentStatusEnum.PENDING.toString().equalsIgnoreCase(pod.getStatus().getPhase());
+  private boolean isPodInRunningPhase(V1Pod pod) {
+    return CurrentStatusEnum.RUNNING.toString().equalsIgnoreCase(pod.getStatus().getPhase());
+  }
+  private boolean isPodInFailedPhase(V1Pod pod) {
+    return CurrentStatusEnum.FAILED.toString().equalsIgnoreCase(pod.getStatus().getPhase());
   }
 
-  private boolean isPodInWaitingState(V1Pod pod) {
+  private boolean isContainerInRunningState(V1Pod pod) {
     for (V1ContainerStatus containerStatus : pod.getStatus().getContainerStatuses()) {
-      if (containerStatus.getState().getWaiting() != null) {
+      if (containerStatus.getState().getRunning() != null) {
         return true;
       }
     }
     return false;
   }
 
+  private boolean isContainerInTerminatedState(V1Pod pod) {
+    for (V1ContainerStatus containerStatus : pod.getStatus().getContainerStatuses()) {
+      if (containerStatus.getState().getTerminated() != null
+          || containerStatus.getLastState().getTerminated() != null) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private V1PodCondition isPodInReadyCondition(V1Pod pod) {
+    return pod.getStatus()
+        .getConditions()
+        .stream()
+        .filter(c -> "Ready".equals(c.getType()) && "True".equals(c.getStatus()))
+        .findFirst()
+        .orElse(null);
+  }
+
   private String getPodMessage(V1Pod pod) {
-    String msg;
-    if (!CollectionUtils.isEmpty(pod.getStatus().getContainerStatuses())) {
-      msg = pod.getStatus()
-                .getContainerStatuses()
-                .stream()
-                .filter(containerStatus -> containerStatus.getState().getWaiting() != null)
-                .filter(containerStatus -> containerStatus.getState().getWaiting().getMessage() != null)
-                .map(containerStatus -> containerStatus.getState().getWaiting().getMessage())
-                .collect(Collectors.joining(MESSAGE_SEPARATOR));
-    } else {
+    String msg = null;
+    for (V1ContainerStatus containerStatus : pod.getStatus().getContainerStatuses()) {
+      if (containerStatus.getState().getWaiting() != null) {
+        msg = containerStatus.getState().getWaiting().getMessage();
+      } else {
+        msg = containerStatus.getState().getTerminated().getMessage();
+      }
+    }
+
+    if (msg == null) {
       msg = pod.getStatus()
                 .getConditions()
                 .stream()
-                .filter(Objects::nonNull)
                 .map(V1PodCondition::getMessage)
+                .filter(Objects::nonNull)
                 .collect(Collectors.joining(MESSAGE_SEPARATOR));
     }
     return msg;

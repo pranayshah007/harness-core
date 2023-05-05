@@ -10,7 +10,6 @@ package io.harness.cvng.core.services.impl.monitoredService;
 import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
 import static io.harness.cvng.core.constant.MonitoredServiceConstants.REGULAR_EXPRESSION;
 import static io.harness.cvng.core.utils.FeatureFlagNames.SRM_CODE_ERROR_NOTIFICATIONS;
-import static io.harness.cvng.notification.beans.MonitoredServiceChangeEventType.getMonitoredServiceChangeEventTypeFromActivityType;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.ENVIRONMENT_NAME;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_NAME;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_URL;
@@ -453,6 +452,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                                       .build();
     updateOperations.set(MonitoredServiceKeys.notificationRuleRefs,
         getNotificationRuleRefs(projectParams, monitoredService, monitoredServiceDTO));
+    updateOperations.set(MonitoredServiceKeys.lastUpdatedAt, clock.millis());
     validateDependencyMetadata(projectParams, monitoredServiceDTO.getDependencies());
     serviceDependencyService.updateDependencies(
         projectParams, monitoredService.getIdentifier(), monitoredServiceDTO.getDependencies());
@@ -970,6 +970,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   private void saveMonitoredServiceEntity(ProjectParams projectParams, MonitoredServiceDTO monitoredServiceDTO) {
+    long currentTime = System.currentTimeMillis();
     MonitoredService monitoredServiceEntity =
         MonitoredService.builder()
             .name(monitoredServiceDTO.getName())
@@ -988,6 +989,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
             .notificationRuleRefs(notificationRuleService.getNotificationRuleRefs(projectParams,
                 monitoredServiceDTO.getNotificationRuleRefs(), NotificationRuleType.MONITORED_SERVICE,
                 Instant.ofEpochSecond(0)))
+            .createdAt(currentTime)
+            .lastUpdatedAt(currentTime)
             .build();
     if (monitoredServiceDTO.getTemplate() != null) {
       monitoredServiceEntity.setTemplateIdentifier(monitoredServiceDTO.getTemplate().getTemplateRef());
@@ -1372,7 +1375,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         hPersistence.createQuery(MonitoredService.class).filter(MonitoredServiceKeys.uuid, monitoredService.getUuid()),
         hPersistence.createUpdateOperations(MonitoredService.class)
             .set(MonitoredServiceKeys.enabled, enable)
-            .set(MonitoredServiceKeys.lastDisabledAt, clock.millis()));
+            .set(MonitoredServiceKeys.lastDisabledAt, clock.millis())
+            .set(MonitoredServiceKeys.lastUpdatedAt, clock.millis()));
 
     MonitoredServiceDTO newMonitoredServiceDTO = getMonitoredServiceDTO(monitoredServiceParams);
     MonitoredService newMonitoredService = getMonitoredService(projectParams, identifier);
@@ -2011,13 +2015,16 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     Map<String, String> templateDataMap = new HashMap<>();
 
     List<ActivityType> changeObservedActivityTypes = new ArrayList<>();
-    changeObservedCondition.getChangeEventTypes().forEach(
-        changeEventType -> changeObservedActivityTypes.addAll(changeEventType.getActivityTypes()));
+    changeObservedCondition.getChangeCategories().forEach(changeCategory
+        -> changeObservedActivityTypes.addAll(ChangeSourceType.getForCategory(changeCategory)
+                                                  .stream()
+                                                  .map(ChangeSourceType::getActivityType)
+                                                  .collect(Collectors.toList())));
     Optional<Activity> activity = activityService.getAnyEventFromListOfActivityTypes(monitoredServiceParams,
         changeObservedActivityTypes, clock.instant().minus(5, ChronoUnit.MINUTES), clock.instant());
     activity.ifPresent(value
         -> templateDataMap.put(
-            CHANGE_EVENT_TYPE, getMonitoredServiceChangeEventTypeFromActivityType(value.getType()).getDisplayName()));
+            CHANGE_EVENT_TYPE, ChangeSourceType.ofActivityType(value.getType()).getChangeCategory().getDisplayName()));
     return NotificationData.builder()
         .shouldSendNotification(activity.isPresent())
         .templateDataMap(templateDataMap)
@@ -2033,14 +2040,17 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     long riskTimeBufferMins = 0;
 
     List<ActivityType> changeImpactActivityTypes = new ArrayList<>();
-    changeImpactCondition.getChangeEventTypes().forEach(
-        changeEventType -> changeImpactActivityTypes.addAll(changeEventType.getActivityTypes()));
+    changeImpactCondition.getChangeCategories().forEach(changeCategory
+        -> changeImpactActivityTypes.addAll(ChangeSourceType.getForCategory(changeCategory)
+                                                .stream()
+                                                .map(ChangeSourceType::getActivityType)
+                                                .collect(Collectors.toList())));
     Optional<Activity> optionalActivity =
         activityService.getAnyEventFromListOfActivityTypes(monitoredServiceParams, changeImpactActivityTypes,
             clock.instant().minus(changeImpactCondition.getPeriod(), ChronoUnit.MILLIS), clock.instant());
     if (optionalActivity.isPresent()) {
       templateDataMap.put(CHANGE_EVENT_TYPE,
-          getMonitoredServiceChangeEventTypeFromActivityType(optionalActivity.get().getType()).getDisplayName());
+          ChangeSourceType.ofActivityType(optionalActivity.get().getType()).getChangeCategory().getDisplayName());
       Instant activityStartTime = optionalActivity.get().getActivityStartTime();
       riskTimeBufferMins = Duration.between(activityStartTime, clock.instant()).toMinutes();
       isEveryHeatMapBelowThreshold =

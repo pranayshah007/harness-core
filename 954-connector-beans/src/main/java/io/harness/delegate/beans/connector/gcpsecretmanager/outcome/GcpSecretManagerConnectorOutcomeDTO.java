@@ -38,4 +38,7 @@ public class GcpSecretManagerConnectorOutcomeDTO extends ConnectorConfigOutcomeD
   SecretRefData credentialsRef;
 
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) Set<String> delegateSelectors;
+
+  @Schema(description = SecretManagerDescriptionConstants.ASSUME_CREDENTIALS_ON_DELEGATE)
+  Boolean assumeCredentialsOnDelegate;
 }

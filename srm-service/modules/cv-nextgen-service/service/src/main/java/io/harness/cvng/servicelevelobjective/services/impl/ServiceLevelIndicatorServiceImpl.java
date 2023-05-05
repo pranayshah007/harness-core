@@ -68,7 +68,6 @@ import io.harness.persistence.HPersistence;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import dev.morphia.query.Criteria;
 import dev.morphia.query.Query;
@@ -223,7 +222,9 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
                 -> metricPackService.populateDataCollectionDsl(
                     metricCVConfig.getType(), metricCVConfig.getMetricPack()))
             .collect(Collectors.toList());
-    Preconditions.checkArgument(isNotEmpty(cvConfigs), "Health source not present");
+    if (cvConfigs.isEmpty()) {
+      throw new InvalidArgumentsException("Health source not present");
+    }
     return cvConfigs;
   }
 

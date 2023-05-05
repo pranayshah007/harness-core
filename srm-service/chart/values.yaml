@@ -1,0 +1,169 @@
+# Default values for cv-nextgen
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  loadbalancerURL: ""
+  database:
+    postgres:
+      ## - installed = true if installed within cluster
+      installed: true
+      ## - protocol to use for connection
+      protocol: postgres
+      ## - host array for external
+      hosts:
+        - postgres:5432
+      ## - secret name containing external values
+      secretName: ""
+      ## - key within secret containing username
+      userKey: ""
+      ## - key within secret containing password
+      passwordKey: ""
+      ## - extra arguments set to connection string
+      extraArgs: ""
+    mongo:
+      installed: true
+      protocol: mongodb
+      # --  provide default values if mongo.installed is set to false
+      hosts: []
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
+      extraArgs: ""
+    timescaledb:
+      installed: true
+      protocol: "jdbc:postgresql"
+      # --  provide default values if mongo.installed is set to false
+      hosts:
+        - timescaledb-single-chart:5432
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
+      extraArgs: ""
+  ha: false
+  ingress:
+    enabled: false
+    className: harness
+    hosts:
+      - my-host.example.org
+    tls:
+      enabled: true
+      secretName: ''
+  istio:
+    enabled: false
+    gateway:
+      create: false
+    virtualService:
+      gateways:
+      hosts:
+  imagePullSecrets: []
+
+replicaCount: 1
+maxSurge: 1
+maxUnavailable: 0
+
+config:
+  DEPLOY_MODE: KUBERNETES_ONPREM
+  ENV: KUBERNETES_ONPREM
+  STACK_DRIVER_LOGGING_ENABLED: false
+  VERIFICATION_PORT: 6060
+  VERIFICATION_SERVICE_SECRET: 59MR5RlVARcdH7zb7pNx6GzqiglBmXR8
+  SHOULD_CONFIGURE_WITH_NOTIFICATION: true
+  EVENTS_FRAMEWORK_REDIS_URL:
+  EVENTS_FRAMEWORK_USE_SENTINEL: true
+  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: harness-redis
+  EVENTS_FRAMEWORK_REDIS_SENTINELS:
+  SHOULD_CONFIGURE_WITH_PMS: true
+  PMS_TARGET:
+  PMS_AUTHORITY:
+  GRPC_SERVER_PORT: 9979
+  CACHE_CONFIG_REDIS_URL:
+  CACHE_BACKEND: REDIS
+  CACHE_CONFIG_REDIS_SENTINELS: 
+  CACHE_CONFIG_SENTINEL_MASTER_NAME: harness-redis
+  CACHE_CONFIG_USE_SENTINEL: true
+  MOCK_ACCESS_CONTROL_SERVICE: false
+  ACCESS_CONTROL_BASE_URL:  http://access-control.{{ .Release.Namespace }}.svc.cluster.local:9006/api/
+  ACCESS_CONTROL_ENABLED: true
+
+image:
+  registry: docker.io
+  repository: harness/cv-nextgen-signed
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "78900"
+  digest: ""
+  imagePullSecrets: []
+
+mongoSecrets:
+  userName:
+    name: harness-secrets
+    key: mongodbUsername
+  password:
+    name: mongodb-replicaset-chart
+    key: mongodb-root-password
+
+waitForInitContainer:
+  image:
+    registry: docker.io
+    repository: harness/helm-init-container
+    pullPolicy: IfNotPresent
+    tag: "latest"
+    digest: ""
+
+java:
+  memory: 4096
+
+appLogLevel: INFO
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "harness-default"
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext:
+  runAsUser: 65534
+  runAsNonRoot: true
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 6060
+  grpcport: 9979
+
+resources:
+  limits:
+    cpu: 1
+    memory: 6144Mi
+  requests:
+    cpu: 1
+    memory: 6144Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

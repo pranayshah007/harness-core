@@ -28,7 +28,7 @@ public class ChaosLocalClient implements ChaosModuleLicenseClient {
   private static final int TEAM_TRIAL_CHAOS_INFRASTRUCTURES = 1000;
 
   private static final int FREE_TRIAL_CHAOS_EXPERIMENT_RUNS = 10;
-  private static final int FREE_TRIAL_CHAOS_INFRASTRUCTURES = 2;
+  private static final int FREE_TRIAL_CHAOS_INFRASTRUCTURES = 100;
 
   @Override
   public ChaosModuleLicenseDTO createTrialLicense(Edition edition, String accountId) {

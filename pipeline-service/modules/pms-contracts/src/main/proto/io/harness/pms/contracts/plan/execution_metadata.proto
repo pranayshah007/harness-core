@@ -51,8 +51,9 @@ message PipelineStageInfo {
 }
 
 message PostExecutionRollbackInfo {
-  string postExecutionRollbackStageId = 1;
+  string postExecutionRollbackStageId = 1;  // if stage is under strategy then this will be the strategy setup id
   io.harness.pms.contracts.execution.StrategyMetadata rollbackStageStrategyMetadata = 2;
+  string originalStageExecutionId = 3;
 }
 
 enum PipelineStoreType {

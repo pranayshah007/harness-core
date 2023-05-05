@@ -8,6 +8,7 @@
 package io.harness.pms.governance;
 
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.pms.governance.EnvironmentExpansionUtils.getEnvRefFromEnvYamlV2Node;
 import static io.harness.pms.governance.ExpansionConstants.ENVIRONMENTS_PARALLEL_KEY;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -48,8 +50,14 @@ public class MultiEnvironmentExpansionHandler implements JsonExpansionHandler {
       }
 
       List<SingleEnvironmentExpandedValue> values = new ArrayList<>();
-      environments.forEach(
-          environmentNode -> values.add(utils.toSingleEnvironmentExpandedValue(metadata, environmentNode)));
+      environments.forEach(environmentNode -> {
+        final Optional<String> environmentRefOpt = getEnvRefFromEnvYamlV2Node(environmentNode);
+        if (environmentRefOpt.isPresent()) {
+          values.add(utils.toSingleEnvironmentExpandedValue(metadata, environmentNode, environmentRefOpt.get()));
+        } else {
+          values.add(SingleEnvironmentExpandedValue.builder().build());
+        }
+      });
 
       JsonNode metaDataNode = fieldValue.get(EnvironmentsYaml.METADATA);
 
@@ -69,6 +77,7 @@ public class MultiEnvironmentExpansionHandler implements JsonExpansionHandler {
           .value(value)
           .build();
     } catch (Exception ex) {
+      log.error("Exception in multi environment expansion", ex);
       return ExpansionResponse.builder().success(false).errorMessage(ExceptionUtils.getMessage(ex)).build();
     }
   }

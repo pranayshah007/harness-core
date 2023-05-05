@@ -32,7 +32,9 @@ java_library(
     name = "tests",
     testonly = True,
     srcs = glob(["src/test/**/*.java"]),
-    resources = [],
+    resources = [
+        "//315-sto-manager/contracts/src/test/resources:resource",
+    ],
     visibility = ["//visibility:public"],
     deps = test_deps,
 )

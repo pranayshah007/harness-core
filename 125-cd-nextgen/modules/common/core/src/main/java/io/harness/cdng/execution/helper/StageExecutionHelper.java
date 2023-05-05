@@ -23,7 +23,7 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
-import io.harness.cdng.customDeployment.beans.CustomDeploymentExecutionDetails;
+import io.harness.cdng.customDeployment.CustomDeploymentExecutionDetails;
 import io.harness.cdng.execution.DefaultExecutionDetails;
 import io.harness.cdng.execution.ExecutionDetails;
 import io.harness.cdng.execution.ExecutionInfoKey;

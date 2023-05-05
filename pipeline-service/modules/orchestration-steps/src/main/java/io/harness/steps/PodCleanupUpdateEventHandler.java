@@ -9,7 +9,6 @@ package io.harness.steps;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
@@ -27,8 +26,8 @@ public class PodCleanupUpdateEventHandler implements OrchestrationEventHandler {
 
   @Override
   public void handleEvent(OrchestrationEvent event) {
-    Level level = AmbianceUtils.obtainCurrentLevel(event.getAmbiance());
-    if (level.getStepType().equals(StepGroupStep.STEP_TYPE) && StatusUtils.isFinalStatus(event.getStatus())) {
+    if (StepGroupStep.STEP_TYPE.getType().equals(AmbianceUtils.getCurrentStepType(event.getAmbiance()).getType())
+        && StatusUtils.isFinalStatus(event.getStatus())) {
       containerStepCleanupHelper.sendCleanupRequest(event.getAmbiance());
     }
   }

@@ -95,13 +95,13 @@ public class K8sApplyBaseHandler {
       K8sDelegateTaskParams k8sDelegateTaskParams, long timeoutInMillis, LogCallback executionLogCallback,
       K8sApplyHandlerConfig k8sApplyHandlerConfig) throws Exception {
     return steadyStateCheck(skipSteadyStateCheck, namespace, k8sDelegateTaskParams, timeoutInMillis,
-        executionLogCallback, k8sApplyHandlerConfig, false, false);
+        executionLogCallback, k8sApplyHandlerConfig, false, false, true);
   }
 
   public boolean steadyStateCheck(boolean skipSteadyStateCheck, String namespace,
       K8sDelegateTaskParams k8sDelegateTaskParams, long timeoutInMillis, LogCallback executionLogCallback,
-      K8sApplyHandlerConfig k8sApplyHandlerConfig, boolean isErrorFrameworkEnabled, boolean skipSteadyStateForWorkloads)
-      throws Exception {
+      K8sApplyHandlerConfig k8sApplyHandlerConfig, boolean isErrorFrameworkEnabled, boolean skipSteadyStateForWorkloads,
+      boolean denoteOverallSuccess) throws Exception {
     if (isEmpty(k8sApplyHandlerConfig.getWorkloads()) && isEmpty(k8sApplyHandlerConfig.getCustomWorkloads())) {
       executionLogCallback.saveExecutionLog("Skipping Status Check since there is no Workload.", INFO, SUCCESS);
       return true;
@@ -119,13 +119,13 @@ public class K8sApplyBaseHandler {
                                                              .collect(Collectors.toList());
 
       success = k8sTaskHelperBase.doStatusCheckForAllResources(k8sApplyHandlerConfig.getClient(), kubernetesResourceIds,
-          k8sDelegateTaskParams, namespace, executionLogCallback, k8sApplyHandlerConfig.getCustomWorkloads().isEmpty(),
-          isErrorFrameworkEnabled);
+          k8sDelegateTaskParams, namespace, executionLogCallback,
+          denoteOverallSuccess && k8sApplyHandlerConfig.getCustomWorkloads().isEmpty(), isErrorFrameworkEnabled);
     }
 
     boolean customResourcesStatusSuccess = k8sTaskHelperBase.doStatusCheckForAllCustomResources(
         k8sApplyHandlerConfig.getClient(), k8sApplyHandlerConfig.getCustomWorkloads(), k8sDelegateTaskParams,
-        executionLogCallback, true, timeoutInMillis, isErrorFrameworkEnabled);
+        executionLogCallback, denoteOverallSuccess, timeoutInMillis, isErrorFrameworkEnabled);
 
     return success && customResourcesStatusSuccess;
   }

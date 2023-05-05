@@ -23,7 +23,7 @@ public interface UserMetadataRepository
     extends PagingAndSortingRepository<UserMetadata, String>, UserMetadataRepositoryCustom {
   Optional<UserMetadata> findDistinctByUserId(String userId);
 
-  Optional<UserMetadata> findDistinctByEmail(String email);
+  Optional<UserMetadata> findDistinctByEmailIgnoreCase(String email);
 
   void deleteByEmail(String email);
 }

@@ -28,8 +28,11 @@ import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -56,6 +59,7 @@ import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookRegistrationStatus;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogType;
+import io.harness.ngtriggers.beans.entity.metadata.status.StatusResult;
 import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistrationStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.WebhookInfo;
@@ -73,6 +77,7 @@ import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.service.impl.NGTriggerServiceImpl;
 import io.harness.ngtriggers.utils.PollingSubscriptionHelper;
 import io.harness.ngtriggers.validations.TriggerValidationHandler;
+import io.harness.ngtriggers.validations.ValidationResult;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.merger.YamlConfig;
@@ -92,6 +97,11 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.YamlPipelineUtils;
 
+import com.cronutils.model.Cron;
+import com.cronutils.model.CronType;
+import com.cronutils.model.definition.CronDefinitionBuilder;
+import com.cronutils.model.time.ExecutionTime;
+import com.cronutils.parser.CronParser;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -103,6 +113,7 @@ import com.google.common.io.Resources;
 import com.mongodb.client.result.DeleteResult;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -336,6 +347,44 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Cron expression contains 5 parts but we expect one of [6, 7]");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testCronTriggerWithFiringTimeDifferenceLessThan5Minutes() {
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder()
+            .ngTriggerEntity(NGTriggerEntity.builder().identifier("id").name("name").build())
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(
+                        NGTriggerSourceV2.builder()
+                            .type(NGTriggerType.SCHEDULED)
+                            .spec(ScheduledTriggerConfig.builder()
+                                      .type("Cron")
+                                      .spec(CronTriggerSpec.builder().type("UNIX").expression("0/4 0 * * *").build())
+                                      .build())
+                            .build())
+                    .build())
+            .build();
+    CronParser cronParser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.UNIX));
+    Cron cron = cronParser.parse("0/4 0 * * *");
+    ExecutionTime executionTime = ExecutionTime.forCron(cron);
+    Optional<ZonedDateTime> firstExecutionTimeOptional = executionTime.nextExecution(ZonedDateTime.now());
+    if (firstExecutionTimeOptional.isPresent()) {
+      ZonedDateTime firstExecutionTime = firstExecutionTimeOptional.get();
+      Optional<ZonedDateTime> secondExecutionTimeOptional = executionTime.nextExecution(firstExecutionTime);
+      if (secondExecutionTimeOptional.isPresent()) {
+        ZonedDateTime secondExecutionTime = secondExecutionTimeOptional.get();
+        assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails))
+            .isInstanceOf(InvalidArgumentsException.class)
+            .hasMessage(
+                "Cron interval must be greater than or equal to 5 minutes. The next two execution times when this trigger is suppose to fire are "
+                + firstExecutionTime.toLocalTime().toString() + " and " + secondExecutionTime.toLocalTime().toString()
+                + " which do not have a difference of 5 minutes between them.");
+      }
+    }
   }
 
   @Test
@@ -784,5 +833,40 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     assertThatThrownBy(() -> ngTriggerServiceImpl.validatePipelineRef(triggerDetails))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("pipelineBranchName is missing or is empty.");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testUpdateTriggerWithValidationStatusWhileRuntime() {
+    NGTriggerEntity ngTriggerEntity = NGTriggerEntity.builder()
+                                          .identifier("id")
+                                          .orgIdentifier("orgId")
+                                          .projectIdentifier("projId")
+                                          .targetIdentifier("targetId")
+                                          .enabled(true)
+                                          .name("name")
+                                          .build();
+    doNothing().when(ngTriggerElementMapper).updateEntityYmlWithEnabledValue(ngTriggerEntity);
+    doReturn(ngTriggerEntity).when(ngTriggerRepository).updateValidationStatus(any(), any());
+    ArgumentCaptor<NGTriggerEntity> entityAfterUpdate = ArgumentCaptor.forClass(NGTriggerEntity.class);
+    ngTriggerServiceImpl.updateTriggerWithValidationStatus(
+        ngTriggerEntity, ValidationResult.builder().success(false).message("message").build(), true);
+    verify(ngTriggerRepository, times(1)).updateValidationStatus(any(), entityAfterUpdate.capture());
+    assertThat(entityAfterUpdate.getValue().getEnabled()).isTrue();
+    assertThat(entityAfterUpdate.getValue().getTriggerStatus().getValidationStatus().getStatusResult())
+        .isEqualTo(StatusResult.FAILED);
+    assertThat(entityAfterUpdate.getValue().getTriggerStatus().getValidationStatus().getDetailedMessage())
+        .isEqualTo("message");
+
+    ArgumentCaptor<NGTriggerEntity> entityAfterUpdate1 = ArgumentCaptor.forClass(NGTriggerEntity.class);
+    ngTriggerServiceImpl.updateTriggerWithValidationStatus(
+        ngTriggerEntity, ValidationResult.builder().success(false).message("message").build(), false);
+    verify(ngTriggerRepository, times(2)).updateValidationStatus(any(), entityAfterUpdate1.capture());
+    assertThat(entityAfterUpdate1.getValue().getEnabled()).isFalse();
+    assertThat(entityAfterUpdate1.getValue().getTriggerStatus().getValidationStatus().getStatusResult())
+        .isEqualTo(StatusResult.FAILED);
+    assertThat(entityAfterUpdate1.getValue().getTriggerStatus().getValidationStatus().getDetailedMessage())
+        .isEqualTo("message");
   }
 }

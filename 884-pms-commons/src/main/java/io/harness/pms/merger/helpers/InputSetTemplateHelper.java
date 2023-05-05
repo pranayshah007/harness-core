@@ -60,7 +60,7 @@ public class InputSetTemplateHelper {
       return null;
     }
     String resolvedTemplateYaml = removeNonRequiredStages(template, pipelineYaml, stageIdentifiers, true);
-    return removePropertiesIfNotRequired(mergedPipelineYaml, resolvedTemplateYaml, pipelineYaml);
+    return removePropertiesIfNotRequired(mergedPipelineYaml, resolvedTemplateYaml, pipelineYaml, stageIdentifiers);
   }
 
   public String removeRuntimeInputFromYaml(String pipelineYaml, String runtimeInputYaml) {
@@ -89,7 +89,8 @@ public class InputSetTemplateHelper {
     return new YamlConfig(templateFQNMap, pipelineYamlConfig.getYamlMap()).getYaml();
   }
 
-  public String removePropertiesIfNotRequired(String mergedPipelineYaml, String template, String pipelineYaml) {
+  public String removePropertiesIfNotRequired(
+      String mergedPipelineYaml, String template, String pipelineYaml, List<String> stageIdentifiers) {
     YamlConfig mergedPipelineYamlConfig = new YamlConfig(mergedPipelineYaml);
     Map<FQN, Object> mergedPipelineYamlFQNMap = mergedPipelineYamlConfig.getFqnToValueMap();
     Set<FQN> filteredSet = mergedPipelineYamlFQNMap.keySet()
@@ -103,14 +104,14 @@ public class InputSetTemplateHelper {
                                        && mergedPipelineYamlFQNMap.get(key) == BooleanNode.TRUE)
                                .collect(Collectors.toSet());
 
-    Set<String> stageIdentifiersWithCloneEnabled =
-        filteredSet.stream().map(FQN::getStageIdentifier).collect(Collectors.toSet());
+    List<String> stageIdentifiersWithCloneEnabled =
+        filteredSet.stream().map(FQN::getStageIdentifier).collect(Collectors.toList());
 
     if (EmptyPredicate.isNotEmpty(stageIdentifiersWithCloneEnabled)) {
       YamlConfig pipelineYamlConfig = new YamlConfig(pipelineYaml);
       YamlConfig templateConfig = new YamlConfig(template);
       Map<FQN, Object> templateFQNMap = templateConfig.getFqnToValueMap();
-      FQNHelper.removeProperties(templateFQNMap, stageIdentifiersWithCloneEnabled);
+      FQNHelper.removeProperties(templateFQNMap, stageIdentifiers, stageIdentifiersWithCloneEnabled);
       return new YamlConfig(templateFQNMap, pipelineYamlConfig.getYamlMap()).getYaml();
     }
     return template;

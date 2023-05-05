@@ -53,14 +53,14 @@ import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
+import io.harness.cdng.serviceoverridesv2.validators.EnvironmentValidationHelper;
+import io.harness.cdng.validations.helper.OrgAndProjectValidationHelper;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ng.beans.PageResponse;
-import io.harness.ng.core.EnvironmentValidationHelper;
-import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -717,9 +717,8 @@ public class EnvironmentResourceV2 {
     throwExceptionForInvalidRequestDTO(serviceOverrideRequestDTO);
     validateServiceOverrideScope(serviceOverrideRequestDTO, accountId);
 
-    boolean isOverridesV2 = checkFeatureFlagForOverridesV2(accountId);
     NGServiceOverridesEntity serviceOverridesEntity =
-        ServiceOverridesMapper.toServiceOverridesEntity(accountId, serviceOverrideRequestDTO, isOverridesV2);
+        ServiceOverridesMapper.toServiceOverridesEntity(accountId, serviceOverrideRequestDTO);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(serviceOverridesEntity.getOrgIdentifier(),
         serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getAccountId());
     environmentValidationHelper.checkThatEnvExists(serviceOverridesEntity.getAccountId(),

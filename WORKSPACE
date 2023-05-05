@@ -1296,8 +1296,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:9ZrokpIAX+BANYGahqJp6vJqgYiD5c8v5A4iVk+oyZo=",
-    version = "v1.29.1",
+    sum = "h1:rubFzxpqZfxfN0Z9MwcUX44/OUur/hEA1OvI+S14CDU=",
+    version = "v1.29.2-0.20230428094229-194f53fb3716",
 )
 
 go_repository(
@@ -5141,7 +5141,7 @@ plain_artifacts = [
     "org.atmosphere:atmosphere-runtime:2.7.6",
     "org.atmosphere:wasync:3.0.0",
     "org.atteo:evo-inflector:1.2.2",
-    "org.bitbucket.b_c:jose4j:0.7.0",
+    "org.bitbucket.b_c:jose4j:0.9.3",
     "org.bouncycastle:bcpg-jdk15on:1.70",
     "org.bouncycastle:bcpkix-jdk15on:1.70",
     "org.bouncycastle:bcprov-ext-jdk15on:1.70",
@@ -5186,9 +5186,9 @@ plain_artifacts = [
     "org.eclipse.jetty:jetty-util:9.4.51.v20230217",
     "org.eclipse.jetty:jetty-webapp:9.4.51.v20230217",
     "org.eclipse.jetty:jetty-xml:9.4.51.v20230217",
-    "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:jar:6.5.0.202303070854-r",
-    "org.eclipse.jgit:org.eclipse.jgit.http.apache:6.5.0.202303070854-r",
-    "org.eclipse.jgit:org.eclipse.jgit:6.5.0.202303070854-r",
+    "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:jar:5.13.0.202109080827-r",
+    "org.eclipse.jgit:org.eclipse.jgit.http.apache:5.13.0.202109080827-r",
+    "org.eclipse.jgit:org.eclipse.jgit:5.13.0.202109080827-r",
     "org.elasticsearch.client:elasticsearch-rest-client:7.17.7",
     "org.elasticsearch.client:elasticsearch-rest-high-level-client:7.17.7",
     "org.elasticsearch.plugin:aggs-matrix-stats-client:7.17.7",

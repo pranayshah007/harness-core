@@ -7,26 +7,19 @@
 
 package io.harness.steps.container.execution;
 
-import static io.harness.ci.commonconstants.ContainerExecutionConstants.LITE_ENGINE_PORT;
-import static io.harness.ci.commonconstants.ContainerExecutionConstants.TMP_PATH;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.yaml.extended.CIShellType;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.beans.ci.k8s.CIK8ExecuteStepTaskParams;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.expression.ExpressionResolverUtils;
-import io.harness.pms.sdk.core.plugin.ContainerDelegateTaskHelper;
 import io.harness.pms.sdk.core.plugin.ContainerPortHelper;
 import io.harness.pms.sdk.core.plugin.ContainerUnitStepUtils;
-import io.harness.pms.sdk.core.resolver.RefObjectUtils;
-import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
-import io.harness.product.ci.engine.proto.ExecuteStepRequest;
+import io.harness.pms.sdk.core.plugin.PluginStepMetadata;
 import io.harness.product.ci.engine.proto.RunStep;
 import io.harness.product.ci.engine.proto.StepContext;
 import io.harness.product.ci.engine.proto.UnitStep;
@@ -36,6 +29,7 @@ import io.harness.steps.container.utils.ContainerStepResolverUtils;
 import io.harness.steps.plugin.ContainerStepInfo;
 import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.steps.plugin.PluginStep;
+import io.harness.utils.PluginUtils;
 import io.harness.yaml.core.variables.OutputNGVariable;
 
 import com.google.inject.Inject;
@@ -48,34 +42,22 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ContainerRunStepHelper {
-  @Inject ContainerDelegateTaskHelper containerDelegateTaskHelper;
   @Inject Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
-  @Inject OutcomeService outcomeService;
   @Inject ContainerExecutionConfig containerExecutionConfig;
   @Inject PluginStepSerializer pluginStepSerializer;
   @Inject ContainerPortHelper containerPortHelper;
 
+  @Inject PluginUtils pluginUtils;
+
   public TaskData getRunStepTask(Ambiance ambiance, ContainerStepSpec containerStepInfo, String accountId,
       String logKey, long timeout, String parkedTaskId) {
     UnitStep unitStep = serialiseStep(ambiance, containerStepInfo, accountId, logKey, timeout, parkedTaskId);
-    LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome = (LiteEnginePodDetailsOutcome) outcomeService.resolve(
-        ambiance, RefObjectUtils.getOutcomeRefObject(LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME));
-    String ip = liteEnginePodDetailsOutcome.getIpAddress();
-
-    ExecuteStepRequest executeStepRequest = ExecuteStepRequest.newBuilder()
-                                                .setExecutionId(ambiance.getPlanExecutionId())
-                                                .setStep(unitStep)
-                                                .setTmpFilePath(TMP_PATH)
-                                                .build();
-    CIK8ExecuteStepTaskParams params =
-        CIK8ExecuteStepTaskParams.builder()
-            .ip(ip)
-            .port(LITE_ENGINE_PORT)
-            .serializedStep(executeStepRequest.toByteArray())
+    return pluginUtils.getDelegateTaskForPluginStep(ambiance, unitStep,
+        PluginStepMetadata.builder()
+            .timeout(timeout)
             .isLocal(containerExecutionConfig.isLocal())
-            .delegateSvcEndpoint(containerExecutionConfig.getDelegateServiceEndpointVariableValue())
-            .build();
-    return containerDelegateTaskHelper.getDelegateTaskDataForExecuteStep(ambiance, timeout, params);
+            .delegateServiceEndpoint(containerExecutionConfig.getDelegateServiceEndpointVariableValue())
+            .build());
   }
 
   private UnitStep serialiseStep(Ambiance ambiance, ContainerStepSpec containerStepInfo, String accountId,

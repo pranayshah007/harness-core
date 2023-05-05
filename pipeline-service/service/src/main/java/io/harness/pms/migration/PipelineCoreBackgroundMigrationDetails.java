@@ -34,6 +34,7 @@ public class PipelineCoreBackgroundMigrationDetails implements MigrationDetails 
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
         .add(Pair.of(1, NoopPipelineCoreMigration.class))
         .add(Pair.of(2, PopulateAmbianceFieldsAtFirstLevelInApprovalInstancesMigration.class))
+        .add(Pair.of(3, PopulateTTLFieldAndDeleteOldInApprovalInstancesMigration.class))
         .build();
   }
 }

@@ -585,6 +585,14 @@ func GetAuthenticatedUser(ctx context.Context, request *pb.GetAuthenticatedUserR
 	}
 	log.Infow("GetAuthenticatedUser success", "elapsed_time_ms", utils.TimeSince(start))
 
+	if response.Email == "" &&  request.GetProvider().GetBitbucketCloud() != nil {
+	    email, _, err := client.Users.FindEmail(ctx)
+	    if err != nil {
+	        log.Errorw("GetAuthenticatedUser email failure", "provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+	        return nil, err
+	    }
+	    response.Email = email
+	}
 	out = &pb.GetAuthenticatedUserResponse{
 		Username:  response.Name,
 		UserLogin: response.Login,

@@ -611,7 +611,7 @@ public class ServiceStepV3Test extends CategoryTest {
                                 .build(),
                             null))
         .withMessageContaining(
-            "The value provided for [environment.variables.numbervar: 7] does not match any of the allowed values [5,6]");
+            "The values provided for environment.variables.numbervar: [\\'7\\'] do not match any of the allowed values [\\'5\\', \\'6\\']");
   }
   @Test
   @Owner(developers = OwnerRule.ROHITKARELIA)
