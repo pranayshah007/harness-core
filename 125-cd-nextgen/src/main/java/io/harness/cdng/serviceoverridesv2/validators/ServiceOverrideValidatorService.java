@@ -9,15 +9,13 @@ package io.harness.cdng.serviceoverridesv2.validators;
 
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
-import io.harness.ng.core.serviceoverridev2.beans.OverrideCRUDRequestType;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 public interface ServiceOverrideValidatorService {
-  void validateRequest(@NonNull ServiceOverrideRequestDTOV2 requestDTOV2, @NonNull String accountId,
-      @NonNull OverrideCRUDRequestType crudRequestType);
+  void validateRequest(@NonNull ServiceOverrideRequestDTOV2 requestDTOV2, @NonNull String accountId);
 
   @NonNull String generateServiceOverrideIdentifier(@NonNull NGServiceOverridesEntity serviceOverridesEntity);
 

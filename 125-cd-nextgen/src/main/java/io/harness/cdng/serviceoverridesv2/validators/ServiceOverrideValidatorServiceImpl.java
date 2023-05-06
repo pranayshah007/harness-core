@@ -16,7 +16,6 @@ import io.harness.cdng.validations.helper.OrgAndProjectValidationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
-import io.harness.ng.core.serviceoverridev2.beans.OverrideCRUDRequestType;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 
 import com.google.inject.Inject;
@@ -34,8 +33,7 @@ public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValid
   @Inject private OrgAndProjectValidationHelper orgAndProjectValidationHelper;
 
   @Override
-  public void validateRequest(@NonNull ServiceOverrideRequestDTOV2 requestDTOV2, @NonNull String accountId,
-      @NonNull OverrideCRUDRequestType crudRequestType) {
+  public void validateRequest(@NonNull ServiceOverrideRequestDTOV2 requestDTOV2, @NonNull String accountId) {
     validateServiceOverrideRequestBasicChecks(requestDTOV2, accountId);
     validateEnvUsedInServiceOverrideRequest(accountId, requestDTOV2.getOrgIdentifier(),
         requestDTOV2.getProjectIdentifier(), requestDTOV2.getEnvironmentRef());
