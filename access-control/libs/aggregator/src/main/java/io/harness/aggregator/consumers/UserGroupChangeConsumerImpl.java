@@ -72,13 +72,6 @@ public class UserGroupChangeConsumerImpl implements ChangeConsumer<UserGroupDBO>
 
   @Override
   public void consumeUpdateEvent(String id, UserGroupDBO updatedUserGroup) {
-    String accountToDisable = "/ACCOUNT/nYY7inrwTrqqa3r1a_-krg";
-    if (updatedUserGroup != null && updatedUserGroup.getScopeIdentifier() != null
-        && updatedUserGroup.getScopeIdentifier().startsWith(accountToDisable)) {
-      log.info(String.format("UserGroupChangeConsumerImpl: Skipping ACL creation for account %s id: %s ",
-          updatedUserGroup.getScopeIdentifier(), id));
-      return;
-    }
     long startTime = System.currentTimeMillis();
     if (updatedUserGroup.getUsers() == null) {
       return;
