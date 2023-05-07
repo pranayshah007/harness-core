@@ -13,6 +13,7 @@ import static io.harness.telemetry.Destination.ALL;
 import io.harness.ModuleType;
 import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.core.services.api.SRMTelemetrySentStatusService;
 import io.harness.cvng.usage.impl.SRMLicenseUsageDTO;
 import io.harness.cvng.usage.impl.SRMLicenseUsageImpl;
 import io.harness.data.structure.EmptyPredicate;
@@ -33,7 +34,7 @@ public class SrmTelemetryPublisher {
   @Inject private TelemetryReporter telemetryReporter;
 
   @Inject AccountUtils accountUtils;
-  @Inject private SrmTelemetryStatusRepository srmTelemetryStatusRepository;
+  @Inject private SRMTelemetrySentStatusService srmTelemetrySentStatusService;
 
   private static final String COUNT_ACTIVE_SERVICES_LICENSES = "srm_license_services_monitored";
   // Locking for a bit less than one day. It's ok to send a bit more than less considering downtime/etc
@@ -64,7 +65,7 @@ public class SrmTelemetryPublisher {
 
   private void sendEvent(String accountId) {
     if (EmptyPredicate.isNotEmpty(accountId) && !accountId.equals(GLOBAL_ACCOUNT_ID)) {
-      if (srmTelemetryStatusRepository.updateTimestampIfOlderThan(
+      if (srmTelemetrySentStatusService.updateTimestampIfOlderThan(
               accountId, System.currentTimeMillis() - A_DAY_MINUS_TEN_MINS_IN_MILLIS, System.currentTimeMillis())) {
         HashMap<String, Object> map = new HashMap<>();
         map.put(GROUP_TYPE, ACCOUNT);

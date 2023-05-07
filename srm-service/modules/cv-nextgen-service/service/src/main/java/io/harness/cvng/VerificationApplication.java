@@ -524,8 +524,8 @@ public class VerificationApplication extends Application<VerificationConfigurati
     initAutoscalingMetrics();
     registerOasResource(configuration, environment, injector);
     registerMigrations(injector);
-    initializeSrmMonitoring(configuration, injector);
     registerAPIAuthTelemetryFilters(configuration, environment, injector);
+    initializeSrmMonitoring(configuration, injector);
 
     if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
       registerTraceFilter(environment, injector);

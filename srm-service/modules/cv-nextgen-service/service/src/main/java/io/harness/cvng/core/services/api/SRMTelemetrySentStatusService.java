@@ -5,8 +5,8 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cvng.telemetry;
+package io.harness.cvng.core.services.api;
 
-public interface SRMTelemetryStatusRepositoryCustom {
+public interface SRMTelemetrySentStatusService {
   boolean updateTimestampIfOlderThan(String accountId, long olderThanTime, long updateToTime);
 }

@@ -26,6 +26,7 @@ import io.harness.ModuleType;
 import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cvng.repositories.SrmTelemetryStatusRepository;
 import io.harness.cvng.usage.impl.SRMLicenseUsageDTO;
 import io.harness.cvng.usage.impl.SRMLicenseUsageImpl;
 import io.harness.licensing.usage.beans.UsageDataDTO;

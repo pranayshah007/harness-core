@@ -68,10 +68,8 @@ public class SRMLicenseUsageResource {
   @Inject LicenseUsageInterface licenseUsageInterface;
 
   private static final String SERVICE_INSTANCE_ID = "serviceInstances";
-  private static final String LICENSE_CONSUMED = "licensesConsumed";
 
-  private static final List<String> ACTIVE_SERVICES_MONITORED_SORT_QUERY_PROPERTIES =
-      List.of(SERVICE_INSTANCE_ID, LICENSE_CONSUMED);
+  private static final List<String> ACTIVE_SERVICES_MONITORED_SORT_QUERY_PROPERTIES = List.of(SERVICE_INSTANCE_ID);
 
   private static final String ACTIVE_SERVICES_MONITORED_FILTER_PARAM_MESSAGE =
       "Details of the Active Services Monitored Filter";

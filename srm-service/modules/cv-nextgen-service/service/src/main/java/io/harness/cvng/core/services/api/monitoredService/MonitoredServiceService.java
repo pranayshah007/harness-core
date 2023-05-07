@@ -120,5 +120,5 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef);
   long countUniqueEnabledServices(String accountId);
 
-  List<ActiveServiceMonitoredDTO> listActiveServiceMonitored(ProjectParams projectParams);
+  List<ActiveServiceMonitoredDTO> listActiveServiceMonitored(ProjectParams projectParams, long currentTimeInMs);
 }

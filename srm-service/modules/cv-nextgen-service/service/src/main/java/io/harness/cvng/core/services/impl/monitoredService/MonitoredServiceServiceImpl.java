@@ -1913,25 +1913,39 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   @Override
-  public List<ActiveServiceMonitoredDTO> listActiveServiceMonitored(ProjectParams projectParams) {
+  public List<ActiveServiceMonitoredDTO> listActiveServiceMonitored(ProjectParams projectParams, long currentTimeInMS) {
     Map<ServiceParams, Long> serviceParamsCountMap = new HashMap<>();
+    Map<ProjectParams, List<String>> projectParamsServiceIdentifiersMap = new HashMap<>();
+    Map<ProjectParams, Map<String, String>> projectParamsToServiceIdNameMap = new HashMap<>();
     getEnableMonitoredServiceParamsSet(projectParams).stream().forEach(serviceParams -> {
       long count = serviceParamsCountMap.getOrDefault(serviceParams, 0L);
       serviceParamsCountMap.put(serviceParams, count + 1);
+      ProjectParams projectParams1 = serviceParams.getProjectParams();
+      List<String> serviceIdentifiers =
+          projectParamsServiceIdentifiersMap.getOrDefault(projectParams1, new ArrayList<>());
+      serviceIdentifiers.add(serviceParams.getServiceIdentifier());
+      projectParamsServiceIdentifiersMap.put(projectParams1, serviceIdentifiers);
     });
 
-    Map<String, String> serviceIdNameMap = nextGenService.getServiceIdNameMap(projectParams,
-        serviceParamsCountMap.keySet().stream().map(ServiceParams::getServiceIdentifier).collect(Collectors.toList()));
+    for (ProjectParams projectParams2 : projectParamsServiceIdentifiersMap.keySet()) {
+      Map<String, String> serviceIdNameMap =
+          nextGenService.getServiceIdNameMap(projectParams2, projectParamsServiceIdentifiersMap.get(projectParams2));
+      projectParamsToServiceIdNameMap.put(projectParams2, serviceIdNameMap);
+    }
 
     List<ActiveServiceMonitoredDTO> activeServiceMonitoredDTOList = new ArrayList<>();
 
     for (ServiceParams serviceParams : serviceParamsCountMap.keySet()) {
       ActiveServiceMonitoredDTO activeServiceMonitoredDTO =
           ActiveServiceMonitoredDTO.builder()
+              .accountIdentifier(serviceParams.getAccountIdentifier())
+              .timestamp(currentTimeInMS)
+              .module(ModuleType.SRM.getDisplayName())
               .identifier(serviceParams.getServiceIdentifier())
               .orgIdentifier(serviceParams.getOrgIdentifier())
               .projectIdentifier(serviceParams.getProjectIdentifier())
-              .name(serviceIdNameMap.get(serviceParams.serviceIdentifier))
+              .name(projectParamsToServiceIdNameMap.get(serviceParams.getProjectParams())
+                        .get(serviceParams.getServiceIdentifier()))
               .monitoredServiceCount(serviceParamsCountMap.get(serviceParams))
               .build();
 
@@ -1968,7 +1982,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
   private List<MonitoredService> getEnabledMonitoredServicesWithScopedQuery(ProjectParams projectParams) {
     Query<MonitoredService> query = hPersistence.createQuery(MonitoredService.class)
-                                        .filter(MonitoredServiceKeys.accountId, projectParams.getProjectIdentifier())
+                                        .filter(MonitoredServiceKeys.accountId, projectParams.getAccountIdentifier())
                                         .filter(MonitoredServiceKeys.enabled, true);
 
     if (projectParams.getOrgIdentifier() != null) {
@@ -2231,6 +2245,14 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         result = result * prime + s.hashCode();
       }
       return result;
+    }
+
+    public ProjectParams getProjectParams() {
+      return ProjectParams.builder()
+          .projectIdentifier(this.getProjectIdentifier())
+          .orgIdentifier(this.getOrgIdentifier())
+          .accountIdentifier(this.getAccountIdentifier())
+          .build();
     }
   }
 }

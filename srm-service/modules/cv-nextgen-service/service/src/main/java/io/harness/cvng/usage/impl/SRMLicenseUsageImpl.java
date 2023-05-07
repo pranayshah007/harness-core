@@ -99,16 +99,25 @@ public class SRMLicenseUsageImpl implements LicenseUsageInterface<SRMLicenseUsag
     ActiveServiceMonitoredFilterParams filterParams =
         (ActiveServiceMonitoredFilterParams) defaultUsageRequestParams.getFilterParams();
 
+    String orgIdentifier = null;
+    String projectIdentifier = null;
+    if (filterParams.getOrgIdentifier() != null && !filterParams.getOrgIdentifier().isEmpty()) {
+      orgIdentifier = filterParams.getOrgIdentifier();
+    }
+    if (filterParams.getProjectIdentifier() != null && !filterParams.getProjectIdentifier().isEmpty()) {
+      projectIdentifier = filterParams.getServiceIdentifier();
+    }
+
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(accountIdentifier)
-                                      .orgIdentifier(filterParams.getOrgIdentifier())
-                                      .projectIdentifier(filterParams.getProjectIdentifier())
+                                      .orgIdentifier(orgIdentifier)
+                                      .projectIdentifier(projectIdentifier)
                                       .build();
 
     List<ActiveServiceMonitoredDTO> activeServiceMonitoredDTOList =
-        monitoredServiceService.listActiveServiceMonitored(projectParams);
+        monitoredServiceService.listActiveServiceMonitored(projectParams, currentTsInMs);
 
-    if (filterParams.getServiceIdentifier() != null) {
+    if (filterParams.getServiceIdentifier() != null && !filterParams.getServiceIdentifier().isEmpty()) {
       activeServiceMonitoredDTOList =
           activeServiceMonitoredDTOList.stream()
               .filter(activeServiceMonitoredDTO
@@ -143,7 +152,7 @@ public class SRMLicenseUsageImpl implements LicenseUsageInterface<SRMLicenseUsag
           emptyList(), Sort.by(Sort.Direction.DESC, SERVICE_INSTANCES_QUERY_PROPERTY));
       List<ActiveServiceMonitoredDTO> activeServiceMonitoredDTOList =
           monitoredServiceService.listActiveServiceMonitored(
-              ProjectParams.builder().accountIdentifier(accountIdentifier).build());
+              ProjectParams.builder().accountIdentifier(accountIdentifier).build(), currentTsInMs);
 
       activeServiceMonitoredDTOS =
           new PageImpl<>(activeServiceMonitoredDTOList, pageRequest, activeServiceMonitoredDTOList.size());
