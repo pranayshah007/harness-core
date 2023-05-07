@@ -119,18 +119,34 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
                     .build()))
             .build());
 
-    NGServiceOverridesEntity updatedEntity = serviceOverridesServiceV2.update(ngServiceOverridesEntity);
-    assertThat(updatedEntity).isNotNull();
-    assertThat(updatedEntity.getEnvironmentRef()).isEqualTo(ENVIRONMENT_REF);
-    assertThat(updatedEntity.getServiceRef()).isEqualTo(SERVICE_REF);
-    assertThat(updatedEntity.getType()).isEqualTo(ServiceOverridesType.ENV_SERVICE_OVERRIDE);
-    assertThat(updatedEntity.getSpec()).isNotNull();
-    assertThat(updatedEntity.getSpec().getVariables()).isNull();
-    assertThat(updatedEntity.getSpec().getManifests()).isNotEmpty();
-    assertThat(updatedEntity.getSpec().getManifests()).hasSize(1);
-    assertThat(updatedEntity.getSpec().getManifests().get(0).getManifest().getIdentifier()).isEqualTo("manifestId");
-    assertThat(updatedEntity.getSpec().getManifests().get(0).getManifest().getType())
+    NGServiceOverridesEntity updatedEntity1 = serviceOverridesServiceV2.update(ngServiceOverridesEntity);
+    assertThat(updatedEntity1).isNotNull();
+    assertThat(updatedEntity1.getEnvironmentRef()).isEqualTo(ENVIRONMENT_REF);
+    assertThat(updatedEntity1.getServiceRef()).isEqualTo(SERVICE_REF);
+    assertThat(updatedEntity1.getType()).isEqualTo(ServiceOverridesType.ENV_SERVICE_OVERRIDE);
+    assertThat(updatedEntity1.getSpec()).isNotNull();
+    assertThat(updatedEntity1.getSpec().getVariables()).isNull();
+    assertThat(updatedEntity1.getSpec().getManifests()).isNotEmpty();
+    assertThat(updatedEntity1.getSpec().getManifests()).hasSize(1);
+    assertThat(updatedEntity1.getSpec().getManifests().get(0).getManifest().getIdentifier()).isEqualTo("manifestId");
+    assertThat(updatedEntity1.getSpec().getManifests().get(0).getManifest().getType())
         .isEqualTo(ManifestConfigType.KUSTOMIZE);
+
+    // test multiple update
+    ngServiceOverridesEntity.setSpec(
+        ServiceOverridesSpec.builder()
+            .manifests(Collections.singletonList(
+                ManifestConfigWrapper.builder()
+                    .manifest(
+                        ManifestConfig.builder().identifier("manifestId").type(ManifestConfigType.K8_MANIFEST).build())
+                    .build()))
+            .build());
+
+    NGServiceOverridesEntity updatedEntity2 = serviceOverridesServiceV2.update(ngServiceOverridesEntity);
+    assertThat(updatedEntity1).isNotNull();
+    assertThat(updatedEntity1.getSpec().getManifests()).isNotEmpty();
+    assertThat(updatedEntity1.getSpec().getManifests().get(0).getManifest().getType())
+        .isEqualTo(ManifestConfigType.K8_MANIFEST);
   }
 
   @Test

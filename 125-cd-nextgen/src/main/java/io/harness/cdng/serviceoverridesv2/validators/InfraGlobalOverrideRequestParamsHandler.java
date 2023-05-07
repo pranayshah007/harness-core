@@ -27,4 +27,5 @@ public class InfraGlobalOverrideRequestParamsHandler implements ServiceOverrideT
     return String.join("_", serviceOverridesEntity.getEnvironmentRef(), serviceOverridesEntity.getInfraIdentifier())
         .replace(".", "_");
   }
+
 }

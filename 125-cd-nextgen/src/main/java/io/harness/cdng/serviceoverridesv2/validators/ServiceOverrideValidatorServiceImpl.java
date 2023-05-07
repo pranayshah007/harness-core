@@ -20,6 +20,8 @@ import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -42,15 +44,60 @@ public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValid
     validator.validateRequest(requestDTOV2);
   }
 
+  @Override
   public void validateEnvUsedInServiceOverrideRequest(
       @NotNull String accountId, String orgId, String projectId, @NonNull String environmentRef) {
     Environment environment = checkIfEnvExistAndReturn(accountId, orgId, projectId, environmentRef);
     validateEnvironmentRBAC(environment);
   }
 
+  @Override
+  public void checkForImmutableProperties(
+      NGServiceOverridesEntity existingEntity, NGServiceOverridesEntity requestedEntity) {
+    List<String> mismatchedProperties = new ArrayList<>();
+    List<String> requestedFields = new ArrayList<>();
+    List<String> existingFields = new ArrayList<>();
+
+    if (requestedEntity.getType() != null
+        && !requestedEntity.getType().toString().equals(existingEntity.getType().toString())) {
+      mismatchedProperties.add("type");
+      requestedFields.add(requestedEntity.getType().toString());
+      existingFields.add(existingEntity.getType().toString());
+    }
+
+    if (isNotEmpty(requestedEntity.getEnvironmentRef())
+        && !requestedEntity.getEnvironmentRef().equals(existingEntity.getEnvironmentRef())) {
+      mismatchedProperties.add("EnvironmentRef");
+      requestedFields.add(requestedEntity.getEnvironmentRef());
+      existingFields.add(existingEntity.getEnvironmentRef());
+    }
+
+    if ((isEmpty(existingEntity.getServiceRef()) && isNotEmpty(requestedEntity.getServiceRef()))
+        || (isNotEmpty(requestedEntity.getServiceRef())
+            && !requestedEntity.getServiceRef().equals(existingEntity.getServiceRef()))) {
+      mismatchedProperties.add("ServiceRef");
+      requestedFields.add(requestedEntity.getServiceRef());
+      existingFields.add(existingEntity.getServiceRef());
+    }
+
+    if ((isEmpty(existingEntity.getInfraIdentifier()) && isNotEmpty(requestedEntity.getInfraIdentifier()))
+        || (isNotEmpty(requestedEntity.getInfraIdentifier())
+            && !existingEntity.getInfraIdentifier().equals(requestedEntity.getInfraIdentifier()))) {
+      mismatchedProperties.add("InfraId");
+      requestedFields.add(requestedEntity.getInfraIdentifier());
+      existingFields.add(existingEntity.getInfraIdentifier());
+    }
+
+    throw new InvalidRequestException(String.format(
+        "Following fields: [%s] in requested entity [%s] does not match those values in existing entity [%s] for override Identifier: [%s], ProjectIdentifier: [%s] ,OrgIdentifier : [%s]",
+        mismatchedProperties, requestedFields, existingFields, requestedEntity.getIdentifier(),
+        requestedEntity.getProjectIdentifier(), existingEntity.getOrgIdentifier()));
+  }
+
+  @Override
   public void validateServiceOverrideRequestBasicChecks(
       @NotNull ServiceOverrideRequestDTOV2 serviceOverrideRequestDTOV2, @NotNull String accountId) {
-    throwExceptionRequiredFields(serviceOverrideRequestDTOV2);
+    throwExceptionForRequiredFields(serviceOverrideRequestDTOV2);
     validateServiceOverrideScope(serviceOverrideRequestDTOV2);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         serviceOverrideRequestDTOV2.getOrgIdentifier(), serviceOverrideRequestDTOV2.getProjectIdentifier(), accountId);
@@ -69,7 +116,6 @@ public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValid
   public String generateServiceOverrideIdentifier(@NotNull NGServiceOverridesEntity serviceOverridesEntity) {
     ServiceOverrideTypeBasedRequestParamsHandler validator =
         overrideValidatorFactory.getTypeBasedValidator(serviceOverridesEntity.getType());
-
     return validator.generateServiceOverrideIdentifier(serviceOverridesEntity);
   }
 
@@ -79,7 +125,7 @@ public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValid
     return environmentValidationHelper.checkThatEnvExists(accountId, orgId, projectId, environmentRef);
   }
 
-  private void throwExceptionRequiredFields(ServiceOverrideRequestDTOV2 dto) {
+  private void throwExceptionForRequiredFields(ServiceOverrideRequestDTOV2 dto) {
     if (dto == null) {
       throw new InvalidRequestException("No request body for Service overrides");
     }

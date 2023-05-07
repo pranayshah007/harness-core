@@ -13,6 +13,8 @@ import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 public interface ServiceOverrideValidatorService {
   void validateRequest(@NonNull ServiceOverrideRequestDTOV2 requestDTOV2, @NonNull String accountId);
@@ -26,4 +28,6 @@ public interface ServiceOverrideValidatorService {
 
   void validateEnvUsedInServiceOverrideRequest(
       @NotNull String accountId, String orgId, String projectId, String environmentRef);
+
+  void checkForImmutableProperties(NGServiceOverridesEntity existingEntity, NGServiceOverridesEntity requestedEntity);
 }

@@ -7,6 +7,7 @@
 
 package io.harness.repositories.serviceoverridesv2.custom;
 
+import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.springdata.PersistenceUtils;
 
@@ -17,11 +18,16 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.repository.support.PageableExecutionUtils;
+
+import java.util.List;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 @Slf4j
@@ -47,6 +53,14 @@ public class ServiceOverrideRepositoryCustomV2Impl implements ServiceOverrideRep
     RetryPolicy<Object> retryPolicy = getRetryPolicy("[Retrying]: Failed deleting Service Override; attempt: {}",
         "[Failed]: Failed deleting Service Override; attempt: {}");
     return Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, NGServiceOverridesEntity.class));
+  }
+
+  @Override
+  public Page<NGServiceOverridesEntity> findAll(Criteria criteria, Pageable pageRequest) {
+    Query query = new Query(criteria).with(pageRequest);
+    List<NGServiceOverridesEntity> projects = mongoTemplate.find(query, NGServiceOverridesEntity.class);
+    return PageableExecutionUtils.getPage(
+            projects, pageRequest, () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), NGServiceOverridesEntity.class));
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {

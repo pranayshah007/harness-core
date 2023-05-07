@@ -8,6 +8,7 @@
 package io.harness.cdng.serviceoverridesv2.services;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
@@ -34,6 +35,8 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -104,6 +107,9 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
         requestedEntity.getOrgIdentifier(), requestedEntity.getProjectIdentifier(), requestedEntity.getIdentifier());
 
     if (existingEntityInDb.isPresent()) {
+      checkForImmutableType(existingEntityInDb.get(), requestedEntity);
+      overrideValidatorService.checkForImmutableProperties(existingEntityInDb.get(), requestedEntity);
+
       return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
         NGServiceOverridesEntity tempResult = serviceOverrideRepositoryV2.update(equalityCriteria, requestedEntity);
         if (tempResult == null) {
@@ -130,6 +136,16 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
     }
   }
 
+  private void checkForImmutableType(
+      NGServiceOverridesEntity existingEntity, @NonNull @Valid NGServiceOverridesEntity requestedEntity) {
+    if (existingEntity != requestedEntity) {
+      throw new InvalidRequestException(String.format(
+          "Type [%s] in requested entity does not match with type [%s] in existing entity for override Identifier: [%s], ProjectIdentifier: [%s] ,OrgIdentifier : [%s]",
+          requestedEntity.getType(), existingEntity.getType(), requestedEntity.getIdentifier(),
+          requestedEntity.getProjectIdentifier(), existingEntity.getOrgIdentifier()));
+    }
+  }
+
   @Override
   public boolean delete(@NonNull String accountId, String orgIdentifier, String projectIdentifier,
       @NonNull String identifier, NGServiceOverridesEntity existingEntity) {
@@ -138,6 +154,11 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
     }
 
     return deleteInternal(accountId, orgIdentifier, projectIdentifier, identifier, existingEntity);
+  }
+
+  @Override
+  public Page<NGServiceOverridesEntity> list(Criteria criteria, Pageable pageRequest) {
+    return serviceOverrideRepositoryV2.findAll(criteria, pageRequest);
   }
 
   private NGServiceOverridesEntity checkIfServiceOverrideExistAndThrow(

@@ -7,11 +7,15 @@
 
 package io.harness.cdng.serviceoverridesv2.services;
 
+import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 
 import java.util.Optional;
 import javax.validation.Valid;
 import lombok.NonNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 public interface ServiceOverridesServiceV2 {
   Optional<NGServiceOverridesEntity> get(@NonNull String accountId, String orgIdentifier, String projectIdentifier,
@@ -23,4 +27,6 @@ public interface ServiceOverridesServiceV2 {
 
   boolean delete(@NonNull String accountId, String orgIdentifier, String projectIdentifier, @NonNull String identifier,
       NGServiceOverridesEntity existingEntity);
+
+  Page<NGServiceOverridesEntity> list(Criteria criteria, Pageable pageRequest);
 }

@@ -15,17 +15,26 @@ import lombok.NonNull;
 
 @Singleton
 public class ServiceOverrideValidatorFactory {
+  private final EnvGlobalOverrideRequestParamsHandler envGlobalOverrideRequestParamsHandler =
+      new EnvGlobalOverrideRequestParamsHandler();
+  private final EnvServiceOverrideRequestParamsHandler envServiceOverrideRequestParamsHandler =
+      new EnvServiceOverrideRequestParamsHandler();
+  private final InfraGlobalOverrideRequestParamsHandler infraGlobalOverrideRequestParamsHandler =
+      new InfraGlobalOverrideRequestParamsHandler();
+  private final InfraServiceOverrideRequestParamsHandler infraServiceOverrideRequestParamsHandler =
+      new InfraServiceOverrideRequestParamsHandler();
+
   public ServiceOverrideTypeBasedRequestParamsHandler getTypeBasedValidator(
       @NonNull ServiceOverridesType overridesType) {
     switch (overridesType) {
       case ENV_GLOBAL_OVERRIDE:
-        return new EnvGlobalOverrideRequestParamsHandler();
+        return envGlobalOverrideRequestParamsHandler;
       case ENV_SERVICE_OVERRIDE:
-        return new EnvServiceOverrideRequestParamsHandler();
+        return envServiceOverrideRequestParamsHandler;
       case INFRA_GLOBAL_OVERRIDE:
-        return new InfraGlobalOverrideRequestParamsHandler();
+        return infraGlobalOverrideRequestParamsHandler;
       case INFRA_SERVICE_OVERRIDE:
-        return new InfraServiceOverrideRequestParamsHandler();
+        return infraServiceOverrideRequestParamsHandler;
       default:
         throw new InvalidRequestException(
             String.format("Validator has not been implemented for override type %s", overridesType));

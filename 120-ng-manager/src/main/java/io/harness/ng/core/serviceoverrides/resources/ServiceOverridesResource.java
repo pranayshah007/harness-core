@@ -9,6 +9,7 @@ package io.harness.ng.core.serviceoverrides.resources;
 
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
+import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -21,20 +22,32 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.serviceoverridesv2.services.ServiceOverrideCriteriaHelper;
 import io.harness.cdng.serviceoverridesv2.services.ServiceOverridesServiceV2;
 import io.harness.cdng.serviceoverridesv2.validators.ServiceOverrideValidatorService;
 import io.harness.cdng.validations.helper.OrgAndProjectValidationHelper;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.service.dto.ServiceResponse;
+import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.mappers.ServiceElementMapper;
+import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
+import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
+import io.harness.ng.core.serviceoverride.mapper.ServiceOverridesMapper;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesResponseDTOV2;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.ng.core.serviceoverridev2.mappers.ServiceOverridesMapperV2;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -48,9 +61,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Optional;
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
@@ -61,6 +76,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @NextGenManagerAuth
 @Api("/serviceOverrides")
@@ -102,6 +122,7 @@ public class ServiceOverridesResource {
   @Inject private ServiceOverrideValidatorService overrideValidatorService;
 
   @Inject private OrgAndProjectValidationHelper orgAndProjectValidationHelper;
+  private static final int MAX_LIMIT = 1000;
 
   @GET
   @Path("/{serviceOverridesIdentifier}")
@@ -219,5 +240,34 @@ public class ServiceOverridesResource {
 
     return ResponseDTO.newResponse(serviceOverridesServiceV2.delete(accountId, orgIdentifier, projectIdentifier,
         ngServiceOverridesEntity.getIdentifier(), ngServiceOverridesEntity));
+  }
+
+  @GET
+  @ApiOperation(value = "Gets Service list ", nickname = "getServiceList")
+  @Operation(operationId = "getServiceList", summary = "Gets Service list",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the list of Services for a Project")
+      })
+  public ResponseDTO<PageResponse<ServiceOverridesResponseDTOV2>>
+  listServiceOverrides(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+                           NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SIZE) @DefaultValue("100") @Max(MAX_LIMIT) int size,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "This is service override type which is based on override source") @QueryParam(
+          "type") ServiceOverridesType type) {
+    Criteria criteria =
+        ServiceOverrideCriteriaHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, type);
+    Pageable  pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, NGServiceOverridesEntityKeys.lastModifiedAt));
+    Page<NGServiceOverridesEntity> serviceOverridesEntities = serviceOverridesServiceV2.list(criteria, pageRequest);
+
+    return ResponseDTO.newResponse(getNGPageResponse(
+            serviceOverridesEntities.map(ServiceOverridesMapperV2::toResponseDTO)));
   }
 }
