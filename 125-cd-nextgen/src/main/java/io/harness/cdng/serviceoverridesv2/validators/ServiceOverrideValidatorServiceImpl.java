@@ -33,7 +33,7 @@ import org.jetbrains.annotations.NotNull;
 @Slf4j
 public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValidatorService {
   @Inject private ServiceOverrideValidatorFactory overrideValidatorFactory;
-  @Inject private EnvironmentNGAccessControlCheckHelper environmentAccessControlCheckHelper;
+  @Inject private OverrideV2AccessControlCheckHelper overrideV2AccessControlCheckHelper;
   @Inject private EnvironmentValidationHelper environmentValidationHelper;
   @Inject private OrgAndProjectValidationHelper orgAndProjectValidationHelper;
 
@@ -44,7 +44,7 @@ public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValid
         requestDTOV2.getProjectIdentifier(), requestDTOV2.getEnvironmentRef());
     ServiceOverrideTypeBasedRequestParamsHandler validator =
         overrideValidatorFactory.getTypeBasedValidator(requestDTOV2.getType());
-    validator.validateRequest(requestDTOV2);
+    validator.validateRequest(requestDTOV2,accountId);
   }
 
   @Override
@@ -110,7 +110,7 @@ public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValid
 
   @Override
   public void validateEnvironmentRBAC(@NotNull Environment environment) {
-    environmentAccessControlCheckHelper.checkForEnvAndAttributesAccessOrThrow(
+    overrideV2AccessControlCheckHelper.checkForEnvAndAttributesAccessOrThrow(
         ResourceScope.of(
             environment.getAccountId(), environment.getOrgIdentifier(), environment.getProjectIdentifier()),
         environment.getIdentifier(), ENVIRONMENT_UPDATE_PERMISSION, environment.getType().toString());

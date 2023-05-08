@@ -7,21 +7,29 @@
 
 package io.harness.cdng.serviceoverridesv2.validators;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDC)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 
 public class InfraServiceOverrideRequestParamsHandler implements ServiceOverrideTypeBasedRequestParamsHandler {
+  @Inject OverrideV2AccessControlCheckHelper overrideV2AccessControlCheckHelper;
   @Override
-  public void validateRequest(@NotNull ServiceOverrideRequestDTOV2 requestDTOV2) {}
+  public void validateRequest(@NotNull ServiceOverrideRequestDTOV2 requestDTOV2, @NonNull String accountId) {
+    validateRequiredField(requestDTOV2.getServiceRef(), requestDTOV2.getInfraIdentifier());
+    overrideV2AccessControlCheckHelper.validateRBACForService(requestDTOV2, accountId);
+  }
 
   @Override
   public String generateServiceOverrideIdentifier(NGServiceOverridesEntity serviceOverridesEntity) {
@@ -29,5 +37,14 @@ public class InfraServiceOverrideRequestParamsHandler implements ServiceOverride
         .join("_", serviceOverridesEntity.getEnvironmentRef(), serviceOverridesEntity.getServiceRef(),
             serviceOverridesEntity.getInfraIdentifier())
         .replace(".", "_");
+  }
+
+  private void validateRequiredField(String serviceRef, String infraIdentifier) {
+    if (isEmpty(infraIdentifier)) {
+      throw new InvalidRequestException("Infra Identifier should not be empty for INFRA-SERVICE override");
+    }
+    if (isEmpty(serviceRef)) {
+      throw new InvalidRequestException("ServiceRef should not be empty for INFRA-SERVICE override");
+    }
   }
 }

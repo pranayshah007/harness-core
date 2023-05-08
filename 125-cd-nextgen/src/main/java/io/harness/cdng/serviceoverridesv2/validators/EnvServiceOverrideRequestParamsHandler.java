@@ -15,23 +15,21 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 
+import com.google.inject.Inject;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDC)
 public class EnvServiceOverrideRequestParamsHandler implements ServiceOverrideTypeBasedRequestParamsHandler {
+  @Inject OverrideV2AccessControlCheckHelper overrideV2AccessControlCheckHelper;
   @Override
-  public void validateRequest(@NotNull ServiceOverrideRequestDTOV2 requestDTOV2) {
-    validateRequiredFieldForService(requestDTOV2);
-    validateRBACForService(requestDTOV2);
-
+  public void validateRequest(@NotNull ServiceOverrideRequestDTOV2 requestDTOV2, @NonNull String accountId) {
+    validateRequiredField(requestDTOV2.getServiceRef());
+    overrideV2AccessControlCheckHelper.validateRBACForService(requestDTOV2, accountId);
   }
 
-  private void validateRBACForService(ServiceOverrideRequestDTOV2 requestDTOV2) {
-
-  }
-
-  private void validateRequiredFieldForService(ServiceOverrideRequestDTOV2 requestDTOV2) {
-    if (isEmpty(requestDTOV2.getServiceRef())) {
+  private void validateRequiredField(String serviceRef) {
+    if (isEmpty(serviceRef)) {
       throw new InvalidRequestException("ServiceRef should not be empty for ENVIRONMENT-SERVICE override");
     }
   }

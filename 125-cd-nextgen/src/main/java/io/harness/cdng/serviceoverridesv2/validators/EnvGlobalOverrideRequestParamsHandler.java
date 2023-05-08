@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class EnvGlobalOverrideRequestParamsHandler implements ServiceOverrideTypeBasedRequestParamsHandler {
   @Override
-  public void validateRequest(@NotNull ServiceOverrideRequestDTOV2 requestDTOV2) {}
+  public void validateRequest(@NotNull ServiceOverrideRequestDTOV2 requestDTOV2, @NonNull String accountId) {}
 
   @Override
   public String generateServiceOverrideIdentifier(@NonNull NGServiceOverridesEntity serviceOverridesEntity) {

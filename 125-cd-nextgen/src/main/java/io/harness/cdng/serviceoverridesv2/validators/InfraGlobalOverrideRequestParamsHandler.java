@@ -7,20 +7,26 @@
 
 package io.harness.cdng.serviceoverridesv2.validators;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDC)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class InfraGlobalOverrideRequestParamsHandler implements ServiceOverrideTypeBasedRequestParamsHandler {
   @Override
-  public void validateRequest(@NotNull ServiceOverrideRequestDTOV2 requestDTOV2) {}
+  public void validateRequest(@NotNull ServiceOverrideRequestDTOV2 requestDTOV2, @NonNull String accountId) {
+    validateRequiredField(requestDTOV2.getInfraIdentifier());
+  }
 
   @Override
   public String generateServiceOverrideIdentifier(NGServiceOverridesEntity serviceOverridesEntity) {
@@ -28,4 +34,9 @@ public class InfraGlobalOverrideRequestParamsHandler implements ServiceOverrideT
         .replace(".", "_");
   }
 
+  private void validateRequiredField(String infraIdentifier) {
+    if (isEmpty(infraIdentifier)) {
+      throw new InvalidRequestException("Infra Identifier should not be empty for INFRA-GLOBAL override");
+    }
+  }
 }
