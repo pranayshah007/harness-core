@@ -8,6 +8,7 @@
 package io.harness.assessment.settings.resources;
 
 import io.harness.assessment.settings.beans.dto.AssessmentResultsResponse;
+import io.harness.assessment.settings.beans.dto.AssessmentSectionResultResponse;
 import io.harness.assessment.settings.services.AssessmentResultService;
 
 import com.google.inject.Inject;
@@ -45,7 +46,7 @@ public class AssessmentResultResource {
   @Path(("section-results/{resultCode}"))
   @Produces({"application/json"})
   @ApiOperation(value = "View section wise results of an assessment previously attempted.",
-      nickname = "getAssessmentSectionResults", response = AssessmentResultsResponse.class)
+      nickname = "getAssessmentSectionResults", response = AssessmentSectionResultResponse.class)
   public Response
   getAssessmentSectionResults(
       @PathParam("resultCode") String resultCode, @QueryParam("benchmarkId") String benchmarkId) {

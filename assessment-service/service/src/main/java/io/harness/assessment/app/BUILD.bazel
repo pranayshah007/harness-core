@@ -23,6 +23,7 @@ java_binary(
     ],
     visibility = ["//assessment-service:__subpackages__"],
     deps = [
+
         "//:lombok",
         "//950-log-client:module",
         "//953-events-api:module",
