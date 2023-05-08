@@ -102,12 +102,13 @@ public class LicenseResourceTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = OwnerRule.ZHUO)
+  @Owner(developers = {OwnerRule.ZHUO, OwnerRule.KAPIL})
   @Category(UnitTests.class)
   public void testStartTrial() {
     doReturn(defaultModueLicenseDTO)
         .when(licenseService)
         .startTrialLicense(ACCOUNT_IDENTIFIER, startTrialRequestDTO, null);
+    startTrialRequestDTO.setModuleType(ModuleType.CD);
     ResponseDTO<ModuleLicenseDTO> responseDTO =
         licenseResource.startTrialLicense(ACCOUNT_IDENTIFIER, startTrialRequestDTO, null);
     Mockito.verify(licenseService, times(1)).startTrialLicense(ACCOUNT_IDENTIFIER, startTrialRequestDTO, null);
