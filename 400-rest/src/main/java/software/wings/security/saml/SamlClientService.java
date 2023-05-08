@@ -196,9 +196,11 @@ public class SamlClientService {
       samlSettings.forEach(setting -> {
         try {
           if (setting != null && setting.isAuthenticationEnabled()) {
+            final String friendlyName =
+                isNotEmpty(setting.getFriendlySamlName()) ? setting.getFriendlySamlName() : setting.getDisplayName();
             samlClientMap.put(setting.getUuid(),
                 new SamlClientFriendlyNameProviderType(
-                    getSamlClient(setting), setting.getFriendlySamlName(), setting.getSamlProviderType()));
+                    getSamlClient(setting), friendlyName, setting.getSamlProviderType()));
           }
         } catch (SamlException se) {
           log.warn("Error generating saml client for saml setting id {} in account {}", setting.getUuid(),
