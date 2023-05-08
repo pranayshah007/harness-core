@@ -1271,7 +1271,7 @@ public class AccountServiceImpl implements AccountService {
                                .project(AccountKeys.isProductLed, true)
                                .project(AccountKeys.twoFactorAdminEnforced, true)
                                .filter(ApplicationKeys.appId, GLOBAL_APP_ID)
-                               .offset(offset)
+                               .offset(offset * pageSize)
                                .limit(pageSize);
     List<AccountDTO> accountDTOList = new ArrayList<>();
     try (HIterator<Account> iterator = new HIterator<>(query.fetch())) {
