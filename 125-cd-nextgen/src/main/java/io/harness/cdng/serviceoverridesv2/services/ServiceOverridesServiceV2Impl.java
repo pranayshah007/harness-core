@@ -70,8 +70,8 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
 
   @Override
   public NGServiceOverridesEntity create(@NonNull NGServiceOverridesEntity requestedEntity) {
-    validatePresenceOfRequiredFields(requestedEntity.getAccountId(), requestedEntity.getEnvironmentRef(),
-        requestedEntity.getType());
+    validatePresenceOfRequiredFields(
+        requestedEntity.getAccountId(), requestedEntity.getEnvironmentRef(), requestedEntity.getType());
     modifyRequestedServiceOverride(requestedEntity);
 
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
@@ -99,7 +99,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
   @Override
   public NGServiceOverridesEntity update(@NonNull @Valid NGServiceOverridesEntity requestedEntity) {
     validatePresenceOfRequiredFields(
-        requestedEntity.getAccountId(), requestedEntity.getEnvironmentRef(), requestedEntity.getIdentifier());
+        requestedEntity.getAccountId(), requestedEntity.getEnvironmentRef(), requestedEntity.getType());
     modifyRequestedServiceOverride(requestedEntity);
     Criteria equalityCriteria = ServiceOverrideRepositoryHelper.getEqualityCriteriaForServiceOverride(
         requestedEntity.getAccountId(), requestedEntity.getOrgIdentifier(), requestedEntity.getProjectIdentifier(),
