@@ -346,11 +346,15 @@ import io.harness.cvng.outbox.CVServiceOutboxEventHandler;
 import io.harness.cvng.outbox.MonitoredServiceOutboxEventHandler;
 import io.harness.cvng.outbox.ServiceLevelObjectiveOutboxEventHandler;
 import io.harness.cvng.resources.VerifyStepResource;
+import io.harness.cvng.servicelevelobjective.beans.CompositeSLOFormulaType;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
+import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeSLOEvaluator;
+import io.harness.cvng.servicelevelobjective.beans.slospec.LeastPerformanceCompositeSLOEvaluator;
+import io.harness.cvng.servicelevelobjective.beans.slospec.WeightedAverageCompositeSLOEvaluator;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.AbstractServiceLevelObjectiveUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.CompositeServiceLevelObjectiveUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator.RatioServiceLevelIndicatorUpdatableEntity;
@@ -932,6 +936,15 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     serviceLevelObjectiveTypeUpdatableEntityMapBinder.addBinding(ServiceLevelObjectiveType.COMPOSITE)
         .to(CompositeServiceLevelObjectiveUpdatableEntity.class)
+        .in(Scopes.SINGLETON);
+
+    MapBinder<CompositeSLOFormulaType, CompositeSLOEvaluator> formulaTypeCompositeSLOEvaluatorMapBinder =
+        MapBinder.newMapBinder(binder(), CompositeSLOFormulaType.class, CompositeSLOEvaluator.class);
+    formulaTypeCompositeSLOEvaluatorMapBinder.addBinding(CompositeSLOFormulaType.WEIGHTED_AVERAGE)
+        .to(WeightedAverageCompositeSLOEvaluator.class)
+        .in(Scopes.SINGLETON);
+    formulaTypeCompositeSLOEvaluatorMapBinder.addBinding(CompositeSLOFormulaType.LEAST_PERFORMANCE)
+        .to(LeastPerformanceCompositeSLOEvaluator.class)
         .in(Scopes.SINGLETON);
     // We have not used FeatureFlag module as it depends on stream and we don't have reliable way to tracking
     // if something goes wrong in feature flags stream

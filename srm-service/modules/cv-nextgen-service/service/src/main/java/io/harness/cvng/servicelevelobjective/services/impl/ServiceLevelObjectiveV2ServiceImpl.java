@@ -47,6 +47,7 @@ import io.harness.cvng.notification.entities.SLONotificationRule.SLONotification
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
+import io.harness.cvng.servicelevelobjective.beans.CompositeSLOFormulaType;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
@@ -132,7 +133,7 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.math3.util.Pair;
 import org.apache.commons.math3.util.Precision;
 
 @Slf4j
@@ -187,8 +188,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     List<CompositeSLORecord> compositeSLORecords = new ArrayList<>();
     if (sloDetailsSLIRecordsAndSLIMissingDataType.getKey().size()
         == compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails().size()) {
-      compositeSLORecords = getCompositeSLORecords(
-          sloDetailsSLIRecordsAndSLIMissingDataType.getKey(), sloDetailsSLIRecordsAndSLIMissingDataType.getValue());
+      compositeSLORecords = getCompositeSLORecords(sloDetailsSLIRecordsAndSLIMissingDataType.getKey(),
+          sloDetailsSLIRecordsAndSLIMissingDataType.getValue(), compositeServiceLevelObjectiveSpec.getSloFormulaType());
     }
     compositeSLORecords.sort(Comparator.comparing(CompositeSLORecord::getTimestamp));
     return TimeGraphResponse.builder()
@@ -1089,16 +1090,18 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   private void validateCompositeSLO(ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO, ProjectParams projectParams) {
     CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec =
         (CompositeServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec();
-    double sum = compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
-                     .stream()
-                     .peek(sloDetail -> checkIfValidSLOPresent(sloDetail, serviceLevelObjectiveDTO))
-                     .mapToDouble(ServiceLevelObjectiveDetailsDTO::getWeightagePercentage)
-                     .sum();
+    if (compositeServiceLevelObjectiveSpec.getSloFormulaType() == CompositeSLOFormulaType.WEIGHTED_AVERAGE) {
+      double sum = compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
+                       .stream()
+                       .peek(sloDetail -> checkIfValidSLOPresent(sloDetail, serviceLevelObjectiveDTO))
+                       .mapToDouble(ServiceLevelObjectiveDetailsDTO::getWeightagePercentage)
+                       .sum();
 
-    if (sum != 100) {
-      throw new InvalidRequestException(String.format(
-          "The weightage percentage of all the SLOs constituting the Composite SLO with identifier %s is %s. It should sum up to 100.",
-          serviceLevelObjectiveDTO.getIdentifier(), sum));
+      if (sum != 100) {
+        throw new InvalidRequestException(String.format(
+            "The weightage percentage of all the SLOs constituting the Composite SLO with identifier %s is %s. It should sum up to 100.",
+            serviceLevelObjectiveDTO.getIdentifier(), sum));
+      }
     }
 
     List<AbstractServiceLevelObjective> serviceLevelObjectiveList = getAllReferredSLOs(projectParams,
@@ -1375,7 +1378,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
 
   private List<CompositeSLORecord> getCompositeSLORecords(
       Map<ServiceLevelObjectivesDetail, List<SLIRecord>> serviceLevelObjectivesDetailCompositeSLORecordMap,
-      Map<ServiceLevelObjectivesDetail, SLIMissingDataType> objectivesDetailSLIMissingDataTypeMap) {
+      Map<ServiceLevelObjectivesDetail, SLIMissingDataType> objectivesDetailSLIMissingDataTypeMap,
+      CompositeSLOFormulaType compositeSLOFormulaType) {
     if (isEmpty(serviceLevelObjectivesDetailCompositeSLORecordMap)) {
       return new ArrayList<>();
     }
@@ -1383,7 +1387,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     double runningBadCount = 0;
     return compositeSLORecordService.getCompositeSLORecordsFromSLIsDetails(
         serviceLevelObjectivesDetailCompositeSLORecordMap, objectivesDetailSLIMissingDataTypeMap, 0, runningGoodCount,
-        runningBadCount, null, SLIEvaluationType.WINDOW);
+        runningBadCount, null, SLIEvaluationType.WINDOW, compositeSLOFormulaType);
   }
 
   @Value
