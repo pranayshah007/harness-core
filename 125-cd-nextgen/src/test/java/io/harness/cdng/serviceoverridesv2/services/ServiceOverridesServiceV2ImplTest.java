@@ -43,6 +43,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 
 public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
@@ -143,9 +148,9 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
             .build());
 
     NGServiceOverridesEntity updatedEntity2 = serviceOverridesServiceV2.update(ngServiceOverridesEntity);
-    assertThat(updatedEntity1).isNotNull();
-    assertThat(updatedEntity1.getSpec().getManifests()).isNotEmpty();
-    assertThat(updatedEntity1.getSpec().getManifests().get(0).getManifest().getType())
+    assertThat(updatedEntity2).isNotNull();
+    assertThat(updatedEntity2.getSpec().getManifests()).isNotEmpty();
+    assertThat(updatedEntity2.getSpec().getManifests().get(0).getManifest().getType())
         .isEqualTo(ManifestConfigType.K8_MANIFEST);
   }
 
@@ -223,6 +228,110 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining(
             "Service Override [some_identifier], Project[projectId], Organization [orgIdentifier] couldn't be deleted.");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testList() {
+    createDbTestDataForListCall();
+
+    // project level with type
+    Criteria criteria = ServiceOverrideCriteriaHelper.createCriteriaForGetList(
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ServiceOverridesType.ENV_SERVICE_OVERRIDE);
+    Pageable pageRequest = PageRequest.of(
+        0, 20, Sort.by(Sort.Direction.DESC, NGServiceOverridesEntity.NGServiceOverridesEntityKeys.lastModifiedAt));
+    List<NGServiceOverridesEntity> overridesEntities =
+        serviceOverridesServiceV2.list(criteria, pageRequest).get().collect(Collectors.toList());
+    assertThat(overridesEntities).hasSize(1);
+    assertThat(overridesEntities.get(0).getIdentifier()).isEqualTo("id0");
+
+    // project level without type
+    criteria = ServiceOverrideCriteriaHelper.createCriteriaForGetList(
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null);
+    overridesEntities = serviceOverridesServiceV2.list(criteria, pageRequest).get().collect(Collectors.toList());
+    assertThat(overridesEntities).hasSize(2);
+    assertThat(overridesEntities.stream().map(NGServiceOverridesEntity::getIdentifier).collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("id0", "id1");
+
+    // org level with type
+    criteria = ServiceOverrideCriteriaHelper.createCriteriaForGetList(
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null, ServiceOverridesType.ENV_SERVICE_OVERRIDE);
+    overridesEntities = serviceOverridesServiceV2.list(criteria, pageRequest).get().collect(Collectors.toList());
+    assertThat(overridesEntities).hasSize(1);
+    assertThat(overridesEntities.get(0).getIdentifier()).isEqualTo("id2");
+
+    // org level without type
+    criteria = ServiceOverrideCriteriaHelper.createCriteriaForGetList(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null, null);
+    overridesEntities = serviceOverridesServiceV2.list(criteria, pageRequest).get().collect(Collectors.toList());
+    assertThat(overridesEntities).hasSize(2);
+    assertThat(overridesEntities.stream().map(NGServiceOverridesEntity::getIdentifier).collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("id2", "id3");
+  }
+
+  private void createDbTestDataForListCall() {
+    NGServiceOverridesEntity entity0 = NGServiceOverridesEntity.builder()
+                                           .identifier("id0")
+                                           .accountId(ACCOUNT_IDENTIFIER)
+                                           .orgIdentifier(ORG_IDENTIFIER)
+                                           .projectIdentifier(PROJECT_IDENTIFIER)
+                                           .type(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
+                                           .environmentRef(ENVIRONMENT_REF)
+                                           .serviceRef(SERVICE_REF)
+                                           .spec(ServiceOverridesSpec.builder().build())
+                                           .build();
+
+    NGServiceOverridesEntity entity1 =
+        NGServiceOverridesEntity.builder()
+            .identifier("id1")
+            .accountId(ACCOUNT_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .projectIdentifier(PROJECT_IDENTIFIER)
+            .type(ServiceOverridesType.ENV_GLOBAL_OVERRIDE)
+            .environmentRef(ENVIRONMENT_REF)
+            .spec(
+                ServiceOverridesSpec.builder()
+                    .variables(List.of(
+                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                        StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+                    .build())
+            .build();
+
+    NGServiceOverridesEntity entity2 =
+        NGServiceOverridesEntity.builder()
+            .identifier("id2")
+            .accountId(ACCOUNT_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .type(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
+            .environmentRef(ENVIRONMENT_REF)
+            .serviceRef(SERVICE_REF)
+            .spec(
+                ServiceOverridesSpec.builder()
+                    .variables(List.of(
+                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                        StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+                    .build())
+            .build();
+
+    NGServiceOverridesEntity entity3 =
+        NGServiceOverridesEntity.builder()
+            .identifier("id3")
+            .accountId(ACCOUNT_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .type(ServiceOverridesType.ENV_GLOBAL_OVERRIDE)
+            .environmentRef(ENVIRONMENT_REF)
+            .spec(
+                ServiceOverridesSpec.builder()
+                    .variables(List.of(
+                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                        StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+                    .build())
+            .build();
+
+    serviceOverridesServiceV2.create(entity0);
+    serviceOverridesServiceV2.create(entity1);
+    serviceOverridesServiceV2.create(entity2);
+    serviceOverridesServiceV2.create(entity3);
   }
 
   private static void assertBasicOverrideEntityProperties(NGServiceOverridesEntity ngServiceOverridesEntity) {

@@ -7,12 +7,12 @@
 
 package io.harness.repositories.serviceoverridesv2.custom;
 
-import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,8 +26,6 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.repository.support.PageableExecutionUtils;
-
-import java.util.List;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 @Slf4j
@@ -58,9 +56,9 @@ public class ServiceOverrideRepositoryCustomV2Impl implements ServiceOverrideRep
   @Override
   public Page<NGServiceOverridesEntity> findAll(Criteria criteria, Pageable pageRequest) {
     Query query = new Query(criteria).with(pageRequest);
-    List<NGServiceOverridesEntity> projects = mongoTemplate.find(query, NGServiceOverridesEntity.class);
-    return PageableExecutionUtils.getPage(
-            projects, pageRequest, () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), NGServiceOverridesEntity.class));
+    List<NGServiceOverridesEntity> overridesEntities = mongoTemplate.find(query, NGServiceOverridesEntity.class);
+    return PageableExecutionUtils.getPage(overridesEntities, pageRequest,
+        () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), NGServiceOverridesEntity.class));
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {

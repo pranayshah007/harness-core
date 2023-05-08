@@ -54,6 +54,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -243,6 +244,7 @@ public class ServiceOverridesResource {
   }
 
   @GET
+  @Hidden
   @ApiOperation(value = "Gets Service list ", nickname = "getServiceList")
   @Operation(operationId = "getServiceList", summary = "Gets Service list",
       responses =
@@ -264,10 +266,11 @@ public class ServiceOverridesResource {
           "type") ServiceOverridesType type) {
     Criteria criteria =
         ServiceOverrideCriteriaHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, type);
-    Pageable  pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, NGServiceOverridesEntityKeys.lastModifiedAt));
+    Pageable pageRequest =
+        PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, NGServiceOverridesEntityKeys.lastModifiedAt));
     Page<NGServiceOverridesEntity> serviceOverridesEntities = serviceOverridesServiceV2.list(criteria, pageRequest);
 
-    return ResponseDTO.newResponse(getNGPageResponse(
-            serviceOverridesEntities.map(ServiceOverridesMapperV2::toResponseDTO)));
+    return ResponseDTO.newResponse(
+        getNGPageResponse(serviceOverridesEntities.map(ServiceOverridesMapperV2::toResponseDTO)));
   }
 }

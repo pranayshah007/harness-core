@@ -88,10 +88,12 @@ public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValid
       existingFields.add(existingEntity.getInfraIdentifier());
     }
 
-    throw new InvalidRequestException(String.format(
-        "Following fields: [%s] in requested entity [%s] does not match those values in existing entity [%s] for override Identifier: [%s], ProjectIdentifier: [%s] ,OrgIdentifier : [%s]",
-        mismatchedProperties, requestedFields, existingFields, requestedEntity.getIdentifier(),
-        requestedEntity.getProjectIdentifier(), existingEntity.getOrgIdentifier()));
+    if (isNotEmpty(mismatchedProperties)) {
+      throw new InvalidRequestException(String.format(
+          "Following fields: %s in requested entity %s does not match those values in existing entity %s for override Identifier: [%s], ProjectIdentifier: [%s] ,OrgIdentifier : [%s]",
+          mismatchedProperties, requestedFields, existingFields, requestedEntity.getIdentifier(),
+          requestedEntity.getProjectIdentifier(), existingEntity.getOrgIdentifier()));
+    }
   }
 
   @Override

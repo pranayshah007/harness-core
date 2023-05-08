@@ -33,12 +33,9 @@ public class ServiceOverrideCriteriaHelper {
       @NotNull String accountId, String orgIdentifier, String projectIdentifier, ServiceOverridesType type) {
     Criteria criteria = new Criteria();
     criteria.and(ACCOUNT_ID).is(accountId);
-    if (isNotEmpty(orgIdentifier)) {
-      criteria.and(ORG_ID).is(orgIdentifier);
-    }
-    if (isNotEmpty(PROJECT_ID)) {
-      criteria.and(PROJECT_ID).is(projectIdentifier);
-    }
+    criteria.and(ORG_ID).is(orgIdentifier);
+    criteria.and(PROJECT_ID).is(projectIdentifier);
+
     if (type != null) {
       criteria.and(TYPE).is(type);
     }

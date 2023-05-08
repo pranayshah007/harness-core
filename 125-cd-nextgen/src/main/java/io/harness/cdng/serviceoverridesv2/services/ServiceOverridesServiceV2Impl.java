@@ -107,7 +107,6 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
         requestedEntity.getOrgIdentifier(), requestedEntity.getProjectIdentifier(), requestedEntity.getIdentifier());
 
     if (existingEntityInDb.isPresent()) {
-      checkForImmutableType(existingEntityInDb.get(), requestedEntity);
       overrideValidatorService.checkForImmutableProperties(existingEntityInDb.get(), requestedEntity);
 
       return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
@@ -133,16 +132,6 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
       throw new InvalidRequestException(String.format(
           "ServiceOverride [%s] under Project[%s], Organization [%s] doesn't exist.", requestedEntity.getIdentifier(),
           requestedEntity.getProjectIdentifier(), requestedEntity.getOrgIdentifier()));
-    }
-  }
-
-  private void checkForImmutableType(
-      NGServiceOverridesEntity existingEntity, @NonNull @Valid NGServiceOverridesEntity requestedEntity) {
-    if (existingEntity != requestedEntity) {
-      throw new InvalidRequestException(String.format(
-          "Type [%s] in requested entity does not match with type [%s] in existing entity for override Identifier: [%s], ProjectIdentifier: [%s] ,OrgIdentifier : [%s]",
-          requestedEntity.getType(), existingEntity.getType(), requestedEntity.getIdentifier(),
-          requestedEntity.getProjectIdentifier(), existingEntity.getOrgIdentifier()));
     }
   }
 
