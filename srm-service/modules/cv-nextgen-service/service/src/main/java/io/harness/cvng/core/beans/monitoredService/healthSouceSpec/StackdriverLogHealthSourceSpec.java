@@ -48,14 +48,14 @@ import org.hibernate.validator.constraints.NotEmpty;
     description = "This is the StackDriver Log Health Source spec entity defined in Harness")
 public class StackdriverLogHealthSourceSpec extends HealthSourceSpec {
   @NotNull String feature;
-  @NotNull @NotEmpty @Valid List<QueryDTO> queries;
+  @NotNull @NotEmpty @Valid List<StackdriverLogHealthSourceQueryDTO> queries;
 
   @Data
   @SuperBuilder
   @FieldDefaults(level = AccessLevel.PRIVATE)
   @NoArgsConstructor
   @JsonIgnoreProperties(ignoreUnknown = true)
-  public static class QueryDTO {
+  public static class StackdriverLogHealthSourceQueryDTO {
     @NotNull String name;
     @NotNull String query;
     @NotNull String messageIdentifier;

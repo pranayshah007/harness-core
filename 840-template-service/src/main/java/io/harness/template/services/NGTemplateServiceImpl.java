@@ -174,9 +174,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         templateEntity.getAccountId(), templateEntity.getIdentifier(), templateEntity.getVersionLabel());
     assureThatTheProjectAndOrgExists(
         templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
-    gitXSettingsHelper.enforceGitExperienceIfApplicable(
-        templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
-    gitXSettingsHelper.setConnectorRefForRemoteEntity(
+    applyGitXSettingsIfApplicable(
         templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
 
     if (TemplateRefHelper.hasTemplateRef(templateEntity.getYaml())) {
@@ -1572,9 +1570,11 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     return templateEntities;
   }
 
-  private void applyGitXSettingsIfApplicable(String accountIdentifier, String orgIdentifier, String projIdentifier) {
+  @VisibleForTesting
+  void applyGitXSettingsIfApplicable(String accountIdentifier, String orgIdentifier, String projIdentifier) {
     gitXSettingsHelper.enforceGitExperienceIfApplicable(accountIdentifier, orgIdentifier, projIdentifier);
     gitXSettingsHelper.setConnectorRefForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
-    gitXSettingsHelper.setDefaultStoreTypeForEntities(accountIdentifier, orgIdentifier, projIdentifier);
+    gitXSettingsHelper.setDefaultStoreTypeForEntities(
+        accountIdentifier, orgIdentifier, projIdentifier, EntityType.TEMPLATE);
   }
 }

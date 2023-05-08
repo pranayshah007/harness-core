@@ -49,7 +49,22 @@ public class RuleExecutionDAO {
     query.field(RuleExecutionKeys.accountId).equal(accountId).field(RuleExecutionKeys.uuid).equal(uuid);
     return query.get();
   }
+  public RuleExecutionList filterExecutionInternal(RuleExecutionFilter ruleExecutionFilter) {
+    RuleExecutionList ruleExecutionList = RuleExecutionList.builder().build();
+    Query<RuleExecution> query = hPersistence.createQuery(RuleExecution.class)
+                                     .field(RuleExecutionKeys.accountId)
+                                     .equal(ruleExecutionFilter.getAccountId());
+    if (ruleExecutionFilter.getExecutionIds() != null) {
+      query.field(RuleExecutionKeys.uuid).in(ruleExecutionFilter.getExecutionIds());
+    }
+    ruleExecutionList.setTotalItems(query.asList().size());
+    ruleExecutionList.setRuleExecution(query.limit(ruleExecutionFilter.getLimit())
+                                           .offset(ruleExecutionFilter.getOffset())
+                                           .order(Sort.descending(RuleExecutionKeys.lastUpdatedAt))
+                                           .asList());
 
+    return ruleExecutionList;
+  }
   public RuleExecutionList filterExecution(RuleExecutionFilter ruleExecutionFilter) {
     RuleExecutionList ruleExecutionList = RuleExecutionList.builder().build();
     Query<RuleExecution> query = hPersistence.createQuery(RuleExecution.class);
@@ -123,6 +138,6 @@ public class RuleExecutionDAO {
     }
     RuleExecutionFilter ruleExecutionFilter =
         RuleExecutionFilter.builder().executionIds(executionIds).accountId(accountId).build();
-    return filterExecution(ruleExecutionFilter);
+    return filterExecutionInternal(ruleExecutionFilter);
   }
 }

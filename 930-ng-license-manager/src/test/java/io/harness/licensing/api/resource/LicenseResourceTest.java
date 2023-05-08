@@ -16,6 +16,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import io.harness.CategoryTest;
 import io.harness.ModuleType;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.modules.AccountLicenseDTO;
@@ -102,15 +103,27 @@ public class LicenseResourceTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = OwnerRule.ZHUO)
+  @Owner(developers = {OwnerRule.ZHUO, OwnerRule.KAPIL})
   @Category(UnitTests.class)
   public void testStartTrial() {
     doReturn(defaultModueLicenseDTO)
         .when(licenseService)
         .startTrialLicense(ACCOUNT_IDENTIFIER, startTrialRequestDTO, null);
+    startTrialRequestDTO.setModuleType(ModuleType.CD);
     ResponseDTO<ModuleLicenseDTO> responseDTO =
         licenseResource.startTrialLicense(ACCOUNT_IDENTIFIER, startTrialRequestDTO, null);
     Mockito.verify(licenseService, times(1)).startTrialLicense(ACCOUNT_IDENTIFIER, startTrialRequestDTO, null);
     assertThat(responseDTO.getData()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.KAPIL)
+  @Category(UnitTests.class)
+  public void testStartTrial_forCIModule() {
+    try {
+      licenseResource.startTrialLicense(ACCOUNT_IDENTIFIER, startTrialRequestDTO, null);
+    } catch (InvalidRequestException ex) {
+      assertThat(ex.getMessage()).isEqualTo("Trial license for CI module is not supported!");
+    }
   }
 }

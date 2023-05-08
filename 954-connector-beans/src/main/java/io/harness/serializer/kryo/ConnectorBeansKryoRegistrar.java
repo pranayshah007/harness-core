@@ -508,6 +508,6 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(AwsSdkClientBackoffStrategyDTO.class, 10000458);
     kryo.register(AwsSdkClientBackoffStrategySpecDTO.class, 10000459);
     kryo.register(AwsSdkClientBackoffStrategyType.class, 10000460);
-    kryo.register(SignalFXConnectorDTO.class, 10000461);
+    kryo.register(SignalFXConnectorDTO.class, 9145);
   }
 }

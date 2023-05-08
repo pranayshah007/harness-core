@@ -7,6 +7,7 @@
 
 package io.harness.cvng.cdng.resources;
 
+import io.harness.beans.FeatureName;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.DeploymentVerificationJobInstanceSummary;
 import io.harness.cvng.analysis.beans.CanaryBlueGreenAdditionalInfo;
 import io.harness.cvng.analysis.beans.CanaryBlueGreenAdditionalInfo.HostSummaryInfo;
@@ -32,18 +33,26 @@ import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
 import io.harness.cvng.core.beans.LoadTestAdditionalInfo;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceDTO;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentTimeSeriesAnalysisFilter;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.resources.VerifyStepResource;
 import io.harness.cvng.verificationjob.beans.AdditionalInfo;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
+import io.harness.security.SecurityContextBuilder;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.security.dto.UserPrincipal;
+import io.harness.telemetry.Category;
+import io.harness.telemetry.Destination;
+import io.harness.telemetry.TelemetryReporter;
 import io.harness.utils.PageUtils;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -56,6 +65,8 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Inject private DeploymentLogAnalysisService deploymentLogAnalysisService;
   @Inject private DeploymentTimeSeriesAnalysisService deploymentTimeSeriesAnalysisService;
+  @Inject private TelemetryReporter telemetryReporter;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Override
   public List<String> getTransactionGroupsForVerifyStepExecutionId(VerifyStepPathParams verifyStepPathParams) {
@@ -79,6 +90,17 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
         .collect(Collectors.toList());
   }
 
+  private void sendTelemetryEvent(String verifyStepResult, String projectId, String orgId) {
+    UserPrincipal userPrincipal = (UserPrincipal) SecurityContextBuilder.getPrincipal();
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put("verifyStepResult", verifyStepResult);
+    properties.put("projectId", projectId);
+    properties.put("orgId", orgId);
+    properties.put("userId", userPrincipal.getEmail());
+    telemetryReporter.sendTrackEvent("Verify Step Result", properties,
+        ImmutableMap.<Destination, Boolean>builder().put(Destination.AMPLITUDE, true).build(), Category.GLOBAL);
+  }
+
   @Override
   public VerificationOverview getVerificationOverviewForVerifyStepExecutionId(
       VerifyStepPathParams verifyStepPathParams) {
@@ -91,8 +113,15 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
     AdditionalInfo additionalInfo = deploymentVerificationJobInstanceSummary.getAdditionalInfo();
     // TODO: Currently we do not persist the analysis type used. Need a common voted upon analysis type for a given
     // verification.
+
+    // Send telemetry event
     AppliedDeploymentAnalysisType appliedDeploymentAnalysisType =
         getAppliedDeploymentAnalysisType(deploymentVerificationJobInstanceSummary);
+    if (featureFlagService.isFeatureFlagEnabled(
+            verifyStepPathParams.getAccountIdentifier(), FeatureName.SRM_TELEMETRY.toString())) {
+      sendTelemetryEvent(deploymentVerificationJobInstanceSummary.getStatus().toString(),
+          verifyStepPathParams.getProjectIdentifier(), verifyStepPathParams.getOrgIdentifier());
+    }
     return VerificationOverview.builder()
         .spec(getVerificationSpec(verificationJobInstance, deploymentVerificationJobInstanceSummary))
         .appliedDeploymentAnalysisType(appliedDeploymentAnalysisType)

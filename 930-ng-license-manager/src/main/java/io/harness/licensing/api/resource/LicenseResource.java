@@ -16,6 +16,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.exception.IllegalArgumentException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.NGLicensingEntityConstants;
@@ -241,6 +242,7 @@ public class LicenseResource {
           description = "This is the details of the Trial License. ModuleType and edition are mandatory") @NotNull
       @Valid @Body StartTrialDTO startTrialRequestDTO,
       @Parameter(description = "Referrer URL") @QueryParam(NGCommonEntityConstants.REFERER) String referer) {
+    checkCITrialLicense(startTrialRequestDTO);
     return ResponseDTO.newResponse(licenseService.startTrialLicense(accountIdentifier, startTrialRequestDTO, referer));
   }
 
@@ -261,7 +263,14 @@ public class LicenseResource {
       @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
           description = "This is the details of the Trial License. ModuleType and edition are mandatory") @NotNull
       @Valid @Body StartTrialDTO startTrialRequestDTO) {
+    checkCITrialLicense(startTrialRequestDTO);
     return ResponseDTO.newResponse(licenseService.extendTrialLicense(accountIdentifier, startTrialRequestDTO));
+  }
+
+  private void checkCITrialLicense(StartTrialDTO startTrialRequestDTO) {
+    if (ModuleType.CI.equals(startTrialRequestDTO.getModuleType())) {
+      throw new InvalidRequestException("Trial license for CI module is not supported!");
+    }
   }
 
   @GET

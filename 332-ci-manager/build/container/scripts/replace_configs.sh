@@ -159,6 +159,26 @@ if [[ "" != "$DLC_S3_REGION" ]]; then
   export DLC_S3_REGION; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingConfig.region=env(DLC_S3_REGION)' $CONFIG_FILE
 fi
 
+if [[ "" != "$DLC_GCS_ENDPOINT" ]]; then
+  export DLC_GCS_ENDPOINT; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingGCSConfig.endpoint=env(DLC_GCS_ENDPOINT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_GCS_BUCKET" ]]; then
+  export DLC_GCS_BUCKET; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingGCSConfig.bucket=env(DLC_GCS_BUCKET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_GCS_ACCESS_KEY" ]]; then
+  export DLC_GCS_ACCESS_KEY; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingGCSConfig.accessKey=env(DLC_GCS_ACCESS_KEY)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_GCS_SECRET_KEY" ]]; then
+  export DLC_GCS_SECRET_KEY; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingGCSConfig.secretKey=env(DLC_GCS_SECRET_KEY)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_GCS_REGION" ]]; then
+  export DLC_GCS_REGION; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingGCSConfig.region=env(DLC_GCS_REGION)' $CONFIG_FILE
+fi
+
 if [[ "" != "$HOSTED_VM_SPLIT_LINUX_AMD64_POOL" ]]; then
   export HOSTED_VM_SPLIT_LINUX_AMD64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitLinuxAmd64Pool=env(HOSTED_VM_SPLIT_LINUX_AMD64_POOL)' $CONFIG_FILE
 fi

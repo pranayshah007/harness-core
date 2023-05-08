@@ -8,6 +8,7 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessModule._950_NG_AUTHENTICATION_SERVICE;
+import static io.harness.beans.FeatureName.PL_ENABLE_MULTIPLE_IDP_SUPPORT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -19,6 +20,7 @@ import static software.wings.common.NotificationMessageResolver.NotificationMess
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -148,6 +150,18 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   }
 
   @Override
+  public SamlSettings getSamlSettingsByAccountIdNotConfiguredFromNG(String accountId) {
+    return wingsPersistence.createQuery(SamlSettings.class)
+        .field(SamlSettings.ACCOUNT_ID_KEY2)
+        .equal(accountId)
+        .field("type")
+        .equal(SSOType.SAML)
+        .field("configuredFromNG")
+        .equal(false)
+        .get();
+  }
+
+  @Override
   public List<SamlSettings> getSamlSettingsListByAccountId(String accountId) {
     return wingsPersistence.createQuery(SamlSettings.class)
         .field(SamlSettings.ACCOUNT_ID_KEY2)
@@ -155,6 +169,18 @@ public class SSOSettingServiceImpl implements SSOSettingService {
         .field("type")
         .equal(SSOType.SAML)
         .asList();
+  }
+
+  @Override
+  public SamlSettings getSamlSettingsByAccountIdAndUuid(String accountId, String uuid) {
+    return wingsPersistence.createQuery(SamlSettings.class)
+        .field(SamlSettings.ACCOUNT_ID_KEY2)
+        .equal(accountId)
+        .field(NGCommonEntityConstants.UUID)
+        .equal(uuid)
+        .field(NGCommonEntityConstants.TYPE_KEY)
+        .equal(SSOType.SAML)
+        .get();
   }
 
   @Override
@@ -173,6 +199,13 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     return saveSSOSettingsInternal(settings);
   }
 
+  @Override
+  @RestrictedApi(SamlFeature.class)
+  public SamlSettings saveSamlSettings(@GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings,
+      boolean isUpdateCase, boolean isNGSso) {
+    return saveSSOSettingsInternal(settings, isUpdateCase, isNGSso);
+  }
+
   // This function is meant to be called for ng sso settings, as the license check is already done in NG Service
   @Override
   public SamlSettings saveSamlSettingsWithoutCGLicenseCheck(
@@ -180,35 +213,98 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     return saveSSOSettingsInternal(settings);
   }
 
+  @Override
+  public SamlSettings saveSamlSettingsWithoutCGLicenseCheck(
+      @GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings, boolean isUpdateCase,
+      boolean isNGSso) {
+    return saveSSOSettingsInternal(settings, isUpdateCase, isNGSso);
+  }
+
   private SamlSettings saveSSOSettingsInternal(
       @GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings) {
     SamlSettings queriedSettings = getSamlSettingsByAccountId(settings.getAccountId());
     SamlSettings savedSettings;
     if (queriedSettings != null) {
-      queriedSettings.setUrl(settings.getUrl());
-      queriedSettings.setMetaDataFile(settings.getMetaDataFile());
-      queriedSettings.setDisplayName(settings.getDisplayName());
-      queriedSettings.setOrigin(settings.getOrigin());
-      queriedSettings.setGroupMembershipAttr(settings.getGroupMembershipAttr());
-      queriedSettings.setLogoutUrl(settings.getLogoutUrl());
-      queriedSettings.setEntityIdentifier(settings.getEntityIdentifier());
-      queriedSettings.setSamlProviderType(settings.getSamlProviderType());
-      queriedSettings.setClientId(settings.getClientId());
-      queriedSettings.setEncryptedClientSecret(settings.getEncryptedClientSecret());
+      setSamlSettingValuesInternal(queriedSettings, settings);
       SamlSettings currentSamlSettings = getSamlSettingsByAccountId(settings.getAccountId());
-      String ssoSettingUuid = wingsPersistence.save(queriedSettings);
-      savedSettings = wingsPersistence.get(SamlSettings.class, ssoSettingUuid);
-      ngAuditLoginSettingsForSAMLUpdate(currentSamlSettings, savedSettings);
+      savedSettings = saveAndAuditSAMLSettingUpdateInternal(currentSamlSettings, queriedSettings);
     } else {
-      String ssoSettingUuid = wingsPersistence.save(settings);
-      savedSettings = wingsPersistence.get(SamlSettings.class, ssoSettingUuid);
-      eventPublishHelper.publishSSOEvent(settings.getAccountId());
-      ngAuditLoginSettingsForSAMLUpload(savedSettings);
+      savedSettings = savePublishEventAndAuditSAMLSettingUploadInternal(settings);
     }
     auditServiceHelper.reportForAuditingUsingAccountId(settings.getAccountId(), null, settings, Event.Type.CREATE);
     log.info("Auditing creation of SAML Settings for account={}", settings.getAccountId());
 
     return savedSettings;
+  }
+
+  private SamlSettings saveSSOSettingsInternal(@GetAccountId(SamlSettingsAccountIdExtractor.class)
+                                               SamlSettings settings, boolean isUpdateCase, boolean isNGSsoSetting) {
+    SamlSettings savedSettings = null;
+    SamlSettings currentSamlSettings;
+    if (!isUpdateCase) {
+      settings.setConfiguredFromNG(isNGSsoSetting);
+      if (isNGSsoSetting && isEmpty(settings.getFriendlySamlName())) {
+        settings.setFriendlySamlName(settings.getDisplayName());
+      }
+      savedSettings = savePublishEventAndAuditSAMLSettingUploadInternal(settings);
+      if (!isNGSsoSetting) {
+        log.info("CG_SAML_AUDITS: Auditing creation of SAML Settings for account={}", settings.getAccountId());
+        auditServiceHelper.reportForAuditingUsingAccountId(settings.getAccountId(), null, settings, Event.Type.CREATE);
+      }
+    } else {
+      SamlSettings queriedSettings = getSamlSettingsByAccountIdAndUuid(settings.getAccountId(), settings.getUuid());
+      if (queriedSettings != null) {
+        setSamlSettingValuesInternal(queriedSettings, settings);
+        if (isNotEmpty(settings.getFriendlySamlName())) {
+          queriedSettings.setFriendlySamlName(settings.getFriendlySamlName());
+        }
+        currentSamlSettings = getSamlSettingsByAccountIdAndUuid(settings.getAccountId(), settings.getUuid());
+        savedSettings = saveAndAuditSAMLSettingUpdateInternal(currentSamlSettings, queriedSettings);
+        if (!isNGSsoSetting) {
+          log.info("CG_SAML_AUDITS: Auditing updation of SAML Settings for account={} and saml setting id={}",
+              settings.getAccountId(), settings.getUuid());
+          auditServiceHelper.reportForAuditingUsingAccountId(
+              settings.getAccountId(), currentSamlSettings, savedSettings, Event.Type.UPDATE);
+        }
+      }
+    }
+    return savedSettings;
+  }
+
+  private void setSamlSettingValuesInternal(SamlSettings queriedSettings, SamlSettings settings) {
+    queriedSettings.setUrl(settings.getUrl());
+    queriedSettings.setMetaDataFile(settings.getMetaDataFile());
+    queriedSettings.setDisplayName(settings.getDisplayName());
+    queriedSettings.setOrigin(settings.getOrigin());
+    queriedSettings.setGroupMembershipAttr(settings.getGroupMembershipAttr());
+    queriedSettings.setLogoutUrl(settings.getLogoutUrl());
+    queriedSettings.setEntityIdentifier(settings.getEntityIdentifier());
+    queriedSettings.setSamlProviderType(settings.getSamlProviderType());
+    queriedSettings.setClientId(settings.getClientId());
+    queriedSettings.setEncryptedClientSecret(settings.getEncryptedClientSecret());
+  }
+
+  private SamlSettings savePublishEventAndAuditSAMLSettingUploadInternal(SamlSettings settings) {
+    String ssoSettingUuid = wingsPersistence.save(settings);
+    SamlSettings savedSettings = wingsPersistence.get(SamlSettings.class, ssoSettingUuid);
+    eventPublishHelper.publishSSOEvent(settings.getAccountId());
+    ngAuditLoginSettingsForSAMLUpload(savedSettings);
+    return savedSettings;
+  }
+
+  private SamlSettings saveAndAuditSAMLSettingUpdateInternal(
+      SamlSettings currentSettings, SamlSettings queriedSettings) {
+    String ssoSettingUuid = wingsPersistence.save(queriedSettings);
+    SamlSettings savedSettings = wingsPersistence.get(SamlSettings.class, ssoSettingUuid);
+    ngAuditLoginSettingsForSAMLUpdate(currentSettings, savedSettings);
+    return savedSettings;
+  }
+
+  @Override
+  public void updateAuthenticationEnabledForSAMLSetting(String accountId, String samlSSOId, boolean enable) {
+    SamlSettings samlSettings = getSamlSettingsByAccountIdAndUuid(accountId, samlSSOId);
+    samlSettings.setAuthenticationEnabled(enable);
+    wingsPersistence.save(samlSettings);
   }
 
   private void ngAuditLoginSettingsForSAMLUpload(SamlSettings newSamlSettings) {
@@ -378,24 +474,46 @@ public class SSOSettingServiceImpl implements SSOSettingService {
 
   @Override
   public boolean deleteSamlSettings(String accountId) {
-    SamlSettings samlSettings = getSamlSettingsByAccountId(accountId);
+    SamlSettings samlSettings = featureFlagService.isEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountId)
+        ? getSamlSettingsByAccountIdNotConfiguredFromNG(accountId)
+        : getSamlSettingsByAccountId(accountId);
     if (samlSettings == null) {
-      throw new InvalidRequestException("No Saml settings found for this account");
+      log.error(
+          "No SAML setting found or No SAML setting configured from CG for case of FF PL_ENABLE_MULTIPLE_IDP_SUPPORT enabled in account {} found",
+          accountId);
+      throw new InvalidRequestException(String.format("No Saml settings found for this account %s", accountId));
     }
     auditServiceHelper.reportDeleteForAuditingUsingAccountId(accountId, samlSettings);
     ngAuditLoginSettingsForSAMLDelete(samlSettings);
-    log.info("Auditing deletion of SAML Settings for account={}", accountId);
+    log.info("Auditing deletion of SAML Settings {} for account={}", samlSettings.getUuid(), accountId);
     return deleteSamlSettings(samlSettings);
   }
 
   @Override
   public boolean deleteSamlSettings(SamlSettings samlSettings) {
+    deleteSamlSettingsCheckLinkedUserGroupsInternal(samlSettings);
+    return wingsPersistence.delete(samlSettings);
+  }
+
+  @Override
+  public boolean deleteSamlSettingsWithAudits(SamlSettings samlSettings) {
+    if (samlSettings == null) {
+      throw new InvalidRequestException("DELETE_SAML_SSO: No Saml settings found with configuration for the account");
+    }
+    deleteSamlSettingsCheckLinkedUserGroupsInternal(samlSettings);
+    log.info(
+        "Auditing deletion of SAML Settings {} for account={}", samlSettings.getUuid(), samlSettings.getAccountId());
+    auditServiceHelper.reportDeleteForAuditingUsingAccountId(samlSettings.getAccountId(), samlSettings);
+    ngAuditLoginSettingsForSAMLDelete(samlSettings);
+    return wingsPersistence.delete(samlSettings);
+  }
+
+  private void deleteSamlSettingsCheckLinkedUserGroupsInternal(SamlSettings samlSettings) {
     if (userGroupService.existsLinkedUserGroup(samlSettings.getAccountId(), samlSettings.getUuid())) {
       throw new InvalidRequestException(
           "Deleting Saml provider with linked user groups is not allowed. Unlink the user groups first.");
     }
     checkForLinkedSSOGroupsOnNG(samlSettings.getAccountId(), samlSettings.getUuid());
-    return wingsPersistence.delete(samlSettings);
   }
 
   @Override

@@ -7,8 +7,6 @@
 
 package io.harness.delegate.metrics;
 
-import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_AGENT_METRIC_MAP;
-
 import io.harness.metrics.HarnessMetricRegistry;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -18,6 +16,8 @@ import io.prometheus.client.exporter.common.TextFormat;
 import io.swagger.annotations.Api;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -40,7 +40,12 @@ public class DelegateAgentMetricResource {
   @ExceptionMetered
   public String get() throws IOException {
     try (StringWriter writer = new StringWriter()) {
-      TextFormat.write004(writer, metricRegistry.getMetric(DELEGATE_AGENT_METRIC_MAP.keySet()));
+      TextFormat.write004(writer,
+          metricRegistry.getMetric(Arrays.stream(DelegateMetric.values())
+                                       .collect(Collectors.toList())
+                                       .stream()
+                                       .map(delegateMetric -> delegateMetric.getMetricName())
+                                       .collect(Collectors.toSet())));
       writer.flush();
       return writer.getBuffer().toString();
     }

@@ -138,7 +138,7 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
         taskResponse.response(result);
       } else {
         String errorMessage = "No response from delegate task " + taskId;
-        log.error(errorMessage);
+        log.info(errorMessage);
         taskResponse.response(errorNotifyResponseDataBuilder.failureTypes(EnumSet.of(FailureType.APPLICATION_ERROR))
                                   .errorMessage(errorMessage)
                                   .build());
@@ -155,8 +155,7 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
       taskResponse.responseCode(ResponseCode.RETRY_ON_OTHER_DELEGATE);
     } catch (Throwable throwable) {
       if (!(throwable instanceof Exception) || !isSupportingErrorFramework()) {
-        log.error(
-            format("Unexpected error while executing delegate taskId: [%s] in accountId: [%s]", taskId, accountId),
+        log.warn(format("Unexpected error while executing delegate taskId: [%s] in accountId: [%s]", taskId, accountId),
             throwable);
       }
       taskResponse.response(delegateExceptionManager.getResponseData(

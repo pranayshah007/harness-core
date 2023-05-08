@@ -102,8 +102,12 @@ public class FQNHelper {
           templateMap.keySet()
               .stream()
               .filter(key
-                  -> key.getFqnList().size() >= 2
-                      && key.getFqnList().get(1).getKey().equals(YAMLFieldNameConstants.PROPERTIES))
+                  -> (key.getFqnList().size() >= 2
+                         && key.getFqnList().get(1).getKey().equals(YAMLFieldNameConstants.PROPERTIES))
+                      || (key.getFqnList().size() > 3
+                          && key.getFqnList().get(1).getKey().equals(YAMLFieldNameConstants.TEMPLATE)
+                          && key.getFqnList().get(2).getKey().equals(YAMLFieldNameConstants.TEMPLATE_INPUTS)
+                          && key.getFqnList().get(3).getKey().equals(YAMLFieldNameConstants.PROPERTIES)))
               .collect(Collectors.toSet());
       toBeRemovedFQNs.forEach(templateMap::remove);
     }

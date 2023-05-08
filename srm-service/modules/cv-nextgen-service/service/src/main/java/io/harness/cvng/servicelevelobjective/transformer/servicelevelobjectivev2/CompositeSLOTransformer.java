@@ -60,6 +60,7 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
         .notificationRuleRefs(notificationRuleService.getNotificationRuleRefs(projectParams,
             serviceLevelObjectiveV2DTO.getNotificationRuleRefs(), NotificationRuleType.SLO, Instant.ofEpochSecond(0)))
         .target(sloTarget)
+        .compositeSLOFormulaType(compositeServiceLevelObjectiveSpec.getSloFormulaType())
         .serviceLevelObjectivesDetails(
             compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
                 .stream()
@@ -102,6 +103,7 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
   private ServiceLevelObjectiveSpec getSpec(CompositeServiceLevelObjective serviceLevelObjective) {
     return CompositeServiceLevelObjectiveSpec.builder()
         .evaluationType(serviceLevelObjective.getSliEvaluationType())
+        .sloFormulaType(serviceLevelObjective.getCompositeSLOFormulaType())
         .serviceLevelObjectivesDetails(
             serviceLevelObjective.getServiceLevelObjectivesDetails()
                 .stream()

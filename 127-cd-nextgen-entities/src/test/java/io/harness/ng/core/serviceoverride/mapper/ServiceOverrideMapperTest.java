@@ -7,14 +7,17 @@
 
 package io.harness.ng.core.serviceoverride.mapper;
 
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.NGCoreTestBase;
+import io.harness.ng.core.serviceoverride.beans.ServiceOverrideRequestDTO;
 import io.harness.rule.Owner;
 import io.harness.yaml.core.variables.NGServiceOverrides;
 
@@ -37,5 +40,19 @@ public class ServiceOverrideMapperTest extends NGCoreTestBase {
     NGServiceOverrides ngServiceOverrides = ServiceOverridesMapper.toServiceOverrides(yaml);
 
     assertThat(ngServiceOverrides.getServiceRef()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void toServiceOverridesThrowsExceptionIfEnvIDIsNotProjectLevel() {
+    ServiceOverrideRequestDTO serviceOverrideRequestDTO = ServiceOverrideRequestDTO.builder()
+                                                              .environmentIdentifier("org.env")
+                                                              .projectIdentifier("projectIdentifier")
+                                                              .orgIdentifier("orgIdentifier")
+                                                              .build();
+    assertThatThrownBy(() -> ServiceOverridesMapper.toServiceOverridesEntity("accountId", serviceOverrideRequestDTO))
+        .hasMessageContaining(
+            "Project Identifier should not be passed when environment used in service override is at organisation or account scope");
   }
 }

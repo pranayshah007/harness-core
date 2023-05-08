@@ -14,5 +14,5 @@ import lombok.Value;
 @Value
 @Builder
 public class OpenTaskDetails {
-  List<ServicePipelineInfo> pipelineDeploymentDetails;
+  List<ServicePipelineWithRevertInfo> pipelineDeploymentDetails;
 }

@@ -25,12 +25,14 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
 
@@ -54,6 +56,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
   @Mock PMSPipelineService pmsPipelineService;
   @Mock PMSInputSetService pmsInputSetService;
   @Mock GitSyncSdkService gitSyncSdkService;
+  @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
 
   private static final String accountId = "accountId";
   private static final String orgId = "orgId";
@@ -287,6 +290,44 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
     List<String> selectedStages = new ArrayList<>();
     selectedStages.add("customstage");
     selectedStages.add("cistage2");
+    responseWithRuntime = validateAndMergeHelper.getInputSetTemplateResponseDTO(
+        accountId, orgId, projectId, "has_runtime", selectedStages, false);
+    expectedResponse = "pipeline:\n  identifier: \"temppipeline\"\n";
+    assertThat(responseWithRuntime.getHasInputSets()).isTrue();
+    assertThat(responseWithRuntime.getInputSetTemplateYaml()).isEqualTo(expectedResponse);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetInputSetTemplateResponseDTOWithSelectedStagesWithoutCodebasePropertiesAndPipelineTemplate() {
+    String pipelineTemplateYaml = readFile("pipeline-template.yml");
+    PipelineEntity pipelineEntityWithRuntime = PipelineEntity.builder().yaml(pipelineTemplateYaml).build();
+    doReturn(Optional.of(pipelineEntityWithRuntime))
+        .when(pmsPipelineService)
+        .getPipeline(accountId, orgId, projectId, "has_runtime", false, false, false, false);
+    String mergedTemplateYaml = readFile("merged-pipeline-template.yml");
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        TemplateMergeResponseDTO.builder().mergedPipelineYaml(mergedTemplateYaml).build();
+    doReturn(templateMergeResponseDTO)
+        .when(pipelineTemplateHelper)
+        .resolveTemplateRefsInPipeline(accountId, orgId, projectId, pipelineTemplateYaml, "false");
+    doReturn(true).when(pmsInputSetService).checkForInputSetsForPipeline(accountId, orgId, projectId, "has_runtime");
+    InputSetTemplateResponseDTOPMS responseWithRuntime = validateAndMergeHelper.getInputSetTemplateResponseDTO(
+        accountId, orgId, projectId, "has_runtime", Collections.singletonList("Stage1"), false);
+    String expectedResponse = "pipeline:\n"
+        + "  identifier: \"temppipeline\"\n"
+        + "  template:\n"
+        + "    templateInputs:\n"
+        + "      properties:\n"
+        + "        ci:\n"
+        + "          codebase:\n"
+        + "            repoName: \"<+input>\"\n"
+        + "            build: \"<+input>\"\n";
+    assertThat(responseWithRuntime.getHasInputSets()).isTrue();
+    assertThat(responseWithRuntime.getInputSetTemplateYaml()).isEqualTo(expectedResponse);
+    List<String> selectedStages = new ArrayList<>();
+    selectedStages.add("stage2");
     responseWithRuntime = validateAndMergeHelper.getInputSetTemplateResponseDTO(
         accountId, orgId, projectId, "has_runtime", selectedStages, false);
     expectedResponse = "pipeline:\n  identifier: \"temppipeline\"\n";

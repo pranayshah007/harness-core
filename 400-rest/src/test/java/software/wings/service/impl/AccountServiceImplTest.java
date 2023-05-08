@@ -9,6 +9,7 @@ package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessModule._955_ACCOUNT_MGMT;
 import static io.harness.rule.OwnerRule.KAPIL;
+import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RAJ;
 import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.XIN;
@@ -17,6 +18,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
@@ -28,6 +30,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.AuthenticationInfo;
+import io.harness.authenticationservice.beans.AuthenticationInfoV2;
+import io.harness.authenticationservice.beans.SSORequest;
 import io.harness.beans.FeatureName;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.category.element.UnitTests;
@@ -47,7 +51,6 @@ import software.wings.beans.sso.OauthSettings;
 import software.wings.dl.GenericDbCache;
 import software.wings.dl.WingsPersistence;
 import software.wings.licensing.LicenseService;
-import software.wings.security.saml.SSORequest;
 import software.wings.security.saml.SamlClientService;
 import software.wings.service.intfc.AuthService;
 
@@ -325,6 +328,19 @@ public class AccountServiceImplTest extends WingsBaseTest {
     buildAccountWithAuthMechanism(AuthenticationMechanism.SAML, false);
     when(featureFlagService.isEnabled(any(FeatureName.class), anyString())).thenReturn(false);
     assertFalse(accountService.isPLNoEmailForSamlAccountInvitesEnabled(ACCOUNT_ID));
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void getAuthenticationInfoV2_SAMLList() {
+    Account account = buildAccountWithAuthMechanism(AuthenticationMechanism.SAML, false);
+    when(samlClientService.generateSamlRequestFromAccount(account, false))
+        .thenReturn(SSORequest.builder().idpRedirectUrl("testredirecturl").build());
+
+    AuthenticationInfoV2 authInfoV2 = accountService.getAuthenticationInfoV2(ACCOUNT_ID);
+    assertThat(authInfoV2).isNotNull();
+    assertThat(authInfoV2.getAuthenticationMechanism()).isEqualTo(AuthenticationMechanism.SAML);
   }
 
   private Account buildAccountWithAuthMechanism(

@@ -115,6 +115,7 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
     assertThat(newMetadata.getExecutionMode()).isEqualTo(POST_EXECUTION_ROLLBACK);
     assertThat(newMetadata.getPipelineStageInfo().getHasParentPipeline()).isTrue();
     assertThat(newMetadata.getPostExecutionRollbackInfoCount()).isEqualTo(0);
+    assertThat(newMetadata.getOriginalPlanExecutionIdForRollbackMode()).isEqualTo("oldId");
     assertThat(rollbackModeExecutionHelper
                    .transformExecutionMetadata(oldExecutionMetadata, newId, newTriggerInfo, account, org, project,
                        POST_EXECUTION_ROLLBACK, null, null)

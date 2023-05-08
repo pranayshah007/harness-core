@@ -82,6 +82,7 @@ import software.wings.security.annotations.IdentityServiceAuth;
 import software.wings.security.annotations.Scope;
 import software.wings.security.authentication.AuthenticationManager;
 import software.wings.security.authentication.LoginTypeResponse;
+import software.wings.security.authentication.LoginTypeResponseV2;
 import software.wings.security.authentication.SsoRedirectRequest;
 import software.wings.security.authentication.TwoFactorAuthenticationManager;
 import software.wings.security.authentication.TwoFactorAuthenticationMechanism;
@@ -768,6 +769,14 @@ public class UserResource {
   public RestResponse<LoginTypeResponse> getLoginType(
       @NotNull LoginTypeRequest loginTypeRequest, @QueryParam("accountId") String accountId) {
     return new RestResponse<>(authenticationManager.getLoginTypeResponse(loginTypeRequest.getUserName(), accountId));
+  }
+
+  @POST
+  @Path("v2/logintype")
+  @PublicApi
+  public RestResponse<LoginTypeResponseV2> getLoginTypeV2(
+      @NotNull LoginTypeRequest loginTypeRequest, @QueryParam("accountId") String accountId) {
+    return new RestResponse<>(authenticationManager.getLoginTypeResponseV2(loginTypeRequest.getUserName(), accountId));
   }
 
   @GET

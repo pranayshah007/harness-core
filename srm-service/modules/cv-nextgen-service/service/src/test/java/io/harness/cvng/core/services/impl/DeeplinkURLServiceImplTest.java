@@ -61,7 +61,7 @@ public class DeeplinkURLServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = ANSUMAN)
   @Category(UnitTests.class)
-  public void generateDeeplinkURLforPrometheus() throws IllegalAccessException, URISyntaxException {
+  public void generateDeeplinkURLForPrometheus() throws IllegalAccessException, URISyntaxException {
     String query = "process_cpu_seconds_total\t{\n"
         + "\n"
         + "\t\tjob=\"kubernetes-nodes\",\n"
@@ -107,7 +107,8 @@ public class DeeplinkURLServiceImplTest extends CvNextGenTestBase {
     uriBuilder.addParameter("g0.step_input", "60");
     uriBuilder.addParameter("g0.expr", query);
     uriBuilder.addParameter("g0.range_input", "5m");
-    uriBuilder.addParameter("g0.g0.end_input", "2023-01-24 10:02");
+    uriBuilder.addParameter("g0.end_input", "2023-01-24 10:02");
+    uriBuilder.addParameter("g0.tab", "0");
     assertThat(prometheusDeeplinkURL.get()).isEqualTo(uriBuilder.build().toString());
   }
 

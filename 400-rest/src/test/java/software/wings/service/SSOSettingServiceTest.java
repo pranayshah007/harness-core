@@ -237,4 +237,124 @@ public class SSOSettingServiceTest extends WingsBaseTest {
         ssoSettingService.getSamlSettingsIteratorByOrigin("testOrigin", accountId);
     assertThat(testOriginIterator).isNotNull();
   }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testSamlSettingsSaveUpdateCaseAuditing() {
+    Account account = Account.Builder.anAccount()
+                          .withUuid("TestAccountID")
+                          .withOauthEnabled(false)
+                          .withAccountName("Account_1")
+                          .withLicenseInfo(getLicenseInfo())
+                          .withAppId("appId")
+                          .withCompanyName("Account_2")
+                          .withAuthenticationMechanism(USER_PASSWORD)
+                          .build();
+    accountService.save(account, false);
+    SamlSettings samlSettings = SamlSettings.builder()
+                                    .metaDataFile("TestMetaDataFile")
+                                    .url("TestURL")
+                                    .accountId("TestAccountID")
+                                    .displayName("Okta")
+                                    .origin("TestOrigin")
+                                    .build();
+
+    samlSettings.setConfiguredFromNG(false);
+
+    samlSettings = ssoSettingService.saveSamlSettings(samlSettings);
+    assertThat(samlSettings.getUrl()).isEqualTo("TestURL");
+    assertThat(samlSettings.getAccountId()).isEqualTo("TestAccountID");
+    assertThat(samlSettings.getMetaDataFile()).isEqualTo("TestMetaDataFile");
+    assertThat(samlSettings.getDisplayName()).isEqualTo("Okta");
+    assertThat(samlSettings.getOrigin()).isEqualTo("TestOrigin");
+
+    SamlSettings updatedSamlSettings = SamlSettings.builder()
+                                           .metaDataFile("TestMetaDataFile")
+                                           .accountId("TestAccountID")
+                                           .url("TestNewURL")
+                                           .origin("TestNewOrigin")
+                                           .displayName("Okta_NEW")
+                                           .friendlySamlName("Okta_FriendlyName")
+                                           .build();
+
+    updatedSamlSettings.setUuid(samlSettings.getUuid());
+    updatedSamlSettings = ssoSettingService.saveSamlSettings(updatedSamlSettings, true, true);
+    assertThat(updatedSamlSettings.getUrl()).isEqualTo("TestNewURL");
+    assertThat(updatedSamlSettings.getOrigin()).isEqualTo("TestNewOrigin");
+    assertThat(updatedSamlSettings.getDisplayName()).isEqualTo("Okta_NEW");
+    assertThat(updatedSamlSettings.getFriendlySamlName()).isEqualTo("Okta_FriendlyName");
+    assertThat(updatedSamlSettings.isConfiguredFromNG()).isEqualTo(false);
+
+    verify(auditServiceHelper, times(1))
+        .reportForAuditingUsingAccountId(
+            eq(samlSettings.getAccountId()), eq(null), any(SamlSettings.class), eq(Event.Type.CREATE));
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testDeleteSamlSettingsWithAuditing() {
+    Account account = Account.Builder.anAccount()
+                          .withUuid("TestAccountID")
+                          .withOauthEnabled(false)
+                          .withAccountName("Account_1")
+                          .withLicenseInfo(getLicenseInfo())
+                          .withAppId("appId")
+                          .withCompanyName("Account_2")
+                          .withAuthenticationMechanism(USER_PASSWORD)
+                          .withNextGenEnabled(false)
+                          .build();
+    accountService.save(account, false);
+    SamlSettings samlSettings = SamlSettings.builder()
+                                    .metaDataFile("TestMetaDataFile")
+                                    .url("TestURL")
+                                    .accountId("TestAccountID")
+                                    .displayName("Okta")
+                                    .origin("TestOrigin")
+                                    .build();
+
+    samlSettings = ssoSettingService.saveSamlSettings(samlSettings);
+    assertThat(samlSettings.getUrl()).isEqualTo("TestURL");
+    assertThat(samlSettings.getAccountId()).isEqualTo("TestAccountID");
+
+    when(userGroupService.existsLinkedUserGroup(samlSettings.getAccountId(), samlSettings.getUuid())).thenReturn(false);
+
+    assertThat(ssoSettingService.deleteSamlSettingsWithAudits(samlSettings)).isTrue();
+    verify(auditServiceHelper, times(1))
+        .reportDeleteForAuditingUsingAccountId(eq(samlSettings.getAccountId()), any(SamlSettings.class));
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testUpdateAuthenticationEnabledForASamlSettings() {
+    Account account = Account.Builder.anAccount()
+                          .withUuid("TestAccountID")
+                          .withOauthEnabled(false)
+                          .withAccountName("Account_1")
+                          .withLicenseInfo(getLicenseInfo())
+                          .withAppId("appId")
+                          .withCompanyName("Account_2")
+                          .withAuthenticationMechanism(USER_PASSWORD)
+                          .withNextGenEnabled(false)
+                          .build();
+    accountService.save(account, false);
+    SamlSettings samlSettings = SamlSettings.builder()
+                                    .metaDataFile("TestMetaDataFile")
+                                    .url("TestURL")
+                                    .accountId("TestAccountID")
+                                    .displayName("Okta")
+                                    .origin("TestOrigin")
+                                    .build();
+
+    samlSettings = ssoSettingService.saveSamlSettings(samlSettings);
+    assertThat(samlSettings.isAuthenticationEnabled()).isEqualTo(false);
+
+    ssoSettingService.updateAuthenticationEnabledForSAMLSetting(
+        samlSettings.getAccountId(), samlSettings.getUuid(), true);
+    SamlSettings authUpdatedSamlSettings =
+        ssoSettingService.getSamlSettingsByAccountIdAndUuid(samlSettings.getAccountId(), samlSettings.getUuid());
+    assertThat(authUpdatedSamlSettings.isAuthenticationEnabled()).isEqualTo(true);
+  }
 }

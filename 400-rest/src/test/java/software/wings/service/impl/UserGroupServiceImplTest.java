@@ -20,6 +20,7 @@ import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.HANTANG;
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.MEHUL;
 import static io.harness.rule.OwnerRule.MOHIT;
 import static io.harness.rule.OwnerRule.NAMANG;
@@ -144,6 +145,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1141,6 +1143,37 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
     assertThat(prunedAppIds.size()).isEqualTo(3);
     assertThat(prunedAppIds.containsAll(Arrays.asList("111", "333", "444"))).isTrue();
     assertThat(prunedAppIds.contains("222")).isFalse();
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void createQueryForUserGroup_accountIdIsNull() {
+    String appId = "appId1";
+    Query<UserGroup> expectedQuery = persistence.createQuery(UserGroup.class)
+                                         .field(UserGroupKeys.appIds)
+                                         .in(Set.of(appId))
+                                         .project(UserGroup.ID_KEY2, true)
+                                         .project(UserGroupKeys.accountId, true)
+                                         .project(UserGroupKeys.appPermissions, true)
+                                         .project(UserGroupKeys.memberIds, true);
+    Query<UserGroup> query = userGroupService.createQueryForUserGroup(null, Set.of(appId));
+    assertThat(query).isEqualTo(expectedQuery);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void createQueryForUserGroup_accountIdNotNull() {
+    String appId = "appId1";
+    Query<UserGroup> expectedQuery = persistence.createQuery(UserGroup.class)
+                                         .filter(UserGroupKeys.accountId, accountId)
+                                         .project(UserGroup.ID_KEY2, true)
+                                         .project(UserGroupKeys.accountId, true)
+                                         .project(UserGroupKeys.appPermissions, true)
+                                         .project(UserGroupKeys.memberIds, true);
+    Query<UserGroup> query = userGroupService.createQueryForUserGroup(accountId, Set.of(appId));
+    assertThat(query).isEqualTo(expectedQuery);
   }
 
   @Test
