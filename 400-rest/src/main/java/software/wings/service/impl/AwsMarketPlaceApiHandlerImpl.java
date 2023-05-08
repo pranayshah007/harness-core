@@ -79,10 +79,10 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     /**
      * If request gets routed to the free cluster, reject the request rightaway
      */
-    if (configuration.isTrialRegistrationAllowed()) {
-      final String message = "Invalid cluster, please contact Harness at support@harness.io, customertoken=" + token;
-      return generateMessageResponse(message, "ERROR", null, null);
-    }
+    // if (configuration.isTrialRegistrationAllowed()) {
+    //   final String message = "Invalid cluster, please contact Harness at support@harness.io, customertoken=" + token;
+    //   return generateMessageResponse(message, "ERROR", null, null);
+    // }
 
     if (DeployMode.isOnPrem(configuration.getDeployMode().name())) {
       final String message =
@@ -101,7 +101,7 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     try {
       resolveCustomerResult = AWSMarketplaceMeteringClientBuilder.standard()
                                   .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-                                  .withRegion(Regions.US_EAST_1)
+                                  .withRegion(Regions.US_WEST_1)
                                   .build()
                                   .resolveCustomer(resolveCustomerRequest);
     } catch (AWSMarketplaceMeteringException e) {
