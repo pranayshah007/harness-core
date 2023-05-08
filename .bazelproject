@@ -1,2 +1,0 @@
-build_flags:
-  --disk_cache=~/.bazel-dirs/cache

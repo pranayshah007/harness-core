@@ -70,7 +70,8 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
 
   @Override
   public NGServiceOverridesEntity create(@NonNull NGServiceOverridesEntity requestedEntity) {
-    validatePresenceOfRequiredFields(requestedEntity.getAccountId(), requestedEntity.getEnvironmentRef());
+    validatePresenceOfRequiredFields(requestedEntity.getAccountId(), requestedEntity.getEnvironmentRef(),
+        requestedEntity.getType());
     modifyRequestedServiceOverride(requestedEntity);
 
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {

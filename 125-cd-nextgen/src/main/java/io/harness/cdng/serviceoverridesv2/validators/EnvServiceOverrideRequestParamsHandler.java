@@ -7,8 +7,11 @@
 
 package io.harness.cdng.serviceoverridesv2.validators;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 
@@ -17,12 +20,25 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(HarnessTeam.CDC)
 public class EnvServiceOverrideRequestParamsHandler implements ServiceOverrideTypeBasedRequestParamsHandler {
   @Override
-  public void validateRequest(@NotNull ServiceOverrideRequestDTOV2 requestDTOV2) {}
+  public void validateRequest(@NotNull ServiceOverrideRequestDTOV2 requestDTOV2) {
+    validateRequiredFieldForService(requestDTOV2);
+    validateRBACForService(requestDTOV2);
+
+  }
+
+  private void validateRBACForService(ServiceOverrideRequestDTOV2 requestDTOV2) {
+
+  }
+
+  private void validateRequiredFieldForService(ServiceOverrideRequestDTOV2 requestDTOV2) {
+    if (isEmpty(requestDTOV2.getServiceRef())) {
+      throw new InvalidRequestException("ServiceRef should not be empty for ENVIRONMENT-SERVICE override");
+    }
+  }
 
   @Override
   public String generateServiceOverrideIdentifier(NGServiceOverridesEntity serviceOverridesEntity) {
     return String.join("_", serviceOverridesEntity.getEnvironmentRef(), serviceOverridesEntity.getServiceRef())
         .replace(".", "_");
   }
-
 }
