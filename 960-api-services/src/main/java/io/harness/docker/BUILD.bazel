@@ -13,6 +13,7 @@ java_library(
     deps = [
         "//:lombok",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
     ],
 )
 

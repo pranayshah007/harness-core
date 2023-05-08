@@ -23,7 +23,6 @@ import io.harness.pms.contracts.advisers.InterventionWaitAdvise;
 import io.harness.pms.contracts.commons.RepairActionCode;
 import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.rule.Owner;
-import io.harness.testlib.RealMongo;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -42,7 +41,7 @@ public class InterventionWaitTimeoutCallbackTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void shouldTestGetInterruptPackage() {

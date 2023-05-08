@@ -36,7 +36,6 @@ import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
-import io.harness.template.yaml.TemplateYamlFacade;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -55,9 +54,6 @@ import org.mockito.Mock;
 @OwnedBy(HarnessTeam.CDC)
 public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   @InjectMocks private TemplateMergeServiceImpl templateMergeService;
-
-  TemplateYamlFacade templateYamlFacade = new TemplateYamlFacade();
-
   @Mock private NGTemplateServiceHelper templateServiceHelper;
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
 
@@ -81,9 +77,6 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
     on(templateMergeService).set("templateMergeServiceHelper", templateMergeServiceHelper);
     on(templateMergeService).set("ngTemplateFeatureFlagHelperService", ngTemplateFeatureFlagHelperService);
-    on(templateYamlFacade).set("featureFlagHelperService", ngTemplateFeatureFlagHelperService);
-    on(templateMergeService).set("templateYamlFacade", templateYamlFacade);
-    on(templateMergeServiceHelper).set("templateYamlFacade", templateYamlFacade);
 
     when(ngTemplateFeatureFlagHelperService.isFeatureFlagEnabled(any(), any())).thenReturn(false);
   }
@@ -741,18 +734,18 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
         + "                      outputVariables: []\n"
         + "                      executionTarget: {}\n"
         + "                  timeout: 10m";
-    String updatedYaml = "type: \"Approval\"\n"
+    String updatedYaml = "type: Approval\n"
         + "spec:\n"
         + "  execution:\n"
         + "    steps:\n"
-        + "    - step:\n"
-        + "        identifier: \"ssh\"\n"
-        + "        type: \"ShellScript\"\n"
-        + "        spec:\n"
-        + "          source:\n"
-        + "            type: \"Inline\"\n"
-        + "            spec:\n"
-        + "              script: \"cd harness\"\n";
+        + "      - step:\n"
+        + "          identifier: ssh\n"
+        + "          type: ShellScript\n"
+        + "          spec:\n"
+        + "            source:\n"
+        + "              type: Inline\n"
+        + "              spec:\n"
+        + "                script: cd harness\n";
 
     TemplateRetainVariablesResponse templateRetainVariablesResponse =
         templateMergeService.mergeTemplateInputs(originalTemplateYaml, yamlToBeUpdated);
@@ -830,13 +823,13 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
         .thenReturn(Optional.of(templateEntity));
     String templateInputYaml =
         templateMergeService.getTemplateInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "1", true);
-    String templateYaml = "type: \"ShellScript\"\n"
+    String templateYaml = "type: ShellScript\n"
         + "spec:\n"
         + "  source:\n"
-        + "    type: \"Inline\"\n"
+        + "    type: Inline\n"
         + "    spec:\n"
-        + "      script: \"<+input>\"\n"
-        + "timeout: \"<+input>\"\n"
+        + "      script: <+input>\n"
+        + "timeout: <+input>\n"
         + "";
     assertThat(templateYaml).isEqualTo(templateInputYaml);
   }

@@ -21,11 +21,13 @@ public interface SLOHealthIndicatorService {
   SLOHealthIndicator getBySLOEntity(AbstractServiceLevelObjective serviceLevelObjective);
 
   List<SLOHealthIndicator> getBySLOIdentifiers(
-      ProjectParams projectParams, List<String> serviceLevelObjectiveIdentifiers);
+      ProjectParams projectParams, List<String> serviceLevelObjectiveIdentifiers, boolean childResource);
   List<SLOHealthIndicator> getBySLOIdentifiers(String accountId, List<String> serviceLevelObjectiveIdentifiers);
   void upsert(AbstractServiceLevelObjective serviceLevelObjective);
   void delete(ProjectParams projectParams, String serviceLevelObjectiveIdentifier);
   SLOGraphData getGraphData(ProjectParams projectParams, AbstractServiceLevelObjective serviceLevelObjective);
 
   boolean getFailedState(ProjectParams projectParams, AbstractServiceLevelObjective serviceLevelObjective);
+
+  String getScopedIdentifier(SLOHealthIndicator sloHealthIndicator);
 }

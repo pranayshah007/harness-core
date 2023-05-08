@@ -77,15 +77,12 @@ import io.harness.utils.PageUtils;
 import software.wings.beans.TaskType;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Streams;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import io.serializer.HObjectMapper;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -414,22 +411,7 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
   }
 
   @Override
-  public List<Secret> getPermitted(Collection<Secret> secrets) {
-    return Streams.stream(Iterables.partition(secrets, 1000))
-        .map(this::checkAccess)
-        .flatMap(Collection::stream)
-        .collect(Collectors.toList());
-  }
-
-  @Override
-  public Page<Secret> getPaginatedResult(List<Secret> unpagedSecrets, int page, int size) {
-    if (unpagedSecrets.isEmpty()) {
-      return Page.empty();
-    }
-    return PageUtils.getPage(unpagedSecrets, page, size);
-  }
-
-  private Collection<Secret> checkAccess(List<Secret> secrets) {
+  public List<Secret> getPermitted(List<Secret> secrets) {
     Map<SecretResource, List<Secret>> secretsMap = secrets.stream().collect(groupingBy(SecretResource::fromSecret));
     List<PermissionCheckDTO> permissionChecks =
         secrets.stream()
@@ -442,9 +424,9 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
                        .resourceType(SECRET_RESOURCE_TYPE)
                        .build())
             .collect(Collectors.toList());
-    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccess(permissionChecks);
+    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
 
-    Collection<Secret> permittedSecrets = new ArrayList<>();
+    List<Secret> permittedSecrets = new ArrayList<>();
     for (AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
       if (accessControlDTO.isPermitted()) {
         permittedSecrets.add(secretsMap.get(SecretResource.fromAccessControlDTO(accessControlDTO)).get(0));
@@ -452,6 +434,14 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
     }
 
     return permittedSecrets;
+  }
+
+  @Override
+  public Page<Secret> getPaginatedResult(List<Secret> unpagedSecrets, int page, int size) {
+    if (unpagedSecrets.isEmpty()) {
+      return Page.empty();
+    }
+    return PageUtils.getPage(unpagedSecrets, page, size);
   }
 
   @Value

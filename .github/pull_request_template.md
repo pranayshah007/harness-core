@@ -42,7 +42,7 @@ You can run multiple PR check triggers by comma separating them in a single comm
 - PMD: `trigger pmd`
 - Copyright Check: `trigger copyrightcheck`
 - Feature Name Check: `trigger featurenamecheck`
-- UnitTests-ALL: `trigger utAll`
+- UnitTests-ALL: `trigger uts`
 - UnitTests-0: `trigger ut0`
 - UnitTests-1: `trigger ut1`
 - UnitTests-2: `trigger ut2`
@@ -60,6 +60,7 @@ You can run multiple PR check triggers by comma separating them in a single comm
 - Trigger all Checks: `trigger smartchecks`
 - Go Build: `trigger gobuild`
 - Validate_Reviews: `trigger review`
+- Module Dependency Check: `trigger mdc`
 </details>
 
 ## PR check failures and solutions

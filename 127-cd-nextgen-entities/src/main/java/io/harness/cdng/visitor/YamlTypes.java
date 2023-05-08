@@ -47,6 +47,7 @@ public interface YamlTypes {
   String K8S_BG_SWAP_SERVICES = StepSpecTypeConstants.K8S_BG_SWAP_SERVICES;
   String K8S_DELETE = StepSpecTypeConstants.K8S_DELETE;
   String K8S_CANARY_DELETE = StepSpecTypeConstants.K8S_CANARY_DELETE;
+  String K8S_BLUE_GREEN_STAGE_SCALE_DOWN = StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN;
 
   String HELM_DEPLOY = StepSpecTypeConstants.HELM_DEPLOY;
   String HELM_ROLLBACK = StepSpecTypeConstants.HELM_ROLLBACK;
@@ -214,6 +215,7 @@ public interface YamlTypes {
 
   // AWS SAM
   String AWS_SAM_DEPLOY = StepSpecTypeConstants.AWS_SAM_DEPLOY;
+  String AWS_SAM_BUILD = StepSpecTypeConstants.AWS_SAM_BUILD;
   String AWS_SAM_ROLLBACK = StepSpecTypeConstants.AWS_SAM_ROLLBACK;
 
   String AWS_LAMBDA_ROLLBACK = StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK;

@@ -22,9 +22,7 @@ import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import io.harness.accesscontrol.AccessControlTestBase;
@@ -38,31 +36,31 @@ import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
 import io.harness.accesscontrol.scopes.harness.ScopeMapper;
 import io.harness.account.AccountClient;
+import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.ff.FeatureFlagService;
 import io.harness.lock.PersistentLocker;
-import io.harness.ng.core.dto.AccountDTO;
-import io.harness.remote.client.CGRestUtils;
-import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import retrofit2.Call;
 
 @OwnedBy(PL)
 public class UserRoleAssignmentRemovalJobTest extends AccessControlTestBase {
   @Inject private RoleAssignmentRepository roleAssignmentRepository;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private AccountClient accountClient;
+  @Mock private AccountUtils accountUtils;
   @Inject private ScopeService scopeService;
   @Mock private PersistentLocker persistentLocker;
   private UserRoleAssignmentRemovalJob userRoleAssignmentRemovalJob;
@@ -84,15 +82,12 @@ public class UserRoleAssignmentRemovalJobTest extends AccessControlTestBase {
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
 
+    Set<String> accounts = new HashSet<>();
+    accounts.add(accountIdentifier);
     when(featureFlagService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(false);
-    when(featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountIdentifier)).thenReturn(true);
+    when(featureFlagService.getAccountIds(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS)).thenReturn(accounts);
 
-    List<AccountDTO> accountDTOs = new ArrayList<>();
-    accountDTOs.add(AccountDTO.builder().identifier(accountIdentifier).isNextGenEnabled(true).build());
-    Call<RestResponse<List<AccountDTO>>> responseCall = mock(Call.class);
-    when(accountClient.getAllAccounts()).thenReturn(responseCall);
-    mockStatic(CGRestUtils.class);
-    when(CGRestUtils.getResponse(any())).thenReturn(accountDTOs);
+    when(accountUtils.getAllNGAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
     String principalIdentifier = randomAlphabetic(10);
     RoleAssignmentDBO accountScopeUserRoleAssignment = createAccountScopeRoleAssignment(
         accountIdentifier, PrincipalType.USER, principalIdentifier, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
@@ -184,16 +179,13 @@ public class UserRoleAssignmentRemovalJobTest extends AccessControlTestBase {
     String accountIdentifier = randomAlphabetic(10);
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
+    Set<String> accounts = new HashSet<>();
+    accounts.add(accountIdentifier);
 
     when(featureFlagService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(false);
-    when(featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountIdentifier)).thenReturn(true);
+    when(featureFlagService.getAccountIds(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS)).thenReturn(accounts);
 
-    List<AccountDTO> accountDTOs = new ArrayList<>();
-    accountDTOs.add(AccountDTO.builder().identifier(accountIdentifier).isNextGenEnabled(true).build());
-    Call<RestResponse<List<AccountDTO>>> responseCall = mock(Call.class);
-    when(accountClient.getAllAccounts()).thenReturn(responseCall);
-    mockStatic(CGRestUtils.class);
-    when(CGRestUtils.getResponse(any())).thenReturn(accountDTOs);
+    when(accountUtils.getAllNGAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
     String principalIdentifier = randomAlphabetic(10);
     RoleAssignmentDBO accountScopeUserRoleAssignment = createAccountScopeRoleAssignment(
         accountIdentifier, PrincipalType.USER, principalIdentifier, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
@@ -225,16 +217,13 @@ public class UserRoleAssignmentRemovalJobTest extends AccessControlTestBase {
     String accountIdentifier = randomAlphabetic(10);
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
+    Set<String> accounts = new HashSet<>();
+    accounts.add(accountIdentifier);
+    when(featureFlagService.getAccountIds(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS)).thenReturn(accounts);
 
     when(featureFlagService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(false);
-    when(featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountIdentifier)).thenReturn(true);
 
-    List<AccountDTO> accountDTOs = new ArrayList<>();
-    accountDTOs.add(AccountDTO.builder().identifier(accountIdentifier).isNextGenEnabled(true).build());
-    Call<RestResponse<List<AccountDTO>>> responseCall = mock(Call.class);
-    when(accountClient.getAllAccounts()).thenReturn(responseCall);
-    mockStatic(CGRestUtils.class);
-    when(CGRestUtils.getResponse(any())).thenReturn(accountDTOs);
+    when(accountUtils.getAllNGAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
     String principalIdentifier = randomAlphabetic(10);
     RoleAssignmentDBO accountScopeUserRoleAssignment = createAccountScopeRoleAssignment(
         accountIdentifier, PrincipalType.USER, principalIdentifier, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
@@ -266,16 +255,13 @@ public class UserRoleAssignmentRemovalJobTest extends AccessControlTestBase {
     String accountIdentifier = randomAlphabetic(10);
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
+    Set<String> accounts = new HashSet<>();
+    accounts.add(accountIdentifier);
+    when(featureFlagService.getAccountIds(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS)).thenReturn(accounts);
 
     when(featureFlagService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(true);
-    when(featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountIdentifier)).thenReturn(true);
 
-    List<AccountDTO> accountDTOs = new ArrayList<>();
-    accountDTOs.add(AccountDTO.builder().identifier(accountIdentifier).isNextGenEnabled(true).build());
-    Call<RestResponse<List<AccountDTO>>> responseCall = mock(Call.class);
-    when(accountClient.getAllAccounts()).thenReturn(responseCall);
-    mockStatic(CGRestUtils.class);
-    when(CGRestUtils.getResponse(any())).thenReturn(accountDTOs);
+    when(accountUtils.getAllNGAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
     String principalIdentifier = randomAlphabetic(10);
     RoleAssignmentDBO accountScopeUserRoleAssignment = createAccountScopeRoleAssignment(
         accountIdentifier, PrincipalType.USER, principalIdentifier, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
@@ -310,14 +296,9 @@ public class UserRoleAssignmentRemovalJobTest extends AccessControlTestBase {
     String projectIdentifier = randomAlphabetic(10);
 
     when(featureFlagService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(false);
-    when(featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountIdentifier)).thenReturn(false);
+    when(featureFlagService.getAccountIds(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS)).thenReturn(Collections.EMPTY_SET);
 
-    List<AccountDTO> accountDTOs = new ArrayList<>();
-    accountDTOs.add(AccountDTO.builder().identifier(accountIdentifier).isNextGenEnabled(true).build());
-    Call<RestResponse<List<AccountDTO>>> responseCall = mock(Call.class);
-    when(accountClient.getAllAccounts()).thenReturn(responseCall);
-    mockStatic(CGRestUtils.class);
-    when(CGRestUtils.getResponse(any())).thenReturn(accountDTOs);
+    when(accountUtils.getAllNGAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
     String principalIdentifier = randomAlphabetic(10);
     RoleAssignmentDBO accountScopeUserRoleAssignment = createAccountScopeRoleAssignment(
         accountIdentifier, PrincipalType.USER, principalIdentifier, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);

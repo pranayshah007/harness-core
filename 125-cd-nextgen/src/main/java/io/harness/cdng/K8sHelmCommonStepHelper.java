@@ -1297,7 +1297,7 @@ public class K8sHelmCommonStepHelper {
     if (kustomizeManifestCommandFlags != null) {
       Map<String, String> commandFlags = new HashMap<>();
       for (KustomizeManifestCommandFlag kustomizeManifestCommandFlag : kustomizeManifestCommandFlags) {
-        commandFlags.put(kustomizeManifestCommandFlag.getKustomizeCommandFlagType().toKustomizeCommandName(),
+        commandFlags.put(kustomizeManifestCommandFlag.getCommandType().toKustomizeCommandName(),
             getParameterFieldValue(kustomizeManifestCommandFlag.getFlag()));
       }
       return commandFlags;

@@ -1,3 +1,4 @@
 dto-exclusion: io.harness.template.beans.TemplateDeleteListRequestDTO
 dto-exclusion: io.harness.template.TemplateFilterPropertiesDTO
+dto-exclusion: io.harness.ng.core.template.ListingScope
 operation-exclusion: io.harness.template.resources.NGTemplateResource.getTemplateReferences

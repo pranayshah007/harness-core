@@ -149,16 +149,20 @@ public class InfraStructureDefinitionVisitorHelper implements ConfigValidator, E
   }
 
   private EntityDetailProtoDTO getEntityDetailProtoDTO(String infraRef, IdentifierRef envIdentifierRef) {
-    InfraDefinitionReferenceProtoDTO infraDefinitionReferenceProtoDTO =
+    InfraDefinitionReferenceProtoDTO.Builder infraDefinitionReferenceProtoDTO =
         InfraDefinitionReferenceProtoDTO.newBuilder()
             .setAccountIdentifier(StringValue.of(envIdentifierRef.getAccountIdentifier()))
             .setOrgIdentifier(StringValue.of(defaultIfBlank(envIdentifierRef.getOrgIdentifier(), "")))
             .setProjectIdentifier(StringValue.of(defaultIfBlank(envIdentifierRef.getProjectIdentifier(), "")))
             .setIdentifier(StringValue.of(infraRef))
-            .setEnvIdentifier(StringValue.of(envIdentifierRef.getIdentifier()))
-            .build();
+            .setEnvIdentifier(StringValue.of(envIdentifierRef.getIdentifier()));
+
+    if (EmptyPredicate.isNotEmpty(envIdentifierRef.getMetadata())) {
+      infraDefinitionReferenceProtoDTO.putAllMetadata(envIdentifierRef.getMetadata());
+    }
+
     return EntityDetailProtoDTO.newBuilder()
-        .setInfraDefRef(infraDefinitionReferenceProtoDTO)
+        .setInfraDefRef(infraDefinitionReferenceProtoDTO.build())
         .setType(EntityTypeProtoEnum.INFRASTRUCTURE)
         .build();
   }

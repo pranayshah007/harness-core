@@ -98,7 +98,7 @@ public class GitFilePathHelperTest extends CategoryTest {
         .when(gitSyncConnectorHelper)
         .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), anyString());
     try {
-      gitFilePathHelper.getFileUrl(scope, connectorRef, null, filePath, dummyCommitId, gitRepositoryDTO);
+      gitFilePathHelper.getFileUrl(scope, connectorRef, null, filePath, null, gitRepositoryDTO);
     } catch (WingsException ex) {
       assertThat(ex).isInstanceOf(InvalidRequestException.class);
     }

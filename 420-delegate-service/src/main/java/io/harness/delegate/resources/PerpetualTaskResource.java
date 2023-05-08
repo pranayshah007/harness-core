@@ -69,7 +69,22 @@ public class PerpetualTaskResource {
   public Response perpetualTaskContext(@QueryParam("taskId") String taskId, @QueryParam("accountId") String accountId) {
     PerpetualTaskContextResponse response =
         PerpetualTaskContextResponse.newBuilder()
-            .setPerpetualTaskContext(perpetualTaskService.perpetualTaskContext(taskId))
+            .setPerpetualTaskContext(perpetualTaskService.perpetualTaskContext(taskId, false))
+            .build();
+    return Response.ok(response).build();
+  }
+
+  @GET
+  @Path("/context/v2")
+  @Timed
+  @DelegateAuth
+  @ExceptionMetered
+  @ApiOperation(value = "Get perpetual task context for given perpetual task", nickname = "perpetualTaskContext")
+  public Response perpetualTaskContextV2(
+      @QueryParam("taskId") String taskId, @QueryParam("accountId") String accountId) {
+    PerpetualTaskContextResponse response =
+        PerpetualTaskContextResponse.newBuilder()
+            .setPerpetualTaskContext(perpetualTaskService.perpetualTaskContext(taskId, true))
             .build();
     return Response.ok(response).build();
   }

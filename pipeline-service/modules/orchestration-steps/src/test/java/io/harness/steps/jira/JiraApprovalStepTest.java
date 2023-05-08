@@ -16,11 +16,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.exception.ApprovalStepNGException;
+import io.harness.logstreaming.ILogStreamingStepClient;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -39,6 +45,7 @@ import io.harness.steps.approval.step.jira.beans.JiraApprovalResponseData;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
 
 import java.util.Collections;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -54,8 +61,15 @@ public class JiraApprovalStepTest extends CategoryTest {
   public static final String INSTANCE_ID = "INSTANCE_ID";
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock ApprovalInstanceService approvalInstanceService;
-
+  @Mock LogStreamingStepClientFactory logStreamingStepClientFactory;
   @InjectMocks private JiraApprovalStep jiraApprovalStep;
+  private ILogStreamingStepClient logStreamingStepClient;
+
+  @Before
+  public void setup() {
+    logStreamingStepClient = mock(ILogStreamingStepClient.class);
+    when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logStreamingStepClient);
+  }
 
   @Test
   @Owner(developers = PRABU)
@@ -79,6 +93,7 @@ public class JiraApprovalStepTest extends CategoryTest {
     JiraApprovalInstance instance = (JiraApprovalInstance) approvalInstanceArgumentCaptor.getValue();
     assertThat(instance.getIssueKey()).isEqualTo(TICKET_NUMBER);
     assertThat(instance.getConnectorRef()).isEqualTo(CONNECTOR);
+    verify(logStreamingStepClient, times(1)).openStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   @Test
@@ -97,6 +112,7 @@ public class JiraApprovalStepTest extends CategoryTest {
         () -> jiraApprovalStep.handleAsyncResponse(ambiance, parameters, Collections.singletonMap("key", responseData)))
         .isInstanceOf(ApprovalStepNGException.class)
         .hasMessage("error");
+    verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   @Test
@@ -116,6 +132,7 @@ public class JiraApprovalStepTest extends CategoryTest {
     assertThat(response.getStepOutcomes().iterator().next().getOutcome())
         .isNotNull()
         .isInstanceOf(JiraApprovalOutcome.class);
+    verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   @Test
@@ -139,6 +156,7 @@ public class JiraApprovalStepTest extends CategoryTest {
     assertThat(response.getStepOutcomes().iterator().next().getOutcome())
         .isNotNull()
         .isInstanceOf(JiraApprovalOutcome.class);
+    verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   @Test
@@ -148,7 +166,8 @@ public class JiraApprovalStepTest extends CategoryTest {
     Ambiance ambiance = buildAmbiance();
     StepElementParameters parameters = getStepElementParameters();
     jiraApprovalStep.handleAbort(ambiance, parameters, null);
-    verify(approvalInstanceService).expireByNodeExecutionId(null);
+    verify(approvalInstanceService).abortByNodeExecutionId(null);
+    verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   @Test

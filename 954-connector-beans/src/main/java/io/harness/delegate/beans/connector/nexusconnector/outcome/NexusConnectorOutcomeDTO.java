@@ -10,15 +10,10 @@ package io.harness.delegate.beans.connector.nexusconnector.outcome;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
-import io.harness.delegate.beans.connector.nexusconnector.NexusAuthType;
-import io.harness.exception.InvalidRequestException;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -41,15 +36,4 @@ public class NexusConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implemen
   @NotNull @NotBlank String version;
   @Valid NexusAuthenticationOutcomeDTO auth;
   Set<String> delegateSelectors;
-
-  @Override
-  public List<DecryptableEntity> getDecryptableEntities() {
-    if (auth == null) {
-      throw new InvalidRequestException("Auth Field is Null");
-    }
-    if (auth.getType() == NexusAuthType.ANONYMOUS) {
-      return null;
-    }
-    return Collections.singletonList(auth.getSpec());
-  }
 }

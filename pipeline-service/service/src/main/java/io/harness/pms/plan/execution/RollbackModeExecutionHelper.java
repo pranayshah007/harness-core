@@ -24,6 +24,7 @@ import io.harness.plan.Node;
 import io.harness.plan.Plan;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionMetadata.Builder;
 import io.harness.pms.contracts.plan.ExecutionMode;
@@ -70,39 +71,55 @@ public class RollbackModeExecutionHelper {
   public ExecutionMetadata transformExecutionMetadata(ExecutionMetadata executionMetadata, String planExecutionID,
       ExecutionTriggerInfo triggerInfo, String accountId, String orgIdentifier, String projectIdentifier,
       ExecutionMode executionMode, PipelineStageInfo parentStageInfo, List<String> stageNodeExecutionIds) {
+    String originalPlanExecutionId = executionMetadata.getExecutionUuid();
     Builder newMetadata = executionMetadata.toBuilder()
                               .setExecutionUuid(planExecutionID)
                               .setTriggerInfo(triggerInfo)
                               .setRunSequence(pipelineMetadataService.incrementExecutionCounter(accountId,
                                   orgIdentifier, projectIdentifier, executionMetadata.getPipelineIdentifier()))
                               .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
-                              .setExecutionMode(executionMode);
+                              .setExecutionMode(executionMode)
+                              .setOriginalPlanExecutionIdForRollbackMode(originalPlanExecutionId);
     if (parentStageInfo != null) {
       newMetadata = newMetadata.setPipelineStageInfo(parentStageInfo);
     }
     if (EmptyPredicate.isNotEmpty(stageNodeExecutionIds)) {
       List<NodeExecution> rollbackStageNodeExecutions = nodeExecutionService.getAllWithFieldIncluded(
           new HashSet<>(stageNodeExecutionIds), NodeProjectionUtils.fieldsForNodeAndAmbiance);
-      newMetadata.addAllPostExecutionRollbackInfo(
-          rollbackStageNodeExecutions.stream()
-              .map(o
-                  -> PostExecutionRollbackInfo.newBuilder()
-                         .setPostExecutionRollbackStageId(o.getNodeId())
-                         .setRollbackStageStrategyMetadata(
-                             AmbianceUtils.obtainCurrentLevel(o.getAmbiance()).getStrategyMetadata())
-                         .build())
-              .collect(Collectors.toList()));
+      newMetadata.addAllPostExecutionRollbackInfo(rollbackStageNodeExecutions.stream()
+                                                      .map(ne -> createPostExecutionRollbackInfo(ne.getAmbiance()))
+                                                      .collect(Collectors.toList()));
     }
     return newMetadata.build();
   }
 
+  private PostExecutionRollbackInfo createPostExecutionRollbackInfo(Ambiance ambiance) {
+    PostExecutionRollbackInfo.Builder builder = PostExecutionRollbackInfo.newBuilder();
+    String stageId;
+    // This stageId will also be the startingNodeId in the execution graph. So if its under the
+    // strategy(Multi-deployment) then it must be set to strategy setupId so that graph is shown correctly.
+    if (AmbianceUtils.getStrategyLevelFromAmbiance(ambiance).isPresent()) {
+      // If the nodeExecutions is under the strategy, then set the stageId to strategy setupId.
+      stageId = ambiance.getLevels(ambiance.getLevelsCount() - 2).getSetupId();
+      builder.setRollbackStageStrategyMetadata(AmbianceUtils.obtainCurrentLevel(ambiance).getStrategyMetadata());
+    } else {
+      // If not under strategy then stage setupId will be the stageId.
+      stageId = AmbianceUtils.obtainCurrentSetupId(ambiance);
+    }
+    builder.setPostExecutionRollbackStageId(stageId);
+    String stageExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    builder.setOriginalStageExecutionId(stageExecutionId);
+    return builder.build();
+  }
+
   public PlanExecutionMetadata transformPlanExecutionMetadata(PlanExecutionMetadata planExecutionMetadata,
-      String planExecutionID, ExecutionMode executionMode, List<String> stageNodeExecutionIds) {
+      String planExecutionID, ExecutionMode executionMode, List<String> stageNodeExecutionIds, String updatedNotes) {
     String originalPlanExecutionId = planExecutionMetadata.getPlanExecutionId();
     PlanExecutionMetadata metadata =
         planExecutionMetadata.withPlanExecutionId(planExecutionID)
             .withProcessedYaml(transformProcessedYaml(
                 planExecutionMetadata.getProcessedYaml(), executionMode, originalPlanExecutionId))
+            .withNotes(updatedNotes) // these are updated notes given for a pipelineRollback.
             .withUuid(null); // this uuid is the mongo uuid. It is being set as null so that when this Plan Execution
                              // Metadata is saved later on in the execution, a new object is stored rather than
                              // replacing the Metadata for the original execution

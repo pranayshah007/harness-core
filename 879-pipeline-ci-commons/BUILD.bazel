@@ -10,10 +10,7 @@ load("//:tools/bazel/macros.bzl", "run_analysis")
 java_library(
     name = "module",
     srcs = glob(["src/main/java/**/*.java"]),
-    visibility = [
-        "//332-ci-manager:__subpackages__",
-        "//pipeline-service:__subpackages__",
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
         "//878-ng-common-utilities:module",

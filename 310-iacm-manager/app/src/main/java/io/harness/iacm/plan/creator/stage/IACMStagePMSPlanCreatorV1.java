@@ -62,14 +62,15 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.when.utils.RunInfoUtils;
+import io.harness.yaml.clone.Clone;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.extended.ci.codebase.PRCloneStrategy;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
+import io.harness.yaml.options.Options;
 import io.harness.yaml.registry.Registry;
-import io.harness.yaml.repository.Repository;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -191,10 +192,11 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
     switch (ctx.getTriggerInfo().getTriggerType()) {
       case WEBHOOK:
         Dependency globalDependency = ctx.getMetadata().getGlobalDependency();
-        Optional<Object> optionalRepository =
-            getDeserializedObjectFromDependency(globalDependency, YAMLFieldNameConstants.REPOSITORY);
-        Repository repository = (Repository) optionalRepository.orElse(Repository.builder().build());
-        if (ParameterField.isNull(repository.getReference())) {
+        Optional<Object> optionalOptions =
+            getDeserializedObjectFromDependency(globalDependency, YAMLFieldNameConstants.OPTIONS);
+        Options options = (Options) optionalOptions.orElse(Options.builder().build());
+        Clone clone = options.getClone();
+        if (clone == null || ParameterField.isNull(clone.getRef())) {
           return false;
         }
         break;
@@ -217,9 +219,10 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
     String stackId = specField.getNode().getField("stack").getNode().getCurrJsonNode().asText();
 
     CodeBase codeBase = getIACMCodebase(ctx, stackId);
-    Optional<Object> optionalRegistry =
-        getDeserializedObjectFromDependency(ctx.getMetadata().getGlobalDependency(), YAMLFieldNameConstants.REGISTRY);
-    Registry registry = (Registry) optionalRegistry.orElse(Registry.builder().build());
+    Optional<Object> optionalOptions =
+        getDeserializedObjectFromDependency(ctx.getMetadata().getGlobalDependency(), YAMLFieldNameConstants.OPTIONS);
+    Options options = (Options) optionalOptions.orElse(Options.builder().build());
+    Registry registry = options.getRegistry() == null ? Registry.builder().build() : options.getRegistry();
     IntegrationStageStepParametersPMS params = IntegrationStageStepParametersPMS.builder()
                                                    .infrastructure(infrastructure)
                                                    .childNodeID(childrenNodeIds.get(0))

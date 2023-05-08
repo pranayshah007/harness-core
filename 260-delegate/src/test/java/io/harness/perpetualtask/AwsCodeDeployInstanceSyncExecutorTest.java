@@ -41,6 +41,7 @@ import software.wings.service.intfc.aws.delegate.AwsEc2HelperServiceDelegate;
 import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.ec2.model.Instance;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -64,13 +65,13 @@ public class AwsCodeDeployInstanceSyncExecutorTest extends DelegateTestBase {
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @InjectMocks private AwsCodeDeployInstanceSyncExecutor executor;
 
   @Before
   public void setup() throws IOException {
-    on(executor).set("kryoSerializer", kryoSerializer);
+    on(executor).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
 
     doReturn(singletonList(new Instance()))
         .when(ec2ServiceDelegate)
@@ -95,7 +96,8 @@ public class AwsCodeDeployInstanceSyncExecutorTest extends DelegateTestBase {
 
     verify(ec2ServiceDelegate, times(1))
         .listEc2Instances(any(AwsConfig.class), anyList(), eq("us-east-1"), anyList(), eq(true));
-    verify(delegateAgentManagerClient, times(1)).publishInstanceSyncResult(eq("id"), eq("accountId"), captor.capture());
+    verify(delegateAgentManagerClient, times(1))
+        .publishInstanceSyncResultV2(eq("id"), eq("accountId"), captor.capture());
     verifySuccessResponse(perpetualTaskResponse, captor.getValue());
 
     doThrow(new RuntimeException()).when(call).execute();
@@ -124,7 +126,7 @@ public class AwsCodeDeployInstanceSyncExecutorTest extends DelegateTestBase {
 
     doReturn(call)
         .when(delegateAgentManagerClient)
-        .publishInstanceSyncResult(anyString(), anyString(), any(DelegateResponseData.class));
+        .publishInstanceSyncResultV2(anyString(), anyString(), any(DelegateResponseData.class));
     doThrow(new InvalidRequestException("Invalid deployment id"))
         .when(ec2ServiceDelegate)
         .listEc2Instances(any(AwsConfig.class), anyList(), eq("us-east-1"), anyList(), eq(true));
@@ -133,7 +135,8 @@ public class AwsCodeDeployInstanceSyncExecutorTest extends DelegateTestBase {
 
     verify(ec2ServiceDelegate, times(1))
         .listEc2Instances(any(AwsConfig.class), anyList(), anyString(), anyList(), eq(true));
-    verify(delegateAgentManagerClient, times(1)).publishInstanceSyncResult(eq("id"), eq("accountId"), captor.capture());
+    verify(delegateAgentManagerClient, times(1))
+        .publishInstanceSyncResultV2(eq("id"), eq("accountId"), captor.capture());
     verifyFailureResponse(perpetualTaskResponse, captor.getValue());
   }
 
@@ -149,17 +152,20 @@ public class AwsCodeDeployInstanceSyncExecutorTest extends DelegateTestBase {
 
   private PerpetualTaskExecutionParams getPerpetualTaskParams() {
     ByteString configBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(AwsConfig.builder().accountId("accountId").build()));
-    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
+        ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(AwsConfig.builder().accountId("accountId").build()));
+    ByteString encryptionDetailsBytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(new ArrayList<>()));
     AwsCodeDeployInstanceSyncPerpetualTaskParams.Builder paramsBuilder =
         AwsCodeDeployInstanceSyncPerpetualTaskParams.newBuilder();
 
     paramsBuilder.setRegion("us-east-1");
     paramsBuilder.setAwsConfig(configBytes);
     paramsBuilder.setEncryptedData(encryptionDetailsBytes);
-    ByteString filterBytes = ByteString.copyFrom(kryoSerializer.asBytes(singletonList(new Filter())));
+    ByteString filterBytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(singletonList(new Filter())));
     paramsBuilder.setFilter(filterBytes);
 
-    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(paramsBuilder.build())).build();
+    return PerpetualTaskExecutionParams.newBuilder()
+        .setCustomizedParams(Any.pack(paramsBuilder.build()))
+        .setReferenceFalseKryoSerializer(true)
+        .build();
   }
 }

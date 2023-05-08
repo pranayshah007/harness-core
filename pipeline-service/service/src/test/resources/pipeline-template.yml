@@ -1,0 +1,15 @@
+pipeline:
+  name: temppipeline
+  identifier: temppipeline
+  template:
+    templateRef: PipelineTemp
+    versionLabel: v1
+    templateInputs:
+      properties:
+        ci:
+          codebase:
+            repoName: <+input>
+            build: <+input>
+  tags: {}
+  projectIdentifier: default
+  orgIdentifier: default

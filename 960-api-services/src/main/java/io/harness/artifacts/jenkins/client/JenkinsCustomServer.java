@@ -16,6 +16,7 @@ import software.wings.helpers.ext.jenkins.model.JobWithExtendedDetails;
 import com.offbytwo.jenkins.JenkinsServer;
 import com.offbytwo.jenkins.client.JenkinsHttpClient;
 import com.offbytwo.jenkins.client.util.EncodingUtils;
+import com.offbytwo.jenkins.model.BuildWithDetails;
 import com.offbytwo.jenkins.model.FolderJob;
 import com.offbytwo.jenkins.model.Job;
 import com.offbytwo.jenkins.model.JobWithDetails;
@@ -39,6 +40,21 @@ public class JenkinsCustomServer extends JenkinsServer {
       jobWithExtendedDetails.setClient(client);
 
       return jobWithExtendedDetails;
+    } catch (HttpResponseException e) {
+      if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+        return null;
+      }
+      throw e;
+    }
+  }
+
+  public BuildWithDetails getBuildDetail(FolderJob folder, String jobName, String buildNumber) throws IOException {
+    try {
+      JobWithExtendedDetails jobWithExtendedDetails =
+          client.get(toJobUrl(folder, jobName) + "/" + buildNumber, JobWithExtendedDetails.class);
+      String url = jobWithExtendedDetails.getUrl();
+      BuildWithDetails buildWithDetails = client.get(url, BuildWithDetails.class);
+      return buildWithDetails;
     } catch (HttpResponseException e) {
       if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
         return null;

@@ -8,16 +8,12 @@
 package io.harness.delegate.beans.connector.bamboo.outcome;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.delegate.beans.connector.bamboo.BambooAuthType.ANONYMOUS;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -43,12 +39,4 @@ public class BambooConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO impleme
   @URL @NotNull @NotBlank String bambooUrl;
   @Valid BambooAuthenticationOutcomeDTO auth;
   Set<String> delegateSelectors;
-
-  @Override
-  public List<DecryptableEntity> getDecryptableEntities() {
-    if (auth.getType() == ANONYMOUS) {
-      return null;
-    }
-    return Collections.singletonList(auth.getSpec());
-  }
 }

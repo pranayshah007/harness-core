@@ -9,6 +9,8 @@ package io.harness.delegate.task.shell.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.shell.ssh.CommandHandler.RESOLVED_ENV_VARIABLES_KEY;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_ARTIFACT_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_SSH_CONFIG_FILE_HINT;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.VITALIE;
@@ -142,6 +144,34 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = ACASIAN)
   @Category(UnitTests.class)
+  public void testShouldCopyArtifactWithSshFileExecutorScpFailure() {
+    doReturn(fileBasedSshScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
+    when(fileBasedSshScriptExecutorNG.copyFiles(any())).thenReturn(CommandExecutionStatus.FAILURE);
+
+    assertThatThrownBy(()
+                           -> sshCopyCommandHandler.handle(getParameters(false, true), copyCommandUnit,
+                               logStreamingTaskClient, commandUnitsProgress, taskContext))
+        .isInstanceOf(HintException.class)
+        .hasMessage(FAILED_TO_COPY_ARTIFACT_HINT);
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testShouldCopyArtifactWithSshFileExecutorOnDelegateScpFailure() {
+    doReturn(fileBasedProcessScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
+    when(fileBasedProcessScriptExecutorNG.copyFiles(any())).thenReturn(CommandExecutionStatus.FAILURE);
+
+    assertThatThrownBy(()
+                           -> sshCopyCommandHandler.handle(getParameters(true, true), copyCommandUnit,
+                               logStreamingTaskClient, commandUnitsProgress, taskContext))
+        .isInstanceOf(HintException.class)
+        .hasMessage(FAILED_TO_COPY_ARTIFACT_HINT);
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
   public void testShouldFailCopyArtifactWithSshFileExecutorIfNoArtifact() {
     doReturn(fileBasedSshScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
     when(fileBasedSshScriptExecutorNG.copyFiles(any())).thenReturn(CommandExecutionStatus.SUCCESS);
@@ -213,6 +243,48 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
     ArgumentCaptor<ConfigFileParameters> configFileArgumentCaptor = ArgumentCaptor.forClass(ConfigFileParameters.class);
     verify(fileBasedProcessScriptExecutorNG, times(2)).copyConfigFiles(eq("/test"), configFileArgumentCaptor.capture());
     assertConfigFile(configFileArgumentCaptor.getValue());
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testShouldCopyConfigFileWithSshFileExecutorScpError() {
+    doReturn(fileBasedSshScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
+    when(fileBasedSshScriptExecutorNG.copyConfigFiles(any(), any())).thenReturn(CommandExecutionStatus.FAILURE);
+    when(secretDecryptionService.decrypt(any(), any()))
+        .thenReturn(SecretConfigFile.builder()
+                        .encryptedConfigFile(SecretRefData.builder()
+                                                 .identifier("secret-ref")
+                                                 .decryptedValue("This is a secret".toCharArray())
+                                                 .build())
+                        .build());
+
+    assertThatThrownBy(()
+                           -> sshCopyCommandHandler.handle(getParameters(false, false), copyConfigCommandUnit,
+                               logStreamingTaskClient, commandUnitsProgress, taskContext))
+        .isInstanceOf(HintException.class)
+        .hasMessage(FAILED_TO_COPY_SSH_CONFIG_FILE_HINT);
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testShouldCopyConfigFileWithSshFileExecutorOnDelegateScpError() {
+    doReturn(fileBasedProcessScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
+    when(fileBasedProcessScriptExecutorNG.copyConfigFiles(any(), any())).thenReturn(CommandExecutionStatus.FAILURE);
+    when(secretDecryptionService.decrypt(any(), any()))
+        .thenReturn(SecretConfigFile.builder()
+                        .encryptedConfigFile(SecretRefData.builder()
+                                                 .identifier("secret-ref")
+                                                 .decryptedValue("This is a secret".toCharArray())
+                                                 .build())
+                        .build());
+
+    assertThatThrownBy(()
+                           -> sshCopyCommandHandler.handle(getParameters(true, false), copyConfigCommandUnit,
+                               logStreamingTaskClient, commandUnitsProgress, taskContext))
+        .isInstanceOf(HintException.class)
+        .hasMessage(FAILED_TO_COPY_SSH_CONFIG_FILE_HINT);
   }
 
   @Test

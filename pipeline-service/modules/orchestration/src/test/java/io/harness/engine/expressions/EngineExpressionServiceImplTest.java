@@ -28,7 +28,6 @@ import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.rule.Owner;
-import io.harness.testlib.RealMongo;
 import io.harness.utils.AmbianceTestUtils;
 import io.harness.utils.DummyOrchestrationOutcome;
 import io.harness.utils.DummySweepingOutput;
@@ -66,7 +65,7 @@ public class EngineExpressionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   @Ignore("Move to PmsServiceImpl Test")
@@ -78,7 +77,7 @@ public class EngineExpressionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   @Ignore("Move to PmsServiceImpl Test")
@@ -90,7 +89,7 @@ public class EngineExpressionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   @Ignore("Move to PmsServiceImpl Test")

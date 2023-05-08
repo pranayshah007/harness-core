@@ -8,7 +8,7 @@
 package io.harness.cvng.core.utils.monitoredService;
 
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.StackdriverLogHealthSourceSpec;
-import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.StackdriverLogHealthSourceSpec.QueryDTO;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.StackdriverLogHealthSourceSpec.StackdriverLogHealthSourceQueryDTO;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig;
 
 import com.google.common.base.Preconditions;
@@ -30,7 +30,7 @@ public class StackdriverLogHealthSourceSpecTransformer
         .feature(cvConfigs.get(0).getProductName())
         .queries(cvConfigs.stream()
                      .map(cv
-                         -> QueryDTO.builder()
+                         -> StackdriverLogHealthSourceQueryDTO.builder()
                                 .name(cv.getQueryName())
                                 .query(cv.getQuery())
                                 .messageIdentifier(cv.getMessageIdentifier())

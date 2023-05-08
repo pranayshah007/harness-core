@@ -48,6 +48,8 @@ import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory
 import io.harness.idp.gitintegration.resources.ConnectorInfoApiImpl;
 import io.harness.idp.gitintegration.service.GitIntegrationService;
 import io.harness.idp.gitintegration.service.GitIntegrationServiceImpl;
+import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsCache;
+import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsInMemoryCache;
 import io.harness.idp.health.resources.HealthResource;
 import io.harness.idp.health.service.HealthResourceImpl;
 import io.harness.idp.k8s.client.K8sApiClient;
@@ -313,6 +315,7 @@ public class IdpModule extends AbstractModule {
         .annotatedWith(Names.named("DefaultPREnvAccountIdToNamespaceMappingCreator"))
         .toInstance(new ManagedExecutorService(Executors.newSingleThreadExecutor()));
     bind(HealthResource.class).to(HealthResourceImpl.class);
+    bind(DelegateSelectorsCache.class).to(DelegateSelectorsInMemoryCache.class);
 
     MapBinder<BackstageEnvVariableType, BackstageEnvVariableMapper> backstageEnvVariableMapBinder =
         MapBinder.newMapBinder(binder(), BackstageEnvVariableType.class, BackstageEnvVariableMapper.class);

@@ -7,6 +7,8 @@
 
 package io.harness.cvng.servicelevelobjective.services.impl;
 
+import static io.harness.cvng.utils.ScopedInformation.getScopedInformation;
+
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.DataCollectionTask;
@@ -29,6 +31,7 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorS
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.time.Clock;
 import java.time.Instant;
@@ -82,12 +85,15 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
 
   @Override
   public List<SLOHealthIndicator> getBySLOIdentifiers(
-      ProjectParams projectParams, List<String> serviceLevelObjectiveIdentifiers) {
-    return hPersistence.createQuery(SLOHealthIndicator.class)
-        .filter(SLOHealthIndicatorKeys.accountId, projectParams.getAccountIdentifier())
-        .filter(SLOHealthIndicatorKeys.orgIdentifier, projectParams.getOrgIdentifier())
-        .filter(SLOHealthIndicatorKeys.projectIdentifier, projectParams.getProjectIdentifier())
-        .field(SLOHealthIndicatorKeys.serviceLevelObjectiveIdentifier)
+      ProjectParams projectParams, List<String> serviceLevelObjectiveIdentifiers, boolean childResource) {
+    Query<SLOHealthIndicator> query =
+        hPersistence.createQuery(SLOHealthIndicator.class)
+            .filter(SLOHealthIndicatorKeys.accountId, projectParams.getAccountIdentifier());
+    if (!childResource) {
+      query = query.filter(SLOHealthIndicatorKeys.orgIdentifier, projectParams.getOrgIdentifier())
+                  .filter(SLOHealthIndicatorKeys.projectIdentifier, projectParams.getProjectIdentifier());
+    }
+    return query.field(SLOHealthIndicatorKeys.serviceLevelObjectiveIdentifier)
         .in(serviceLevelObjectiveIdentifiers)
         .asList();
   }
@@ -193,5 +199,11 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
     Instant currentTimeMinute = DateTimeUtils.roundDownTo1MinBoundary(clock.instant());
     return graphDataService.getGraphData(serviceLevelObjective,
         timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes, 0L);
+  }
+
+  @Override
+  public String getScopedIdentifier(SLOHealthIndicator sloHealthIndicator) {
+    return getScopedInformation(sloHealthIndicator.getAccountId(), sloHealthIndicator.getOrgIdentifier(),
+        sloHealthIndicator.getProjectIdentifier(), sloHealthIndicator.getServiceLevelObjectiveIdentifier());
   }
 }

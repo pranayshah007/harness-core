@@ -10,7 +10,7 @@ package io.harness.steps.container.utils;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_PREFIX;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_REQUEST_MEMORY_MIB;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_REQUEST_MILLI_CPU;
-import static io.harness.steps.container.ContainerStepInitHelper.getKubernetesStandardPodName;
+import static io.harness.pms.sdk.core.plugin.ContainerUnitStepUtils.getKubernetesStandardPodName;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -29,6 +29,7 @@ import io.harness.steps.plugin.InitContainerV2StepInfo;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.yaml.core.variables.SecretNGVariable;
 
+import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,11 +49,10 @@ public class ContainerStepV2DefinitionCreator {
 
     initContainerV2StepInfo.getPluginsData().forEach((stepInfo, value) -> {
       PluginDetails pluginDetails = value.getPluginDetails();
-      // Todo(Sahil): Currently with ci it is not working. A small change is required inorder to find the port in CI.
-      //      String stepIdentifier = stepInfo.getStepIdentifier();
-      //      if (Strings.isNotBlank(stepGroupIdentifier)) {
-      //        stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
-      //      }
+      String stepIdentifier = stepInfo.getStepIdentifier();
+      if (Strings.isNotBlank(stepGroupIdentifier)) {
+        stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
+      }
       String identifier = getKubernetesStandardPodName(stepInfo.getStepIdentifier());
       String containerName = String.format("%s%s", STEP_PREFIX, identifier).toLowerCase();
       Map<String, String> envMap = new HashMap<>(pluginDetails.getEnvVariablesMap());
@@ -78,7 +78,7 @@ public class ContainerStepV2DefinitionCreator {
               // Using this as proto object is being serialized
               .ports(new ArrayList<Integer>(pluginDetails.getPortUsedList()))
               .containerType(CIContainerType.PLUGIN)
-              .stepIdentifier(identifier)
+              .stepIdentifier(stepIdentifier)
               .stepName(stepInfo.getStepIdentifier())
               .imagePullPolicy(StringValueUtils.getStringFromStringValue(
                   pluginDetails.getImageDetails().getImageInformation().getImagePullPolicy()))

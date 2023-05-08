@@ -56,6 +56,8 @@ public class SLODashboardWidget {
   @NotNull boolean isTotalErrorBudgetApplicable;
   @NotNull boolean isRecalculatingSLI;
   @NotNull boolean isCalculatingSLI;
+
+  SLOError sloError;
   @Value
   @Builder
   public static class BurnRate {

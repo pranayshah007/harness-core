@@ -46,6 +46,12 @@ public class CgInstanceSyncTaskDetailsService {
   public boolean delete(String taskDetailsId) {
     return mongoPersistence.delete(InstanceSyncTaskDetails.class, taskDetailsId);
   }
+  public boolean deleteByInfraMappingId(String accountId, String infraMappingId) {
+    Query<InstanceSyncTaskDetails> query = mongoPersistence.createQuery(InstanceSyncTaskDetails.class)
+                                               .filter(InstanceSyncTaskDetailsKeys.accountId, accountId)
+                                               .filter(InstanceSyncTaskDetailsKeys.infraMappingId, infraMappingId);
+    return mongoPersistence.delete(query);
+  }
 
   public InstanceSyncTaskDetails getForId(String taskDetailsId) {
     return mongoPersistence.get(InstanceSyncTaskDetails.class, taskDetailsId);

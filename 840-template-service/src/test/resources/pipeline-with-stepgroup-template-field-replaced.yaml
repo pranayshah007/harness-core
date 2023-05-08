@@ -1,54 +1,54 @@
 pipeline:
-  name: "testPipelineWithStepGroup"
-  identifier: "testPipelineWithStepGroup"
+  name: testPipelineWithStepGroup
+  identifier: testPipelineWithStepGroup
   stages:
-  - stage:
-      name: "gfd"
-      identifier: "gfd"
-      type: "Approval"
-      spec:
-        execution:
-          steps:
-          - stepGroup:
-              identifier: "dfs"
-              name: "dfs"
-              stageType: "Deployment"
-              steps:
-              - step:
-                  type: "ShellScript"
-                  name: "Shell Script"
-                  identifier: "ShellScript"
-                  spec:
-                    shell: "Bash"
-                    onDelegate: true
-                    source:
-                      type: "Inline"
-                      spec:
-                        script: "echo \"high\""
-                    environmentVariables: []
-                    outputVariables: []
-                  timeout: "10m"
+    - stage:
+        name: gfd
+        identifier: gfd
+        type: Approval
+        spec:
+          execution:
+            steps:
               - stepGroup:
-                  identifier: "dfss"
-                  name: "dfsss"
-                  stageType: "Deployment"
+                  identifier: dfs
+                  name: dfs
+                  stageType: Deployment
                   steps:
-                  - step:
-                      type: "ShellScript"
-                      name: "Shell Script"
-                      identifier: "ShellScript"
-                      spec:
-                        shell: "Bash"
-                        onDelegate: true
-                        source:
-                          type: "Inline"
-                          spec:
-                            script: "echo \"hi\""
-                        environmentVariables: []
+                    - step:
+                        type: ShellScript
+                        name: Shell Script
+                        identifier: ShellScript
+                        spec:
+                          shell: Bash
+                          onDelegate: true
+                          source:
+                            type: Inline
+                            spec:
+                              script: echo "high"
+                          environmentVariables: []
+                          outputVariables: []
+                        timeout: 10m
+                    - stepGroup:
+                        identifier: dfss
+                        name: dfsss
+                        stageType: Deployment
+                        steps:
+                          - step:
+                              type: ShellScript
+                              name: Shell Script
+                              identifier: ShellScript
+                              spec:
+                                shell: Bash
+                                onDelegate: true
+                                source:
+                                  type: Inline
+                                  spec:
+                                    script: echo "hi"
+                                environmentVariables: []
+                                outputVariables: []
+                              timeout: 10m
                         outputVariables: []
-                      timeout: "10m"
                   outputVariables: []
-              outputVariables: []
   tags: {}
-  projectIdentifier: "njh"
-  orgIdentifier: "default"
+  projectIdentifier: njh
+  orgIdentifier: default

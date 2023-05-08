@@ -19,6 +19,7 @@ import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.gitsync.GitSdkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.mongo.MongoConfig;
+import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
 
 import ch.qos.logback.access.spi.IAccessEvent;
@@ -56,7 +57,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
-import org.reflections.Reflections;
+import org.apache.commons.lang3.StringUtils;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -133,8 +134,11 @@ public class TemplateServiceConfiguration extends Configuration {
   }
 
   public static Collection<Class<?>> getResourceClasses() {
-    Reflections reflections = new Reflections(RESOURCE_PACKAGE, FILTER_PACKAGE, SERVER_STUB);
-    return reflections.getTypesAnnotatedWith(Path.class);
+    return HarnessReflections.get()
+        .getTypesAnnotatedWith(Path.class)
+        .stream()
+        .filter(klazz -> StringUtils.startsWithAny(klazz.getPackage().getName(), RESOURCE_PACKAGE, FILTER_PACKAGE))
+        .collect(Collectors.toSet());
   }
 
   private ConnectorFactory getDefaultAdminConnectorFactory() {

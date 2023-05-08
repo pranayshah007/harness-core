@@ -905,7 +905,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
     // entities are <=1. Checking error message
     when(pmsExecutionSummaryRepository.fetchPipelineSummaryEntityFromRootParentIdUsingSecondaryMongo(rootExecutionId))
         .thenReturn(PipelineServiceTestHelper.createCloseableIterator(pipelineExecutionSummaryEntities.iterator()));
-    RetryHistoryResponseDto retryHistory = retryExecuteHelper.getRetryHistory(rootExecutionId);
+    RetryHistoryResponseDto retryHistory = retryExecuteHelper.getRetryHistory(rootExecutionId, "planExecutionId");
     assertThat(retryHistory.getErrorMessage()).isNotNull();
 
     pipelineExecutionSummaryEntities = Arrays.asList(PipelineExecutionSummaryEntity.builder()
@@ -929,7 +929,10 @@ public class RetryExecuteHelperTest extends CategoryTest {
 
     when(pmsExecutionSummaryRepository.fetchPipelineSummaryEntityFromRootParentIdUsingSecondaryMongo(rootExecutionId))
         .thenReturn(PipelineServiceTestHelper.createCloseableIterator(pipelineExecutionSummaryEntities.iterator()));
-    retryHistory = retryExecuteHelper.getRetryHistory(rootExecutionId);
+    doReturn(Optional.of(PlanExecutionMetadata.builder().build()))
+        .when(planExecutionMetadataService)
+        .findByPlanExecutionId("planExecutionId");
+    retryHistory = retryExecuteHelper.getRetryHistory(rootExecutionId, "planExecutionId");
     assertThat(retryHistory.getErrorMessage()).isNull();
     assertThat(retryHistory.getLatestExecutionId()).isEqualTo("uuid1");
     assertThat(retryHistory.getExecutionInfos().size()).isEqualTo(3);

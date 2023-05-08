@@ -10,13 +10,18 @@ package io.harness.delegate.beans.connector;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DecryptableEntity;
 import io.harness.delegate.beans.connector.artifactoryconnector.outcome.ArtifactoryConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.awsconnector.outcome.AwsConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.awskmsconnector.outcome.AwsKmsConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.awssecretmanager.outcome.AwsSecretManagerOutcomeDTO;
 import io.harness.delegate.beans.connector.azureartifacts.outcome.AzureArtifactsConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.azureconnector.outcome.AzureConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.azurekeyvaultconnector.outcome.AzureKeyVaultConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.customsecretmanager.outcome.CustomSecretManagerConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.docker.outcome.DockerConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.gcpconnector.outcome.GcpConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.gcpkmsconnector.outcome.GcpKmsConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.gcpsecretmanager.outcome.GcpSecretManagerConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.helm.outcome.HttpHelmConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.helm.outcome.OciHelmConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.jenkins.outcome.JenkinsConnectorOutcomeDTO;
@@ -30,13 +35,12 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.outcome.GitCo
 import io.harness.delegate.beans.connector.scm.github.outcome.GithubConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.outcome.GitlabConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.tasconnector.outcome.TasConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.vaultconnector.outcome.VaultConnectorOutcomeDTO;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSubTypes({
@@ -58,13 +62,19 @@ import java.util.List;
       @JsonSubTypes.Type(value = HttpHelmConnectorOutcomeDTO.class, name = "HttpHelmRepoOutcome"),
       @JsonSubTypes.Type(value = AwsCodeCommitConnectorOutcomeDTO.class, name = "CodecommitOutcome"),
       @JsonSubTypes.Type(value = BitbucketConnectorOutcomeDTO.class, name = "BitbucketOutcome"),
-      @JsonSubTypes.Type(value = AzureRepoConnectorOutcomeDTO.class, name = "AzureRepoOutcome")
+      @JsonSubTypes.Type(value = AzureRepoConnectorOutcomeDTO.class, name = "AzureRepoOutcome"),
+      @JsonSubTypes.Type(value = AwsKmsConnectorOutcomeDTO.class, name = "AwsKmsConnectorOutcome"),
+      @JsonSubTypes.Type(value = AwsSecretManagerOutcomeDTO.class, name = "AwsSecretManagerOutcome"),
+      @JsonSubTypes.Type(value = AzureKeyVaultConnectorOutcomeDTO.class, name = "AzureKeyVaultConnectorOutcome"),
+      @JsonSubTypes.Type(
+          value = CustomSecretManagerConnectorOutcomeDTO.class, name = "CustomSecretManagerConnectorOutcome"),
+      @JsonSubTypes.Type(value = GcpKmsConnectorOutcomeDTO.class, name = " GcpKmsConnectorOutcome"),
+      @JsonSubTypes.Type(value = GcpSecretManagerConnectorOutcomeDTO.class, name = "GcpSecretManagerConnectorOutcome"),
+      @JsonSubTypes.Type(value = VaultConnectorOutcomeDTO.class, name = "VaultConnectorOutcome")
 })
 @OwnedBy(DX)
 @Schema(
     name = "ConnectorConfigOutcome", description = "This is the view of the ConnectorConfig entity defined in Harness")
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME, property = "connectorType", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)
-public abstract class ConnectorConfigOutcomeDTO implements DecryptableEntity {
-  @JsonIgnore public abstract List<DecryptableEntity> getDecryptableEntities();
-}
+public abstract class ConnectorConfigOutcomeDTO {}

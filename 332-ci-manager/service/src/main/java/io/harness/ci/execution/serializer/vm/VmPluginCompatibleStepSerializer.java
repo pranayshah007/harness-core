@@ -12,6 +12,8 @@ import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.PluginSettingUtils;
+import io.harness.ci.config.CIDockerLayerCachingConfig;
+import io.harness.ci.execution.CIDockerLayerCachingConfigService;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
@@ -33,7 +35,9 @@ import io.harness.yaml.core.timeout.Timeout;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 @Singleton
 public class VmPluginCompatibleStepSerializer {
@@ -42,6 +46,7 @@ public class VmPluginCompatibleStepSerializer {
   @Inject private HarnessImageUtils harnessImageUtils;
   @Inject private PluginSettingUtils pluginSettingUtils;
   @Inject private CIFeatureFlagService featureFlagService;
+  @Inject private CIDockerLayerCachingConfigService dockerLayerCachingConfigService;
 
   public VmStepInfo serialize(Ambiance ambiance, PluginCompatibleStep pluginCompatibleStep,
       StageInfraDetails stageInfraDetails, String identifier, ParameterField<Timeout> parameterFieldTimeout,
@@ -100,5 +105,41 @@ public class VmPluginCompatibleStepSerializer {
     ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorRef);
     connectorDetails.setEnvToSecretsMap(connectorSecretEnvMap);
     return connectorDetails;
+  }
+
+  public Set<String> preProcessStep(Ambiance ambiance, PluginCompatibleStep pluginCompatibleStep,
+      StageInfraDetails stageInfraDetails, String identifier) {
+    Set<String> secretSet = new HashSet<>();
+    if (CIStepInfoUtils.canRunVmStepOnHost(pluginCompatibleStep.getNonYamlInfo().getStepInfoType(), stageInfraDetails,
+            AmbianceUtils.getAccountId(ambiance), ciExecutionConfigService, featureFlagService)) {
+      // Check if DLC Setup is required
+      if (pluginSettingUtils.dlcSetupRequired(pluginCompatibleStep)) {
+        Set<String> dlcSecrets = setupDlc(pluginCompatibleStep, AmbianceUtils.getAccountId(ambiance), identifier);
+        secretSet.addAll(dlcSecrets);
+      }
+    }
+    return secretSet;
+  }
+
+  private Set<String> setupDlc(PluginCompatibleStep stepInfo, String accountId, String identifier) {
+    Set<String> stepSecrets = new HashSet<>();
+    // Get DLC Config for the accountId
+    CIDockerLayerCachingConfig config = dockerLayerCachingConfigService.getDockerLayerCachingConfig(accountId);
+    if (config == null) {
+      // Nothing to add
+      return stepSecrets;
+    }
+    // Get DLC Prefix
+    String prefix = pluginSettingUtils.getDlcPrefix(accountId, identifier, stepInfo);
+    // Set the DLC args
+    pluginSettingUtils.setupDlcArgs(stepInfo, identifier,
+        dockerLayerCachingConfigService.getCacheFromArg(config, prefix),
+        dockerLayerCachingConfigService.getCacheToArg(config, prefix));
+    stepSecrets.add(config.getEndpoint());
+    stepSecrets.add(config.getBucket());
+    stepSecrets.add(config.getAccessKey());
+    stepSecrets.add(config.getSecretKey());
+    stepSecrets.add(config.getRegion());
+    return stepSecrets;
   }
 }

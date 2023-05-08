@@ -38,6 +38,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
+import org.bson.BsonDocument;
+import org.bson.BsonInt32;
+import org.bson.BsonInt64;
+import org.bson.BsonString;
+import org.bson.codecs.configuration.CodecRegistry;
+import org.bson.conversions.Bson;
 
 @Data
 @Builder(buildMethodName = "unsafeBuild")
@@ -50,7 +56,7 @@ import lombok.experimental.FieldNameConstants;
 @Entity(value = "sliRecords", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-public class SLIRecord extends VerificationTaskBase implements PersistentEntity, UuidAware {
+public class SLIRecord extends VerificationTaskBase implements PersistentEntity, UuidAware, Bson {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -60,6 +66,23 @@ public class SLIRecord extends VerificationTaskBase implements PersistentEntity,
                  .build())
         .build();
   }
+
+  @Override
+  public <TDocument> BsonDocument toBsonDocument(Class<TDocument> aClass, CodecRegistry codecRegistry) {
+    BsonDocument bsonDocument = new BsonDocument();
+    if (uuid != null) {
+      bsonDocument.append(SLIRecordKeys.uuid, new BsonString(uuid));
+    }
+    bsonDocument.append(SLIRecordKeys.verificationTaskId, new BsonString(verificationTaskId));
+    bsonDocument.append(SLIRecordKeys.sliId, new BsonString(sliId));
+    bsonDocument.append(SLIRecordKeys.epochMinute, new BsonInt64(epochMinute));
+    bsonDocument.append(SLIRecordKeys.runningBadCount, new BsonInt64(runningBadCount));
+    bsonDocument.append(SLIRecordKeys.runningGoodCount, new BsonInt64(runningGoodCount));
+    bsonDocument.append(SLIRecordKeys.sliVersion, new BsonInt32(sliVersion));
+    bsonDocument.append(SLIRecordKeys.sliState, new BsonString(sliState.toString()));
+    return bsonDocument;
+  }
+
   public static class SLIRecordBuilder {
     public SLIRecord build() {
       SLIRecord sliRecord = unsafeBuild();

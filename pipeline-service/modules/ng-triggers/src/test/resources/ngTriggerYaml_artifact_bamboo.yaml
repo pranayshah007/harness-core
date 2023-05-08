@@ -15,7 +15,7 @@ trigger:
       spec:
         connectorRef: account.conn
         planKey: test1
-        artifactPath:
+        artifactPaths:
           - us-east-1
         build: <+trigger.artifact.build>
         eventConditions:

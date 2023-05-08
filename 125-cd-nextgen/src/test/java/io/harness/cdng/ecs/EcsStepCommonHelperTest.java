@@ -370,6 +370,7 @@ public class EcsStepCommonHelperTest extends CategoryTest {
     Optional<FileStoreNodeDTO> manifestFile = Optional.of(FileNodeDTO.builder().content("content").build());
     doReturn(manifestFile).when(fileStoreService).getWithChildrenByPath(any(), any(), any(), any(), anyBoolean());
     doReturn(content).when(engineExpressionService).renderExpression(any(), any());
+    doReturn(content).when(engineExpressionService).renderExpression(any(), any(), any());
 
     EcsInfraConfig ecsInfraConfig = EcsInfraConfig.builder().build();
     doReturn(ecsInfraConfig).when(ecsStepCommonHelper).getEcsInfraConfig(any(), any());
@@ -433,6 +434,7 @@ public class EcsStepCommonHelperTest extends CategoryTest {
 
     EcsInfraConfig ecsInfraConfig = EcsInfraConfig.builder().build();
     doReturn(ecsInfraConfig).when(ecsStepCommonHelper).getEcsInfraConfig(any(), any());
+    doReturn(content).when(engineExpressionService).renderExpression(any(), any(), any());
 
     ecsStepCommonHelper.startChainLink(ecsBlueGreenCreateServiceStep, ambiance, stepElementParameters, ecsStepHelper);
 
@@ -476,6 +478,7 @@ public class EcsStepCommonHelperTest extends CategoryTest {
     Optional<FileStoreNodeDTO> manifestFile = Optional.of(FileNodeDTO.builder().content(content).build());
     doReturn(manifestFile).when(fileStoreService).getWithChildrenByPath(any(), any(), any(), any(), anyBoolean());
     doReturn(content).when(engineExpressionService).renderExpression(any(), any());
+    doReturn(content).when(engineExpressionService).renderExpression(any(), any(), any());
 
     EcsInfraConfig ecsInfraConfig = EcsInfraConfig.builder().build();
     doReturn(ecsInfraConfig).when(ecsStepCommonHelper).getEcsInfraConfig(any(), any());
@@ -521,6 +524,7 @@ public class EcsStepCommonHelperTest extends CategoryTest {
                                     .taskStatus(TaskStatus.SUCCESS)
                                     .build();
     doReturn(content).when(engineExpressionService).renderExpression(any(), eq(content));
+    doReturn(content).when(engineExpressionService).renderExpression(any(), any(), any());
 
     ecsStepCommonHelper.executeNextLinkRolling(ecsStepExecutor, ambiance, stepElementParameters,
         ecsGitFetchPassThroughData, () -> responseData, ecsStepHelper);
@@ -699,6 +703,7 @@ public class EcsStepCommonHelperTest extends CategoryTest {
 
     doReturn("sakdj").when(executionSweepingOutputService).consume(any(), any(), any(), any());
     doReturn(content).when(engineExpressionService).renderExpression(any(), eq(content));
+    doReturn(content).when(engineExpressionService).renderExpression(any(), any(), any());
 
     ecsStepCommonHelper.executeNextLinkBlueGreen(
         ecsBlueGreenCreateServiceStep, ambiance, stepElementParameters, ecsGitFetchPassThroughData, () -> responseData);
@@ -800,6 +805,7 @@ public class EcsStepCommonHelperTest extends CategoryTest {
                                     .build();
 
     doReturn(content).when(engineExpressionService).renderExpression(any(), eq(content));
+    doReturn(content).when(engineExpressionService).renderExpression(any(), any(), any());
 
     ecsStepCommonHelper.executeNextLinkCanary(ecsStepExecutor, ambiance, stepElementParameters,
         ecsGitFetchPassThroughData, () -> responseData, ecsStepHelper);

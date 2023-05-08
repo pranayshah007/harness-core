@@ -74,6 +74,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -630,10 +631,15 @@ public class MigratorUtility {
 
   public static Map<String, Object> getExpressions(
       WorkflowPhase phase, List<StepExpressionFunctor> functors, CaseFormat caseFormat) {
+    String stageIdentifier = MigratorUtility.generateIdentifier(phase.getName(), caseFormat);
+    return getExpressions(stageIdentifier, functors);
+  }
+
+  public static Map<String, Object> getExpressions(String phaseIdentifier, List<StepExpressionFunctor> functors) {
     Map<String, Object> expressions = new HashMap<>();
 
     for (StepExpressionFunctor functor : functors) {
-      functor.setCurrentStageIdentifier(MigratorUtility.generateIdentifier(phase.getName(), caseFormat));
+      functor.setCurrentStageIdentifier(phaseIdentifier);
       expressions.put(functor.getCgExpression(), functor);
     }
     return expressions;
@@ -681,5 +687,34 @@ public class MigratorUtility {
     } else {
       return val;
     }
+  }
+
+  public static String toTimeoutString(long timestamp) {
+    long tSec = timestamp / 1000;
+    String timeString = "10m";
+
+    long days = TimeUnit.SECONDS.toDays(tSec);
+    if (days > 0) {
+      timeString = days + "d";
+      tSec -= TimeUnit.DAYS.toSeconds(days);
+    }
+
+    long hours = TimeUnit.SECONDS.toHours(tSec);
+    if (hours > 0) {
+      timeString = hours + "h";
+      tSec -= TimeUnit.HOURS.toSeconds(hours);
+    }
+
+    long minutes = TimeUnit.SECONDS.toMinutes(tSec);
+    if (minutes > 0) {
+      timeString = minutes + "m";
+      tSec -= TimeUnit.MINUTES.toSeconds(minutes);
+    }
+
+    long seconds = tSec;
+    if (seconds > 0) {
+      timeString = seconds + "s";
+    }
+    return timeString;
   }
 }

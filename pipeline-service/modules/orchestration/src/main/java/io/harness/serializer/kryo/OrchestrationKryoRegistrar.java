@@ -16,6 +16,7 @@ import io.harness.engine.execution.PipelineStageResponseData;
 import io.harness.engine.execution.WaitForExecutionInputCallback;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
 import io.harness.engine.interrupts.AbortInterruptCallback;
+import io.harness.engine.interrupts.InterruptProcessingFailedException;
 import io.harness.engine.interrupts.UserMarkedFailureInterruptCallback;
 import io.harness.engine.interrupts.callback.FailureInterruptCallback;
 import io.harness.engine.interrupts.handlers.AbortAllInterruptCallback;
@@ -48,5 +49,6 @@ public class OrchestrationKryoRegistrar implements KryoRegistrar {
     kryo.register(PlanExecutionResumeCallback.class, 87016);
     kryo.register(UserMarkedFailureInterruptCallback.class, 87017);
     kryo.register(UserMarkedFailAllInterruptCallback.class, 87018);
+    kryo.register(InterruptProcessingFailedException.class, 87019);
   }
 }

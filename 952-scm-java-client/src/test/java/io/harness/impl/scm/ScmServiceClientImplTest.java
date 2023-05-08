@@ -16,6 +16,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static io.harness.rule.OwnerRule.SHALINI;
@@ -52,13 +53,17 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.constants.Constants;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
@@ -550,6 +555,45 @@ public class ScmServiceClientImplTest extends CategoryTest {
         scmServiceClient.getUserDetails(userDetailsRequestDTO, scmBlockingStub);
     assertEquals(userDetailsResponseDTO.getUserEmail(), "email1");
     assertEquals(userDetailsResponseDTO.getUserName(), "user1");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testGetSlugGitlab() {
+    ScmGitProviderHelper helper = new ScmGitProviderHelper();
+    GitlabConnectorDTO gitlabConnectorDTO =
+        GitlabConnectorDTO.builder()
+            .url("http://34.170.133.206/gitlab/gitlab-instance-9ca8a1ea/subgroup/repo1.git")
+            .authentication(GitlabAuthenticationDTO.builder().authType(GitAuthType.HTTP).build())
+            .apiAccess(GitlabApiAccessDTO.builder()
+                           .spec(GitlabTokenSpecDTO.builder().apiUrl("http://34.170.133.206/gitlab/").build())
+                           .build())
+            .build();
+    String slug = helper.getSlug(gitlabConnectorDTO);
+    assertEquals(slug, "gitlab-instance-9ca8a1ea/subgroup/repo1");
+
+    gitlabConnectorDTO.setUrl("http://34.170.133.206/gitlab/gitlab-instance-9ca8a1ea/repo1.git");
+    slug = helper.getSlug(gitlabConnectorDTO);
+    assertEquals(slug, "gitlab-instance-9ca8a1ea/repo1");
+
+    gitlabConnectorDTO.setUrl("git@34.170.133.206:gitlab-instance-9ca8a1ea/subgroup/repo1.git");
+    gitlabConnectorDTO.setAuthentication(GitlabAuthenticationDTO.builder().authType(GitAuthType.SSH).build());
+    slug = helper.getSlug(gitlabConnectorDTO);
+    assertEquals(slug, "gitlab-instance-9ca8a1ea/subgroup/repo1");
+
+    gitlabConnectorDTO.setUrl("git@34.170.133.206:gitlab-instance-9ca8a1ea/repo1.git");
+    slug = helper.getSlug(gitlabConnectorDTO);
+    assertEquals(slug, "gitlab-instance-9ca8a1ea/repo1");
+
+    gitlabConnectorDTO.setApiAccess(
+        GitlabApiAccessDTO.builder().spec(GitlabTokenSpecDTO.builder().apiUrl("").build()).build());
+    slug = helper.getSlug(gitlabConnectorDTO);
+    assertEquals(slug, "gitlab-instance-9ca8a1ea/repo1");
+
+    gitlabConnectorDTO.setUrl("http://34.170.133.206/gitlab/gitlab-instance-9ca8a1ea/repo1.git");
+    slug = helper.getSlug(gitlabConnectorDTO);
+    assertEquals(slug, "gitlab/gitlab-instance-9ca8a1ea/repo1");
   }
 
   private GitFileDetails getGitFileDetailsDefault() {

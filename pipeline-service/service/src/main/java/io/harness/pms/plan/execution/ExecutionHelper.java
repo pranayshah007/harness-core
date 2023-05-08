@@ -37,6 +37,7 @@ import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.PlanExecutionMetadata.Builder;
+import io.harness.execution.RetryStagesMetadata;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.logging.AutoLogContext;
@@ -112,6 +113,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.InternalServerErrorException;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
@@ -198,11 +200,20 @@ public class ExecutionHelper {
 
     return (modules != null) && (modules.contains("ci"));
   }
-  @SneakyThrows
+
   public ExecArgs buildExecutionArgs(PipelineEntity pipelineEntity, String moduleType, String mergedRuntimeInputYaml,
       List<String> stagesToRun, Map<String, String> expressionValues, ExecutionTriggerInfo triggerInfo,
       String originalExecutionId, RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser,
       boolean isDebug) {
+    return buildExecutionArgs(pipelineEntity, moduleType, mergedRuntimeInputYaml, stagesToRun, expressionValues,
+        triggerInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser, isDebug, null);
+  }
+
+  @SneakyThrows
+  public ExecArgs buildExecutionArgs(PipelineEntity pipelineEntity, String moduleType, String mergedRuntimeInputYaml,
+      List<String> stagesToRun, Map<String, String> expressionValues, ExecutionTriggerInfo triggerInfo,
+      String originalExecutionId, RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser,
+      boolean isDebug, String notes) {
     long start = System.currentTimeMillis();
     final String executionId = generateUuid();
 
@@ -257,7 +268,7 @@ public class ExecutionHelper {
       }
 
       Builder planExecutionMetadataBuilder = obtainPlanExecutionMetadata(mergedRuntimeInputYaml, executionId,
-          stagesExecutionInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser, version);
+          stagesExecutionInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser, version, notes);
       if (stagesExecutionInfo.isStagesExecution()) {
         pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity.getAccountId(),
             YamlUtils.extractPipelineField(planExecutionMetadataBuilder.build().getProcessedYaml()));
@@ -268,9 +279,16 @@ public class ExecutionHelper {
           pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef,
           OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
       planExecutionMetadataBuilder.expandedPipelineJson(expandedJson);
+      boolean isRetry = retryExecutionParameters.isRetry();
+      if (isRetry) {
+        planExecutionMetadataBuilder.retryStagesMetadata(
+            RetryStagesMetadata.builder()
+                .retryStagesIdentifier(retryExecutionParameters.getRetryStagesIdentifier())
+                .skipStagesIdentifier(retryExecutionParameters.getIdentifierOfSkipStages())
+                .build());
+      }
       PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataBuilder.build();
 
-      boolean isRetry = retryExecutionParameters.isRetry();
       // RetryExecutionInfo
       RetryExecutionInfo retryExecutionInfo = buildRetryInfo(isRetry, originalExecutionId);
       ExecutionMetadata executionMetadata = buildExecutionMetadata(pipelineEntity.getIdentifier(), moduleType,
@@ -294,19 +312,17 @@ public class ExecutionHelper {
   private ExecutionMetadata buildExecutionMetadata(@NotNull String pipelineIdentifier, String moduleType,
       ExecutionTriggerInfo triggerInfo, PipelineEntity pipelineEntity, String executionId,
       RetryExecutionInfo retryExecutionInfo, List<NotificationRules> notificationRules, boolean isDebug) {
-    ExecutionMetadata.Builder builder =
-        ExecutionMetadata.newBuilder()
-            .setExecutionUuid(executionId)
-            .setTriggerInfo(triggerInfo)
-            .setModuleType(EmptyPredicate.isEmpty(moduleType) ? "" : moduleType)
-            .setRunSequence(pipelineMetadataService.incrementRunSequence(pipelineEntity))
-            .setPipelineIdentifier(pipelineIdentifier)
-            .setRetryInfo(retryExecutionInfo)
-            .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
-            .setIsNotificationConfigured(isNotEmpty(notificationRules))
-            .setHarnessVersion(pipelineEntity.getHarnessVersion())
-            .setIsDebug(isDebug)
-            .setExecutionMode(ExecutionMode.NORMAL);
+    ExecutionMetadata.Builder builder = ExecutionMetadata.newBuilder()
+                                            .setExecutionUuid(executionId)
+                                            .setTriggerInfo(triggerInfo)
+                                            .setModuleType(EmptyPredicate.isEmpty(moduleType) ? "" : moduleType)
+                                            .setPipelineIdentifier(pipelineIdentifier)
+                                            .setRetryInfo(retryExecutionInfo)
+                                            .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
+                                            .setIsNotificationConfigured(isNotEmpty(notificationRules))
+                                            .setHarnessVersion(pipelineEntity.getHarnessVersion())
+                                            .setIsDebug(isDebug)
+                                            .setExecutionMode(ExecutionMode.NORMAL);
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(
         pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo(), pipelineEntity.getConnectorRef());
     if (gitSyncBranchContext != null) {
@@ -407,7 +423,7 @@ public class ExecutionHelper {
 
   private PlanExecutionMetadata.Builder obtainPlanExecutionMetadata(String mergedRuntimeInputYaml, String executionId,
       StagesExecutionInfo stagesExecutionInfo, String originalExecutionId,
-      RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser, String version) {
+      RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser, String version, String notes) {
     long start = System.currentTimeMillis();
     boolean isRetry = retryExecutionParameters.isRetry();
     String pipelineYaml = stagesExecutionInfo.getPipelineYamlToRun();
@@ -418,7 +434,8 @@ public class ExecutionHelper {
             .yaml(pipelineYaml)
             .stagesExecutionMetadata(stagesExecutionInfo.toStagesExecutionMetadata())
             .allowStagesExecution(stagesExecutionInfo.isAllowStagesExecution())
-            .notifyOnlyUser(notifyOnlyUser);
+            .notifyOnlyUser(notifyOnlyUser)
+            .notes(notes);
     String currentProcessedYaml;
     try {
       switch (version) {
@@ -511,7 +528,19 @@ public class ExecutionHelper {
       }
       plan = transformPlan(plan, isRetry, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier,
           executionMode, rollbackStageIds);
-      return orchestrationService.startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
+
+      // Currently not adding transaction here to validate if there are errors after plan creation
+      ExecutionMetadata finalExecutionMetadata =
+          executionMetadata.toBuilder()
+              .setRunSequence(pipelineMetadataService.incrementRunSequence(
+                  accountId, orgIdentifier, projectIdentifier, executionMetadata.getPipelineIdentifier()))
+              .build();
+      try {
+        return orchestrationService.startExecution(plan, abstractions, finalExecutionMetadata, planExecutionMetadata);
+      } catch (Exception e) {
+        log.warn("Add transaction for increment and startExecution as execution failed after plan creation");
+        throw new InternalServerErrorException(e.getMessage());
+      }
     }
   }
 

@@ -29,7 +29,7 @@ public class DatadogLogHealthSourceSpecTransformer
         .feature(cvConfigs.get(0).getProductName())
         .queries(cvConfigs.stream()
                      .map(cv
-                         -> DatadogLogHealthSourceSpec.QueryDTO.builder()
+                         -> DatadogLogHealthSourceSpec.DatadogLogHealthSourceQueryDTO.builder()
                                 .name(cv.getQueryName())
                                 .query(cv.getQuery())
                                 .indexes(cv.getIndexes())

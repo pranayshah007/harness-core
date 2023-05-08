@@ -1,0 +1,63 @@
+{
+  "identifier": "step_g",
+  "name": "step_g",
+  "steps": [
+    {
+      "step": {
+        "identifier": "run2",
+        "type": "Run",
+        "name": "run2",
+        "spec": {
+          "connectorRef": "account.harnessImage",
+          "image": "alpine",
+          "shell": "Sh",
+          "command": "echo run2",
+          "resources": {
+            "limits": {
+              "memory": "150Mi",
+              "__uuid": "8fDE4gRxQIaYimXcUWt7Yg"
+            },
+            "__uuid": "XobRKNXaQhi47aIZL8i_fQ"
+          },
+          "__uuid": "_uopCbs0TxSf2M6U2AsTjQ"
+        },
+        "__uuid": "elpN_yI3SvKSa0HfhaOiuw"
+      },
+      "__uuid": "f2RvuqDXQS2E_IalcUIT_A"
+    },
+    {
+      "stepGroup": {
+        "identifier": "sg1",
+        "name": "sg1",
+        "steps": [
+          {
+            "step": {
+              "identifier": "run3",
+              "type": "Run",
+              "name": "run3",
+              "spec": {
+                "connectorRef": "account.harnessImage",
+                "image": "alpine",
+                "shell": "Sh",
+                "command": "echo run3",
+                "resources": {
+                  "limits": {
+                    "memory": "150Mi",
+                    "__uuid": "8fDE4gRxQIaYimXcUWt7Yg"
+                  },
+                  "__uuid": "XobRKNXaQhi47aIZL8i_fQ"
+                },
+                "__uuid": "_uopCbs0TxSf2M6U2AsTjQ"
+              },
+              "__uuid": "elpN_yI3SvKSa0HfhaOiuw"
+            },
+            "__uuid": "f2RvuqDXQS2E_IalcUIT_B"
+          }
+        ],
+        "__uuid": "JlidxGAXQYWREQjt04c_z4"
+      },
+      "__uuid": "2ry45SOaR1m_ItSl8RMRpv"
+    }
+  ],
+  "__uuid": "JlidxGAXQYWREQjt04c_zQ"
+}

@@ -18,6 +18,7 @@ import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAss
 import io.harness.accesscontrol.roles.persistence.RoleDBO;
 import io.harness.accesscontrol.roles.persistence.repositories.RoleRepository;
 import io.harness.accesscontrol.scopes.core.ScopeService;
+import io.harness.aggregator.AccessControlAdminService;
 import io.harness.aggregator.AggregatorConfiguration;
 import io.harness.aggregator.DebeziumConfig;
 import io.harness.aggregator.MongoOffsetBackingStore;
@@ -65,6 +66,7 @@ public abstract class AggregatorBaseSyncController implements Runnable {
   protected final AggregatorConfiguration aggregatorConfiguration;
   protected final ExecutorService executorService;
   private final ChangeEventFailureHandler changeEventFailureHandler;
+  private final AccessControlAdminService accessControlAdminService;
   private final PersistentLocker persistentLocker;
   private final AtomicLong hostSelectorIndex;
 
@@ -114,7 +116,8 @@ public abstract class AggregatorBaseSyncController implements Runnable {
       PersistentLocker persistentLocker, ChangeEventFailureHandler changeEventFailureHandler,
       AggregatorJobType aggregatorJobType, ChangeConsumerService changeConsumerService,
       RoleAssignmentCRUDEventHandler roleAssignmentCRUDEventHandler,
-      UserGroupCRUDEventHandler userGroupCRUDEventHandler, ScopeService scopeService) {
+      UserGroupCRUDEventHandler userGroupCRUDEventHandler, ScopeService scopeService,
+      AccessControlAdminService accessControlAdminService) {
     ChangeConsumer<RoleAssignmentDBO> roleAssignmentChangeConsumer = new RoleAssignmentChangeConsumerImpl(
         aclRepository, roleAssignmentRepository, changeConsumerService, roleAssignmentCRUDEventHandler);
     ChangeConsumer<RoleDBO> roleChangeConsumer = new RoleChangeConsumerImpl(
@@ -135,6 +138,7 @@ public abstract class AggregatorBaseSyncController implements Runnable {
     this.persistentLocker = persistentLocker;
     this.changeEventFailureHandler = changeEventFailureHandler;
     this.hostSelectorIndex = new AtomicLong(-1);
+    this.accessControlAdminService = accessControlAdminService;
   }
 
   protected DebeziumEngine<ChangeEvent<String, String>> getEngine(
@@ -225,8 +229,8 @@ public abstract class AggregatorBaseSyncController implements Runnable {
     collectionToDeserializerMap.put(USER_GROUPS, userGroupSerde.deserializer());
 
     // configuring debezium
-    return new AccessControlDebeziumChangeConsumer(
-        idDeserializer, collectionToDeserializerMap, collectionToConsumerMap, changeEventFailureHandler);
+    return new AccessControlDebeziumChangeConsumer(idDeserializer, collectionToDeserializerMap, collectionToConsumerMap,
+        changeEventFailureHandler, accessControlAdminService);
   }
 
   public abstract String getLockName();

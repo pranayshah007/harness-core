@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.execution.NodeExecution;
 import io.harness.jira.JiraIssueNG;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.servicenow.misc.TicketNG;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
@@ -25,6 +26,7 @@ import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInst
 import java.util.List;
 import java.util.Set;
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 @OwnedBy(CDC)
@@ -57,8 +59,16 @@ public interface ApprovalInstanceService {
   HarnessApprovalInstance addHarnessApprovalActivity(@NotNull String approvalInstanceId, @NotNull EmbeddedUser user,
       @NotNull @Valid HarnessApprovalActivityRequestDTO request);
 
+  List<String> findAllPreviousWaitingApprovals(String accountId, String orgId, String projectId,
+      @NotEmpty String pipelineId, String approvalKey, Ambiance ambiance);
+
   boolean isNodeExecutionOfApprovalStepType(NodeExecution nodeExecution);
   void deleteByNodeExecutionIds(@NotNull Set<String> nodeExecutionIds);
+
+  void closeHarnessApprovalStep(HarnessApprovalInstance instance);
+
+  void rejectPreviousExecutions(
+      @NotNull String approvalInstanceId, @NotNull EmbeddedUser user, boolean unauthorized, Ambiance ambiance);
 
   void updateTicketFieldsInServiceNowApprovalInstance(
       @NotNull ServiceNowApprovalInstance approvalInstance, @NotNull ServiceNowTicketNG ticketNG);

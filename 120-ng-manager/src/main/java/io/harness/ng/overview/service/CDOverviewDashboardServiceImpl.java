@@ -13,11 +13,13 @@ import static io.harness.NGDateUtils.getNumberOfDays;
 import static io.harness.NGDateUtils.getStartTimeOfPreviousInterval;
 import static io.harness.NGDateUtils.getStartTimeOfTheDayAsEpoch;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.event.timeseries.processor.utils.DateUtils.getCurrentTime;
 import static io.harness.ng.core.activityhistory.dto.TimeGroupType.DAY;
 import static io.harness.ng.core.activityhistory.dto.TimeGroupType.HOUR;
 import static io.harness.ng.core.template.TemplateListType.STABLE_TEMPLATE_TYPE;
 
+import static java.lang.String.format;
 import static java.util.Objects.isNull;
 
 import io.harness.NGDateUtils;
@@ -26,6 +28,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cd.CDDashboardServiceHelper;
 import io.harness.cd.NGPipelineSummaryCDConstants;
 import io.harness.cd.NGServiceConstants;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
+import io.harness.cdng.envGroup.services.EnvironmentGroupServiceImpl;
+import io.harness.cdng.service.beans.CustomSequenceDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.event.timeseries.processor.utils.DateUtils;
@@ -52,11 +57,14 @@ import io.harness.ng.core.dashboard.GitInfo;
 import io.harness.ng.core.dashboard.InfrastructureInfo;
 import io.harness.ng.core.dashboard.ServiceDeploymentInfo;
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.beans.EnvironmentFilterPropertiesDTO;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.entity.ServiceSequence;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.services.ServiceSequenceService;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
@@ -82,8 +90,8 @@ import io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfo;
 import io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfoList;
 import io.harness.ng.overview.dto.EnvIdCountPair;
 import io.harness.ng.overview.dto.EnvironmentDeploymentInfo;
+import io.harness.ng.overview.dto.EnvironmentGroupInstanceDetails;
 import io.harness.ng.overview.dto.EnvironmentInfoByServiceId;
-import io.harness.ng.overview.dto.EnvironmentInstanceDetails;
 import io.harness.ng.overview.dto.ExecutionDeployment;
 import io.harness.ng.overview.dto.ExecutionDeploymentInfo;
 import io.harness.ng.overview.dto.HealthDeploymentDashboard;
@@ -115,6 +123,7 @@ import io.harness.ng.overview.dto.ServiceDetailsInfoDTO;
 import io.harness.ng.overview.dto.ServiceDetailsInfoDTOV2;
 import io.harness.ng.overview.dto.ServiceHeaderInfo;
 import io.harness.ng.overview.dto.ServicePipelineInfo;
+import io.harness.ng.overview.dto.ServicePipelineWithRevertInfo;
 import io.harness.ng.overview.dto.TimeAndStatusDeployment;
 import io.harness.ng.overview.dto.TimeValuePair;
 import io.harness.ng.overview.dto.TimeValuePairListDTO;
@@ -160,6 +169,9 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
@@ -170,13 +182,17 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Inject InstanceDashboardService instanceDashboardService;
   @Inject ServiceEntityService serviceEntityServiceImpl;
   @Inject EnvironmentServiceImpl environmentService;
+  @Inject EnvironmentGroupServiceImpl environmentGroupService;
+  @Inject ServiceSequenceService serviceSequenceService;
   @Inject TemplateResourceClient templateResourceClient;
   @Inject CustomDeploymentYamlHelper customDeploymentYamlHelper;
 
   private String tableNameCD = "pipeline_execution_summary_cd";
+  private String EMPTY_ARTIFACT = "";
   private String CUSTOM_DEPLOYMENT = "CustomDeployment";
   private String tableNameServiceAndInfra = "service_infra_info";
   private static final String PIPELINE_EXECUTION_SUMMARY_CD_ID = "pipeline_execution_summary_cd_id";
+  private static final String EXECUTION_FAILURE_DETAILS = "execution_failure_details";
   public static List<String> activeStatusList = Arrays.asList(ExecutionStatus.RUNNING.name(),
       ExecutionStatus.ASYNCWAITING.name(), ExecutionStatus.TASKWAITING.name(), ExecutionStatus.TIMEDWAITING.name(),
       ExecutionStatus.PAUSED.name(), ExecutionStatus.PAUSING.name());
@@ -1423,6 +1439,72 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     return pipelineExecutionDetailsMap;
   }
 
+  @Override
+  public Map<String, ServicePipelineWithRevertInfo> getPipelineExecutionDetailsWithRevertInfo(
+      List<String> planExecutionIdList) {
+    return getPipelineExecutionDetailsWithRevertInfo(planExecutionIdList, null);
+  }
+
+  public Map<String, ServicePipelineWithRevertInfo> getPipelineExecutionDetailsWithRevertInfo(
+      List<String> planExecutionIdList, List<String> statusList) {
+    Map<String, ServicePipelineWithRevertInfo> pipelineExecutionDetailsMap = new HashMap<>();
+    int totalTries = 0;
+    boolean successfulOperation = false;
+    String sql;
+    if (EmptyPredicate.isNotEmpty(statusList)) {
+      sql = "select * from " + tableNameCD + " where planexecutionid = any (?) and status = any (?);";
+    } else {
+      sql = "select * from " + tableNameCD + " where planexecutionid = any (?);";
+    }
+
+    while (!successfulOperation && totalTries <= MAX_RETRY_COUNT) {
+      ResultSet resultSet = null;
+      try (Connection connection = timeScaleDBService.getDBConnection();
+           PreparedStatement statement = connection.prepareStatement(sql)) {
+        final Array array = connection.createArrayOf("VARCHAR", planExecutionIdList.toArray());
+        statement.setArray(1, array);
+        if (EmptyPredicate.isNotEmpty(statusList)) {
+          final Array statusArray = connection.createArrayOf("VARCHAR", statusList.toArray());
+          statement.setArray(2, statusArray);
+        }
+        resultSet = statement.executeQuery();
+        while (resultSet != null && resultSet.next()) {
+          String pipelineExecutionId = resultSet.getString(NGPipelineSummaryCDConstants.ID);
+          String pipelineName = resultSet.getString(NGPipelineSummaryCDConstants.NAME);
+          String pipelineId = resultSet.getString(NGPipelineSummaryCDConstants.PIPELINE_IDENTIFIER);
+          String status = resultSet.getString(NGPipelineSummaryCDConstants.STATUS);
+          String planExecutionId = resultSet.getString(NGPipelineSummaryCDConstants.PLAN_EXECUTION_ID);
+          boolean isRevertExecution = resultSet.getBoolean(NGPipelineSummaryCDConstants.REVERT_EXECUTION);
+          String deployedByName = resultSet.getString(NGPipelineSummaryCDConstants.AUTHOR_NAME);
+          String deployedById = resultSet.getString(NGPipelineSummaryCDConstants.AUTHOR_ID);
+
+          long executionTime = Long.parseLong(resultSet.getString(NGPipelineSummaryCDConstants.START_TS));
+          if (!pipelineExecutionDetailsMap.containsKey(planExecutionId)) {
+            pipelineExecutionDetailsMap.put(planExecutionId,
+                ServicePipelineWithRevertInfo.builder()
+                    .identifier(pipelineId)
+                    .pipelineExecutionId(pipelineExecutionId)
+                    .name(pipelineName)
+                    .lastExecutedAt(executionTime)
+                    .status(status)
+                    .planExecutionId(planExecutionId)
+                    .deployedByName(deployedByName)
+                    .deployedById(deployedById)
+                    .isRevertExecution(isRevertExecution)
+                    .build());
+          }
+        }
+        successfulOperation = true;
+      } catch (SQLException ex) {
+        log.error("%s after total tries = %s", ex, totalTries);
+        totalTries++;
+      } finally {
+        DBUtils.close(resultSet);
+      }
+    }
+    return pipelineExecutionDetailsMap;
+  }
+
   public Map<String, String> getPipelineExecutionStatusMap(List<String> pipelineExecutionIdList, String query) {
     Map<String, String> executionStatusMap = new HashMap<>();
     int totalTries = 0;
@@ -1475,6 +1557,31 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       }
     }
     return ids.stream().collect(Collectors.toList());
+  }
+
+  public Map<String, String> getPipelineExecutionIdAndFailureDetailsFromServiceInfraInfo(String query) {
+    Map<String, String> idToFailureInfoMap = new HashMap<>();
+    int totalTries = 0;
+    boolean successfulOperation = false;
+    ResultSet resultSet = null;
+    while (!successfulOperation && totalTries <= MAX_RETRY_COUNT) {
+      try (Connection connection = timeScaleDBService.getDBConnection();
+           PreparedStatement statement = connection.prepareStatement(query)) {
+        resultSet = statement.executeQuery();
+        while (resultSet != null && resultSet.next()) {
+          String id = resultSet.getString(PIPELINE_EXECUTION_SUMMARY_CD_ID);
+          String executionFailureDetails = resultSet.getString(EXECUTION_FAILURE_DETAILS);
+          idToFailureInfoMap.put(id, executionFailureDetails);
+        }
+        successfulOperation = true;
+      } catch (SQLException ex) {
+        log.error("{} after total tries = {}", ex, totalTries);
+        totalTries++;
+      } finally {
+        DBUtils.close(resultSet);
+      }
+    }
+    return idToFailureInfoMap;
   }
 
   public Map<String, Pair<String, AuthorInfo>> getPipelineExecutionIdToTriggerTypeAndAuthorInfoMapping(
@@ -1534,6 +1641,76 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     Map<String, String> executionStatusMap = getPipelineExecutionStatusMap(ids, queryExecutionStatus);
     return DashboardServiceHelper.getPipelineExecutionCountInfoHelper(
         serviceArtifactExecutionDetailList, executionStatusMap);
+  }
+  @Override
+  public ServiceSequence getCustomSequence(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
+    Optional<ServiceSequence> serviceSequenceOptional =
+        serviceSequenceService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    ServiceSequence serviceSequence;
+    if (serviceSequenceOptional.isPresent()) {
+      serviceSequence = serviceSequenceOptional.get();
+    } else {
+      throw new InvalidRequestException("No default sequence of Env and Env Group exist for this service");
+    }
+    if (isNull(serviceSequence.getCustomSequence())) {
+      return serviceSequence;
+    } else {
+      List<CustomSequenceDTO.EnvAndEnvGroupCard> customSequence = filterCustomSequence(serviceSequence);
+      serviceSequence.setCustomSequence(CustomSequenceDTO.builder().EnvAndEnvGroupCardList(customSequence).build());
+      return serviceSequence;
+    }
+  }
+
+  private List<CustomSequenceDTO.EnvAndEnvGroupCard> filterCustomSequence(ServiceSequence serviceSequence) {
+    List<CustomSequenceDTO.EnvAndEnvGroupCard> customSequence =
+        serviceSequence.getCustomSequence().getEnvAndEnvGroupCardList();
+    List<CustomSequenceDTO.EnvAndEnvGroupCard> defaultSequence =
+        serviceSequence.getDefaultSequence().getEnvAndEnvGroupCardList();
+    HashMap<String, CustomSequenceDTO.EnvAndEnvGroupCard> envGrpCardsMap = new HashMap<>();
+    customSequence.forEach(envGroupCard
+        -> envGrpCardsMap.put(
+            envGroupCard.getName() + envGroupCard.getIdentifier() + envGroupCard.isEnvGroup(), envGroupCard));
+
+    List<CustomSequenceDTO.EnvAndEnvGroupCard> appendSequence = new ArrayList<>();
+    defaultSequence.forEach(envGroupCard -> addIfPresentInDefault(appendSequence, envGroupCard, envGrpCardsMap));
+
+    for (String envKey : envGrpCardsMap.keySet()) {
+      CustomSequenceDTO.EnvAndEnvGroupCard customCard = envGrpCardsMap.get(envKey);
+
+      boolean isNew = customCard.isNew();
+      customCard.setNew(false);
+
+      if (!defaultSequence.contains(customCard)) {
+        customSequence.remove(customCard);
+      }
+      customCard.setNew(isNew);
+    }
+
+    customSequence.addAll(0, appendSequence);
+    return customSequence;
+  }
+
+  private void addIfPresentInDefault(List<CustomSequenceDTO.EnvAndEnvGroupCard> appendSequence,
+      CustomSequenceDTO.EnvAndEnvGroupCard envGroupCard,
+      HashMap<String, CustomSequenceDTO.EnvAndEnvGroupCard> envGrpCardsMap) {
+    if (isNull(envGrpCardsMap.get(envGroupCard.getName() + envGroupCard.getIdentifier() + envGroupCard.isEnvGroup()))) {
+      envGroupCard.setNew(true);
+      appendSequence.add(envGroupCard);
+    }
+  }
+
+  @Override
+  public ServiceSequence saveCustomSequence(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceId, CustomSequenceDTO customSequenceDTO) {
+    ServiceSequence serviceSequence = ServiceSequence.builder()
+                                          .accountId(accountIdentifier)
+                                          .orgIdentifier(orgIdentifier)
+                                          .projectIdentifier(projectIdentifier)
+                                          .customSequence(customSequenceDTO)
+                                          .serviceIdentifier(serviceId)
+                                          .build();
+    return serviceSequenceService.upsertCustomSequence(serviceSequence);
   }
 
   public List<ServiceArtifactExecutionDetail> getExecutionIdAndArtifactDetails(String query) {
@@ -2624,24 +2801,112 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
   @Override
   public InstanceGroupedByEnvironmentList getInstanceGroupedByEnvironmentList(String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, String serviceId, String environmentId) {
+      String orgIdentifier, String projectIdentifier, String serviceId, String environmentId, String envGrpId) {
     boolean isGitOps = isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
     List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList =
         instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(
             accountIdentifier, orgIdentifier, projectIdentifier, environmentId, serviceId, null, isGitOps, false);
+
+    updateNullArtifact(activeServiceInstanceInfoList);
+
     DashboardServiceHelper.sortActiveServiceInstanceInfoWithEnvTypeList(activeServiceInstanceInfoList);
-    return DashboardServiceHelper.getInstanceGroupedByEnvironmentListHelper(activeServiceInstanceInfoList, isGitOps);
+
+    List<String> envIds = new ArrayList<>();
+    activeServiceInstanceInfoList.forEach(
+        activeServiceInstanceInfo -> envIds.add(activeServiceInstanceInfo.getEnvIdentifier()));
+
+    Criteria criteria = environmentGroupService.formCriteria(
+        accountIdentifier, orgIdentifier, projectIdentifier, false, "", "", null, false);
+    Page<EnvironmentGroupEntity> environmentGroupEntitiesPage =
+        environmentGroupService.list(criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier);
+
+    List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(
+        accountIdentifier, orgIdentifier, projectIdentifier, new ArrayList<>(envIds));
+
+    activeServiceInstanceInfoList = filterNonDeletedEnvs(activeServiceInstanceInfoList, environments);
+
+    return DashboardServiceHelper.getInstanceGroupedByEnvironmentListHelper(
+        envGrpId, activeServiceInstanceInfoList, isGitOps, environmentGroupEntitiesPage);
+  }
+
+  private void updateNullArtifact(List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList) {
+    for (ActiveServiceInstanceInfoWithEnvType activeServiceInstanceInfoWithEnvType : activeServiceInstanceInfoList) {
+      if (isNull(activeServiceInstanceInfoWithEnvType.getDisplayName())) {
+        activeServiceInstanceInfoWithEnvType.setDisplayName(EMPTY_ARTIFACT);
+      }
+    }
+  }
+
+  private String convertIdToRef(String accountId, String orgId, String projectId, String id) {
+    return IdentifierRefHelper.getIdentifierRefWithScope(accountId, orgId, projectId, id).buildScopedIdentifier();
+  }
+
+  private List<ActiveServiceInstanceInfoWithEnvType> filterNonDeletedEnvs(
+      List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList, List<Environment> environments) {
+    List<String> envIds = new ArrayList<>();
+    HashMap<String, Environment> envRefEnvMap = new HashMap<>();
+    environments.forEach(environment -> {
+      String envRef = convertIdToRef(environment.getAccountId(), environment.getOrgIdentifier(),
+          environment.getProjectIdentifier(), environment.getIdentifier());
+      envRefEnvMap.put(envRef, environment);
+      envIds.add(envRef);
+    });
+    List<ActiveServiceInstanceInfoWithEnvType> updatedActiveServiceInstanceInfoList = new ArrayList<>();
+
+    for (ActiveServiceInstanceInfoWithEnvType activeServiceInstanceInfoWithEnvType : activeServiceInstanceInfoList) {
+      if (envIds.contains(activeServiceInstanceInfoWithEnvType.getEnvIdentifier())) {
+        activeServiceInstanceInfoWithEnvType.setEnvName(
+            envRefEnvMap.get(activeServiceInstanceInfoWithEnvType.getEnvIdentifier()).getName());
+        activeServiceInstanceInfoWithEnvType.setEnvType(
+            envRefEnvMap.get(activeServiceInstanceInfoWithEnvType.getEnvIdentifier()).getType());
+        updatedActiveServiceInstanceInfoList.add(activeServiceInstanceInfoWithEnvType);
+      }
+    }
+    return updatedActiveServiceInstanceInfoList;
   }
 
   @Override
   public InstanceGroupedOnArtifactList getInstanceGroupedOnArtifactList(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String serviceId, String environmentId, String displayName, boolean filterOnArtifact) {
+      String projectIdentifier, String serviceId, String environmentId, String envGrpId, String displayName,
+      boolean filterOnArtifact) {
     boolean isGitOps = isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
-    List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList =
-        instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(accountIdentifier, orgIdentifier,
-            projectIdentifier, environmentId, serviceId, displayName, isGitOps, filterOnArtifact);
+
+    List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList = new ArrayList<>();
+    if (filterOnArtifact && isEmpty(displayName)) {
+      activeServiceInstanceInfoList.addAll(
+          instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(accountIdentifier, orgIdentifier,
+              projectIdentifier, environmentId, serviceId, EMPTY_ARTIFACT, isGitOps, filterOnArtifact));
+
+      activeServiceInstanceInfoList.addAll(
+          instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(accountIdentifier, orgIdentifier,
+              projectIdentifier, environmentId, serviceId, null, isGitOps, filterOnArtifact));
+
+    } else {
+      activeServiceInstanceInfoList =
+          instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(accountIdentifier, orgIdentifier,
+              projectIdentifier, environmentId, serviceId, displayName, isGitOps, filterOnArtifact);
+    }
+
+    updateNullArtifact(activeServiceInstanceInfoList);
+
     DashboardServiceHelper.sortActiveServiceInstanceInfoWithEnvTypeList(activeServiceInstanceInfoList);
-    return DashboardServiceHelper.getInstanceGroupedByArtifactListHelper(activeServiceInstanceInfoList, isGitOps);
+
+    List<String> envIds = new ArrayList<>();
+    activeServiceInstanceInfoList.forEach(
+        activeServiceInstanceInfo -> envIds.add(activeServiceInstanceInfo.getEnvIdentifier()));
+
+    Criteria criteria = environmentGroupService.formCriteria(
+        accountIdentifier, orgIdentifier, projectIdentifier, false, "", "", null, false);
+    Page<EnvironmentGroupEntity> environmentGroupEntitiesPage =
+        environmentGroupService.list(criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier);
+
+    List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(
+        accountIdentifier, orgIdentifier, projectIdentifier, new ArrayList<>(envIds));
+
+    activeServiceInstanceInfoList = filterNonDeletedEnvs(activeServiceInstanceInfoList, environments);
+
+    return DashboardServiceHelper.getInstanceGroupedByArtifactListHelper(
+        activeServiceInstanceInfoList, isGitOps, environmentGroupEntitiesPage, envGrpId);
   }
 
   @Override
@@ -3005,32 +3270,183 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   }
 
   @Override
-  public EnvironmentInstanceDetails getEnvironmentInstanceDetails(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
+  public EnvironmentGroupInstanceDetails getEnvironmentInstanceDetails(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier,
+      EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO) {
     Boolean isGitOps = isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
     List<EnvironmentInstanceCountModel> environmentInstanceCounts =
         instanceDashboardService.getInstanceCountForEnvironmentFilteredByService(
             accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, isGitOps);
 
-    List<String> envIds = new ArrayList<>();
+    Set<String> envIds = new HashSet<>();
     Map<String, Integer> envToCountMap = new HashMap<>();
 
     DashboardServiceHelper.constructEnvironmentCountMap(environmentInstanceCounts, envToCountMap, envIds);
 
-    List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(
-        accountIdentifier, orgIdentifier, projectIdentifier, envIds);
+    List<EnvironmentGroupEntity> environmentGroupEntities =
+        fetchEnvGrpList(accountIdentifier, orgIdentifier, projectIdentifier, envIds);
+
+    List<Environment> environments = fetchEnvList(accountIdentifier, orgIdentifier, projectIdentifier, envIds);
+
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
     Map<String, EnvironmentType> envIdToEnvTypeMap = new HashMap<>();
-
     DashboardServiceHelper.constructEnvironmentNameAndTypeMap(environments, envIdToEnvNameMap, envIdToEnvTypeMap);
 
     List<ArtifactDeploymentDetailModel> artifactDeploymentDetails = instanceDashboardService.getLastDeployedInstance(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, true, isGitOps);
     Map<String, ArtifactDeploymentDetail> artifactDeploymentDetailsMap =
-        DashboardServiceHelper.constructEnvironmentToArtifactDeploymentMap(artifactDeploymentDetails);
+        DashboardServiceHelper.constructEnvironmentToArtifactDeploymentMap(
+            artifactDeploymentDetails, envIdToEnvNameMap);
+    Map<String, ServicePipelineWithRevertInfo> pipelineExecutionDetailsMap = getPipelineExecutionDetailsWithRevertInfo(
+        artifactDeploymentDetailsMap.values()
+            .stream()
+            .filter(artifactDeploymentDetail
+                -> EmptyPredicate.isNotEmpty(artifactDeploymentDetail.getLastPipelineExecutionId()))
+            .map(artifactDeploymentDetail -> artifactDeploymentDetail.getLastPipelineExecutionId())
+            .collect(Collectors.toList()));
+    List<String> pipelineExecutionIdsWhereRollbackOccurred = getPipelineExecutionsWhereRollbackOccurred(
+        pipelineExecutionDetailsMap.values()
+            .stream()
+            .filter(servicePipelineWithRevertInfo
+                -> EmptyPredicate.isNotEmpty(servicePipelineWithRevertInfo.getPipelineExecutionId()))
+            .map(servicePipelineWithRevertInfo -> servicePipelineWithRevertInfo.getPipelineExecutionId())
+            .collect(Collectors.toList()));
+    return DashboardServiceHelper.getEnvironmentInstanceDetailsFromMap(artifactDeploymentDetailsMap, envToCountMap,
+        envIdToEnvNameMap, envIdToEnvTypeMap, environmentGroupEntities, environmentFilterPropertiesDTO,
+        pipelineExecutionDetailsMap, pipelineExecutionIdsWhereRollbackOccurred);
 
-    return DashboardServiceHelper.getEnvironmentInstanceDetailsFromMap(
-        artifactDeploymentDetailsMap, envToCountMap, envIdToEnvNameMap, envIdToEnvTypeMap);
+    /* saveDefaultSequenceInDB(
+         environmentGroupInstanceDetails, accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
+
+     environmentGroupInstanceDetails.setEnvironmentGroupInstanceDetails(
+         getServiceSequence(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier,
+             environmentGroupInstanceDetails.getEnvironmentGroupInstanceDetails()));*/
+  }
+
+  private List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> getServiceSequence(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
+      List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> environmentGroupInstanceDetailList) {
+    Optional<ServiceSequence> serviceSequenceOptional =
+        serviceSequenceService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
+    ServiceSequence serviceSequence;
+    if (serviceSequenceOptional.isPresent()) {
+      serviceSequence = serviceSequenceOptional.get();
+    } else {
+      throw new InvalidRequestException(format("Failed to get service sequence for service id: ", serviceIdentifier));
+    }
+
+    CustomSequenceDTO sequenceDTO;
+    if (isNull(serviceSequence.getCustomSequence())) {
+      return environmentGroupInstanceDetailList;
+
+    } else {
+      sequenceDTO = serviceSequence.getCustomSequence();
+
+      List<CustomSequenceDTO.EnvAndEnvGroupCard> envAndEnvGroupCards = sequenceDTO.getEnvAndEnvGroupCardList();
+
+      List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> newEnvironmentGroupInstanceDetailList =
+          new ArrayList<>();
+
+      List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> appendListForEnvGrpNotPresentInSequence =
+          new ArrayList<>();
+
+      HashMap<String, EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> envGrpMapForListFromDB =
+          new HashMap<>();
+
+      HashMap<String, CustomSequenceDTO.EnvAndEnvGroupCard> envGrpMapForCustomSequence = new HashMap<>();
+
+      envAndEnvGroupCards.forEach(envGroupDetail
+          -> envGrpMapForCustomSequence.put(
+              envGroupDetail.getName() + envGroupDetail.getIdentifier() + envGroupDetail.isEnvGroup(), envGroupDetail));
+
+      environmentGroupInstanceDetailList.forEach(envGroupDetail
+          -> envGrpMapForListFromDB.put(
+              envGroupDetail.getName() + envGroupDetail.getId() + envGroupDetail.getIsEnvGroup().toString(),
+              envGroupDetail));
+
+      for (String key : envGrpMapForListFromDB.keySet()) {
+        if (isNull(envGrpMapForCustomSequence.get(key))) {
+          appendListForEnvGrpNotPresentInSequence.add(envGrpMapForListFromDB.get(key));
+        }
+      }
+      envAndEnvGroupCards.forEach(envGroup
+          -> filterInstanceDetailsList(newEnvironmentGroupInstanceDetailList, envGrpMapForListFromDB, envGroup));
+
+      newEnvironmentGroupInstanceDetailList.addAll(0, appendListForEnvGrpNotPresentInSequence);
+
+      saveCustomSequenceInDB(newEnvironmentGroupInstanceDetailList, envGrpMapForCustomSequence, accountIdentifier,
+          orgIdentifier, projectIdentifier, serviceIdentifier);
+
+      return newEnvironmentGroupInstanceDetailList;
+    }
+  }
+
+  private void saveCustomSequenceInDB(
+      List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> newEnvironmentGroupInstanceDetailList,
+      HashMap<String, CustomSequenceDTO.EnvAndEnvGroupCard> envAndEnvGroupCards, String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
+    List<CustomSequenceDTO.EnvAndEnvGroupCard> sequenceToStoreInDB = new ArrayList<>();
+    for (EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail envGrpDetail :
+        newEnvironmentGroupInstanceDetailList) {
+      if (isNull(envAndEnvGroupCards.get(
+              envGrpDetail.getName() + envGrpDetail.getId() + envGrpDetail.getIsEnvGroup().toString()))) {
+        sequenceToStoreInDB.add(createEnvAndEnvGroupCard(envGrpDetail, true));
+      } else {
+        sequenceToStoreInDB.add(createEnvAndEnvGroupCard(envGrpDetail, false));
+      }
+    }
+
+    CustomSequenceDTO customSequenceDTO =
+        CustomSequenceDTO.builder().EnvAndEnvGroupCardList(sequenceToStoreInDB).build();
+    ServiceSequence serviceSequence = ServiceSequence.builder()
+                                          .customSequence(customSequenceDTO)
+                                          .accountId(accountIdentifier)
+                                          .projectIdentifier(projectIdentifier)
+                                          .orgIdentifier(orgIdentifier)
+                                          .serviceIdentifier(serviceIdentifier)
+                                          .build();
+    serviceSequenceService.upsertCustomSequence(serviceSequence);
+  }
+
+  private void filterInstanceDetailsList(
+      List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> newEnvironmentGroupInstanceDetailList,
+      HashMap<String, EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> mapForEnvGroup,
+      CustomSequenceDTO.EnvAndEnvGroupCard envGroup) {
+    if (!isNull(mapForEnvGroup.get(envGroup.getName() + envGroup.getIdentifier() + envGroup.isEnvGroup()))) {
+      newEnvironmentGroupInstanceDetailList.add(
+          mapForEnvGroup.get(envGroup.getName() + envGroup.getIdentifier() + envGroup.isEnvGroup()));
+    }
+  }
+
+  private void saveDefaultSequenceInDB(EnvironmentGroupInstanceDetails environmentGroupInstanceDetails,
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
+    List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> environmentGroupInstanceDetailList =
+        environmentGroupInstanceDetails.getEnvironmentGroupInstanceDetails();
+    List<CustomSequenceDTO.EnvAndEnvGroupCard> envAndEnvGroupCards = new ArrayList<>();
+
+    environmentGroupInstanceDetailList.forEach(
+        envGrpDetail -> envAndEnvGroupCards.add(createEnvAndEnvGroupCard(envGrpDetail, false)));
+    CustomSequenceDTO defaultSequenceDTO =
+        CustomSequenceDTO.builder().EnvAndEnvGroupCardList(envAndEnvGroupCards).build();
+    ServiceSequence serviceSequence = ServiceSequence.builder()
+                                          .defaultSequence(defaultSequenceDTO)
+                                          .accountId(accountIdentifier)
+                                          .projectIdentifier(projectIdentifier)
+                                          .orgIdentifier(orgIdentifier)
+                                          .serviceIdentifier(serviceIdentifier)
+                                          .build();
+    serviceSequenceService.upsertDefaultSequence(serviceSequence);
+  }
+
+  private CustomSequenceDTO.EnvAndEnvGroupCard createEnvAndEnvGroupCard(
+      EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail envGrpDetail, boolean isNew) {
+    return CustomSequenceDTO.EnvAndEnvGroupCard.builder()
+        .isEnvGroup(envGrpDetail.getIsEnvGroup())
+        .identifier(envGrpDetail.getId())
+        .environmentTypes(envGrpDetail.getEnvironmentTypes())
+        .isNew(isNew)
+        .name(envGrpDetail.getName())
+        .build();
   }
 
   @Override
@@ -3041,20 +3457,58 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<ArtifactDeploymentDetailModel> artifactDeploymentDetails = instanceDashboardService.getLastDeployedInstance(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, false, isGitOps);
 
-    List<String> envIds = new ArrayList<>();
+    Set<String> envIds = new HashSet<>();
 
     Map<String, Map<String, ArtifactDeploymentDetail>> artifactDeploymentDetailsMap =
         DashboardServiceHelper.constructArtifactToLastDeploymentMap(artifactDeploymentDetails, envIds);
 
-    List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(
-        accountIdentifier, orgIdentifier, projectIdentifier, envIds);
+    List<EnvironmentGroupEntity> environmentGroupEntities =
+        fetchEnvGrpList(accountIdentifier, orgIdentifier, projectIdentifier, envIds);
+
+    List<Environment> environments = fetchEnvList(accountIdentifier, orgIdentifier, projectIdentifier, envIds);
+
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
     Map<String, EnvironmentType> envIdToEnvTypeMap = new HashMap<>();
 
     DashboardServiceHelper.constructEnvironmentNameAndTypeMap(environments, envIdToEnvNameMap, envIdToEnvTypeMap);
+    Map<String, List<ArtifactDeploymentDetail>> envToArtifactMap =
+        DashboardServiceHelper.constructEnvironmentToArtifactDeploymentListMap(
+            artifactDeploymentDetails, envIdToEnvNameMap);
 
     return DashboardServiceHelper.getArtifactInstanceDetailsFromMap(
-        artifactDeploymentDetailsMap, envIdToEnvNameMap, envIdToEnvTypeMap);
+        artifactDeploymentDetailsMap, envIdToEnvNameMap, envIdToEnvTypeMap, environmentGroupEntities, envToArtifactMap);
+  }
+
+  private List<EnvironmentGroupEntity> fetchEnvGrpList(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, Set<String> envIds) {
+    Criteria criteria = environmentGroupService.formCriteria(
+        accountIdentifier, orgIdentifier, projectIdentifier, false, "", "", null, false);
+    Page<EnvironmentGroupEntity> environmentGroupEntitiesPage =
+        environmentGroupService.list(criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier);
+
+    List<EnvironmentGroupEntity> environmentGroupEntities = null;
+
+    if (environmentGroupEntitiesPage != null) {
+      environmentGroupEntities = environmentGroupEntitiesPage.getContent();
+      for (EnvironmentGroupEntity environmentGroupEntity : environmentGroupEntities) {
+        if (EmptyPredicate.isNotEmpty(environmentGroupEntity.getEnvIdentifiers())) {
+          envIds.addAll(environmentGroupEntity.getEnvIdentifiers()
+                            .stream()
+                            .map(envId
+                                -> convertIdToRef(environmentGroupEntity.getAccountId(),
+                                    environmentGroupEntity.getOrgIdentifier(),
+                                    environmentGroupEntity.getProjectIdentifier(), envId))
+                            .collect(Collectors.toList()));
+        }
+      }
+    }
+    return environmentGroupEntities;
+  }
+
+  private List<Environment> fetchEnvList(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, Set<String> envIds) {
+    return environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(
+        accountIdentifier, orgIdentifier, projectIdentifier, new ArrayList<>(envIds));
   }
 
   @Override
@@ -3069,12 +3523,37 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
             .collect(Collectors.toList());
     String query = DashboardServiceHelper.buildOpenTaskQuery(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, startInterval);
-    List<String> pipelineExecutionIdList = getPipelineExecutionIdFromServiceInfraInfo(query);
+    Map<String, String> pipelineExecutionIdToFailureInfoMap =
+        getPipelineExecutionIdAndFailureDetailsFromServiceInfraInfo(query);
     Map<String, ServicePipelineInfo> servicePipelineInfoMap =
-        getPipelineExecutionDetails(pipelineExecutionIdList, STATUS_LIST);
-    List<ServicePipelineInfo> servicePipelineInfoList = new ArrayList<>(servicePipelineInfoMap.values());
+        getPipelineExecutionDetails(new ArrayList<>(pipelineExecutionIdToFailureInfoMap.keySet()), STATUS_LIST);
+    List<ServicePipelineWithRevertInfo> servicePipelineInfoList = new ArrayList<>();
+    if (isNotEmpty(servicePipelineInfoMap.values())) {
+      servicePipelineInfoList.addAll(servicePipelineInfoMap.values()
+                                         .stream()
+                                         .map(servicePipelineInfo
+                                             -> ServicePipelineWithRevertInfo.builder()
+                                                    .name(servicePipelineInfo.getName())
+                                                    .deployedById(servicePipelineInfo.getDeployedById())
+                                                    .deployedByName(servicePipelineInfo.getDeployedByName())
+                                                    .identifier(servicePipelineInfo.getIdentifier())
+                                                    .pipelineExecutionId(servicePipelineInfo.getPipelineExecutionId())
+                                                    .planExecutionId(servicePipelineInfo.getPlanExecutionId())
+                                                    .lastExecutedAt(servicePipelineInfo.getLastExecutedAt())
+                                                    .status(servicePipelineInfo.getStatus())
+                                                    .failureDetail(pipelineExecutionIdToFailureInfoMap.getOrDefault(
+                                                        servicePipelineInfo.getPipelineExecutionId(), ""))
+                                                    .build())
+                                         .collect(Collectors.toList()));
+    }
     DashboardServiceHelper.sortServicePipelineInfoList(servicePipelineInfoList);
     return OpenTaskDetails.builder().pipelineDeploymentDetails(servicePipelineInfoList).build();
+  }
+
+  @Override
+  public List<String> getPipelineExecutionsWhereRollbackOccurred(List<String> pipelineExecutionIdList) {
+    String query = DashboardServiceHelper.buildRollbackDurationQuery(pipelineExecutionIdList);
+    return getPipelineExecutionIdFromServiceInfraInfo(query);
   }
 
   private List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> groupedByArtifacts(
@@ -3153,12 +3632,26 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       String envIdentifier, EnvironmentType environmentType, String infraIdentifier, String clusterIdentifier,
       String displayName) {
     boolean isGitOps = isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
-    List<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>
-        instanceDetailGroupedByPipelineExecutionList =
-            instanceDashboardService.getActiveInstanceDetailGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
-                projectIdentifier, serviceIdentifier, envIdentifier, environmentType, infraIdentifier,
-                clusterIdentifier, displayName, isGitOps);
 
+    List<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>
+        instanceDetailGroupedByPipelineExecutionList = new ArrayList<>();
+
+    if (isEmpty(displayName)) {
+      instanceDetailGroupedByPipelineExecutionList.addAll(
+          instanceDashboardService.getActiveInstanceDetailGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
+              projectIdentifier, serviceIdentifier, envIdentifier, environmentType, infraIdentifier, clusterIdentifier,
+              EMPTY_ARTIFACT, isGitOps));
+
+      instanceDetailGroupedByPipelineExecutionList.addAll(
+          instanceDashboardService.getActiveInstanceDetailGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
+              projectIdentifier, serviceIdentifier, envIdentifier, environmentType, infraIdentifier, clusterIdentifier,
+              null, isGitOps));
+    } else {
+      instanceDetailGroupedByPipelineExecutionList.addAll(
+          instanceDashboardService.getActiveInstanceDetailGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
+              projectIdentifier, serviceIdentifier, envIdentifier, environmentType, infraIdentifier, clusterIdentifier,
+              displayName, isGitOps));
+    }
     // sort based on last deployed time
 
     Collections.sort(instanceDetailGroupedByPipelineExecutionList,

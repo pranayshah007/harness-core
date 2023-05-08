@@ -223,6 +223,9 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
         // Convert variables map from Map<String, Object> to Map<String, String>
         for (String key : cluster.getVariables().keySet()) {
           Object value = cluster.getVariables().get(key);
+          if (value instanceof String && ((String) value).startsWith("${ngSecretManager.obtain")) {
+            continue;
+          }
           if (value.getClass() == ParameterField.class) {
             ParameterField<Object> p = (ParameterField) value;
             flattennedVariables.put(key, p.getValue().toString());

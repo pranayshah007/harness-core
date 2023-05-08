@@ -33,6 +33,11 @@ public class InstanceSyncPerpetualTaskMappingServiceImpl implements InstanceSync
   }
 
   @Override
+  public boolean delete(String accountId, String perpetualTaskId) {
+    return instanceSyncPerpetualTaskMappingRepository.deleteByAccountIdAndPerpetualTaskId(accountId, perpetualTaskId);
+  }
+
+  @Override
   public Optional<InstanceSyncPerpetualTaskMapping> findByConnectorRef(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorId) {
     return instanceSyncPerpetualTaskMappingRepository.findByConnectorRef(

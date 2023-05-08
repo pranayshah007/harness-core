@@ -58,23 +58,31 @@ public class DockerRegistryUtils {
   public ArtifactMetaInfo getArtifactMetaInfo(DockerInternalConfig dockerConfig,
       DockerRegistryRestClient registryRestClient, Function<Headers, String> getTokenFn, String authHeader,
       String imageName, String tag, boolean shouldFetchDockerV2DigestSHA256) {
+    ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().build();
     try {
       Response<DockerImageManifestResponse> response =
           getImageManifestResponse(dockerConfig, registryRestClient, getTokenFn, authHeader, imageName, tag);
-      ArtifactMetaInfo artifactMetaInfo = parseArtifactMetaInfoResponse(response, imageName);
-      if (artifactMetaInfo != null && shouldFetchDockerV2DigestSHA256) {
-        Response<DockerImageManifestResponse> responseV2 =
-            getImageManifestResponseV2(dockerConfig, registryRestClient, getTokenFn, authHeader, imageName, tag);
-        ArtifactMetaInfo artifactMetaInfoV2 = parseArtifactMetaInfoResponse(responseV2, imageName);
-        if (artifactMetaInfoV2 != null) {
-          artifactMetaInfo.setShaV2(artifactMetaInfoV2.getSha());
-        }
+      ArtifactMetaInfo artifactMetaInfoSchemaVersion1 = parseArtifactMetaInfoResponse(response, imageName);
+      if (artifactMetaInfoSchemaVersion1 != null) {
+        artifactMetaInfo = artifactMetaInfoSchemaVersion1;
       }
-      return artifactMetaInfo;
     } catch (Exception e) {
       log.error("Unable to fetch artifact metainfo", e);
-      return null;
     }
+
+    if (shouldFetchDockerV2DigestSHA256) {
+      try {
+        Response<DockerImageManifestResponse> responseV2 =
+            getImageManifestResponseV2(dockerConfig, registryRestClient, getTokenFn, authHeader, imageName, tag);
+        ArtifactMetaInfo artifactMetaInfoSchemaVersion2 = parseArtifactMetaInfoResponse(responseV2, imageName);
+        if (artifactMetaInfoSchemaVersion2 != null) {
+          artifactMetaInfo.setShaV2(artifactMetaInfoSchemaVersion2.getSha());
+        }
+      } catch (Exception e) {
+        log.error("Unable to fetch artifact metainfo", e);
+      }
+    }
+    return artifactMetaInfo;
   }
 
   public List<Map<String, String>> getLabels(DockerInternalConfig dockerConfig,

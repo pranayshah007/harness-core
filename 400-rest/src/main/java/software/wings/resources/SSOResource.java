@@ -35,7 +35,6 @@ import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.security.authentication.LoginTypeResponse;
-import software.wings.security.authentication.LoginTypeResponse.LoginTypeResponseBuilder;
 import software.wings.security.authentication.SSOConfig;
 import software.wings.security.saml.SamlClientService;
 import software.wings.service.intfc.SSOService;
@@ -99,7 +98,7 @@ public class SSOResource {
       @FormDataParam("clientSecret") String clientSecret) {
     return new RestResponse<>(ssoService.uploadSamlConfiguration(accountId, uploadedInputStream, displayName,
         groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-        isEmpty(clientSecret) ? null : clientSecret.toCharArray(), false));
+        isEmpty(clientSecret) ? null : clientSecret.toCharArray(), null, false));
   }
 
   @POST
@@ -108,8 +107,8 @@ public class SSOResource {
   @ExceptionMetered
   public RestResponse<SSOConfig> uploadOathSettings(
       @QueryParam("accountId") String accountId, OauthSettings oauthSettings) {
-    return new RestResponse<>(
-        ssoService.uploadOauthConfiguration(accountId, oauthSettings.getFilter(), oauthSettings.getAllowedProviders()));
+    return new RestResponse<>(ssoService.uploadOauthConfiguration(
+        accountId, oauthSettings.getFilter(), oauthSettings.getAllowedProviders(), false));
   }
 
   @DELETE
@@ -174,7 +173,7 @@ public class SSOResource {
   @ExceptionMetered
   public RestResponse<SSOConfig> setAuthMechanism(@QueryParam("accountId") String accountId,
       @QueryParam("authMechanism") AuthenticationMechanism authenticationMechanism) {
-    return new RestResponse<SSOConfig>(ssoService.setAuthenticationMechanism(accountId, authenticationMechanism));
+    return new RestResponse<>(ssoService.setAuthenticationMechanism(accountId, authenticationMechanism, false));
   }
 
   @PUT
@@ -195,7 +194,7 @@ public class SSOResource {
       throw new InvalidRequestException(response.getMessage());
     }
 
-    return new RestResponse<>(ssoService.setAuthenticationMechanism(accountId, AuthenticationMechanism.LDAP));
+    return new RestResponse<>(ssoService.setAuthenticationMechanism(accountId, AuthenticationMechanism.LDAP, false));
   }
 
   @PUT
@@ -203,7 +202,7 @@ public class SSOResource {
   @Timed
   @ExceptionMetered
   public RestResponse<SSOConfig> enableSamlAuthMechanism(@QueryParam("accountId") String accountId) {
-    return new RestResponse<>(ssoService.setAuthenticationMechanism(accountId, AuthenticationMechanism.SAML));
+    return new RestResponse<>(ssoService.setAuthenticationMechanism(accountId, AuthenticationMechanism.SAML, false));
   }
 
   @PUT
@@ -211,7 +210,7 @@ public class SSOResource {
   @Timed
   @ExceptionMetered
   public RestResponse<SSOConfig> enableOauthAuthMechanism(@QueryParam("accountId") String accountId) {
-    return new RestResponse<>(ssoService.setAuthenticationMechanism(accountId, AuthenticationMechanism.OAUTH));
+    return new RestResponse<>(ssoService.setAuthenticationMechanism(accountId, AuthenticationMechanism.OAUTH, false));
   }
 
   @PUT
@@ -219,7 +218,8 @@ public class SSOResource {
   @Timed
   @ExceptionMetered
   public RestResponse<SSOConfig> enableBasicAuthMechanism(@QueryParam("accountId") String accountId) {
-    return new RestResponse<>(ssoService.setAuthenticationMechanism(accountId, AuthenticationMechanism.USER_PASSWORD));
+    return new RestResponse<>(
+        ssoService.setAuthenticationMechanism(accountId, AuthenticationMechanism.USER_PASSWORD, false));
   }
 
   @GET
@@ -228,7 +228,7 @@ public class SSOResource {
   @AuthRule(permissionType = LOGGED_IN)
   @ExceptionMetered
   public RestResponse<SSOConfig> getAccountAccessManagementSettings(@PathParam("accountId") String accountId) {
-    return new RestResponse<>(ssoService.getAccountAccessManagementSettings(accountId));
+    return new RestResponse<>(ssoService.getAccountAccessManagementSettings(accountId, false));
   }
 
   @POST
@@ -347,10 +347,11 @@ public class SSOResource {
   @GET
   @Path("saml-login-test")
   public RestResponse<LoginTypeResponse> getSamlLoginTest(@QueryParam("accountId") @NotBlank String accountId) {
-    LoginTypeResponseBuilder builder = LoginTypeResponse.builder();
+    LoginTypeResponse response = LoginTypeResponse.builder().build();
     try {
-      builder.SSORequest(samlClientService.generateTestSamlRequest(accountId));
-      return new RestResponse<>(builder.authenticationMechanism(AuthenticationMechanism.SAML).build());
+      response.setSSORequest(samlClientService.generateTestSamlRequest(accountId));
+      response.setAuthenticationMechanism(AuthenticationMechanism.SAML);
+      return new RestResponse<>(response);
     } catch (Exception e) {
       throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION);
     }

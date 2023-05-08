@@ -24,6 +24,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.NO_APPS_ASSIGNED;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.Base.CREATED_AT_KEY;
@@ -157,6 +158,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
@@ -417,6 +419,48 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     } else {
       log.error("Unable to get instance stats", exception);
     }
+  }
+
+  @Override
+  public int consumeAppInstancesForAccount(String accountId, long timestamp, Consumer<Instance> instanceConsumer) {
+    return consumeInstancesForAccount(accountId, timestamp, new ArrayList<>(), instanceConsumer);
+  }
+
+  // CONTAINS EXACTLY THE SAME EXECUTION FLOW THAN getInstancesForAccount
+  private int consumeInstancesForAccount(
+      String accountId, long timestamp, List<String> projectedFields, Consumer<Instance> instanceConsumer) {
+    int count = 0;
+    Query<Instance> query = constructInstanceQueryForAccount(accountId, projectedFields);
+
+    if (timestamp > 0) {
+      query.field(Instance.CREATED_AT_KEY).lessThanOrEq(timestamp);
+
+      Query<Instance> cloneQuery = constructInstanceQueryForAccount(accountId, projectedFields);
+      cloneQuery.field(Instance.CREATED_AT_KEY).lessThanOrEq(timestamp);
+      cloneQuery.field(InstanceKeys.deletedAt).greaterThanOrEq(timestamp);
+      FindOptions findOptions = wingsPersistence.analyticNodePreferenceOptions();
+      findOptions.hint(BasicDBUtils.getIndexObject(Instance.mongoIndexes(), "accountId_deletedAt_createdAt"));
+
+      try (HIterator<Instance> iterator = new HIterator<>(cloneQuery.limit(NO_LIMIT).fetch(findOptions))) {
+        for (Instance instance : iterator) {
+          instanceConsumer.accept(instance);
+          count++;
+        }
+      }
+    }
+
+    query.filter(InstanceKeys.isDeleted, false);
+
+    try (HIterator<Instance> iterator =
+             new HIterator<>(query.limit(NO_LIMIT).fetch(wingsPersistence.analyticNodePreferenceOptions()))) {
+      for (Instance instance : iterator) {
+        instanceConsumer.accept(instance);
+        count++;
+      }
+    }
+
+    log.info("Instances reported {}", count);
+    return count;
   }
 
   @Override
@@ -1573,6 +1617,11 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
   public ServiceInstanceDashboard getServiceInstanceDashboardFiltered(
       String accountId, String appId, String serviceId, PageRequest<WorkflowExecution> pageRequest) {
     return getServiceInstanceDashboard(accountId, appId, serviceId, pageRequest);
+  }
+
+  @Override
+  public boolean isInstanceConsumerEnabled(String accountId) {
+    return featureFlagService.isEnabled(FeatureName.SPG_CG_STATS_INSTANCE_CONSUMER, accountId);
   }
 
   private ServiceInfoResponseSummary createServiceSummary(ServiceInfoSummary item) {

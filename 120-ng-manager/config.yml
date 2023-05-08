@@ -448,6 +448,11 @@ gitlabConfig:
   clientSecret: "1234"
   callbackUrl: "https://gitlab.com/oauth/token"
 
+bitbucketConfig:
+  clientId: "1234"
+  clientSecret: "1234"
+  callbackUrl: "https://bitbucket.com/oauth/token"
+
 basePathPrefix: ${BASE_PATH_PREFIX:-""}
 
 enforcementClientConfiguration:
@@ -492,3 +497,13 @@ cdTsDbRetentionPeriodMonths: 7
 enableOpentelemetry: false
 
 disableFreezeNotificationTemplate: ${DISABLE_FREEZE_NOTIFY_TEMPLATE:-false}
+
+pluginExecutionConfig:
+  samBuildStepImageConfig:
+    image: ""
+    entrypoint:
+      - ""
+  samDeployStepImageConfig:
+    image: ""
+    entrypoint:
+      - ""

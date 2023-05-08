@@ -35,6 +35,7 @@ import static io.harness.rule.OwnerRule.SRINIVAS;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 import static io.harness.rule.OwnerRule.UTKARSH;
 import static io.harness.rule.OwnerRule.VIKAS;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.rule.OwnerRule.VOJIN;
 
 import static software.wings.beans.Account.Builder.anAccount;
@@ -245,6 +246,17 @@ public class AccountServiceTest extends WingsBaseTest {
     return accountService.save(anAccount()
                                    .withCompanyName(companyName)
                                    .withAccountName("Account Name 1")
+                                   .withAccountKey("ACCOUNT_KEY")
+                                   .withLicenseInfo(getLicenseInfo())
+                                   .withWhitelistedDomains(new HashSet<>())
+                                   .build(),
+        false);
+  }
+
+  private Account saveAccount_withAccountName(String accountName) {
+    return accountService.save(anAccount()
+                                   .withCompanyName("Company name")
+                                   .withAccountName(accountName)
                                    .withAccountKey("ACCOUNT_KEY")
                                    .withLicenseInfo(getLicenseInfo())
                                    .withWhitelistedDomains(new HashSet<>())
@@ -1169,6 +1181,19 @@ public class AccountServiceTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void test_updateAccountName_withDuplicateName() {
+    String accountName1 = "existingName";
+    saveAccount_withAccountName(accountName1);
+    String accountName2 = "newName";
+    Account existingAccount2 = saveAccount_withAccountName(accountName2);
+    assertThatThrownBy(() -> accountService.updateAccountName(existingAccount2.getUuid(), accountName1, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("An account with same name already exists. Please use a different name.");
+  }
+
+  @Test
   @Owner(developers = NANDAN)
   @Category(UnitTests.class)
   public void test_updateAccountNameWithNoCompanyNameParam() {
@@ -1670,8 +1695,9 @@ public class AccountServiceTest extends WingsBaseTest {
                           .withGlobalDelegateAccount(false)
                           .build();
     wingsPersistence.save(account);
-    assertThat(accountService.getAllAccounts().get(0).getDefaultExperience()).isEqualTo(DefaultExperience.CG);
-    assertThat(accountService.getAllAccounts().get(0).getCompanyName()).isEqualTo(HARNESS_NAME);
+    assertThat(accountService.listAccounts(0, 2).size()).isEqualTo(1);
+    assertThat(accountService.listAccounts(0, 2).getResponse().get(0).getCompanyName()).isEqualTo(HARNESS_NAME);
+    assertThat(accountService.listAccounts(1, 2).size()).isEqualTo(0);
   }
 
   @Test

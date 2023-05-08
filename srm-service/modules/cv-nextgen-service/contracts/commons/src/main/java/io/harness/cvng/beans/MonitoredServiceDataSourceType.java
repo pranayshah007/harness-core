@@ -29,7 +29,8 @@ public enum MonitoredServiceDataSourceType {
   @JsonProperty("CloudWatchMetrics") CLOUDWATCH_METRICS,
   @JsonProperty("AwsPrometheus") AWS_PROMETHEUS,
   @JsonProperty("SumologicMetrics") SUMOLOGIC_METRICS,
-  @JsonProperty("SumologicLogs") SUMOLOGIC_LOG;
+  @JsonProperty("SumologicLogs") SUMOLOGIC_LOG,
+  @JsonProperty("SplunkSignalFXMetrics") SPLUNK_SIGNALFX_METRICS;
   public static final Map<DataSourceType, MonitoredServiceDataSourceType>
       dataSourceTypeMonitoredServiceDataSourceTypeMap = new HashMap<>();
   static {
@@ -51,6 +52,8 @@ public enum MonitoredServiceDataSourceType {
     dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.AWS_PROMETHEUS, AWS_PROMETHEUS);
     dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.SUMOLOGIC_LOG, SUMOLOGIC_LOG);
     dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.SUMOLOGIC_METRICS, SUMOLOGIC_METRICS);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(
+        DataSourceType.SPLUNK_SIGNALFX_METRICS, SPLUNK_SIGNALFX_METRICS);
   }
 
   public static MonitoredServiceDataSourceType getMonitoredServiceDataSourceType(DataSourceType dataSourceType) {

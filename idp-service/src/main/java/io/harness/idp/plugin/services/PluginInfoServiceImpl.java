@@ -55,7 +55,7 @@ public class PluginInfoServiceImpl implements PluginInfoService {
   private BackstageEnvVariableService backstageEnvVariableService;
   @Override
   public List<PluginInfo> getAllPluginsInfo(String accountId) {
-    List<PluginInfoEntity> plugins = (List<PluginInfoEntity>) pluginInfoRepository.findAll();
+    List<PluginInfoEntity> plugins = pluginInfoRepository.findByIdentifierIn(Constants.pluginIds);
     List<PluginInfo> pluginDTOs = new ArrayList<>();
 
     Map<String, Boolean> map = configManagerService.getAllPluginIdsMap(accountId);
@@ -76,7 +76,7 @@ public class PluginInfoServiceImpl implements PluginInfoService {
     PluginInfoEntity pluginEntity = pluginInfoEntity.get();
     AppConfig appConfig = configManagerService.getPluginConfig(harnessAccount, identifier);
     List<BackstageEnvSecretVariable> backstageEnvSecretVariables = new ArrayList<>();
-    if (pluginEntity.getEnvVariables() != null && appConfig != null) {
+    if (appConfig != null) {
       List<String> envNames =
           configEnvVariablesService.getAllEnvVariablesForAccountIdentifierAndPluginId(harnessAccount, identifier);
       backstageEnvSecretVariables =

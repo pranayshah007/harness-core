@@ -241,7 +241,7 @@ public class InstanceDataBulkWriteServiceImpl implements InstanceDataBulkWriteSe
   }
 
   private <T> boolean batchQueryExecutor(List<T> itemsList, K8sBatchQueryFnFactory<T> k8sBatchQueryFn, Class<T> clazz) {
-    final int bulkWriteLimit = config.getBatchQueryConfig().getQueryBatchSize();
+    final int bulkWriteLimit = config.getBulkOperationBatchQueryConfig().getQueryBatchSize();
 
     for (List<T> itemsListPartitioned : Lists.partition(itemsList, bulkWriteLimit)) {
       final BulkWriteOperation bulkWriteOperation =

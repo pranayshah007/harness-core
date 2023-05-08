@@ -3609,6 +3609,9 @@
             },
             "target": {
               "$ref": "#/definitions/STOYamlTarget"
+            },
+            "tool": {
+              "$ref": "#/definitions/STOYamlFossaToolData"
             }
           }
         }
@@ -6839,7 +6842,8 @@
             "Java",
             "Kotlin",
             "Scala",
-            "Csharp"
+            "Csharp",
+            "Python"
           ]
         },
         "executionInput": {
@@ -6869,7 +6873,8 @@
             "Java",
             "Kotlin",
             "Scala",
-            "Csharp"
+            "Csharp",
+            "Python"
           ]
         }
       },
@@ -8204,7 +8209,9 @@
                     "Gradle",
                     "Dotnet",
                     "Nunitconsole",
-                    "SBT"
+                    "SBT",
+                    "Pytest",
+                    "Unittest"
                   ]
                 },
                 {
@@ -8277,7 +8284,8 @@
                     "Java",
                     "Kotlin",
                     "Scala",
-                    "Csharp"
+                    "Csharp",
+                    "Python"
                   ]
                 },
                 {
@@ -8318,6 +8326,22 @@
               "oneOf": [
                 {
                   "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "pythonVersion": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "3",
+                    "2"
+                  ]
                 },
                 {
                   "type": "string",
@@ -8385,6 +8409,9 @@
               "type": "string"
             },
             "testGlobs": {
+              "type": "string"
+            },
+            "testRoot": {
               "type": "string"
             },
             "testSplitStrategy": {
@@ -8608,6 +8635,21 @@
           "type": "string"
         },
         "target_language_version": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlFossaToolData": {
+      "type": "object",
+      "properties": {
+        "policy_name": {
+          "type": "string"
+        },
+        "project_name": {
+          "type": "string"
+        },
+        "team_name": {
           "type": "string"
         }
       },
@@ -9452,6 +9494,121 @@
                   "type": "string"
                 }
               ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SemgrepStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "auth": {
+              "$ref": "#/definitions/STOYamlAuth"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
             }
           }
         }
@@ -10934,6 +11091,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "Semgrep"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SemgrepStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "ShiftLeft"
               }
             }
@@ -11842,7 +12015,9 @@
                     "gradle",
                     "dotnet",
                     "nunit_console",
-                    "sbt"
+                    "sbt",
+                    "pytest",
+                    "unittest"
                   ]
                 },
                 {

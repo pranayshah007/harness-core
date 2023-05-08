@@ -22,6 +22,7 @@ import io.harness.ngtriggers.validations.ValidationResult.ValidationResultBuilde
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
+import java.util.Optional;
 import lombok.AllArgsConstructor;
 
 @Singleton
@@ -30,8 +31,13 @@ import lombok.AllArgsConstructor;
 public class TriggerWebhookValidator {
   private final NGTriggerService ngTriggerService;
 
-  public void applyValidationsForCustomWebhook(TriggerWebhookEvent triggerWebhookEvent) {
-    ValidationResult validationResult = validateTriggers(triggerWebhookEvent);
+  public void applyValidationsForCustomWebhook(TriggerWebhookEvent triggerWebhookEvent, String webhookToken) {
+    ValidationResult validationResult;
+    if (webhookToken == null) {
+      validationResult = validateTriggers(triggerWebhookEvent);
+    } else {
+      validationResult = validateTriggersFetchedViaWebhookToken(webhookToken);
+    }
     if (!validationResult.isSuccess()) {
       throw new InvalidRequestException(validationResult.getMessage());
     }
@@ -58,6 +64,28 @@ public class TriggerWebhookValidator {
         errorMsg.append(", Trigger: ").append(triggerWebhookEvent.getTriggerIdentifier());
       }
       builder.success(false).message(errorMsg.toString());
+    } else if (!isEmpty(triggersForAccount.get(0).getCustomWebhookToken())) {
+      String errorMsg =
+          "This webhook url is no longer supported for newly created custom webhook triggers. We are migrating to new webhook urls using custom webhook tokens in the url.";
+      builder.success(false).message(errorMsg);
+    }
+    return builder.build();
+  }
+
+  private ValidationResult validateTriggersFetchedViaWebhookToken(String webhookToken) {
+    ValidationResultBuilder builder = ValidationResult.builder().success(true);
+    Optional<NGTriggerEntity> customTriggerOptional =
+        ngTriggerService.findTriggersForCustomWebhookViaCustomWebhookToken(webhookToken);
+
+    if (customTriggerOptional.isPresent()) {
+      NGTriggerEntity customTrigger = customTriggerOptional.get();
+      if ((!customTrigger.getEnabled()) || (customTrigger.getDeleted())) {
+        String errorMsg = "No enabled custom trigger found for the used custom webhook token: " + webhookToken;
+        builder.success(false).message(errorMsg);
+      }
+    } else {
+      String errorMsg = "No custom trigger found for the used custom webhook token: " + webhookToken;
+      builder.success(false).message(errorMsg);
     }
     return builder.build();
   }

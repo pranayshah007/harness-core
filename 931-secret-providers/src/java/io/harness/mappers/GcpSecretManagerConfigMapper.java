@@ -26,11 +26,13 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PL)
 public class GcpSecretManagerConfigMapper {
   public static GcpSecretsManagerConfig fromDTO(GcpSecretManagerConfigDTO configDTO) {
-    GcpSecretsManagerConfig gcpSecretsManagerConfig = GcpSecretsManagerConfig.builder()
-                                                          .name(configDTO.getName())
-                                                          .delegateSelectors(configDTO.getDelegateSelectors())
-                                                          .credentials(configDTO.getCredentials())
-                                                          .build();
+    GcpSecretsManagerConfig gcpSecretsManagerConfig =
+        GcpSecretsManagerConfig.builder()
+            .name(configDTO.getName())
+            .delegateSelectors(configDTO.getDelegateSelectors())
+            .credentials(configDTO.getCredentials())
+            .assumeCredentialsOnDelegate(configDTO.getAssumeCredentialsOnDelegate())
+            .build();
     gcpSecretsManagerConfig.setNgMetadata(ngMetaDataFromDto(configDTO));
     gcpSecretsManagerConfig.setAccountId(configDTO.getAccountIdentifier());
     gcpSecretsManagerConfig.setEncryptionType(configDTO.getEncryptionType());

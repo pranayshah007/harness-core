@@ -24,6 +24,7 @@ import io.harness.pms.contracts.advisers.MarkSuccessAdvise;
 import io.harness.pms.contracts.advisers.NextStepAdvise;
 import io.harness.pms.contracts.advisers.NextStepAdvise.Builder;
 import io.harness.pms.contracts.advisers.RetryAdvise;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.adviser.Adviser;
@@ -61,7 +62,7 @@ public class RetryAdviser implements Adviser {
                   .build())
           .build();
     }
-    return handlePostRetry(parameters);
+    return handlePostRetry(parameters, advisingEvent.getToStatus());
   }
 
   @Override
@@ -76,7 +77,8 @@ public class RetryAdviser implements Adviser {
     return canAdvise;
   }
 
-  private AdviserResponse handlePostRetry(io.harness.pms.sdk.core.adviser.retry.RetryAdviserParameters parameters) {
+  private AdviserResponse handlePostRetry(
+      io.harness.pms.sdk.core.adviser.retry.RetryAdviserParameters parameters, Status toStatus) {
     AdviserResponse.Builder adviserResponseBuilder =
         AdviserResponse.newBuilder().setRepairActionCode(parameters.getRepairActionCodeAfterRetry());
     switch (parameters.getRepairActionCodeAfterRetry()) {
@@ -85,6 +87,7 @@ public class RetryAdviser implements Adviser {
             .setInterventionWaitAdvise(
                 InterventionWaitAdvise.newBuilder()
                     .setTimeout(Duration.newBuilder().setSeconds(java.time.Duration.ofDays(1).toMinutes() * 60).build())
+                    .setFromStatus(toStatus)
                     .build())
             .setType(AdviseType.INTERVENTION_WAIT)
             .build();

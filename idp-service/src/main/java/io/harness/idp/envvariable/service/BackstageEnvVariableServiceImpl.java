@@ -200,7 +200,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
   @Override
   public void deleteMultiUsingEnvNames(List<String> envNames, String accountIdentifier) {
     k8sClient.removeSecretData(getNamespaceForAccount(accountIdentifier), BACKSTAGE_SECRET, envNames);
-    backstageEnvVariableRepository.deleteAllByEnvName(envNames);
+    backstageEnvVariableRepository.deleteAllByAccountIdentifierAndEnvNames(accountIdentifier, envNames);
   }
 
   @Override

@@ -29,12 +29,12 @@ import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.EntityDetail;
-import io.harness.template.beans.yaml.NGTemplateConfig;
-import io.harness.template.beans.yaml.NGTemplateInfoConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.helpers.TemplateEntityDetailUtils;
 import io.harness.template.mappers.NGTemplateDtoMapper;
+import io.harness.template.resources.beans.yaml.NGTemplateConfig;
+import io.harness.template.resources.beans.yaml.NGTemplateInfoConfig;
 import io.harness.template.services.NGTemplateService;
 
 import com.google.inject.Inject;

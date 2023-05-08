@@ -30,6 +30,7 @@ import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.CustomerRetrieveParams;
 import com.stripe.param.CustomerUpdateParams;
 import com.stripe.param.InvoiceUpcomingParams;
+import com.stripe.param.InvoiceUpdateParams;
 import com.stripe.param.PaymentMethodListParams;
 import com.stripe.param.PriceListParams;
 import com.stripe.param.PriceSearchParams;
@@ -206,6 +207,16 @@ public class StripeHandlerImpl {
       return invoice.pay();
     } catch (StripeException e) {
       throw new InvalidRequestException("Unable to preview upcoming invoice", e);
+    }
+  }
+
+  Invoice putInvoiceMetadata(String invoiceId, String key, String value) {
+    try {
+      Invoice invoice = retrieveInvoice(invoiceId);
+      InvoiceUpdateParams invoiceUpdateParams = InvoiceUpdateParams.builder().putMetadata(key, value).build();
+      return invoice.update(invoiceUpdateParams);
+    } catch (StripeException e) {
+      throw new InvalidRequestException("Unable to retrieve invoice", e);
     }
   }
 

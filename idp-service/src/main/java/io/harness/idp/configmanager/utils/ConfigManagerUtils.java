@@ -54,6 +54,12 @@ public class ConfigManagerUtils {
 
   private static final String SNYK_SECURITY_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/snyk-security-schema.json";
 
+  private static final String CIRCLE_CI_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/circleci-schema.json";
+
+  private static final String JENKINS_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/jenkins-schema.json";
+
+  private static final String LIGHTHOUSE_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/lighthouse-schema.json";
+
   public String asYaml(String jsonString) throws IOException {
     JsonNode jsonNodeTree = new ObjectMapper().readTree(jsonString);
     String jsonAsYaml =
@@ -146,6 +152,12 @@ public class ConfigManagerUtils {
         return readFileFromClassPath(PAGER_DUTY_PLUGIN_JSON_SCHEMA_PATH);
       case "snyk-security":
         return readFileFromClassPath(SNYK_SECURITY_PLUGIN_JSON_SCHEMA_PATH);
+      case "circleci":
+        return readFileFromClassPath(CIRCLE_CI_PLUGIN_JSON_SCHEMA_PATH);
+      case "jenkins":
+        return readFileFromClassPath(JENKINS_PLUGIN_JSON_SCHEMA_PATH);
+      case "lighthouse":
+        return readFileFromClassPath(LIGHTHOUSE_PLUGIN_JSON_SCHEMA_PATH);
       default:
         return null;
     }

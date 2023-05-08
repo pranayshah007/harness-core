@@ -7,6 +7,7 @@
 
 package io.harness.beans;
 
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.task.TaskParameters;
 
 import software.wings.beans.SerializationFormat;
@@ -29,6 +30,7 @@ public class DelegateTaskRequest {
   String accountId;
   @Singular Map<String, String> taskSetupAbstractions;
   @Singular List<String> taskSelectors;
+  List<TaskSelector> selectors;
   Duration executionTimeout;
   String taskDescription;
   LinkedHashMap<String, String> logStreamingAbstractions;

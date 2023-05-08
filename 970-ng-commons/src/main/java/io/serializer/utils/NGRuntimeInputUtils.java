@@ -19,11 +19,11 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class NGRuntimeInputUtils {
   public String extractParameters(String text, String validatorTypeString) {
-    String defaultValueString = null;
+    String validatorValueString = null;
     // Checking the pattern when field ends with validatorTypeString
     Matcher matcher = Pattern.compile("\\." + validatorTypeString + "\\((.*?)\\)$").matcher(text);
     if (matcher.find()) {
-      defaultValueString = matcher.group(1);
+      validatorValueString = matcher.group(1);
       // when any inputSetValidator is present after validatorTypeString construct
       List<Pattern> patterns =
           Arrays.stream(InputSetValidatorType.values())
@@ -38,15 +38,15 @@ public class NGRuntimeInputUtils {
       for (Pattern pattern : patterns) {
         Matcher m = pattern.matcher(text);
         if (m.find()) {
-          String defaultValue = m.group(1);
+          String validatorValue = m.group(1);
           // Take the smallest match as default value. <+input>.default("abc").executionInput() can match to "abc" and
           // "abc").executionInput(). We need to take the "abc"
-          if (defaultValueString == null || defaultValue.length() < defaultValueString.length()) {
-            defaultValueString = defaultValue;
+          if (validatorValueString == null || validatorValue.length() < validatorValueString.length()) {
+            validatorValueString = validatorValue;
           }
         }
       }
     }
-    return defaultValueString;
+    return validatorValueString;
   }
 }

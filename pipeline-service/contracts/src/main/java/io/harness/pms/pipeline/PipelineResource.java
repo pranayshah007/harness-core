@@ -398,11 +398,12 @@ public interface PipelineResource {
           description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE) String pipelineId,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @Parameter(description = " ", hidden = true) @QueryParam(
-          PipelineResourceConstants.GET_METADATA_ONLY_PARAM_KEY) Boolean getMetadataOnly);
+          PipelineResourceConstants.GET_METADATA_ONLY_PARAM_KEY) Boolean getMetadataOnly,
+      @QueryParam("loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache);
 
   @POST
   @Path("/import/{pipelineIdentifier}")
-  @Hidden
   @ApiOperation(value = "Get Pipeline YAML from Git Repository", nickname = "importPipeline")
   @Operation(operationId = "importPipeline", summary = "Get Pipeline YAML from Git Repository",
       responses =

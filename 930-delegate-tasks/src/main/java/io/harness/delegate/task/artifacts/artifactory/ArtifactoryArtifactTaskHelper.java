@@ -74,7 +74,7 @@ public class ArtifactoryArtifactTaskHelper {
             (RepositoryFormat.docker.name().equals(artifactoryArtifactDelegateResponse.getRepositoryFormat())
                 && artifactoryArtifactDelegateResponse.getBuildDetails() != null
                 && artifactoryArtifactDelegateResponse.getBuildDetails().getMetadata() != null)
-            ? "\nImage pull command: docker pull "
+            ? "\nTo pull image use: docker pull "
                 + artifactoryArtifactDelegateResponse.getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
             : null;
         saveLogs(executionLogCallback,

@@ -255,13 +255,11 @@ public class TriggerExecutionHelper {
       PipelineEntity pipelineEntity = pipelineEntityToExecute.get();
 
       final String executionId = generateUuid();
-      ExecutionMetadata.Builder executionMetaDataBuilder =
-          ExecutionMetadata.newBuilder()
-              .setExecutionUuid(executionId)
-              .setTriggerInfo(triggerInfo)
-              .setRunSequence(pipelineMetadataService.incrementRunSequence(pipelineEntity))
-              .setPipelineIdentifier(pipelineEntity.getIdentifier())
-              .setHarnessVersion(pipelineEntity.getHarnessVersion());
+      ExecutionMetadata.Builder executionMetaDataBuilder = ExecutionMetadata.newBuilder()
+                                                               .setExecutionUuid(executionId)
+                                                               .setTriggerInfo(triggerInfo)
+                                                               .setPipelineIdentifier(pipelineEntity.getIdentifier())
+                                                               .setHarnessVersion(pipelineEntity.getHarnessVersion());
 
       if (isNotEmpty(pipelineEntity.getConnectorRef())) {
         executionMetaDataBuilder.setPipelineConnectorRef(pipelineEntity.getConnectorRef());

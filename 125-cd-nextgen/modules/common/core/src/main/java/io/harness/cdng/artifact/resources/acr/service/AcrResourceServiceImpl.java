@@ -14,8 +14,10 @@ import io.harness.cdng.artifact.resources.acr.dtos.AcrRegistriesDTO;
 import io.harness.cdng.artifact.resources.acr.dtos.AcrRegistryDTO;
 import io.harness.cdng.artifact.resources.acr.dtos.AcrRepositoriesDTO;
 import io.harness.cdng.artifact.resources.acr.dtos.AcrRepositoryDTO;
+import io.harness.cdng.artifact.resources.acr.dtos.AcrRequestDTO;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.azure.AcrBuildDetailsDTO;
 import io.harness.delegate.beans.azure.AcrResponseDTO;
 import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
 import io.harness.delegate.beans.azure.response.AzureRepositoriesResponse;
@@ -25,8 +27,10 @@ import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskType;
 import io.harness.delegate.task.artifacts.ArtifactDelegateRequestUtils;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
+import io.harness.exception.ArtifactServerException;
 import io.harness.exception.DelegateNotAvailableException;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.HintException;
@@ -133,6 +137,36 @@ public class AcrResourceServiceImpl implements AcrResourceService {
 
       ArtifactTaskResponse artifactTaskResponse = (ArtifactTaskResponse) acrTaskExecutionResponse;
       return azureHelperService.getAcrResponseDTO(artifactTaskResponse.getArtifactTaskExecutionResponse());
+    } catch (DelegateServiceDriverException ex) {
+      throw new HintException(
+          String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
+          new DelegateNotAvailableException(ex.getCause().getMessage(), WingsException.USER));
+    }
+  }
+
+  @Override
+  public AcrBuildDetailsDTO getLastSuccessfulBuild(IdentifierRef connectorRef, String subscription, String registry,
+      String repository, String orgIdentifier, String projectIdentifier, AcrRequestDTO acrRequestDTO) {
+    AzureConnectorDTO connector = azureHelperService.getConnector(connectorRef);
+    BaseNGAccess baseNGAccess =
+        azureHelperService.getBaseNGAccess(connectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+    List<EncryptedDataDetail> encryptionDetails = azureHelperService.getEncryptionDetails(connector, baseNGAccess);
+
+    AcrArtifactDelegateRequest acrArtifactDelegateRequest = ArtifactDelegateRequestUtils.getAcrDelegateRequest(
+        subscription, registry, repository, connector, acrRequestDTO.getTag(), acrRequestDTO.getTagRegex(),
+        acrRequestDTO.getTagsList(), encryptionDetails, ArtifactSourceType.ACR);
+    try {
+      DelegateResponseData acrTaskExecutionResponse = azureHelperService.executeSyncTask(acrArtifactDelegateRequest,
+          baseNGAccess, ArtifactTaskType.GET_LAST_SUCCESSFUL_BUILD,
+          "ACR Artifact Get Last Successful Build task failure due to error");
+
+      ArtifactTaskResponse artifactTaskResponse = (ArtifactTaskResponse) acrTaskExecutionResponse;
+      AcrResponseDTO acrResponseDTO =
+          azureHelperService.getAcrResponseDTO(artifactTaskResponse.getArtifactTaskExecutionResponse());
+      if (acrResponseDTO.getBuildDetailsList().size() != 1) {
+        throw new ArtifactServerException("ACR Artifact get last successful build task failure.");
+      }
+      return acrResponseDTO.getBuildDetailsList().get(0);
     } catch (DelegateServiceDriverException ex) {
       throw new HintException(
           String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),

@@ -88,7 +88,6 @@ import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.dl.WingsPersistence;
 import software.wings.exception.WingsExceptionMapper;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
-import software.wings.ratelimit.DelegateRequestRateLimiter;
 import software.wings.service.impl.instance.InstanceHelper;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.DelegateService;
@@ -133,7 +132,6 @@ public class DelegateAgentResourceTest extends CategoryTest {
 
   private static final AccountService accountService = mock(AccountService.class);
   private static final WingsPersistence wingsPersistence = mock(WingsPersistence.class);
-  private static final DelegateRequestRateLimiter delegateRequestRateLimiter = mock(DelegateRequestRateLimiter.class);
   private static final SubdomainUrlHelperIntfc subdomainUrlHelper = mock(SubdomainUrlHelperIntfc.class);
   private static final InstanceHelper instanceSyncResponseHandler = mock(InstanceHelper.class);
   private static final ArtifactCollectionResponseHandler artifactCollectionResponseHandler;
@@ -149,6 +147,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
   private static final ManifestCollectionResponseHandler manifestCollectionResponseHandler =
       mock(ManifestCollectionResponseHandler.class);
   private static final ConnectorHearbeatPublisher connectorHearbeatPublisher = mock(ConnectorHearbeatPublisher.class);
+  private static final KryoSerializer referenceFalseKryoSerializer = mock(KryoSerializer.class);
   private static final KryoSerializer kryoSerializer = mock(KryoSerializer.class);
   private static final FeatureFlagService featureFlagService = mock(FeatureFlagService.class);
   private static final PollingResourceClient pollResourceClient = mock(PollingResourceClient.class);
@@ -165,12 +164,11 @@ public class DelegateAgentResourceTest extends CategoryTest {
   @ClassRule
   public static final ResourceTestRule RESOURCES =
       ResourceTestRule.builder()
-          .instance(
-              new DelegateAgentResource(delegateService, accountService, wingsPersistence, delegateRequestRateLimiter,
-                  subdomainUrlHelper, artifactCollectionResponseHandler, instanceSyncResponseHandler,
-                  manifestCollectionResponseHandler, connectorHearbeatPublisher, kryoSerializer,
-                  configurationController, featureFlagService, delegateTaskServiceClassic, pollResourceClient,
-                  instanceSyncResponsePublisher, delegatePollingHeartbeatService, delegateCapacityManagementService))
+          .instance(new DelegateAgentResource(delegateService, accountService, wingsPersistence, subdomainUrlHelper,
+              artifactCollectionResponseHandler, instanceSyncResponseHandler, manifestCollectionResponseHandler,
+              connectorHearbeatPublisher, kryoSerializer, configurationController, featureFlagService,
+              delegateTaskServiceClassic, pollResourceClient, instanceSyncResponsePublisher,
+              delegatePollingHeartbeatService, delegateCapacityManagementService, referenceFalseKryoSerializer))
           .instance(new AbstractBinder() {
             @Override
             protected void configure() {
@@ -271,12 +269,12 @@ public class DelegateAgentResourceTest extends CategoryTest {
             .buildSourceResponse(BuildSourceResponse.builder().build())
             .build();
 
-    when(kryoSerializer.asObject(any(byte[].class))).thenReturn(buildSourceExecutionResponse);
+    when(referenceFalseKryoSerializer.asObject(any(byte[].class))).thenReturn(buildSourceExecutionResponse);
 
     RequestBody requestBody = RequestBody.create(okhttp3.MediaType.parse("application/octet-stream"), "");
 
     RESOURCES.client()
-        .target("/agent/delegates/artifact-collection/12345679?accountId=" + ACCOUNT_ID)
+        .target("/agent/delegates/artifact-collection/v2/12345679?accountId=" + ACCOUNT_ID)
         .request()
         .post(entity(requestBody, "application/x-kryo"), new GenericType<RestResponse<Boolean>>() {});
 

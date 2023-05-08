@@ -48,7 +48,7 @@ public class AcrArtifactDelegateResponse extends ArtifactDelegateResponse {
   public String describe() {
     String buildMetadataUrl = getBuildDetails() != null ? getBuildDetails().getBuildUrl() : null;
     String dockerPullCommand = (getBuildDetails() != null && getBuildDetails().getMetadata() != null)
-        ? "\nImage pull command: docker pull " + getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
+        ? "\nTo pull image use: docker pull " + getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
         : null;
     return "type: " + (getSourceType() != null ? getSourceType().getDisplayName() : null)
         + "\nsubscription: " + getSubscription() + "\nregistry: " + getRegistry() + "\nrepository: " + getRepository()

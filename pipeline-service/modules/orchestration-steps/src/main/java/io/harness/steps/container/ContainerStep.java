@@ -22,7 +22,6 @@ import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.contracts.execution.TaskChainExecutableResponse;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -35,7 +34,6 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
 import io.harness.steps.container.execution.ContainerRunStepHelper;
 import io.harness.steps.container.execution.ContainerStepCleanupHelper;
@@ -72,7 +70,7 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
 
   private final InitialiseTaskUtils initialiseTaskUtils;
 
-  public static final StepType STEP_TYPE = StepSpecTypeConstants.CONTAINER_STEP_TYPE;
+  public static final StepType STEP_TYPE = ContainerStepSpecTypeConstants.CONTAINER_STEP_TYPE;
 
   public TaskData getTaskData(StepElementParameters stepNode, CIInitializeTaskParams buildSetupTaskParams) {
     long timeout = Timeout.fromString((String) stepNode.getTimeout().fetchFinalValue()).getTimeoutInMillis();
@@ -96,12 +94,6 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
   private String getLogPrefix(Ambiance ambiance) {
     LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, "STEP");
     return LogStreamingHelper.generateLogBaseKey(logAbstractions);
-  }
-
-  @Override
-  public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, TaskChainExecutableResponse executableResponse) {
-    containerStepCleanupHelper.sendCleanupRequest(ambiance);
   }
 
   @Override
@@ -137,7 +129,6 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
-    containerStepCleanupHelper.sendCleanupRequest(ambiance);
     ResponseData responseData = responseDataSupplier.get();
     executionResponseHelper.finalizeStepResponse(ambiance, stepParameters, responseData, null);
     return StepResponse.builder().status(Status.SUCCEEDED).build();

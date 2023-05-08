@@ -34,7 +34,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.NativeHelmDeploymentRelease;
 import io.harness.perpetualtask.instancesync.NativeHelmInstanceSyncPerpetualTaskParams;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.time.Instant;
@@ -53,11 +52,11 @@ import org.jetbrains.annotations.NotNull;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
-public class NativeHelmInstanceSyncPerpetualTaskExcecutor implements PerpetualTaskExecutor {
+public class NativeHelmInstanceSyncPerpetualTaskExcecutor
+    extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   private static final int DEFAULT_STEADY_STATE_TIMEOUT = 5;
   private static final String SUCCESS_RESPONSE_MSG = "success";
 
-  @Inject private KryoSerializer kryoSerializer;
   @Inject private ContainerDeploymentDelegateBaseHelper containerBaseHelper;
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
@@ -68,13 +67,13 @@ public class NativeHelmInstanceSyncPerpetualTaskExcecutor implements PerpetualTa
     NativeHelmInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), NativeHelmInstanceSyncPerpetualTaskParams.class);
 
-    return executeNativeHelmInstanceSyncTask(taskId, taskParams);
+    return executeNativeHelmInstanceSyncTask(taskId, taskParams, params.getReferenceFalseKryoSerializer());
   }
 
-  private PerpetualTaskResponse executeNativeHelmInstanceSyncTask(
-      PerpetualTaskId taskId, NativeHelmInstanceSyncPerpetualTaskParams taskParams) {
-    List<NativeHelmDeploymentReleaseData> deploymentReleaseDataList =
-        fixNativeHelmDeploymentReleaseData(getNativeHelmDeploymentReleaseData(taskParams));
+  private PerpetualTaskResponse executeNativeHelmInstanceSyncTask(PerpetualTaskId taskId,
+      NativeHelmInstanceSyncPerpetualTaskParams taskParams, boolean referenceFalseKryoSerializer) {
+    List<NativeHelmDeploymentReleaseData> deploymentReleaseDataList = fixNativeHelmDeploymentReleaseData(
+        getNativeHelmDeploymentReleaseData(taskParams, referenceFalseKryoSerializer));
 
     HelmVersion helmVersion = HelmVersion.fromString(taskParams.getHelmVersion());
 
@@ -95,22 +94,22 @@ public class NativeHelmInstanceSyncPerpetualTaskExcecutor implements PerpetualTa
   }
 
   private List<NativeHelmDeploymentReleaseData> getNativeHelmDeploymentReleaseData(
-      NativeHelmInstanceSyncPerpetualTaskParams taskParams) {
+      NativeHelmInstanceSyncPerpetualTaskParams taskParams, boolean referenceFalseKryoSerializer) {
     return taskParams.getDeploymentReleaseListList()
         .stream()
-        .map(this::toNativeHelmDeploymentReleaseData)
+        .map(data -> toNativeHelmDeploymentReleaseData(data, referenceFalseKryoSerializer))
         .collect(Collectors.toList());
   }
 
   private NativeHelmDeploymentReleaseData toNativeHelmDeploymentReleaseData(
-      NativeHelmDeploymentRelease nativeHelmDeploymentRelease) {
+      NativeHelmDeploymentRelease nativeHelmDeploymentRelease, boolean referenceFalseKryoSerializerb) {
     return NativeHelmDeploymentReleaseData.builder()
         .releaseName(nativeHelmDeploymentRelease.getReleaseName())
         .namespaces(new LinkedHashSet<>(nativeHelmDeploymentRelease.getNamespacesList()))
-        .k8sInfraDelegateConfig((K8sInfraDelegateConfig) kryoSerializer.asObject(
-            nativeHelmDeploymentRelease.getK8SInfraDelegateConfig().toByteArray()))
-        .helmChartInfo(
-            (HelmChartInfo) kryoSerializer.asObject(nativeHelmDeploymentRelease.getHelmChartInfo().toByteArray()))
+        .k8sInfraDelegateConfig((K8sInfraDelegateConfig) getKryoSerializer(referenceFalseKryoSerializerb)
+                                    .asObject(nativeHelmDeploymentRelease.getK8SInfraDelegateConfig().toByteArray()))
+        .helmChartInfo((HelmChartInfo) getKryoSerializer(referenceFalseKryoSerializerb)
+                           .asObject(nativeHelmDeploymentRelease.getHelmChartInfo().toByteArray()))
         .build();
   }
 

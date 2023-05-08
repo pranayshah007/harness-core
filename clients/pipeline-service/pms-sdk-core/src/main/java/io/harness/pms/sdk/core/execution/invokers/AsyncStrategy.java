@@ -15,7 +15,9 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutionMode;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.execution.AsyncSdkProgressCallback;
 import io.harness.pms.sdk.core.execution.AsyncSdkResumeCallback;
 import io.harness.pms.sdk.core.execution.AsyncSdkSingleCallback;
@@ -51,6 +53,13 @@ public class AsyncStrategy extends ProgressableStrategy {
     AsyncExecutable asyncExecutable = extractStep(ambiance);
     AsyncExecutableResponse asyncExecutableResponse = asyncExecutable.executeAsync(ambiance,
         invokerPackage.getStepParameters(), invokerPackage.getInputPackage(), invokerPackage.getPassThroughData());
+    // Status should be in non-final state
+    if (!StatusUtils.resumableStatuses().contains(asyncExecutableResponse.getStatus())) {
+      log.warn("Skipping Handle Response as status in AsyncExecutionResponse is of final state {} ",
+          asyncExecutableResponse.getStatus());
+      asyncExecutableResponse = asyncExecutableResponse.toBuilder().setStatus(Status.NO_OP).build();
+    }
+    // This is only for handling non-final state
     handleResponse(
         ambiance, invokerPackage.getExecutionMode(), invokerPackage.getStepParameters(), asyncExecutableResponse);
   }

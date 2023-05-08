@@ -31,6 +31,7 @@ import io.harness.plancreator.pipeline.NGPipelinePlanCreator;
 import io.harness.plancreator.pipeline.PipelinePlanCreatorV1;
 import io.harness.plancreator.stages.StagesPlanCreator;
 import io.harness.plancreator.stages.v1.StagesPlanCreatorV1;
+import io.harness.plancreator.steps.StepGroupPMSPlanCreatorV2;
 import io.harness.plancreator.steps.barrier.BarrierStepPlanCreator;
 import io.harness.plancreator.steps.email.EmailStepPlanCreator;
 import io.harness.plancreator.steps.email.EmailStepVariableCreator;
@@ -151,6 +152,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     planCreators.add(new ContainerStepPlanCreator());
     planCreators.add(new GroupPlanCreatorV1());
     planCreators.add(new CdSscaOrchestrationStepPlanCreator());
+    planCreators.add(new StepGroupPMSPlanCreatorV2());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;

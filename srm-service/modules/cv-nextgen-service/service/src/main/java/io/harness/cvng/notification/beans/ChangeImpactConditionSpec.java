@@ -7,6 +7,8 @@
 
 package io.harness.cvng.notification.beans;
 
+import io.harness.cvng.beans.change.ChangeCategory;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
 import javax.validation.constraints.Max;
@@ -24,7 +26,8 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ChangeImpactConditionSpec extends NotificationRuleConditionSpec {
-  @NonNull List<MonitoredServiceChangeEventType> changeEventTypes;
+  @Deprecated List<MonitoredServiceChangeEventType> changeEventTypes;
+  List<ChangeCategory> changeCategories;
   @NonNull @Min(0) @Max(100) Double threshold;
   @NonNull String period;
 

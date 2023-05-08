@@ -113,6 +113,7 @@ message GetFileRequest {
   string repoName = 1;
   string branchName = 2;
   string filePath = 3;
+  string commitId = 4;
   string connectorRef = 5;
   ScopeIdentifiers scopeIdentifiers = 6;
   map<string, string> contextMap = 7;
@@ -273,6 +274,7 @@ message GetBatchFilesResponse {
 message UserDetailsRequest {
   string accountIdentifier = 1;
   GitAccessRequest gitAccessRequest = 2;
+  io.harness.security.Principal principal = 3;
 }
 
 message GitAccessRequest {
@@ -280,6 +282,7 @@ message GitAccessRequest {
     GithubAccessRequest github = 1;
     GitlabAccessRequest gitlab = 2;
     AzureRepoAccessRequest azureRepo = 3;
+    BitbucketAccessRequest bitbucket = 4;
   }
 }
 
@@ -314,6 +317,22 @@ message GithubAppAccessRequest {
   SecretRefData applicationIdRef = 3;
   SecretRefData privateKeyRef = 4;
   SecretRefData installationIdRef = 5;
+}
+
+message BitbucketAccessRequest {
+  oneof hook {
+    BitbucketOAuthAccessRequest bitbucketOAuthAccessRequest = 1;
+    BitbucketUserNameTokenAccessRequest bitbucketUserNameTokenAccessRequest = 2;
+  }
+}
+
+message BitbucketOAuthAccessRequest {
+  SecretRefData tokenRef = 1;
+}
+
+message BitbucketUserNameTokenAccessRequest {
+  SecretRefData userNameRef = 1;
+  SecretRefData tokenRef = 2;
 }
 
 message UserDetailsResponse {

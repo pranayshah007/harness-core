@@ -12,28 +12,25 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.Boolean.FALSE;
 
-import io.harness.account.AccountClient;
+import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.ng.core.api.DefaultUserGroupService;
-import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Organization.OrganizationKeys;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.entities.Project.ProjectKeys;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -46,19 +43,19 @@ public class DefaultUserGroupCreationService implements Runnable {
   private final OrganizationService organizationService;
   private final ProjectService projectService;
   private final PersistentLocker persistentLocker;
-  private final AccountClient accountClient;
+  private final AccountUtils accountUtils;
   private static final String DEBUG_MESSAGE = "DefaultUserGroupCreationService: ";
   private static final String LOCK_NAME = "DefaultUserGroupsCreationJobLock";
 
   @Inject
   public DefaultUserGroupCreationService(DefaultUserGroupService defaultUserGroupService,
       OrganizationService organizationService, ProjectService projectService, PersistentLocker persistentLocker,
-      AccountClient accountClient) {
+      AccountUtils accountUtils) {
     this.defaultUserGroupService = defaultUserGroupService;
     this.organizationService = organizationService;
     this.projectService = projectService;
     this.persistentLocker = persistentLocker;
-    this.accountClient = accountClient;
+    this.accountUtils = accountUtils;
   }
 
   @Override
@@ -91,11 +88,7 @@ public class DefaultUserGroupCreationService implements Runnable {
     log.info(DEBUG_MESSAGE + "User Groups creation started.");
 
     try {
-      List<AccountDTO> allAccounts = CGRestUtils.getResponse(accountClient.getAllAccounts());
-      List<String> distinctAccountIds = allAccounts.stream()
-                                            .filter(AccountDTO::isNextGenEnabled)
-                                            .map(AccountDTO::getIdentifier)
-                                            .collect(Collectors.toList());
+      List<String> distinctAccountIds = accountUtils.getAllNGAccountIds();
       if (isEmpty(distinctAccountIds)) {
         return;
       }

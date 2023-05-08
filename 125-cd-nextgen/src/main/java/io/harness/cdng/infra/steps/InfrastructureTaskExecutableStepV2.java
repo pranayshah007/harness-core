@@ -25,6 +25,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.common.beans.StepDelegateInfo;
+import io.harness.cdng.common.beans.StepDetailsDelegateInfo;
 import io.harness.cdng.elastigroup.output.ElastigroupConfigurationOutput;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
@@ -72,6 +74,7 @@ import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.infrastructure.services.impl.InfrastructureYamlSchemaHelper;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -86,6 +89,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.rbac.PipelineRbacHelper;
+import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.execution.invokers.StrategyHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -126,6 +130,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
                                                .setType(ExecutionNodeType.INFRASTRUCTURE_TASKSTEP_V2.getName())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
+  private static final String INFRASTRUCTURE_STEP = "Infrastructure Step";
 
   @Inject private InfrastructureEntityService infrastructureEntityService;
   @Inject private InfrastructureStepHelper infrastructureStepHelper;
@@ -138,6 +143,8 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   @Inject private CDExpressionResolver resolver;
   @Inject private StrategyHelper strategyHelper;
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
+  @Inject private InfrastructureYamlSchemaHelper infrastructureYamlSchemaHelper;
 
   @Override
   public Class<InfrastructureTaskExecutableStepV2Params> getStepParametersClass() {
@@ -175,6 +182,10 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
                   .map(TaskSelectorYaml::getDelegateSelectors)
                   .collect(Collectors.toSet()));
       String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
+      List<StepDelegateInfo> stepDelegateInfos =
+          Collections.singletonList(StepDelegateInfo.builder().taskName("Infrastructure Task").taskId(taskId).build());
+      sdkGraphVisualizationDataService.publishStepDetailInformation(ambiance,
+          StepDetailsDelegateInfo.builder().stepDelegateInfos(stepDelegateInfos).build(), INFRASTRUCTURE_STEP);
       return AsyncExecutableResponse.newBuilder()
           .addCallbackIds(taskId)
           .addAllLogKeys(StepUtils.generateLogKeys(ambiance, List.of(LOG_SUFFIX)))
@@ -377,10 +388,24 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     if (ParameterField.isNotNull(stepParameters.getInfraInputs())
         && isNotEmpty(stepParameters.getInfraInputs().getValue())) {
       String mergedYaml = mergeInfraInputs(infrastructureEntity.getYaml(), stepParameters.getInfraInputs().getValue());
+
       infrastructureEntity.setYaml(mergedYaml);
     }
 
-    return InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity);
+    return getInfrastructureConfig(infrastructureEntity);
+  }
+
+  private InfrastructureConfig getInfrastructureConfig(InfrastructureEntity infrastructureEntity) {
+    try {
+      return InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity);
+    } catch (Exception ex) {
+      infrastructureYamlSchemaHelper.validateSchema(
+          infrastructureEntity.getAccountId(), infrastructureEntity.getYaml());
+      log.error(String.format(
+          "Infrastructure schema validation succeeded but failed to convert yaml to Infrastructure config [%s]",
+          infrastructureEntity.getIdentifier()));
+      throw ex;
+    }
   }
 
   private Optional<InstancesOutcome> publishInfraOutput(NGLogCallback logCallback, ServiceStepOutcome serviceOutcome,

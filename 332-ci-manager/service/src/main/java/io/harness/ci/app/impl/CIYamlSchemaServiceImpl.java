@@ -151,7 +151,7 @@ public class CIYamlSchemaServiceImpl implements CIYamlSchemaService {
         CI_NAMESPACE);
     if (stepSchemaWithDetails != null) {
       YamlSchemaUtils.addOneOfInExecutionWrapperConfig(integrationStageSchema.get(DEFINITIONS_NODE),
-          stepSchemaWithDetails, ModuleType.CD, enabledFeatureFlags, featureRestrictionsMap);
+          stepSchemaWithDetails, ModuleType.CI, enabledFeatureFlags, featureRestrictionsMap);
     }
 
     ObjectMapper mapper = SchemaGeneratorUtils.getObjectMapperForSchemaGeneration();

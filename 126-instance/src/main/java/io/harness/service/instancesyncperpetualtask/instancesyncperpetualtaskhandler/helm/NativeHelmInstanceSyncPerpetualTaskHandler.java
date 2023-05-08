@@ -50,7 +50,8 @@ public class NativeHelmInstanceSyncPerpetualTaskHandler extends InstanceSyncPerp
     List<ExecutionCapability> executionCapabilities = getExecutionCapabilities(deploymentReleaseList, helmVersion);
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier());
+        infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier(),
+        infrastructure.getAccountIdentifier());
   }
 
   private List<NativeHelmDeploymentReleaseData> populateDeploymentReleaseList(
@@ -102,21 +103,26 @@ public class NativeHelmInstanceSyncPerpetualTaskHandler extends InstanceSyncPerp
     return NativeHelmInstanceSyncPerpetualTaskParams.newBuilder()
         .setAccountId(accountIdentifier)
         .setHelmVersion(helmVersion.toString())
-        .addAllDeploymentReleaseList(toNativeHelmDeploymentReleaseList(deploymentReleaseData))
+        .addAllDeploymentReleaseList(toNativeHelmDeploymentReleaseList(deploymentReleaseData, accountIdentifier))
         .build();
   }
 
   private List<NativeHelmDeploymentRelease> toNativeHelmDeploymentReleaseList(
-      List<NativeHelmDeploymentReleaseData> deploymentReleaseData) {
-    return deploymentReleaseData.stream().map(this::toNativeHelmDeploymentRelease).collect(Collectors.toList());
+      List<NativeHelmDeploymentReleaseData> deploymentReleaseData, String accountIdentifier) {
+    return deploymentReleaseData.stream()
+        .map(data -> toNativeHelmDeploymentRelease(data, accountIdentifier))
+        .collect(Collectors.toList());
   }
 
-  private NativeHelmDeploymentRelease toNativeHelmDeploymentRelease(NativeHelmDeploymentReleaseData releaseData) {
+  private NativeHelmDeploymentRelease toNativeHelmDeploymentRelease(
+      NativeHelmDeploymentReleaseData releaseData, String accountIdentifier) {
     return NativeHelmDeploymentRelease.newBuilder()
         .setReleaseName(releaseData.getReleaseName())
         .addAllNamespaces(releaseData.getNamespaces())
-        .setK8SInfraDelegateConfig(ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getK8sInfraDelegateConfig())))
-        .setHelmChartInfo(ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getHelmChartInfo())))
+        .setK8SInfraDelegateConfig(
+            ByteString.copyFrom(getKryoSerializer(accountIdentifier).asBytes(releaseData.getK8sInfraDelegateConfig())))
+        .setHelmChartInfo(
+            ByteString.copyFrom(getKryoSerializer(accountIdentifier).asBytes(releaseData.getHelmChartInfo())))
         .build();
   }
 

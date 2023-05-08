@@ -81,6 +81,7 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.ssca.client.SSCAServiceUtils;
 import io.harness.steps.StepUtils;
 import io.harness.stoserviceclient.STOServiceUtils;
 import io.harness.vm.VmExecuteStepUtils;
@@ -127,6 +128,7 @@ public class VmInitializeTaskParamsBuilder {
 
   @Inject StepExecutionHelper stepExecutionHelper;
   @Inject private VmExecuteStepUtils vmExecuteStepUtils;
+  @Inject private SSCAServiceUtils sscaServiceUtils;
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
 
@@ -214,11 +216,11 @@ public class VmInitializeTaskParamsBuilder {
     envVars.putAll(codebaseEnvVars);
     envVars.putAll(gitEnvVars);
 
-    Map<String, String> stoEnvVars = vmInitializeUtils.getSTOServiceEnvVariables(stoServiceUtils, accountID);
     Map<String, String> commonEnvVars =
         vmInitializeUtils.getCommonStepEnvVariables(stageDetails.getStageID(), ambiance);
+    Map<String, String> envVariables = getEnvVariables(ambiance);
 
-    envVars.putAll(stoEnvVars);
+    envVars.putAll(envVariables);
     envVars.putAll(commonEnvVars);
 
     Caching caching = initializeStepInfo.getStageElementConfig().getCaching();
@@ -268,6 +270,17 @@ public class VmInitializeTaskParamsBuilder {
         .tags(vmInitializeUtils.getBuildTags(ambiance, stageDetails))
         .infraInfo(infraInfo)
         .build();
+  }
+
+  private Map<String, String> getEnvVariables(Ambiance ambiance) {
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+
+    Map<String, String> envVars = new HashMap<>();
+    envVars.putAll(vmInitializeUtils.getSTOServiceEnvVariables(stoServiceUtils, accountId));
+    envVars.putAll(sscaServiceUtils.getSSCAServiceEnvVariables(accountId, orgId, projectId));
+    return envVars;
   }
 
   public static void validateInfrastructure(Infrastructure infrastructure) {

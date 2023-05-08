@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.resourcegroup.v1.remote.dto.CoveoResponseDTO;
 import io.harness.resourcegroup.v1.remote.dto.TicketType;
 ;
 import io.harness.resourcegroup.v1.remote.dto.ZendeskDescription;
@@ -107,8 +108,6 @@ public class ZendeskResource {
                                                 .module(module)
                                                 .url(url)
                                                 .userOS(userOS)
-                                                .website(website)
-                                                .userOS(userOS)
                                                 .build();
     return ResponseDTO.newResponse(zendeskHelper.create(
         emailId, ticketType, priority, subject, zendeskDescription, uploadedInputStream, fileDetail));
@@ -118,14 +117,14 @@ public class ZendeskResource {
   @Path("/token")
   @Produces({"application/json", "application/yaml"})
   @Consumes({"application/json", "application/yaml"})
-  @ApiOperation(value = "get short live token for zendesk", nickname = "getZendeskToken")
-  @Operation(operationId = "getZendeskToken", summary = "get short live token for zendesk",
+  @ApiOperation(value = "get short live token for Coveo", nickname = "getCoveoToken")
+  @Operation(operationId = "getCoveoToken", summary = "get short live token for Coveo",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "get short live token for zendesk")
+        ApiResponse(responseCode = "default", description = "get short live token for Coveo")
       })
-  public ResponseDTO<ZendeskResponseDTO>
+  public ResponseDTO<CoveoResponseDTO>
   getShortLiveToken() {
     return ResponseDTO.newResponse(zendeskHelper.getToken());
   }

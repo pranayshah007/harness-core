@@ -74,16 +74,20 @@ func (j *Junit) GetTests(ctx context.Context) <-chan *types.TestCase {
 	testc := make(chan *types.TestCase, buffSize)
 	go func() {
 		defer close(testc)
-		total := 0
+		fileMap := make(map[string]int)
+		totalTests := 0
 		for _, file := range j.Files {
 			suites, err := gojunit.IngestFile(file)
 			if err != nil {
 				j.Log.Errorw(fmt.Sprintf("could not parse file %s. Error: %s", file, err), "file", file, zap.Error(err))
 				continue
 			}
-			total += processTestSuites(testc, suites)
+			testsInFile := processTestSuites(testc, suites)
+			totalTests += testsInFile
+			fileMap[file] = testsInFile
 		}
-		j.Log.Infow(fmt.Sprintf("parsed %d test cases", total), "num_cases", total)
+		j.Log.Infow("Number of cases parsed in each file: ", fileMap)
+		j.Log.Infow(fmt.Sprintf("parsed %d test cases", totalTests), "num_cases", totalTests)
 	}()
 	return testc
 }

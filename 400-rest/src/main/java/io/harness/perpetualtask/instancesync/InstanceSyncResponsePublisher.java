@@ -30,8 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 public class InstanceSyncResponsePublisher {
   @Inject private InstanceSyncResourceClient instanceSyncResourceClient;
 
-  public void publishInstanceSyncResponseToNG(
-      String accountIdentifier, String perpetualTaskId, DelegateResponseData instanceSyncPerpetualTaskResponse) {
+  public void publishInstanceSyncResponseToNG(String accountIdentifier, String perpetualTaskId,
+      DelegateResponseData instanceSyncPerpetualTaskResponse, boolean referenceFalseKryoSerializer) {
     if (instanceSyncPerpetualTaskResponse == null) {
       log.error("Instance sync perpetual task response is null for accountIdentifier : {} and perpetualTaskId : {}",
           accountIdentifier, perpetualTaskId);
@@ -40,8 +40,14 @@ public class InstanceSyncResponsePublisher {
     int retry = 0;
     while (!response && retry < 3) {
       try {
-        response = NGRestUtils.getResponse(instanceSyncResourceClient.sendPerpetualTaskResponse(
-            accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse));
+        if (referenceFalseKryoSerializer) {
+          response = NGRestUtils.getResponse(instanceSyncResourceClient.sendPerpetualTaskResponseV2(
+              accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse));
+        } else {
+          response = NGRestUtils.getResponse(instanceSyncResourceClient.sendPerpetualTaskResponse(
+              accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse));
+        }
+
       } catch (Exception exception) {
         log.error(
             "Error occured while sending instance sync perpetual task response from CG to NG for accountIdentifier : {} and perpetualTaskId : {}",
@@ -52,6 +58,31 @@ public class InstanceSyncResponsePublisher {
 
     log.info(
         "Successfully pushed instance sync perpetual task response from CG to NG for accountIdentifier : {} and perpetualTaskId : {}",
+        accountIdentifier, perpetualTaskId);
+  }
+
+  public void publishInstanceSyncResponseV2ToNG(
+      String accountIdentifier, String perpetualTaskId, InstanceSyncResponseV2 instanceSyncResponseV2) {
+    if (instanceSyncResponseV2 == null) {
+      log.error("Instance sync perpetual task response is null for accountIdentifier : {} and perpetualTaskId : {}",
+          accountIdentifier, perpetualTaskId);
+    }
+    boolean response = false;
+    int retry = 0;
+    while (!response && retry < 3) {
+      try {
+        response = NGRestUtils.getResponse(instanceSyncResourceClient.sendPerpetualTaskV2Response(
+            accountIdentifier, perpetualTaskId, instanceSyncResponseV2));
+      } catch (Exception exception) {
+        log.error(
+            "Error occured while sending instance sync perpetual task v2 response from CG to NG for accountIdentifier : {} and perpetualTaskId : {}",
+            accountIdentifier, perpetualTaskId, exception);
+      }
+      retry += 1;
+    }
+
+    log.info(
+        "Successfully pushed instance sync perpetual task v2 response from CG to NG for accountIdentifier : {} and perpetualTaskId : {}",
         accountIdentifier, perpetualTaskId);
   }
 

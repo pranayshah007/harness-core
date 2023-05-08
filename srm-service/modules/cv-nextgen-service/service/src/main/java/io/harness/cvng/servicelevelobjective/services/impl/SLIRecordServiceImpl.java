@@ -32,7 +32,6 @@ import com.google.inject.Inject;
 import com.mongodb.ReadPreference;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Sort;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -45,7 +44,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.math3.util.Pair;
 
 @Slf4j
 public class SLIRecordServiceImpl implements SLIRecordService {
@@ -53,8 +52,6 @@ public class SLIRecordServiceImpl implements SLIRecordService {
   private static final int RETRY_COUNT = 3;
 
   @Inject private SRMPersistence hPersistence;
-  @Inject Clock clock;
-
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
 
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
@@ -169,12 +166,23 @@ public class SLIRecordServiceImpl implements SLIRecordService {
   }
 
   @Override
-  public double getErrorBudgetBurnRate(String sliId, long lookBackDuration, int totalErrorBudgetMinutes) {
+  public double getErrorBudgetBurnRate(
+      String sliId, long lookBackDuration, int totalErrorBudgetMinutes, SLIMissingDataType sliMissingDataType) {
     List<SLIRecord> sliRecords = getSLIRecordsForLookBackDuration(sliId, lookBackDuration);
-    return sliRecords.size() < 2
-        ? 0
-        : (((double) (sliRecords.get(1).getRunningBadCount() - sliRecords.get(0).getRunningBadCount()) * 100)
-            / totalErrorBudgetMinutes);
+    if (sliRecords.size() < 2) {
+      return 0;
+    }
+    long missingBadCount = 0;
+    if (sliMissingDataType != null && sliMissingDataType == SLIMissingDataType.BAD) {
+      long totalMinutesBetweenRecords = sliRecords.get(1).getEpochMinute() - sliRecords.get(0).getEpochMinute() + 1;
+      long totalGoodAndBadCountBetweenRecords = sliRecords.get(1).getRunningBadCount()
+          + sliRecords.get(1).getRunningGoodCount() - sliRecords.get(0).getRunningBadCount()
+          - sliRecords.get(0).getRunningGoodCount();
+      missingBadCount = totalMinutesBetweenRecords - totalGoodAndBadCountBetweenRecords;
+    }
+    return ((double) (sliRecords.get(1).getRunningBadCount() - sliRecords.get(0).getRunningBadCount() + missingBadCount)
+               * 100)
+        / totalErrorBudgetMinutes;
   }
 
   @Override
@@ -217,6 +225,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         .order(Sort.ascending(SLIRecordKeys.timestamp))
         .asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
   }
+  @Override
   public Pair<Map<ServiceLevelObjectivesDetail, List<SLIRecord>>, Map<ServiceLevelObjectivesDetail, SLIMissingDataType>>
   getSLODetailsSLIRecordsAndSLIMissingDataType(
       List<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList,
@@ -262,7 +271,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         objectivesDetailSLIMissingDataTypeMap.put(objectivesDetail, serviceLevelIndicator.getSliMissingDataType());
       }
     }
-    return Pair.of(serviceLevelObjectivesDetailSLIRecordMap, objectivesDetailSLIMissingDataTypeMap);
+    return Pair.create(serviceLevelObjectivesDetailSLIRecordMap, objectivesDetailSLIMissingDataTypeMap);
   }
 
   @Override
