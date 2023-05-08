@@ -205,7 +205,7 @@ public class EntityUnavailabilityStatusesServiceImpl
         .filter(EntityUnavailabilityStatusesKeys.projectIdentifier, projectParams.getProjectIdentifier())
         .field(EntityUnavailabilityStatusesKeys.startTime)
         .lessThanOrEq(endTime)
-        .field(EntityUnavailabilityStatusesKeys.endTime)
+        .field(EntityUnavailabilityStatusesKeys.startTime)
         .greaterThanOrEq(startTime)
         .order(Sort.ascending(EntityUnavailabilityStatusesKeys.startTime))
         .asList();

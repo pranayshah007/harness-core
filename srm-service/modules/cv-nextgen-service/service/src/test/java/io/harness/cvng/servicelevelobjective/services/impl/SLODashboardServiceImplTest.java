@@ -110,6 +110,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1925,6 +1926,8 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     long endTime = startTime + Duration.ofMinutes(30).toSeconds();
 
     DowntimeDTO downtimeDTO = builderFactory.getOnetimeDurationBasedDowntimeDTO();
+    downtimeDTO.getSpec().getSpec().setStartDateTime(
+        dtf.format(LocalDateTime.ofInstant(Instant.ofEpochSecond(startTime), ZoneId.of("UTC"))));
     downtimeDTO.setEntitiesRule(
         EntityIdentifiersRule.builder()
             .entityIdentifiers(Collections.singletonList(
@@ -1971,7 +1974,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     SecondaryEventDetailsResponse response = sloDashboardService.getSecondaryEventDetails(
         SecondaryEventsType.DOWNTIME, Collections.singletonList(instances.get(0).getUuid()));
     assertThat(response.getType()).isEqualTo(SecondaryEventsType.DOWNTIME);
-    assertThat(response.getStartTime()).isEqualTo(CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond());
+    assertThat(response.getStartTime()).isEqualTo(startTime);
 
     response = sloDashboardService.getSecondaryEventDetails(SecondaryEventsType.ANNOTATION, annotationIds);
     assertThat(response.getStartTime()).isEqualTo(startTime);

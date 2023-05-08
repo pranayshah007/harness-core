@@ -51,6 +51,7 @@ import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjec
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
 import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.entities.UserJourney;
@@ -648,7 +649,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
     List<String> sliIds =
         serviceLevelIndicatorService.getEntities(projectParams, Collections.singletonList(sliIdentifier))
             .stream()
-            .map(serviceLevelIndicator -> serviceLevelIndicator.getUuid())
+            .map(ServiceLevelIndicator::getUuid)
             .collect(Collectors.toList());
     List<EntityUnavailabilityStatuses> entityUnavailabilityInstances =
         entityUnavailabilityStatusesService.getAllUnavailabilityInstances(
@@ -670,7 +671,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
                     && sliIds.contains(statusesDTO.getEntityIdentifier())
                     && (statusesDTO.getStatus().equals(EntityUnavailabilityStatus.DATA_COLLECTION_FAILED)
                         || statusesDTO.getStatus().equals(EntityUnavailabilityStatus.DATA_RECOLLECTION_PASSED)))
-            .sorted(Comparator.comparing(entry -> entry.getStartTime()))
+            .sorted(Comparator.comparing(EntityUnavailabilityStatuses::getStartTime))
             .collect(Collectors.toList());
 
     if (!dcEntityUnavailabilityStatuses.isEmpty()) {
