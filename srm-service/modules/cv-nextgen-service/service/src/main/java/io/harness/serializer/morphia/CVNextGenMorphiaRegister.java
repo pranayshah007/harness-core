@@ -70,6 +70,7 @@ import io.harness.cvng.core.entities.NextGenMetricCVConfig;
 import io.harness.cvng.core.entities.PagerDutyWebhook;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.SLIDataCollectionTask;
+import io.harness.cvng.core.entities.SRMTelemetrySentStatus;
 import io.harness.cvng.core.entities.ServiceDependency;
 import io.harness.cvng.core.entities.ServiceGuardDataCollectionTask;
 import io.harness.cvng.core.entities.SideKick;
@@ -249,6 +250,7 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(LogFeedbackAnalysisLearningEngineTask.class);
     set.add(RequestServiceLevelIndicator.class);
     set.add(Annotation.class);
+    set.add(SRMTelemetrySentStatus.class);
     set.add(ActivityBucket.class);
   }
 
