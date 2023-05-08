@@ -164,7 +164,7 @@ ciExecutionServiceConfig:
   defaultInternalImageConnector: ''
   executionLimits:
     freeNewUser:
-      dailyMaxBuildsCount: 5
+      dailyMaxBuildsCount: 0
     freeBasicUser:
       dailyMaxBuildsCount: 25
     free:

@@ -67,6 +67,11 @@ public class CIStagePlanCreationUtils {
   public void validateFreeAccountStageExecutionLimit(String accountId, Infrastructure infrastructure) {
     if (isHostedInfra(infrastructure)) {
       LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+
+      if (licensesWithSummaryDTO == null) {
+        throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+      }
+
       if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
         Optional<CIAccountExecutionMetadata> accountExecutionMetadata =
             accountExecutionMetadataRepository.findByAccountId(accountId);
