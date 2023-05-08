@@ -25,6 +25,7 @@ import io.harness.cdng.serviceoverridesv2.validators.EnvironmentValidationHelper
 import io.harness.cdng.validations.helper.OrgAndProjectValidationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
+import io.harness.ng.core.infrastructure.services.impl.InfrastructureYamlSchemaHelper;
 import io.harness.rule.Owner;
 import io.harness.utils.NGFeatureFlagHelperService;
 

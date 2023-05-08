@@ -434,7 +434,6 @@ public class ExecutionDetailsResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Return the Input Set YAML used for given Plan Execution")
       })
-  @Hidden
   public ResponseDTO<InputSetYamlWithTemplateDTO>
   getInputsetYamlV2(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
                     @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -442,7 +441,14 @@ public class ExecutionDetailsResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @NotNull @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @Parameter(
+          description = "A boolean that indicates whether or not expressions should be resolved in input set yaml ")
       @QueryParam("resolveExpressions") @DefaultValue("false") boolean resolveExpressions,
+      @Parameter(
+          description =
+              "Resolve Expressions Type indicates what kind of expressions should be resolved in input set yaml. "
+              + "The default value is UNKNOWN in which case no expressions will be resolved"
+              + "Choose a value from the enum list: [RESOLVE_ALL_EXPRESSIONS, RESOLVE_TRIGGER_EXPRESSIONS, UNKNOWN]")
       @QueryParam("resolveExpressionsType") @DefaultValue("UNKNOWN") ResolveInputYamlType resolveExpressionsType,
       @Parameter(description = "Plan Execution Id for which we want to get the Input Set YAML",
           required = true) @PathParam(NGCommonEntityConstants.PLAN_KEY) String planExecutionId) {

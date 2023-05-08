@@ -57,7 +57,7 @@ public class NexusArtifactTaskHelper {
             (RepositoryFormat.docker.name().equals(nexusArtifactDelegateResponse.getRepositoryFormat())
                 && nexusArtifactDelegateResponse.getBuildDetails() != null
                 && nexusArtifactDelegateResponse.getBuildDetails().getMetadata() != null)
-            ? "\nImage pull command: docker pull "
+            ? "\nTo pull image use: docker pull "
                 + nexusArtifactDelegateResponse.getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
             : null;
         saveLogs(executionLogCallback,

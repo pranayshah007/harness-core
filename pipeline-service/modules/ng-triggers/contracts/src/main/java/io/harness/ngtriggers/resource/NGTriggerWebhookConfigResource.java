@@ -9,6 +9,7 @@ package io.harness.ngtriggers.resource;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.ngtriggers.Constants.TRIGGER_KEY;
+import static io.harness.ngtriggers.Constants.WEBHOOK_TOKEN;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
@@ -268,6 +269,31 @@ public interface NGTriggerWebhookConfigResource {
   ResponseDTO<NGProcessWebhookResponseDTO>
   processWebhookEventV2(@Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                             NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @Parameter(description = "Trigger Key") @QueryParam(TRIGGER_KEY) String triggerIdentifier,
+      @Parameter(description = "Trigger Payload") @NotNull String eventPayload, @Context HttpHeaders httpHeaders);
+
+  @POST
+  @Operation(operationId = "processCustomWebhookEventV3",
+      summary = "Handles event payload for custom webhook triggers.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Returns data about of newly created custom webhook processing event.")
+      })
+  @Path("/custom/{webhookToken}/v3")
+  @ApiOperation(value = "accept custom webhook event V3", nickname = "customWebhookEndpointV3")
+  @PipelineServiceAuthIfHasApiKey
+  ResponseDTO<NGProcessWebhookResponseDTO>
+  processWebhookEventV3(@Parameter(description = "Custom Webhook token for custom webhook triggers") @NotNull
+                        @PathParam(WEBHOOK_TOKEN) String webhookToken,
+      @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @NotNull @QueryParam(

@@ -8,6 +8,7 @@
 package io.harness.ngtriggers.resource;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.ngtriggers.Constants.MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static java.lang.Long.parseLong;
@@ -22,11 +23,13 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.NGTriggerCatalogDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO;
@@ -46,10 +49,12 @@ import io.harness.ngtriggers.service.NGTriggerEventsService;
 import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.rbac.PipelineRbacPermissions;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.InternalApi;
 import io.harness.utils.CryptoUtils;
 import io.harness.utils.PageUtils;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -57,6 +62,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.swagger.v3.oas.annotations.Hidden;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -81,6 +87,8 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
   private final NGTriggerEventHistoryResource ngTriggerEventHistoryResource;
   private final NGTriggerElementMapper ngTriggerElementMapper;
   private final AccessControlClient accessControlClient;
+  private final NGSettingsClient settingsClient;
+  private final PmsFeatureFlagService pmsFeatureFlagService;
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   public ResponseDTO<NGTriggerResponseDTO> create(@NotNull @AccountIdentifier String accountIdentifier,
@@ -202,9 +210,11 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
 
+    boolean mandatoryAuth =
+        getMandatoryAuthForCustomWebhookTriggers(accountIdentifier, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(getNGPageResponse(ngTriggerService.list(criteria, pageRequest).map(triggerEntity -> {
       NGTriggerDetailsResponseDTO responseDTO =
-          ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(triggerEntity, true, false, false);
+          ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(triggerEntity, true, false, false, mandatoryAuth);
       return responseDTO;
     })));
   }
@@ -220,7 +230,8 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       return ResponseDTO.newResponse(null);
     }
     return ResponseDTO.newResponse(ngTriggerEntity.get().getVersion().toString(),
-        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity.get(), true, true, false));
+        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity.get(), true, true, false,
+            getMandatoryAuthForCustomWebhookTriggers(accountIdentifier, orgIdentifier, projectIdentifier)));
   }
 
   @Timed
@@ -273,5 +284,18 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       String pipelineBranchName) {
     return ResponseDTO.newResponse(ngTriggerService.updateBranchName(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, operationType, pipelineBranchName));
+  }
+
+  private boolean getMandatoryAuthForCustomWebhookTriggers(
+      String accountId, String orgIdentifier, String projectIdentifier) {
+    boolean mandatoryAuth = false;
+    if (pmsFeatureFlagService.isEnabled(accountId, FeatureName.NG_SETTINGS)) {
+      mandatoryAuth = Objects.equals(NGRestUtils
+                                         .getResponse(settingsClient.getSetting(MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION,
+                                             accountId, orgIdentifier, projectIdentifier))
+                                         .getValue(),
+          "true");
+    }
+    return mandatoryAuth;
   }
 }

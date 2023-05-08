@@ -113,6 +113,7 @@ import software.wings.service.intfc.UserGroupService;
 import software.wings.service.intfc.UserService;
 import software.wings.service.intfc.pagerduty.PagerDutyService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -1364,18 +1365,34 @@ public class UserGroupServiceImpl implements UserGroupService {
     deletedIds.add(appId);
 
     String accountId = appService.getAccountIdByAppId(appId);
-    log.info("[USERGROUP-DEBUG]: deleted appId {} for account {}", appId, accountId);
-    try (HIterator<UserGroup> userGroupIterator = new HIterator<>(wingsPersistence.createQuery(UserGroup.class)
-                                                                      .filter(UserGroupKeys.accountId, accountId)
-                                                                      .project(UserGroup.ID_KEY2, true)
-                                                                      .project(UserGroupKeys.accountId, true)
-                                                                      .project(UserGroupKeys.appPermissions, true)
-                                                                      .project(UserGroupKeys.memberIds, true)
-                                                                      .fetch())) {
+    log.info("[USERGROUP-DEBUG]: deleted appId {} with app {} for account {}", deletedIds, appId, accountId);
+    Query<UserGroup> query = createQueryForUserGroup(accountId, deletedIds);
+    log.info("[USERGROUP-DEBUG]: appId {} query {}", appId, query);
+    try (HIterator<UserGroup> userGroupIterator = new HIterator<>(query.fetch())) {
       while (userGroupIterator.hasNext()) {
         final UserGroup userGroup = userGroupIterator.next();
         removeAppIdsFromAppPermissions(userGroup, deletedIds);
       }
+    }
+  }
+
+  @VisibleForTesting
+  protected Query<UserGroup> createQueryForUserGroup(String accountId, Set<String> deletedIds) {
+    if (isNotEmpty(accountId)) {
+      return wingsPersistence.createQuery(UserGroup.class)
+          .filter(UserGroupKeys.accountId, accountId)
+          .project(UserGroup.ID_KEY2, true)
+          .project(UserGroupKeys.accountId, true)
+          .project(UserGroupKeys.appPermissions, true)
+          .project(UserGroupKeys.memberIds, true);
+    } else {
+      return wingsPersistence.createQuery(UserGroup.class)
+          .field(UserGroupKeys.appIds)
+          .in(deletedIds)
+          .project(UserGroup.ID_KEY2, true)
+          .project(UserGroupKeys.accountId, true)
+          .project(UserGroupKeys.appPermissions, true)
+          .project(UserGroupKeys.memberIds, true);
     }
   }
 

@@ -283,12 +283,18 @@ public class ContainerStepInitHelper {
         identifier = stepGroupIdentifier + "_" + identifier;
       }
       stepConnectorMap.put(identifier, new ArrayList<>());
+      // This is required for ContainerStep V1.
+      String kubernetesStandardPodName =
+          ContainerUnitStepUtils.getKubernetesStandardPodName(containerStepInfo.getIdentifier());
+      stepConnectorMap.put(kubernetesStandardPodName, new ArrayList<>());
       String connectorRef = PluginUtils.getConnectorRef(pluginStep);
       if (EmptyPredicate.isEmpty(connectorRef)) {
         return stepConnectorMap;
       }
       Map<EnvVariableEnum, String> envToSecretMap = PluginUtils.getConnectorSecretEnvMap(pluginStep.getType());
       stepConnectorMap.get(identifier)
+          .add(ConnectorConversionInfo.builder().connectorRef(connectorRef).envToSecretsMap(envToSecretMap).build());
+      stepConnectorMap.get(kubernetesStandardPodName)
           .add(ConnectorConversionInfo.builder().connectorRef(connectorRef).envToSecretsMap(envToSecretMap).build());
     } else if (containerStepInfo instanceof InitContainerV2StepInfo) {
       InitContainerV2StepInfo initContainerV2StepInfo = (InitContainerV2StepInfo) containerStepInfo;

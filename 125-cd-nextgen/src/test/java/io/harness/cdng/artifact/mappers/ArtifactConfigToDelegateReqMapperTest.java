@@ -23,6 +23,7 @@ import io.harness.beans.InputSetValidatorType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
@@ -74,6 +75,7 @@ import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArt
 import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.metrics.intfc.DelegateMetricsService;
@@ -1954,5 +1956,27 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
         .isEqualTo(googleCloudSourceArtifactConfig.getFetchType().toString());
     assertThat(googleCloudSourceArtifactDelegateRequest.getProject())
         .isEqualTo(googleCloudSourceArtifactConfig.getProject().getValue());
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetS3DelegateRequestWithTagAsRegex() {
+    AmazonS3ArtifactConfig amazonS3ArtifactConfig =
+        AmazonS3ArtifactConfig.builder()
+            .filePath(ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION))
+            .filePathRegex(ParameterField.createValueField(""))
+            .bucketName(ParameterField.createValueField("test"))
+            .build();
+    AwsConnectorDTO awsConnectorDTO = AwsConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    S3ArtifactDelegateRequest s3ArtifactDelegateRequest = ArtifactConfigToDelegateReqMapper.getAmazonS3DelegateRequest(
+        amazonS3ArtifactConfig, awsConnectorDTO, encryptedDataDetailList, "");
+
+    assertThat(s3ArtifactDelegateRequest.getAwsConnectorDTO()).isEqualTo(awsConnectorDTO);
+    assertThat(s3ArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(s3ArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.AMAZONS3);
+    assertThat(s3ArtifactDelegateRequest.getFilePathRegex()).isEqualTo("*");
   }
 }

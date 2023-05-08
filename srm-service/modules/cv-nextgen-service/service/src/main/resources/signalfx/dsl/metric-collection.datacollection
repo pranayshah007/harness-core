@@ -1,0 +1,33 @@
+Var metricApiUrl = concat(Env:baseUrl, "v2/signalflow/execute?start=", Env:startTimeMillis,"&stop=", Env:endTimeMillis, "&resolution=60000")
+Var collectHostDataString = concat("", Env:collectHostData)
+Var requestIdx = 0
+Var one = 1
+Var timeSeriesList = []
+foreach query in Env:queries {
+print Var:query
+Var metricIdentifier =  Env:metricIdentifiers[Var:requestIdx]
+Var metricName = Env:metricNames[Var:requestIdx]
+Var lengthOfResults = 0
+Var response = []
+if Var:collectHostDataString == "true" {
+ response = sync-call-signalfx(url=Var:metricApiUrl, header=Env:commonHeaders, options=Env:commonOptions, body=Var:query, bodyType=TEXT, method=POST, metricType=TIMESERIES, serviceIdentifier=Env:serviceInstanceIdentifierTag)
+lengthOfResults = Var:response.length()
+}
+if Var:collectHostDataString != "true" {
+ response = sync-call-signalfx(url=Var:metricApiUrl, header=Env:commonHeaders, options=Env:commonOptions, body=Var:query, bodyType=TEXT, method=POST, metricType=TIMESERIES)
+lengthOfResults = Var:response.length()
+}
+Var resultIndex = 0
+while Var:resultIndex !=  Var:lengthOfResults{
+Var metricDataResult = Var:response[Var:resultIndex]
+Var timestamp = extract(Var:metricDataResult,$.timestamp)
+Var hostName = extract(Var:metricDataResult,$.hostname)
+Var metricValue = extract(Var:metricDataResult,$.metricValue)
+Var tsRecord = new TimeseriesRecord(txnName=Env:groupName, metricIdentifier=Var:metricIdentifier, metricName=Var:metricName, metricValue=Var:metricValue, timestamp=Var:timestamp, host=Var:hostName)
+Var:timeSeriesList.append(Var:tsRecord)
+resultIndex = Var:resultIndex + Var:one
+}
+requestIdx = Var:requestIdx + Var:one
+}
+print Var:timeSeriesList
+return Var:timeSeriesList

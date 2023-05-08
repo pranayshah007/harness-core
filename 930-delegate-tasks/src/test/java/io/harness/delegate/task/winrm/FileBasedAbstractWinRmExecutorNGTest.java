@@ -9,6 +9,7 @@ package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessModule._930_DELEGATE_TASKS;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,6 +20,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -36,12 +39,15 @@ import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.utils.ExecutionLogWriter;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import org.apache.commons.lang3.NotImplementedException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -155,6 +161,34 @@ public class FileBasedAbstractWinRmExecutorNGTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testSplitFileAndTransferNGDisableEncoding() throws IOException {
+    FileBasedWinRmExecutorNG fileBasedWinRmExecutorNGSpy = spy(new FileBasedWinRmExecutorNG(
+        logCallback, false, config, true, secretDecryptionService, artifactoryRequestMapper));
+    doNothing().when(fileBasedWinRmExecutorNGSpy).clearTargetFile(any(), any(), any(), anyString(), anyString());
+
+    ConfigFileParameters configFileParameters =
+        ConfigFileParameters.builder().fileName("x").destinationPath("y").fileSize(4).fileContent("test").build();
+
+    CommandExecutionStatus result = fileBasedWinRmExecutorNGSpy.splitFileAndTransfer(
+        configFileParameters, winRmSession, executionLogWriter, executionLogWriter);
+    assertThat(result).isEqualTo(CommandExecutionStatus.SUCCESS);
+
+    ArgumentCaptor<String> executedCommandCaptor = ArgumentCaptor.forClass(String.class);
+    verify(winRmSession, times(3)).executeCommandString(executedCommandCaptor.capture(), any(), any(), anyBoolean());
+    List<String> commands = executedCommandCaptor.getAllValues();
+    assertThat(commands).isNotEmpty();
+    assertThat(commands.get(0))
+        .isEqualTo(
+            "Powershell  Invoke-Command  -command {[IO.File]::WriteAllText(\\\"%TEMP%\\\", \\\"`$ErrorActionPreference=`\\\"Stop`\\\"`n`$fileName = `\\\"y\\x`\\\"`n`$commandString = @'`ntest`n`n'@`n[IO.File]::AppendAllText(`$fileName, `$commandString,   [Text.Encoding]::UTF8)`nWrite-Host `\\\"Appended to config file on the host.`\\\"`r`n\\\" ) }");
+    assertThat(commands.get(1)).isEqualTo("Powershell  -f \"%TEMP%\" ");
+    assertThat(commands.get(2))
+        .isEqualTo(
+            "Powershell  Invoke-Command -command {$FILE_PATH=[System.Environment]::ExpandEnvironmentVariables(\\\"%TEMP%\\\") ;  Remove-Item -Path $FILE_PATH}");
+  }
+
+  @Test
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testSplitFileAndTransferNG_Failure() throws IOException {
@@ -229,5 +263,47 @@ public class FileBasedAbstractWinRmExecutorNGTest extends CategoryTest {
     CommandExecutionStatus result = fileBasedWinRmExecutorNGSpy.executeRemoteCommand(
         winRmSession, executionLogWriter, executionLogWriter, "cmd", true);
     assertThat(result).isEqualTo(CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testExecuteRemoteCommandEncode_BulkModePSScriptFileContainsSeparator() throws IOException {
+    WinRmSessionConfig config = WinRmSessionConfig.builder()
+                                    .commandParameters(Collections.emptyList())
+                                    .workingDirectory("C:\\User\\temp")
+                                    .build();
+    FileBasedWinRmExecutorNG fileBasedWinRmExecutorNGSpy = spy(new FileBasedWinRmExecutorNG(
+        logCallback, false, config, true, secretDecryptionService, artifactoryRequestMapper));
+    doReturn(0).when(winRmSession).executeCommandString(anyString(), any(), any(), anyBoolean());
+
+    CommandExecutionStatus result = fileBasedWinRmExecutorNGSpy.executeRemoteCommand(
+        winRmSession, executionLogWriter, executionLogWriter, "cmd", true);
+    assertThat(result).isEqualTo(CommandExecutionStatus.SUCCESS);
+    ArgumentCaptor<String> executedCommand = ArgumentCaptor.forClass(String.class);
+    verify(winRmSession, times(3)).executeCommandString(executedCommand.capture(), any(), any(), anyBoolean());
+    String command = executedCommand.getValue();
+    assertThat(command).contains("C:\\User\\temp" + File.separator);
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testExecuteRemoteCommandEncode_BulkModePSScriptFileSeparatorProvided() throws IOException {
+    WinRmSessionConfig config = WinRmSessionConfig.builder()
+                                    .commandParameters(Collections.emptyList())
+                                    .workingDirectory("C:\\User\\temp\\")
+                                    .build();
+    FileBasedWinRmExecutorNG fileBasedWinRmExecutorNGSpy = spy(new FileBasedWinRmExecutorNG(
+        logCallback, false, config, true, secretDecryptionService, artifactoryRequestMapper));
+    doReturn(0).when(winRmSession).executeCommandString(anyString(), any(), any(), anyBoolean());
+
+    CommandExecutionStatus result = fileBasedWinRmExecutorNGSpy.executeRemoteCommand(
+        winRmSession, executionLogWriter, executionLogWriter, "cmd", true);
+    assertThat(result).isEqualTo(CommandExecutionStatus.SUCCESS);
+    ArgumentCaptor<String> executedCommand = ArgumentCaptor.forClass(String.class);
+    verify(winRmSession, times(3)).executeCommandString(executedCommand.capture(), any(), any(), anyBoolean());
+    String command = executedCommand.getValue();
+    assertThat(command).contains("C:\\User\\temp\\");
   }
 }

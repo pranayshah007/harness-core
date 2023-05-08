@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 18
+version : 19
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -229,4 +229,99 @@ settings :
       - PROJECT
       - ACCOUNT
       - ORGANIZATION
-
+  - identifier: show_anomalies
+    name: Show Anomalies
+    category: CE
+    groupIdentifier: perspective_preferences
+    defaultValue: true
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+  - identifier: show_others
+    name: Show Others
+    category: CE
+    groupIdentifier: perspective_preferences
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+  - identifier: show_unallocated_cluster_cost
+    name: Show Unallocated cost in Clusters
+    category: CE
+    groupIdentifier: perspective_preferences
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+  - identifier: include_aws_discounts
+    name: AWS Only - Include Discounts
+    category: CE
+    groupIdentifier: perspective_preferences
+    defaultValue: true
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+  - identifier: include_aws_credit
+    name: AWS only - Include Credit
+    category: CE
+    groupIdentifier: perspective_preferences
+    defaultValue: true
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+  - identifier: include_aws_refunds
+    name: AWS only - Include Refunds
+    category: CE
+    groupIdentifier: perspective_preferences
+    defaultValue: true
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+  - identifier: include_aws_taxes
+    name: AWS only - Include Taxes
+    category: CE
+    groupIdentifier: perspective_preferences
+    defaultValue: true
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+  - identifier: show_aws_cost_as
+    name: AWS only - Show costs as
+    category: CE
+    groupIdentifier: perspective_preferences
+    defaultValue: Unblended
+    valueType: STRING
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+    allowedValues:
+      - Amortised
+      - Net-amortised
+      - Unblended
+      - Blended
+      - Effective
+  - identifier: include_gcp_discounts
+    name: GCP only - Include Discounts
+    category: CE
+    groupIdentifier: perspective_preferences
+    defaultValue: true
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+  - identifier: include_gcp_taxes
+    name: GCP only - Include Taxes
+    category: CE
+    groupIdentifier: perspective_preferences
+    defaultValue: true
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT

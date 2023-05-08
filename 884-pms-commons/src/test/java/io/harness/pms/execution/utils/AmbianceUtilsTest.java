@@ -31,6 +31,7 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.MatrixMetadata;
 import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PostExecutionRollbackInfo;
 import io.harness.pms.contracts.plan.TriggeredBy;
@@ -543,5 +544,38 @@ public class AmbianceUtilsTest extends CategoryTest {
     runtimeId =
         AmbianceUtils.obtainOriginalStageExecutionIdForRollbackMode(ambianceWithStrategy, stageLevelWithStrategy);
     assertThat(runtimeId).isEqualTo("stageRuntime2");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetStageExecutionIdForExecutionMode() {
+    ExecutionMetadata normalMode = ExecutionMetadata.newBuilder().setExecutionMode(ExecutionMode.NORMAL).build();
+    Ambiance normalModeAmbiance = Ambiance.newBuilder().setMetadata(normalMode).setStageExecutionId("currId").build();
+    assertThat(AmbianceUtils.getStageExecutionIdForExecutionMode(normalModeAmbiance)).isEqualTo("currId");
+
+    ExecutionMetadata rbMode = ExecutionMetadata.newBuilder().setExecutionMode(ExecutionMode.PIPELINE_ROLLBACK).build();
+    Ambiance rbModeAmbiance = Ambiance.newBuilder()
+                                  .setMetadata(rbMode)
+                                  .setStageExecutionId("currId")
+                                  .setOriginalStageExecutionIdForRollbackMode("origId")
+                                  .build();
+    assertThat(AmbianceUtils.getStageExecutionIdForExecutionMode(rbModeAmbiance)).isEqualTo("origId");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetPlanExecutionIdForExecutionMode() {
+    ExecutionMetadata normalMode = ExecutionMetadata.newBuilder().setExecutionMode(ExecutionMode.NORMAL).build();
+    Ambiance normalModeAmbiance = Ambiance.newBuilder().setMetadata(normalMode).setPlanExecutionId("currId").build();
+    assertThat(AmbianceUtils.getPlanExecutionIdForExecutionMode(normalModeAmbiance)).isEqualTo("currId");
+
+    ExecutionMetadata rbMode = ExecutionMetadata.newBuilder()
+                                   .setExecutionMode(ExecutionMode.PIPELINE_ROLLBACK)
+                                   .setOriginalPlanExecutionIdForRollbackMode("origId")
+                                   .build();
+    Ambiance rbModeAmbiance = Ambiance.newBuilder().setMetadata(rbMode).build();
+    assertThat(AmbianceUtils.getPlanExecutionIdForExecutionMode(rbModeAmbiance)).isEqualTo("origId");
   }
 }

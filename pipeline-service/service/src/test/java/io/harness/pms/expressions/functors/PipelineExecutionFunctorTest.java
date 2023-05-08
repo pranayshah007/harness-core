@@ -7,6 +7,7 @@
 
 package io.harness.pms.expressions.functors;
 
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.BRIJESH;
 
 import static junit.framework.TestCase.assertEquals;
@@ -20,6 +21,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
+import io.harness.engine.executions.retry.RetryExecutionMetadata;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
@@ -161,6 +163,7 @@ public class PipelineExecutionFunctorTest extends CategoryTest {
     on(triggeredByFunctor).set("ambiance", ambiance);
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
         PipelineExecutionSummaryEntity.builder()
+            .planExecutionId(generateUuid())
             .allowStagesExecution(false)
             .runSequence(32)
             .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
@@ -185,10 +188,14 @@ public class PipelineExecutionFunctorTest extends CategoryTest {
     Map<String, String> triggeredByMap = (Map<String, String>) response.get("triggeredBy");
     assertNull(triggeredByMap.get("email"));
     assertEquals(triggeredByMap.get("name"), "system");
+    assertEquals(response.get("resumedExecutionId"),
+        pipelineExecutionSummaryEntity.getRetryExecutionMetadata().getRootExecutionId());
 
     pipelineExecutionSummaryEntity =
         PipelineExecutionSummaryEntity.builder()
             .allowStagesExecution(false)
+            .planExecutionId(generateUuid())
+            .retryExecutionMetadata(RetryExecutionMetadata.builder().rootExecutionId(generateUuid()).build())
             .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
                                       .setTriggerType(TriggerType.MANUAL)
                                       .setTriggeredBy(TriggeredBy.newBuilder()
@@ -204,6 +211,8 @@ public class PipelineExecutionFunctorTest extends CategoryTest {
         .getPipelineExecutionSummaryEntity(any(), any(), any(), any());
 
     response = (Map<String, Object>) triggeredByFunctor.bind();
+    assertEquals(response.get("resumedExecutionId"),
+        pipelineExecutionSummaryEntity.getRetryExecutionMetadata().getRootExecutionId());
     assertEquals(response.get("triggerType"), TriggerType.MANUAL.toString());
     triggeredByMap = (Map<String, String>) response.get("triggeredBy");
     assertEquals(triggeredByMap.get("email"), "admin@harness.io");

@@ -432,7 +432,10 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
         taskData, delegateSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toSet()), baseLogKey,
         shouldSkipOpenStream);
 
-    return delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
+    String delegateTaskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
+    logCallback.saveExecutionLog(
+        LogHelper.color(String.format("Delegate task id: %s", delegateTaskId), LogColor.Cyan, LogWeight.Bold));
+    return delegateTaskId;
   }
 
   private void logArtifactFetchedMessage(

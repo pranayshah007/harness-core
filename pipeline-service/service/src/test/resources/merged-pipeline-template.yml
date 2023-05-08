@@ -1,0 +1,77 @@
+pipeline:
+  name: temppipeline
+  identifier: temppipeline
+  properties:
+    ci:
+      codebase:
+        connectorRef: account.connector
+        repoName: <+input>
+        build: <+input>
+  stages:
+    - stage:
+        identifier: Stage1
+        name: Stage1
+        type: CI
+        spec:
+          cloneCodebase: true
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Run_1
+                  identifier: Run_1
+                  spec:
+                    shell: Sh
+                    command: echo hello
+    - stage:
+        identifier: stage2
+        name: stage2
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: ShellScript_1
+                  identifier: ShellScript_1
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: echo hello
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+    - stage:
+        identifier: stage3
+        name: stage3
+        type: CI
+        spec:
+          cloneCodebase: false
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Run_1
+                  identifier: Run_1
+                  spec:
+                    shell: Sh
+                    command: echo hello
+  allowStageExecutions: true
+  tags: {}
+  projectIdentifier: default
+  orgIdentifier: default

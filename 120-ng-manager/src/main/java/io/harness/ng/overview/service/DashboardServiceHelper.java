@@ -27,7 +27,6 @@ import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
 import io.harness.ng.overview.dto.PipelineExecutionCountInfo;
 import io.harness.ng.overview.dto.ServiceArtifactExecutionDetail;
-import io.harness.ng.overview.dto.ServicePipelineInfo;
 import io.harness.ng.overview.dto.ServicePipelineWithRevertInfo;
 import io.harness.utils.IdentifierRefHelper;
 
@@ -770,10 +769,10 @@ public class DashboardServiceHelper {
     });
   }
 
-  public void sortServicePipelineInfoList(List<ServicePipelineInfo> servicePipelineInfoList) {
+  public void sortServicePipelineInfoList(List<ServicePipelineWithRevertInfo> servicePipelineInfoList) {
     // sort based on last deployed time
-    Collections.sort(servicePipelineInfoList, new Comparator<ServicePipelineInfo>() {
-      public int compare(ServicePipelineInfo o1, ServicePipelineInfo o2) {
+    Collections.sort(servicePipelineInfoList, new Comparator<ServicePipelineWithRevertInfo>() {
+      public int compare(ServicePipelineWithRevertInfo o1, ServicePipelineWithRevertInfo o2) {
         return (int) (o2.getLastExecutedAt() - o1.getLastExecutedAt());
       }
     });
@@ -1023,7 +1022,7 @@ public class DashboardServiceHelper {
   public String buildOpenTaskQuery(
       String accountId, String orgId, String projectId, String serviceId, long startInterval) {
     return String.format(
-        "select pipeline_execution_summary_cd_id from service_infra_info where accountid = '%s' and orgidentifier = '%s' and projectidentifier = '%s' and service_id = '%s' and service_startts > %s",
+        "select DISTINCT ON(pipeline_execution_summary_cd_id) pipeline_execution_summary_cd_id, execution_failure_details from service_infra_info where accountid = '%s' and orgidentifier = '%s' and projectidentifier = '%s' and service_id = '%s' and service_startts > %s order by pipeline_execution_summary_cd_id, service_endts DESC",
         accountId, orgId, projectId, serviceId, startInterval);
   }
 

@@ -23,12 +23,14 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(HarnessTeam.CV)
 public class SignalFXCapabilityHelper {
+  private static final String SIGNALFX_BASIC_QUERY = "v2/metric";
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(
       ExpressionEvaluator maskingEvaluator, ConnectorConfigDTO signalFXDTO) {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     SignalFXConnectorDTO connectorDTO = (SignalFXConnectorDTO) signalFXDTO;
     capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-        connectorDTO.getUrl(), maskingEvaluator));
+        connectorDTO.getUrl() + SIGNALFX_BASIC_QUERY,
+        HttpConnectionExecutionCapabilityGenerator.HttpCapabilityDetailsLevel.QUERY, maskingEvaluator));
     populateDelegateSelectorCapability(capabilityList, connectorDTO.getDelegateSelectors());
     return capabilityList;
   }

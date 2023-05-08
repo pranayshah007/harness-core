@@ -635,6 +635,7 @@ public enum FeatureName {
       "Do not add quotes to strings when a user reconciles a template, pipeline", HarnessTeam.CDC, Scope.GLOBAL),
   SSCA_ENABLED("FF to enable SSCA on Harness", HarnessTeam.SSCA),
   PL_NEW_SCIM_STANDARDS("Changes required for being SCIM 2 compliant API calls", HarnessTeam.PL),
+  PL_ENABLE_MULTIPLE_IDP_SUPPORT("Enable support for multiple SSO IDP in an account", HarnessTeam.PL),
   PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG("FF to disable CG to NG user migration except Admins", HarnessTeam.PL),
   PIE_EXECUTION_JSON_SUPPORT("Support for storing execution json in mongo", HarnessTeam.PIPELINE),
   PIE_EXPRESSION_ENGINE_V2("Support for new model of expression engine", HarnessTeam.PIPELINE),
@@ -748,7 +749,9 @@ public enum FeatureName {
       "Will allow comma and multi-selection in runtime input allowed values", PIPELINE),
   PL_USE_CREDENTIALS_FROM_DELEGATE_FOR_GCP_SM(
       "Enables the use of credentials from Delegate in GCP Secret Manager", HarnessTeam.PL),
-  CI_ENABLE_DLC("Enable docker layer caching", HarnessTeam.CI);
+  CI_ENABLE_DLC("Enable docker layer caching", HarnessTeam.CI),
+  SRM_TELEMETRY("Will enable telemetry for verify step result", HarnessTeam.CV),
+  CI_USE_S3_FOR_DLC("Use S3 bucket for DLC cache", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {

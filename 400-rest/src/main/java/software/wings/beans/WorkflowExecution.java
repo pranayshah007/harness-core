@@ -97,11 +97,10 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                                           CreatedAtAware, CreatedByAware, KeywordsAware, AccountAccess {
   public static String SEARCH2 = "search2";
   public static String ACCOUNT_ID_VALID_UNTIL = "accountId_validUntil";
-  public static String APP_PIP_EXECUTIONID_CREATEDAT = "app_pipExecutionId_createdAt";
+  public static String ACCOUNT_ID_PIP_EXECUTIONID_CREATEDAT_APP_ID = "accountId_pipelineExecutionId_createdAt_appId";
   public static String SERVICE_GUARD = "service_guard";
   public static String LAST_INFRAMAPPING_SEARCH_2 = "lastInfraMappingSearch2";
   public static String WORKFLOW_EXECUTION_MONITOR = "workflowExecutionMonitor";
-  public static String ACCOUNTID_PIPEXECUTIONID_CREATEDAT = "accountId_pipExecutionId_createdAt";
   public static String SEARCH_BY_SERVICEIDS = "searchByServiceIds";
   public static String ACCOUNTID_TAGS_CREATEDAT = "accountId_tags_createdAt";
   public static String APPID_WORKFLOWID_STATUS_CREATEDAT = "appid_workflowid_status_createdat";
@@ -132,10 +131,11 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .descSortField(WorkflowExecutionKeys.endTs)
                  .build())
         .add(SortCompoundMongoIndex.builder()
-                 .name(APP_PIP_EXECUTIONID_CREATEDAT)
-                 .field(WorkflowExecutionKeys.appId)
+                 .name(ACCOUNT_ID_PIP_EXECUTIONID_CREATEDAT_APP_ID)
+                 .field(WorkflowExecutionKeys.accountId)
                  .field(WorkflowExecutionKeys.pipelineExecutionId)
                  .descSortField(WorkflowExecutionKeys.createdAt)
+                 .rangeField(WorkflowExecutionKeys.appId)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name(SERVICE_GUARD)
@@ -155,12 +155,6 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .name(WORKFLOW_EXECUTION_MONITOR)
                  .field(WorkflowExecutionKeys.status)
                  .field(WorkflowExecutionKeys.nextIteration)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name(ACCOUNTID_PIPEXECUTIONID_CREATEDAT)
-                 .field(WorkflowExecutionKeys.accountId)
-                 .field(WorkflowExecutionKeys.pipelineExecutionId)
-                 .descSortField(WorkflowExecutionKeys.createdAt)
                  .build())
         .add(SortCompoundMongoIndex.builder()
                  .name(SEARCH_BY_SERVICEIDS)

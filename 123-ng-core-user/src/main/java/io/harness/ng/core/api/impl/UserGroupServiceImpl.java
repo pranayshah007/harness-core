@@ -12,6 +12,7 @@ import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENT
 import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.PL_ENABLE_MULTIPLE_IDP_SUPPORT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.GROUP;
@@ -845,7 +846,9 @@ public class UserGroupServiceImpl implements UserGroupService {
       throw new InvalidRequestException("SSO Provider already linked to the group. Try unlinking first.");
     }
 
-    SSOConfig ssoConfig = getResponse(managerClient.getAccountAccessManagementSettings(accountIdentifier));
+    SSOConfig ssoConfig = ngFeatureFlagHelperService.isEnabled(accountIdentifier, PL_ENABLE_MULTIPLE_IDP_SUPPORT)
+        ? getResponse(managerClient.getAccountAccessManagementSettingsV2(accountIdentifier))
+        : getResponse(managerClient.getAccountAccessManagementSettings(accountIdentifier));
 
     List<SSOSettings> ssoSettingsList = ssoConfig.getSsoSettings();
     SSOSettings ssoSettings = null;

@@ -47,6 +47,7 @@ import io.harness.cvng.notification.entities.SLONotificationRule.SLONotification
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
+import io.harness.cvng.servicelevelobjective.beans.CompositeSLOFormulaType;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
@@ -132,7 +133,7 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.math3.util.Pair;
 import org.apache.commons.math3.util.Precision;
 
 @Slf4j
@@ -187,8 +188,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     List<CompositeSLORecord> compositeSLORecords = new ArrayList<>();
     if (sloDetailsSLIRecordsAndSLIMissingDataType.getKey().size()
         == compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails().size()) {
-      compositeSLORecords = getCompositeSLORecords(
-          sloDetailsSLIRecordsAndSLIMissingDataType.getKey(), sloDetailsSLIRecordsAndSLIMissingDataType.getValue());
+      compositeSLORecords = getCompositeSLORecords(sloDetailsSLIRecordsAndSLIMissingDataType.getKey(),
+          sloDetailsSLIRecordsAndSLIMissingDataType.getValue(), compositeServiceLevelObjectiveSpec.getSloFormulaType());
     }
     compositeSLORecords.sort(Comparator.comparing(CompositeSLORecord::getTimestamp));
     return TimeGraphResponse.builder()
@@ -427,14 +428,21 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                       .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
                       .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
                       .build(),
-            serviceLevelObjective.getIdentifier()));
+            serviceLevelObjective.getIdentifier(), false));
   }
   @Override
   public boolean delete(ProjectParams projectParams, String identifier) {
+    return delete(projectParams, identifier, true);
+  }
+
+  @Override
+  public boolean delete(
+      ProjectParams projectParams, String identifier, boolean validateReferencedCompositeSLOForSimpleSLO) {
     AbstractServiceLevelObjective serviceLevelObjectiveV2 = checkIfSLOPresent(projectParams, identifier);
     ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO =
         sloEntityToSLOResponse(serviceLevelObjectiveV2).getServiceLevelObjectiveV2DTO();
-    if (serviceLevelObjectiveV2.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+    if (validateReferencedCompositeSLOForSimpleSLO
+        && serviceLevelObjectiveV2.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
       List<String> referencedCompositeSLOIdentifiers =
           compositeSLOService.getReferencedCompositeSLOs(projectParams, identifier)
               .stream()
@@ -479,7 +487,6 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                            .build());
     return hPersistence.delete(serviceLevelObjectiveV2);
   }
-
   @Override
   public void setMonitoredServiceSLOsEnableFlag(
       ProjectParams projectParams, String monitoredServiceIdentifier, boolean isEnabled) {
@@ -552,11 +559,13 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .sliTypes(sloDashboardApiFilter.getSliTypes())
             .sliEvaluationType(sloDashboardApiFilter.getEvaluationType())
             .searchFilter(sloDashboardApiFilter.getSearchFilter())
+            .childResource(sloDashboardApiFilter.isChildResource())
             .build());
     List<SLOHealthIndicator> sloHealthIndicators = sloHealthIndicatorService.getBySLOIdentifiers(projectParams,
         serviceLevelObjectiveList.stream()
             .map(AbstractServiceLevelObjective::getIdentifier)
-            .collect(Collectors.toList()));
+            .collect(Collectors.toList()),
+        sloDashboardApiFilter.isChildResource());
 
     Map<ErrorBudgetRisk, Long> riskToCountMap =
         sloHealthIndicators.stream()
@@ -1083,16 +1092,18 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   private void validateCompositeSLO(ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO, ProjectParams projectParams) {
     CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec =
         (CompositeServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec();
-    double sum = compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
-                     .stream()
-                     .peek(sloDetail -> checkIfValidSLOPresent(sloDetail, serviceLevelObjectiveDTO))
-                     .mapToDouble(ServiceLevelObjectiveDetailsDTO::getWeightagePercentage)
-                     .sum();
+    if (compositeServiceLevelObjectiveSpec.getSloFormulaType() == CompositeSLOFormulaType.WEIGHTED_AVERAGE) {
+      double sum = compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
+                       .stream()
+                       .peek(sloDetail -> checkIfValidSLOPresent(sloDetail, serviceLevelObjectiveDTO))
+                       .mapToDouble(ServiceLevelObjectiveDetailsDTO::getWeightagePercentage)
+                       .sum();
 
-    if (sum != 100) {
-      throw new InvalidRequestException(String.format(
-          "The weightage percentage of all the SLOs constituting the Composite SLO with identifier %s is %s. It should sum up to 100.",
-          serviceLevelObjectiveDTO.getIdentifier(), sum));
+      if (sum != 100) {
+        throw new InvalidRequestException(String.format(
+            "The weightage percentage of all the SLOs constituting the Composite SLO with identifier %s is %s. It should sum up to 100.",
+            serviceLevelObjectiveDTO.getIdentifier(), sum));
+      }
     }
 
     List<AbstractServiceLevelObjective> serviceLevelObjectiveList = getAllReferredSLOs(projectParams,
@@ -1284,7 +1295,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       List<SLOHealthIndicator> sloHealthIndicators = sloHealthIndicatorService.getBySLOIdentifiers(projectParams,
           serviceLevelObjectiveList.stream()
               .map(AbstractServiceLevelObjective::getIdentifier)
-              .collect(Collectors.toList()));
+              .collect(Collectors.toList()),
+          filter.isChildResource());
       Map<String, ErrorBudgetRisk> sloIdToRiskMap =
           sloHealthIndicators.stream().collect(Collectors.toMap(SLOHealthIndicator::getServiceLevelObjectiveIdentifier,
               SLOHealthIndicator::getErrorBudgetRisk, (slo1, slo2) -> slo1));
@@ -1369,7 +1381,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
 
   private List<CompositeSLORecord> getCompositeSLORecords(
       Map<ServiceLevelObjectivesDetail, List<SLIRecord>> serviceLevelObjectivesDetailCompositeSLORecordMap,
-      Map<ServiceLevelObjectivesDetail, SLIMissingDataType> objectivesDetailSLIMissingDataTypeMap) {
+      Map<ServiceLevelObjectivesDetail, SLIMissingDataType> objectivesDetailSLIMissingDataTypeMap,
+      CompositeSLOFormulaType compositeSLOFormulaType) {
     if (isEmpty(serviceLevelObjectivesDetailCompositeSLORecordMap)) {
       return new ArrayList<>();
     }
@@ -1377,7 +1390,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     double runningBadCount = 0;
     return compositeSLORecordService.getCompositeSLORecordsFromSLIsDetails(
         serviceLevelObjectivesDetailCompositeSLORecordMap, objectivesDetailSLIMissingDataTypeMap, 0, runningGoodCount,
-        runningBadCount, null, SLIEvaluationType.WINDOW);
+        runningBadCount, null, SLIEvaluationType.WINDOW, compositeSLOFormulaType);
   }
 
   @Value

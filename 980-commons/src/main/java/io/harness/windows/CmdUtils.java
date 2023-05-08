@@ -31,7 +31,7 @@ public class CmdUtils {
   }
 
   public static String escapeLineBreakChars(String value) {
-    return value.replace("\r", "`r").replace("\n", "`n");
+    return value.replace("\r", "`r").replace("\n", "`n").replace("\t", "`t");
   }
 
   public static String escapeWordBreakChars(String value) {

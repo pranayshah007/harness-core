@@ -62,9 +62,11 @@ import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.environment.services.impl.EnvironmentEntityYamlSchemaHelper;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.services.impl.ServiceEntityYamlSchemaHelper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
@@ -149,7 +151,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject private ServiceCustomSweepingOutputHelper serviceCustomSweepingOutputHelper;
-
+  @Inject private ServiceEntityYamlSchemaHelper serviceEntityYamlSchemaHelper;
+  @Inject private EnvironmentEntityYamlSchemaHelper environmentEntityYamlSchemaHelper;
   private static final Pattern serviceVariablePattern = Pattern.compile(SERVICE_VARIABLES_PATTERN_REGEX);
   private static final Pattern envVariablePattern = Pattern.compile(ENV_VARIABLES_PATTERN_REGEX);
 
@@ -222,10 +225,9 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
           serviceTags, AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
           AmbianceUtils.getProjectIdentifier(ambiance));
     }
-    Set<String> envRefs =
-        envClusterRefs.stream().map(envClusterRefs1 -> envClusterRefs1.getEnvRef()).collect(Collectors.toSet());
+    Set<String> envRefs = envClusterRefs.stream().map(EnvClusterRefs::getEnvRef).collect(Collectors.toSet());
     List<ParameterField<String>> envRefsList =
-        envRefs.stream().map(envRef -> ParameterField.createValueField(envRef)).collect(Collectors.toList());
+        envRefs.stream().map(ParameterField::createValueField).collect(Collectors.toList());
     stepParameters.setEnvRefs(envRefsList);
   }
 
@@ -299,6 +301,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
    */
   private void handleMultipleEnvironmentsPart(Ambiance ambiance, ServiceStepV3Parameters parameters,
       ServicePartResponse servicePartResponse, NGLogCallback logCallback) {
+    final String accountId = AmbianceUtils.getAccountId(ambiance);
+
     Map<String, Map<String, Object>> envToEnvVariables = new HashMap<>();
     Map<String, Map<String, Object>> envToSvcVariables = new HashMap<>();
     List<NGVariable> svcOverrideVariables;
@@ -319,15 +323,16 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       NGEnvironmentConfig ngEnvironmentConfig;
       // handle old environments
       if (isEmpty(environment.getYaml())) {
-        getNGEnvironmentConfig(environment);
+        setYamlInEnvironment(environment);
       }
       try {
         if (isNotEmpty(parameters.getEnvToEnvInputs())) {
-          ngEnvironmentConfig = mergeEnvironmentInputs(environment.getYaml(),
+          ngEnvironmentConfig = mergeEnvironmentInputs(accountId, environment.getIdentifier(), environment.getYaml(),
               parameters.getEnvToEnvInputs().get(
                   getEnvRefOrId(environment.fetchRef(), parameters.getEnvGroupRef(), environment.getIdentifier())));
         } else {
-          ngEnvironmentConfig = mergeEnvironmentInputs(environment.getYaml(), null);
+          ngEnvironmentConfig =
+              mergeEnvironmentInputs(accountId, environment.getIdentifier(), environment.getYaml(), null);
         }
       } catch (IOException ex) {
         throw new InvalidRequestException(format("Unable to read yaml for environment [Name: %s, Identifier: %s]",
@@ -342,9 +347,9 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         secretNGVariables.addAll(
             variables.stream().filter(SecretNGVariable.class ::isInstance).collect(Collectors.toList()));
       }
-      final Optional<NGServiceOverridesEntity> ngServiceOverridesEntity = serviceOverrideService.get(
-          AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-          AmbianceUtils.getProjectIdentifier(ambiance), environment.fetchRef(), parameters.getServiceRef().getValue());
+      final Optional<NGServiceOverridesEntity> ngServiceOverridesEntity = serviceOverrideService.get(accountId,
+          AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance),
+          environment.fetchRef(), parameters.getServiceRef().getValue());
       NGServiceOverrideConfig ngServiceOverrides;
       if (ngServiceOverridesEntity.isPresent()) {
         ngServiceOverrides = mergeSvcOverrideInputs(ngServiceOverridesEntity.get().getYaml(),
@@ -411,7 +416,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   }
 
   private List<Environment> getEnvironmentsFromEnvRef(Ambiance ambiance, List<ParameterField<String>> envRefs) {
-    List<String> envRefsIds = envRefs.stream().map(e -> e.getValue()).collect(Collectors.toList());
+    List<String> envRefsIds = envRefs.stream().map(ParameterField::getValue).collect(Collectors.toList());
 
     List<Environment> environments =
         environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(AmbianceUtils.getAccountId(ambiance),
@@ -424,15 +429,15 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     return environments;
   }
 
-  private NGEnvironmentConfig getNGEnvironmentConfig(Environment environment) {
+  private void setYamlInEnvironment(Environment environment) {
     NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment);
     environment.setYaml(io.harness.ng.core.environment.mappers.EnvironmentMapper.toYaml(ngEnvironmentConfig));
-    return ngEnvironmentConfig;
   }
 
   private void executeEnvironmentPart(Ambiance ambiance, ServiceStepV3Parameters parameters,
       ServicePartResponse servicePartResponse, NGLogCallback logCallback,
       Map<FreezeEntityType, List<String>> entityMap) {
+    final String accountId = AmbianceUtils.getAccountId(ambiance);
     final ParameterField<String> envRef = parameters.getEnvRef();
     final ParameterField<Map<String, Object>> envInputs = parameters.getEnvInputs();
     if (ParameterField.isNull(envRef)) {
@@ -458,11 +463,12 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       NGEnvironmentConfig ngEnvironmentConfig;
       // handle old environments
       if (isEmpty(environment.get().getYaml())) {
-        getNGEnvironmentConfig(environment.get());
+        setYamlInEnvironment(environment.get());
       }
 
       try {
-        ngEnvironmentConfig = mergeEnvironmentInputs(environment.get().getYaml(), envInputs);
+        ngEnvironmentConfig = mergeEnvironmentInputs(
+            accountId, environment.get().getIdentifier(), environment.get().getYaml(), envInputs);
       } catch (IOException ex) {
         throw new InvalidRequestException(
             "Unable to read yaml for environment: " + environment.get().getIdentifier(), ex);
@@ -703,14 +709,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       mergedServiceYaml = serviceEntity.getYaml();
     }
 
-    final NGServiceConfig ngServiceConfig;
-    try {
-      ngServiceConfig = YamlUtils.read(mergedServiceYaml, NGServiceConfig.class);
-    } catch (IOException e) {
-      throw new InvalidRequestException(format("Unable to read yaml for service [Name: %s, Identifier: %s]",
-                                            serviceEntity.getName(), serviceEntity.getIdentifier()),
-          e);
-    }
+    final NGServiceConfig ngServiceConfig = getNgServiceConfig(AmbianceUtils.getAccountId(ambiance), mergedServiceYaml,
+        serviceEntity.getName(), serviceEntity.getIdentifier());
 
     sweepingOutputService.consume(ambiance, ServiceStepV3Constants.SERVICE_SWEEPING_OUTPUT,
         ServiceSweepingOutput.builder().finalServiceYaml(mergedServiceYaml).build(), "");
@@ -736,12 +736,26 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
     entityMap.put(FreezeEntityType.PIPELINE, Lists.newArrayList(AmbianceUtils.getPipelineIdentifier(ambiance)));
 
-    // Add the reason in serviceOutcome;
     ServiceStepOutcome outcome = ServiceStepOutcome.fromServiceStepV2(serviceEntity, ngServiceV2InfoConfig);
 
     sweepingOutputService.consume(ambiance, OutcomeExpressionConstants.SERVICE, outcome, StepCategory.STAGE.name());
 
     return ServicePartResponse.builder().ngServiceConfig(ngServiceConfig).build();
+  }
+
+  private NGServiceConfig getNgServiceConfig(
+      String accountId, String mergedServiceYaml, String name, String identifier) {
+    final NGServiceConfig ngServiceConfig;
+    try {
+      ngServiceConfig = YamlUtils.read(mergedServiceYaml, NGServiceConfig.class);
+    } catch (IOException e) {
+      serviceEntityYamlSchemaHelper.validateSchema(accountId, mergedServiceYaml);
+      log.error(String.format(
+          "Service schema validation succeeded but failed to convert service yaml to service config [%s]", identifier));
+      throw new InvalidRequestException(
+          format("Unable to read yaml for service [Name: %s, Identifier: %s]", name, identifier), e);
+    }
+    return ngServiceConfig;
   }
 
   private String mergeServiceInputsIntoService(String originalServiceYaml, Map<String, Object> serviceInputs) {
@@ -751,16 +765,30 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         originalServiceYaml, YamlPipelineUtils.writeYamlString(serviceInputsYaml), true, true);
   }
 
-  private NGEnvironmentConfig mergeEnvironmentInputs(
-      String originalEnvYaml, ParameterField<Map<String, Object>> environmentInputs) throws IOException {
+  private NGEnvironmentConfig mergeEnvironmentInputs(String accountId, String identifier, String yaml,
+      ParameterField<Map<String, Object>> environmentInputs) throws IOException {
     if (ParameterField.isNull(environmentInputs) || isEmpty(environmentInputs.getValue())) {
-      return YamlUtils.read(originalEnvYaml, NGEnvironmentConfig.class);
+      return getNgEnvironmentConfig(accountId, identifier, yaml);
     }
     Map<String, Object> environmentInputYaml = new HashMap<>();
     environmentInputYaml.put(YamlTypes.ENVIRONMENT_YAML, environmentInputs);
     String resolvedYaml = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
-        originalEnvYaml, YamlPipelineUtils.writeYamlString(environmentInputYaml), true, true);
-    return YamlUtils.read(resolvedYaml, NGEnvironmentConfig.class);
+        yaml, YamlPipelineUtils.writeYamlString(environmentInputYaml), true, true);
+
+    return getNgEnvironmentConfig(accountId, identifier, resolvedYaml);
+  }
+
+  private NGEnvironmentConfig getNgEnvironmentConfig(String accountId, String identifier, String yaml)
+      throws IOException {
+    try {
+      return YamlUtils.read(yaml, NGEnvironmentConfig.class);
+    } catch (Exception ex) {
+      environmentEntityYamlSchemaHelper.validateSchema(accountId, yaml);
+      log.error(String.format(
+          "Environment schema validation succeeded but failed to convert environment yaml to environment config [%s]",
+          identifier));
+      throw ex;
+    }
   }
 
   private VariablesSweepingOutput getVariablesSweepingOutput(

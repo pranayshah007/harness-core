@@ -95,6 +95,10 @@ public class NGTriggerEntity implements PersistentEntity, PersistentNGCronIterab
                 .name("accId_signature_index")
                 .field(NGTriggerEntityKeys.accountId)
                 .field("metadata.buildMetadata.pollingConfig.signature")
+                .build(),
+            CompoundMongoIndex.builder()
+                .name("webhookToken_index")
+                .field(NGTriggerEntityKeys.customWebhookToken)
                 .build())
         .build();
   }
@@ -123,6 +127,7 @@ public class NGTriggerEntity implements PersistentEntity, PersistentNGCronIterab
   @Builder.Default Boolean enabled = Boolean.TRUE;
   String pollInterval;
   String webhookId;
+  String customWebhookToken;
   String encryptedWebhookSecretIdentifier;
   List<String> stagesToExecute;
   @FdIndex private List<Long> nextIterations; // List of activation times for cron triggers

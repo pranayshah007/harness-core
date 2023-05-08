@@ -2127,7 +2127,8 @@
               "type": "string",
               "enum": [
                 "maven",
-                "nuget"
+                "nuget",
+                "upack"
               ]
             },
             "project": {
