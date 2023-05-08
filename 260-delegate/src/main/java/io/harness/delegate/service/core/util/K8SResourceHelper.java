@@ -16,18 +16,33 @@ import java.util.regex.Pattern;
 @UtilityClass
 public class K8SResourceHelper {
   private static final Pattern RESOURCE_NAME_NORMALIZER = Pattern.compile("_");
-  private static final String DEFAULT_RUNNER_NAMESPACE = "harness-delegate-ng";
+  private static final String DEFAULT_RUNNER_NAMESPACE = "bijou-testing";
 
   @NonNull
   public static String getPodName(final String taskGroupId) {
     return normalizeResourceName("harness-" + taskGroupId + "-job");
   }
 
+  @NonNull
+  public static String getContainerName(final String taskId) {
+    return normalizeResourceName("task-" + taskId);
+  }
+
+  @NonNull
+  public static String getImagePullSecretName(final String taskGroupId, final long index) {
+    return normalizeResourceName(String.format("image-%s-%s", taskGroupId, index));
+  }
+
+  @NonNull
+  public static String getSecretName(final String taskId) {
+    return normalizeResourceName("secret-" + taskId);
+  }
+
   // K8S resource name needs to contain only lowercase alphanumerics . and -, but must start and end with alphanumerics
   // Regex used by K8S for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'
   @NonNull
   public static String normalizeResourceName(final String resourceName) {
-    return RESOURCE_NAME_NORMALIZER.matcher(resourceName.trim().toLowerCase(Locale.ROOT)).replaceAll(".");
+    return RESOURCE_NAME_NORMALIZER.matcher(resourceName.trim().toLowerCase(Locale.ROOT)).replaceAll("-");
   }
 
   @NonNull

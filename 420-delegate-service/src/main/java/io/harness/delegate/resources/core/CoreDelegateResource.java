@@ -16,10 +16,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.core.beans.AcquireTasksResponse;
+import io.harness.delegate.core.beans.EmptyDirVolume;
 import io.harness.delegate.core.beans.ExecutionEnvironment;
+import io.harness.delegate.core.beans.ExecutionInfrastructure;
 import io.harness.delegate.core.beans.ExecutionMode;
 import io.harness.delegate.core.beans.ExecutionPriority;
+import io.harness.delegate.core.beans.K8S;
 import io.harness.delegate.core.beans.PluginSource;
+import io.harness.delegate.core.beans.Resource;
 import io.harness.delegate.core.beans.ResourceRequirements;
 import io.harness.delegate.core.beans.SecretConfig;
 import io.harness.delegate.core.beans.TaskDescriptor;
@@ -40,6 +44,7 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Duration;
 import io.dropwizard.jersey.protobuf.ProtocolBufferMediaType;
@@ -89,6 +94,11 @@ public class CoreDelegateResource {
       final var taskDataBytes = kryoSerializer.asBytes(delegateTaskPackage);
       final List<TaskSecret> protoSecrets = createProtoSecrets(delegateTaskPackage);
 
+      final var resources = ResourceRequirements.newBuilder()
+                                .setMemory("128Mi")
+                                .setCpu("0.1")
+                                .setTimeout(Duration.newBuilder().setSeconds(timeout).build())
+                                .build();
       final var pluginDesc =
           TaskDescriptor.newBuilder()
               .setId(taskId)
@@ -101,14 +111,19 @@ public class CoreDelegateResource {
                               .setType(delegateTaskPackage.getData().getTaskType())
                               .setSource(PluginSource.SOURCE_IMAGE)
                               .setUses(getImage(delegateTaskPackage.getData().getTaskType()))
-                              .setResource(ResourceRequirements.newBuilder()
-                                               .setMemory("128Mi")
-                                               .setCpu("0.1")
-                                               .setTimeout(Duration.newBuilder().setSeconds(timeout).build())
-                                               .build())
+                              .setResource(resources)
                               .build())
               .build();
-      final var response = AcquireTasksResponse.newBuilder().addTasks(pluginDesc).build();
+      final var emptyDir = EmptyDirVolume.newBuilder().setName("marko-dir").setPath("/harness/marko").build();
+      final var k8SInfra = K8S.newBuilder()
+//                               .addAllInfraSecrets(protoSecrets) // Not supported now
+                               .setResource(resources)
+                               .setWorkingDir("pera")
+                               .addResources(Resource.newBuilder().setSpec(Any.pack(emptyDir)).build())
+                               .build();
+      final ExecutionInfrastructure infra =
+          ExecutionInfrastructure.newBuilder().setProtoSpec(Any.pack(k8SInfra)).build();
+      final var response = AcquireTasksResponse.newBuilder().setInfra(infra).setId(taskId).addTasks(pluginDesc).build();
 
       return Response.ok(response).build();
     } catch (final Exception e) {

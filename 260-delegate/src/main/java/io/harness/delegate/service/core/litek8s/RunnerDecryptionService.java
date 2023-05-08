@@ -15,18 +15,24 @@ import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import lombok.RequiredArgsConstructor;
-
 import java.util.List;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RequiredArgsConstructor(onConstructor_ = @Inject)
+@Slf4j
 public class RunnerDecryptionService {
   private final DelegateDecryptionService decryptionService;
   @Named("referenceFalseKryoSerializer") private final KryoSerializer kryoSerializer; // TODO: remove named
 
   public Map<String, char[]> decrypt(final TaskSecret secret) {
-    final var kryoSecrets = (Map<EncryptionConfig, List<EncryptedRecord>>) kryoSerializer.asObject(secret.getSecrets().getBinaryData().toByteArray());
-    return decryptionService.decrypt(kryoSecrets);
+    final EncryptionConfig secretConfig =
+        (EncryptionConfig) kryoSerializer.asInflatedObject(secret.getConfig().getBinaryData().toByteArray());
+    final List<EncryptedRecord> kryoSecrets =
+        (List<EncryptedRecord>) kryoSerializer.asInflatedObject(secret.getSecrets().getBinaryData().toByteArray());
+    final var decrypt = decryptionService.decrypt(Map.of(secretConfig, kryoSecrets));
+    log.info("Decrypted secrets are: {}", decrypt);
+    return decrypt;
   }
 }

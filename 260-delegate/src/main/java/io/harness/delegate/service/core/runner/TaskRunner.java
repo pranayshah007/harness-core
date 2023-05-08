@@ -7,10 +7,13 @@
 
 package io.harness.delegate.service.core.runner;
 
+import io.harness.delegate.core.beans.ExecutionInfrastructure;
 import io.harness.delegate.core.beans.TaskDescriptor;
 
 import java.util.List;
 
 public interface TaskRunner {
-  void executeTask(final String taskGroupId, final List<TaskDescriptor> tasks);
+  void init(String taskGroupId, List<TaskDescriptor> tasks, ExecutionInfrastructure resources);
+  void execute(String taskGroupId, List<TaskDescriptor> tasks);
+  void cleanup(String taskGroupId);
 }

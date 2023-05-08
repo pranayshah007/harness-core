@@ -8,27 +8,26 @@
 package io.harness.delegate.app.modules.platform.k8s;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import io.harness.decryption.delegate.module.DelegateDecryptionModule;
 import io.harness.delegate.service.core.litek8s.K8SLiteRunner;
 import io.harness.delegate.service.core.runner.TaskRunner;
+import io.harness.security.encryption.DelegateDecryptionService;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.Config;
+import software.wings.service.impl.security.DelegateDecryptionServiceImpl;
+
 import java.io.IOException;
 
 public class K8SRunnerModule extends AbstractModule {
+
   @Override
   protected void configure() {
-    bind(TaskRunner.class).to(K8SLiteRunner.class);
+    install(new DelegateDecryptionModule());
+    install(new ApiClientModule());
 
-    try {
-      final var delegateType = System.getenv().get("DELEGATE_TYPE");
-      if ("KUBERNETES".equals(delegateType)) {
-        bind(ApiClient.class).toInstance(ClientBuilder.cluster().build());
-      } else { // K8S platform runner can only be real K8S or local in which case we need different API client
-        bind(ApiClient.class).toInstance(Config.defaultClient());
-      }
-    } catch (IOException e) {
-      throw new IllegalStateException("Can't create K8S API client");
-    }
+    bind(TaskRunner.class).to(K8SLiteRunner.class);
   }
 }

@@ -12,6 +12,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "@maven//:com_google_protobuf_protobuf_java",
         "@maven//:io_kubernetes_client_java_api",
         "@maven//:io_kubernetes_client_java_api_fluent",
     ],

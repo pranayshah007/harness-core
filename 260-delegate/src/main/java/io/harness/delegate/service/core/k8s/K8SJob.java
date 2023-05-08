@@ -40,7 +40,7 @@ public class K8SJob extends V1Job {
   }
 
   public K8SJob addVolume(final V1Volume volume, final String mountPath) {
-    final var volumeMount = K8SVolumeUtils.createVolumeMount(volume, mountPath);
+    final var volumeMount = K8SVolumeUtils.volumeMount(volume, mountPath);
     getSpec().getTemplate().getSpec().addVolumesItem(volume).getContainers().forEach(
         container -> container.addVolumeMountsItem(volumeMount));
 

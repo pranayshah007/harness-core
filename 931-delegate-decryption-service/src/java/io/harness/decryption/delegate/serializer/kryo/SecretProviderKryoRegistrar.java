@@ -7,6 +7,7 @@
 
 package io.harness.decryption.delegate.serializer.kryo;
 
+import io.harness.azure.AzureEnvironmentType;
 import io.harness.security.encryption.AdditionalMetadata;
 import io.harness.security.encryption.EncryptedDataParams;
 import io.harness.security.encryption.EncryptedRecordData;
@@ -25,10 +26,13 @@ import java.util.LinkedHashSet;
 public class SecretProviderKryoRegistrar implements KryoRegistrar {
   @Override
   public void register(final Kryo kryo) {
-    kryo.register(LinkedHashSet.class, 100030);
+//    kryo.register(LinkedHashSet.class, 100030); // Defined in ConnectorBeans as well.
     kryo.register(EncryptionType.class, 5123);
     kryo.register(EncryptedRecordData.class, 1401);
     kryo.register(EncryptedDataParams.class, 1413);
     kryo.register(AdditionalMetadata.class, 72101);
+
+
+    kryo.register(AzureEnvironmentType.class, 1436);
   }
 }

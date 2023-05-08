@@ -18,8 +18,11 @@ option java_multiple_files = true;
   running
  */
 message ExecutionInfrastructure {
-  google.protobuf.Any spec = 1;
-  InfraType type = 2;  // Should it just be string
+  oneof spec {
+    google.protobuf.Any proto_spec = 1;
+    bytes binary_spec = 2;
+  }
+  InfraType type = 3;  // TODO: Should it just be string
 }
 
 /*
@@ -31,11 +34,10 @@ enum InfraType {
 }
 
 message K8S {
-  TaskSecret infra_secret = 1;        // Secret needed to setup execution environment (e.g. imagePullSecrets)
-  ResourceRequirements resource = 2;  // Resource requirements for infra types that need it (e.g. K8S CPU/Mem)
-  PluginInit init = 3;                // Any kind of init that needs to happen for the plugin (e.g. init script)
-  map<string, string> env = 4;
-  SecurityContext security_context = 5;  // Startup user id for the execution infra
-  string working_dir = 6;
-  repeated Resource resources = 7;
+  repeated TaskSecret infra_secrets = 1;  // Secret needed to setup execution environment (e.g. imagePullSecrets)
+  ResourceRequirements resource = 2;      // Resource requirements for infra types that need it (e.g. K8S CPU/Mem)
+  map<string, string> env = 4;            // Any global env variables
+  SecurityContext security_context = 5;   // Startup user id for the execution infra
+  string working_dir = 6;                 // Working dir that all tasks have read/write access to
+  repeated Resource resources = 7;        // Any global resources like shared volumes
 }

@@ -77,7 +77,9 @@ message ExecutionEnvironment {
   map<string, string> env = 8;
   repeated string command = 9;
   repeated string arg = 10;
-  ExecutionSchedule schedule = 14;  // Schedule on which the plugin runs, applies only for MODE_PERPETUAL
+  SecurityContext security_context = 11;  // Startup user id for the execution infra
+  string working_dir = 12;                // Working dir that all tasks have read/write access to
+  ExecutionSchedule schedule = 14;        // Schedule on which the plugin runs, applies only for MODE_PERPETUAL
 }
 
 /*

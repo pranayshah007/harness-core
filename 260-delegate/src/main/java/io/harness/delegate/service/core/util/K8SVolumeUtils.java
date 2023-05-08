@@ -7,13 +7,15 @@
 
 package io.harness.delegate.service.core.util;
 
-import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
+import io.kubernetes.client.openapi.models.V1HostPathVolumeSourceBuilder;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSourceBuilder;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeBuilder;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import lombok.experimental.UtilityClass;
 
@@ -31,7 +33,27 @@ public class K8SVolumeUtils {
     return new V1Volume().name(name).emptyDir(new V1EmptyDirVolumeSource());
   }
 
-  public static V1VolumeMount createVolumeMount(final V1Volume volume, final String mountPath) {
+  public static V1Volume pvcVolume(final String name, final String claimName, final boolean readonly) {
+    return new V1VolumeBuilder()
+        .withName(name)
+        .withPersistentVolumeClaim(
+            new V1PersistentVolumeClaimVolumeSourceBuilder().withClaimName(claimName).withReadOnly(readonly).build())
+        .build();
+  }
+
+  public static V1Volume hostPathVolume(final String name, final String hostPath, final String type) {
+    final var volumeBuilder = new V1HostPathVolumeSourceBuilder().withPath(hostPath);
+    if (type != null && !"".equals(type)) {
+      volumeBuilder.withType(type);
+    }
+    return new V1VolumeBuilder().withName(name).withHostPath(volumeBuilder.build()).build();
+  }
+
+  public static V1VolumeMount volumeMount(final V1Volume volume, final String mountPath) {
     return new V1VolumeMount().name(volume.getName()).mountPath(mountPath);
+  }
+
+  public static V1VolumeMount volumeMount(final String volumeName, final String mountPath) {
+    return new V1VolumeMount().name(volumeName).mountPath(mountPath);
   }
 }

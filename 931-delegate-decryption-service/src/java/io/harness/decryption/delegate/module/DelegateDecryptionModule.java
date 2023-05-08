@@ -60,7 +60,7 @@ public class DelegateDecryptionModule extends AbstractModule {
     bind(SecretsDelegateCacheService.class).to(SecretsDelegateCacheServiceImpl.class);
     bind(SecretsDelegateCacheHelperService.class).to(NoopSecretsDelegateCacheHelperService.class);
 
-    bind(TimeLimiter.class).toInstance(HTimeLimiter.create());
+//    bind(TimeLimiter.class).toInstance(HTimeLimiter.create());
 
     bindSecretEncryptors();
   }

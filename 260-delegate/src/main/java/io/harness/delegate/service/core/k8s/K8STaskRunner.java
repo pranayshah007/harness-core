@@ -128,7 +128,7 @@ public class K8STaskRunner {
   }
 
   private V1Secret createTaskSecrets(final String taskId, final List<TaskSecret> secrets) throws ApiException {
-    final var k8sSecret = new K8SSecret(getSecretName(taskId), HARNESS_DELEGATE_NG);
+    final var k8sSecret = K8SSecret.secret(getSecretName(taskId), HARNESS_DELEGATE_NG);
 
     for (final var secret : secrets) {
       final var secretFilename = UUID.randomUUID().toString();
@@ -140,7 +140,7 @@ public class K8STaskRunner {
             .putDataItem(secretFilename + ".bin", secret.getSecrets().getProtoData().toByteArray());
       }
     }
-    return k8sSecret.create(coreApi, HARNESS_DELEGATE_NG);
+    return k8sSecret.create(coreApi);
   }
 
   private V1ConfigMap createTaskConfig(final String taskId, final TaskDescriptor descriptor) throws ApiException {

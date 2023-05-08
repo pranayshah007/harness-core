@@ -8,7 +8,9 @@
 package io.harness.delegate.service.core.litek8s;
 
 import io.harness.delegate.core.beans.ExecutionEnvironment;
+import io.harness.delegate.core.beans.ResourceRequirements;
 import io.harness.delegate.core.beans.SecurityContext;
+import io.harness.delegate.service.core.util.K8SResourceHelper;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -20,12 +22,14 @@ import io.kubernetes.client.openapi.models.V1ContainerPortBuilder;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarBuilder;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import io.kubernetes.client.openapi.models.V1ResourceRequirementsBuilder;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1SecurityContextBuilder;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.NonNull;
+import org.apache.commons.lang3.ObjectUtils;
 
 public class ContainerBuilder {
   private static final String PLUGIN_DOCKER_IMAGE_NAME = "plugins/docker";
@@ -48,25 +52,23 @@ public class ContainerBuilder {
   private static final String WORKING_DIR = "/harness";
   private static final String ADDON_RUN_COMMAND = "/addon/bin/ci-addon";
   private static final String ADDON_RUN_ARGS_FORMAT = "--port %s";
+  private static final int RESERVED_LE_PORT = 20001;
 
   public V1ContainerBuilder createContainer(
       final String taskId, final ExecutionEnvironment containerRuntime, final int port) {
-    final V1ContainerBuilder containerBuilder =
-        new V1ContainerBuilder()
-            .withName(taskId)
-            .withImage(containerRuntime.getUses())
-            .withCommand(ADDON_RUN_COMMAND)
-            .withArgs(String.format(ADDON_RUN_ARGS_FORMAT, port))
-            .withPorts(getPort(port))
-            //                                                    .withCommand(containerRuntime.getCommandList())
-            //                                                    .withArgs(containerRuntime.getArgList())
-            //                                                    .withPorts(getPorts(containerRuntime.getPortList()))
-            .withEnv(getEnvVars(containerRuntime.getEnvMap()))
-            .withImagePullPolicy("Always");
+    final V1ContainerBuilder containerBuilder = new V1ContainerBuilder()
+                                                    .withName(K8SResourceHelper.getContainerName(taskId))
+                                                    .withImage(containerRuntime.getUses())
+                                                    .withCommand(ADDON_RUN_COMMAND)
+                                                    .withArgs(String.format(ADDON_RUN_ARGS_FORMAT, port))
+                                                    .withPorts(getPort(port))
+                                                    .withEnv(getEnvVars(containerRuntime.getEnvMap()))
+                                                    .withResources(getResources("100m", "100Mi"))
+                                                    .withImagePullPolicy("Always");
 
     if (containerRuntime.hasResource()) {
       containerBuilder.withResources(
-          getResources(containerRuntime.getResource().getMemory(), containerRuntime.getResource().getCpu()));
+          getResources(containerRuntime.getResource().getCpu(), containerRuntime.getResource().getMemory()));
     }
 
     if (containerRuntime.hasSecurityContext()) {
@@ -90,23 +92,24 @@ public class ContainerBuilder {
         .withArgs(getAddonArgs()) // TODO: Why defining here, should be part of image
         .withEnv(new V1EnvVar().name(HARNESS_WORKSPACE).value(WORKING_DIR))
         .withImagePullPolicy("Always")
-        .withResources(getResources("100Mi", "100m"));
+        .withResources(getResources("100m", "100Mi"));
   }
 
-  public V1ContainerBuilder createLEContainer(final String memory, final String cpu) {
+  public V1ContainerBuilder createLEContainer(final ResourceRequirements resource, final Map<String, Integer> portMap) {
+    // TODO: See how to share ports to LE, possibly env var?
     return new V1ContainerBuilder()
         .withName(LE_CONTAINER_NAME)
         .withImage(getLeImage())
-        .withEnv(getEnvVars(getLeEnvVars(WORKING_DIR)))
+        .withEnv(getEnvVars(getLeEnvVars()))
         .withImagePullPolicy("Always")
-        .withPorts(getPort(20001))
-        .withResources(getResources(memory, cpu))
+        .withPorts(getPort(RESERVED_LE_PORT))
+        .withResources(getResources(resource.getCpu(), resource.getMemory()))
         .withWorkingDir(WORKING_DIR);
   }
 
-  private Map<String, String> getLeEnvVars(final String workingDir) {
+  private Map<String, String> getLeEnvVars() {
     final var envVars = ImmutableMap.<String, String>builder();
-    envVars.put(HARNESS_WORKSPACE, workingDir);
+    envVars.put(HARNESS_WORKSPACE, ContainerBuilder.WORKING_DIR);
     envVars.put(HARNESS_CI_INDIRECT_LOG_UPLOAD_FF, "true");
     envVars.put(HARNESS_LE_STATUS_REST_ENABLED, "true");
     envVars.put(DELEGATE_SERVICE_ENDPOINT_VARIABLE, "delegate-service"); // Todo: make per delegate
@@ -134,14 +137,17 @@ public class ContainerBuilder {
   }
 
   @NonNull
+  // TODO: possible to pull from private repo or have CI/CD/STO specific addon (CI Addon has TI & STO specific code).
+  // It should belong to runner startup config not PL because it's a property of a runner not our SaaS system, but that
+  // means you need to reconfigure runner to upgrade. Maybe through upgrade (e.g. put in config map that upgrader
+  // updates)? Extra considerations for imagePullSecrets for private repos
   private String getAddonImage() {
-    // TODO: possible to pull from private repo or have CI/CD/STO. specific addon (CI Addon has TI & STO specific code)
     return "harness/ci-addon:1.16.7";
   }
 
   @NonNull
   private String getLeImage() {
-    return "harness/ci-lite-engine:1.16.7"; // TODO: possible to pull from private repo
+    return "harness/ci-lite-engine:1.16.7"; // TODO: Same as for Addon image
   }
 
   private List<V1EnvVar> getEnvVars(final Map<String, String> envMap) {
@@ -154,9 +160,6 @@ public class ContainerBuilder {
   @NonNull
   private V1ContainerPort getPort(final int port) {
     return new V1ContainerPortBuilder().withContainerPort(port).build();
-    //    return ports.stream()
-    //                .map(port -> new V1ContainerPortBuilder().withContainerPort(port).build())
-    //        .collect(Collectors.toList());
   }
 
   private V1SecurityContext getSecurityContext(final SecurityContext securityContext, final boolean isPrivilegedImage) {
@@ -194,9 +197,29 @@ public class ContainerBuilder {
 
   // TODO: Make sure LE has max(all) resources and other containers min resources (runner should handle that not
   // manager)
-  private V1ResourceRequirements getResources(final String memory, final String cpu) {
-    return new V1ResourceRequirements()
-        .limits(Map.of("memory", Quantity.fromString(memory)))
-        .requests(Map.of("memory", Quantity.fromString(cpu), "cpu", Quantity.fromString(cpu)));
+  private V1ResourceRequirements getResources(final String cpu, final String memory) {
+    final var limitBuilder = ImmutableMap.<String, Quantity>builder();
+    final var requestBuilder = ImmutableMap.<String, Quantity>builder();
+
+    if (!Strings.isNullOrEmpty(cpu)) {
+      requestBuilder.put("cpu", Quantity.fromString(cpu));
+    }
+
+    if (!Strings.isNullOrEmpty(memory)) {
+      requestBuilder.put("memory", Quantity.fromString(memory));
+      limitBuilder.put("memory", Quantity.fromString(memory));
+    }
+
+
+    final var requests = requestBuilder.build();
+    final var limits = limitBuilder.build();
+    final var resources = new V1ResourceRequirementsBuilder();
+    if (!requests.isEmpty()) {
+      resources.withRequests(requests);
+    }
+    if (!limits.isEmpty()) {
+      resources.withLimits(limits);
+    }
+    return resources.build();
   }
 }
