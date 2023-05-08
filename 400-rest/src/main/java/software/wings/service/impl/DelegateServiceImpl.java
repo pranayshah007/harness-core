@@ -2489,8 +2489,12 @@ public class DelegateServiceImpl implements DelegateService {
           .build();
     }
 
+    final String hostName = ECS.equals(delegate.getDelegateType())
+        ? getHostNameToBeUsedForECSDelegate(delegate.getHostName(), delegate.getSequenceNum())
+        : delegate.getHostName();
+
     final Delegate existingDelegate = getExistingDelegate(
-        delegate.getAccountId(), delegate.getHostName(), delegate.isNg(), delegate.getDelegateType(), delegate.getIp());
+        delegate.getAccountId(), hostName, delegate.isNg(), delegate.getDelegateType(), delegate.getIp());
 
     if (existingDelegate != null && existingDelegate.getStatus() == DelegateInstanceStatus.DELETED) {
       broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true)
@@ -2708,7 +2712,8 @@ public class DelegateServiceImpl implements DelegateService {
     return calendar.getTimeInMillis();
   }
 
-  private Delegate getExistingDelegate(
+  @VisibleForTesting
+  protected Delegate getExistingDelegate(
       final String accountId, final String hostName, final boolean ng, final String delegateType, final String ip) {
     final Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
                                               .filter(DelegateKeys.accountId, accountId)
@@ -3685,7 +3690,8 @@ public class DelegateServiceImpl implements DelegateService {
     return sequenceConfig;
   }
 
-  private String getHostNameToBeUsedForECSDelegate(String hostName, String seqNum) {
+  @VisibleForTesting
+  protected String getHostNameToBeUsedForECSDelegate(String hostName, String seqNum) {
     return hostName + DELIMITER + seqNum;
   }
 
