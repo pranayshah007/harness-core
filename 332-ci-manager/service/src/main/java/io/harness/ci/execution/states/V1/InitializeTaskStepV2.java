@@ -392,13 +392,16 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+
+    InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
+    validateFeatureFlags(initializeStepInfo, accountIdentifier);
+
     ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
     String principal = executionPrincipalInfo.getPrincipal();
     if (EmptyPredicate.isEmpty(principal)) {
       return;
     }
 
-    InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
     List<EntityDetail> connectorsEntityDetails =
         getConnectorIdentifiers(initializeStepInfo, accountIdentifier, projectIdentifier, orgIdentifier);
 
@@ -406,7 +409,6 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
       pipelineRbacHelper.checkRuntimePermissions(ambiance, connectorsEntityDetails, true);
     }
 
-    validateFeatureFlags(initializeStepInfo, accountIdentifier);
     validateConnectors(
         initializeStepInfo, connectorsEntityDetails, accountIdentifier, orgIdentifier, projectIdentifier);
     sanitizeExecution(initializeStepInfo, accountIdentifier);
