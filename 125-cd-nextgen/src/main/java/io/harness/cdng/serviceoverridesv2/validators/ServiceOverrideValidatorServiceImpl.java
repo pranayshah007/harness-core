@@ -13,10 +13,13 @@ import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_UPDATE_PERMISSION;
 
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.cdng.validations.helper.OrgAndProjectValidationHelper;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
+import io.harness.scope.ScopeHelper;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -99,10 +102,10 @@ public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValid
   @Override
   public void validateServiceOverrideRequestBasicChecks(
       @NotNull ServiceOverrideRequestDTOV2 serviceOverrideRequestDTOV2, @NotNull String accountId) {
-    throwExceptionForRequiredFields(serviceOverrideRequestDTOV2);
-    validateServiceOverrideScope(serviceOverrideRequestDTOV2);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         serviceOverrideRequestDTOV2.getOrgIdentifier(), serviceOverrideRequestDTOV2.getProjectIdentifier(), accountId);
+    throwExceptionForRequiredFields(serviceOverrideRequestDTOV2);
+    validateServiceOverrideScope(serviceOverrideRequestDTOV2, accountId);
   }
 
   @Override
@@ -142,9 +145,24 @@ public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValid
     }
   }
 
-  private void validateServiceOverrideScope(ServiceOverrideRequestDTOV2 requestDTO) {
+  private void validateServiceOverrideScope(ServiceOverrideRequestDTOV2 requestDTO, String accountId) {
     if (isNotEmpty(requestDTO.getProjectIdentifier()) && isEmpty(requestDTO.getOrgIdentifier())) {
       throw new InvalidRequestException("org identifier must be specified when project identifier is specified.");
+    }
+    Scope requestScope =
+        ScopeHelper.getScope(accountId, requestDTO.getOrgIdentifier(), requestDTO.getProjectIdentifier());
+
+    if (Scope.ORG == requestScope) {
+      if (Scope.PROJECT == IdentifierRefHelper.getScope(requestDTO.getEnvironmentRef())) {
+        throw new InvalidRequestException(
+            "For an org level override, project level environment can not be used. If you want to use environment at org/account level you might be missing prefix(org./account.) in environmentRef");
+      }
+    }
+    if (Scope.ACCOUNT == requestScope) {
+      if (Scope.ACCOUNT != IdentifierRefHelper.getScope(requestDTO.getEnvironmentRef())) {
+        throw new InvalidRequestException(
+            "For an account level override, project/org level environment can not be used. If you want to use environment at account level you might be missing prefix(account.) in environmentRef");
+      }
     }
   }
 }
