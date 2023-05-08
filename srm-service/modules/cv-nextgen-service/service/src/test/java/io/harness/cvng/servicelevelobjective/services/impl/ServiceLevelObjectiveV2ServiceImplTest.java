@@ -22,6 +22,7 @@ import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -2266,7 +2267,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testDeleteByProjectIdentifier_Success() {
     ProjectParams projectParamsTest = ProjectParams.builder()
-                                          .accountIdentifier(generateUuid())
+                                          .accountIdentifier(builderFactory.getProjectParams().getAccountIdentifier())
                                           .orgIdentifier("orgIdentifier")
                                           .projectIdentifier("project3")
                                           .build();
@@ -2309,10 +2310,15 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     compositeSLODTO.setOrgIdentifier(projectParamsTest.getOrgIdentifier());
     compositeSLODTO.setProjectIdentifier(projectParamsTest.getProjectIdentifier());
     mockServiceLevelObjectiveService.create(projectParamsTest, compositeSLODTO);
+
+    compositeSLODTO.setIdentifier("compositeSLO3");
+    compositeSLODTO.setOrgIdentifier(builderFactory.getProjectParams().getOrgIdentifier());
+    compositeSLODTO.setProjectIdentifier(builderFactory.getProjectParams().getOrgIdentifier());
+    mockServiceLevelObjectiveService.create(builderFactory.getProjectParams(), compositeSLODTO);
     mockServiceLevelObjectiveService.deleteByProjectIdentifier(AbstractServiceLevelObjective.class,
         projectParamsTest.getAccountIdentifier(), projectParamsTest.getOrgIdentifier(),
         projectParamsTest.getProjectIdentifier());
-    verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any());
+    verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any(), anyBoolean());
   }
 
   @Test
@@ -2365,7 +2371,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     mockServiceLevelObjectiveService.create(projectParamsTest, compositeSLODTO);
     mockServiceLevelObjectiveService.deleteByOrgIdentifier(AbstractServiceLevelObjective.class,
         projectParamsTest.getAccountIdentifier(), projectParamsTest.getOrgIdentifier());
-    verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any());
+    verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any(), anyBoolean());
   }
 
   @Test
@@ -2419,7 +2425,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
 
     mockServiceLevelObjectiveService.deleteByAccountIdentifier(
         AbstractServiceLevelObjective.class, projectParamsTest.getAccountIdentifier());
-    verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any());
+    verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any(), anyBoolean());
   }
 
   @Test

@@ -427,14 +427,21 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                       .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
                       .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
                       .build(),
-            serviceLevelObjective.getIdentifier()));
+            serviceLevelObjective.getIdentifier(), false));
   }
   @Override
   public boolean delete(ProjectParams projectParams, String identifier) {
+    return delete(projectParams, identifier, true);
+  }
+
+  @Override
+  public boolean delete(
+      ProjectParams projectParams, String identifier, boolean validateReferencedCompositeSLOForSimpleSLO) {
     AbstractServiceLevelObjective serviceLevelObjectiveV2 = checkIfSLOPresent(projectParams, identifier);
     ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO =
         sloEntityToSLOResponse(serviceLevelObjectiveV2).getServiceLevelObjectiveV2DTO();
-    if (serviceLevelObjectiveV2.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+    if (validateReferencedCompositeSLOForSimpleSLO
+        && serviceLevelObjectiveV2.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
       List<String> referencedCompositeSLOIdentifiers =
           compositeSLOService.getReferencedCompositeSLOs(projectParams, identifier)
               .stream()
@@ -479,7 +486,6 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                            .build());
     return hPersistence.delete(serviceLevelObjectiveV2);
   }
-
   @Override
   public void setMonitoredServiceSLOsEnableFlag(
       ProjectParams projectParams, String monitoredServiceIdentifier, boolean isEnabled) {
