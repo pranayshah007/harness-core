@@ -5,7 +5,7 @@ template_types:
   - ./pipeline/template.yaml
 
 step_template_types:
-  - ./step/wait_step.yaml
+  - ./steps/pie/wait-step-node.yaml
 
 stage_template_types:
   - ./stage/custom/stage.yaml
