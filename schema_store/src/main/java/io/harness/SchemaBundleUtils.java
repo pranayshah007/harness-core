@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.bundler.SchemaBundler;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.jackson.JsonNodeUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -25,8 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Iterator;
-import java.util.Objects;
+import java.util.*;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -34,6 +34,12 @@ import lombok.Getter;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class SchemaBundleUtils implements SchemaBundler {
   @Getter private YamlEntityType yamlEntityType;
+
+  public final String DESCRIPTION = "description";
+  public final String IDENTIFIER = "identifier";
+  public final String NAME = "name";
+  public final String ORG_IDENTIFIER = "orgIdentifier";
+  public final String PROJECT_IDENTIFIER = "projectIdentifier";
   private static final ObjectMapper YAML_OBJECT_MAPPER = new ObjectMapper(new YAMLFactory());
   private static final ObjectMapper JSON_OBJECT_MAPPER = new ObjectMapper();
   private static final String REF_NODE = "$ref";
@@ -109,6 +115,10 @@ public class SchemaBundleUtils implements SchemaBundler {
           throw new InvalidRequestException("Title is missing from file: " + refValue);
         }
 
+        if (refValue.contains("template_config")) {
+          updateJsonForTemplate(childSchemaNode, refValue);
+        }
+
         String childSchemaTitle = childSchemaNode.get(TITLE).asText();
         // We want to retain the folder structure in definitions
         // So, let's get the relative folder first from version directory.
@@ -126,6 +136,20 @@ public class SchemaBundleUtils implements SchemaBundler {
           iterateJsonNode(definitionsNode, childSchemaNode, Paths.get(newPath + "/../").normalize());
         }
       }
+    }
+  }
+
+  private void updateJsonForTemplate(JsonNode childSchemaNode, String refValue) {
+    String title = childSchemaNode.get(TITLE).asText();
+    String newTitle = title + "_template";
+    HashSet<String> keys =
+        new HashSet<>(Arrays.asList(NAME, IDENTIFIER, DESCRIPTION, ORG_IDENTIFIER, PROJECT_IDENTIFIER));
+    if (refValue.contains("../pipeline/")) {
+      JsonNodeUtils.deletePropertiesInJsonNode((ObjectNode) childSchemaNode.get("properties"), keys);
+      JsonNodeUtils.deletePropertiesInArrayNode((ArrayNode) childSchemaNode.get("required"), keys);
+      Map<String, String> propertiesToUpdate = new HashMap<>();
+      propertiesToUpdate.put(TITLE, newTitle);
+      JsonNodeUtils.updatePropertiesInJsonNode((ObjectNode) childSchemaNode, propertiesToUpdate);
     }
   }
 
