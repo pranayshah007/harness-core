@@ -35,11 +35,11 @@ public class AwsKmsConnectorCredentialOutcomeDTO {
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)
   @Valid
-  AwsKmsCredentialSpecDTO config;
+  AwsKmsCredentialSpecDTO spec;
 
   @Builder
   public AwsKmsConnectorCredentialOutcomeDTO(AwsKmsCredentialType type, AwsKmsCredentialSpecDTO config) {
     this.type = type;
-    this.config = config;
+    this.spec = config;
   }
 }

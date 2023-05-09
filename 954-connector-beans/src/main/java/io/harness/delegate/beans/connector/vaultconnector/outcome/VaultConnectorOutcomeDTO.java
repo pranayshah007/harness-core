@@ -25,6 +25,7 @@ import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
+import io.harness.security.encryption.AccessType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -46,7 +47,7 @@ public class VaultConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implemen
   @NotNull
   @Schema(description = SecretManagerDescriptionConstants.VAULT_URL)
   private String vaultUrl;
-  @Schema(description = SecretManagerDescriptionConstants.READ_ONLY) private boolean isReadOnly;
+  @Schema(description = SecretManagerDescriptionConstants.READ_ONLY) private boolean readOnly;
   @NotNull
   @Schema(description = SecretManagerDescriptionConstants.RENEWAL_INTERVAL_MINUTES)
   private long renewalIntervalMinutes;
@@ -64,10 +65,11 @@ public class VaultConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implemen
   @Schema(description = USE_AWS_IAM) private boolean useAwsIam;
   @Schema(description = AWS_REGION) private String awsRegion;
   @Schema(description = VAULT_AWS_IAM_ROLE) private String vaultAwsIamRole;
-  @SecretReference @Schema(description = VAULT_AWS_IAM_HEADER) private SecretRefData headerAwsIam;
+  @SecretReference @Schema(description = VAULT_AWS_IAM_HEADER) private SecretRefData xvaultAwsIamServerId;
   @Schema(description = USE_K8s_AUTH) private boolean useK8sAuth;
   @Schema(description = VAULT_K8S_AUTH_ROLE) private String vaultK8sAuthRole;
   @Schema(description = SERVICE_ACCOUNT_TOKEN_PATH) private String serviceAccountTokenPath;
   @Schema(description = K8S_AUTH_ENDPOINT) private String k8sAuthEndpoint;
   @Schema(description = RENEW_APPROLE_TOKEN) private boolean renewAppRoleToken;
+  private AccessType accessType;
 }
