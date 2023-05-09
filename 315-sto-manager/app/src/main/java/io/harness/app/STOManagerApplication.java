@@ -8,8 +8,13 @@
 package io.harness.app;
 
 import static io.harness.annotations.dev.HarnessTeam.STO;
+import static io.harness.app.STOManagerConfiguration.BASE_PACKAGE;
+import static io.harness.app.STOManagerConfiguration.NG_PIPELINE_PACKAGE;
 import static io.harness.authorization.AuthorizationServiceHeader.STO_MANAGER;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
+import static io.harness.pms.contracts.plan.ExpansionRequestType.KEY;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
 import static java.util.Collections.singletonList;
@@ -17,9 +22,11 @@ import static java.util.Collections.singletonList;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
 import io.harness.SCMGrpcClientModule;
+import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
+import io.harness.ci.execution.ObserverEventConsumer;
 import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
 import io.harness.ci.execution.queue.CIExecutionPoller;
 import io.harness.ci.plan.creator.CIModuleInfoProvider;
@@ -31,16 +38,25 @@ import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
 import io.harness.exception.GeneralException;
 import io.harness.govern.ProviderModule;
+import io.harness.governance.DefaultConnectorRefExpansionHandler;
 import io.harness.health.HealthService;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.TraceFilter;
+import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
+import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
+import io.harness.ng.core.exceptionmappers.NotAllowedExceptionMapper;
+import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
+import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.persistence.store.Store;
+import io.harness.plugin.PluginMetadataRecordsJob;
+import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PipelineEventConsumerController;
 import io.harness.pms.listener.NgOrchestrationNotifyEventListenerNonVersioned;
@@ -59,6 +75,7 @@ import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEvent
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
 import io.harness.pms.serializer.json.PmsBeansJacksonModule;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.queue.QueueController;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
@@ -69,6 +86,7 @@ import io.harness.serializer.CiBeansRegistrars;
 import io.harness.serializer.ConnectorNextGenRegistrars;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.serializer.PersistenceRegistrars;
 import io.harness.serializer.PrimaryVersionManagerRegistrars;
 import io.harness.serializer.StoBeansRegistrars;
 import io.harness.serializer.YamlBeansModuleRegistrars;
@@ -92,6 +110,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -106,6 +125,8 @@ import dev.morphia.converters.TypeConverter;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
+import io.dropwizard.jersey.errors.EarlyEofExceptionMapper;
+import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
@@ -119,6 +140,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -128,6 +151,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ResourceInfo;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.LogManager;
 import org.glassfish.jersey.server.model.Resource;
@@ -142,8 +166,6 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
   private static final SecureRandom random = new SecureRandom();
   public static final Store HARNESS_STORE = Store.builder().name("harness").build();
   private static final String APP_NAME = "STO Manager Service Application";
-  public static final String BASE_PACKAGE = "io.harness.app.resources";
-  public static final String NG_PIPELINE_PACKAGE = "io.harness.ngpipeline";
 
   public static void main(String[] args) throws Exception {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -151,15 +173,6 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
       MaintenanceController.forceMaintenance(true);
     }));
     new STOManagerApplication().run(args);
-  }
-
-  public static Collection<Class<?>> getResourceClasses() {
-    Reflections basePackageClasses = new Reflections(BASE_PACKAGE);
-    Set<Class<?>> classSet = basePackageClasses.getTypesAnnotatedWith(Path.class);
-    Reflections pipelinePackageClasses = new Reflections(NG_PIPELINE_PACKAGE);
-    classSet.addAll(pipelinePackageClasses.getTypesAnnotatedWith(Path.class));
-
-    return classSet;
   }
 
   @Override
@@ -199,6 +212,7 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
       @Singleton
       Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
         return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
+            .addAll(CiExecutionRegistrars.morphiaRegistrars)
             .addAll(PrimaryVersionManagerRegistrars.morphiaRegistrars)
             .build();
       }
@@ -217,7 +231,9 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
       @Provides
       @Singleton
       Set<Class<? extends TypeConverter>> morphiaConverters() {
-        return ImmutableSet.<Class<? extends TypeConverter>>builder().build();
+        return ImmutableSet.<Class<? extends TypeConverter>>builder()
+            .addAll(PersistenceRegistrars.morphiaConverters)
+            .build();
       }
 
       @Provides
@@ -230,12 +246,6 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
       List<YamlSchemaRootClass> yamlSchemaRootClasses() {
         return ImmutableList.<YamlSchemaRootClass>builder().addAll(StoBeansRegistrars.yamlSchemaRegistrars).build();
       }
-      @Provides
-      @Singleton
-      @Named("dbAliases")
-      public List<String> getDbAliases() {
-        return configuration.getDbAliases();
-      }
     });
 
     modules.add(new ProviderModule() {
@@ -243,6 +253,13 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
       @Singleton
       MongoConfig mongoConfig() {
         return STOManagerConfiguration.getHarnessSTOMongo(configuration.getHarnessCIMongo());
+      }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return configuration.getDbAliases();
       }
     });
 
@@ -296,15 +313,38 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
     registerHealthCheck(environment, injector);
     registerAuthFilters(configuration, environment, injector);
     registerCorrelationFilter(environment, injector);
-    //    registerStores(configuration, injector);
+    registerStores(configuration, injector);
     registerYamlSdk(injector);
     scheduleJobs(injector, configuration);
     registerQueueListener(injector);
     registerPmsSdkEvents(injector);
+    registerEventConsumers(injector);
+    registerExceptionMappers(environment);
+
+    if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
+      registerTraceFilter(environment, injector);
+    }
+
+    initializePluginPublisher(injector);
     registerOasResource(configuration, environment, injector);
     log.info("Starting app done");
     MaintenanceController.forceMaintenance(false);
     LogManager.shutdown();
+  }
+
+  public static Collection<Class<?>> getResourceClasses() {
+    Reflections basePackageClasses = new Reflections(BASE_PACKAGE);
+    Set<Class<?>> classSet = basePackageClasses.getTypesAnnotatedWith(Path.class);
+    Reflections pipelinePackageClasses = new Reflections(NG_PIPELINE_PACKAGE);
+    classSet.addAll(pipelinePackageClasses.getTypesAnnotatedWith(Path.class));
+
+    return classSet;
+  }
+
+  private void registerEventConsumers(final Injector injector) {
+    final ExecutorService entityCRUDConsumerExecutor =
+        Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(OBSERVER_EVENT_CHANNEL).build());
+    entityCRUDConsumerExecutor.execute(injector.getInstance(ObserverEventConsumer.class));
   }
 
   private void registerOasResource(CIManagerConfiguration appConfig, Environment environment, Injector injector) {
@@ -389,7 +429,16 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
   }
 
   private List<JsonExpansionHandlerInfo> getJsonExpansionHandlers() {
-    return new ArrayList<>();
+    List<JsonExpansionHandlerInfo> jsonExpansionHandlers = new ArrayList<>();
+    JsonExpansionInfo connectorRefExpansionInfo =
+        JsonExpansionInfo.newBuilder().setKey(YAMLFieldNameConstants.CONNECTOR_REF).setExpansionType(KEY).build();
+    JsonExpansionHandlerInfo connectorRefExpansionHandlerInfo =
+        JsonExpansionHandlerInfo.builder()
+            .jsonExpansionInfo(connectorRefExpansionInfo)
+            .expansionHandler(DefaultConnectorRefExpansionHandler.class)
+            .build();
+    jsonExpansionHandlers.add(connectorRefExpansionHandlerInfo);
+    return jsonExpansionHandlers;
   }
 
   private void scheduleJobs(Injector injector, CIManagerConfiguration config) {
@@ -449,6 +498,13 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
                                             .buildValidatorFactory();
     modules.add(new ValidationModule(validatorFactory));
   }
+  private static void registerStores(CIManagerConfiguration config, Injector injector) {
+    final String stoMongo = STOManagerConfiguration.getHarnessSTOMongo(config.getHarnessCIMongo()).getUri();
+    if (isNotEmpty(stoMongo) && !stoMongo.equals(config.getHarnessMongo().getUri())) {
+      final HPersistence hPersistence = injector.getInstance(HPersistence.class);
+      hPersistence.register(HARNESS_STORE, config.getHarnessMongo().getUri());
+    }
+  }
 
   private void registerWaitEnginePublishers(Injector injector) {
     final QueuePublisher<NotifyEvent> publisher =
@@ -474,9 +530,23 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
           injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
     }
   }
+  private void registerExceptionMappers(Environment environment) {
+    environment.jersey().register(JerseyViolationExceptionMapperV2.class);
+    environment.jersey().register(GenericExceptionMapperV2.class);
+    environment.jersey().register(new JsonProcessingExceptionMapper(true));
+    environment.jersey().register(EarlyEofExceptionMapper.class);
+    environment.jersey().register(NGAccessDeniedExceptionMapper.class);
+    environment.jersey().register(WingsExceptionMapperV2.class);
+    environment.jersey().register(NotFoundExceptionMapper.class);
+    environment.jersey().register(NotAllowedExceptionMapper.class);
+  }
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
+  }
+
+  private void registerTraceFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(TraceFilter.class));
   }
 
   private void registerYamlSdk(Injector injector) {
@@ -486,5 +556,10 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
                                                     .requireValidatorInit(false)
                                                     .build();
     YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
+  }
+
+  private void initializePluginPublisher(Injector injector) {
+    log.info("Initializing plugin metadata publishing job");
+    injector.getInstance(PluginMetadataRecordsJob.class).scheduleTasks();
   }
 }

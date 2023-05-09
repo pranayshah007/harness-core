@@ -247,7 +247,11 @@ ciExecutionServiceConfig:
       - product: fossa_.*
         image: harness/fossa-job-runner
       - product: semgrep_.*
-        image: harness/semgrep-job-runner
+        image: harness/sto-plugin
+        entrypoint:
+          - /bin/sto_plugin
+          - "--run-strategy"
+          - single-container
       - product: grype_default
         image: harness/grype-job-runner
       - product: nmap_.*
