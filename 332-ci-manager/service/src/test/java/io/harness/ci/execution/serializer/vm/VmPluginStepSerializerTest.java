@@ -8,8 +8,7 @@
 package io.harness.ci.execution.serializer.vm;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.ci.commonconstants.CIExecutionConstants.STACK_ID;
-import static io.harness.ci.commonconstants.CIExecutionConstants.WORKFLOW;
+import static io.harness.ci.commonconstants.CIExecutionConstants.WORKSPACE_ID;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
@@ -117,27 +116,26 @@ public class VmPluginStepSerializerTest extends CategoryTest {
                             .putAllSetupAbstractions(Maps.of("accountId", "accountId", "projectIdentifier",
                                 "projectIdentfier", "orgIdentifier", "orgIdentifier"))
                             .build();
-    PluginStepInfo pluginStepInfo =
-        PluginStepInfo.builder()
-            .privileged(ParameterField.createValueField(true))
-            .connectorRef(ParameterField.createValueField("connectorRef"))
-            .reports(ParameterField.createValueField(null))
-            .envVariables(ParameterField.createValueField(Map.of(
-                STACK_ID, ParameterField.createValueField("val1"), WORKFLOW, ParameterField.createValueField("val2"))))
-            .build();
+    PluginStepInfo pluginStepInfo = PluginStepInfo.builder()
+                                        .privileged(ParameterField.createValueField(true))
+                                        .connectorRef(ParameterField.createValueField("connectorRef"))
+                                        .reports(ParameterField.createValueField(null))
+                                        .image(ParameterField.<String>builder().value("foobar").build())
+                                        .envVariables(ParameterField.createValueField(
+                                            Map.of(WORKSPACE_ID, ParameterField.createValueField("val1"))))
+                                        .build();
 
     when(iacmStepsUtils.getIACMEnvVariables(any(), any())).thenReturn(new HashMap<>() {
       { put("KEY", "VALUE"); }
     });
     when(iacmStepsUtils.isIACMStep(any())).thenReturn(true);
-    when(iacmStepsUtils.retrieveIACMPluginImage(any(), any())).thenReturn("terraform");
 
     VmStepInfo vmStepInfo =
         vmPluginStepSerializer.serialize(pluginStepInfo, null, "id", null, null, ambiance, null, null);
     assertThat(vmStepInfo).isInstanceOf(VmPluginStep.class);
     VmPluginStep vmPluginStep = (VmPluginStep) vmStepInfo;
-    assertThat(vmPluginStep.getImage()).isEqualTo("terraform");
-    assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(3);
+    assertThat(vmPluginStep.getImage()).isEqualTo("foobar");
+    assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(2);
   }
 
   @Test
@@ -148,20 +146,18 @@ public class VmPluginStepSerializerTest extends CategoryTest {
                             .putAllSetupAbstractions(Maps.of("accountId", "accountId", "projectIdentifier",
                                 "projectIdentfier", "orgIdentifier", "orgIdentifier"))
                             .build();
-    PluginStepInfo pluginStepInfo =
-        PluginStepInfo.builder()
-            .privileged(ParameterField.createValueField(true))
-            .uses(ParameterField.createValueField("faaa"))
-            .connectorRef(ParameterField.createValueField("connectorRef"))
-            .reports(ParameterField.createValueField(null))
-            .envVariables(ParameterField.createValueField(Map.of(
-                STACK_ID, ParameterField.createValueField("val1"), WORKFLOW, ParameterField.createValueField("val2"))))
-            .build();
+    PluginStepInfo pluginStepInfo = PluginStepInfo.builder()
+                                        .privileged(ParameterField.createValueField(true))
+                                        .uses(ParameterField.createValueField("faaa"))
+                                        .connectorRef(ParameterField.createValueField("connectorRef"))
+                                        .reports(ParameterField.createValueField(null))
+                                        .envVariables(ParameterField.createValueField(
+                                            Map.of(WORKSPACE_ID, ParameterField.createValueField("val1"))))
+                                        .build();
 
     when(iacmStepsUtils.getIACMEnvVariables(any(), any())).thenReturn(new HashMap<>() {
       { put("KEY", "VALUE"); }
     });
-    when(iacmStepsUtils.retrieveIACMPluginImage(any(), any())).thenReturn("");
 
     VmStepInfo vmStepInfo = vmPluginStepSerializer.serialize(
         pluginStepInfo, DliteVmStageInfraDetails.builder().build(), "id", null, null, ambiance, null, null);

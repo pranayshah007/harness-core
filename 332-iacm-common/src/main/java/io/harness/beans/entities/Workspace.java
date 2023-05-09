@@ -19,7 +19,7 @@ import lombok.Value;
 @Builder
 @OwnedBy(IACM)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Stack {
+public class Workspace {
   Long created;
   String name;
   String account;

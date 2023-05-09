@@ -7,22 +7,15 @@
 
 package io.harness.iacm.execution;
 
-import static io.harness.ci.commonconstants.CIExecutionConstants.EVALUATE;
-import static io.harness.ci.commonconstants.CIExecutionConstants.EXECUTE;
-import static io.harness.ci.commonconstants.CIExecutionConstants.INITIALISE;
-import static io.harness.ci.commonconstants.CIExecutionConstants.STACK_ID;
-import static io.harness.ci.commonconstants.CIExecutionConstants.TEARDOWN;
-import static io.harness.ci.commonconstants.CIExecutionConstants.WORKFLOW;
+import static io.harness.ci.commonconstants.CIExecutionConstants.WORKSPACE_ID;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import io.harness.beans.entities.Stack;
-import io.harness.beans.entities.StackVariables;
+import io.harness.beans.entities.Workspace;
+import io.harness.beans.entities.WorkspaceVariables;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.PluginSettingUtils;
-import io.harness.ci.execution.CIExecutionConfigService;
-import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.exception.ngexception.IACMStageExecutionException;
@@ -38,37 +31,37 @@ import java.util.Map;
 import java.util.Objects;
 
 public class IACMStepsUtils {
-  @Inject private CIExecutionConfigService ciExecutionConfigService;
   @Inject ConnectorUtils connectorUtils;
-  @Inject HarnessImageUtils harnessImageUtils;
   @Inject IACMServiceUtils iacmServiceUtils;
-  private Stack getIACMStackInfo(String org, String projectId, String accountId, String stackID) {
-    Stack stack = iacmServiceUtils.getIACMStackInfo(org, projectId, accountId, stackID);
-    if (stack == null) {
-      throw new IACMStageExecutionException("Unable to retrieve the stack information for the stack " + stackID);
+
+  private Workspace getIACMWorkspaceInfo(String org, String projectId, String accountId, String workspaceID) {
+    Workspace workspaceInfo = iacmServiceUtils.getIACMWorkspaceInfo(org, projectId, accountId, workspaceID);
+    if (workspaceInfo == null) {
+      throw new IACMStageExecutionException(
+          "Unable to retrieve the workspaceInfo information for the workspace " + workspaceID);
     }
-    return stack;
+    return workspaceInfo;
   }
 
-  private String getTerraformEndpointsInfo(Ambiance ambiance, String stackId) {
-    return iacmServiceUtils.GetTerraformEndpointsData(ambiance, stackId);
+  private String getTerraformEndpointsInfo(Ambiance ambiance, String workspaceId) {
+    return iacmServiceUtils.GetTerraformEndpointsData(ambiance, workspaceId);
   }
 
-  public void createExecution(Ambiance ambiance, String stackId, String action) {
-    iacmServiceUtils.createIACMExecution(ambiance, stackId, action);
+  public void createExecution(Ambiance ambiance, String workspaceId) {
+    iacmServiceUtils.createIACMExecution(ambiance, workspaceId);
   }
 
-  private Map<String, String> getStackVariables(Ambiance ambiance, String org, String projectId, String accountId,
-      String stackID, String command, Stack stackInfo) {
+  private Map<String, String> getWorkspaceVariables(Ambiance ambiance, String org, String projectId, String accountId,
+      String workspaceID, String command, Workspace workspaceInfo) {
     String pluginEnvPrefix = "PLUGIN_";
 
-    StackVariables[] variables = getIACMStackVariables(org, projectId, accountId, stackID);
+    WorkspaceVariables[] variables = getIACMWorkspaceVariables(org, projectId, accountId, workspaceID);
     HashMap<String, String> pluginEnvs = new HashMap<>();
 
     HashMap<String, String> env = new HashMap<>();
     HashMap<String, String> tfInputEnvs = new HashMap<>();
 
-    for (StackVariables variable : variables) {
+    for (WorkspaceVariables variable : variables) {
       switch (variable.getKind()) {
         case "env":
           if (Objects.equals(variable.getValue_type(), "secret")) {
@@ -90,19 +83,19 @@ public class IACMStepsUtils {
     }
 
     // Plugin system env variables
-    pluginEnvs.put("ROOT_DIR", stackInfo.getRepository_path());
-    pluginEnvs.put("TF_VERSION", stackInfo.getProvisioner_version());
-    pluginEnvs.put("ENDPOINT_VARIABLES", getTerraformEndpointsInfo(ambiance, stackID));
+    pluginEnvs.put("ROOT_DIR", workspaceInfo.getRepository_path());
+    pluginEnvs.put("TF_VERSION", workspaceInfo.getProvisioner_version());
+    pluginEnvs.put("ENDPOINT_VARIABLES", getTerraformEndpointsInfo(ambiance, workspaceID));
     pluginEnvs.put("VARS", transformMapToString(tfInputEnvs));
     pluginEnvs.put("ENV_VARS", transformMapToString(env));
 
     if (!Objects.equals(command, "")) {
-      pluginEnvs.put("OPERATIONS", command);
+      pluginEnvs.put("COMMAND", command);
     }
     return prepareEnvsMaps(pluginEnvs, pluginEnvPrefix);
   }
 
-  Map<String, String> prepareEnvsMaps(Map<String, String> envs, String prefix) {
+  private Map<String, String> prepareEnvsMaps(Map<String, String> envs, String prefix) {
     Map<String, String> envVars = new HashMap<>();
     if (!isEmpty(envs)) {
       for (Map.Entry<String, String> entry : envs.entrySet()) {
@@ -113,12 +106,13 @@ public class IACMStepsUtils {
     return envVars;
   }
 
-  private StackVariables[] getIACMStackVariables(String org, String projectId, String accountId, String stackID) {
-    return iacmServiceUtils.getIacmStackEnvs(org, projectId, accountId, stackID);
+  private WorkspaceVariables[] getIACMWorkspaceVariables(
+      String org, String projectId, String accountId, String workspaceID) {
+    return iacmServiceUtils.getIacmWorkspaceEnvs(org, projectId, accountId, workspaceID);
   }
 
-  // This will be expanded eventually I guess when we start to have more plugins
-  private String selectTypeOfPlugin(PluginStepInfo stepInfo) {
+  // Extract the keyword operation
+  private String extractOperation(PluginStepInfo stepInfo) {
     TextNode operationTextNode = (TextNode) stepInfo.getSettings().get("operation");
 
     if (operationTextNode == null) {
@@ -128,60 +122,39 @@ public class IACMStepsUtils {
     return operationTextNode.asText();
   }
 
-  private String selectPluginImage(NGAccess ngAccess, PluginStepInfo stepInfo) {
-    if (stepInfo.getImage() != null && stepInfo.getImage().getValue() != null) {
-      return stepInfo.getImage().getValue();
-    }
-    String type = selectTypeOfPlugin(stepInfo);
-    switch (type) {
-      case INITIALISE:
-      case EVALUATE:
-      case EXECUTE:
-        return ciExecutionConfigService.getPluginVersionForVM(
-            CIStepInfoType.IACM_TERRAFORM, ngAccess.getAccountIdentifier());
-      default:
-        return null;
-    }
-  }
-
   public Map<String, String> getIACMEnvVariables(Ambiance ambiance, PluginStepInfo stepInfo) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    String stackId = stepInfo.getEnvVariables().getValue().get(STACK_ID).getValue();
-    String workflow = stepInfo.getEnvVariables().getValue().get(WORKFLOW).getValue();
+    String workspaceId = stepInfo.getEnvVariables().getValue().get(WORKSPACE_ID).getValue();
 
-    Stack stackInfo = getIACMStackInfo(
-        ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), ngAccess.getAccountIdentifier(), stackId);
+    Workspace workspaceInfo = getIACMWorkspaceInfo(
+        ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), ngAccess.getAccountIdentifier(), workspaceId);
 
-    String command = extractCommand(stepInfo, workflow);
+    String command = extractOperation(stepInfo);
 
-    return getStackVariables(ambiance, ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(),
-        ngAccess.getAccountIdentifier(), stackId, command, stackInfo);
-  }
+    createExecution(ambiance, workspaceId);
 
-  public String retrieveIACMPluginImage(Ambiance ambiance, PluginStepInfo stepInfo) {
-    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-
-    return selectPluginImage(ngAccess, stepInfo);
+    return getWorkspaceVariables(ambiance, ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(),
+        ngAccess.getAccountIdentifier(), workspaceId, command, workspaceInfo);
   }
 
   public boolean isIACMStep(PluginStepInfo pluginStepInfo) {
     return pluginStepInfo.getEnvVariables() != null && pluginStepInfo.getEnvVariables().getValue() != null
-        && pluginStepInfo.getEnvVariables().getValue().get(STACK_ID) != null
-        && !Objects.equals(pluginStepInfo.getEnvVariables().getValue().get(STACK_ID).getValue(), "");
+        && pluginStepInfo.getEnvVariables().getValue().get(WORKSPACE_ID) != null
+        && !Objects.equals(pluginStepInfo.getEnvVariables().getValue().get(WORKSPACE_ID).getValue(), "");
   }
 
   public ConnectorDetails retrieveIACMConnectorDetails(Ambiance ambiance, PluginStepInfo stepInfo) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    String stackId = stepInfo.getEnvVariables().getValue().get(STACK_ID).getValue();
-    Stack stackInfo = getIACMStackInfo(
-        ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), ngAccess.getAccountIdentifier(), stackId);
-    if (stackInfo.getProvider_connector() != null) {
+    String workspaceId = stepInfo.getEnvVariables().getValue().get(WORKSPACE_ID).getValue();
+    Workspace workspaceInfo = getIACMWorkspaceInfo(
+        ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), ngAccess.getAccountIdentifier(), workspaceId);
+    if (workspaceInfo.getProvider_connector() != null) {
       Map<EnvVariableEnum, String> connectorSecretEnvMap = null;
-      if (stackInfo.getProvisioner().equals("terraform")) {
+      if (workspaceInfo.getProvisioner().equals("terraform")) {
         connectorSecretEnvMap = PluginSettingUtils.getConnectorSecretEnvMap(CIStepInfoType.IACM_TERRAFORM);
       }
       ConnectorDetails connectorDetails =
-          connectorUtils.getConnectorDetails(ngAccess, stackInfo.getProvider_connector());
+          connectorUtils.getConnectorDetails(ngAccess, workspaceInfo.getProvider_connector());
       connectorDetails.setEnvToSecretsMap(connectorSecretEnvMap);
       return connectorDetails;
     }
@@ -202,38 +175,5 @@ public class IACMStepsUtils {
     }
     sb.append('}');
     return sb.toString();
-  }
-
-  private String extractCommand(PluginStepInfo stepInfo, String workflow) {
-    String command;
-    TextNode operationTextNode = (TextNode) stepInfo.getSettings().get("operation");
-
-    if (operationTextNode == null) {
-      return "";
-    }
-
-    String operation = operationTextNode.asText();
-    switch (operation) {
-      case INITIALISE:
-        command = INITIALISE;
-        break;
-      case EVALUATE:
-        if (Objects.equals(workflow, TEARDOWN)) {
-          command = "evaluate-plan-destroy";
-        } else {
-          command = "evaluate-plan";
-        }
-        break;
-      case EXECUTE:
-        if (Objects.equals(workflow, TEARDOWN)) {
-          command = "execute-destroy";
-        } else {
-          command = "execute-apply";
-        }
-        break;
-      default:
-        command = "";
-    }
-    return command;
   }
 }
