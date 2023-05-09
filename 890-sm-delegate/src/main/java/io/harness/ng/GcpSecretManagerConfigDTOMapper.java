@@ -42,8 +42,7 @@ public class GcpSecretManagerConfigDTOMapper {
             .description(connector.getDescription())
             .build();
 
-    if (null != gcpSecretManagerConnectorDTO.getCredentialsRef()
-        && null != gcpSecretManagerConnectorDTO.getCredentialsRef().getDecryptedValue()) {
+    if (null != gcpSecretManagerConnectorDTO.getCredentialsRef().getDecryptedValue()) {
       gcpSecretManagerConfigDTO.setCredentials(gcpSecretManagerConnectorDTO.getCredentialsRef().getDecryptedValue());
     }
     return gcpSecretManagerConfigDTO;
@@ -63,8 +62,7 @@ public class GcpSecretManagerConfigDTOMapper {
             .description(connector.getDescription())
             .build();
 
-    if (null != gcpSecretManagerConnectorDTO.getCredentialsRef()
-        && null != gcpSecretManagerConnectorDTO.getCredentialsRef().getDecryptedValue()) {
+    if (null != gcpSecretManagerConnectorDTO.getCredentialsRef().getDecryptedValue()) {
       gcpSecretManagerConfigUpdateDTO.setCredentials(
           gcpSecretManagerConnectorDTO.getCredentialsRef().getDecryptedValue());
     }
