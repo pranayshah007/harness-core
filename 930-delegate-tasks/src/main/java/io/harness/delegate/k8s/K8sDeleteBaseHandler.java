@@ -55,15 +55,25 @@ public class K8sDeleteBaseHandler {
 
   private List<KubernetesResourceId> getReleaseNameResourceIdsToDelete(K8sDeleteRequest k8sDeleteRequest,
       KubernetesConfig kubernetesConfig, LogCallback executionLogCallback) throws IOException {
-    executionLogCallback.saveExecutionLog("All Resources are selected for deletion");
-    executionLogCallback.saveExecutionLog(color("Delete Namespace is set to: "
-            + k8sDeleteRequest.isDeleteNamespacesForRelease() + ", Skipping deleting Namespace resources",
-        GrayDark, Bold));
-    executionLogCallback.saveExecutionLog(
-        "Delete Namespace is set to: " + k8sDeleteRequest.isDeleteNamespacesForRelease());
+    boolean deleteNamespaceForRelease = k8sDeleteRequest.isDeleteNamespacesForRelease();
+    String namespaceMessage = createNamespaceInfoMessage(deleteNamespaceForRelease);
+
+    executionLogCallback.saveExecutionLog("All resources in release [%s] are selected for deletion.");
+    executionLogCallback.saveExecutionLog(color(namespaceMessage, GrayDark, Bold));
+
     return k8sTaskHelperBase.getResourceIdsForDeletion(k8sDeleteRequest.isUseDeclarativeRollback(),
-        k8sDeleteRequest.getReleaseName(), kubernetesConfig, executionLogCallback,
-        k8sDeleteRequest.isDeleteNamespacesForRelease());
+        k8sDeleteRequest.getReleaseName(), kubernetesConfig, executionLogCallback, deleteNamespaceForRelease);
+  }
+
+  private String createNamespaceInfoMessage(boolean deleteNamespaceForRelease) {
+    StringBuilder namespaceMessageBuilder = new StringBuilder(256);
+
+    namespaceMessageBuilder.append("Delete namespace is set to : ")
+        .append(String.format("<%s>", deleteNamespaceForRelease));
+    if (!deleteNamespaceForRelease) {
+      namespaceMessageBuilder.append("Skipping deleting namespace resources.");
+    }
+    return namespaceMessageBuilder.toString();
   }
 
   public List<KubernetesResourceId> getResourceNameResourceIdsToDelete(String resources) {
