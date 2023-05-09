@@ -400,7 +400,7 @@ public class InviteServiceImpl implements InviteService {
     UserInviteDTOBuilder userInviteDTOBuilder = UserInviteDTO.builder()
                                                     .accountId(accountIdentifier)
                                                     .email(email)
-                                                    .name(displayName)
+                                                    .name(displayName != null ? displayName : email)
                                                     .givenName(givenName)
                                                     .familyName(familyName)
                                                     .externalId(externalId)
