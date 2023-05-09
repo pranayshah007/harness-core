@@ -14,7 +14,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.IdentifierRef;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
@@ -44,11 +43,12 @@ public class ServiceOverridesMapper {
     String orgIdentifier = serviceOverrideRequestDTO.getOrgIdentifier();
     String projectIdentifier = serviceOverrideRequestDTO.getProjectIdentifier();
     String environmentIdentifier = serviceOverrideRequestDTO.getEnvironmentIdentifier();
-    IdentifierRef envIdentifierRef =
-        IdentifierRefHelper.getIdentifierRef(environmentIdentifier, accountId, orgIdentifier, projectIdentifier);
-    if (envIdentifierRef.getScope() != Scope.PROJECT && isNotEmpty(projectIdentifier)) {
-      throw new InvalidRequestException(
-          "Project Identifier should not be passed when environment used in service override is at organisation or account scope");
+    if (isNotEmpty(environmentIdentifier)) {
+      String[] environmentRefSplit = StringUtils.split(environmentIdentifier, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+      if (environmentRefSplit.length > 1 && isNotEmpty(projectIdentifier)) {
+        throw new InvalidRequestException(
+            "Project Identifier should not be passed when environment used in service override is at organisation or account scope");
+      }
     }
     NGServiceOverridesEntity serviceOverridesEntity = NGServiceOverridesEntity.builder()
                                                           .accountId(accountId)
