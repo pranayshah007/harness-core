@@ -44,7 +44,7 @@ public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValid
         requestDTOV2.getProjectIdentifier(), requestDTOV2.getEnvironmentRef());
     ServiceOverrideTypeBasedRequestParamsHandler validator =
         overrideValidatorFactory.getTypeBasedValidator(requestDTOV2.getType());
-    validator.validateRequest(requestDTOV2,accountId);
+    validator.validateRequest(requestDTOV2, accountId);
   }
 
   @Override
@@ -153,13 +153,13 @@ public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValid
         ScopeHelper.getScope(accountId, requestDTO.getOrgIdentifier(), requestDTO.getProjectIdentifier());
 
     if (Scope.ORG == requestScope) {
-      if (Scope.PROJECT == IdentifierRefHelper.getScope(requestDTO.getEnvironmentRef())) {
+      if (Scope.PROJECT == IdentifierRefHelper.getScopeFromScopedRef(requestDTO.getEnvironmentRef())) {
         throw new InvalidRequestException(
             "For an org level override, project level environment can not be used. If you want to use environment at org/account level you might be missing prefix(org./account.) in environmentRef");
       }
     }
     if (Scope.ACCOUNT == requestScope) {
-      if (Scope.ACCOUNT != IdentifierRefHelper.getScope(requestDTO.getEnvironmentRef())) {
+      if (Scope.ACCOUNT != IdentifierRefHelper.getScopeFromScopedRef(requestDTO.getEnvironmentRef())) {
         throw new InvalidRequestException(
             "For an account level override, project/org level environment can not be used. If you want to use environment at account level you might be missing prefix(account.) in environmentRef");
       }

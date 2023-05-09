@@ -73,6 +73,15 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
     validatePresenceOfRequiredFields(
         requestedEntity.getAccountId(), requestedEntity.getEnvironmentRef(), requestedEntity.getType());
     modifyRequestedServiceOverride(requestedEntity);
+    Optional<NGServiceOverridesEntity> existingEntity =
+        serviceOverrideRepositoryV2
+            .getNGServiceOverridesEntityByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+                requestedEntity.getAccountId(), requestedEntity.getOrgIdentifier(),
+                requestedEntity.getProjectIdentifier(), requestedEntity.getIdentifier());
+    if (existingEntity.isPresent()) {
+      throw new InvalidRequestException(
+          String.format("Service Override with identifier [%s] already exists", requestedEntity.getIdentifier()));
+    }
 
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       NGServiceOverridesEntity tempCreateResult = serviceOverrideRepositoryV2.save(requestedEntity);

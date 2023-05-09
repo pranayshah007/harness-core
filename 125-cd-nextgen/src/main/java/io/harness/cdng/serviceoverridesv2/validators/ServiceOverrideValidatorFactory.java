@@ -10,19 +10,17 @@ package io.harness.cdng.serviceoverridesv2.validators;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 
+import com.google.inject.Inject;
 import javax.ejb.Singleton;
 import lombok.NonNull;
 
 @Singleton
 public class ServiceOverrideValidatorFactory {
-  private final EnvGlobalOverrideRequestParamsHandler envGlobalOverrideRequestParamsHandler =
-      new EnvGlobalOverrideRequestParamsHandler();
-  private final EnvServiceOverrideRequestParamsHandler envServiceOverrideRequestParamsHandler =
-      new EnvServiceOverrideRequestParamsHandler();
-  private final InfraGlobalOverrideRequestParamsHandler infraGlobalOverrideRequestParamsHandler =
-      new InfraGlobalOverrideRequestParamsHandler();
-  private final InfraServiceOverrideRequestParamsHandler infraServiceOverrideRequestParamsHandler =
-      new InfraServiceOverrideRequestParamsHandler();
+  @Inject private EnvGlobalOverrideRequestParamsHandler envGlobalOverrideRequestParamsHandler;
+  @Inject private EnvServiceOverrideRequestParamsHandler envServiceOverrideRequestParamsHandler;
+
+  @Inject private InfraGlobalOverrideRequestParamsHandler infraGlobalOverrideRequestParamsHandler;
+  @Inject private InfraServiceOverrideRequestParamsHandler infraServiceOverrideRequestParamsHandler;
 
   public ServiceOverrideTypeBasedRequestParamsHandler getTypeBasedValidator(
       @NonNull ServiceOverridesType overridesType) {
