@@ -132,6 +132,7 @@ public class AzureRecommendationServiceImpl implements AzureRecommendationServic
     double currentSkuMonthlySavings = Double.parseDouble(extendedProperties.get(SAVINGS_AMOUNT));
     String targetSku = extendedProperties.get(TARGET_SKU);
     String vmId = getAzureVmId(recommendation.resourceMetadata().resourceId());
+    String duration = extendedProperties.get(DURATION);
     AzureRecommendationBuilder azureRecommendationBuilder =
         AzureRecommendation.builder()
             .recommendationId(recommendation.id())
@@ -148,7 +149,7 @@ public class AzureRecommendationServiceImpl implements AzureRecommendationServic
             .recommendationType(recommendationType)
             .regionName(regionName)
             .subscriptionId(extendedProperties.get(SUBSCRIPTION_ID))
-            .duration(extendedProperties.get(DURATION))
+            .duration(duration)
             .tenantId(tenantId)
             .vmId(vmId);
 
@@ -165,7 +166,7 @@ public class AzureRecommendationServiceImpl implements AzureRecommendationServic
         getVirtualMachineDetails(targetSku, virtualMachineSizeInners, currentSkuCost - currentSkuMonthlySavings);
 
     Double currentSkuAvgCpuUtilisation =
-        azureCpuUtilisationService.getAverageAzureVmCpuUtilisationData(vmId, accountId);
+        azureCpuUtilisationService.getAverageAzureVmCpuUtilisationData(vmId, accountId, Integer.parseInt(duration));
     Double targetSkuAvgCpuUtilisation = getTargetAverageAzureVmCpuUtilisation(
         currentVmDetails.getNumberOfCores(), targetVmDetails.getNumberOfCores(), currentSkuAvgCpuUtilisation);
     currentVmDetails.setCpuUtilisation(currentSkuAvgCpuUtilisation);
