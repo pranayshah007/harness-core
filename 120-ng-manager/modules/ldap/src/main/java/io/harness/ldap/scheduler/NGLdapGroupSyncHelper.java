@@ -119,7 +119,7 @@ public class NGLdapGroupSyncHelper {
           }
         } catch (Exception exception) {
           log.error(
-              "NGLDAP: Skipping user: Add/update user with ldap externalUserId {}, email: {} to User group: {} in account: {}, organization: {}, project: {} failed",
+              "NGLDAP: Skipping : Add/update user with ldap externalUserId {}, email: {} to User group: {} in account: {}, organization: {}, project: {} failed",
               userResponse.getUserId(), userResponse.getEmail(), userGroup, userGroup.getAccountIdentifier(),
               userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier(), exception);
         }
@@ -158,7 +158,7 @@ public class NGLdapGroupSyncHelper {
           userGroupService.removeMember(scope, userGroup.getIdentifier(), userId);
         } catch (Exception exception) {
           log.error(
-              "NGLDAP: Skipping user: Remove user with harness userId {}, email: {} to User group: {} in account: {}, organization: {}, project: {} failed",
+              "NGLDAP: Skipping : Remove user with harness userId {}, email: {} to User group: {} in account: {}, organization: {}, project: {} failed",
               userId, emailStr, userGroup, userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(),
               userGroup.getProjectIdentifier(), exception);
         }
