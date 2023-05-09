@@ -31,7 +31,6 @@ public class GcpSecretManagerConfigDTOMapper {
             .delegateSelectors(gcpSecretManagerConnectorDTO.getDelegateSelectors())
             .isDefault(gcpSecretManagerConnectorDTO.isDefault())
             .encryptionType(EncryptionType.GCP_SECRETS_MANAGER)
-            .assumeCredentialsOnDelegate(gcpSecretManagerConnectorDTO.getAssumeCredentialsOnDelegate())
 
             .name(connector.getName())
             .accountIdentifier(accountIdentifier)

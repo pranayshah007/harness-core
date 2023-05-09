@@ -36,6 +36,5 @@ public class GcpSecretManagerConfigDTO extends SecretManagerConfigDTO {
   @Schema(description = SecretManagerDescriptionConstants.GOOGLE_SECRET_MANAGER_CREDENTIALS)
   @NotEmpty
   private char[] credentials;
-  private Boolean assumeCredentialsOnDelegate;
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) private Set<String> delegateSelectors;
 }
