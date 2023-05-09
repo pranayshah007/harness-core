@@ -42,8 +42,8 @@ public class AzureCpuUtilisationService {
   @Inject private BigQueryService bigQueryService;
   @Inject private BigQueryHelper bigQueryHelper;
 
-  public Double getAverageAzureVmCpuUtilisationData(String vmId, String accountIdentifier) {
-    long startTime = getStartOfLastMonth();
+  public Double getAverageAzureVmCpuUtilisationData(String vmId, String accountIdentifier, int duration) {
+    long startTime = getStartOfLastDuration(duration);
     String cloudProviderTableName =
         bigQueryHelper.getCloudProviderTableName(accountIdentifier, AZURE_VM_INVENTORY_METRIC);
     String query =
@@ -63,10 +63,10 @@ public class AzureCpuUtilisationService {
     return null;
   }
 
-  private long getStartOfLastMonth() {
+  private long getStartOfLastDuration(int duration) {
     ZoneId zoneId = ZoneId.of("GMT");
     LocalDate today = LocalDate.now(zoneId);
     ZonedDateTime zdtStart = today.atStartOfDay(zoneId);
-    return (zdtStart.toEpochSecond() * 1000) - 30 * ONE_DAY_MILLIS;
+    return (zdtStart.toEpochSecond() * 1000) - duration * ONE_DAY_MILLIS;
   }
 }

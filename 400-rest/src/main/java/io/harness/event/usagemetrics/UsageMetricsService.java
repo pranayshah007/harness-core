@@ -81,7 +81,7 @@ public class UsageMetricsService {
 
   public void createSetupEventsForTimescaleDB(Account account) {
     List<CVConfiguration> cvConfigurationList = cvConfigurationService.listConfigurations(account.getUuid());
-    List<Environment> environments = environmentService.getEnvByAccountId(account.getUuid());
+    List<Environment> environments = environmentService.getEnvByAccountId(account.getUuid(), true);
     Map<String, Environment> environmentMap =
         environments.stream().collect(Collectors.toMap(Environment::getUuid, identity()));
 

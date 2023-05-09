@@ -17,11 +17,7 @@ config: |-
         Accept: 'application/json'
         Content-Type: 'application/json'
         X-Atlassian-Token: 'nocheck'
-        User-Agent: "MY-UA-STRING" 
-  
-  backend:
-    csp:
-      img-src: ["'self'", 'data:', 'JIRA_URL']
+        User-Agent: "MY-UA-STRING"
 environmentVariables:
   - JIRA_TOKEN
 exports:

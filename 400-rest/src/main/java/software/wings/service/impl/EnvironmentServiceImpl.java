@@ -50,6 +50,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EnvironmentType;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
@@ -644,10 +645,14 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   }
 
   @Override
-  public List<Environment> getEnvByAccountId(String accountId) {
+  public List<Environment> getEnvByAccountId(String accountId, boolean hitSecondary) {
     PageRequest<Environment> pageRequest =
         aPageRequest().addFilter(EnvironmentKeys.accountId, EQ, accountId).withLimit(UNLIMITED).build();
-    return wingsPersistence.query(Environment.class, pageRequest).getResponse();
+    if (featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId) && hitSecondary) {
+      return wingsPersistence.querySecondary(Environment.class, pageRequest).getResponse();
+    } else {
+      return wingsPersistence.query(Environment.class, pageRequest).getResponse();
+    }
   }
 
   @Override

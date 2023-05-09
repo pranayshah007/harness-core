@@ -786,7 +786,7 @@ public class OnboardingServiceImpl implements OnboardingService {
   private void createCatalogInfraConnectorInBackstageK8S(String accountIdentifier,
       CatalogConnectorInfo catalogConnectorInfo, String catalogInfraConnectorType, ConnectorInfoDTO connectorInfoDTO) {
     try {
-      gitIntegrationService.createConnectorInBackstage(accountIdentifier, connectorInfoDTO,
+      gitIntegrationService.createOrUpdateConnectorInBackstage(accountIdentifier, connectorInfoDTO,
           CatalogInfraConnectorType.valueOf(catalogInfraConnectorType),
           catalogConnectorInfo.getConnector().getIdentifier());
     } catch (Exception e) {

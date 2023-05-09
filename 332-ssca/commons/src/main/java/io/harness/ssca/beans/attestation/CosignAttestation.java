@@ -5,25 +5,18 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.beans.entities;
+package io.harness.ssca.beans.attestation;
 
-import static io.harness.annotations.dev.HarnessTeam.IACM;
-
+import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 
-@Value
+@OwnedBy(HarnessTeam.SSCA)
+@Data
 @Builder
-@OwnedBy(IACM)
-public class TerraformEndpointsData {
-  String base_url;
-  String org_id;
-  String project_id;
-  String account_id;
-  String pipeline_execution_id;
-  String pipeline_stage_execution_id;
-  String workspace_id;
-  String token;
+public class CosignAttestation implements AttestationSpec {
+  String privateKey;
+  String password;
 }

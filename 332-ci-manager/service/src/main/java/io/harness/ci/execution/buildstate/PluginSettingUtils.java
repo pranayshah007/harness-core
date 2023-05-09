@@ -159,6 +159,8 @@ public class PluginSettingUtils {
   public static final String PLUGIN_DOCKER_REGISTRY = "PLUGIN_DOCKER_REGISTRY";
   public static final String PLUGIN_CACHE_FROM = "PLUGIN_CACHE_FROM";
   public static final String PLUGIN_CACHE_TO = "PLUGIN_CACHE_TO";
+  public static final String PLUGIN_BUILDER_DRIVER_OPTS = "PLUGIN_BUILDER_DRIVER_OPTS";
+  public static final String DOCKER_BUILDKIT_IMAGE = "harness/buildkit:1.0.0";
   @Inject private CodebaseUtils codebaseUtils;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
@@ -569,6 +571,10 @@ public class PluginSettingUtils {
             resolveStringParameterV2("cacheTo", "BuildAndPushDockerRegistry", identifier, stepInfo.getCacheTo(), false);
         if (!isEmpty(cacheTo)) {
           setOptionalEnvironmentVariable(map, PLUGIN_CACHE_TO, cacheTo);
+        }
+        if (resolveBooleanParameter(stepInfo.getCaching(), false)) {
+          setOptionalEnvironmentVariable(
+              map, PLUGIN_BUILDER_DRIVER_OPTS, String.format("image=%s", DOCKER_BUILDKIT_IMAGE));
         }
       }
     }

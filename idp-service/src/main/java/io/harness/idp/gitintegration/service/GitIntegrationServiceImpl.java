@@ -97,13 +97,13 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   }
 
   @Override
-  public void createConnectorInBackstage(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO,
+  public void createOrUpdateConnectorInBackstage(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO,
       CatalogInfraConnectorType catalogConnectorEntityType, String connectorIdentifier) {
     try {
       createConnectorSecretsEnvVariable(accountIdentifier, connectorInfoDTO);
       createOrUpdateConnectorConfigEnvVariable(
           accountIdentifier, connectorInfoDTO.getConnectorType(), catalogConnectorEntityType);
-      createAppConfigForGitIntegrations(accountIdentifier, connectorInfoDTO);
+      createOrUpdateAppConfigForGitIntegrations(accountIdentifier, connectorInfoDTO);
     } catch (Exception e) {
       log.error("Unable to create infra connector secrets in backstage k8s, ex = {}", e.getMessage(), e);
     }
@@ -168,7 +168,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
         accountIdentifier, connectorIdentifier);
   }
 
-  public void createAppConfigForGitIntegrations(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO)
+  public void createOrUpdateAppConfigForGitIntegrations(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO)
       throws Exception {
     ConnectorType connectorType = connectorInfoDTO.getConnectorType();
     String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
@@ -192,7 +192,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
     appConfig.setEnabled(true);
 
     try {
-      configManagerService.saveConfigForAccount(appConfig, accountIdentifier, ConfigType.INTEGRATION);
+      configManagerService.saveOrUpdateConfigForAccount(appConfig, accountIdentifier, ConfigType.INTEGRATION);
       configManagerService.mergeAndSaveAppConfig(accountIdentifier);
     } catch (Exception e) {
       log.error(e.getMessage());
@@ -210,7 +210,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
     CatalogConnectorEntity savedCatalogConnectorEntity =
         catalogConnectorRepository.saveOrUpdate(catalogConnectorEntity);
     delegateSelectorsCache.put(accountIdentifier, host, delegateSelectors);
-    createConnectorInBackstage(accountIdentifier, connectorInfoDTO, catalogConnectorEntity.getType(),
+    createOrUpdateConnectorInBackstage(accountIdentifier, connectorInfoDTO, catalogConnectorEntity.getType(),
         catalogConnectorEntity.getConnectorIdentifier());
     return savedCatalogConnectorEntity;
   }

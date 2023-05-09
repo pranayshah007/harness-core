@@ -156,7 +156,9 @@ public class EventJobScheduler {
   private void runCloudEfficiencyEventJobs(BatchJobBucket batchJobBucket, boolean runningMode) {
     accountShardService.getCeEnabledAccountIds().forEach(account
         -> jobs.stream()
-               .filter(job -> BatchJobType.fromJob(job).getBatchJobBucket() == batchJobBucket)
+               .filter(job
+                   -> BatchJobType.fromJob(job).getBatchJobBucket() == batchJobBucket
+                       && BatchJobType.fromJob(job) != BatchJobType.AZURE_VM_RECOMMENDATION)
                .forEach(job -> runJob(account, job, runningMode)));
   }
 
