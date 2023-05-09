@@ -21,8 +21,6 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDC)
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
-
 public class InfraServiceOverrideRequestParamsHandler implements ServiceOverrideTypeBasedRequestParamsHandler {
   @Inject OverrideV2AccessControlCheckHelper overrideV2AccessControlCheckHelper;
   @Override
