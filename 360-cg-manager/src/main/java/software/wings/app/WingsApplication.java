@@ -349,6 +349,8 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+import io.opencensus.contrib.dropwizard.DropWizardMetrics;
+import io.opencensus.metrics.Metrics;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -445,6 +447,9 @@ public class WingsApplication extends Application<MainConfiguration> {
     });
     bootstrap.addBundle(new FileAssetsBundle("/.well-known"));
     configureObjectMapper(bootstrap.getObjectMapper());
+
+    Metrics.getExportComponent().getMetricProducerManager().add(
+        new DropWizardMetrics(Collections.singletonList(metricRegistry)));
     bootstrap.setMetricRegistry(metricRegistry);
     bootstrap.addBundle(new ProtobufBundle<>());
 

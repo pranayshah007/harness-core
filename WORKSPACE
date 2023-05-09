@@ -5007,6 +5007,7 @@ plain_artifacts = [
     "io.netty:netty-transport:4.1.86.Final",
     "io.opencensus:opencensus-api:0.24.0",
     "io.opencensus:opencensus-contrib-http-util:0.24.0",
+    "io.opencensus:opencensus-contrib-dropwizard:0.28.0",
     "io.opencensus:opencensus-exporter-stats-stackdriver:0.28.0",
     "io.opencensus:opencensus-exporter-stats-prometheus:0.28.0",
     "io.opencensus:opencensus-impl:0.28.0",
