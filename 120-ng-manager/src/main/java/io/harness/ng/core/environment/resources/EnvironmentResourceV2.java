@@ -79,7 +79,7 @@ import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.environment.services.impl.EnvironmentEntityYamlSchemaHelper;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.remote.utils.ScopeAccessHelper;
-import io.harness.ng.core.service.ServiceEntityValidationHelper;
+import io.harness.cdng.serviceoverridesv2.validators.ServiceEntityValidationHelper;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
 import io.harness.ng.core.serviceoverride.beans.ServiceOverrideRequestDTO;

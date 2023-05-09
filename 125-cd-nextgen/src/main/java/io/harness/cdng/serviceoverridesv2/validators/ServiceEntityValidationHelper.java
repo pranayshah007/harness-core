@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ng.core.service;
+package io.harness.cdng.serviceoverridesv2.validators;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
