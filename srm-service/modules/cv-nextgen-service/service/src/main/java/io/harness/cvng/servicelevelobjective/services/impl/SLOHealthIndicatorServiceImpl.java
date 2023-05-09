@@ -31,6 +31,7 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorS
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.time.Clock;
 import java.time.Instant;
@@ -84,12 +85,15 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
 
   @Override
   public List<SLOHealthIndicator> getBySLOIdentifiers(
-      ProjectParams projectParams, List<String> serviceLevelObjectiveIdentifiers) {
-    return hPersistence.createQuery(SLOHealthIndicator.class)
-        .filter(SLOHealthIndicatorKeys.accountId, projectParams.getAccountIdentifier())
-        .filter(SLOHealthIndicatorKeys.orgIdentifier, projectParams.getOrgIdentifier())
-        .filter(SLOHealthIndicatorKeys.projectIdentifier, projectParams.getProjectIdentifier())
-        .field(SLOHealthIndicatorKeys.serviceLevelObjectiveIdentifier)
+      ProjectParams projectParams, List<String> serviceLevelObjectiveIdentifiers, boolean childResource) {
+    Query<SLOHealthIndicator> query =
+        hPersistence.createQuery(SLOHealthIndicator.class)
+            .filter(SLOHealthIndicatorKeys.accountId, projectParams.getAccountIdentifier());
+    if (!childResource) {
+      query = query.filter(SLOHealthIndicatorKeys.orgIdentifier, projectParams.getOrgIdentifier())
+                  .filter(SLOHealthIndicatorKeys.projectIdentifier, projectParams.getProjectIdentifier());
+    }
+    return query.field(SLOHealthIndicatorKeys.serviceLevelObjectiveIdentifier)
         .in(serviceLevelObjectiveIdentifiers)
         .asList();
   }

@@ -77,6 +77,7 @@ import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
 import io.harness.delegate.task.stepstatus.StepStatus;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
+import io.harness.delegate.task.stepstatus.artifact.Artifact;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadata;
 import io.harness.encryption.Scope;
 import io.harness.eraro.Level;
@@ -117,6 +118,7 @@ import io.harness.yaml.core.timeout.Timeout;
 import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import io.fabric8.utils.Strings;
 import java.util.ArrayList;
@@ -401,7 +403,7 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
     if (stageInfraType == StageInfraDetails.Type.K8) {
       return handleK8AsyncResponse(ambiance, stepParameters, responseDataMap);
     } else if (stageInfraType == StageInfraDetails.Type.VM || stageInfraType == StageInfraDetails.Type.DLITE_VM) {
-      return handleVmStepResponse(stepIdentifier, responseDataMap);
+      return handleVmStepResponse(ambiance, stepIdentifier, stepParameters, responseDataMap);
     } else {
       throw new CIStageExecutionException(format("Invalid infra type: %s", stageInfraType));
     }
@@ -446,7 +448,8 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
     return buildAndReturnStepResponse(stepStatusTaskResponseData, ambiance, stepParameters, stepIdentifier);
   }
 
-  private StepResponse handleVmStepResponse(String stepIdentifier, Map<String, ResponseData> responseDataMap) {
+  private StepResponse handleVmStepResponse(Ambiance ambiance, String stepIdentifier,
+      StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     log.info("Received response for step {}", stepIdentifier);
     VmTaskExecutionResponse taskResponse = filterVmStepResponse(responseDataMap);
     if (taskResponse == null) {
@@ -467,6 +470,20 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
                 .build();
         stepResponseBuilder.stepOutcome(stepOutcome);
       }
+
+      ArtifactMetadata artifactMetadata = null;
+      if (taskResponse.getArtifact() != null) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+          Artifact artifact = objectMapper.readValue(taskResponse.getArtifact(), Artifact.class);
+          artifactMetadata = artifact.toArtifactMetadata();
+        } catch (Exception e) {
+          log.error("Unable to parse artifact data", e);
+        }
+      }
+
+      StepArtifacts stepArtifacts = handleArtifact(artifactMetadata, stepParameters);
+      buildArtifacts(ambiance, stepIdentifier, stepArtifacts, stepResponseBuilder);
       return stepResponseBuilder.build();
     } else if (taskResponse.getCommandExecutionStatus() == CommandExecutionStatus.SKIPPED) {
       return StepResponse.builder().status(Status.SKIPPED).build();
@@ -535,15 +552,7 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
               StepArtifactSweepingOutput.builder().stepArtifacts(stepArtifacts).build(), StepOutcomeGroup.STAGE.name());
         }
 
-        String uniqueStepIdentifier =
-            CIStepGroupUtils.getUniqueStepIdentifier(ambiance.getLevelsList(), stepIdentifier);
-        StepResponse.StepOutcome stepArtifactOutcomeOld =
-            StepResponse.StepOutcome.builder()
-                .outcome(CIStepArtifactOutcome.builder().stepArtifacts(stepArtifacts).build())
-                .group(StepOutcomeGroup.STAGE.name())
-                .name("artifact_" + uniqueStepIdentifier)
-                .build();
-        stepResponseBuilder.stepOutcome(stepArtifactOutcomeOld);
+        buildArtifacts(ambiance, stepIdentifier, stepArtifacts, stepResponseBuilder);
       }
 
       return stepResponseBuilder.status(Status.SUCCEEDED).build();
@@ -737,6 +746,20 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
         log.warn("Step identifier {} is not complete for background step. Complete identifier {}, planId {}",
             identifier, completeIdentifier, planExecutionId);
       }
+    }
+  }
+
+  private void buildArtifacts(
+      Ambiance ambiance, String stepIdentifier, StepArtifacts stepArtifacts, StepResponseBuilder stepResponseBuilder) {
+    if (stepArtifacts != null) {
+      String uniqueStepIdentifier = CIStepGroupUtils.getUniqueStepIdentifier(ambiance.getLevelsList(), stepIdentifier);
+      StepResponse.StepOutcome stepArtifactOutcome =
+          StepResponse.StepOutcome.builder()
+              .outcome(CIStepArtifactOutcome.builder().stepArtifacts(stepArtifacts).build())
+              .group(StepOutcomeGroup.STAGE.name())
+              .name("artifact_" + uniqueStepIdentifier)
+              .build();
+      stepResponseBuilder.stepOutcome(stepArtifactOutcome);
     }
   }
 }

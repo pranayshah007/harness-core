@@ -7,6 +7,8 @@
 
 package io.harness.cvng.servicelevelobjective.beans;
 
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -19,5 +21,5 @@ public class ServiceLevelObjectiveDetailsDTO {
   @NotNull String orgIdentifier;
   @NotNull String projectIdentifier;
   @NotNull @NotBlank String serviceLevelObjectiveRef;
-  @NotNull Double weightagePercentage;
+  @NotNull @Min(0) @Max(100) Double weightagePercentage;
 }

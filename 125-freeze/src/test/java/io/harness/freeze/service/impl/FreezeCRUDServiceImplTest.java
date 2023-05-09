@@ -30,6 +30,7 @@ import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.beans.response.FrozenExecutionDetails;
 import io.harness.freeze.entity.FreezeConfigEntity;
 import io.harness.freeze.entity.FrozenExecution;
+import io.harness.freeze.helpers.FreezeTimeUtils;
 import io.harness.freeze.notifications.NotificationHelper;
 import io.harness.freeze.service.FrozenExecutionService;
 import io.harness.outbox.api.OutboxService;
@@ -47,6 +48,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -132,6 +134,31 @@ public class FreezeCRUDServiceImplTest extends CategoryTest {
       + "      duration: 30m";
 
   static final String GLOBAL = "_GLOBAL_";
+
+  static final String YAML_FOR_WINDOWS = "freeze:\n"
+      + "  name: fr-4\n"
+      + "  identifier: fr4\n"
+      + "  entityConfigs:\n"
+      + "    - name: rule-1\n"
+      + "      entities:\n"
+      + "        - filterType: All\n"
+      + "          type: Pipeline\n"
+      + "        - filterType: All\n"
+      + "          type: Service\n"
+      + "        - filterType: All\n"
+      + "          type: Environment\n"
+      + "        - filterType: All\n"
+      + "          type: EnvType\n"
+      + "  status: Enabled\n"
+      + "  orgIdentifier: default\n"
+      + "  projectIdentifier: TAS\n"
+      + "  description: \"\"\n"
+      + "  windows:\n"
+      + "    - timeZone: Asia/Calcutta\n"
+      + "      startTime: 2023-04-27 02:48 PM\n"
+      + "      duration: 30m\n"
+      + "      recurrence:\n"
+      + "        type: Daily\n";
   static final Map<String, String> EMPTY_MAP = new HashMap<>();
   static final List<FreezeSummaryResponseDTO> manualFreezeList = Arrays.asList(FreezeSummaryResponseDTO.builder()
                                                                                    .freezeScope(Scope.PROJECT)
@@ -252,6 +279,17 @@ public class FreezeCRUDServiceImplTest extends CategoryTest {
                                                             .yaml(YAML)
                                                             .build();
 
+  static final FreezeConfigEntity manualFreezeConfig = FreezeConfigEntity.builder()
+                                                           .accountId(ACCOUNT_ID)
+                                                           .orgIdentifier(ORG_ID)
+                                                           .freezeScope(Scope.ORG)
+                                                           .identifier(GLOBAL_FREEZE_2)
+                                                           .status(FreezeStatus.ENABLED)
+                                                           .type(FreezeType.MANUAL)
+                                                           .lastUpdatedAt(3L)
+                                                           .yaml(YAML_FOR_WINDOWS)
+                                                           .build();
+
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.openMocks(this);
@@ -307,6 +345,26 @@ public class FreezeCRUDServiceImplTest extends CategoryTest {
     verify(notificationHelper).getManualFreezeUrl(URL, ACCOUNT_ID, ORG_ID, null, MANUAL_FREEZE_2);
     verify(notificationHelper).getGlobalFreezeUrl(URL, ACCOUNT_ID, ORG_ID, PROJECT_ID);
     verify(notificationHelper).getGlobalFreezeUrl(URL, ACCOUNT_ID, ORG_ID, null);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void test_updateNextIteration() {
+    Mockito.mockStatic(FreezeTimeUtils.class);
+    when(FreezeTimeUtils.fetchUpcomingTimeWindow(any())).thenReturn(null);
+    freezeCRUDService.updateNextIterations(manualFreezeConfig);
+    assertThat(manualFreezeConfig.getNextIteration()).isNull();
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void test_updateNextIterationForNotNullIteration() {
+    Mockito.mockStatic(FreezeTimeUtils.class);
+    when(FreezeTimeUtils.fetchUpcomingTimeWindow(any())).thenReturn(List.of(180000L));
+    freezeCRUDService.updateNextIterations(manualFreezeConfig);
+    assertThat(manualFreezeConfig.getNextIteration()).isEqualTo(180000L);
   }
 
   @Test

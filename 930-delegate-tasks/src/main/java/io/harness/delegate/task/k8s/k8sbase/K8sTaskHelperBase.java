@@ -775,16 +775,17 @@ public class K8sTaskHelperBase {
       throw new InvalidRequestException(msg, USER);
     }
 
-    KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig);
-    kubernetesClient.resources(VirtualService.class, VirtualServiceList.class);
-    KubernetesResource kubernetesResource = virtualServiceResources.get(0);
-    InputStream inputStream = IOUtils.toInputStream(kubernetesResource.getSpec(), UTF_8);
-    VirtualService virtualService = (VirtualService) kubernetesClient.load(inputStream).get().get(0);
-    updateVirtualServiceWithDestinationWeights(istioDestinationWeights, virtualService, executionLogCallback);
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      kubernetesClient.resources(VirtualService.class, VirtualServiceList.class);
+      KubernetesResource kubernetesResource = virtualServiceResources.get(0);
+      InputStream inputStream = IOUtils.toInputStream(kubernetesResource.getSpec(), UTF_8);
+      VirtualService virtualService = (VirtualService) kubernetesClient.load(inputStream).items().get(0);
+      updateVirtualServiceWithDestinationWeights(istioDestinationWeights, virtualService, executionLogCallback);
 
-    kubernetesResource.setSpec(KubernetesHelper.toYaml(virtualService));
+      kubernetesResource.setSpec(KubernetesHelper.toYaml(virtualService));
 
-    return virtualService;
+      return virtualService;
+    }
   }
 
   public VirtualService updateVirtualServiceManifestFilesWithRoutesForCanary(List<KubernetesResource> resources,
@@ -819,17 +820,18 @@ public class K8sTaskHelperBase {
       throw new InvalidRequestException(msg, USER);
     }
 
-    KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig);
-    kubernetesClient.resources(DestinationRule.class, DestinationRuleList.class);
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      kubernetesClient.resources(DestinationRule.class, DestinationRuleList.class);
 
-    KubernetesResource kubernetesResource = destinationRuleResources.get(0);
-    InputStream inputStream = IOUtils.toInputStream(kubernetesResource.getSpec(), UTF_8);
-    DestinationRule destinationRule = (DestinationRule) kubernetesClient.load(inputStream).get().get(0);
-    destinationRule.getSpec().setSubsets(generateSubsetsForDestinationRule(subsets));
+      KubernetesResource kubernetesResource = destinationRuleResources.get(0);
+      InputStream inputStream = IOUtils.toInputStream(kubernetesResource.getSpec(), UTF_8);
+      DestinationRule destinationRule = (DestinationRule) kubernetesClient.load(inputStream).items().get(0);
+      destinationRule.getSpec().setSubsets(generateSubsetsForDestinationRule(subsets));
 
-    kubernetesResource.setSpec(KubernetesHelper.toYaml(destinationRule));
+      kubernetesResource.setSpec(KubernetesHelper.toYaml(destinationRule));
 
-    return destinationRule;
+      return destinationRule;
+    }
   }
 
   private String getPodContainerId(K8sPod pod) {

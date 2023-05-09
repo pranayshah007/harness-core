@@ -12,7 +12,8 @@ public enum ResourceType {
   NODE_POOL,
   ECS_SERVICE,
   EC2_INSTANCE,
-  GOVERNANCE
+  GOVERNANCE,
+  AZURE_INSTANCE
   //  CLUSTER,
   //  AUTO_STOPPING;
 }

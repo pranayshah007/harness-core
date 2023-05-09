@@ -205,6 +205,7 @@ public class BarrierServiceImpl extends IteratorPumpAndRedisModeHandler implemen
       if (workflows.stream().anyMatch(t -> t.getWorkflowExecutionId() == null)) {
         try (HKeyIterator<WorkflowExecution> keys = new HKeyIterator(
                  wingsPersistence.createQuery(WorkflowExecution.class)
+                     .filter(WorkflowExecutionKeys.accountId, barrierInstance.getAccountId())
                      .filter(WorkflowExecutionKeys.appId, barrierInstance.getAppId())
                      .filter(WorkflowExecutionKeys.pipelineExecutionId, pipeline.getExecutionId())
                      .filter(WorkflowExecutionKeys.executionArgs_pipelinePhaseElementId, pipelineStageId)

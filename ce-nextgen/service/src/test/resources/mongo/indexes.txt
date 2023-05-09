@@ -4,6 +4,7 @@
 !!!custom_delegateTaskProgressResponses {"name": "processAfter_1", "background": true} {"processAfter": 1}
 !!!custom_delegateTaskProgressResponses {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 awsEntityToBucketMapping {"name": "unique_accountId_awsConnectorIdentifier", "unique": true} {"accountId": 1, "awsConnectorIdentifier": 1}
+azureRecommendation {"name": "unique_accountId_recommendationId", "unique": true} {"accountId": 1, "recommendationId": 1}
 batchJobInterval {"name": "accountId_batchJobType", "unique": true} {"accountId": 1, "batchJobType": 1}
 batchJobScheduledData {"name": "accountId_batchJobType_validRun_endAt", "background": true} {"accountId": 1, "batchJobType": 1, "validRun": 1, "endAt": -1}
 batchJobScheduledData {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}

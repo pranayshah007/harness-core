@@ -49,6 +49,7 @@ environmentsNG {"name": "unique_accountId_organizationIdentifier_projectIdentifi
 filters {"name": "unique_accountId_orgId_projectId_name_type_Index", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "name": 1, "filterType": 1}
 filters {"name": "unique_accountId_organizationId_projectId_type", "unique": true} {"fullyQualifiedIdentifier": 1, "filterType": 1}
 freezeConfigNG {"name": "createdAt_1", "background": true} {"createdAt": 1}
+freezeConfigNG {"name": "status_nextIteration_shouldSendNotification_idx", "background": true} {"status": 1, "nextIteration": 1, "shouldSendNotification": 1}
 frozenExecution {"name": "unique_accountId_orgId_projectId_planExecutionId_stageExecutionId_stepExecutionId_idx", "unique": true} {"accountId": 1, "orgId": 1, "projectId": 1, "planExecutionId": 1, "stageExecutionId": 1, "stepExecutionId": 1}
 frozenExecution {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 genericEvent {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}

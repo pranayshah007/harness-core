@@ -31,10 +31,18 @@ public class ContainerPortHelper {
 
   public Integer getPort(Ambiance ambiance, String stepIdentifier) {
     // Ports are assigned in lite engine step
+    return getPort(ambiance, stepIdentifier, true);
+  }
+
+  public Integer getPort(Ambiance ambiance, String stepIdentifier, boolean prunePodName) {
+    // Ports are assigned in lite engine step
     ContainerPortDetails containerPortDetails = (ContainerPortDetails) executionSweepingOutputService.resolve(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(PORT_DETAILS));
 
-    List<Integer> ports = containerPortDetails.getPortDetails().get(getKubernetesStandardPodName(stepIdentifier));
+    if (prunePodName) {
+      stepIdentifier = getKubernetesStandardPodName(stepIdentifier);
+    }
+    List<Integer> ports = containerPortDetails.getPortDetails().get(stepIdentifier);
 
     if (ports.size() != 1) {
       throw new ContainerStepExecutionException(format("Step [%s] should map to single port", stepIdentifier));

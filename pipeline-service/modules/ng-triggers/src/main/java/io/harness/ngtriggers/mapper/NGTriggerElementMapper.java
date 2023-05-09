@@ -520,7 +520,8 @@ public class NGTriggerElementMapper {
   }
 
   public NGTriggerDetailsResponseDTO toNGTriggerDetailsResponseDTO(NGTriggerEntity ngTriggerEntity, boolean includeYaml,
-      boolean throwExceptionIfYamlConversionFails, boolean isPipelineInputOutdated) {
+      boolean throwExceptionIfYamlConversionFails, boolean isPipelineInputOutdated,
+      boolean mandatoryAuthForCustomWebhookTriggers) {
     String webhookUrl = EMPTY;
     String webhookCurlCommand = EMPTY;
     if (ngTriggerEntity.getType() == WEBHOOK) {
@@ -530,8 +531,10 @@ public class NGTriggerElementMapper {
       } else if (webhookMetadata.getCustom() != null) {
         webhookUrl = WebhookHelper.generateCustomWebhookUrl(webhookConfigProvider, ngTriggerEntity.getAccountId(),
             ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(),
-            ngTriggerEntity.getTargetIdentifier(), ngTriggerEntity.getIdentifier());
-        webhookCurlCommand = WebhookHelper.generateCustomWebhookCurlCommand(webhookUrl);
+            ngTriggerEntity.getTargetIdentifier(), ngTriggerEntity.getIdentifier(),
+            ngTriggerEntity.getCustomWebhookToken());
+        webhookCurlCommand =
+            WebhookHelper.generateCustomWebhookCurlCommand(webhookUrl, mandatoryAuthForCustomWebhookTriggers);
       }
     }
 

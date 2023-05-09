@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.beans.FeatureName;
 import io.harness.ci.config.CIDockerLayerCachingConfig;
+import io.harness.ci.config.CIDockerLayerCachingGCSConfig;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.ff.CIFeatureFlagService;
 
@@ -26,7 +27,10 @@ public class CIDockerLayerCachingConfigService {
     }
     // Placeholder for vendor APIs for bucket creation. Instead of the global keys, return the
     // keys specific to the bucket of the user when APIs are implemented
-    return ciExecutionServiceConfig.getDockerLayerCachingConfig();
+    if (featureFlagService.isEnabled(FeatureName.CI_USE_S3_FOR_DLC, accountId)) {
+      return ciExecutionServiceConfig.getDockerLayerCachingConfig();
+    }
+    return convertFromGCS(ciExecutionServiceConfig.getDockerLayerCachingGCSConfig());
   }
 
   public String getCacheFromArg(CIDockerLayerCachingConfig config, String prefix) {
@@ -47,5 +51,18 @@ public class CIDockerLayerCachingConfigService {
       cacheTo = String.format("%s,prefix=%s", cacheTo, prefix);
     }
     return cacheTo;
+  }
+
+  private CIDockerLayerCachingConfig convertFromGCS(CIDockerLayerCachingGCSConfig gcsConfig) {
+    if (gcsConfig == null) {
+      return null;
+    }
+    return CIDockerLayerCachingConfig.builder()
+        .endpoint(gcsConfig.getEndpoint())
+        .bucket(gcsConfig.getBucket())
+        .accessKey(gcsConfig.getAccessKey())
+        .secretKey(gcsConfig.getSecretKey())
+        .region(gcsConfig.getRegion())
+        .build();
   }
 }

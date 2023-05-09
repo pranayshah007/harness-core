@@ -17,7 +17,8 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @ApiModel(value = "EntityReference",
-    subTypes = {IdentifierRef.class, InputSetReference.class, NGTemplateReference.class}, discriminator = "type")
+    subTypes = {IdentifierRef.class, InputSetReference.class, NGTemplateReference.class, TriggerReference.class},
+    discriminator = "type")
 public interface EntityReference extends NGAccess {
   @JsonIgnore String getFullyQualifiedName();
   String getBranch();

@@ -170,6 +170,7 @@ import io.harness.limits.checker.LimitApproachingException;
 import io.harness.limits.checker.UsageLimitExceededException;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.index.BasicDBUtils;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
@@ -5619,10 +5620,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
   @Override
   public List<WorkflowExecution> obtainWorkflowExecutions(
-      List<String> appIds, long fromDateEpochMilli, String[] projectedKeys) {
+      String accountId, List<String> appIds, long fromDateEpochMilli, String[] projectedKeys) {
     List<WorkflowExecution> workflowExecutions = new ArrayList<>();
     try (HIterator<WorkflowExecution> iterator =
-             obtainWorkflowExecutionIterator(appIds, fromDateEpochMilli, projectedKeys)) {
+             obtainWorkflowExecutionIterator(accountId, appIds, fromDateEpochMilli, projectedKeys)) {
       while (iterator.hasNext()) {
         workflowExecutions.add(iterator.next());
       }
@@ -5646,8 +5647,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
   @Override
   public HIterator<WorkflowExecution> obtainWorkflowExecutionIterator(
-      List<String> appIds, long epochMilli, String[] projectedKeys) {
+      String accountId, List<String> appIds, long epochMilli, String[] projectedKeys) {
     Query<WorkflowExecution> query = wingsPersistence.createQuery(WorkflowExecution.class)
+                                         .filter(WorkflowExecutionKeys.accountId, accountId)
                                          .field(WorkflowExecutionKeys.appId)
                                          .in(appIds)
                                          .field(WorkflowExecutionKeys.createdAt)
@@ -5673,7 +5675,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     for (String projectedKey : projectedKeys) {
       query.project(projectedKey, true);
     }
-    return new HIterator<>(query.fetch());
+    return new HIterator<>(query.limit(MongoConfig.NO_LIMIT).fetch());
   }
 
   @Override

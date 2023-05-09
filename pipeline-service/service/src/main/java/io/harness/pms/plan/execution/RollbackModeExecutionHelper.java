@@ -71,13 +71,15 @@ public class RollbackModeExecutionHelper {
   public ExecutionMetadata transformExecutionMetadata(ExecutionMetadata executionMetadata, String planExecutionID,
       ExecutionTriggerInfo triggerInfo, String accountId, String orgIdentifier, String projectIdentifier,
       ExecutionMode executionMode, PipelineStageInfo parentStageInfo, List<String> stageNodeExecutionIds) {
+    String originalPlanExecutionId = executionMetadata.getExecutionUuid();
     Builder newMetadata = executionMetadata.toBuilder()
                               .setExecutionUuid(planExecutionID)
                               .setTriggerInfo(triggerInfo)
                               .setRunSequence(pipelineMetadataService.incrementExecutionCounter(accountId,
                                   orgIdentifier, projectIdentifier, executionMetadata.getPipelineIdentifier()))
                               .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
-                              .setExecutionMode(executionMode);
+                              .setExecutionMode(executionMode)
+                              .setOriginalPlanExecutionIdForRollbackMode(originalPlanExecutionId);
     if (parentStageInfo != null) {
       newMetadata = newMetadata.setPipelineStageInfo(parentStageInfo);
     }

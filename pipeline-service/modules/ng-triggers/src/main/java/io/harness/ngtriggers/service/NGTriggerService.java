@@ -48,6 +48,9 @@ public interface NGTriggerService {
 
   List<NGTriggerEntity> findTriggersForCustomWehbook(
       TriggerWebhookEvent triggerWebhookEvent, boolean isDeleted, boolean enabled);
+
+  Optional<NGTriggerEntity> findTriggersForCustomWebhookViaCustomWebhookToken(String webhookToken);
+
   List<NGTriggerEntity> findTriggersForWehbookBySourceRepoType(
       TriggerWebhookEvent triggerWebhookEvent, boolean isDeleted, boolean enabled);
   List<NGTriggerEntity> findBuildTriggersByAccountIdAndSignature(String accountId, List<String> signatures);

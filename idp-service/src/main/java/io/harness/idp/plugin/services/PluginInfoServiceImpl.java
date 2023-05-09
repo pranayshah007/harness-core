@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -79,8 +80,11 @@ public class PluginInfoServiceImpl implements PluginInfoService {
     if (appConfig != null) {
       List<String> envNames =
           configEnvVariablesService.getAllEnvVariablesForAccountIdentifierAndPluginId(harnessAccount, identifier);
-      backstageEnvSecretVariables =
-          backstageEnvVariableService.getAllSecretIdentifierForMultipleEnvVariablesInAccount(harnessAccount, envNames);
+      if (CollectionUtils.isNotEmpty(envNames)) {
+        backstageEnvSecretVariables =
+            backstageEnvVariableService.getAllSecretIdentifierForMultipleEnvVariablesInAccount(
+                harnessAccount, envNames);
+      }
     } else if (pluginEntity.getEnvVariables() != null) {
       for (String envVariable : pluginEntity.getEnvVariables()) {
         BackstageEnvSecretVariable backstageEnvSecretVariable = new BackstageEnvSecretVariable();

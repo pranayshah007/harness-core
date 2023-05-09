@@ -82,7 +82,7 @@ public abstract class StepMapper {
 
   public abstract State getState(GraphNode stepYaml);
 
-  String getSweepingOutputName(GraphNode graphNode) {
+  public String getSweepingOutputName(GraphNode graphNode) {
     State state = getState(graphNode);
     if (state instanceof SweepingOutputStateMixin) {
       return ((SweepingOutputStateMixin) state).getSweepingOutputName();

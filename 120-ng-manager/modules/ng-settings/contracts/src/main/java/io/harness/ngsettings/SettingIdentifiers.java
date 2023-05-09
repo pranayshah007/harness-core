@@ -19,4 +19,15 @@ public class SettingIdentifiers {
   public static String STAGE_TIMEOUT_IDENTIFIER = "stage_timeout";
   public static String STEP_TIMEOUT_IDENTIFIER = "step_timeout";
   public static String CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS = "concurrent_active_pipeline_executions";
+  public static String PERSPECTIVE_PREFERENCES_GROUP_IDENTIFIER = "perspective_preferences";
+  public static String SHOW_ANOMALIES_IDENTIFIER = "show_anomalies";
+  public static String SHOW_OTHERS_IDENTIFIER = "show_others";
+  public static String SHOW_UNALLOCATED_CLUSTER_COST_IDENTIFIER = "show_unallocated_cluster_cost";
+  public static String INCLUDE_AWS_DISCOUNTS_IDENTIFIER = "include_aws_discounts";
+  public static String INCLUDE_AWS_CREDIT_IDENTIFIER = "include_aws_credit";
+  public static String INCLUDE_AWS_REFUNDS_IDENTIFIER = "include_aws_refunds";
+  public static String INCLUDE_AWS_TAXES_IDENTIFIER = "include_aws_taxes";
+  public static String SHOW_AWS_COST_AS_IDENTIFIER = "show_aws_cost_as";
+  public static String INCLUDE_GCP_DISCOUNTS_IDENTIFIER = "include_gcp_discounts";
+  public static String INCLUDE_GCP_TAXES_IDENTIFIER = "include_gcp_taxes";
 }

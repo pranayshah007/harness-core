@@ -6,6 +6,7 @@
  */
 package io.harness.cvng.servicelevelobjective.entities;
 
+import io.harness.cvng.servicelevelobjective.beans.CompositeSLOFormulaType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsRefDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 
@@ -33,6 +34,8 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
 
   @Size(min = 2, max = 20, message = "A minimum of 2 simple SLO's and a maximum of 20 simple SLO's can be referenced.")
   List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetails;
+
+  private CompositeSLOFormulaType compositeSLOFormulaType;
 
   @Data
   @Builder
@@ -69,5 +72,12 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
       updateOperations.set(CompositeServiceLevelObjectiveKeys.serviceLevelObjectivesDetails,
           compositeServiceLevelObjective.getServiceLevelObjectivesDetails());
     }
+  }
+
+  public CompositeSLOFormulaType getCompositeSLOFormulaType() {
+    if (this.compositeSLOFormulaType == null) {
+      return CompositeSLOFormulaType.WEIGHTED_AVERAGE;
+    }
+    return compositeSLOFormulaType;
   }
 }

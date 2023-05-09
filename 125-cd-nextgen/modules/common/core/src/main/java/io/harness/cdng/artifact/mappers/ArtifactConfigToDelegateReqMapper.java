@@ -161,7 +161,7 @@ public class ArtifactConfigToDelegateReqMapper {
           && tagHasInputValidator(artifactConfig.getFilePath().getInputSetValidator(), filePath)) {
         filePathRegex = artifactConfig.getFilePath().getInputSetValidator().getParameters();
       } else {
-        filePathRegex = ACCEPT_ALL_REGEX;
+        filePathRegex = "*";
       }
       filePath = "";
     }

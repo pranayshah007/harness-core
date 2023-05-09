@@ -164,7 +164,7 @@ ciExecutionServiceConfig:
   defaultInternalImageConnector: ''
   executionLimits:
     freeNewUser:
-      dailyMaxBuildsCount: 5
+      dailyMaxBuildsCount: 0
     freeBasicUser:
       dailyMaxBuildsCount: 25
     free:
@@ -194,6 +194,12 @@ ciExecutionServiceConfig:
     region: "s3_bucket_region"
     endpoint: "s3_endpoint"
   dockerLayerCachingConfig:
+    endpoint: "endpoint"
+    bucket: "bucket"
+    accessKey: "access_key"
+    secretKey: "secret_key"
+    region: "region"
+  dockerLayerCachingGCSConfig:
     endpoint: "endpoint"
     bucket: "bucket"
     accessKey: "access_key"
@@ -337,10 +343,10 @@ ciExecutionServiceConfig:
     vmImageConfig:
       # Use root image for VM git clone
       gitClone: harness/drone-git:1.3.3
-      buildAndPushDockerRegistry: plugins/docker:20.13.0
-      buildAndPushACR: plugins/acr:20.13.0
-      buildAndPushECR: plugins/ecr:20.13.0
-      buildAndPushGCR: plugins/gcr:20.13.0
+      buildAndPushDockerRegistry: plugins/docker:20.14.3
+      buildAndPushACR: plugins/acr:20.14.3
+      buildAndPushECR: plugins/ecr:20.14.3
+      buildAndPushGCR: plugins/gcr:20.14.3
       gcsUpload: plugins/gcs:1.3.0
       s3Upload: plugins/s3:1.2.0
       security: harness/sto-plugin:dev
@@ -358,7 +364,7 @@ ciExecutionServiceConfig:
       cacheGCSConfig:
         name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.5.6
       gitCloneConfig:
-        name: github.com/wings-software/drone-git@refs/tags/v1.3.2
+        name: github.com/wings-software/drone-git@refs/tags/v1.3.5
       dockerBuildxConfig:
         name: github.com/drone-plugins/drone-buildx@refs/tags/v1.0.0
 

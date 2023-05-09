@@ -258,6 +258,7 @@ public class ProjectChangeEventMessageProcessorTest extends CvNextGenTestBase {
     monitoredServiceDTOBuilder.orgIdentifier(orgIdentifier);
     monitoredServiceDTOBuilder.projectIdentifier(projectIdentifier);
     monitoredServiceDTOBuilder.identifier(generateUuid());
+    monitoredServiceDTOBuilder.name(generateUuid());
     monitoredServiceDTOBuilder.type(MonitoredServiceType.INFRASTRUCTURE);
     monitoredServiceDTOBuilder.sources(MonitoredServiceDTO.Sources.builder().build());
     return monitoredServiceDTOBuilder.build();
