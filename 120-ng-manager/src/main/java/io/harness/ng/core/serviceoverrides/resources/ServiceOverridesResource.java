@@ -244,6 +244,7 @@ public class ServiceOverridesResource {
   }
 
   @GET
+  @Path("/list")
   @Hidden
   @ApiOperation(value = "Gets Service list ", nickname = "getServiceList")
   @Operation(operationId = "getServiceList", summary = "Gets Service list",
