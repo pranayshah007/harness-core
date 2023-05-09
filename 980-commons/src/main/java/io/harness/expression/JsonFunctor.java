@@ -12,7 +12,9 @@ import io.harness.serializer.JsonUtils;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class JsonFunctor implements ExpressionFunctor {
   public Object object(String json) {
     return JsonUtils.asObject(json, HashMap.class);
@@ -28,6 +30,7 @@ public class JsonFunctor implements ExpressionFunctor {
         return list.get(0);
       }
     }
+    log.info(String.format("Json functor evaluation returned null for the Json: %s and path %s", json, path));
     return null;
   }
 
