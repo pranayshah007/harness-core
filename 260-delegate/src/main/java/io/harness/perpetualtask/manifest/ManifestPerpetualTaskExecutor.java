@@ -60,7 +60,7 @@ public class ManifestPerpetualTaskExecutor implements PerpetualTaskExecutor {
   private final DelegateAgentManagerClient delegateAgentManagerClient;
   private final KryoSerializer kryoSerializer;
   private final ManifestRepositoryService manifestRepositoryService;
-  private final KryoSerializer referenceFalseKryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private final KryoSerializer referenceFalseKryoSerializer;
 
   private final @Getter Cache<String, ArtifactsPublishedCache<HelmChart>> cache = Caffeine.newBuilder().build();
 

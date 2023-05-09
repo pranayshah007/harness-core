@@ -19,9 +19,11 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 @OwnedBy(STO)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class STOYamlInstance {

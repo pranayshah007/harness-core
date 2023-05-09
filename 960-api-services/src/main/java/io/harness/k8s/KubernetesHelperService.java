@@ -60,19 +60,17 @@ import io.fabric8.kubernetes.api.model.autoscaling.v1.HorizontalPodAutoscaler;
 import io.fabric8.kubernetes.api.model.autoscaling.v1.HorizontalPodAutoscalerList;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.SimpleClientContext;
+import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.internal.SSLUtils;
-import io.fabric8.kubernetes.client.okhttp.OkHttpClientImpl;
 import io.fabric8.kubernetes.client.utils.Utils;
-import io.fabric8.openshift.client.DefaultOpenShiftClient;
+import io.fabric8.openshift.client.NamespacedOpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.fabric8.openshift.client.OpenShiftConfig;
 import io.kubernetes.client.openapi.ApiClient;
 import java.io.File;
 import java.io.IOException;
@@ -83,7 +81,6 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -99,16 +96,12 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Authenticator;
 import okhttp3.ConnectionSpec;
 import okhttp3.Credentials;
 import okhttp3.Dispatcher;
-import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
 import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.Route;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -182,33 +175,26 @@ public class KubernetesHelperService {
    */
   public KubernetesClient getKubernetesClient(KubernetesConfig kubernetesConfig, String apiVersion) {
     Config config = getConfig(kubernetesConfig, apiVersion);
-
-    String namespace = "default";
-    if (isNotBlank(config.getNamespace())) {
-      namespace = config.getNamespace();
-    }
-
-    OkHttpClient okHttpClient = createHttpClientWithProxySetting(config);
-    OkHttpClientImpl fabric8OkHttpClient = new OkHttpClientImpl(okHttpClient);
-    SimpleClientContext simpleClientContext = new SimpleClientContext(config, fabric8OkHttpClient);
-
-    try (DefaultKubernetesClient client = new DefaultKubernetesClient(simpleClientContext)) {
-      return client.inNamespace(namespace);
-    }
+    String namespace = getOrDefaultNamespace(config);
+    Fabric8HttpClientFactory fabric8HttpClientFactory = new Fabric8HttpClientFactory(config, this);
+    return new KubernetesClientBuilder()
+        .withConfig(config)
+        .withHttpClientFactory(fabric8HttpClientFactory)
+        .build()
+        .adapt(NamespacedKubernetesClient.class)
+        .inNamespace(namespace);
   }
 
   public OpenShiftClient getOpenShiftClient(KubernetesConfig kubernetesConfig) {
     Config config = getConfig(kubernetesConfig, StringUtils.EMPTY);
-
-    String namespace = "default";
-    if (isNotBlank(config.getNamespace())) {
-      namespace = config.getNamespace();
-    }
-
-    OkHttpClient okHttpClient = createHttpClientWithProxySetting(config);
-    try (DefaultOpenShiftClient client = new DefaultOpenShiftClient(okHttpClient, new OpenShiftConfig(config))) {
-      return client.inNamespace(namespace);
-    }
+    String namespace = getOrDefaultNamespace(config);
+    Fabric8HttpClientFactory fabric8HttpClientFactory = new Fabric8HttpClientFactory(config, this);
+    return new KubernetesClientBuilder()
+        .withConfig(config)
+        .withHttpClientFactory(fabric8HttpClientFactory)
+        .build()
+        .adapt(NamespacedOpenShiftClient.class)
+        .inNamespace(namespace);
   }
 
   public Config getConfig(KubernetesConfig kubernetesConfig, String apiVersion) {
@@ -266,18 +252,18 @@ public class KubernetesHelperService {
 
   public IstioClient getFabric8IstioClient(KubernetesConfig kubernetesConfig) {
     Config config = getConfig(kubernetesConfig, StringUtils.EMPTY);
+    String namespace = getOrDefaultNamespace(config);
+    Fabric8HttpClientFactory fabric8HttpClientFactory = new Fabric8HttpClientFactory(config, this);
+    KubernetesClient genericK8sClient =
+        new KubernetesClientBuilder().withConfig(config).withHttpClientFactory(fabric8HttpClientFactory).build();
+    return new DefaultIstioClient(genericK8sClient).inNamespace(namespace);
+  }
 
-    String namespace = "default";
+  private String getOrDefaultNamespace(Config config) {
     if (isNotBlank(config.getNamespace())) {
-      namespace = config.getNamespace();
+      return config.getNamespace();
     }
-    OkHttpClient okHttpClient = createHttpClientWithProxySetting(config);
-    OkHttpClientImpl fabric8OkHttpClient = new OkHttpClientImpl(okHttpClient);
-    SimpleClientContext simpleClientContext = new SimpleClientContext(config, fabric8OkHttpClient);
-
-    try (DefaultIstioClient istioClient = new DefaultIstioClient(simpleClientContext)) {
-      return istioClient.inNamespace(namespace);
-    }
+    return "default";
   }
 
   public static void printVirtualServiceRouteWeights(
@@ -310,8 +296,13 @@ public class KubernetesHelperService {
    */
   @VisibleForTesting
   public OkHttpClient createHttpClientWithProxySetting(final Config config) {
+    OkHttpClient.Builder httpClientBuilder = getOkHttpClientBuilder();
+    configureHttpClientBuilder(httpClientBuilder, config);
+    return httpClientBuilder.build();
+  }
+
+  public void configureHttpClientBuilder(OkHttpClient.Builder httpClientBuilder, Config config) {
     try {
-      OkHttpClient.Builder httpClientBuilder = getOkHttpClientBuilder();
       httpClientBuilder.proxy(Http.checkAndGetNonProxyIfApplicable(config.getMasterUrl()));
       // Follow any redirects
       httpClientBuilder.followRedirects(true);
@@ -342,7 +333,7 @@ public class KubernetesHelperService {
         try {
           SSLContext sslContext = SSLUtils.sslContext(keyManagers, trustManagers);
           httpClientBuilder.sslSocketFactory(sslContext.getSocketFactory(), trustManager);
-        } catch (GeneralSecurityException e) {
+        } catch (Exception e) {
           throw new AssertionError(); // The system has no TLS. Just give up.
         }
       } else {
@@ -351,24 +342,21 @@ public class KubernetesHelperService {
         httpClientBuilder.sslSocketFactory(context.getSocketFactory(), (X509TrustManager) trustManagers[0]);
       }
 
-      httpClientBuilder.addInterceptor(new Interceptor() {
-        @Override
-        public Response intercept(Chain chain) throws IOException {
-          Request request = chain.request();
-          if (isNotNullOrEmpty(config.getUsername()) && isNotNullOrEmpty(config.getPassword())) {
-            Request authReq =
-                chain.request()
-                    .newBuilder()
-                    .addHeader("Authorization", Credentials.basic(config.getUsername(), config.getPassword()))
-                    .build();
-            return chain.proceed(authReq);
-          } else if (isNotNullOrEmpty(config.getOauthToken())) {
-            Request authReq =
-                chain.request().newBuilder().addHeader("Authorization", "Bearer " + config.getOauthToken()).build();
-            return chain.proceed(authReq);
-          }
-          return chain.proceed(request);
+      httpClientBuilder.addInterceptor(chain -> {
+        Request request = chain.request();
+        if (isNotNullOrEmpty(config.getUsername()) && isNotNullOrEmpty(config.getPassword())) {
+          Request authReq =
+              chain.request()
+                  .newBuilder()
+                  .addHeader("Authorization", Credentials.basic(config.getUsername(), config.getPassword()))
+                  .build();
+          return chain.proceed(authReq);
+        } else if (isNotNullOrEmpty(config.getOauthToken())) {
+          Request authReq =
+              chain.request().newBuilder().addHeader("Authorization", "Bearer " + config.getOauthToken()).build();
+          return chain.proceed(authReq);
         }
+        return chain.proceed(request);
       });
 
       Logger reqLogger = LoggerFactory.getLogger(HttpLoggingInterceptor.class);
@@ -406,15 +394,12 @@ public class KubernetesHelperService {
                 new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyUrl.getHost(), proxyUrl.getPort())));
 
             if (config.getProxyUsername() != null) {
-              httpClientBuilder.proxyAuthenticator(new Authenticator() {
-                @Override
-                public Request authenticate(Route route, Response response) throws IOException {
-                  if (response == null || response.code() == 407) {
-                    return null;
-                  }
-                  String credential = Credentials.basic(config.getProxyUsername(), config.getProxyPassword());
-                  return response.request().newBuilder().header("Proxy-Authorization", credential).build();
+              httpClientBuilder.proxyAuthenticator((route, response) -> {
+                if (response == null || response.code() == 407) {
+                  return null;
                 }
+                String credential = Credentials.basic(config.getProxyUsername(), config.getProxyPassword());
+                return response.request().newBuilder().header("Proxy-Authorization", credential).build();
               });
             }
           }
@@ -425,12 +410,9 @@ public class KubernetesHelperService {
       }
 
       if (isNotEmpty(config.getUserAgent())) {
-        httpClientBuilder.addNetworkInterceptor(new Interceptor() {
-          @Override
-          public Response intercept(Chain chain) throws IOException {
-            Request agent = chain.request().newBuilder().header("User-Agent", config.getUserAgent()).build();
-            return chain.proceed(agent);
-          }
+        httpClientBuilder.addNetworkInterceptor(chain -> {
+          Request agent = chain.request().newBuilder().header("User-Agent", config.getUserAgent()).build();
+          return chain.proceed(agent);
         });
       }
 
@@ -443,8 +425,6 @@ public class KubernetesHelperService {
         ConnectionSpec spec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS).tlsVersions(tlsVersions).build();
         httpClientBuilder.connectionSpecs(asList(spec, CLEARTEXT));
       }
-
-      return httpClientBuilder.build();
     } catch (RuntimeException | CertificateException | NoSuchAlgorithmException | KeyStoreException | IOException
         | UnrecoverableKeyException | InvalidKeySpecException | KeyManagementException e) {
       throw KubernetesClientException.launderThrowable(e);
@@ -495,20 +475,7 @@ public class KubernetesHelperService {
       io.fabric8.kubernetes.api.model.autoscaling.v2beta1.HorizontalPodAutoscalerList,
       Resource<io.fabric8.kubernetes.api.model.autoscaling.v2beta1.HorizontalPodAutoscaler>>
   hpaOperationsForCustomMetricHPA(KubernetesConfig kubernetesConfig, String apiName) {
-    DefaultKubernetesClient kubernetesClient = (DefaultKubernetesClient) getKubernetesClient(kubernetesConfig, apiName);
-
-    /*
-     * Following constructor invocation content is copied from HorizontalPodAutoscalerOperationsImpl(OkHttpClient
-     * client, Config config, String namespace){...}, except we are passing apiName, where as in above mentioned one its
-     * hardcoded as "v1".
-     *
-     * Following call does exactly what
-     * getKubernetesClient(kubernetesConfig,encryptedDataDetails).autoscaling().horizontalPodAutoscalers()) does, Only
-     * diff is, here its based on apiVersion we passed. So for "v2beta1" version, we needed to take this approach, as
-     * there was this issue with fabric8 library, that
-     * getKubernetesClient(kubernetesConfig,encryptedDataDetails).autoscaling().horizontalPodAutoscalers()) always
-     * returns client with "v1" apiVersion.
-     * */
+    KubernetesClient kubernetesClient = getKubernetesClient(kubernetesConfig, apiName);
     MixedOperation<io.fabric8.kubernetes.api.model.autoscaling.v2beta1.HorizontalPodAutoscaler,
         io.fabric8.kubernetes.api.model.autoscaling.v2beta1.HorizontalPodAutoscalerList,
         Resource<io.fabric8.kubernetes.api.model.autoscaling.v2beta1.HorizontalPodAutoscaler>> mixedOperation =

@@ -22,29 +22,23 @@ import java.util.Optional;
 
 public class IACMPluginStepPlanCretorV1 extends PluginStepPlanCreatorV1 {
   @Inject private CIPlanCreatorUtils ciPlanCreatorUtils;
-  public static final String stackID = "stackId";
-  public static final String workflow = "workflow";
-  public static final String STACK_ID = "STACK_ID";
-  public static final String WORKFLOW = "WORKFLOW";
+  public static final String workspaceID = "workspaceId";
+  public static final String WORKSPACE_ID = "WORKSPACE_ID";
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, PluginStepNodeV1 stepElement) {
-    Optional<Object> stackIdMetadata =
-        ciPlanCreatorUtils.getDeserializedObjectFromDependency(ctx.getDependency(), stackID);
-    if (stackIdMetadata.isPresent()) {
-      Optional<Object> workflowMetadata =
-          ciPlanCreatorUtils.getDeserializedObjectFromDependency(ctx.getDependency(), workflow);
-      String stackId = (String) stackIdMetadata.get();
-      String workflow = (String) workflowMetadata.get();
-      addMetadataToIACMPluginStep(stepElement, stackId, workflow);
+    Optional<Object> workspaceIdMetadata =
+        ciPlanCreatorUtils.getDeserializedObjectFromDependency(ctx.getDependency(), workspaceID);
+    if (workspaceIdMetadata.isPresent()) {
+      String workspaceId = (String) workspaceIdMetadata.get();
+      addMetadataToIACMPluginStep(stepElement, workspaceId);
     }
     return super.createPlanForFieldV2(ctx, stepElement);
   }
-  private PluginStepNodeV1 addMetadataToIACMPluginStep(PluginStepNodeV1 stepElement, String stackId, String workflow) {
+  private PluginStepNodeV1 addMetadataToIACMPluginStep(PluginStepNodeV1 stepElement, String workspaceId) {
     PluginStepInfoV1 stepInfo = stepElement.getPluginStepInfo();
     ParameterField<Map<String, ParameterField<String>>> stepEnvs = stepInfo.getEnvs();
     Map<String, ParameterField<String>> env = new HashMap<>();
-    env.put(STACK_ID, ParameterField.createValueField(stackId));
-    env.put(WORKFLOW, ParameterField.createValueField(workflow));
+    env.put(WORKSPACE_ID, ParameterField.createValueField(workspaceId));
     if (stepEnvs.getValue() != null) {
       env.putAll(stepEnvs.getValue());
     }

@@ -15,7 +15,7 @@ import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.math3.util.Pair;
 
 public interface SLIRecordService {
   void create(List<SLIRecordParam> sliRecordList, String sliId, String verificationTaskId, int sliVersion);
@@ -33,7 +33,8 @@ public interface SLIRecordService {
       Instant startTime);
   List<SLIRecord> getLatestCountSLIRecords(String sliId, int count);
   List<SLIRecord> getSLIRecordsForLookBackDuration(String sliId, long lookBackDuration);
-  double getErrorBudgetBurnRate(String sliId, long lookBackDuration, int totalErrorBudgetMinutes);
+  double getErrorBudgetBurnRate(
+      String sliId, long lookBackDuration, int totalErrorBudgetMinutes, SLIMissingDataType sliMissingDataType);
   List<SLIRecord> getSLIRecords(String sliId, Instant startTime, Instant endTime);
   List<SLIRecord> getSLIRecordsWithSLIVersion(String sliId, Instant startTime, Instant endTime, int sliVersion);
   SLIRecord getFirstSLIRecord(String sliId, Instant timestampInclusive);

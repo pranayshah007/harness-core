@@ -533,7 +533,8 @@ public interface PlanExecutionResource {
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @Parameter(
           description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) String projectId,
       @Parameter(
-          description = "The Interrupt type needed to be applied to the execution. Choose a value from the enum list.")
+          description =
+              "The Interrupt type needed to be applied to the execution. Choose a value from the enum list: [AbortAll, Abort, Resume, Pause].")
       @NotNull @QueryParam("interruptType") PlanExecutionInterruptType executionInterruptType,
       @Parameter(description = PlanExecutionResourceConstants.PLAN_EXECUTION_ID_PARAM_MESSAGE
               + " on which the Interrupt needs to be applied.") @NotNull @PathParam("planExecutionId")

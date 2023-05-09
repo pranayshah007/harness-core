@@ -84,6 +84,7 @@ import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityManagementService;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.services.impl.ServiceEntityYamlSchemaHelper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.pms.rbac.NGResourceType;

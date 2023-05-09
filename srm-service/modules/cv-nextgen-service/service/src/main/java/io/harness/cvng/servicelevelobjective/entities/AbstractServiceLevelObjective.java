@@ -25,9 +25,7 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.persistence.AccountAccess;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -65,7 +63,7 @@ import lombok.experimental.SuperBuilder;
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
 public abstract class AbstractServiceLevelObjective
-    implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware, CreatedAtAware, PersistentRegularIterable {
+    implements PersistentEntity, UuidAware, AccountAccess, PersistentRegularIterable {
   @NotNull String accountId;
   String orgIdentifier;
   String projectIdentifier;

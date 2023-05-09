@@ -99,7 +99,7 @@ public class ExceptionManager {
         if (exceptionHandler != null) {
           handledException = exceptionHandler.handleException(exception);
         } else {
-          log.error("Exception handler not registered for exception : ", exception);
+          log.info("Exception handler not registered for exception : ", exception);
           handledException = prepareUnhandledExceptionResponse(exception);
         }
         WingsException cascadedException = handledException;

@@ -11,6 +11,7 @@ import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.ci.CITaskExecutionResponse;
 import io.harness.logging.CommandExecutionStatus;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,7 @@ import lombok.Data;
 
 @Data
 @Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class VmTaskExecutionResponse implements CITaskExecutionResponse {
   @JsonProperty("delegate_meta_info") private DelegateMetaInfo delegateMetaInfo;
   @JsonProperty("error_message") private String errorMessage;
@@ -26,6 +28,7 @@ public class VmTaskExecutionResponse implements CITaskExecutionResponse {
   @JsonProperty("output_vars") private Map<String, String> outputVars;
   @JsonProperty("command_execution_status") private CommandExecutionStatus commandExecutionStatus;
   @JsonProperty("service_statuses") private List<VmServiceStatus> serviceStatuses;
+  @JsonProperty("artifact") private byte[] artifact;
 
   @Builder.Default private static final CITaskExecutionResponse.Type type = Type.VM;
 

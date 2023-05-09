@@ -316,8 +316,17 @@ public class YamlSchemaUtils {
   public void addOneOfInExecutionWrapperConfig(JsonNode pipelineSchema,
       List<YamlSchemaWithDetails> stepSchemaWithDetails, ModuleType moduleType, Set<String> enabledFeatureFlags,
       Map<String, Boolean> featureRestrictionsMap) {
-    stepSchemaWithDetails =
-        stepSchemaWithDetails.stream().filter(o -> o.getModuleType() != moduleType).collect(Collectors.toList());
+    addOneOfInExecutionWrapperConfig(
+        pipelineSchema, stepSchemaWithDetails, moduleType, enabledFeatureFlags, featureRestrictionsMap, true);
+  }
+
+  public void addOneOfInExecutionWrapperConfig(JsonNode pipelineSchema,
+      List<YamlSchemaWithDetails> stepSchemaWithDetails, ModuleType moduleType, Set<String> enabledFeatureFlags,
+      Map<String, Boolean> featureRestrictionsMap, boolean shouldFilter) {
+    if (shouldFilter) {
+      stepSchemaWithDetails =
+          stepSchemaWithDetails.stream().filter(o -> o.getModuleType() != moduleType).collect(Collectors.toList());
+    }
     JsonNode executionWrapperConfigProperties = pipelineSchema.get(EXECUTION_WRAPPER_CONFIG_NODE).get(PROPERTIES_NODE);
     ArrayNode oneOfNode = getOneOfNode(executionWrapperConfigProperties, STEP_NODE);
     JsonNode stepsNode = executionWrapperConfigProperties.get(STEP_NODE);

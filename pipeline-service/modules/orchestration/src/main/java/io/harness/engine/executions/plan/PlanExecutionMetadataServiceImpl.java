@@ -18,6 +18,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.PlanExecutionMetadata.PlanExecutionMetadataKeys;
+import io.harness.execution.RetryStagesMetadata;
 import io.harness.repositories.PlanExecutionMetadataRepository;
 
 import com.google.inject.Inject;
@@ -61,15 +62,15 @@ public class PlanExecutionMetadataServiceImpl implements PlanExecutionMetadataSe
   }
 
   public String getNotesForExecution(String planExecutionId) {
-    Criteria criteria = where(PlanExecutionMetadataKeys.planExecutionId).is(planExecutionId);
-    Optional<PlanExecutionMetadata> planExecutionMetadata =
-        Optional.ofNullable(planExecutionMetadataRepository.getExecutionNotes(criteria));
-    if (!planExecutionMetadata.isPresent()) {
-      throw new InvalidRequestException(
-          String.format("Execution with id [%s] is not present or deleted", planExecutionId));
-    }
+    PlanExecutionMetadata planExecutionMetadata =
+        planExecutionMetadataRepository.getWithFieldsIncluded(planExecutionId, Set.of(PlanExecutionMetadataKeys.notes));
+    return getNotesOrEmptyString(planExecutionMetadata);
+  }
 
-    return getNotesOrEmptyString(planExecutionMetadata.get());
+  public RetryStagesMetadata getRetryStagesMetadata(String planExecutionId) {
+    PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataRepository.getWithFieldsIncluded(
+        planExecutionId, Set.of(PlanExecutionMetadataKeys.retryStagesMetadata));
+    return planExecutionMetadata.getRetryStagesMetadata();
   }
 
   public String updateNotesForExecution(String planExecutionId, String notes) {

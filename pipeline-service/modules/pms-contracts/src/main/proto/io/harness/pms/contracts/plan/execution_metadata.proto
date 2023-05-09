@@ -32,6 +32,7 @@ message ExecutionMetadata {
   ExecutionMode executionMode = 19;
   bool useMatrixFieldName = 20;
   repeated PostExecutionRollbackInfo postExecutionRollbackInfo = 21;
+  string originalPlanExecutionIdForRollbackMode = 22;
 }
 
 message RetryExecutionInfo {

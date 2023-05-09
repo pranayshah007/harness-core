@@ -484,11 +484,12 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
       FindOptions findOptions = wingsPersistence.analyticNodePreferenceOptions();
       findOptions.hint(BasicDBUtils.getIndexObject(Instance.mongoIndexes(), "accountId_deletedAt_createdAt"));
 
-      instanceSet.addAll(cloneQuery.asList(findOptions));
+      instanceSet.addAll(cloneQuery.limit(NO_LIMIT).asList(findOptions));
     }
 
-    instanceSet.addAll(
-        query.filter(InstanceKeys.isDeleted, false).asList(wingsPersistence.analyticNodePreferenceOptions()));
+    instanceSet.addAll(query.filter(InstanceKeys.isDeleted, false)
+                           .limit(NO_LIMIT)
+                           .asList(wingsPersistence.analyticNodePreferenceOptions()));
 
     int counter = instanceSet.size();
 

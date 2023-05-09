@@ -15,6 +15,7 @@ import io.harness.cdng.visitor.helpers.cdstepinfo.UpdateReleaseRepoStepVisitorHe
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
@@ -80,5 +81,10 @@ public class UpdateReleaseRepoStepInfo extends UpdateReleaseRepoBaseStepInfo imp
         .prTitle(prTitle)
         .variables(NGVariablesUtils.getMapOfVariablesWithoutSecretExpression(variables))
         .build();
+  }
+
+  @Override
+  public ExpressionMode getExpressionMode() {
+    return ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED;
   }
 }

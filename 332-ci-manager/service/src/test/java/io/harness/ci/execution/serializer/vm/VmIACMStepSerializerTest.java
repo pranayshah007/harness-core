@@ -18,8 +18,8 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.entities.Stack;
-import io.harness.beans.entities.StackVariables;
+import io.harness.beans.entities.Workspace;
+import io.harness.beans.entities.WorkspaceVariables;
 import io.harness.beans.steps.stepinfo.IACMTerraformPlanInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.ConnectorUtils;
@@ -80,15 +80,15 @@ public class VmIACMStepSerializerTest extends CategoryTest {
     env.put("command", "Apply");
     IACMTerraformPlanInfo stepInfo =
         IACMTerraformPlanInfo.builder().env(ParameterField.createValueField(env)).identifier("id").name("name").build();
-    StackVariables[] stackVariables = new StackVariables[] {StackVariables.builder()
-                                                                .stack("123")
-                                                                .account("abc")
-                                                                .key("keytest1")
-                                                                .kind("env")
-                                                                .value("keyValue1")
-                                                                .value_type("secret")
-                                                                .build(),
-        StackVariables.builder()
+    WorkspaceVariables[] stackVariables = new WorkspaceVariables[] {WorkspaceVariables.builder()
+                                                                        .stack("123")
+                                                                        .account("abc")
+                                                                        .key("keytest1")
+                                                                        .kind("env")
+                                                                        .value("keyValue1")
+                                                                        .value_type("secret")
+                                                                        .build(),
+        WorkspaceVariables.builder()
             .stack("123")
             .account("abc")
             .key("keytest2")
@@ -96,7 +96,7 @@ public class VmIACMStepSerializerTest extends CategoryTest {
             .value("keyValue2")
             .value_type("string")
             .build(),
-        StackVariables.builder()
+        WorkspaceVariables.builder()
             .stack("123")
             .account("abc")
             .key("keytest3")
@@ -104,7 +104,7 @@ public class VmIACMStepSerializerTest extends CategoryTest {
             .value("keyValue3")
             .value_type("secret")
             .build(),
-        StackVariables.builder()
+        WorkspaceVariables.builder()
             .stack("123")
             .account("abc")
             .key("keytest4")
@@ -115,9 +115,9 @@ public class VmIACMStepSerializerTest extends CategoryTest {
 
     Mockito.mockStatic(CIStepInfoUtils.class);
     when(CIStepInfoUtils.getPluginCustomStepImage(any(), any(), any(), any())).thenReturn("imageName");
-    Stack stack = Stack.builder().provider_connector("awsTest").build();
-    when(iacmServiceUtils.getIACMStackInfo(any(), any(), any(), any())).thenReturn(stack);
-    when(iacmServiceUtils.getIacmStackEnvs(any(), any(), any(), any())).thenReturn(stackVariables);
+    Workspace stack = Workspace.builder().provider_connector("awsTest").build();
+    when(iacmServiceUtils.getIACMWorkspaceInfo(any(), any(), any(), any())).thenReturn(stack);
+    when(iacmServiceUtils.getIacmWorkspaceEnvs(any(), any(), any(), any())).thenReturn(stackVariables);
     when(harnessImageUtils.getHarnessImageConnectorDetailsForVM(any(), any()))
         .thenReturn(ConnectorDetails.builder().build());
     Mockito.mockStatic(IntegrationStageUtils.class);
@@ -146,10 +146,10 @@ public class VmIACMStepSerializerTest extends CategoryTest {
 
     Mockito.mockStatic(CIStepInfoUtils.class);
     when(CIStepInfoUtils.getPluginCustomStepImage(any(), any(), any(), any())).thenReturn("imageName");
-    Stack stack =
-        Stack.builder().provider_connector("awsTest").repository_path("root").provisioner_version("1.2.3").build();
-    when(iacmServiceUtils.getIACMStackInfo(any(), any(), any(), any())).thenReturn(stack);
-    when(iacmServiceUtils.getIacmStackEnvs(any(), any(), any(), any())).thenReturn(new StackVariables[] {});
+    Workspace stack =
+        Workspace.builder().provider_connector("awsTest").repository_path("root").provisioner_version("1.2.3").build();
+    when(iacmServiceUtils.getIACMWorkspaceInfo(any(), any(), any(), any())).thenReturn(stack);
+    when(iacmServiceUtils.getIacmWorkspaceEnvs(any(), any(), any(), any())).thenReturn(new WorkspaceVariables[] {});
     when(harnessImageUtils.getHarnessImageConnectorDetailsForVM(any(), any()))
         .thenReturn(ConnectorDetails.builder().build());
     Mockito.mockStatic(IntegrationStageUtils.class);

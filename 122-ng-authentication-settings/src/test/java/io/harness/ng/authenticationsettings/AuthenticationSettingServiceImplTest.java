@@ -8,13 +8,16 @@
 package io.harness.ng.authenticationsettings;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.PL_ENABLE_MULTIPLE_IDP_SUPPORT;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -36,6 +39,7 @@ import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import software.wings.beans.loginSettings.LoginSettings;
 import software.wings.beans.loginSettings.PasswordExpirationPolicy;
@@ -45,6 +49,7 @@ import software.wings.beans.sso.LdapConnectionSettings;
 import software.wings.beans.sso.SSOSettings;
 import software.wings.beans.sso.SSOType;
 import software.wings.beans.sso.SamlSettings;
+import software.wings.security.authentication.LoginTypeResponse;
 import software.wings.security.authentication.SSOConfig;
 
 import com.google.inject.Inject;
@@ -66,6 +71,7 @@ import retrofit2.Response;
 public class AuthenticationSettingServiceImplTest extends CategoryTest {
   @Mock private AuthSettingsManagerClient managerClient;
   @Mock private UserGroupService userGroupService;
+  @Mock NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Inject @InjectMocks AuthenticationSettingsServiceImpl authenticationSettingsServiceImpl;
 
   private SamlSettings samlSettings;
@@ -238,6 +244,15 @@ public class AuthenticationSettingServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = PRATEEK)
   @Category(UnitTests.class)
+  public void testGetAuthenticationSettings_FF_PL_ENABLE_MULTIPLE_IDP_SUPPORT_Enabled() throws IOException {
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(ACCOUNT_ID, PL_ENABLE_MULTIPLE_IDP_SUPPORT);
+    assertThatThrownBy(() -> authenticationSettingsServiceImpl.getAuthenticationSettings(ACCOUNT_ID))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
   public void testGetAuthenticationSettingsV2() throws IOException {
     Call<RestResponse<Set<String>>> whitelistDomainsRequest = mock(Call.class);
     doReturn(whitelistDomainsRequest).when(managerClient).getWhitelistedDomains(anyString());
@@ -302,5 +317,128 @@ public class AuthenticationSettingServiceImplTest extends CategoryTest {
     assertNotNull(settingsV2Response.getWhitelistedDomains());
     assertThat(settingsV2Response.getAuthenticationMechanism()).isEqualTo(AuthenticationMechanism.SAML);
     assertThat(settingsV2Response.isTwoFactorEnabled()).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testUpdateSamlMetadata_SSOId() throws IOException {
+    Call<RestResponse<SamlSettings>> request = mock(Call.class);
+    doReturn(request)
+        .when(managerClient)
+        .updateSAMLMetadata(
+            anyString(), anyString(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
+
+    SamlSettings samlSettings = SamlSettings.builder()
+                                    .accountId(ACCOUNT_ID)
+                                    .friendlySamlName("testSAMLFriendlyName")
+                                    .ssoType(SSOType.SAML)
+                                    .logoutUrl("http://dummy.logout.url")
+                                    .build();
+    List<SSOSettings> settings = new ArrayList<>();
+    settings.add(samlSettings);
+    SSOConfig config = SSOConfig.builder()
+                           .accountId(ACCOUNT_ID)
+                           .authenticationMechanism(AuthenticationMechanism.SAML)
+                           .ssoSettings(settings)
+                           .build();
+    RestResponse<SSOConfig> mockSSOConfigRes = new RestResponse<>(config);
+    doReturn(Response.success(mockSSOConfigRes)).when(request).execute();
+
+    SSOConfig responseSSOConfig =
+        authenticationSettingsServiceImpl.updateSAMLMetadata(anyString(), anyString(), any(), anyString(), anyString(),
+            anyBoolean(), anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
+
+    assertNotNull(responseSSOConfig);
+    assertThat(responseSSOConfig.getAuthenticationMechanism()).isEqualTo(AuthenticationMechanism.SAML);
+    assertNotNull(responseSSOConfig.getSsoSettings());
+    assertThat(responseSSOConfig.getSsoSettings().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testUpdateSamlAuthenticationEnabled() throws IOException {
+    Call<RestResponse<SamlSettings>> request = mock(Call.class);
+    doReturn(request)
+        .when(managerClient)
+        .updateAuthenticationEnabledForSAMLSetting(anyString(), anyString(), anyBoolean());
+    doReturn(Response.success(new RestResponse<>(true))).when(request).execute();
+    final String testSAMLId = "testSAMLSSOId";
+    authenticationSettingsServiceImpl.updateAuthenticationForSAMLSetting(ACCOUNT_ID, testSAMLId, Boolean.TRUE);
+    verify(managerClient, times(1)).updateAuthenticationEnabledForSAMLSetting(ACCOUNT_ID, testSAMLId, true);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testDeleteSamlMetadata_SSOId() throws IOException {
+    final String testSAMLId = "testSAMLSSOId";
+    Call<RestResponse<SamlSettings>> request = mock(Call.class);
+    doReturn(request).when(managerClient).getSAMLMetadata(ACCOUNT_ID, testSAMLId);
+    RestResponse<SamlSettings> mockResponse = new RestResponse<>(samlSettings);
+    doReturn(Response.success(mockResponse)).when(request).execute();
+    List<String> userGroups = new ArrayList<>();
+    doReturn(userGroups).when(userGroupService).getUserGroupsBySsoId(ACCOUNT_ID, testSAMLId);
+    SSOConfig ssoConfig = SSOConfig.builder().accountId(ACCOUNT_ID).build();
+    Call<RestResponse<SSOConfig>> config = mock(Call.class);
+    doReturn(config).when(managerClient).deleteSAMLMetadata(ACCOUNT_ID, testSAMLId);
+    RestResponse<SSOConfig> mockConfig = new RestResponse<>(ssoConfig);
+    doReturn(Response.success(mockConfig)).when(config).execute();
+    SSOConfig expectedConfig = authenticationSettingsServiceImpl.deleteSAMLMetadata(ACCOUNT_ID, testSAMLId);
+    assertNotNull(expectedConfig);
+    assertThat(expectedConfig.getAccountId()).isEqualTo(ACCOUNT_ID);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void getSAMLLoginTest_SamlSSOId() throws IOException {
+    final String testSAMLId = "testSAMLSSOId";
+    LoginTypeResponse response =
+        LoginTypeResponse.builder().authenticationMechanism(AuthenticationMechanism.SAML).isOauthEnabled(false).build();
+    Call<RestResponse<LoginTypeResponse>> request = mock(Call.class);
+    doReturn(request).when(managerClient).getSAMLLoginTestV2(ACCOUNT_ID, testSAMLId);
+    RestResponse<LoginTypeResponse> mockResponse = new RestResponse<>(response);
+    doReturn(Response.success(mockResponse)).when(request).execute();
+    LoginTypeResponse loginTypeResponse = authenticationSettingsServiceImpl.getSAMLLoginTestV2(ACCOUNT_ID, testSAMLId);
+    assertNotNull(loginTypeResponse);
+    assertThat(loginTypeResponse.getAuthenticationMechanism()).isEqualTo(AuthenticationMechanism.SAML);
+    assertThat(loginTypeResponse.isOauthEnabled()).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testSAMLSettingAuthenticationCanNotBeDisabled() throws IOException {
+    String uuid = "someRandomTestUUID";
+    Call<RestResponse<SSOConfig>> ssoConfigRequest = mock(Call.class);
+    doReturn(ssoConfigRequest).when(managerClient).getAccountAccessManagementSettingsV2(anyString());
+    SamlSettings samlSettings = SamlSettings.builder()
+                                    .accountId(ACCOUNT_ID)
+                                    .friendlySamlName("testSAMLFriendlyName")
+                                    .ssoType(SSOType.SAML)
+                                    .logoutUrl("http://dummy.logout.url")
+                                    .build();
+    samlSettings.setUuid(uuid);
+    List<SSOSettings> settings = new ArrayList<>();
+    settings.add(samlSettings);
+    SSOConfig config = SSOConfig.builder()
+                           .accountId(ACCOUNT_ID)
+                           .authenticationMechanism(AuthenticationMechanism.SAML)
+                           .ssoSettings(settings)
+                           .build();
+
+    RestResponse<SSOConfig> mockSSOConfigRes = new RestResponse<>(config);
+    doReturn(Response.success(mockSSOConfigRes)).when(ssoConfigRequest).execute();
+
+    assertThatThrownBy(
+        () -> authenticationSettingsServiceImpl.updateAuthenticationForSAMLSetting(ACCOUNT_ID, uuid, Boolean.FALSE))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format(
+            "SAML setting with SSO Id %s can not be disabled for authentication, as account's %s current authentication mechanism is SAML, "
+                + "and this is the only SAML setting with authentication setting enabled. Please enable authentication on other configured SAML"
+                + " setting(s) first or switch account authentication mechanism to other before disabling authentication for this SAML.",
+            uuid, ACCOUNT_ID));
   }
 }

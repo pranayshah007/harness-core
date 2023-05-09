@@ -105,14 +105,40 @@ public interface AuthSettingsManagerClient {
       @Part("entityIdentifier") RequestBody entityIdentifier, @Part("samlProviderType") RequestBody samlProviderType,
       @Part("clientId") RequestBody clientId, @Part("clientSecret") RequestBody clientSecret);
 
+  @Multipart
+  @PUT(API_PREFIX + "sso/saml-idp-metadata-upload-sso-id")
+  Call<RestResponse<SSOConfig>> updateSAMLMetadata(@Query("accountId") String accountId,
+      @Query("samlSSOId") String samlSSOId, @Part MultipartBody.Part uploadedInputStream,
+      @Part("displayName") RequestBody displayName, @Part("groupMembershipAttr") RequestBody groupMembershipAttr,
+      @Part("authorizationEnabled") RequestBody authorizationEnabled, @Part("logoutUrl") RequestBody logoutUrl,
+      @Part("entityIdentifier") RequestBody entityIdentifier, @Part("samlProviderType") RequestBody samlProviderType,
+      @Part("clientId") RequestBody clientId, @Part("clientSecret") RequestBody clientSecret,
+      @Part("friendlySamlName") RequestBody friendlySamlAppName);
+
   @DELETE(API_PREFIX + "sso/delete-saml-idp-metadata")
   Call<RestResponse<SSOConfig>> deleteSAMLMetadata(@Query("accountId") String accountIdentifier);
+
+  @DELETE(API_PREFIX + "sso/delete-saml-idp-metadata-sso-id")
+  Call<RestResponse<SSOConfig>> deleteSAMLMetadata(
+      @Query("accountId") String accountIdentifier, @Query("samlSSOId") String samlSSOId);
 
   @GET(API_PREFIX + "sso/get-saml-settings")
   Call<RestResponse<SamlSettings>> getSAMLMetadata(@Query("accountId") String accountIdentifier);
 
+  @GET(API_PREFIX + "sso/get-saml-settings-sso-id")
+  Call<RestResponse<SamlSettings>> getSAMLMetadata(
+      @Query("accountId") String accountIdentifier, @Query("samlSSOId") String samlSSOId);
+
+  @PUT(API_PREFIX + "sso/update-saml-setting-authentication")
+  Call<RestResponse<Boolean>> updateAuthenticationEnabledForSAMLSetting(@Query("accountId") @NotEmpty String accountId,
+      @Query("samlSSOId") @NotEmpty String samlSSOId, @Query("enable") boolean enable);
+
   @GET(API_PREFIX + "sso/saml-login-test")
   Call<RestResponse<LoginTypeResponse>> getSAMLLoginTest(@Query("accountId") @NotEmpty String accountIdentifier);
+
+  @GET(API_PREFIX + "sso/v2/saml-login-test")
+  Call<RestResponse<LoginTypeResponse>> getSAMLLoginTestV2(
+      @Query("accountId") @NotEmpty String accountIdentifier, @Query("samlSSOId") @NotEmpty String samlSSOId);
 
   @PUT(API_PREFIX + "user/two-factor-admin-override-settings")
   Call<RestResponse<Boolean>> setTwoFactorAuthAtAccountLevel(@Query("accountId") @NotEmpty String accountId,

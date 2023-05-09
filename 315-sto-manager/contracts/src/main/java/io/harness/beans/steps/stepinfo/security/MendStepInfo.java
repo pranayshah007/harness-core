@@ -24,9 +24,13 @@ import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
+@SuperBuilder
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @JsonTypeName("Mend")
 @JsonIgnoreProperties(ignoreUnknown = true)

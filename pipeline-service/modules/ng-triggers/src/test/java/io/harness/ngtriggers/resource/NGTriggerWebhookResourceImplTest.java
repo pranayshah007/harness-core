@@ -130,7 +130,7 @@ public class NGTriggerWebhookResourceImplTest extends CategoryTest {
     TriggerWebhookEvent eventEntity = triggerWebhookEventBuilder.build();
     when(ngTriggerElementMapper.toNGTriggerWebhookEventForCustom(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(triggerWebhookEventBuilder);
-    doNothing().when(triggerWebhookValidator).applyValidationsForCustomWebhook(any());
+    doNothing().when(triggerWebhookValidator).applyValidationsForCustomWebhook(any(), any());
     when(ngTriggerService.addEventToQueue(any())).thenReturn(eventEntity);
     ResponseDTO<String> response = ngTriggerWebhookConfigResource.processWebhookEvent(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, triggerIdentifier, "payload", headers);
@@ -155,10 +155,46 @@ public class NGTriggerWebhookResourceImplTest extends CategoryTest {
     TriggerWebhookEvent eventEntity = triggerWebhookEventBuilder.build();
     when(ngTriggerElementMapper.toNGTriggerWebhookEventForCustom(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(triggerWebhookEventBuilder);
-    doNothing().when(triggerWebhookValidator).applyValidationsForCustomWebhook(any());
+    doNothing().when(triggerWebhookValidator).applyValidationsForCustomWebhook(any(), any());
     when(ngTriggerService.addEventToQueue(any())).thenReturn(eventEntity);
     ResponseDTO<NGProcessWebhookResponseDTO> response = ngTriggerWebhookConfigResource.processWebhookEventV2(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, triggerIdentifier, "payload", headers);
+    assertThat(response.getData().getEventCorrelationId()).isEqualTo(executionUuid);
+    String expectedApiUrl = format("%sgateway/pipeline/api/webhook/triggerExecutionDetails/%s?accountIdentifier=%s",
+        "base_ui_url/", executionUuid, accountIdentifier);
+    assertThat(response.getData().getApiUrl()).isEqualTo(expectedApiUrl);
+    String expectedUiUrl = format("%sng/#/account/%s/cd/orgs/%s/projects/%s/deployments?pipelineIdentifier=%s&page=0",
+        "base_ui_url/", accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier);
+    assertThat(response.getData().getUiUrl()).isEqualTo(expectedUiUrl);
+    String expectedUiSetupUrl = format("%sng/#/account/%s/cd/orgs/%s/projects/%s/pipelines/%s/pipeline-studio/",
+        "base_ui_url/", accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier);
+    assertThat(response.getData().getUiSetupUrl()).isEqualTo(expectedUiSetupUrl);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testProcessWebhookEventV3() {
+    HttpHeaders headers = mock(HttpHeaders.class);
+    when(headers.getRequestHeaders()).thenReturn(new MultivaluedHashMap<>());
+    doReturn("base_ui_url/").when(urlHelper).getBaseUrl(any());
+    String executionUuid = "executionUuid";
+    String webhookToken = "webhookToken";
+    TriggerWebhookEventBuilder triggerWebhookEventBuilder = TriggerWebhookEvent.builder()
+                                                                .accountId(accountIdentifier)
+                                                                .orgIdentifier(orgIdentifier)
+                                                                .projectIdentifier(projectIdentifier)
+                                                                .pipelineIdentifier(pipelineIdentifier)
+                                                                .triggerIdentifier(triggerIdentifier)
+                                                                .uuid(executionUuid);
+    TriggerWebhookEvent eventEntity = triggerWebhookEventBuilder.build();
+    when(ngTriggerElementMapper.toNGTriggerWebhookEventForCustom(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(triggerWebhookEventBuilder);
+    doNothing().when(triggerWebhookValidator).applyValidationsForCustomWebhook(any(), any());
+    when(ngTriggerService.addEventToQueue(any())).thenReturn(eventEntity);
+    ResponseDTO<NGProcessWebhookResponseDTO> response =
+        ngTriggerWebhookConfigResource.processWebhookEventV3(webhookToken, accountIdentifier, orgIdentifier,
+            projectIdentifier, pipelineIdentifier, triggerIdentifier, "payload", headers);
     assertThat(response.getData().getEventCorrelationId()).isEqualTo(executionUuid);
     String expectedApiUrl = format("%sgateway/pipeline/api/webhook/triggerExecutionDetails/%s?accountIdentifier=%s",
         "base_ui_url/", executionUuid, accountIdentifier);

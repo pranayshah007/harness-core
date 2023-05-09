@@ -16,12 +16,15 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.ModuleType;
+import io.harness.beans.licensing.api.ActiveDevelopersDTO;
 import io.harness.beans.licensing.api.CILicenseHistoryDTO;
 import io.harness.beans.licensing.api.CILicenseType;
 import io.harness.beans.licensing.api.CILicenseUsageDTO;
 import io.harness.category.element.UnitTests;
 import io.harness.licensing.CILicenseUsageImpl;
 import io.harness.licensing.usage.beans.ReferenceDTO;
+import io.harness.licensing.usage.params.DefaultPageableUsageRequestParams;
+import io.harness.licensing.usage.utils.PageableUtils;
 import io.harness.rule.Owner;
 import io.harness.timescaledb.TimeScaleDBService;
 
@@ -43,6 +46,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.stubbing.Answer;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 public class CILicenseUsageTest extends CategoryTest {
   private static final long DAY_IN_MS = 60 * 60 * 1000 * 24L;
@@ -152,5 +158,55 @@ public class CILicenseUsageTest extends CategoryTest {
     assertThat(result.getActiveCommitters().getReferences().size()).isEqualTo(3);
     assertThat(result.getActiveCommitters().getReferences()).isEqualTo(List.of(user0, user1, user2));
     assertThat(result.getCiLicenseType()).isEqualTo(CILicenseType.DEVELOPERS);
+  }
+
+  @Test
+  @Owner(developers = JAMIE)
+  @Category(UnitTests.class)
+  public void testListLicenseUsage() throws SQLException {
+    final int[] count = {0};
+    when(resultSet.next()).then((Answer<Boolean>) invocation -> {
+      if (count[0] <= 2) {
+        count[0]++;
+        return true;
+      }
+      return false;
+    });
+    when(resultSet.getString("moduleinfo_author_id")).then((Answer<String>) invocation -> "developerID" + count[0] % 2);
+    when(resultSet.getString("projectidentifier")).then((Answer<String>) invocation -> "project" + count[0]);
+    when(resultSet.getString("orgidentifier")).then((Answer<String>) invocation -> "org" + count[0]);
+
+    long time = System.currentTimeMillis();
+    ActiveDevelopersDTO user0 = ActiveDevelopersDTO.builder()
+                                    .identifier("developerID1")
+                                    .projectIdentifier("project1")
+                                    .orgIdentifier("org1")
+                                    .lastBuild(0)
+                                    .timestamp(time)
+                                    .build();
+    ActiveDevelopersDTO user1 = ActiveDevelopersDTO.builder()
+                                    .identifier("developerID0")
+                                    .projectIdentifier("project2")
+                                    .orgIdentifier("org2")
+                                    .lastBuild(0)
+                                    .timestamp(time)
+                                    .build();
+    ActiveDevelopersDTO user2 = ActiveDevelopersDTO.builder()
+                                    .identifier("developerID1")
+                                    .projectIdentifier("project3")
+                                    .orgIdentifier("org3")
+                                    .lastBuild(0)
+                                    .timestamp(time)
+                                    .build();
+    Pageable pageRequest = PageableUtils.getPageRequest(
+        1, 30, List.of("lastBuild,ASC", "projectIdentifier,DESC"), Sort.by(Sort.Direction.DESC, "identifier"));
+    DefaultPageableUsageRequestParams requestParams =
+        DefaultPageableUsageRequestParams.builder().pageRequest(pageRequest).build();
+
+    Page<ActiveDevelopersDTO> result = ciLicenseUsage.listLicenseUsage("accountId", ModuleType.CI, time, requestParams);
+    assertThat(result.getContent().size()).isEqualTo(3);
+    assertThat(result.getContent().get(0)).isEqualTo(user0);
+    assertThat(result.getContent().get(1)).isEqualTo(user1);
+    assertThat(result.getContent().get(2)).isEqualTo(user2);
   }
 }

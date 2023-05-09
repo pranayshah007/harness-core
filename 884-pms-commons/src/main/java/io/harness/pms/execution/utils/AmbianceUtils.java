@@ -29,17 +29,20 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.strategy.StrategyValidationUtils;
 
 import com.cronutils.utils.StringUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -430,8 +433,33 @@ public class AmbianceUtils {
     return new AutoLogContext(logContextMap, OVERRIDE_NESTS);
   }
 
+  public String getFQNUsingLevels(@NotNull List<Level> levels) {
+    List<String> fqnList = new ArrayList<>();
+    for (Level level : levels) {
+      // Strategy level also handled. Strategy identifier will not come is skipExpressionChain will be true.
+      if (YamlUtils.shouldIncludeInQualifiedName(
+              level.getIdentifier(), level.getSetupId(), level.getSkipExpressionChain())) {
+        fqnList.add(level.getIdentifier());
+      }
+    }
+    return String.join(".", fqnList);
+  }
   public boolean isRollbackModeExecution(Ambiance ambiance) {
     ExecutionMode executionMode = ambiance.getMetadata().getExecutionMode();
     return executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK || executionMode == ExecutionMode.PIPELINE_ROLLBACK;
+  }
+
+  public String getStageExecutionIdForExecutionMode(Ambiance ambiance) {
+    if (isRollbackModeExecution(ambiance)) {
+      return ambiance.getOriginalStageExecutionIdForRollbackMode();
+    }
+    return ambiance.getStageExecutionId();
+  }
+
+  public String getPlanExecutionIdForExecutionMode(Ambiance ambiance) {
+    if (isRollbackModeExecution(ambiance)) {
+      return ambiance.getMetadata().getOriginalPlanExecutionIdForRollbackMode();
+    }
+    return ambiance.getPlanExecutionId();
   }
 }

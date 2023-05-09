@@ -61,7 +61,6 @@ import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.integrationstage.K8InitializeServiceUtils;
 import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
-import io.harness.ci.states.CIDelegateTaskExecutor;
 import io.harness.ci.utils.CIStagePlanCreationUtils;
 import io.harness.ci.validation.CIAccountValidationService;
 import io.harness.ci.validation.CIYAMLSanitizationService;
@@ -89,6 +88,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.ngexception.CILiteEngineException;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.hsqs.client.api.HsqsClientService;
 import io.harness.hsqs.client.model.EnqueueRequest;
@@ -393,13 +393,16 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+
+    InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
+    validateFeatureFlags(initializeStepInfo, accountIdentifier);
+
     ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
     String principal = executionPrincipalInfo.getPrincipal();
     if (EmptyPredicate.isEmpty(principal)) {
       return;
     }
 
-    InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
     List<EntityDetail> connectorsEntityDetails =
         getConnectorIdentifiers(initializeStepInfo, accountIdentifier, projectIdentifier, orgIdentifier);
 
@@ -408,7 +411,6 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
       pipelineRbacHelper.checkRuntimePermissions(ambiance, connectorsEntityDetails, true);
     }
 
-    validateFeatureFlags(initializeStepInfo, accountIdentifier);
     validateConnectors(
         initializeStepInfo, connectorsEntityDetails, accountIdentifier, orgIdentifier, projectIdentifier);
     sanitizeExecution(initializeStepInfo, accountIdentifier);
@@ -566,6 +568,10 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     Map<String, StrategyExpansionData> strategyExpansionMap = new HashMap<>();
 
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+
+    if (licensesWithSummaryDTO == null) {
+      throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+    }
     Optional<Integer> maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT));
     if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE
         && ciStagePlanCreationUtils.isHostedInfra(initializeStepInfo.getInfrastructure())) {

@@ -22,9 +22,11 @@ import io.harness.engine.executions.retry.RetryHistoryResponseDto;
 import io.harness.engine.executions.retry.RetryInfo;
 import io.harness.engine.executions.retry.RetryLatestExecutionResponseDto;
 import io.harness.engine.executions.retry.RetryStageInfo;
+import io.harness.engine.executions.retry.RetryStagesMetadataDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.RetryStagesMetadata;
 import io.harness.execution.StagesExecutionMetadata;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.plan.IdentityPlanNode;
@@ -436,7 +438,7 @@ public class RetryExecutionHelper {
         .build();
   }
 
-  public RetryHistoryResponseDto getRetryHistory(String rootParentId) {
+  public RetryHistoryResponseDto getRetryHistory(String rootParentId, String currentPlanExecutionId) {
     try (CloseableIterator<PipelineExecutionSummaryEntity> iterator =
              pmsExecutionSummaryRespository.fetchPipelineSummaryEntityFromRootParentIdUsingSecondaryMongo(
                  rootParentId)) {
@@ -448,11 +450,28 @@ public class RetryExecutionHelper {
         return RetryHistoryResponseDto.builder().errorMessage("Nothing to show in retry history").build();
       }
       String latestRetryExecutionId = executionInfos.get(0).getUuid();
-      return RetryHistoryResponseDto.builder()
-          .executionInfos(executionInfos)
-          .latestExecutionId(latestRetryExecutionId)
-          .build();
+      RetryStagesMetadata retryStagesMetadata =
+          planExecutionMetadataService.getRetryStagesMetadata(currentPlanExecutionId);
+      if (retryStagesMetadata != null) {
+        return RetryHistoryResponseDto.builder()
+            .executionInfos(executionInfos)
+            .latestExecutionId(latestRetryExecutionId)
+            .retryStagesMetadata(toRetryStagesMetadataDTO(retryStagesMetadata))
+            .build();
+      } else {
+        return RetryHistoryResponseDto.builder()
+            .executionInfos(executionInfos)
+            .latestExecutionId(latestRetryExecutionId)
+            .build();
+      }
     }
+  }
+
+  private RetryStagesMetadataDTO toRetryStagesMetadataDTO(RetryStagesMetadata retryStagesMetadata) {
+    return RetryStagesMetadataDTO.builder()
+        .retryStagesIdentifier(retryStagesMetadata.getRetryStagesIdentifier())
+        .skipStagesIdentifier(retryStagesMetadata.getSkipStagesIdentifier())
+        .build();
   }
 
   private List<Node> getIdentityNodeForStrategyNodes(List<Node> planNodes, List<NodeExecution> nodeExecutions) {

@@ -75,9 +75,10 @@ public class CustomStageYamlSchemaServiceImpl implements CustomStageYamlSchemaSe
     Map<String, Boolean> featureRestrictionsMap =
         featureRestrictionsGetter.getFeatureRestrictionsAvailability(yamlSchemaWithDetailsList, accountIdentifier);
 
+    // false is added to support cross service steps schema
     if (yamlSchemaWithDetailsList != null) {
       YamlSchemaUtils.addOneOfInExecutionWrapperConfig(customStageSchema.get(DEFINITIONS_NODE),
-          yamlSchemaWithDetailsList, ModuleType.PMS, enabledFeatureFlags, featureRestrictionsMap);
+          yamlSchemaWithDetailsList, ModuleType.PMS, enabledFeatureFlags, featureRestrictionsMap, false);
     }
 
     ObjectMapper mapper = SchemaGeneratorUtils.getObjectMapperForSchemaGeneration();

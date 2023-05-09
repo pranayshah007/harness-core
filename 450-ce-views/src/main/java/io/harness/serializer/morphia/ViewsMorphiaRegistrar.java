@@ -15,6 +15,7 @@ import io.harness.ccm.views.entities.CEViewFolder;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.entities.RuleEnforcement;
 import io.harness.ccm.views.entities.RuleExecution;
+import io.harness.ccm.views.entities.RuleRecommendation;
 import io.harness.ccm.views.entities.RuleSet;
 import io.harness.ccm.views.entities.ViewCustomField;
 import io.harness.morphia.MorphiaRegistrar;
@@ -37,6 +38,7 @@ public class ViewsMorphiaRegistrar implements MorphiaRegistrar {
     set.add(Rule.class);
     set.add(RuleEnforcement.class);
     set.add(RuleExecution.class);
+    set.add(RuleRecommendation.class);
   }
 
   @Override

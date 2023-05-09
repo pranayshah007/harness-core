@@ -7,6 +7,7 @@
 
 package io.harness.freeze.service.impl;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.data.structure.EmptyPredicate;
@@ -18,6 +19,7 @@ import io.harness.exception.DuplicateEntityException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.ngexception.NGFreezeException;
 import io.harness.freeze.beans.FreezeStatus;
+import io.harness.freeze.beans.FreezeWindow;
 import io.harness.freeze.beans.response.FreezeErrorResponseDTO;
 import io.harness.freeze.beans.response.FreezeResponseDTO;
 import io.harness.freeze.beans.response.FreezeResponseWrapperDTO;
@@ -30,6 +32,7 @@ import io.harness.freeze.entity.FreezeConfigEntity.FreezeConfigEntityKeys;
 import io.harness.freeze.entity.FrozenExecution;
 import io.harness.freeze.helpers.FreezeFilterHelper;
 import io.harness.freeze.helpers.FreezeServiceHelper;
+import io.harness.freeze.helpers.FreezeTimeUtils;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.notifications.NotificationHelper;
 import io.harness.freeze.service.FreezeCRUDService;
@@ -173,12 +176,30 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
     return NGFreezeDtoMapper.prepareFreezeResponseDto(updatedFreezeConfigEntity);
   }
 
-  private void updateNextIterations(FreezeConfigEntity freezeConfigEntity) {
-    freezeConfigEntity.setNextIterations(new ArrayList<>());
+  @Override
+  public FreezeConfigEntity updateExistingFreezeConfigEntity(FreezeConfigEntity freezeConfigEntity) {
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+      FreezeConfigEntity newFreezeConfigEntity = freezeConfigRepository.save(freezeConfigEntity);
+      return newFreezeConfigEntity;
+    }));
+  }
+  public void updateNextIterations(FreezeConfigEntity freezeConfigEntity) {
     if (freezeConfigEntity.getStatus().equals(FreezeStatus.ENABLED)) {
-      freezeConfigEntity.setNextIterations(
-          freezeConfigEntity.recalculateNextIterations(FreezeConfigEntityKeys.nextIterations, true, 0));
+      freezeConfigEntity.setNextIteration(recalculateNextIterations(freezeConfigEntity));
     }
+  }
+
+  private Long recalculateNextIterations(FreezeConfigEntity freezeConfigEntity) {
+    if (freezeConfigEntity.getStatus().equals(FreezeStatus.ENABLED)) {
+      FreezeConfig freezeConfig = NGFreezeDtoMapper.toFreezeConfig(freezeConfigEntity.getYaml());
+      FreezeInfoConfig freezeInfoConfig = freezeConfig.getFreezeInfoConfig();
+      List<FreezeWindow> windows = freezeInfoConfig.getWindows();
+      List<Long> nextIterations = FreezeTimeUtils.fetchUpcomingTimeWindow(windows);
+      if (!isEmpty(nextIterations)) {
+        return nextIterations.get(0);
+      }
+    }
+    return null;
   }
 
   @Override
@@ -522,6 +543,12 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
           freezeConfigEntity.getProjectIdentifier(), freezeConfigEntity.getType(), freezeConfigEntity.getFreezeScope());
       freezeConfigEntity.setYaml(yaml);
       freezeConfigEntity.setStatus(freezeStatus);
+
+      if (FreezeStatus.ENABLED.equals(freezeStatus)) {
+        freezeConfigEntity.setShouldSendNotification(true);
+      } else {
+        freezeConfigEntity.setShouldSendNotification(false);
+      }
       updateNextIterations(freezeConfigEntity);
       FreezeConfigEntity finalFreezeConfigEntity = freezeConfigEntity;
       freezeConfigEntity = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {

@@ -37,6 +37,7 @@ import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.PlanExecutionMetadata.Builder;
+import io.harness.execution.RetryStagesMetadata;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.logging.AutoLogContext;
@@ -278,9 +279,16 @@ public class ExecutionHelper {
           pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef,
           OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
       planExecutionMetadataBuilder.expandedPipelineJson(expandedJson);
+      boolean isRetry = retryExecutionParameters.isRetry();
+      if (isRetry) {
+        planExecutionMetadataBuilder.retryStagesMetadata(
+            RetryStagesMetadata.builder()
+                .retryStagesIdentifier(retryExecutionParameters.getRetryStagesIdentifier())
+                .skipStagesIdentifier(retryExecutionParameters.getIdentifierOfSkipStages())
+                .build());
+      }
       PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataBuilder.build();
 
-      boolean isRetry = retryExecutionParameters.isRetry();
       // RetryExecutionInfo
       RetryExecutionInfo retryExecutionInfo = buildRetryInfo(isRetry, originalExecutionId);
       ExecutionMetadata executionMetadata = buildExecutionMetadata(pipelineEntity.getIdentifier(), moduleType,

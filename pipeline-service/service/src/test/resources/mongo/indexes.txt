@@ -135,6 +135,7 @@ triggersNG {"name": "nextIterations_1", "background": true} {"nextIterations": 1
 triggersNG {"name": "type_repoUrl", "background": true} {"type": 1, "metadata.webhook.git.connectorIdentifier": 1, "accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 triggersNG {"name": "unique_accountId_organizationIdentifier_projectIdentifier_identifier", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
 triggersNG {"name": "unique_accountId_organizationIdentifier_projectIdentifier_targetIdentifier_triggerType_identifier", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "targetIdentifier": 1, "targetType": 1, "identifier": 1}
+triggersNG {"name": "webhookToken_index", "background": true} {"customWebhookToken": 1}
 waitInstances {"name": "correlationIds_1", "background": true} {"correlationIds": 1}
 waitInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 waitInstances {"name": "waitingOnCorrelationIds_1", "background": true} {"waitingOnCorrelationIds": 1}

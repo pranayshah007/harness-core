@@ -18,6 +18,7 @@ import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
@@ -38,6 +39,7 @@ import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.filters.FilterCreatorHelper;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
+import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
@@ -63,6 +65,7 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
   @Inject private SimpleVisitorFactory simpleVisitorFactory;
   @Inject K8InitializeTaskUtils k8InitializeTaskUtils;
   @Inject ValidationUtils validationUtils;
+  @Inject private CILicenseService ciLicenseService;
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -78,6 +81,13 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
   public PipelineFilter getFilter(FilterCreationContext filterCreationContext, IntegrationStageNode stageNode) {
     log.info("Received filter creation request for integration stage {}", stageNode.getIdentifier());
     String accountId = filterCreationContext.getSetupMetadata().getAccountId();
+
+    LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+
+    if (licensesWithSummaryDTO == null) {
+      throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+    }
+
     String orgIdentifier = filterCreationContext.getSetupMetadata().getOrgId();
     String projectIdentifier = filterCreationContext.getSetupMetadata().getProjectId();
 

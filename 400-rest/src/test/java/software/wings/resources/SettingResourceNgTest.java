@@ -15,7 +15,7 @@ import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -189,8 +189,8 @@ public class SettingResourceNgTest extends WingsBaseTest {
     ArgumentCaptor<SecretText> argumentCaptor = ArgumentCaptor.forClass(SecretText.class);
 
     // Now try saving the secret with same name again.
-    SecretManagementException ex = assertThrows(SecretManagementException.class,
-        () -> { settingResourceNg.save(APP_ID, ACCOUNT_ID, attributeWithMetaCharPassword); });
-    assertThat(ex.getMessage()).isEqualTo("Secret with smtp-test-secret already exists");
+    assertThatThrownBy(() -> settingResourceNg.save(APP_ID, ACCOUNT_ID, attributeWithMetaCharPassword))
+        .isInstanceOf(SecretManagementException.class)
+        .hasMessage("Secret with smtp-test-secret already exists");
   }
 }

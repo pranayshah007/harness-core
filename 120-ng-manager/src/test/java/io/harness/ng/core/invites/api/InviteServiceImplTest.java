@@ -20,6 +20,7 @@ import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.UJJAWAL;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,6 +50,7 @@ import io.harness.ng.core.AccountOrgProjectHelper;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.dto.AccountDTO;
+import io.harness.ng.core.dto.UserInviteDTO;
 import io.harness.ng.core.invites.InviteType;
 import io.harness.ng.core.invites.JWTGeneratorUtils;
 import io.harness.ng.core.invites.api.impl.InviteServiceImpl;
@@ -658,6 +660,48 @@ public class InviteServiceImplTest extends CategoryTest {
     assertThat(notificationChannelArgumentCaptor.getValue().getTemplateId()).isEqualTo(EMAIL_INVITE_TEMPLATE_ID);
     assertThat(notificationChannelArgumentCaptor.getValue().getTemplateData().get(SHOULD_MAIL_CONTAIN_TWO_FACTOR_INFO))
         .isEqualTo("true");
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testUserCreation_scimUser() throws IOException {
+    when(ngUserService.getUserByEmail(eq(emailId), anyBoolean())).thenReturn(Optional.empty());
+    when(inviteRepository.findFirstByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndEmailAndDeletedFalse(
+             any(), any(), any(), any()))
+        .thenReturn(Optional.empty());
+    Call<RestResponse<Boolean>> ffCall = mock(Call.class);
+    when(accountClient.checkAutoInviteAcceptanceEnabledForAccount(any())).thenReturn(ffCall);
+    when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
+    Invite invite = Invite.builder()
+                        .accountIdentifier("accountId")
+                        .approved(true)
+                        .email("primaryEmail")
+                        .name("displayName")
+                        .givenName("givenName")
+                        .familyName("familyName")
+                        .externalId("externalId")
+                        .accountIdentifier(accountIdentifier)
+                        .orgIdentifier(orgIdentifier)
+                        .projectIdentifier(projectIdentifier)
+                        .inviteType(InviteType.SCIM_INITIATED_INVITE)
+                        .id(inviteId)
+                        .roleBindings(getDummyRoleBinding())
+                        .build();
+    when(inviteRepository.save(any())).thenReturn(invite);
+    ArgumentCaptor<UserInviteDTO> argumentCaptor = ArgumentCaptor.forClass(UserInviteDTO.class);
+    ArgumentCaptor<Boolean> argumentCaptor1 = ArgumentCaptor.forClass(Boolean.class);
+    ArgumentCaptor<Boolean> argumentCaptor2 = ArgumentCaptor.forClass(Boolean.class);
+    Call<RestResponse<Boolean>> userCall = mock(Call.class);
+    when(userClient.createUserAndCompleteNGInvite(
+             argumentCaptor.capture(), argumentCaptor1.capture(), argumentCaptor2.capture()))
+        .thenReturn(userCall);
+    when(userCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
+    inviteService.create(invite, true, false);
+    assertThat(argumentCaptor1.getValue()).isEqualTo(true);
+    assertThat(argumentCaptor2.getValue()).isEqualTo(false);
+    assertThat(argumentCaptor.getValue().getName()).isEqualTo("displayName");
+    assertThat(argumentCaptor.getValue().getEmail()).isEqualTo("primaryEmail");
   }
 
   @Test

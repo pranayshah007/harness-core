@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -88,6 +89,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.Assertions;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -1017,5 +1019,15 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
 
     Assertions.assertDoesNotThrow(() -> pmsInputSetServiceMock.validateInputSetSetting(inputSet, pipeline));
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testApplyGitXSettingsIfApplicable() {
+    pmsInputSetService.applyGitXSettingsIfApplicable(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    InOrder inOrder = inOrder(gitXSettingsHelper);
+    inOrder.verify(gitXSettingsHelper).setConnectorRefForRemoteEntity(any(), any(), any());
+    inOrder.verify(gitXSettingsHelper).setDefaultStoreTypeForEntities(any(), any(), any(), any());
   }
 }

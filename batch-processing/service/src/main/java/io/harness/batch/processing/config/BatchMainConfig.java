@@ -71,6 +71,7 @@ public class BatchMainConfig {
   @JsonProperty(defaultValue = "false") private boolean isClickHouseEnabled;
   @JsonProperty("recommendationConfig") private RecommendationConfig recommendationConfig;
   @JsonProperty("governanceConfig") private GovernanceConfig governanceConfig;
+  @JsonProperty("azureVmPricingConfig") private ServiceHttpClientConfig azureVmPricingConfig;
 
   public List<String> getDbAliases() {
     List<String> dbAliases = new ArrayList<>();

@@ -91,25 +91,23 @@ public class FQNHelper {
     toBeRemovedFQNs.forEach(templateMap::remove);
   }
 
-  public void removeProperties(Map<FQN, Object> templateMap, Set<String> stageIdentifiersWithCloneEnabled) {
+  public void removeProperties(
+      Map<FQN, Object> templateMap, List<String> stageIdentifiers, List<String> stageIdentifiersWithCloneEnabled) {
     if (EmptyPredicate.isEmpty(stageIdentifiersWithCloneEnabled)) {
       return;
     }
-    boolean removeProperties = true;
-    for (FQN key : templateMap.keySet()) {
-      String stageIdentifier = key.getStageIdentifier();
-      if (EmptyPredicate.isNotEmpty(stageIdentifier) && stageIdentifiersWithCloneEnabled.contains(stageIdentifier)) {
-        removeProperties = false;
-        break;
-      }
-    }
-    if (removeProperties) {
+    stageIdentifiers.retainAll(stageIdentifiersWithCloneEnabled);
+    if (stageIdentifiers.isEmpty()) {
       Set<FQN> toBeRemovedFQNs =
           templateMap.keySet()
               .stream()
               .filter(key
-                  -> key.getFqnList().size() >= 2
-                      && key.getFqnList().get(1).getKey().equals(YAMLFieldNameConstants.PROPERTIES))
+                  -> (key.getFqnList().size() >= 2
+                         && key.getFqnList().get(1).getKey().equals(YAMLFieldNameConstants.PROPERTIES))
+                      || (key.getFqnList().size() > 3
+                          && key.getFqnList().get(1).getKey().equals(YAMLFieldNameConstants.TEMPLATE)
+                          && key.getFqnList().get(2).getKey().equals(YAMLFieldNameConstants.TEMPLATE_INPUTS)
+                          && key.getFqnList().get(3).getKey().equals(YAMLFieldNameConstants.PROPERTIES)))
               .collect(Collectors.toSet());
       toBeRemovedFQNs.forEach(templateMap::remove);
     }

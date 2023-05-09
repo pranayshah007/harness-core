@@ -2441,7 +2441,7 @@ public class UserServiceImpl implements UserService {
             .build();
     ssoSettingService.saveOauthSettings(oauthSettings);
     log.info("Setting authentication mechanism as oauth for account id: {}", accountId);
-    ssoService.setAuthenticationMechanism(accountId, AuthenticationMechanism.OAUTH);
+    ssoService.setAuthenticationMechanism(accountId, AuthenticationMechanism.OAUTH, false);
   }
 
   @Override

@@ -74,6 +74,7 @@ import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.infrastructure.services.impl.InfrastructureYamlSchemaHelper;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -143,6 +144,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   @Inject private StrategyHelper strategyHelper;
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
+  @Inject private InfrastructureYamlSchemaHelper infrastructureYamlSchemaHelper;
 
   @Override
   public Class<InfrastructureTaskExecutableStepV2Params> getStepParametersClass() {
@@ -386,10 +388,24 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     if (ParameterField.isNotNull(stepParameters.getInfraInputs())
         && isNotEmpty(stepParameters.getInfraInputs().getValue())) {
       String mergedYaml = mergeInfraInputs(infrastructureEntity.getYaml(), stepParameters.getInfraInputs().getValue());
+
       infrastructureEntity.setYaml(mergedYaml);
     }
 
-    return InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity);
+    return getInfrastructureConfig(infrastructureEntity);
+  }
+
+  private InfrastructureConfig getInfrastructureConfig(InfrastructureEntity infrastructureEntity) {
+    try {
+      return InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity);
+    } catch (Exception ex) {
+      infrastructureYamlSchemaHelper.validateSchema(
+          infrastructureEntity.getAccountId(), infrastructureEntity.getYaml());
+      log.error(String.format(
+          "Infrastructure schema validation succeeded but failed to convert yaml to Infrastructure config [%s]",
+          infrastructureEntity.getIdentifier()));
+      throw ex;
+    }
   }
 
   private Optional<InstancesOutcome> publishInfraOutput(NGLogCallback logCallback, ServiceStepOutcome serviceOutcome,
