@@ -660,6 +660,6 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     InOrder inOrder = inOrder(gitXSettingsHelper);
     inOrder.verify(gitXSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
     inOrder.verify(gitXSettingsHelper).setConnectorRefForRemoteEntity(any(), any(), any());
-    inOrder.verify(gitXSettingsHelper).setDefaultStoreTypeForEntities(any(), any(), any());
+    inOrder.verify(gitXSettingsHelper).setDefaultStoreTypeForEntities(any(), any(), any(), any());
   }
 }

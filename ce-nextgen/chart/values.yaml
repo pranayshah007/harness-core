@@ -1,0 +1,186 @@
+# Default values for ce-nextgen
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  loadbalancerURL: "https://test"
+  database:
+    postgres:
+      ## - installed = true if installed within cluster
+      installed: true
+      ## - protocol to use for connection
+      protocol: postgres
+      ## - host array for external
+      hosts:
+        - postgres:5432
+      ## - secret name containing external values
+      secretName: ""
+      ## - key within secret containing username
+      userKey: ""
+      ## - key within secret containing password
+      passwordKey: ""
+      ## - extra arguments set to connection string
+      extraArgs: ""
+    mongo:
+      installed: true
+      protocol: mongodb
+      # --  provide default values if mongo.installed is set to false
+      hosts: []
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
+      extraArgs: ""
+    timescaledb:
+      installed: true
+      protocol: "jdbc:postgresql"
+      # --  provide default values if mongo.installed is set to false
+      hosts:
+        - timescaledb-single-chart:5432
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
+      extraArgs: ""
+  ingress:
+    enabled: false
+    className: harness
+    hosts:
+      - my-host.example.org
+    tls:
+      enabled: true
+      secretName: ''
+  istio:
+    enabled: false
+    gateway:
+      create: false
+    virtualService:
+      gateways:
+      hosts:
+  # image pull secrets to use for every image
+  imagePullSecrets: []
+  stackDriverLoggingEnabled: false
+  ccm:
+    gcpProjectId: "placeHolder"
+
+replicaCount: 2
+
+
+maxSurge: 100%
+
+maxUnavailable: 0
+
+java:
+  memory: "4096m"
+  memoryLimit: "4096m"
+
+image:
+  registry: docker.io
+  repository: harness/ce-nextgen-signed
+  pullPolicy: IfNotPresent
+# Overrides the image tag whose default is the chart appVersion.
+  tag: "78700-000"
+  digest: ""
+# image pull secrets to use for ce-nextgen image
+  imagePullSecrets: []
+
+imageClickhouseEnabled:
+  registry: docker.io
+  repository: harness/ce-nextgen-signed
+  pullPolicy: Always
+# Overrides the image tag whose default is the chart appVersion.
+  tag: "78700-000"
+  digest: ""
+# image pull secrets to use for ce-nextgen image
+  imagePullSecrets: []
+
+waitForInitContainer:
+  image:
+    registry: docker.io
+    repository: harness/helm-init-container
+    pullPolicy: IfNotPresent
+    tag: "latest"
+    digest: ""
+  # image pull secrets to use for helm-init-container image
+    imagePullSecrets: []
+
+mongoSecrets:
+  userName:
+    name: harness-secrets
+    key: mongodbUsername
+  password:
+    name: mongodb-replicaset-chart
+    key: mongodb-root-password
+
+timescaleSecret:
+  password:
+    name: harness-secrets
+    key: timescaledbPostgresPassword
+
+awsSecret:
+  AWS_ACCESS_KEY: ""
+  AWS_SECRET_KEY: ""
+  AWS_ACCOUNT_ID: ""
+  AWS_DESTINATION_BUCKET: ""
+  AWS_TEMPLATE_LINK: ""
+  CE_AWS_TEMPLATE_URL: ""
+
+ceng-gcp-credentials: ""
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: false
+  annotations: {}
+  name: "harness-default"
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 6340
+
+ingress:
+  className: nginx
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 80
+# targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+cloudProviderConfig:
+  AZURE_APP_CLIENT_ID: "0211763d-24fb-4d63-865d-92f86f77e908"
+  AWS_GOV_CLOUD_ACCOUNT_ID: "147449478367"
+  AWS_GOV_CLOUD_REGION_NAME: "us-gov-west-1"
+  AWS_GOV_CLOUD_TEMPLATE_LINK: "https://continuous-efficiency.s3.us-east-2.amazonaws.com/setup/v1/ng/HarnessAWSTemplate.yaml"
+  GCP_SERVICE_ACCOUNT_EMAIL: "placeHolder"
+
+clickhouse:
+  enabled: false
+  username: "default"
+  password:
+    name: clickhouse
+    key: admin-password
+
+workloadIdentity:
+  enabled: false
+
+resources:
+  limits:
+    cpu: 1
+    memory: "4Gi"
+  requests:
+    cpu: 1
+    memory: "4Gi"
+
+additionalConfigs: {}

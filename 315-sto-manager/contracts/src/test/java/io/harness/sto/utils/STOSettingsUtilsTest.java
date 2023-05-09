@@ -14,21 +14,47 @@ import static io.harness.sto.utils.STOSettingsUtils.getSTOPluginEnvVariables;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 
+import io.harness.beans.steps.stepinfo.security.AwsEcrStepInfo;
 import io.harness.beans.steps.stepinfo.security.BlackDuckStepInfo;
+import io.harness.beans.steps.stepinfo.security.CustomIngestStepInfo;
+import io.harness.beans.steps.stepinfo.security.FossaStepInfo;
 import io.harness.beans.steps.stepinfo.security.MendStepInfo;
+import io.harness.beans.steps.stepinfo.security.MetasploitStepInfo;
+import io.harness.beans.steps.stepinfo.security.NmapStepInfo;
+import io.harness.beans.steps.stepinfo.security.ProwlerStepInfo;
 import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlAdvancedSettings;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlArgs;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlAuth;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlBlackduckToolData;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlImage;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlIngestion;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlInstance;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlLog;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlTarget;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.serializer.JsonUtils;
+import io.harness.yaml.sto.variables.STOYamlCustomIngestConfig;
 import io.harness.yaml.sto.variables.STOYamlGenericConfig;
-import io.harness.yaml.sto.variables.STOYamlImageType;
+import io.harness.yaml.sto.variables.STOYamlLogLevel;
+import io.harness.yaml.sto.variables.STOYamlLogSerializer;
+import io.harness.yaml.sto.variables.STOYamlMetasploitConfig;
+import io.harness.yaml.sto.variables.STOYamlNmapConfig;
+import io.harness.yaml.sto.variables.STOYamlProwlerConfig;
 import io.harness.yaml.sto.variables.STOYamlScanMode;
+import io.harness.yaml.sto.variables.STOYamlTargetType;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Charsets;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
-import java.util.HashMap;
+import com.google.common.io.Resources;
+import java.io.IOException;
+import java.net.URL;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
@@ -36,30 +62,158 @@ import org.junit.experimental.categories.Category;
 
 @Slf4j
 public class STOSettingsUtilsTest {
-  static final String PRODUCT_NAME = "product_name";
+  private static final String PRODUCT_NAME = "product_name";
+  private static final String INGESTION_FILE_NAME = "/tmp/test.json";
+  private static final String WORKSPACE = "/tmp";
+  private static final String TARGET_NAME = "test";
+  private static final String TARGET_VARIANT = "variant";
+  private static final String ACCESS_ID = "accessId";
+  private static final String ACCESS_TOKEN = "accessToken";
+  private static final String ACCESS_REGION = "us-east-1";
+  private static final String ACCESS_DOMAIN = "test.io";
+  private static final String INSTANCE_PATH = "/path";
+  private static final String INSTANCE_PROTOCOL = "https";
+  private static final Integer INSTANCE_PORT = 443;
+  private static final String CLI_PARAMS = "--test";
+  private static final String IMAGE_NAME = "image-test";
+  private static final String IMAGE_TAG = "latest";
 
   @Test
   @Owner(developers = SERGEY)
   @Category(UnitTests.class)
-  public void getBlackDuckEnvVariablesTest() {
-    BlackDuckStepInfo emptyStep = new BlackDuckStepInfo();
-    STOYamlImage imageData = new STOYamlImage();
-    imageData.setType(STOYamlImageType.AWS_ECR);
+  public void getBlackDuckEnvVariablesTest() throws IOException {
+    BlackDuckStepInfo step =
+        BlackDuckStepInfo.builder()
+            .mode(STOYamlScanMode.ORCHESTRATION)
+            .target(createTarget(STOYamlTargetType.REPOSITORY, TARGET_NAME, TARGET_VARIANT, WORKSPACE))
+            .ingestion(createIngestionSettings(INGESTION_FILE_NAME))
+            .advanced(createAdvancedSettings(STOYamlLogSerializer.BASIC, STOYamlLogLevel.DEBUG, CLI_PARAMS, ""))
+            .auth(createAuthSettings())
+            .image(createImageSettings())
+            .tool(createBDHToolData())
+            .config(STOYamlGenericConfig.DEFAULT)
+            .build();
 
-    emptyStep.setImage(imageData);
-    assertContainerScanEnvVariables(emptyStep);
+    assertEnvVariables(step, getExpectedValue("bdh_repository.json"));
   }
 
   @Test
   @Owner(developers = SERGEY)
   @Category(UnitTests.class)
-  public void getMendEnvVariablesTest() {
-    MendStepInfo emptyStep = new MendStepInfo();
-    STOYamlImage imageData = new STOYamlImage();
-    imageData.setType(STOYamlImageType.AWS_ECR);
+  public void getMendEnvVariablesTest() throws IOException {
+    MendStepInfo step =
+        MendStepInfo.builder()
+            .mode(STOYamlScanMode.ORCHESTRATION)
+            .target(createTarget(STOYamlTargetType.CONTAINER, TARGET_NAME, TARGET_VARIANT, WORKSPACE))
+            .ingestion(createIngestionSettings(INGESTION_FILE_NAME))
+            .advanced(createAdvancedSettings(STOYamlLogSerializer.BASIC, STOYamlLogLevel.DEBUG, CLI_PARAMS, ""))
+            .auth(createAuthSettings())
+            .image(createImageSettings())
+            .config(STOYamlGenericConfig.DEFAULT)
+            .build();
 
-    emptyStep.setImage(imageData);
-    assertContainerScanEnvVariables(emptyStep);
+    assertEnvVariables(step, getExpectedValue("mend_repository.json"));
+  }
+
+  @Test
+  @Owner(developers = SERGEY)
+  @Category(UnitTests.class)
+  public void getFossaEnvVariablesTest() throws IOException {
+    FossaStepInfo step =
+        FossaStepInfo.builder()
+            .mode(STOYamlScanMode.ORCHESTRATION)
+            .target(createTarget(STOYamlTargetType.REPOSITORY, TARGET_NAME, TARGET_VARIANT, WORKSPACE))
+            .ingestion(createIngestionSettings(INGESTION_FILE_NAME))
+            .advanced(createAdvancedSettings(STOYamlLogSerializer.BASIC, STOYamlLogLevel.DEBUG, CLI_PARAMS, ""))
+            .auth(createAuthSettings())
+            .config(STOYamlGenericConfig.DEFAULT)
+            .build();
+
+    assertEnvVariables(step, getExpectedValue("fossa_repository.json"));
+  }
+
+  @Test
+  @Owner(developers = SERGEY)
+  @Category(UnitTests.class)
+  public void getAwsEcrEnvVariablesTest() throws IOException {
+    AwsEcrStepInfo step =
+        AwsEcrStepInfo.builder()
+            .mode(STOYamlScanMode.ORCHESTRATION)
+            .target(createTarget(STOYamlTargetType.CONTAINER, TARGET_NAME, TARGET_VARIANT, WORKSPACE))
+            .ingestion(createIngestionSettings(INGESTION_FILE_NAME))
+            .advanced(createAdvancedSettings(STOYamlLogSerializer.BASIC, STOYamlLogLevel.DEBUG, CLI_PARAMS, ""))
+            .auth(createAuthSettings())
+            .image(createImageSettings())
+            .config(STOYamlGenericConfig.DEFAULT)
+            .build();
+
+    assertEnvVariables(step, getExpectedValue("awsecr.json"));
+  }
+
+  @Test
+  @Owner(developers = SERGEY)
+  @Category(UnitTests.class)
+  public void getProwlerEnvVariablesTest() throws IOException {
+    ProwlerStepInfo step =
+        ProwlerStepInfo.builder()
+            .mode(STOYamlScanMode.ORCHESTRATION)
+            .target(createTarget(STOYamlTargetType.CONFIGURATION, TARGET_NAME, TARGET_VARIANT, WORKSPACE))
+            .ingestion(createIngestionSettings(INGESTION_FILE_NAME))
+            .advanced(createAdvancedSettings(STOYamlLogSerializer.BASIC, STOYamlLogLevel.DEBUG, CLI_PARAMS, ""))
+            .auth(createAuthSettings())
+            .config(STOYamlProwlerConfig.HIPAA)
+            .build();
+
+    assertEnvVariables(step, getExpectedValue("prowler.json"));
+  }
+
+  @Test
+  @Owner(developers = SERGEY)
+  @Category(UnitTests.class)
+  public void getNmapEnvVariablesTest() throws IOException {
+    NmapStepInfo step =
+        NmapStepInfo.builder()
+            .mode(STOYamlScanMode.ORCHESTRATION)
+            .target(createTarget(STOYamlTargetType.INSTANCE, TARGET_NAME, TARGET_VARIANT, WORKSPACE))
+            .ingestion(createIngestionSettings(INGESTION_FILE_NAME))
+            .advanced(createAdvancedSettings(STOYamlLogSerializer.BASIC, STOYamlLogLevel.DEBUG, CLI_PARAMS, ""))
+            .instance(createInstanceSettings())
+            .config(STOYamlNmapConfig.EXPLOIT)
+            .build();
+
+    assertEnvVariables(step, getExpectedValue("nmap.json"));
+  }
+  @Test
+  @Owner(developers = SERGEY)
+  @Category(UnitTests.class)
+  public void getCustomIngestEnvVariablesTest() throws IOException {
+    CustomIngestStepInfo step =
+        CustomIngestStepInfo.builder()
+            .mode(STOYamlScanMode.ORCHESTRATION)
+            .target(createTarget(STOYamlTargetType.INSTANCE, TARGET_NAME, TARGET_VARIANT, WORKSPACE))
+            .ingestion(createIngestionSettings(INGESTION_FILE_NAME))
+            .advanced(createAdvancedSettings(STOYamlLogSerializer.BASIC, STOYamlLogLevel.DEBUG, CLI_PARAMS, ""))
+            .config(STOYamlCustomIngestConfig.SARIF)
+            .build();
+
+    assertEnvVariables(step, getExpectedValue("customingest.json"));
+  }
+
+  @Test
+  @Owner(developers = SERGEY)
+  @Category(UnitTests.class)
+  public void getMetasploitEnvVariablesTest() throws IOException {
+    MetasploitStepInfo step =
+        MetasploitStepInfo.builder()
+            .mode(STOYamlScanMode.ORCHESTRATION)
+            .target(createTarget(STOYamlTargetType.INSTANCE, TARGET_NAME, TARGET_VARIANT, WORKSPACE))
+            .ingestion(createIngestionSettings(INGESTION_FILE_NAME))
+            .advanced(createAdvancedSettings(STOYamlLogSerializer.BASIC, STOYamlLogLevel.DEBUG, CLI_PARAMS, ""))
+            .instance(createInstanceSettings())
+            .config(STOYamlMetasploitConfig.WEAK_SSH)
+            .build();
+
+    assertEnvVariables(step, getExpectedValue("metasploit.json"));
   }
 
   @Test
@@ -69,28 +223,101 @@ public class STOSettingsUtilsTest {
     assertEquals(getSTOKey(PRODUCT_NAME), "SECURITY_PRODUCT_NAME");
   }
 
-  private void assertContainerScanEnvVariables(STOGenericStepInfo emptyStep) {
-    STOYamlAdvancedSettings advanced = new STOYamlAdvancedSettings();
-    advanced.setIncludeRaw(ParameterField.createValueField(true));
-    emptyStep.setAdvanced(advanced);
+  private static STOYamlBlackduckToolData createBDHToolData() {
+    return STOYamlBlackduckToolData.builder()
+        .projectName(ParameterField.createValueField("project"))
+        .projectVersion(ParameterField.createValueField("version"))
+        .build();
+  }
 
-    Map<String, String> actual = getSTOPluginEnvVariables(emptyStep, "1");
-    Map<String, String> expected = new HashMap<>();
-    expected.put(getSTOKey("product_config_name"), STOYamlGenericConfig.DEFAULT.getYamlName());
-    expected.put(getSTOKey("policy_type"), STOYamlScanMode.ORCHESTRATION.getPluginName());
-    expected.put(getSTOKey(PRODUCT_NAME), emptyStep.getProductName());
-    expected.put(getSTOKey("include_raw"), "true");
-    expected.put(getSTOKey("container_type"), STOYamlImageType.AWS_ECR.getYamlName());
-    expected.put(getSTOKey("fail_on_severity"), "0");
+  private static STOYamlInstance createInstanceSettings() {
+    return STOYamlInstance.builder()
+        .accessId(ParameterField.createValueField(ACCESS_ID))
+        .accessToken(ParameterField.createValueField(ACCESS_TOKEN))
+        .path(ParameterField.createValueField(INSTANCE_PATH))
+        .port(ParameterField.createValueField(INSTANCE_PORT))
+        .protocol(ParameterField.createValueField(INSTANCE_PROTOCOL))
+        .domain(ParameterField.createValueField(ACCESS_DOMAIN))
+        .build();
+  }
+
+  private static STOYamlAuth createAuthSettings() {
+    return STOYamlAuth.builder()
+        .accessId(ParameterField.createValueField(ACCESS_ID))
+        .accessToken(ParameterField.createValueField(ACCESS_TOKEN))
+        .region(ParameterField.createValueField(ACCESS_REGION))
+        .domain(ParameterField.createValueField(ACCESS_DOMAIN))
+        .ssl(ParameterField.createValueField(Boolean.FALSE))
+        .build();
+  }
+
+  private static STOYamlImage createImageSettings() {
+    return STOYamlImage.builder()
+        .accessId(ParameterField.createValueField(ACCESS_ID))
+        .accessToken(ParameterField.createValueField(ACCESS_TOKEN))
+        .region(ParameterField.createValueField(ACCESS_REGION))
+        .domain(ParameterField.createValueField(ACCESS_DOMAIN))
+        .name(ParameterField.createValueField(IMAGE_NAME))
+        .tag(ParameterField.createValueField(IMAGE_TAG))
+        .build();
+  }
+
+  private static STOYamlIngestion createIngestionSettings(String file) {
+    return STOYamlIngestion.builder().file(ParameterField.createValueField(file)).build();
+  }
+
+  private static STOYamlAdvancedSettings createAdvancedSettings(
+      STOYamlLogSerializer serializer, STOYamlLogLevel level, String cliParams, String passthroughParams) {
+    return STOYamlAdvancedSettings.builder()
+        .log(createLogSettings(serializer, level))
+        .args(createArgsSettings(cliParams, passthroughParams))
+        .build();
+  }
+
+  private static STOYamlLog createLogSettings(STOYamlLogSerializer serializer, STOYamlLogLevel level) {
+    return STOYamlLog.builder().serializer(serializer).level(level).build();
+  }
+
+  private static STOYamlArgs createArgsSettings(String cliParams, String passthroughParams) {
+    return STOYamlArgs.builder()
+        .cli(ParameterField.createValueField(cliParams))
+        .passthrough(ParameterField.createValueField(passthroughParams))
+        .build();
+  }
+
+  private static STOYamlTarget createTarget(STOYamlTargetType type, String name, String variant, String workspace) {
+    return STOYamlTarget.builder()
+        .type(type)
+        .variant(ParameterField.createValueField(variant))
+        .name(ParameterField.createValueField(name))
+        .workspace(ParameterField.createValueField(workspace))
+        .build();
+  }
+
+  private static Map<String, String> getExpectedValue(String fileName) throws IOException {
+    ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    final URL testFile = classLoader.getResource(fileName);
+    String json = Resources.toString(testFile, Charsets.UTF_8);
+    JsonNode jsonNode = JsonUtils.asObject(json, JsonNode.class);
+    ObjectMapper mapper = new ObjectMapper();
+    return mapper.convertValue(jsonNode, new TypeReference<Map<String, String>>() {});
+  }
+
+  private static void assertEnvVariables(STOGenericStepInfo step, Map<String, String> expected) {
+    Map<String, String> actual = getSTOPluginEnvVariables(step, "1");
 
     MapDifference<String, String> difference = Maps.difference(actual, expected);
     if (!difference.entriesOnlyOnLeft().isEmpty()) {
-      log.error("Diff in actual: {}", difference.entriesOnlyOnLeft());
+      log.error("Diff keys in actual: {}", difference.entriesOnlyOnLeft());
     }
     if (!difference.entriesOnlyOnRight().isEmpty()) {
-      log.error("Diff in expected: {}", difference.entriesOnlyOnRight());
+      log.error("Diff keys in expected: {}", difference.entriesOnlyOnRight());
+    }
+    if (!difference.entriesDiffering().isEmpty()) {
+      log.error("Diff values: {}", difference.entriesDiffering());
     }
     assertTrue(difference.entriesOnlyOnLeft().isEmpty());
     assertTrue(difference.entriesOnlyOnRight().isEmpty());
+    assertTrue(difference.entriesDiffering().isEmpty());
   }
 }

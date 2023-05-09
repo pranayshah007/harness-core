@@ -25,6 +25,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_MOUNT_PATH
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.JAMES_RICKS;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
+import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 import static io.harness.yaml.extended.ci.codebase.Build.builder;
 
 import static java.util.Arrays.asList;
@@ -839,5 +840,105 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     String empty = "";
     assertThat(getRepoNameFromRepoUrl(empty)).isEqualTo("repository");
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testDlcSetupRequired() {
+    DockerStepInfo dockerStepInfo =
+        DockerStepInfo.builder()
+            .repo(ParameterField.createValueField("harness"))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .caching(ParameterField.createValueField(true))
+            .build();
+
+    assertThat(pluginSettingUtils.dlcSetupRequired(dockerStepInfo)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testGetDlcPrefix() {
+    String accountId = "test-account-id";
+    String repo = "harness";
+    DockerStepInfo dockerStepInfo =
+        DockerStepInfo.builder()
+            .repo(ParameterField.createValueField(repo))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .caching(ParameterField.createValueField(true))
+            .build();
+
+    String expectedPrefix = String.format("%s/%s/", accountId, repo);
+    String prefix = pluginSettingUtils.getDlcPrefix(accountId, "identifier", dockerStepInfo);
+    assertThat(expectedPrefix).isEqualTo(prefix);
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testSetupDlcArgs() {
+    String repo = "harness";
+    DockerStepInfo dockerStepInfo =
+        DockerStepInfo.builder()
+            .repo(ParameterField.createValueField(repo))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .caching(ParameterField.createValueField(true))
+            .build();
+
+    String cacheFrom = "cacheFromArg";
+    String cacheTo = "cacheToArg";
+    ParameterField expectedCacheFrom = ParameterField.createValueField(asList(cacheFrom));
+    ParameterField expectedCacheTo = ParameterField.createValueField(cacheTo);
+
+    pluginSettingUtils.setupDlcArgs(dockerStepInfo, "identifier", cacheFrom, cacheTo);
+    assertThat(expectedCacheFrom).isEqualTo(dockerStepInfo.getCacheFrom());
+    assertThat(expectedCacheTo).isEqualTo(dockerStepInfo.getCacheTo());
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testSetupDlcArgsWithCacheArgs() {
+    String repo = "harness";
+    String inputCacheFrom = "inputCacheFrom";
+    String inputCacheTo = "inputCacheTo";
+    DockerStepInfo dockerStepInfo =
+        DockerStepInfo.builder()
+            .repo(ParameterField.createValueField(repo))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .caching(ParameterField.createValueField(true))
+            .cacheFrom(ParameterField.createValueField(asList(inputCacheFrom)))
+            .cacheTo(ParameterField.createValueField(inputCacheTo))
+            .build();
+
+    String cacheFrom = "cacheFromArg";
+    String cacheTo = "cacheToArg";
+    ParameterField expectedCacheFrom = ParameterField.createValueField(asList(inputCacheFrom, cacheFrom));
+    ParameterField expectedCacheTo = ParameterField.createValueField(cacheTo);
+
+    pluginSettingUtils.setupDlcArgs(dockerStepInfo, "identifier", cacheFrom, cacheTo);
+    assertThat(expectedCacheFrom).isEqualTo(dockerStepInfo.getCacheFrom());
+    assertThat(expectedCacheTo).isEqualTo(dockerStepInfo.getCacheTo());
   }
 }

@@ -110,6 +110,7 @@ public interface Constants {
   String BITBUCKET_LOWER_CASE = "bitbucket";
 
   String TRIGGER_KEY = "triggerIdentifier";
+  String WEBHOOK_TOKEN = "webhookToken";
 
   String DOT_GIT = ".git";
   String MANIFEST = "Manifest";

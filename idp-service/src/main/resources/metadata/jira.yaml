@@ -1,0 +1,40 @@
+identifier: jira
+name: Jira
+description: View Jira summary for your projects in Backstage.
+createdBy: roadie.io
+category: Agile Planning
+source: https://roadie.io/backstage/plugins/jira/?utm_source=backstage.io&utm_medium=marketplace&utm_campaign=jira
+iconUrl: https://roadie.io/images/logos/jira.png
+imageUrl: ''
+config: |-
+  proxy:
+    '/jira/api':
+      target: <your-jira-url>
+      pathRewrite:
+        'api/proxy/jira/?': '/'
+      headers:
+        Authorization: ${JIRA_TOKEN}
+        Accept: 'application/json'
+        Content-Type: 'application/json'
+        X-Atlassian-Token: 'nocheck'
+        User-Agent: "MY-UA-STRING" 
+  
+  backend:
+    csp:
+      img-src: ["'self'", 'data:', 'JIRA_URL']
+environmentVariables:
+  - JIRA_TOKEN
+exports:
+  defaultEntityTypes:
+    - service
+  exportDetails:
+    - type: CARD
+      name: EntityJiraOverviewCard
+      addByDefault: true
+      layoutSchemaSpecs:
+        component: EntitySwitch
+        specs:
+          cases:
+            - if: isJiraAvailable
+              content:
+                component: EntityJiraOverviewCard

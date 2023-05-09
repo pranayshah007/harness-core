@@ -11,10 +11,13 @@ import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.PlanExecutionMetadata.PlanExecutionMetadataKeys;
 import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
 
 import com.google.inject.Inject;
+import java.util.Set;
 import net.jodah.failsafe.Failsafe;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -31,11 +34,16 @@ public class PlanExecutionMetadataRepositoryCustomImpl implements PlanExecutionM
     this.secondaryMongoTemplate = secondaryMongoTemplateHolder.getSecondaryMongoTemplate();
   }
 
-  @Override
-  public PlanExecutionMetadata getExecutionNotes(Criteria criteria) {
-    Query query = new Query(criteria);
-    query.fields().include("notes");
-    return secondaryMongoTemplate.findOne(query, PlanExecutionMetadata.class);
+  public PlanExecutionMetadata getWithFieldsIncluded(String planExecutionId, Set<String> fieldsToInclude) {
+    Query query = new Query(Criteria.where(PlanExecutionMetadataKeys.planExecutionId).is(planExecutionId));
+    for (String field : fieldsToInclude) {
+      query.fields().include(field);
+    }
+    PlanExecutionMetadata planExecutionMetadata = secondaryMongoTemplate.findOne(query, PlanExecutionMetadata.class);
+    if (planExecutionMetadata == null) {
+      throw new EntityNotFoundException("Plan Execution Metadata not found for planExecutionId: " + planExecutionId);
+    }
+    return planExecutionMetadata;
   }
 
   @Override

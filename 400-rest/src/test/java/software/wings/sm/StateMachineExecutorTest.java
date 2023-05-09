@@ -66,7 +66,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.RandomUtils.nextInt;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
@@ -1517,7 +1517,8 @@ public class StateMachineExecutorTest extends WingsBaseTest {
       List<ErrorMessage> messages = Collections.singletonList(new ErrorMessage(""));
       mapper.when(() -> MapperUtils.mapObject(Mockito.anyMap(), eq(target))).thenThrow(new MappingException(messages));
 
-      assertThrows(MappingException.class, () -> stateMachineExecutor.mapEntries(source, target, ACCOUNT_ID));
+      assertThatThrownBy(() -> stateMachineExecutor.mapEntries(source, target, ACCOUNT_ID))
+          .isInstanceOf(MappingException.class);
     }
   }
 

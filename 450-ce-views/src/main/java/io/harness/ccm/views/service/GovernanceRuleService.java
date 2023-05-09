@@ -30,5 +30,6 @@ public interface GovernanceRuleService {
   void validateAWSSchema(Rule rule);
   Set<ConnectorInfoDTO> getConnectorResponse(String accountId, Set<String> targetAccounts);
   List<ConnectorResponseDTO> getAWSConnectorWithTargetAccounts(List<String> accounts, String accountId);
+  String getSchema();
   String enqueueAdhoc(String accountId, GovernanceJobEnqueueDTO governanceJobEnqueueDTO);
 }

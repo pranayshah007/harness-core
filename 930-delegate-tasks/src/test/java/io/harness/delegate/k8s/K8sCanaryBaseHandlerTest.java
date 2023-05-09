@@ -12,6 +12,8 @@ import static io.harness.delegate.k8s.K8sTestConstants.CONFIG_MAP_YAML;
 import static io.harness.delegate.k8s.K8sTestConstants.DAEMON_SET_YAML;
 import static io.harness.delegate.k8s.K8sTestConstants.DEPLOYMENT_YAML;
 import static io.harness.delegate.k8s.K8sTestConstants.SECRET_YAML;
+import static io.harness.delegate.k8s.K8sTestConstants.SKIP_VERSIONING_CONFIG_MAP_YAML;
+import static io.harness.delegate.k8s.K8sTestConstants.SKIP_VERSIONING_SECRET_YAML;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Failed;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.InProgress;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_NUMBER_LABEL_KEY;
@@ -476,6 +478,13 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
     assertThat(k8sCanaryBaseHandler.appendSecretAndConfigMapNamesToCanaryWorkloads(
                    "test", List.of(kubernetesResources.get(2))))
         .isEqualTo("test");
+
+    kubernetesResources.addAll(ManifestHelper.processYaml(SKIP_VERSIONING_CONFIG_MAP_YAML));
+    kubernetesResources.addAll(ManifestHelper.processYaml(SKIP_VERSIONING_SECRET_YAML));
+
+    canaryResources =
+        k8sCanaryBaseHandler.appendSecretAndConfigMapNamesToCanaryWorkloads("ns/Deployment/test", kubernetesResources);
+    assertThat(canaryResources).isEqualTo("ns/Deployment/test,ns/ConfigMap/mycm,ns/Secret/mysecret");
   }
 
   private void assertInvalidWorkloadsInManifest(boolean result, String expectedMessage) throws Exception {

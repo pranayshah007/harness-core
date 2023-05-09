@@ -3,7 +3,7 @@ global:
   database:
     minio:
       installed: true
-    mongodb:
+    mongo:
       installed: true
     postgresql:
       installed: true

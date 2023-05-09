@@ -18,6 +18,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mockStatic;
 
 import io.harness.CategoryTest;
+import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
@@ -93,7 +94,8 @@ public class GitXSettingsHelperTest extends CategoryTest {
     GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(gitEntityInfo).build());
     doReturn(true).when(gitXSettingsHelper).isGitExperienceEnforcedInSettings(any(), any(), any());
 
-    gitXSettingsHelper.setDefaultStoreTypeForEntities(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    gitXSettingsHelper.setDefaultStoreTypeForEntities(
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER, EntityType.PIPELINES);
 
     GitEntityInfo gitEntityInfoProcessed = GitAwareContextHelper.getGitRequestParamsInfo();
     assertThat(gitEntityInfoProcessed.getStoreType()).isEqualTo(StoreType.REMOTE);
@@ -112,7 +114,27 @@ public class GitXSettingsHelperTest extends CategoryTest {
     ngRestUtilsMockedStatic.when(() -> NGRestUtils.getResponse(any()))
         .thenAnswer(invocationOnMock -> settingValueResponseDTO);
 
-    gitXSettingsHelper.setDefaultStoreTypeForEntities(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    gitXSettingsHelper.setDefaultStoreTypeForEntities(
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER, EntityType.INPUT_SETS);
+
+    GitEntityInfo gitEntityInfoProcessed = GitAwareContextHelper.getGitRequestParamsInfo();
+    assertThat(gitEntityInfoProcessed.getStoreType()).isEqualTo(StoreType.INLINE);
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testDefaultStoreTypeForInputSets() {
+    GitEntityInfo gitEntityInfo = GitEntityInfo.builder().build();
+    GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(gitEntityInfo).build());
+
+    SettingValueResponseDTO settingValueResponseDTO = SettingValueResponseDTO.builder().value("INLINE").build();
+    MockedStatic<NGRestUtils> ngRestUtilsMockedStatic = mockStatic(NGRestUtils.class);
+    ngRestUtilsMockedStatic.when(() -> NGRestUtils.getResponse(any()))
+        .thenAnswer(invocationOnMock -> settingValueResponseDTO);
+
+    gitXSettingsHelper.setDefaultStoreTypeForEntities(
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER, EntityType.TEMPLATE);
 
     GitEntityInfo gitEntityInfoProcessed = GitAwareContextHelper.getGitRequestParamsInfo();
     assertThat(gitEntityInfoProcessed.getStoreType()).isEqualTo(StoreType.INLINE);

@@ -26,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -54,6 +55,8 @@ import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.dto.TriggerYamlDiffDTO;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
+import io.harness.ngtriggers.beans.entity.metadata.BuildMetadata;
+import io.harness.ngtriggers.beans.entity.metadata.CustomMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.NGTriggerMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookRegistrationStatus;
@@ -73,9 +76,11 @@ import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.ngtriggers.beans.target.TargetType;
 import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
 import io.harness.ngtriggers.helpers.TriggerCatalogHelper;
+import io.harness.ngtriggers.helpers.TriggerSetupUsageHelper;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.service.impl.NGTriggerServiceImpl;
 import io.harness.ngtriggers.utils.PollingSubscriptionHelper;
+import io.harness.ngtriggers.utils.TriggerReferenceHelper;
 import io.harness.ngtriggers.validations.TriggerValidationHandler;
 import io.harness.ngtriggers.validations.ValidationResult;
 import io.harness.outbox.api.OutboxService;
@@ -97,6 +102,11 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.YamlPipelineUtils;
 
+import com.cronutils.model.Cron;
+import com.cronutils.model.CronType;
+import com.cronutils.model.definition.CronDefinitionBuilder;
+import com.cronutils.model.time.ExecutionTime;
+import com.cronutils.parser.CronParser;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -108,6 +118,7 @@ import com.google.common.io.Resources;
 import com.mongodb.client.result.DeleteResult;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -142,6 +153,8 @@ public class NGTriggerServiceImplTest extends CategoryTest {
   @Mock BuildTriggerHelper validationHelper;
   @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @Mock NGTriggerRepository ngTriggerRepository;
+  @Mock TriggerReferenceHelper triggerReferenceHelper;
+  @Mock TriggerSetupUsageHelper triggerSetupUsageHelper;
 
   @Mock OutboxService outboxService;
   @Mock ExecutorService executorService;
@@ -341,6 +354,44 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Cron expression contains 5 parts but we expect one of [6, 7]");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testCronTriggerWithFiringTimeDifferenceLessThan5Minutes() {
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder()
+            .ngTriggerEntity(NGTriggerEntity.builder().identifier("id").name("name").build())
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(
+                        NGTriggerSourceV2.builder()
+                            .type(NGTriggerType.SCHEDULED)
+                            .spec(ScheduledTriggerConfig.builder()
+                                      .type("Cron")
+                                      .spec(CronTriggerSpec.builder().type("UNIX").expression("0/4 0 * * *").build())
+                                      .build())
+                            .build())
+                    .build())
+            .build();
+    CronParser cronParser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.UNIX));
+    Cron cron = cronParser.parse("0/4 0 * * *");
+    ExecutionTime executionTime = ExecutionTime.forCron(cron);
+    Optional<ZonedDateTime> firstExecutionTimeOptional = executionTime.nextExecution(ZonedDateTime.now());
+    if (firstExecutionTimeOptional.isPresent()) {
+      ZonedDateTime firstExecutionTime = firstExecutionTimeOptional.get();
+      Optional<ZonedDateTime> secondExecutionTimeOptional = executionTime.nextExecution(firstExecutionTime);
+      if (secondExecutionTimeOptional.isPresent()) {
+        ZonedDateTime secondExecutionTime = secondExecutionTimeOptional.get();
+        assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails))
+            .isInstanceOf(InvalidArgumentsException.class)
+            .hasMessage(
+                "Cron interval must be greater than or equal to 5 minutes. The next two execution times when this trigger is suppose to fire are "
+                + firstExecutionTime.toLocalTime().toString() + " and " + secondExecutionTime.toLocalTime().toString()
+                + " which do not have a difference of 5 minutes between them.");
+      }
+    }
   }
 
   @Test
@@ -561,6 +612,47 @@ public class NGTriggerServiceImplTest extends CategoryTest {
                            -> ngTriggerServiceImpl.checkAuthorization(
                                ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, IDENTIFIER, headerConfigs))
         .isInstanceOf(AccessDeniedException.class);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testCreateCustomWebhookTrigger() {
+    when(pmsFeatureFlagService.isEnabled(anyString(), eq(FeatureName.CDS_ENABLE_TRIGGER_YAML_VALIDATION)))
+        .thenReturn(false);
+    ngTriggerMetadata = NGTriggerMetadata.builder()
+                            .webhook(WebhookMetadata.builder().custom(CustomMetadata.builder().build()).build())
+                            .build();
+    NGTriggerEntity ngTriggerEntity = NGTriggerEntity.builder()
+                                          .accountId(ACCOUNT_ID)
+                                          .orgIdentifier(ORG_IDENTIFIER)
+                                          .projectIdentifier(PROJ_IDENTIFIER)
+                                          .targetIdentifier(PIPELINE_IDENTIFIER)
+                                          .identifier(IDENTIFIER)
+                                          .name(NAME)
+                                          .targetType(TargetType.PIPELINE)
+                                          .type(NGTriggerType.WEBHOOK)
+                                          .metadata(ngTriggerMetadata)
+                                          .yaml(ngTriggerYamlWithGitSync)
+                                          .version(0L)
+                                          .build();
+    doReturn(ngTriggerEntity).when(ngTriggerRepository).save(any());
+    doReturn(ngTriggerEntity).when(ngTriggerRepository).updateValidationStatus(any(), any());
+    doReturn(Collections.emptyList()).when(triggerReferenceHelper).getReferences(any(), any());
+    doNothing().when(triggerSetupUsageHelper).publishSetupUsageEvent(any(), any());
+    ArgumentCaptor<NGTriggerEntity> entityAfterSave = ArgumentCaptor.forClass(NGTriggerEntity.class);
+    NGTriggerEntity createdEntity = ngTriggerServiceImpl.create(ngTriggerEntity);
+    verify(ngTriggerRepository, times(1)).save(entityAfterSave.capture());
+    assertThat(createdEntity).isNotNull();
+    assertThat(entityAfterSave.getValue().getCustomWebhookToken()).isNotNull();
+    ngTriggerEntity.setMetadata(NGTriggerMetadata.builder().buildMetadata(BuildMetadata.builder().build()).build());
+    ngTriggerEntity.setType(NGTriggerType.ARTIFACT);
+    ngTriggerEntity.setCustomWebhookToken(null);
+    ArgumentCaptor<NGTriggerEntity> entityAfterSave1 = ArgumentCaptor.forClass(NGTriggerEntity.class);
+    NGTriggerEntity createdEntity1 = ngTriggerServiceImpl.create(ngTriggerEntity);
+    verify(ngTriggerRepository, times(2)).save(entityAfterSave1.capture());
+    assertThat(createdEntity1).isNotNull();
+    assertThat(entityAfterSave1.getValue().getCustomWebhookToken()).isNull();
   }
 
   @Test

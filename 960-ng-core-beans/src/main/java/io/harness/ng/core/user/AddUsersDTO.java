@@ -8,6 +8,7 @@
 package io.harness.ng.core.user;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.invites.dto.RoleBinding;
@@ -15,6 +16,7 @@ import io.harness.ng.core.invites.dto.RoleBinding;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.ArrayList;
 import java.util.List;
 import javax.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -33,4 +35,11 @@ public class AddUsersDTO {
   @ApiModelProperty(required = true) @NotEmpty @Size(max = 100) List<String> emails;
   List<RoleBinding> roleBindings;
   List<String> userGroups;
+
+  public List<RoleBinding> getRoleBindings() {
+    if (isEmpty(roleBindings)) {
+      return new ArrayList<>();
+    }
+    return roleBindings;
+  }
 }

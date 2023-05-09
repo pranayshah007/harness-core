@@ -1887,7 +1887,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     ParameterNamespaceListVisitFromServerGetDeleteRecreateWaitApplicable resource =
         mock(ParameterNamespaceListVisitFromServerGetDeleteRecreateWaitApplicable.class);
     doReturn(resource).when(mockClient).load(any());
-    doReturn(asList(service1)).when(resource).get();
+    doReturn(asList(service1)).when(resource).items();
     VirtualService result = k8sTaskHelperBase.updateVirtualServiceManifestFilesWithRoutesForCanary(
         resources, KubernetesConfig.builder().build(), executionLogCallback);
     List<HTTPRouteDestination> routes = result.getSpec().getHttp().get(0).getRoute();

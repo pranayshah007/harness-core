@@ -1743,6 +1743,18 @@
                   "type": "string"
                 }
               ]
+            },
+            "stackName": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
@@ -1904,7 +1916,8 @@
               "type": "string",
               "enum": [
                 "maven",
-                "nuget"
+                "nuget",
+                "upack"
               ]
             },
             "project": {

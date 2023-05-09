@@ -10,6 +10,7 @@ package io.harness.engine.executions.plan;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.RetryStagesMetadata;
 
 import java.util.Optional;
 import java.util.Set;
@@ -27,6 +28,8 @@ public interface PlanExecutionMetadataService {
   void deleteMetadataForGivenPlanExecutionIds(Set<String> planExecutionIds);
 
   String getNotesForExecution(String planExecutionId);
+
+  RetryStagesMetadata getRetryStagesMetadata(String planExecutionId);
 
   String updateNotesForExecution(String planExecutionId, String notes);
 }

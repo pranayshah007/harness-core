@@ -1,0 +1,138 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ce-nextgen
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ce-nextgen.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{.Values.maxSurge}}
+      maxUnavailable: {{.Values.maxUnavailable}}
+  selector:
+    matchLabels:
+      {{- include "ce-nextgen.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: ce-nextgen
+        {{- include "ce-nextgen.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- include "ce-nextgen.pullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "ce-nextgen.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+    #waits only for mongo & timescale to start
+      {{- if .Values.global.database.mongo.installed }}
+      - name: wait-for-mongo
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=mongodb-replicaset"
+      {{- end }}    
+      - name: wait-for-timescale
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=timescaledb-single-chart"
+      containers:
+        - name: ce-nextgen
+          securityContext:
+            {{- toYaml .Values.securityContext | indent 12 }}
+          {{- if .Values.clickhouse.enabled }}
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.imageClickhouseEnabled "global" .Values.global) }}
+          {{- else }}
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          livenessProbe:
+            httpGet:
+              path: /ccm/api/health
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 30
+            failureThreshold: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /ccm/api/health
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 30
+            failureThreshold: 10
+            periodSeconds: 15
+          envFrom:
+            - configMapRef:
+                name: ce-nextgen
+            - secretRef:
+                name: ce-nextgen
+          env:
+            {{- include "harnesscommon.dbconnection.mongoEnv" . | nindent 12 }}
+            - name: EVENTS_MONGO_DB_URL
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "events" "context" $) }}
+            - name: NOTIFICATION_MONGO_URI
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "notifications" "context" $) }}
+            - name : TIMESCALEDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.timescaleSecret.password.name }}
+                  key: {{ .Values.timescaleSecret.password.key }}
+            - name : TIMESCALEDB_USERNAME
+              value: postgres
+            - name: TIMESCALEDB_URI
+              value: 'jdbc:postgresql://timescaledb-single-chart.{{ .Release.Namespace }}:5432/harness'
+            {{- if .Values.clickhouse.enabled }}
+            - name : CLICKHOUSE_USERNAME
+              value: {{ .Values.clickhouse.username | quote}}
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.clickhouse.password.name }}
+                  key: {{ .Values.clickhouse.password.key }}
+            {{- end }}
+          {{- if not .Values.workloadIdentity.enabled }}
+          volumeMounts:
+          - name: secret-mount
+            mountPath: /opt/harness/svc
+          {{- end }}
+      {{- if not .Values.workloadIdentity.enabled }}
+      volumes:
+      - name: secret-mount
+        secret:
+          secretName: ceng-secret-mount
+          items:
+          - key: ceng-gcp-credentials
+            path: ceng_gcp_credentials.json
+      {{- end }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - ce-nextgen
+            topologyKey: "kubernetes.io/hostname"
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

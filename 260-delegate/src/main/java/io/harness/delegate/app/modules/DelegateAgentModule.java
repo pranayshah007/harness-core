@@ -31,8 +31,6 @@ import io.harness.metrics.MetricRegistryModule;
 import io.harness.perpetualtask.PerpetualTaskWorkerModule;
 import io.harness.serializer.KryoModule;
 
-import software.wings.delegatetasks.k8s.client.KubernetesClientFactoryModule;
-
 import com.codahale.metrics.MetricRegistry;
 import com.google.inject.AbstractModule;
 import lombok.RequiredArgsConstructor;
@@ -73,7 +71,6 @@ public class DelegateAgentModule extends AbstractModule {
     configureCcmEventPublishing();
     install(new PerpetualTaskWorkerModule());
 
-    install(KubernetesClientFactoryModule.getInstance());
     install(KubernetesApiClientFactoryModule.getInstance());
     install(new CITaskFactoryModule());
     install(new DelegateModule(configuration));

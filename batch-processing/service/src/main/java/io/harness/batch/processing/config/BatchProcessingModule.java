@@ -28,6 +28,7 @@ import io.harness.batch.processing.tasklet.util.CurrencyPreferenceHelperImpl;
 import io.harness.ccm.CENGGraphQLModule;
 import io.harness.ccm.anomaly.service.impl.AnomalyServiceImpl;
 import io.harness.ccm.anomaly.service.itfc.AnomalyService;
+import io.harness.ccm.azurevmpricing.AzureVmPricingClientModule;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.bigQuery.BigQueryServiceImpl;
 import io.harness.ccm.budgetGroup.service.BudgetGroupService;
@@ -212,6 +213,7 @@ public class BatchProcessingModule extends AbstractModule {
         batchMainConfig.getCeNgServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
     install(new SecretNGManagerClientModule(batchMainConfig.getNgManagerServiceHttpClientConfig(),
         batchMainConfig.getNgManagerServiceSecret(), BATCH_PROCESSING.getServiceId()));
+    install(new AzureVmPricingClientModule(batchMainConfig.getAzureVmPricingConfig()));
     install(new AbstractTelemetryModule() {
       @Override
       public TelemetryConfiguration telemetryConfiguration() {

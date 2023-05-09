@@ -29,6 +29,7 @@ import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
@@ -314,8 +315,20 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
     List<SLIState> sliStates = Arrays.asList(BAD, GOOD, GOOD, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, BAD);
     createData(startTime, sliStates);
     double errorBudgetBurnRate = sliRecordService.getErrorBudgetBurnRate(
-        serviceLevelIndicator.getUuid(), Duration.ofMinutes(10).toMillis(), 120);
+        serviceLevelIndicator.getUuid(), Duration.ofMinutes(10).toMillis(), 120, null);
     assertThat(errorBudgetBurnRate).isCloseTo(3.333, offset(0.001));
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetErrorBudgetBurnRateWithBadMissingData() {
+    Instant startTime = Instant.parse("2020-07-27T10:50:00Z").minus(Duration.ofMinutes(20));
+    List<SLIState> sliStates = Arrays.asList(NO_DATA, GOOD, GOOD, GOOD, GOOD, GOOD, BAD, NO_DATA, NO_DATA, NO_DATA);
+    createData(startTime, sliStates);
+    double errorBudgetBurnRate = sliRecordService.getErrorBudgetBurnRate(
+        serviceLevelIndicator.getUuid(), Duration.ofMinutes(10).toMillis(), 120, SLIMissingDataType.BAD);
+    assertThat(errorBudgetBurnRate).isCloseTo(4.166, offset(0.001));
   }
 
   private void createData(Instant startTime, List<SLIState> sliStates) {

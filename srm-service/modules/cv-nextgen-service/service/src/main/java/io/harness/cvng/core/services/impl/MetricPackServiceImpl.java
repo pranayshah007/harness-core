@@ -77,6 +77,8 @@ public class MetricPackServiceImpl implements MetricPackService {
       "/cloudwatch/metric-packs/default-infra-pack.yaml", "/cloudwatch/metric-packs/default-custom-pack.yaml");
   static final List<String> SUMOLOGIC_METRICS_METRICPACK_FILES =
       Lists.newArrayList("/sumologic/metric-packs/default-custom-pack.yaml");
+  static final List<String> SIGNALFX_METRICS_METRICPACK_FILES =
+      Lists.newArrayList("/signalfx/metric-packs/default-custom-pack.yaml");
   private static final URL APPDYNAMICS_PERFORMANCE_PACK_DSL_PATH =
       MetricPackServiceImpl.class.getResource("/appdynamics/dsl/performance-pack.datacollection");
   public static final String APPDYNAMICS_PERFORMANCE_PACK_DSL;
@@ -134,6 +136,15 @@ public class MetricPackServiceImpl implements MetricPackService {
   public static final String SUMOLOGIC_DSL;
   public static final String SUMOLOGIC_LOG_SAMPLE_DSL;
   public static final String SUMOLOGIC_METRIC_SAMPLE_DSL;
+
+  private static final URL SIGNALFX_METRIC_DSL_PATH =
+      MetricPackServiceImpl.class.getResource("/signalfx/dsl/metric-collection.datacollection");
+  private static final URL SIGNALFX_METRIC_SAMPLE_DSL_PATH =
+      MetricPackServiceImpl.class.getResource("/signalfx/dsl/signalfx-metric-sample-data.datacollection");
+
+  public static final String SIGNALFX_DSL;
+
+  public static final String SIGNALFX_METRIC_SAMPLE_DSL;
   static {
     String appDPeformancePackDsl = null;
     String appDqualityPackDsl = null;
@@ -152,6 +163,8 @@ public class MetricPackServiceImpl implements MetricPackService {
     String sumologicDsl = null;
     String sumologicLogSampleDsl = null;
     String sumologicMetricSampleDsl = null;
+    String signalfxMetricSampleDsl = null;
+    String signalFXDsl = null;
     try {
       appDPeformancePackDsl = Resources.toString(APPDYNAMICS_PERFORMANCE_PACK_DSL_PATH, Charsets.UTF_8);
       appDqualityPackDsl = Resources.toString(APPDYNAMICS_QUALITY_PACK_DSL_PATH, Charsets.UTF_8);
@@ -170,6 +183,8 @@ public class MetricPackServiceImpl implements MetricPackService {
       sumologicDsl = Resources.toString(SUMOLOGIC_METRIC_DSL_PATH, Charsets.UTF_8);
       sumologicLogSampleDsl = Resources.toString(SUMOLOGIC_LOG_SAMPLE_DSL_PATH, Charsets.UTF_8);
       sumologicMetricSampleDsl = Resources.toString(SUMOLOGIC_METRIC_SAMPLE_DSL_PATH, Charsets.UTF_8);
+      signalfxMetricSampleDsl = Resources.toString(SIGNALFX_METRIC_SAMPLE_DSL_PATH, Charsets.UTF_8);
+      signalFXDsl = Resources.toString(SIGNALFX_METRIC_DSL_PATH, Charsets.UTF_8);
     } catch (Exception e) {
       // TODO: this should throw an exception but we risk delegate not starting up. We can remove this log term and
       // throw and exception once things stabilize
@@ -192,6 +207,8 @@ public class MetricPackServiceImpl implements MetricPackService {
     SUMOLOGIC_DSL = sumologicDsl;
     SUMOLOGIC_LOG_SAMPLE_DSL = sumologicLogSampleDsl;
     SUMOLOGIC_METRIC_SAMPLE_DSL = sumologicMetricSampleDsl;
+    SIGNALFX_DSL = signalFXDsl;
+    SIGNALFX_METRIC_SAMPLE_DSL = signalfxMetricSampleDsl;
   }
 
   @Inject private HPersistence hPersistence;
@@ -308,6 +325,9 @@ public class MetricPackServiceImpl implements MetricPackService {
         break;
       case SUMOLOGIC_METRICS:
         yamlFileNames.addAll(SUMOLOGIC_METRICS_METRICPACK_FILES);
+        break;
+      case SPLUNK_SIGNALFX_METRICS:
+        yamlFileNames.addAll(SIGNALFX_METRICS_METRICPACK_FILES);
         break;
       default:
         unhandled(dataSourceType);
@@ -452,6 +472,9 @@ public class MetricPackServiceImpl implements MetricPackService {
         break;
       case SUMOLOGIC_METRICS:
         metricPack.setDataCollectionDsl(SUMOLOGIC_DSL);
+        break;
+      case SPLUNK_SIGNALFX_METRICS:
+        metricPack.setDataCollectionDsl(SIGNALFX_DSL);
         break;
       default:
         throw new IllegalArgumentException("Invalid type " + dataSourceType);

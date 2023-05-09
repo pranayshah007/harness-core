@@ -602,7 +602,7 @@ public class DashboardServiceHelperTest {
   @Category(UnitTests.class)
   public void test_buildOpenTaskQuery() {
     String query =
-        "select pipeline_execution_summary_cd_id from service_infra_info where accountid = 'accountId' and orgidentifier = 'orgId' and projectidentifier = 'projectId' and service_id = 'serviceId' and service_startts > 1000";
+        "select DISTINCT ON(pipeline_execution_summary_cd_id) pipeline_execution_summary_cd_id, execution_failure_details from service_infra_info where accountid = 'accountId' and orgidentifier = 'orgId' and projectidentifier = 'projectId' and service_id = 'serviceId' and service_startts > 1000 order by pipeline_execution_summary_cd_id, service_endts DESC";
     assertThat(query).isEqualTo(
         DashboardServiceHelper.buildOpenTaskQuery(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, 1000l));
   }

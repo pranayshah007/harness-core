@@ -314,4 +314,15 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
     String accountId;
     String targetAccount;
   }
+  @Override
+  public String getSchema() {
+    try {
+      final ArrayList<String> schema = Lists.newArrayList("custodian", "schema", "--json");
+      return getProcessExecutor().command(schema).readOutput(true).execute().outputString();
+    } catch (IOException | TimeoutException e) {
+      throw new InvalidRequestException("Can not get schema");
+    } catch (InterruptedException e) {
+      throw new InvalidRequestException("InterruptedException", e);
+    }
+  }
 }

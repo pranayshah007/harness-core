@@ -47,6 +47,7 @@ import software.wings.utils.ExecutionLogWriter;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Bytes;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
@@ -212,9 +213,7 @@ public abstract class FileBasedAbstractWinRmExecutor {
     int exitCode = 0;
     if (disableCommandEncoding) {
       // Keep the temp script in working directory or in Temp is working directory is not set.
-      psScriptFile = config.getWorkingDirectory() == null
-          ? WINDOWS_TEMPFILE_LOCATION
-          : config.getWorkingDirectory() + "harness-" + this.config.getExecutionId() + ".ps1";
+      psScriptFile = config.getWorkingDirectory() == null ? WINDOWS_TEMPFILE_LOCATION : getPsScriptFile();
       exitCode =
           executeCommandsWithoutEncoding(session, outputWriter, errorWriter, command, bulkMode, psScriptFile, exitCode);
     } else {
@@ -229,6 +228,13 @@ public abstract class FileBasedAbstractWinRmExecutor {
     saveExecutionLog(format("%nCommand completed with ExitCode (%d)", exitCode), INFO);
 
     return commandExecutionStatus;
+  }
+
+  private String getPsScriptFile() {
+    String tmpPsScriptFileName = "harness-" + this.config.getExecutionId() + ".ps1";
+    return config.getWorkingDirectory().endsWith(File.separator)
+        ? config.getWorkingDirectory() + tmpPsScriptFileName
+        : config.getWorkingDirectory() + File.separator + tmpPsScriptFileName;
   }
 
   private int executeCommandsWithoutEncoding(WinRmSession session, ExecutionLogWriter outputWriter,

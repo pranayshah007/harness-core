@@ -8,6 +8,7 @@
 package io.harness.ng.core.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
@@ -15,11 +16,14 @@ import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.PHOENIKX;
 import static io.harness.rule.OwnerRule.VITALIE;
 
+import static java.util.List.of;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -27,6 +31,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.accesscontrol.NGAccessDeniedException;
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
@@ -493,5 +500,33 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
     Page<Secret> paginatedResult = secretServiceV2.getPaginatedResult(Arrays.asList(secret1, secret2, secret3), 1, 2);
     assertThat(paginatedResult.getContent().size()).isEqualTo(1);
     assertThat(paginatedResult.getContent()).isEqualTo(Arrays.asList(secret3));
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testGetPermittedUsingCheckForAccessOrThrow() {
+    Secret secret1 =
+        Secret.builder().name("name1").type(SecretType.SecretText).identifier("id1").createdAt((long) 2).build();
+
+    AccessCheckResponseDTO accessCheckResponseDTO =
+        AccessCheckResponseDTO.builder().accessControlList(of(AccessControlDTO.builder().build())).build();
+    when(accessControlClient.checkForAccessOrThrow(any())).thenReturn(accessCheckResponseDTO);
+
+    secretServiceV2.getPermitted(of(secret1));
+
+    verify(accessControlClient, times(1)).checkForAccessOrThrow(anyList());
+  }
+
+  @Test(expected = NGAccessDeniedException.class)
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testGetPermittedUsingCheckForAccessOrThrowAndGotException() {
+    Secret secret1 =
+        Secret.builder().name("name1").type(SecretType.SecretText).identifier("id1").createdAt((long) 2).build();
+
+    doThrow(NGAccessDeniedException.class).when(accessControlClient).checkForAccessOrThrow(any());
+
+    secretServiceV2.getPermitted(of(secret1));
   }
 }

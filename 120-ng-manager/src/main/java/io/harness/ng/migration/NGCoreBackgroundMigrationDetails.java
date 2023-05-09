@@ -15,6 +15,7 @@ import io.harness.ng.core.migration.CopyTemplatesPermissionRoleUpdate;
 import io.harness.ng.core.migration.NGWebhookMendateSettingsCategoryUpdateMigration;
 import io.harness.ng.core.migration.PopulateYamlFieldInNGEnvironmentMigration;
 import io.harness.ng.core.migration.background.AddDeploymentTypeToInfrastructureEntityMigration;
+import io.harness.ng.core.migration.background.AddServiceOverrideV2RelatedFieldsMigration;
 import io.harness.ng.core.migration.background.DeleteSoftDeletedConnectorsMigration;
 import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGJiraConnectorMigration;
 import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGServiceNowConnectorMigration;
@@ -53,6 +54,7 @@ public class NGCoreBackgroundMigrationDetails implements MigrationDetails {
         .add(Pair.of(11, UpdateEnvironmentRefValueInServiceOverrideNGMigration.class))
         .add(Pair.of(12, PopulateYamlFieldInNGEnvironmentMigration.class))
         .add(Pair.of(13, PopulateYamlFieldInNGServiceEntityMigration.class))
+        .add(Pair.of(14, AddServiceOverrideV2RelatedFieldsMigration.class))
         .build();
   }
 }

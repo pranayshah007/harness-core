@@ -30,7 +30,7 @@ dependencies:
     repository: https://charts.bitnami.com/bitnami
   - name: mongodb
     version: 13.1.2
-    condition: global.database.mongodb.installed
+    condition: global.database.mongo.installed
     repository: https://charts.bitnami.com/bitnami
   - name: timescaledb
     version: 0.2.x

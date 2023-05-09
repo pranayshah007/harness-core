@@ -35,6 +35,8 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -60,12 +62,14 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   @Mock private BackstageEnvVariableService backstageEnvVariableService;
 
   @Mock private NamespaceService namespaceService;
-
+  String env = "prod";
   @InjectMocks ConfigManagerServiceImpl configManagerServiceImpl;
 
   @Before
   public void setUp() {
     openMocks = MockitoAnnotations.openMocks(this);
+    configManagerServiceImpl = new ConfigManagerServiceImpl(env, appConfigRepository, mergedAppConfigRepository,
+        k8sClient, namespaceService, configEnvVariablesService, backstageEnvVariableService);
   }
 
   static final String TEST_ID = "test_id";

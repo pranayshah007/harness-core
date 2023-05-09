@@ -30,5 +30,6 @@ public class ServicePipelineWithRevertInfo {
   String deployedById;
   String deployedByName;
   long lastExecutedAt;
+  String failureDetail;
   boolean isRevertExecution;
 }
