@@ -68,6 +68,7 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -106,7 +107,8 @@ public class EcsPerpetualTaskExecutor implements PerpetualTaskExecutor {
   @Inject
   public EcsPerpetualTaskExecutor(AwsEcsHelperServiceDelegate ecsHelperServiceDelegate,
       AwsEc2HelperServiceDelegate ec2ServiceDelegate, EcsMetricClient ecsMetricClient, EventPublisher eventPublisher,
-      Clock clock, KryoSerializer kryoSerializer, KryoSerializer referenceFalseKryoSerializer) {
+      Clock clock, KryoSerializer kryoSerializer,
+      @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer) {
     this.ecsHelperServiceDelegate = ecsHelperServiceDelegate;
     this.ec2ServiceDelegate = ec2ServiceDelegate;
     this.ecsMetricClient = ecsMetricClient;

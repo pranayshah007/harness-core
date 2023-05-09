@@ -46,6 +46,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.gson.JsonSyntaxException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.protobuf.Timestamp;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
@@ -86,7 +87,7 @@ public class K8SWatchTaskExecutor implements PerpetualTaskExecutor {
   public K8SWatchTaskExecutor(EventPublisher eventPublisher, K8sWatchServiceDelegate k8sWatchServiceDelegate,
       ApiClientFactoryImpl apiClientFactory, KryoSerializer kryoSerializer,
       ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper, K8sConnectorHelper k8sConnectorHelper,
-      KryoSerializer referenceFalseKryoSerializer) {
+      @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer) {
     this.eventPublisher = eventPublisher;
     this.k8sWatchServiceDelegate = k8sWatchServiceDelegate;
     this.apiClientFactory = apiClientFactory;

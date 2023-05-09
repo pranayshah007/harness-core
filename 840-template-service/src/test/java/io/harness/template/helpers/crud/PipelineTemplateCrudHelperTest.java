@@ -8,6 +8,7 @@
 package io.harness.template.helpers.crud;
 
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.ACCOUNT_ID;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.ORG_ID;
 
@@ -22,6 +23,7 @@ import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
+import io.harness.eventsframework.schemas.entity.InfraDefinitionReferenceProtoDTO;
 import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.ng.core.template.TemplateEntityType;
@@ -87,6 +89,29 @@ public class PipelineTemplateCrudHelperTest extends TemplateServiceTestBase {
             .putMetadata(PreFlightCheckMetadata.FQN, "templateInputs.spec.connector")
             .build();
     assertThat(referredEntitiesWithModifiedFQNs.get(0).getIdentifierRef()).isNotNull().isEqualTo(expectedIdentifierRef);
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testConvertFQNsOfReferredEntitiesInfrastructure_StepTemplate() {
+    List<EntityDetailProtoDTO> referredEntitiesWithModifiedFQNs =
+        pipelineTemplateCrudHelper.correctFQNsOfReferredEntities(
+            Collections.singletonList(TemplateReferenceTestHelper.infrastructureEntityDetailProto_StepTemplate),
+            TemplateEntityType.STEP_TEMPLATE);
+
+    assertThat(referredEntitiesWithModifiedFQNs).isNotNull().hasSize(1);
+    assertThat(referredEntitiesWithModifiedFQNs.get(0)).isNotNull();
+    assertThat(referredEntitiesWithModifiedFQNs.get(0).getType()).isEqualTo(EntityTypeProtoEnum.INFRASTRUCTURE);
+
+    InfraDefinitionReferenceProtoDTO infraDefinitionRef =
+        TemplateReferenceTestHelper.infrastructureEntityDetailProto_StepTemplate.getInfraDefRef()
+            .toBuilder()
+            .clearMetadata()
+            .putMetadata(
+                PreFlightCheckMetadata.FQN, "templateInputs.stage.spec.environment.infrastructureDefinitions.infraid")
+            .build();
+    assertThat(referredEntitiesWithModifiedFQNs.get(0).getInfraDefRef()).isNotNull().isEqualTo(infraDefinitionRef);
   }
 
   @Test

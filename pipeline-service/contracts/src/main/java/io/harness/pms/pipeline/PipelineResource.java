@@ -404,7 +404,6 @@ public interface PipelineResource {
 
   @POST
   @Path("/import/{pipelineIdentifier}")
-  @Hidden
   @ApiOperation(value = "Get Pipeline YAML from Git Repository", nickname = "importPipeline")
   @Operation(operationId = "importPipeline", summary = "Get Pipeline YAML from Git Repository",
       responses =

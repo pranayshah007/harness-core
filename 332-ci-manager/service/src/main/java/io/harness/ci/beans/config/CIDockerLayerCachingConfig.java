@@ -22,4 +22,5 @@ public class CIDockerLayerCachingConfig {
   String bucket;
   String accessKey;
   String secretKey;
+  String region;
 }

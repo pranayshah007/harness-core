@@ -47,13 +47,17 @@ import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.resources.VerifyStepResourceImpl;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceDTO;
+import io.harness.cvng.core.services.impl.FeatureFlagServiceImpl;
 import io.harness.cvng.resources.VerifyStepResource;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.UserPrincipal;
 import io.harness.serializer.JsonUtils;
+import io.harness.telemetry.TelemetryReporter;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
@@ -75,11 +79,13 @@ import org.mockito.Mock;
 
 public class VerifyStepResourceImplTest extends CvNextGenTestBase {
   @Inject private Injector injector;
+  @Mock private FeatureFlagServiceImpl featureFlagService;
 
   @Mock private CVNGStepTaskService stepTaskService;
   @Mock private VerificationJobInstanceService verificationJobInstanceService;
   @Mock private DeploymentLogAnalysisService deploymentLogAnalysisService;
   @Mock private DeploymentTimeSeriesAnalysisService deploymentTimeSeriesAnalysisService;
+  @Mock TelemetryReporter telemetryReporter;
 
   private static VerifyStepResource verifyStepResource = new VerifyStepResourceImpl();
   private BuilderFactory builderFactory;
@@ -114,6 +120,8 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
     verificationJobInstance = builderFactory.verificationJobInstanceBuilder().build();
     metricsAnalyses = new ArrayList<>();
     metricsAnalyses.add(builderFactory.getMetricsAnalysis());
+    UserPrincipal userPrincipal = new UserPrincipal("test", "test@harness.io", "test", "accountIdentifier");
+    SecurityContextBuilder.setContext(userPrincipal);
 
     when(stepTaskService.getByCallBackId(any())).thenReturn(cvngStepTask);
     when(verificationJobInstanceService.getVerificationJobInstance(any())).thenReturn(verificationJobInstance);

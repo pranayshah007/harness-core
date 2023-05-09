@@ -13,7 +13,6 @@ import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.InputSetValidator;
-import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -28,6 +27,7 @@ import com.fasterxml.jackson.databind.deser.ContextualDeserializer;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
 import io.serializer.utils.NGRuntimeInputUtils;
+import io.serializer.utils.ParameterFieldYamlUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -186,8 +186,7 @@ public class ParameterFieldDeserializer extends StdDeserializer<ParameterField<?
     if (defaultValuesString == null) {
       return null;
     }
-    defaultValuesString = processDefaultValueString(defaultValuesString);
-    JsonNode jsonNode = JsonUtils.readTree("{\"default\":" + defaultValuesString + "}").get("default");
+    JsonNode jsonNode = ParameterFieldYamlUtils.readTree(defaultValuesString);
     if (jsonNode.isArray()) {
       List<Object> array = new ArrayList<>();
       for (JsonNode arrayElement : jsonNode) {
@@ -197,14 +196,6 @@ public class ParameterFieldDeserializer extends StdDeserializer<ParameterField<?
     } else if (jsonNode.isTextual() && this.referenceType.getRawClass() == String.class) {
       return jsonNode.asText();
     }
-    return JsonUtils.asObject(defaultValuesString, this.referenceType.getRawClass());
-  }
-
-  private String processDefaultValueString(String defaultValuesString) {
-    if (!(defaultValuesString.charAt(0) == '[' && defaultValuesString.endsWith("]")
-            || defaultValuesString.charAt(0) == '"' && defaultValuesString.endsWith("\""))) {
-      return "\"" + defaultValuesString + "\"";
-    }
-    return defaultValuesString;
+    return ParameterFieldYamlUtils.asObject(defaultValuesString, this.referenceType.getRawClass());
   }
 }

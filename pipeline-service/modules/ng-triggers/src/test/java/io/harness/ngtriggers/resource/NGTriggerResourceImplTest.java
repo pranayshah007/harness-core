@@ -8,6 +8,7 @@
 package io.harness.ngtriggers.resource;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.ngtriggers.Constants.MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.MATT;
 import static io.harness.rule.OwnerRule.NAMAN;
@@ -27,9 +28,14 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngsettings.SettingValueType;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.LastTriggerExecutionDetails;
 import io.harness.ngtriggers.beans.dto.NGTriggerCatalogDTO;
@@ -55,6 +61,7 @@ import io.harness.ngtriggers.service.NGTriggerEventsService;
 import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.google.common.io.Resources;
@@ -78,11 +85,16 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @OwnedBy(PIPELINE)
 public class NGTriggerResourceImplTest extends CategoryTest {
   @Mock NGTriggerService ngTriggerService;
   @Mock NGTriggerEventsService ngTriggerEventsService;
+  @Mock NGSettingsClient settingsClient;
+  @Mock PmsFeatureFlagService pmsFeatureFlagService;
+  @Mock Call<ResponseDTO<SettingValueResponseDTO>> request;
   @InjectMocks NGTriggerResourceImpl ngTriggerResource;
   @Mock NGTriggerElementMapper ngTriggerElementMapper;
 
@@ -115,6 +127,13 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
+    when(pmsFeatureFlagService.isEnabled(any(), eq(FeatureName.NG_SETTINGS))).thenReturn(true);
+    when(settingsClient.getSetting(MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER))
+        .thenReturn(request);
+    when(settingsClient.getSetting(MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION, "", "", "")).thenReturn(request);
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+    when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
 
     ClassLoader classLoader = getClass().getClassLoader();
     String filename = "ng-trigger-github-pr-v2.yaml";
@@ -414,7 +433,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
     TriggerDetails triggerDetails =
         TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).ngTriggerConfigV2(ngTriggerConfigV2).build();
-    when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, false))
+    when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, false, true))
         .thenReturn(ngTriggerDetailsResponseDTO);
 
     doReturn(triggerDetails)
@@ -635,7 +654,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     final Page<NGTriggerEntity> serviceList = new PageImpl<>(Collections.singletonList(ngTriggerEntity), pageable, 1);
     doReturn(serviceList).when(ngTriggerService).list(criteria, pageable);
 
-    when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, false, false))
+    when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, false, false, true))
         .thenReturn(ngTriggerDetailsResponseDTO);
 
     List<NGTriggerDetailsResponseDTO> content =

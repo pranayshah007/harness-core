@@ -67,7 +67,7 @@ public class AzureArtifactsConfig implements ArtifactConfig, Visitable, WithConn
    * PackageType - maven/nuget.
    */
   @NotNull
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH, allowableValues = "maven, nuget")
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH, allowableValues = "maven, nuget, upack")
   @Wither
   ParameterField<String> packageType;
 

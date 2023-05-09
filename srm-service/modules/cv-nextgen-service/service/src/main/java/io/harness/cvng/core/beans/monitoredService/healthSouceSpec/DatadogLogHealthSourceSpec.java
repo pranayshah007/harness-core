@@ -47,14 +47,14 @@ import org.hibernate.validator.constraints.NotEmpty;
     description = "This is the Datadog Log Health Source spec entity defined in Harness")
 public class DatadogLogHealthSourceSpec extends HealthSourceSpec {
   @NotNull String feature;
-  @NotNull @NotEmpty @Valid List<QueryDTO> queries;
+  @NotNull @NotEmpty @Valid List<DatadogLogHealthSourceQueryDTO> queries;
 
   @Data
   @SuperBuilder
   @FieldDefaults(level = AccessLevel.PRIVATE)
   @NoArgsConstructor
   @JsonIgnoreProperties(ignoreUnknown = true)
-  public static class QueryDTO {
+  public static class DatadogLogHealthSourceQueryDTO {
     @NotNull String name;
     @NotNull String query;
     @NotNull List<String> indexes;

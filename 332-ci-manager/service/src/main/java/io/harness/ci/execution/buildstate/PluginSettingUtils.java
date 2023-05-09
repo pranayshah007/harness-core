@@ -102,6 +102,7 @@ import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -1018,5 +1019,61 @@ public class PluginSettingUtils {
       ciExecutionArgsCopy = CIExecutionArgs.builder().runSequence(ciExecutionArgs.getRunSequence()).build();
     }
     return BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgsCopy);
+  }
+
+  public boolean dlcSetupRequired(PluginCompatibleStep stepInfo) {
+    switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
+      case DOCKER:
+        DockerStepInfo dockerStepInfo = (DockerStepInfo) stepInfo;
+        return resolveBooleanParameter(dockerStepInfo.getCaching(), false);
+      case ECR:
+      case ACR:
+      case GCR:
+      default:
+        return false;
+    }
+  }
+
+  public String getDlcPrefix(String accountId, String identifier, PluginCompatibleStep stepInfo) {
+    switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
+      case DOCKER:
+        DockerStepInfo dockerStepInfo = (DockerStepInfo) stepInfo;
+
+        String repo =
+            resolveStringParameter("repo", "BuildAndPushDockerRegistry", identifier, dockerStepInfo.getRepo(), true);
+        return String.format("%s/%s/", accountId, repo);
+      case ECR:
+      case ACR:
+      case GCR:
+      default:
+        return "";
+    }
+  }
+
+  public void setupDlcArgs(PluginCompatibleStep stepInfo, String identifier, String cacheFromArg, String cacheToArg) {
+    switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
+      case DOCKER:
+        DockerStepInfo dockerStepInfo = (DockerStepInfo) stepInfo;
+
+        // Append cacheFromArg to the list
+        List<String> cacheFrom = resolveListParameter(
+            "cacheFrom", "BuildAndPushDockerRegistry", identifier, dockerStepInfo.getCacheFrom(), false);
+        if (isEmpty(cacheFrom)) {
+          cacheFrom = new ArrayList<>();
+        } else {
+          cacheFrom = new ArrayList(cacheFrom);
+        }
+        cacheFrom.add(cacheFromArg);
+        dockerStepInfo.setCacheFrom(ParameterField.createValueField(cacheFrom));
+
+        // Overwrite cacheTo with cacheToArg
+        dockerStepInfo.setCacheTo(ParameterField.createValueField(cacheToArg));
+        return;
+      case ECR:
+      case ACR:
+      case GCR:
+      default:
+        return;
+    }
   }
 }

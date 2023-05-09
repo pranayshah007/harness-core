@@ -27,6 +27,8 @@ public class AllowedValuesHelperTest extends CategoryTest {
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testSplit() {
+    // Added extra backslashes in the string below because the characters '\' and '"' require backslash in front of them
+    // as escape character in string
     assertEquals(
         AllowedValuesHelper.split("abc, \\'def, ghi\\', \\\"jkl, mn\\\""), List.of("abc", "def, ghi", "jkl, mn"));
     assertEquals(AllowedValuesHelper.split("abc's\\xyz, \\'def'm, gh\\i\\', \\\"jkl, mn\\\", \\'mnk"),

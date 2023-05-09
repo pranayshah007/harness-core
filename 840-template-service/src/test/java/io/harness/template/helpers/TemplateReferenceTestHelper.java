@@ -13,6 +13,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.eraro.ErrorCode;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
+import io.harness.eventsframework.schemas.entity.InfraDefinitionReferenceProtoDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.pms.contracts.service.EntityReferenceErrorResponse;
 import io.harness.pms.contracts.service.EntityReferenceRequest;
@@ -69,6 +70,15 @@ public class TemplateReferenceTestHelper extends EntityReferenceServiceGrpc.Enti
           .setType(EntityTypeProtoEnum.CONNECTORS)
           .setIdentifierRef(
               IdentifierRefProtoUtils.createIdentifierRefProtoFromIdentifierRef(connectorIdentifierRef_StepTemplate))
+          .build();
+
+  public static final EntityDetailProtoDTO infrastructureEntityDetailProto_StepTemplate =
+      EntityDetailProtoDTO.newBuilder()
+          .setInfraDefRef(
+              InfraDefinitionReferenceProtoDTO.newBuilder()
+                  .putMetadata(PreFlightCheckMetadata.FQN, "stage.spec.environment.infrastructureDefinitions.infraid")
+                  .build())
+          .setType(EntityTypeProtoEnum.INFRASTRUCTURE)
           .build();
 
   public static final EntityDetailProtoDTO connectorEntityDetailProto_StageTemplate =

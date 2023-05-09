@@ -234,10 +234,8 @@ public class CfCommandTaskHelperNGTest extends CategoryTest {
           .downloadArtifacts(configRequest, "repository", requestDetails.toMetadata(),
               ArtifactMetadataKeys.artifactPath, ArtifactMetadataKeys.artifactName);
 
-      TasArtifactDownloadResponse downloadResponse =
-          cfCommandTaskHelperNG.downloadPackageArtifact(downloadContext, logCallback);
-      assertThat(downloadResponse.getArtifactFile()).isNull();
-      assertThat(downloadResponse.getArtifactType()).isEqualTo(ZIP);
+      assertThatThrownBy(() -> cfCommandTaskHelperNG.downloadPackageArtifact(downloadContext, logCallback))
+          .hasMessage("Use supported artifact registry");
     } finally {
       FileIo.deleteDirectoryAndItsContentIfExists(downloadContext.getWorkingDirectory().getAbsolutePath());
     }

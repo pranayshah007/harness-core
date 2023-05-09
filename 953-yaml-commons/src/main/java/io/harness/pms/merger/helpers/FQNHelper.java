@@ -91,19 +91,13 @@ public class FQNHelper {
     toBeRemovedFQNs.forEach(templateMap::remove);
   }
 
-  public void removeProperties(Map<FQN, Object> templateMap, Set<String> stageIdentifiersWithCloneEnabled) {
+  public void removeProperties(
+      Map<FQN, Object> templateMap, List<String> stageIdentifiers, List<String> stageIdentifiersWithCloneEnabled) {
     if (EmptyPredicate.isEmpty(stageIdentifiersWithCloneEnabled)) {
       return;
     }
-    boolean removeProperties = true;
-    for (FQN key : templateMap.keySet()) {
-      String stageIdentifier = key.getStageIdentifier();
-      if (EmptyPredicate.isNotEmpty(stageIdentifier) && stageIdentifiersWithCloneEnabled.contains(stageIdentifier)) {
-        removeProperties = false;
-        break;
-      }
-    }
-    if (removeProperties) {
+    stageIdentifiers.retainAll(stageIdentifiersWithCloneEnabled);
+    if (stageIdentifiers.isEmpty()) {
       Set<FQN> toBeRemovedFQNs =
           templateMap.keySet()
               .stream()

@@ -185,7 +185,6 @@ public abstract class ConnectorProcessor {
             .repoUrl(catalogConnectorInfo.getRepo())
             .branch(catalogConnectorInfo.getBranch())
             .unsureOrNonExistentBranch(true)
-            .cloneDepth(1)
             .connectorId(catalogConnectorInfo.getConnector().getIdentifier())
             .accountId(accountIdentifier)
             .authRequest(

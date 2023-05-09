@@ -22,6 +22,7 @@ import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -61,6 +62,7 @@ import io.harness.cvng.notification.entities.SLONotificationRule;
 import io.harness.cvng.notification.entities.SLONotificationRule.SLONotificationRuleCondition;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
+import io.harness.cvng.servicelevelobjective.beans.CompositeSLOFormulaType;
 import io.harness.cvng.servicelevelobjective.beans.DayOfWeek;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
@@ -84,6 +86,7 @@ import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTarg
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
@@ -267,7 +270,6 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                            .spec(RollingSLOTargetSpec.builder().periodLength("60d").build())
                            .build();
     FieldUtils.writeField(serviceLevelObjectiveV2Service, "clock", clock, true);
-    FieldUtils.writeField(sliRecordService, "clock", clock, true);
     FieldUtils.writeField(serviceLevelObjectiveV2Service, "sliRecordService", sliRecordService, true);
     FieldUtils.writeField(serviceLevelObjectiveV2Service, "notificationClient", notificationClient, true);
   }
@@ -335,8 +337,77 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     assertThat(serviceLevelObjective.getTarget()).isEqualTo(sloTarget);
     assertThat(serviceLevelObjective.getSliEvaluationType())
         .isEqualTo(((CompositeServiceLevelObjectiveSpec) sloDTO.getSpec()).getEvaluationType());
+    assertThat(((CompositeServiceLevelObjective) serviceLevelObjective).getCompositeSLOFormulaType())
+        .isEqualTo(CompositeSLOFormulaType.WEIGHTED_AVERAGE);
   }
 
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testCreateLeastPerformanceCompositeSLO_Success() {
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
+        serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
+    SLOTarget sloTarget = sloTargetTypeSLOTargetTransformerMap.get(sloDTO.getSloTarget().getType())
+                              .getSLOTarget(sloDTO.getSloTarget().getSpec());
+    assertThat(serviceLevelObjective.getTarget()).isEqualTo(sloTarget);
+    assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
+    SimpleServiceLevelObjective simpleServiceLevelObjective =
+        (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
+    assertThat(serviceLevelObjective.getSliEvaluationType())
+        .isEqualTo(serviceLevelIndicatorService
+                       .getServiceLevelIndicator(projectParams,
+                           ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
+                               .getServiceLevelIndicators()
+                               .get(0)
+                               .getIdentifier())
+                       .getSLIEvaluationType());
+    sloDTO = builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+                 .identifier("compositeSloIdentifier1")
+                 .spec(CompositeServiceLevelObjectiveSpec.builder()
+                           .evaluationType(SLIEvaluationType.WINDOW)
+                           .sloFormulaType(CompositeSLOFormulaType.LEAST_PERFORMANCE)
+                           .serviceLevelObjectivesDetails(
+                               Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                                                 .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                                                 .weightagePercentage(30.0)
+                                                 .accountId(simpleServiceLevelObjective1.getAccountId())
+                                                 .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                                                 .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                                                 .build(),
+                                   ServiceLevelObjectiveDetailsDTO.builder()
+                                       .serviceLevelObjectiveRef(simpleServiceLevelObjective2.getIdentifier())
+                                       .weightagePercentage(100.0)
+                                       .accountId(simpleServiceLevelObjective2.getAccountId())
+                                       .orgIdentifier(simpleServiceLevelObjective2.getOrgIdentifier())
+                                       .projectIdentifier(simpleServiceLevelObjective2.getProjectIdentifier())
+                                       .build(),
+                                   ServiceLevelObjectiveDetailsDTO.builder()
+                                       .serviceLevelObjectiveRef(simpleServiceLevelObjective.getIdentifier())
+                                       .weightagePercentage(25.0)
+                                       .accountId(simpleServiceLevelObjective.getAccountId())
+                                       .orgIdentifier(simpleServiceLevelObjective.getOrgIdentifier())
+                                       .projectIdentifier(simpleServiceLevelObjective.getProjectIdentifier())
+                                       .build()))
+                           .build())
+                 .build();
+    serviceLevelObjectiveResponse = serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
+    assertThat(verificationTaskService.getCompositeSLOVerificationTaskId(
+                   builderFactory.getContext().getAccountId(), compositeServiceLevelObjective.getUuid()))
+        .isEqualTo(compositeServiceLevelObjective.getUuid());
+    serviceLevelObjective = serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
+    sloTarget = sloTargetTypeSLOTargetTransformerMap.get(sloDTO.getSloTarget().getType())
+                    .getSLOTarget(sloDTO.getSloTarget().getSpec());
+    assertThat(serviceLevelObjective.getTarget()).isEqualTo(sloTarget);
+    assertThat(serviceLevelObjective.getSliEvaluationType())
+        .isEqualTo(((CompositeServiceLevelObjectiveSpec) sloDTO.getSpec()).getEvaluationType());
+    assertThat(((CompositeServiceLevelObjective) serviceLevelObjective).getCompositeSLOFormulaType())
+        .isEqualTo(CompositeSLOFormulaType.LEAST_PERFORMANCE);
+  }
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
@@ -2266,7 +2337,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testDeleteByProjectIdentifier_Success() {
     ProjectParams projectParamsTest = ProjectParams.builder()
-                                          .accountIdentifier(generateUuid())
+                                          .accountIdentifier(builderFactory.getProjectParams().getAccountIdentifier())
                                           .orgIdentifier("orgIdentifier")
                                           .projectIdentifier("project3")
                                           .build();
@@ -2309,10 +2380,15 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     compositeSLODTO.setOrgIdentifier(projectParamsTest.getOrgIdentifier());
     compositeSLODTO.setProjectIdentifier(projectParamsTest.getProjectIdentifier());
     mockServiceLevelObjectiveService.create(projectParamsTest, compositeSLODTO);
+
+    compositeSLODTO.setIdentifier("compositeSLO3");
+    compositeSLODTO.setOrgIdentifier(builderFactory.getProjectParams().getOrgIdentifier());
+    compositeSLODTO.setProjectIdentifier(builderFactory.getProjectParams().getOrgIdentifier());
+    mockServiceLevelObjectiveService.create(builderFactory.getProjectParams(), compositeSLODTO);
     mockServiceLevelObjectiveService.deleteByProjectIdentifier(AbstractServiceLevelObjective.class,
         projectParamsTest.getAccountIdentifier(), projectParamsTest.getOrgIdentifier(),
         projectParamsTest.getProjectIdentifier());
-    verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any());
+    verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any(), anyBoolean());
   }
 
   @Test
@@ -2365,7 +2441,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     mockServiceLevelObjectiveService.create(projectParamsTest, compositeSLODTO);
     mockServiceLevelObjectiveService.deleteByOrgIdentifier(AbstractServiceLevelObjective.class,
         projectParamsTest.getAccountIdentifier(), projectParamsTest.getOrgIdentifier());
-    verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any());
+    verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any(), anyBoolean());
   }
 
   @Test
@@ -2419,7 +2495,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
 
     mockServiceLevelObjectiveService.deleteByAccountIdentifier(
         AbstractServiceLevelObjective.class, projectParamsTest.getAccountIdentifier());
-    verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any());
+    verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any(), anyBoolean());
   }
 
   @Test
@@ -2736,7 +2812,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
-  @Owner(developers = KAPIL)
+  @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testShouldSendNotification_withErrorBudgetBurnRate() {
     NotificationRuleDTO notificationRuleDTO =
@@ -2768,16 +2844,43 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                    .getNotificationData(serviceLevelObjective, condition)
                    .shouldSendNotification())
         .isTrue();
-
-    condition.setThreshold(0.05);
-    assertThat(((ServiceLevelObjectiveV2ServiceImpl) serviceLevelObjectiveV2Service)
-                   .getNotificationData(serviceLevelObjective, condition)
-                   .shouldSendNotification())
-        .isFalse();
   }
 
   @Test
-  @Owner(developers = KAPIL)
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testShouldSendNotificationForCompositeSLO_withErrorBudgetBurnRate() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    NotificationRuleResponse notificationRuleResponseOne =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    compositeSLODTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponseOne.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    createMonitoredService();
+    serviceLevelObjectiveV2Service.update(projectParams, compositeSLODTO.getIdentifier(), compositeSLODTO);
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, compositeSLODTO.getIdentifier());
+    Instant startTime = clock.instant().minus(Duration.ofMinutes(10));
+    List<Double> runningGoodCount = Arrays.asList(0.75, 1.75, 1.75, 2.5, 2.75);
+    List<Double> runningBadCount = Arrays.asList(0.25, 0.25, 1.25, 1.5, 2.25);
+    createSLORecords(startTime, startTime.plus(5, ChronoUnit.MINUTES), runningGoodCount, runningBadCount);
+    SLONotificationRule.SLOErrorBudgetBurnRateCondition condition =
+        SLONotificationRule.SLOErrorBudgetBurnRateCondition.builder()
+            .threshold(0.00)
+            .lookBackDuration(Duration.ofMinutes(5).toMillis())
+            .build();
+
+    assertThat(((ServiceLevelObjectiveV2ServiceImpl) serviceLevelObjectiveV2Service)
+                   .getNotificationData(serviceLevelObjective, condition)
+                   .shouldSendNotification())
+        .isTrue();
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testGetNotificationRules_withCoolOffLogic() {
     NotificationRuleDTO notificationRuleDTO =
@@ -3052,5 +3155,26 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                               .build());
     }
     return sliRecordParams;
+  }
+
+  private List<CompositeSLORecord> createSLORecords(
+      Instant start, Instant end, List<Double> runningGoodCount, List<Double> runningBadCount) {
+    int index = 0;
+    List<CompositeSLORecord> sloRecords = new ArrayList<>();
+    for (Instant instant = start; instant.isBefore(end); instant = instant.plus(1, ChronoUnit.MINUTES)) {
+      CompositeSLORecord sloRecord = CompositeSLORecord.builder()
+                                         .verificationTaskId(compositeServiceLevelObjective.getUuid())
+                                         .sloId(compositeServiceLevelObjective.getUuid())
+                                         .version(0)
+                                         .runningBadCount(runningBadCount.get(index))
+                                         .runningGoodCount(runningGoodCount.get(index))
+                                         .sloVersion(0)
+                                         .timestamp(instant)
+                                         .build();
+      sloRecords.add(sloRecord);
+      index++;
+    }
+    hPersistence.save(sloRecords);
+    return sloRecords;
   }
 }

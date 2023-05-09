@@ -69,7 +69,7 @@ public class SocketConnectivityCapabilityCheck implements CapabilityCheck, Proto
       log.info("[Delegate Capability] Socket Connection Succeeded for url {} on port {}", host, port);
       return true;
     } catch (final IOException e) {
-      log.error("[Delegate Capability] Socket Connection Failed for url " + host + " on port " + port, e);
+      log.info("[Delegate Capability] Socket Connection Failed for url " + host + " on port " + port, e);
     }
     return false; // Either timeout or unreachable or failed DNS lookup.
   }

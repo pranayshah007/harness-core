@@ -65,6 +65,8 @@ public class PipelineExecutionFunctor implements LateBindingValue {
     // Removed run sequence From PipelineStepParameter as run sequence is set just before start of execution and not
     // during plan creation
     jsonObject.put("sequenceId", pipelineExecutionSummaryEntity.getRunSequence());
+    jsonObject.put(
+        "resumedExecutionId", pipelineExecutionSummaryEntity.getRetryExecutionMetadata().getRootExecutionId());
 
     // block to add selected stages identifier
     try {

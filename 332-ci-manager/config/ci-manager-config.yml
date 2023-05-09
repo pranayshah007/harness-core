@@ -180,8 +180,8 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.12
-  liteEngineImage: harness/ci-lite-engine:1.16.12
+  addonImage: harness/ci-addon:1.16.13
+  liteEngineImage: harness/ci-lite-engine:1.16.13
   isLocal: false
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
@@ -198,6 +198,13 @@ ciExecutionServiceConfig:
     bucket: "bucket"
     accessKey: "access_key"
     secretKey: "secret_key"
+    region: "region"
+  dockerLayerCachingGCSConfig:
+    endpoint: "endpoint"
+    bucket: "bucket"
+    accessKey: "access_key"
+    secretKey: "secret_key"
+    region: "region"
   hostedVmConfig:
     splitLinuxAmd64Pool: false
     splitLinuxArm64Pool: false
@@ -236,13 +243,11 @@ ciExecutionServiceConfig:
           - "--run-strategy"
           - single-container
       - product: gitleaks_.*
-        image: harness/sto-plugin
-        entrypoint:
-          - /bin/sto_plugin
-          - "--run-strategy"
-          - single-container
-      - product: fossa
+        image: harness/gitleaks-job-runner
+      - product: fossa_.*
         image: harness/fossa-job-runner
+      - product: semgrep_.*
+        image: harness/semgrep-job-runner
       - product: grype_default
         image: harness/grype-job-runner
       - product: nmap_.*

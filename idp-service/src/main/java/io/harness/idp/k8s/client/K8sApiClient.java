@@ -31,6 +31,7 @@ import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Secret;
 import java.net.ConnectException;
 import java.util.HashMap;
@@ -50,6 +51,7 @@ public class K8sApiClient implements K8sClient {
   @Inject @Named("backstageSaToken") private String backstageSaToken;
   @Inject @Named("backstageSaCaCrt") private String backstageSaCaCrt;
   @Inject @Named("backstageMasterUrl") private String backstageMasterUrl;
+  @Inject @Named("backstagePodLabel") private String backstagePodLabel;
   @Inject private KubernetesHelperService kubernetesHelperService;
   private final Retry retry = buildRetryAndRegisterListeners();
 
@@ -84,6 +86,24 @@ public class K8sApiClient implements K8sClient {
     configMapData.putAll(data);
     configMap.setData(configMapData);
     return replaceConfigMap(coreV1Api, configMap);
+  }
+
+  @Override
+  public V1PodList getBackstagePodList(String namespace) {
+    KubernetesConfig kubernetesConfig = getKubernetesConfig();
+    ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+    CoreV1Api coreV1Api = new CoreV1Api(apiClient);
+    final Supplier<V1PodList> podListSupplier = Retry.decorateSupplier(retry, () -> {
+      try {
+        return coreV1Api.listNamespacedPod(
+            namespace, null, null, null, null, backstagePodLabel, null, null, null, null, false);
+      } catch (ApiException e) {
+        String err = format("Could not check for pod status. Code: %s, message: %s", e.getCode(), e.getMessage());
+        log.error(err, e);
+        throw new InvalidRequestException(err, e, USER);
+      }
+    });
+    return podListSupplier.get();
   }
 
   @Override

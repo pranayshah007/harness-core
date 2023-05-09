@@ -10,6 +10,7 @@ package io.harness.gitx;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -56,8 +57,7 @@ public class GitXSettingsHelper {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     if (GitAwareContextHelper.isRemoteEntity(gitEntityInfo)
         && GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getConnectorRef())) {
-      String defaultConnectorForGitX =
-          getDefaultConnectorForGitX(accountIdentifier, orgIdentifier, projIdentifier, gitEntityInfo.getConnectorRef());
+      String defaultConnectorForGitX = getDefaultConnectorForGitX(accountIdentifier, orgIdentifier, projIdentifier);
 
       if (!isEmpty(defaultConnectorForGitX)) {
         gitEntityInfo.setConnectorRef(defaultConnectorForGitX);
@@ -66,73 +66,54 @@ public class GitXSettingsHelper {
     }
   }
 
-  public void setDefaultStoreTypeForEntities(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  public void setDefaultStoreTypeForEntities(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, EntityType entityType) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     if (gitEntityInfo.getStoreType() == null) {
       StoreType defaultStoreTypeForEntities;
 
-      if (isGitExperienceEnforcedInSettings(accountIdentifier, orgIdentifier, projectIdentifier)) {
-        defaultStoreTypeForEntities = StoreType.REMOTE;
+      if (EntityType.INPUT_SETS.equals(entityType)) {
+        defaultStoreTypeForEntities =
+            getDefaultStoreTypeForEntities(accountIdentifier, orgIdentifier, projectIdentifier);
       } else {
-        defaultStoreTypeForEntities = getDefaultStoreTypeForEntities(
-            accountIdentifier, orgIdentifier, projectIdentifier, gitEntityInfo.getStoreType());
+        if (isGitExperienceEnforcedInSettings(accountIdentifier, orgIdentifier, projectIdentifier)) {
+          defaultStoreTypeForEntities = StoreType.REMOTE;
+        } else {
+          defaultStoreTypeForEntities =
+              getDefaultStoreTypeForEntities(accountIdentifier, orgIdentifier, projectIdentifier);
+        }
       }
+
       gitEntityInfo.setStoreType(defaultStoreTypeForEntities);
       GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
     }
   }
 
   @VisibleForTesting
-  StoreType getDefaultStoreTypeForEntities(
-      String accountIdentifier, String orgIdentifier, String projIdentifier, StoreType storeType) {
-    String defaultStoreTypeForEntities;
-
-    // Exceptions are handled for release for backward compatibility for 1 release.
-    try {
-      defaultStoreTypeForEntities =
-          NGRestUtils
-              .getResponse(ngSettingsClient.getSetting(
-                  GitSyncConstants.DEFAULT_STORE_TYPE_FOR_ENTITIES, accountIdentifier, orgIdentifier, projIdentifier))
-              .getValue();
-      return StoreType.valueOf(defaultStoreTypeForEntities);
-    } catch (Exception ex) {
-      log.warn(String.format(COULD_NOT_FETCH_SETTING, GitSyncConstants.DEFAULT_STORE_TYPE_FOR_ENTITIES), ex);
-      return storeType;
-    }
+  StoreType getDefaultStoreTypeForEntities(String accountIdentifier, String orgIdentifier, String projIdentifier) {
+    String defaultStoreTypeForEntities =
+        NGRestUtils
+            .getResponse(ngSettingsClient.getSetting(
+                GitSyncConstants.DEFAULT_STORE_TYPE_FOR_ENTITIES, accountIdentifier, orgIdentifier, projIdentifier))
+            .getValue();
+    return StoreType.valueOf(defaultStoreTypeForEntities);
   }
 
-  private String getDefaultConnectorForGitX(
-      String accountIdentifier, String orgIdentifier, String projIdentifier, String connectorRef) {
-    String defaultConnectorForGitExperience;
-
-    // Exceptions are handled for release for backward compatibility for 1 release.
-    try {
-      defaultConnectorForGitExperience =
-          NGRestUtils
-              .getResponse(ngSettingsClient.getSetting(GitSyncConstants.DEFAULT_CONNECTOR_FOR_GIT_EXPERIENCE,
-                  accountIdentifier, orgIdentifier, projIdentifier))
-              .getValue();
-      return defaultConnectorForGitExperience;
-    } catch (Exception ex) {
-      log.warn(String.format(COULD_NOT_FETCH_SETTING, GitSyncConstants.DEFAULT_CONNECTOR_FOR_GIT_EXPERIENCE), ex);
-      return connectorRef;
-    }
+  private String getDefaultConnectorForGitX(String accountIdentifier, String orgIdentifier, String projIdentifier) {
+    return NGRestUtils
+        .getResponse(ngSettingsClient.getSetting(
+            GitSyncConstants.DEFAULT_CONNECTOR_FOR_GIT_EXPERIENCE, accountIdentifier, orgIdentifier, projIdentifier))
+        .getValue();
   }
 
   @VisibleForTesting
   boolean isGitExperienceEnforcedInSettings(String accountIdentifier, String orgIdentifier, String projIdentifier) {
-    String isGitExperienceEnforced;
+    String isGitExperienceEnforced =
+        NGRestUtils
+            .getResponse(ngSettingsClient.getSetting(
+                GitSyncConstants.ENFORCE_GIT_EXPERIENCE, accountIdentifier, orgIdentifier, projIdentifier))
+            .getValue();
 
-    // Exceptions are handled for release for backward compatibility for 1 release.
-    try {
-      isGitExperienceEnforced = NGRestUtils
-                                    .getResponse(ngSettingsClient.getSetting(GitSyncConstants.ENFORCE_GIT_EXPERIENCE,
-                                        accountIdentifier, orgIdentifier, projIdentifier))
-                                    .getValue();
-    } catch (Exception ex) {
-      log.warn(String.format(COULD_NOT_FETCH_SETTING, GitSyncConstants.ENFORCE_GIT_EXPERIENCE), ex);
-      return false;
-    }
     return GitSyncConstants.TRUE_VALUE.equals(isGitExperienceEnforced);
   }
 }

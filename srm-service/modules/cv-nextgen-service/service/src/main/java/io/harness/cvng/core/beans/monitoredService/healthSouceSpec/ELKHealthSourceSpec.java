@@ -49,14 +49,14 @@ import lombok.experimental.SuperBuilder;
 public class ELKHealthSourceSpec extends HealthSourceSpec {
   @NotNull @NotEmpty String feature;
 
-  @NotNull @NotEmpty @Valid List<QueryDTO> queries;
+  @NotNull @NotEmpty @Valid List<ELKHealthSourceQueryDTO> queries;
 
   @Data
   @FieldDefaults(level = AccessLevel.PRIVATE)
   @Builder
   @AllArgsConstructor
   @JsonIgnoreProperties(ignoreUnknown = true)
-  public static class QueryDTO {
+  public static class ELKHealthSourceQueryDTO {
     @NotNull @NotEmpty String name;
     @NotNull String query;
     @NotNull @NotEmpty String index;

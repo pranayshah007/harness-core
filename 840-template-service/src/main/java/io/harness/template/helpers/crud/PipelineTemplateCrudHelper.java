@@ -16,7 +16,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
+import io.harness.eventsframework.schemas.entity.InfraDefinitionReferenceProtoDTO;
 import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.ng.core.template.TemplateEntityType;
@@ -95,13 +97,14 @@ public class PipelineTemplateCrudHelper implements TemplateCrudHelper {
       List<EntityDetailProtoDTO> referredEntities, TemplateEntityType templateEntityType) {
     List<EntityDetailProtoDTO> referredEntitiesWithModifiedFqn = new ArrayList<>();
     referredEntities.forEach(referredEntity -> {
-      if (referredEntity.getIdentifierRef() != null && referredEntity.getIdentifierRef().getMetadataMap() != null) {
-        String fqn = referredEntity.getIdentifierRef().getMetadataMap().get(PreFlightCheckMetadata.FQN);
+      Map<String, String> metadataMap = getMetadataMap(referredEntity);
+      if (metadataMap != null) {
+        String fqn = metadataMap.get(PreFlightCheckMetadata.FQN);
         if (isEmpty(fqn)) {
           // FQN should never be empty. Let's skip this referred entity.
           return;
         }
-        Map<String, String> metadata = new HashMap<>(referredEntity.getIdentifierRef().getMetadataMap());
+        Map<String, String> metadata = new HashMap<>(metadataMap);
         switch (templateEntityType) {
           case STEP_TEMPLATE:
             fqn = TEMPLATE_INPUTS + FQN_SEPARATOR + fqn;
@@ -110,13 +113,31 @@ public class PipelineTemplateCrudHelper implements TemplateCrudHelper {
             fqn = replaceBaseIdentifierInFQNWithTemplateInputs(fqn);
         }
         metadata.put(PreFlightCheckMetadata.FQN, fqn);
-        IdentifierRefProtoDTO identifierRefProtoDTO =
-            referredEntity.getIdentifierRef().toBuilder().clearMetadata().putAllMetadata(metadata).build();
-        referredEntitiesWithModifiedFqn.add(
-            referredEntity.toBuilder().clearIdentifierRef().setIdentifierRef(identifierRefProtoDTO).build());
+        EntityDetailProtoDTO entityDetailWithReplacedMetadata = replaceMetadata(referredEntity, metadata);
+        referredEntitiesWithModifiedFqn.add(entityDetailWithReplacedMetadata);
       }
     });
     return referredEntitiesWithModifiedFqn;
+  }
+
+  private EntityDetailProtoDTO replaceMetadata(EntityDetailProtoDTO referredEntity, Map<String, String> metadata) {
+    if (EntityTypeProtoEnum.INFRASTRUCTURE.equals(referredEntity.getType())) {
+      InfraDefinitionReferenceProtoDTO infraDefinitionReferenceProtoDTO =
+          referredEntity.getInfraDefRef().toBuilder().clearMetadata().putAllMetadata(metadata).build();
+      return referredEntity.toBuilder().clearIdentifierRef().setInfraDefRef(infraDefinitionReferenceProtoDTO).build();
+    } else {
+      IdentifierRefProtoDTO identifierRefProtoDTO =
+          referredEntity.getIdentifierRef().toBuilder().clearMetadata().putAllMetadata(metadata).build();
+      return referredEntity.toBuilder().clearIdentifierRef().setIdentifierRef(identifierRefProtoDTO).build();
+    }
+  }
+
+  private Map<String, String> getMetadataMap(EntityDetailProtoDTO referredEntity) {
+    if (EntityTypeProtoEnum.INFRASTRUCTURE.equals(referredEntity.getType())) {
+      return referredEntity.getInfraDefRef() != null ? referredEntity.getInfraDefRef().getMetadataMap() : null;
+    } else {
+      return referredEntity.getIdentifierRef() != null ? referredEntity.getIdentifierRef().getMetadataMap() : null;
+    }
   }
 
   private String replaceBaseIdentifierInFQNWithTemplateInputs(String fqn) {

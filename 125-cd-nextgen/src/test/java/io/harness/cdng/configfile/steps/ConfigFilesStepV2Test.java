@@ -48,6 +48,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.task.gitcommon.GitFetchFilesResult;
@@ -89,6 +90,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -212,16 +214,18 @@ public class ConfigFilesStepV2Test extends CategoryTest {
 
     AsyncExecutableResponse stepResponse = step.executeAsyncAfterRbac(buildAmbiance(), new EmptyStepParameters(), null);
 
+    ArgumentCaptor<TaskData> taskDataCaptor = ArgumentCaptor.forClass(TaskData.class);
     PowerMockito.verifyStatic(TaskRequestsUtils.class, times(3));
     TaskRequestsUtils.prepareTaskRequestWithTaskSelector(
-        any(), any(), any(), any(), any(), anyBoolean(), anyString(), any());
-
+        any(), taskDataCaptor.capture(), any(), any(), any(), anyBoolean(), anyString(), any());
     ArgumentCaptor<ConfigFilesStepV2SweepingOutput> captor =
         ArgumentCaptor.forClass(ConfigFilesStepV2SweepingOutput.class);
     verify(mockSweepingOutputService, times(1))
         .consume(any(), eq("CONFIG_FILES_STEP_V2"), captor.capture(), eq("STAGE"));
     verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(any(), any(List.class), any(Boolean.class));
     ConfigFilesStepV2SweepingOutput outcome = captor.getValue();
+    TaskData taskData = taskDataCaptor.getValue();
+    assertThat(taskData.getTimeout()).isEqualTo(TimeUnit.MINUTES.toMillis(10));
     assertThat(outcome.getGitConfigFileOutcomesMapTaskIds().size()).isEqualTo(3);
   }
 

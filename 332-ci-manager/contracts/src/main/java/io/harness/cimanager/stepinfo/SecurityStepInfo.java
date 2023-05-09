@@ -49,7 +49,6 @@ import java.util.stream.Stream;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
-import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -124,7 +123,6 @@ public class SecurityStepInfo implements PluginCompatibleStep {
         OutputNGVariable.builder().name("NEW_TOTAL").build());
   }
 
-  @Builder
   @ConstructorProperties({"identifier", "name", "retry", "settings", "resources", "outputVariables", "runAsUser",
       "privileged", "imagePullPolicy"})
   public SecurityStepInfo(String identifier, String name, Integer retry, ParameterField<Map<String, JsonNode>> settings,

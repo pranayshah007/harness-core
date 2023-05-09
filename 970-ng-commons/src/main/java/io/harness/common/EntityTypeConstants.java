@@ -112,6 +112,7 @@ public interface EntityTypeConstants {
   String PROWLER = "Prowler";
   String QUALYS = "Qualys";
   String REAPSAW = "Reapsaw";
+  String SEMGREP = "Semgrep";
   String SHIFT_LEFT = "ShiftLeft";
   String SNIPER = "Sniper";
   String SNYK = "Snyk";

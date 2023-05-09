@@ -33,14 +33,17 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.aws.sam.AwsSamDeployStepParameters")
 public class AwsSamDeployStepParameters extends AwsSamBaseStepInfo implements AwsSamSpecParameters, StepParameters {
   ParameterField<List<String>> deployCommandOptions;
+  ParameterField<String> stackName;
+
   @Builder(builderMethodName = "infoBuilder")
   public AwsSamDeployStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
       ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
-      ParameterField<List<String>> deployCommandOptions) {
+      ParameterField<List<String>> deployCommandOptions, ParameterField<String> stackName) {
     super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
         imagePullPolicy);
     this.deployCommandOptions = deployCommandOptions;
+    this.stackName = stackName;
   }
 }
