@@ -362,6 +362,8 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         // Update the documents next iteration field
         updateDocumentNextIteration(docIds, base);
 
+      } catch (Exception ex) {
+        log.error("Received an exception in redisBatchProcess {} ", ex);
       } finally {
         // Release the distributed lock - acquiredLock cannot be null
         releaseLock(acquiredLock);
@@ -461,8 +463,12 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
           // Got the lock, proceed further.
           return acquiredLock;
         } else {
-          log.warn("Failed to acquire distributed lock - attempting to reacquire");
+          log.warn("Failed to acquire distributed lock - attempting to reacquire after 5 secs");
+          sleep(ofSeconds(REDIS_BATCH_PAUSE_DURATION));
         }
+      } catch (Exception ex) {
+        log.error("Received an exception while acquiring lock - attempting to reacquire after 5 secs {} ", ex);
+        sleep(ofSeconds(REDIS_BATCH_PAUSE_DURATION));
       }
     }
   }
