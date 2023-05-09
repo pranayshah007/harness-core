@@ -13,8 +13,6 @@ import static io.harness.idp.common.Constants.PROXY_ENV_NAME;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.connector.DelegateSelectable;
-import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
@@ -37,7 +35,6 @@ import io.harness.spec.server.idp.v1.model.ConnectorDetails;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -70,7 +67,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
         connectorProcessorFactory.getConnectorProcessor(connectorInfoDTO.getConnectorType());
     Map<String, BackstageEnvVariable> connectorEnvSecrets =
         connectorProcessor.getConnectorAndSecretsInfo(accountIdentifier, connectorInfoDTO);
-    backstageEnvVariableService.createMulti(new ArrayList<>(connectorEnvSecrets.values()), accountIdentifier);
+    backstageEnvVariableService.createOrUpdate(new ArrayList<>(connectorEnvSecrets.values()), accountIdentifier);
   }
 
   @Override
@@ -101,8 +98,8 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
       CatalogInfraConnectorType catalogConnectorEntityType, String connectorIdentifier) {
     try {
       createConnectorSecretsEnvVariable(accountIdentifier, connectorInfoDTO);
-      createOrUpdateConnectorConfigEnvVariable(
-          accountIdentifier, connectorInfoDTO.getConnectorType(), catalogConnectorEntityType);
+      String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
+      createOrUpdateConnectorConfigEnvVariable(accountIdentifier, host, catalogConnectorEntityType);
       createOrUpdateAppConfigForGitIntegrations(accountIdentifier, connectorInfoDTO);
     } catch (Exception e) {
       log.error("Unable to create infra connector secrets in backstage k8s, ex = {}", e.getMessage(), e);
@@ -111,20 +108,20 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
 
   @VisibleForTesting
   void createOrUpdateConnectorConfigEnvVariable(
-      String accountIdentifier, ConnectorType connectorType, CatalogInfraConnectorType catalogConnectorEntityType) {
+      String accountIdentifier, String host, CatalogInfraConnectorType catalogConnectorEntityType) {
     Optional<BackstageEnvVariable> envVariableOpt =
         backstageEnvVariableService.findByEnvNameAndAccountIdentifier(PROXY_ENV_NAME, accountIdentifier);
     if (envVariableOpt.isPresent()) {
       BackstageEnvConfigVariable envVariable = (BackstageEnvConfigVariable) envVariableOpt.get();
       String hostProxyString = envVariable.getValue();
       JSONObject hostProxyObj = new JSONObject(hostProxyString);
-      hostProxyObj.put(connectorType.toString(), catalogConnectorEntityType == CatalogInfraConnectorType.PROXY);
+      hostProxyObj.put(host, catalogConnectorEntityType == CatalogInfraConnectorType.PROXY);
       envVariable.setValue(hostProxyObj.toString());
       backstageEnvVariableService.update(envVariable, accountIdentifier);
     } else {
       BackstageEnvConfigVariable envVariable = new BackstageEnvConfigVariable();
       JSONObject proxyIntegrationObj = new JSONObject();
-      proxyIntegrationObj.put(connectorType.toString(), catalogConnectorEntityType == CatalogInfraConnectorType.PROXY);
+      proxyIntegrationObj.put(host, catalogConnectorEntityType == CatalogInfraConnectorType.PROXY);
       envVariable.setType(BackstageEnvVariable.TypeEnum.CONFIG);
       envVariable.setEnvName(PROXY_ENV_NAME);
       envVariable.setValue(proxyIntegrationObj.toString());
