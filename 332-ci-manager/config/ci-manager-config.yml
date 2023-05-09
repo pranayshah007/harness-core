@@ -343,10 +343,10 @@ ciExecutionServiceConfig:
     vmImageConfig:
       # Use root image for VM git clone
       gitClone: harness/drone-git:1.3.3
-      buildAndPushDockerRegistry: plugins/docker:20.13.0
-      buildAndPushACR: plugins/acr:20.13.0
-      buildAndPushECR: plugins/ecr:20.13.0
-      buildAndPushGCR: plugins/gcr:20.13.0
+      buildAndPushDockerRegistry: plugins/docker:20.14.3
+      buildAndPushACR: plugins/acr:20.14.3
+      buildAndPushECR: plugins/ecr:20.14.3
+      buildAndPushGCR: plugins/gcr:20.14.3
       gcsUpload: plugins/gcs:1.3.0
       s3Upload: plugins/s3:1.2.0
       security: harness/sto-plugin:dev

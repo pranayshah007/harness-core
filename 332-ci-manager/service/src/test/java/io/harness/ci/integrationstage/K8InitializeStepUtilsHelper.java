@@ -587,7 +587,7 @@ public class K8InitializeStepUtilsHelper {
     return newArrayList(step1, step2, step3, stepGroup1, stepGroup2, stepGroup3);
   }
 
-  private String readFile(String filename) {
+  public String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();
     try {
       return Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
