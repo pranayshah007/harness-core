@@ -11,9 +11,37 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import lombok.Data;
+
+@Data
 @OwnedBy(CDP)
 public class KubernetesApiClientRuntimeException extends RuntimeException {
+  public enum KubernetesCertificateType {
+    NONE("No Certificate"),
+    CA_CERTIFICATE("CA Certificate"),
+    CLIENT_CERTIFICATE("Client Certificate"),
+    BOTH_CA_AND_CLIENT_CERTIFICATE("CA / Client Certificate");
+
+    private String name;
+
+    KubernetesCertificateType(String name) {
+      this.name = name;
+    }
+
+    public String getName() {
+      return name;
+    }
+  }
+
+  private KubernetesCertificateType kubernetesCertificateType;
+
   public KubernetesApiClientRuntimeException(String message, Throwable cause) {
     super(message, cause);
+  }
+
+  public KubernetesApiClientRuntimeException(
+      String message, Throwable cause, KubernetesCertificateType kubernetesCertificateType) {
+    super(message, cause);
+    this.kubernetesCertificateType = kubernetesCertificateType;
   }
 }

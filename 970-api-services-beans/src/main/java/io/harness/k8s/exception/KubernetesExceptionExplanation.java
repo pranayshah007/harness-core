@@ -74,9 +74,8 @@ public class KubernetesExceptionExplanation {
       "The provided values.yaml file(s) may contain a field with missing/null value or refer an expression which is not being resolved.";
 
   public final String API_CLIENT_CREATE_FAILED = "Failed to create Kubernetes API client with given credentials";
-  public final String API_CLIENT_CERT_INVALID =
-      "Try to obtain a new or updated certificate, update the certificate chain, or adjust the settings in your application to trust the certificate.";
-  public final String API_CLIENT_CERT_INCOMPLETE = "Invalid or corrupted certificate";
+  public final String API_CLIENT_CA_CERT_INVALID = "Failed to parse {} field";
+  public final String API_CLIENT_CA_CERT_INCOMPLETE = "Invalid or corrupted {} field";
   public final String MANIFEST_RENDER_ERROR_GO_TEMPLATE = "Failed to render manifests. %n%s";
   public final String MANIFEST_RENDER_ERROR_HELM =
       "Failed to render manifests with error: %n%s %n%nCommand Executed: %n%s";

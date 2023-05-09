@@ -60,9 +60,11 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
     try {
       return createNewApiClient(kubernetesConfig, tokenRetriever, false);
     } catch (RuntimeException e) {
-      throw new KubernetesApiClientRuntimeException(e.getMessage(), e.getCause());
+      throw new KubernetesApiClientRuntimeException(
+          e.getMessage(), e.getCause(), getKubernetesConfigCertificateType(kubernetesConfig));
     } catch (Exception e) {
-      throw new KubernetesApiClientRuntimeException(e.getMessage(), e);
+      throw new KubernetesApiClientRuntimeException(
+          e.getMessage(), e, getKubernetesConfigCertificateType(kubernetesConfig));
     }
   }
 
@@ -72,9 +74,11 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
     try {
       return createNewApiClient(kubernetesConfig, tokenRetriever, true);
     } catch (RuntimeException e) {
-      throw new KubernetesApiClientRuntimeException(e.getMessage(), e.getCause());
+      throw new KubernetesApiClientRuntimeException(
+          e.getMessage(), e.getCause(), getKubernetesConfigCertificateType(kubernetesConfig));
     } catch (Exception e) {
-      throw new KubernetesApiClientRuntimeException(e.getMessage(), e);
+      throw new KubernetesApiClientRuntimeException(
+          e.getMessage(), e, getKubernetesConfigCertificateType(kubernetesConfig));
     }
   }
 
@@ -158,6 +162,19 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
       return Base64.getDecoder().decode(new String(data));
     } catch (IllegalArgumentException ignore) {
       return new String(data).getBytes(UTF_8);
+    }
+  }
+
+  private static KubernetesApiClientRuntimeException.KubernetesCertificateType getKubernetesConfigCertificateType(
+      KubernetesConfig kubernetesConfig) {
+    if (isNotEmpty(kubernetesConfig.getCaCert()) && isNotEmpty(kubernetesConfig.getClientCert())) {
+      return KubernetesApiClientRuntimeException.KubernetesCertificateType.BOTH_CA_AND_CLIENT_CERTIFICATE;
+    } else if (isNotEmpty(kubernetesConfig.getCaCert())) {
+      return KubernetesApiClientRuntimeException.KubernetesCertificateType.CA_CERTIFICATE;
+    } else if (isNotEmpty(kubernetesConfig.getClientCert())) {
+      return KubernetesApiClientRuntimeException.KubernetesCertificateType.CLIENT_CERTIFICATE;
+    } else {
+      return KubernetesApiClientRuntimeException.KubernetesCertificateType.NONE;
     }
   }
 }
