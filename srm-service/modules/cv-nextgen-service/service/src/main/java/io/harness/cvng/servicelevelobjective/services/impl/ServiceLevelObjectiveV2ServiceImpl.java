@@ -25,6 +25,7 @@ import io.harness.cvng.core.beans.TimeGraphResponse;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.SLILogsFilter;
 import io.harness.cvng.core.beans.sidekick.VerificationTaskCleanupSideKickData;
 import io.harness.cvng.core.entities.MonitoredService;
@@ -52,6 +53,7 @@ import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
+import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
@@ -953,27 +955,25 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
 
     if (condition.getType().equals(NotificationRuleConditionType.ERROR_BUDGET_BURN_RATE)) {
       SLOErrorBudgetBurnRateCondition conditionSpec = (SLOErrorBudgetBurnRateCondition) condition;
-      LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
-      int totalErrorBudgetMinutes = serviceLevelObjective.getTotalErrorBudgetMinutes(currentLocalDate);
-      double errorBudgetBurnRate = 0.0;
-      if (serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
-        ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
-            ProjectParams.builder()
-                .accountIdentifier(serviceLevelObjective.getAccountId())
-                .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
-                .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
-                .build(),
-            ((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators().get(0));
-        errorBudgetBurnRate = sliRecordService.getErrorBudgetBurnRate(serviceLevelIndicator.getUuid(),
-            conditionSpec.getLookBackDuration(), totalErrorBudgetMinutes,
-            serviceLevelIndicator.getSliMissingDataType());
-      } else if (serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.COMPOSITE)) {
-        errorBudgetBurnRate = compositeSLORecordService.getErrorBudgetBurnRate(
-            serviceLevelObjective.getUuid(), conditionSpec.getLookBackDuration(), totalErrorBudgetMinutes);
+      SLODashboardWidget.SLOGraphData sloGraphData =
+          sloHealthIndicatorService.getGraphData(ProjectParams.builder()
+                                                     .accountIdentifier(serviceLevelObjective.getAccountId())
+                                                     .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                                                     .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                                                     .build(),
+              serviceLevelObjective,
+              TimeRangeParams.builder()
+                  .startTime(clock.instant().minus(conditionSpec.getLookBackDuration(), ChronoUnit.MILLIS))
+                  .endTime(clock.instant())
+                  .build());
+      if (sloGraphData.getErrorBudgetBurndown().size() < 2) {
+        sloHealthIndicator.setErrorBudgetBurnRate(0);
+      } else {
+        double errorBudgetBurnRate = sloGraphData.getErrorBudgetBurndown().get(0).getValue()
+            - sloGraphData.getErrorBudgetBurndown().get(sloGraphData.getErrorBudgetBurndown().size() - 1).getValue();
+        sloHealthIndicator.setErrorBudgetBurnRate(errorBudgetBurnRate);
       }
-      sloHealthIndicator.setErrorBudgetBurnRate(errorBudgetBurnRate);
     }
-
     return NotificationRuleTemplateDataGenerator.NotificationData.builder()
         .shouldSendNotification(condition.shouldSendNotification(sloHealthIndicator))
         .templateDataMap(getTemplateData(condition, sloHealthIndicator))

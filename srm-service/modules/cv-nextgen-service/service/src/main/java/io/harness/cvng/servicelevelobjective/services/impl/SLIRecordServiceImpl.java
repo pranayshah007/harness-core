@@ -151,41 +151,6 @@ public class SLIRecordServiceImpl implements SLIRecordService {
   }
 
   @Override
-  public List<SLIRecord> getSLIRecordsForLookBackDuration(String sliId, long lookBackDuration) {
-    SLIRecord latestSLIRecord = getLatestSLIRecord(sliId);
-    if (latestSLIRecord == null) {
-      return new ArrayList<>();
-    }
-    Instant endTime = latestSLIRecord.getTimestamp();
-    Instant startTime = endTime.minusMillis(lookBackDuration).plus(1, ChronoUnit.MINUTES);
-    List<Instant> minutes = new ArrayList<>();
-    minutes.add(startTime);
-    List<SLIRecord> sliRecords = getSLIRecordsOfMinutes(sliId, minutes);
-    sliRecords.add(latestSLIRecord);
-    return sliRecords;
-  }
-
-  @Override
-  public double getErrorBudgetBurnRate(
-      String sliId, long lookBackDuration, int totalErrorBudgetMinutes, SLIMissingDataType sliMissingDataType) {
-    List<SLIRecord> sliRecords = getSLIRecordsForLookBackDuration(sliId, lookBackDuration);
-    if (sliRecords.size() < 2) {
-      return 0;
-    }
-    long missingBadCount = 0;
-    if (sliMissingDataType != null && sliMissingDataType == SLIMissingDataType.BAD) {
-      long totalMinutesBetweenRecords = sliRecords.get(1).getEpochMinute() - sliRecords.get(0).getEpochMinute() + 1;
-      long totalGoodAndBadCountBetweenRecords = sliRecords.get(1).getRunningBadCount()
-          + sliRecords.get(1).getRunningGoodCount() - sliRecords.get(0).getRunningBadCount()
-          - sliRecords.get(0).getRunningGoodCount();
-      missingBadCount = totalMinutesBetweenRecords - totalGoodAndBadCountBetweenRecords;
-    }
-    return ((double) (sliRecords.get(1).getRunningBadCount() - sliRecords.get(0).getRunningBadCount() + missingBadCount)
-               * 100)
-        / totalErrorBudgetMinutes;
-  }
-
-  @Override
   public List<SLIRecord> getSLIRecords(String sliId, Instant startTimeStamp, Instant endTimeStamp) {
     return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
         .filter(SLIRecordKeys.sliId, sliId)
