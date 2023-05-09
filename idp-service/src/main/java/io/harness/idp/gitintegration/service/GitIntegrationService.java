@@ -25,7 +25,7 @@ import java.util.concurrent.ExecutionException;
 public interface GitIntegrationService {
   void createConnectorSecretsEnvVariable(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO);
   void processConnectorUpdate(Message message, EntityChangeDTO entityChangeDTO) throws ExecutionException;
-  void createConnectorInBackstage(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO,
+  void createOrUpdateConnectorInBackstage(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO,
       CatalogInfraConnectorType catalogConnectorEntityType, String connectorIdentifier);
   List<CatalogConnectorEntity> getAllConnectorDetails(String accountIdentifier);
   Optional<CatalogConnectorEntity> findByAccountIdAndProviderType(String accountIdentifier, String providerType);

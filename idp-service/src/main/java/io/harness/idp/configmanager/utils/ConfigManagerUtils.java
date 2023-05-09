@@ -60,6 +60,8 @@ public class ConfigManagerUtils {
 
   private static final String LIGHTHOUSE_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/lighthouse-schema.json";
 
+  private static final String JIRA_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/jira-schema.json";
+
   public String asYaml(String jsonString) throws IOException {
     JsonNode jsonNodeTree = new ObjectMapper().readTree(jsonString);
     String jsonAsYaml =
@@ -158,6 +160,8 @@ public class ConfigManagerUtils {
         return readFileFromClassPath(JENKINS_PLUGIN_JSON_SCHEMA_PATH);
       case "lighthouse":
         return readFileFromClassPath(LIGHTHOUSE_PLUGIN_JSON_SCHEMA_PATH);
+      case "jira":
+        return readFileFromClassPath(JIRA_PLUGIN_JSON_SCHEMA_PATH);
       default:
         return null;
     }
