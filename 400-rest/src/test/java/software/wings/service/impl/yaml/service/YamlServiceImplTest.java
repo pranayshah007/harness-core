@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.MEET;
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
 import static io.harness.rule.OwnerRule.RUSHABH;
 import static io.harness.rule.OwnerRule.VARDAN_BANSAL;
@@ -41,16 +42,19 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.YamlException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
 import io.harness.rule.Owner;
+import io.harness.yaml.BaseYaml;
 
 import software.wings.WingsBaseTest;
 import software.wings.audit.AuditHeader;
 import software.wings.beans.Application;
+import software.wings.beans.Environment;
 import software.wings.beans.Service;
 import software.wings.beans.yaml.Change;
 import software.wings.beans.yaml.ChangeContext;
@@ -69,6 +73,7 @@ import software.wings.service.intfc.yaml.YamlGitService;
 import software.wings.yaml.YamlOperationResponse;
 import software.wings.yaml.YamlPayload;
 
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.io.File;
@@ -105,6 +110,39 @@ public class YamlServiceImplTest extends WingsBaseTest {
   @Mock BaseYamlHandler baseYamlHandler;
   @Mock HarnessTagYamlHelper harnessTagYamlHelper;
   @Mock AppService appService;
+
+  private static String yamlEnvValid = "harnessApiVersion: \'1.0\'\n"
+      + "type: ENVIRONMENT\n"
+      + "configMapYamlByServiceTemplateName: {}\n"
+      + "environmentType: PROD\n"
+      + "variableOverrides:\n"
+      + "- name: testvargcs1\n"
+      + "  value: overrideGITvargcs\n"
+      + "  valueType: TEXT\n"
+      + "- name: testvarall\n"
+      + "  value: testvarall\n"
+      + "  valueType: TEXT\n"
+      + "- name: testevar\n"
+      + "  serviceName: To-Do List K8s\n"
+      + "  value: overrideGITtestvar\n"
+      + "  valueType: TEXT\n";
+
+  private static String yamlEnvValidWithUnrecognizedField = "harnessApiVersion: \'1.0\'\n"
+      + "type: ENVIRONMENT\n"
+      + "configMapYamlByServiceTemplateName: {}\n"
+      + "environmentType: PROD\n"
+      + "variableOverrides:\n"
+      + "- name: testvargcs1\n"
+      + "  value: overrideGITvargcs\n"
+      + "  valueType: TEXT\n"
+      + "- name: testvarall\n"
+      + "  service: gcs\n"
+      + "  value: testvarall\n"
+      + "  valueType: TEXT\n"
+      + "- name: testevar\n"
+      + "  serviceName: To-Do List K8s\n"
+      + "  value: overrideGITtestvar\n"
+      + "  valueType: TEXT\n";
 
   @Before
   public void setUp() {
@@ -509,5 +547,54 @@ public class YamlServiceImplTest extends WingsBaseTest {
     assertThatThrownBy(() -> yamlService.validateServiceInPath(yamlFilePath5, change))
         .hasMessage("Service with name service5 not found in app app5.")
         .isInstanceOf(YamlException.class);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldValidateWithValidYamlAndFFNotEnabled() throws IOException {
+    when(featureFlagService.isNotEnabled(FeatureName.SPG_ENABLE_GIT_SYNC_YAML_VALIDATE, ACCOUNT_ID)).thenReturn(true);
+
+    BaseYaml baseYaml = yamlService.getYaml(yamlEnvValid, Environment.Yaml.class, ACCOUNT_ID);
+    assertThat(((Environment.Yaml) baseYaml).getVariableOverrides().size()).isEqualTo(3);
+    assertThat(((Environment.Yaml) baseYaml).getVariableOverrides().get(0).getServiceName()).isNull();
+    assertThat(((Environment.Yaml) baseYaml).getVariableOverrides().get(1).getServiceName()).isNull();
+    assertThat(((Environment.Yaml) baseYaml).getVariableOverrides().get(2).getServiceName())
+        .isEqualTo("To-Do List K8s");
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldValidateWithValidYamlWithUnrecognizedFieldAndFFNotEnabled() throws IOException {
+    when(featureFlagService.isNotEnabled(FeatureName.SPG_ENABLE_GIT_SYNC_YAML_VALIDATE, ACCOUNT_ID)).thenReturn(true);
+
+    BaseYaml baseYaml = yamlService.getYaml(yamlEnvValidWithUnrecognizedField, Environment.Yaml.class, ACCOUNT_ID);
+    assertThat(((Environment.Yaml) baseYaml).getVariableOverrides().size()).isEqualTo(3);
+    assertThat(((Environment.Yaml) baseYaml).getVariableOverrides().get(0).getServiceName()).isNull();
+    assertThat(((Environment.Yaml) baseYaml).getVariableOverrides().get(1).getServiceName()).isNull();
+    assertThat(((Environment.Yaml) baseYaml).getVariableOverrides().get(2).getServiceName())
+        .isEqualTo("To-Do List K8s");
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldValidateWithValidYamlAndFFEnabled() throws IOException {
+    when(featureFlagService.isNotEnabled(FeatureName.SPG_ENABLE_GIT_SYNC_YAML_VALIDATE, ACCOUNT_ID)).thenReturn(false);
+    BaseYaml baseYaml = yamlService.getYaml(yamlEnvValid, Environment.Yaml.class, ACCOUNT_ID);
+    assertThat(((Environment.Yaml) baseYaml).getVariableOverrides().size()).isEqualTo(3);
+    assertThat(((Environment.Yaml) baseYaml).getVariableOverrides().get(0).getServiceName()).isNull();
+    assertThat(((Environment.Yaml) baseYaml).getVariableOverrides().get(1).getServiceName()).isNull();
+    assertThat(((Environment.Yaml) baseYaml).getVariableOverrides().get(2).getServiceName())
+        .isEqualTo("To-Do List K8s");
+  }
+
+  @Test(expected = UnrecognizedPropertyException.class)
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldNotValidateWithValidYamlWithUnrecognizedFieldAndFFEnabled() throws IOException {
+    when(featureFlagService.isNotEnabled(FeatureName.SPG_ENABLE_GIT_SYNC_YAML_VALIDATE, ACCOUNT_ID)).thenReturn(false);
+    yamlService.getYaml(yamlEnvValidWithUnrecognizedField, Environment.Yaml.class, ACCOUNT_ID);
   }
 }
