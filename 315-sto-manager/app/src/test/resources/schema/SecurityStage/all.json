@@ -470,14 +470,39 @@
     },
     "Attestation": {
       "type": "object",
-      "required": [
-        "privateKey"
-      ],
       "properties": {
         "privateKey": {
           "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "cosign"
+          ]
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "cosign"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CosignAttestation"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AttestationSpec": {
+      "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "AwsEcrStepInfo": {
@@ -2485,6 +2510,25 @@
           "format": "int32"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CosignAttestation": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AttestationSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "password": {
+              "type": "string"
+            },
+            "privateKey": {
+              "type": "string"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "CustomExecutionSource": {
