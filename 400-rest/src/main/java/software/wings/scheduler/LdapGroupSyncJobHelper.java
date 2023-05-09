@@ -296,7 +296,7 @@ public class LdapGroupSyncJobHelper {
                 "LDAPIterator: creating user invite for account {} and user Invite {} and user Groups {} and externalUserId {}",
                 accountId, userInvite.getEmail(), Lists.newArrayList(userGroups), ldapUserResponse.getUserId());
             userService.inviteUser(userInvite, false, true);
-            // Get the newly added user and add them to the usergroup
+            // Get the newly added user and add them to this user group
             user = userService.getUserByEmail(ldapUserResponse.getEmail());
             userService.addUserToUserGroups(accountId, user, Lists.newArrayList(userGroups), true, true);
             log.info("LDAPIterator: adding new user {} to groups {}  in accountId {}", user.getUuid(),

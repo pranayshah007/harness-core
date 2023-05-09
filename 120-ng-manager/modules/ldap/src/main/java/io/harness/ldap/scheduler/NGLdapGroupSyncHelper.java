@@ -154,7 +154,14 @@ public class NGLdapGroupSyncHelper {
       if (isNotEmpty(userId)) {
         log.info("NGLDAP: removing user {}, from group: {} for account {}", userId, userGroup.getIdentifier(),
             userGroup.getAccountIdentifier());
-        userGroupService.removeMember(scope, userGroup.getIdentifier(), userId);
+        try {
+          userGroupService.removeMember(scope, userGroup.getIdentifier(), userId);
+        } catch (Exception exception) {
+          log.error(
+              "NGLDAP: Skipping user: Remove user with harness userId {}, email: {} to User group: {} in account: {}, organization: {}, project: {} failed",
+              userId, emailStr, userGroup, userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(),
+              userGroup.getProjectIdentifier(), exception);
+        }
       }
     }
   }
