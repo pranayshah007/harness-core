@@ -109,12 +109,19 @@ public class NGLdapGroupSyncHelper {
       Set<String> usersToAdd = SetUtils.difference(ldapUserEmails, userGroupUserEmails);
 
       for (LdapUserResponse userResponse : ldapGroup.getUsers()) {
-        if (usersToAdd.contains(userResponse.getEmail())) {
-          // add to userGroup
-          addMemberToGroup(userGroup, userResponse);
-        } else {
-          // update user name
-          updateUserInGroup(userGroup, userResponse);
+        try {
+          if (usersToAdd.contains(userResponse.getEmail())) {
+            // add to userGroup
+            addMemberToGroup(userGroup, userResponse);
+          } else {
+            // update user name
+            updateUserInGroup(userGroup, userResponse);
+          }
+        } catch (Exception exception) {
+          log.error(
+              "NGLDAP: Skipping user: Add/update user with ldap externalUserId {}, email: {} to User group: {} in account: {}, organization: {}, project: {} failed",
+              userResponse.getUserId(), userResponse.getEmail(), userGroup, userGroup.getAccountIdentifier(),
+              userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier(), exception);
         }
       }
 
