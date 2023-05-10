@@ -9,12 +9,15 @@ package io.harness.delegate.task.k8s.exception;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.exception.runtime.KubernetesApiClientRuntimeException;
+import io.harness.exception.runtime.utils.KubernetesCertificateType;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 
@@ -31,23 +34,31 @@ public class KubernetesApiClientRuntimeExceptionHandler implements ExceptionHand
 
   @Override
   public WingsException handleException(Exception exception) {
-    if (exception.getCause() != null) {
-      Throwable cause = exception.getCause();
+    KubernetesApiClientRuntimeException kubernetesApiClientRuntimeException =
+        (KubernetesApiClientRuntimeException) exception;
+    KubernetesCertificateType kubernetesCertificateType =
+        kubernetesApiClientRuntimeException.getKubernetesCertificateType();
+    if (kubernetesApiClientRuntimeException.getCause() != null) {
+      Throwable cause = kubernetesApiClientRuntimeException.getCause();
       if (cause instanceof CertificateException) {
         return NestedExceptionUtils.hintWithExplanationException(
-            KubernetesExceptionHints.API_CLIENT_CA_CERT_INVALID_FORMAT,
-            KubernetesExceptionExplanation.API_CLIENT_CA_CERT_INVALID_FORMAT + ": " + cause.getMessage(),
+            format(KubernetesExceptionHints.API_CLIENT_CA_CERT_INVALID, kubernetesCertificateType.getName()),
+            format(KubernetesExceptionExplanation.API_CLIENT_CA_CERT_INVALID, kubernetesCertificateType.getName())
+                + ": " + cause.getMessage(),
             new KubernetesTaskException(cause.getMessage()));
       }
 
       if (cause instanceof IOException) {
-        return NestedExceptionUtils.hintWithExplanationException(KubernetesExceptionHints.API_CLIENT_CA_CERT_INCOMPLETE,
-            KubernetesExceptionExplanation.API_CLIENT_CA_CERT_INCOMPLETE + ": " + cause.getMessage(),
+        return NestedExceptionUtils.hintWithExplanationException(
+            format(KubernetesExceptionHints.API_CLIENT_CA_CERT_INCOMPLETE, kubernetesCertificateType.getName()),
+            format(KubernetesExceptionExplanation.API_CLIENT_CA_CERT_INCOMPLETE, kubernetesCertificateType.getName())
+                + ": " + cause.getMessage(),
             new KubernetesTaskException(cause.getMessage()));
       }
     }
 
     return NestedExceptionUtils.hintWithExplanationException(KubernetesExceptionHints.API_CLIENT_CREATE_FAILED,
-        KubernetesExceptionExplanation.API_CLIENT_CREATE_FAILED, new KubernetesTaskException(exception.getMessage()));
+        KubernetesExceptionExplanation.API_CLIENT_CREATE_FAILED,
+        new KubernetesTaskException(kubernetesApiClientRuntimeException.getMessage()));
   }
 }
