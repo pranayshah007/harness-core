@@ -15,6 +15,7 @@
       "$id": "#root/proxy",
       "title": "Proxy",
       "type": "object",
+      "additionalProperties": false,
       "required": [
         "/snyk"
       ],
@@ -23,6 +24,7 @@
           "$id": "#root/proxy//snyk",
           "title": "/snyk",
           "type": "object",
+          "additionalProperties": false,
           "required": [
             "target",
             "pathRewrite",
@@ -34,12 +36,13 @@
               "title": "Target",
               "type": "string",
               "default": "",
-              "pattern": "^.*$"
+              "pattern": "((http|https)://)(www.)?[a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)"
             },
             "pathRewrite": {
               "$id": "#root/proxy//snyk/pathRewrite",
               "title": "Pathrewrite",
               "type": "object",
+              "additionalProperties": false,
               "required": [
                 "api/proxy/snyk/?"
               ],
@@ -57,6 +60,7 @@
               "$id": "#root/proxy//snyk/headers",
               "title": "Headers",
               "type": "object",
+              "additionalProperties": false,
               "required": [
                 "User-Agent",
                 "Authorization"
