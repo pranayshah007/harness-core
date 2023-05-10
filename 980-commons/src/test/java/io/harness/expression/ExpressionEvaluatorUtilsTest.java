@@ -8,6 +8,7 @@
 package io.harness.expression;
 
 import static io.harness.rule.OwnerRule.GARVIT;
+import static io.harness.rule.OwnerRule.HINGER;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -159,6 +160,37 @@ public class ExpressionEvaluatorUtilsTest extends CategoryTest {
     assertThat(strArrArr[1][0]).isEqualTo("c");
     assertThat(strArrArr[1][1]).isEqualTo(updated);
     assertThat(strArrArr[1][2]).isEqualTo(updated);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testUpdateMapValues() {
+    String originalValue = "<+original_value>";
+    String resolvedValue = "updated_value";
+
+    String originalKey = "<+original_key>";
+    String resolvedKey = "updated_key";
+
+    // this map has 1 entry with key as expression, 1 entry with value as expression, 1 constant entry
+    Map<String, Object> map = new HashMap<>(ImmutableMap.of(originalKey, "constantValue", "constantKey", originalValue,
+        "constA", "constB", "<+non_familiar_key>", "non_familiar_value"));
+    DummyB dummyB = DummyB.builder().map(map).build();
+
+    // context knows how to resolve both the key and value
+    Map<String, String> context = ImmutableMap.of(originalKey, resolvedKey, originalValue, resolvedValue);
+
+    ExpressionEvaluatorUtils.updateExpressions(dummyB, DummyMapFunctor.builder().context(context).build());
+
+    // value is updated to <+updated_value>
+    assertThat(map.get("constantKey")).isEqualTo(resolvedValue);
+
+    // key is resolved to <+updated_key>
+    assertThat(map.get(resolvedKey)).isEqualTo("constantValue");
+    assertThat(map.get("constA")).isEqualTo("constB");
+
+    // unresolvable keys are stored as is
+    assertThat(map.get("<+non_familiar_key>")).isEqualTo("non_familiar_value");
   }
 
   @Data

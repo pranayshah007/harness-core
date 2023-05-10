@@ -22,6 +22,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -280,15 +281,38 @@ public class ExpressionEvaluatorUtils {
 
     if (o instanceof Map) {
       Map m = (Map) o;
-      m.replaceAll((k, v) -> {
+      boolean useFallback = false;
+      Map<Object, Object> updatedMap = new HashMap<>(); // create an intermediate map to hold updated key-value pairs
+      for (Map.Entry<Object, Object> entry : (Set<Map.Entry<Object, Object>>) m.entrySet()) {
         try {
-          return updateExpressionsInternal(v, functor, depth - 1, cache);
-        } catch (UnresolvedExpressionsException ex) {
-          // Throwing the error again with field name added in the message
-          // Now the error message would like this: "Some expressions couldn't be evaluated: 'key': expr2, expr2"
-          throw new UnresolvedExpressionsException((String) k, new ArrayList<>(ex.fetchExpressions()));
+          Object updatedKey = entry.getKey();
+          if (updatedKey instanceof String && EngineExpressionEvaluator.hasExpressions((String) updatedKey)) {
+            updatedKey = updateExpressionsInternal(entry.getKey(), functor, depth - 1, cache);
+          }
+          Object updatedValue = updateExpressionsInternal(entry.getValue(), functor, depth - 1, cache);
+          updatedMap.put(updatedKey, updatedValue); // Add the new key-value pair to the intermediate map
+        } catch (Exception ex) {
+          // Fallback to the older mechanism if there is any exception
+          log.error(String.format("Exception while rendering map: [%s]", ex.getMessage()));
+          useFallback = true;
+          break;
         }
-      });
+      }
+
+      if (useFallback) {
+        m.replaceAll((k, v) -> {
+          try {
+            return updateExpressionsInternal(v, functor, depth - 1, cache);
+          } catch (UnresolvedExpressionsException ex) {
+            // Throwing the error again with field name added in the message
+            // Now the error message would like this: "Some expressions couldn't be evaluated: 'key': expr2, expr2"
+            throw new UnresolvedExpressionsException((String) k, new ArrayList<>(ex.fetchExpressions()));
+          }
+        });
+      } else {
+        m.clear(); // Remove all the key-value pairs from the original map
+        m.putAll(updatedMap); // Copy all the updated key-value pairs back to the original map
+      }
       return o;
     }
 
