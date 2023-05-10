@@ -447,7 +447,7 @@ public class SshEntityHelperTest extends CategoryTest {
                                                                  .credentialsRef("sshKeyRef")
                                                                  .subscriptionId("subscriptionId")
                                                                  .resourceGroup("resourceGroup")
-                                                                 .tags(ImmutableMap.of("ENV", "Dev"))
+                                                                 .hostTags(ImmutableMap.of("ENV", "Dev"))
                                                                  .hostConnectionType("Hostname")
                                                                  .build();
 
@@ -478,7 +478,7 @@ public class SshEntityHelperTest extends CategoryTest {
                                                              .credentialsRef("sshKeyRef")
                                                              .region("regionId")
                                                              .hostConnectionType("PrivateIP")
-                                                             .tags(Collections.singletonMap("testTag", "test"))
+                                                             .hostTags(Collections.singletonMap("testTag", "test"))
                                                              .build();
 
     mockSecretKey();
@@ -582,7 +582,7 @@ public class SshEntityHelperTest extends CategoryTest {
                                                                  .credentialsRef("winrmCredentialsRef")
                                                                  .subscriptionId("subscriptionId")
                                                                  .resourceGroup("resourceGroup")
-                                                                 .tags(ImmutableMap.of("ENV", "Dev"))
+                                                                 .hostTags(ImmutableMap.of("ENV", "Dev"))
                                                                  .hostConnectionType("PublicIP")
                                                                  .build();
 
@@ -622,7 +622,7 @@ public class SshEntityHelperTest extends CategoryTest {
                                                              .credentialsRef("winrmCredentialsRef")
                                                              .region("regionId")
                                                              .hostConnectionType("PublicIP")
-                                                             .tags(Collections.singletonMap("testTag", "test"))
+                                                             .hostTags(Collections.singletonMap("testTag", "test"))
                                                              .build();
 
     Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
