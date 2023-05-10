@@ -39,7 +39,8 @@ public interface AppService extends OwnedByAccount, Exterminator {
    */
   Application save(Application app);
 
-  PageResponse<Application> list(PageRequest<Application> req, boolean details, boolean withTags, String tagFilter);
+  PageResponse<Application> list(
+      PageRequest<Application> req, boolean details, boolean withTags, String tagFilter, boolean hitSecondary);
 
   PageResponse<Application> list(PageRequest<Application> req);
 
