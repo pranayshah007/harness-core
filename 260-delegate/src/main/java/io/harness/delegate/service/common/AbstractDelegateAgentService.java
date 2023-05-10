@@ -170,7 +170,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
   private final AtomicBoolean selfDestruct = new AtomicBoolean(false);
 
   protected abstract void abortTask(DelegateTaskAbortEvent taskEvent);
-  protected abstract void executeTask(String id, List<TaskDescriptor> task, ExecutionInfrastructure resourcesList);
+  protected abstract void executeTask(String id, List<TaskDescriptor> task, ExecutionInfrastructure resourcesList, String logPrefix);
   protected abstract List<String> getCurrentlyExecutingTaskIds();
   protected abstract List<TaskType> getSupportedTasks();
   protected abstract void onDelegateStart();
@@ -295,7 +295,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
         log.debug("Try to acquire DelegateTask - accountId: {}", getDelegateConfiguration().getAccountId());
 
         final var taskGroup = acquireTask(delegateTaskId);
-        executeTask(taskGroup.getId(), taskGroup.getTasksList(), taskGroup.getInfra());
+        executeTask(taskGroup.getId(), taskGroup.getTasksList(), taskGroup.getInfra(), taskGroup.getLogPrefix());
       } catch (final IOException e) {
         log.error("Unable to get task for validation", e);
       } catch (final Exception e) {

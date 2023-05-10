@@ -42,19 +42,19 @@ public class CoreDelegateService extends SimpleDelegateAgent {
 
   @Override
   protected void executeTask(
-      final String groupId, final List<TaskDescriptor> tasks, final ExecutionInfrastructure infra) {
+          final String groupId, final List<TaskDescriptor> tasks, final ExecutionInfrastructure infra, final String logPrefix) {
     tasks.forEach(this::validatePluginData);
 
     // FixMe: Hack so we don't need to make changes to CI & NG manager for now. Normally it would just invoke a single
     // runner stage
     if (hasTaskType(tasks, INITIALIZATION_PHASE)) {
-      taskRunner.init(groupId, tasks, infra);
+      taskRunner.init(groupId, tasks, infra, logPrefix);
     } else if (hasTaskType(tasks, CI_EXECUTE_STEP)) {
       taskRunner.execute(groupId, tasks);
     } else if (hasTaskType(tasks, CI_CLEANUP)) {
       taskRunner.cleanup(groupId);
     } else { // Task which doesn't have separate infra step (e.g. CD)
-      taskRunner.init(groupId, tasks, infra);
+      taskRunner.init(groupId, tasks, infra, logPrefix);
       taskRunner.execute(groupId, tasks);
       taskRunner.cleanup(groupId);
     }

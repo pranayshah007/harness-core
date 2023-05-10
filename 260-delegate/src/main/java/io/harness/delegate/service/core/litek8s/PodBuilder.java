@@ -11,11 +11,12 @@ import static java.util.stream.Collectors.toList;
 
 import io.harness.delegate.core.beans.ResourceRequirements;
 import io.harness.delegate.core.beans.TaskDescriptor;
+import io.harness.delegate.service.core.k8s.K8SEnvVar;
+import io.harness.delegate.service.core.k8s.K8SSecret;
 import io.harness.delegate.service.core.util.K8SResourceHelper;
 import io.harness.delegate.service.core.util.K8SVolumeUtils;
 
 import com.google.inject.Inject;
-import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1LocalObjectReferenceBuilder;
@@ -45,8 +46,8 @@ public class PodBuilder extends V1PodBuilder {
   private static final V1VolumeMount WORKDIR_VOLUME_MNT =
       K8SVolumeUtils.volumeMount(WORKDIR_VOLUME_NAME, WORKDIR_MOUNT_PATH);
 
-//  private final ContainerBuilder containerBuilder;
-//  private final CoreV1Api coreApi;
+  //  private final ContainerBuilder containerBuilder;
+  //  private final CoreV1Api coreApi;
 
   public static PodBuilder createSpec(final String taskGroupId) {
     return (PodBuilder) new PodBuilder()
@@ -63,7 +64,8 @@ public class PodBuilder extends V1PodBuilder {
         .withAutomountServiceAccountToken(true)
         //        .withTolerations(getTolerations(taskDescriptors))
         //        .withNodeSelector(Map.of()) // TODO: Add node selectors to infra section in the API
-//        .withRuntimeClassName(GVISOR_RUNTIME_CLASS) // FixMe: Doesn't work for del-play, says nodes with this class
+        //        .withRuntimeClassName(GVISOR_RUNTIME_CLASS) // FixMe: Doesn't work for del-play, says nodes with this
+        //        class
         .withVolumes(WORKDIR_VOLUME) // We will always have workdir volume
         //        .withHostAliases(List.of()) // To add entries to pods /etc/hosts
         .endSpec();
@@ -83,12 +85,19 @@ public class PodBuilder extends V1PodBuilder {
     return this;
   }
 
-  public V1Pod buildPod(final ContainerBuilder containerBuilder, final ResourceRequirements resource, final List<V1Volume> volumes, final PortMap portMap) {
-    return this.withAddon(containerBuilder).withLiteEngine(containerBuilder, resource, portMap).withVolumes(volumes).build();
+  public V1Pod buildPod(final ContainerBuilder containerBuilder, final ResourceRequirements resource,
+      final List<V1Volume> volumes, final V1Secret loggingSecret, final PortMap portMap) {
+    return this.withAddon(containerBuilder)
+        .withLiteEngine(containerBuilder, resource, loggingSecret, portMap)
+        .withVolumes(volumes)
+        .build();
   }
 
-  private PodBuilder withLiteEngine(final ContainerBuilder containerBuilder, final ResourceRequirements resource, final PortMap portMap) {
-    final var leContainer = containerBuilder.createLEContainer(resource, portMap.getPortMap()).build();
+  private PodBuilder withLiteEngine(final ContainerBuilder containerBuilder, final ResourceRequirements resource,
+      final V1Secret loggingSecret, final PortMap portMap) {
+    final var leContainer = containerBuilder.createLEContainer(resource, portMap.getPortMap())
+                                .addToEnvFrom(K8SEnvVar.fromSecret(loggingSecret))
+                                .build();
     this.editOrNewSpec().addToContainers(leContainer).endSpec();
     return this;
   }

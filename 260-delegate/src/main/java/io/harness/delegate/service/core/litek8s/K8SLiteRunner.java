@@ -18,6 +18,7 @@ import io.harness.delegate.core.beans.ExecutionInfrastructure;
 import io.harness.delegate.core.beans.K8S;
 import io.harness.delegate.core.beans.TaskDescriptor;
 import io.harness.delegate.service.core.k8s.K8SEnvVar;
+import io.harness.delegate.service.core.k8s.K8SSecret;
 import io.harness.delegate.service.core.runner.TaskRunner;
 import io.harness.delegate.service.core.util.AnyUtils;
 import io.harness.delegate.service.core.util.ApiExceptionLogger;
@@ -45,6 +46,11 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class K8SLiteRunner implements TaskRunner {
   private static final int CONTAINER_START_PORT = 20002;
+  private static final String LOG_SERVICE_TOKEN_VARIABLE = "HARNESS_LOG_SERVICE_TOKEN";
+  private static final String LOG_SERVICE_ENDPOINT_VARIABLE = "HARNESS_LOG_SERVICE_ENDPOINT";
+  private static final String HARNESS_LOG_PREFIX_VARIABLE = "HARNESS_LOG_PREFIX";
+  private static final String LOGGING_SERVICE_URL =
+      "http://localhost:8079"; // FixMe: This needs to come from delegate or runner config
 
   private final CoreV1Api coreApi;
   private final ContainerBuilder containerBuilder;
@@ -52,7 +58,8 @@ public class K8SLiteRunner implements TaskRunner {
   //  private final K8EventHandler k8EventHandler;
 
   @Override
-  public void init(final String taskGroupId, final List<TaskDescriptor> tasks, final ExecutionInfrastructure infra) {
+  public void init(final String taskGroupId, final List<TaskDescriptor> tasks, final ExecutionInfrastructure infra,
+      final String logPrefix) {
     log.info("Setting up pod spec");
 
     try {
@@ -75,7 +82,10 @@ public class K8SLiteRunner implements TaskRunner {
       final var taskSecrets =
           tasks.stream().collect(groupingBy(TaskDescriptor::getId, flatMapping(this::createTaskSecrets, toList())));
 
-      // Step 1b - TODO: Support certs (i.e. secret files that get mounted as secret volume).
+      final var loggingToken = tasks.stream().findAny().get().getLoggingToken(); // FixMe: obviously no no
+      final V1Secret loggingSecret = createLoggingSecret(taskGroupId, LOGGING_SERVICE_URL, loggingToken, logPrefix);
+
+      // Step 1c - TODO: Support certs (i.e. secret files that get mounted as secret volume).
       // Right now these are copied from delegate using special syntax and env vars (complicated)
 
       // Step 2 - create any other resources like volumes, config maps etc...
@@ -89,7 +99,7 @@ public class K8SLiteRunner implements TaskRunner {
       final V1Pod pod = PodBuilder.createSpec(taskGroupId)
                             .withImagePullSecrets(imageSecrets)
                             .withTasks(createContainers(tasks, taskSecrets, volumeMounts, portMap))
-                            .buildPod(containerBuilder, k8sInfra.getResource(), volumes, portMap);
+                            .buildPod(containerBuilder, k8sInfra.getResource(), volumes, loggingSecret, portMap);
 
       log.info("Creating Task Pod with YAML:\n{}", Yaml.dump(pod));
       coreApi.createNamespacedPod(
@@ -109,6 +119,17 @@ public class K8SLiteRunner implements TaskRunner {
       log.error("Failed to create the task {}", taskGroupId, e);
       throw e;
     }
+  }
+
+  private V1Secret createLoggingSecret(final String taskGroupId, final String logServiceUri, final String loggingToken,
+      final String loggingPrefix) throws ApiException {
+    final var secretName = K8SResourceHelper.getSecretName(taskGroupId + "-logging");
+    final var namespace = K8SResourceHelper.getRunnerNamespace();
+    return K8SSecret.secret(secretName, namespace)
+        .putStringDataItem(LOG_SERVICE_ENDPOINT_VARIABLE, logServiceUri)
+        .putStringDataItem(LOG_SERVICE_TOKEN_VARIABLE, loggingToken)
+        .putStringDataItem(HARNESS_LOG_PREFIX_VARIABLE, loggingPrefix)
+        .create(coreApi);
   }
 
   @Override

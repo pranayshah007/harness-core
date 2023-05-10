@@ -49,6 +49,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Duration;
 import io.dropwizard.jersey.protobuf.ProtocolBufferMediaType;
 import io.swagger.annotations.Api;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -90,6 +91,8 @@ public class CoreDelegateResource {
           delegateTaskServiceClassic.acquireDelegateTask(accountId, delegateId, taskId, delegateInstanceId);
       final long timeout = delegateTaskPackage.getData().getTimeout();
 
+      final var logPrefix = generateLogBaseKey(delegateTaskPackage.getLogStreamingAbstractions());
+
       // Wrap DelegateTaskPackage with AcquireTaskResponse for Kryo tasks
       final var taskDataBytes = kryoSerializer.asBytes(delegateTaskPackage);
       final List<TaskSecret> protoSecrets = createProtoSecrets(delegateTaskPackage);
@@ -113,17 +116,23 @@ public class CoreDelegateResource {
                               .setUses(getImage(delegateTaskPackage.getData().getTaskType()))
                               .setResource(resources)
                               .build())
+              .setLoggingToken(delegateTaskPackage.getLogStreamingToken())
               .build();
       final var emptyDir = EmptyDirVolume.newBuilder().setName("marko-dir").setPath("/harness/marko").build();
       final var k8SInfra = K8S.newBuilder()
-//                               .addAllInfraSecrets(protoSecrets) // Not supported now
+                               //                               .addAllInfraSecrets(protoSecrets) // Not supported now
                                .setResource(resources)
                                .setWorkingDir("pera")
                                .addResources(Resource.newBuilder().setSpec(Any.pack(emptyDir)).build())
                                .build();
       final ExecutionInfrastructure infra =
           ExecutionInfrastructure.newBuilder().setProtoSpec(Any.pack(k8SInfra)).build();
-      final var response = AcquireTasksResponse.newBuilder().setInfra(infra).setId(taskId).addTasks(pluginDesc).build();
+      final var response = AcquireTasksResponse.newBuilder()
+                               .setInfra(infra)
+                               .setId(taskId)
+                               .addTasks(pluginDesc)
+                               .setLogPrefix(logPrefix)
+                               .build();
 
       return Response.ok(response).build();
     } catch (final Exception e) {
@@ -173,5 +182,17 @@ public class CoreDelegateResource {
       default:
         throw new UnsupportedOperationException("Unsupported task type " + taskType);
     }
+  }
+
+  private String generateLogBaseKey(LinkedHashMap<String, String> logStreamingAbstractions) {
+    // Generate base log key that will be used for writing logs to log streaming service
+    StringBuilder logBaseKey = new StringBuilder();
+    for (Map.Entry<String, String> entry : logStreamingAbstractions.entrySet()) {
+      if (logBaseKey.length() != 0) {
+        logBaseKey.append('/');
+      }
+      logBaseKey.append(entry.getKey()).append(':').append(entry.getValue());
+    }
+    return logBaseKey.toString();
   }
 }

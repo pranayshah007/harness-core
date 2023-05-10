@@ -13,7 +13,7 @@ import io.harness.delegate.core.beans.TaskDescriptor;
 import java.util.List;
 
 public interface TaskRunner {
-  void init(String taskGroupId, List<TaskDescriptor> tasks, ExecutionInfrastructure resources);
+  void init(String taskGroupId, List<TaskDescriptor> tasks, ExecutionInfrastructure resources, String logPrefix);
   void execute(String taskGroupId, List<TaskDescriptor> tasks);
   void cleanup(String taskGroupId);
 }

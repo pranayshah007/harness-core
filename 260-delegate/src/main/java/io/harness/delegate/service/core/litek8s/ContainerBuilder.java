@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.NonNull;
-import org.apache.commons.lang3.ObjectUtils;
 
 public class ContainerBuilder {
   private static final String PLUGIN_DOCKER_IMAGE_NAME = "plugins/docker";
@@ -121,7 +120,6 @@ public class ContainerBuilder {
     //    envVars.put(HARNESS_BUILD_ID_VARIABLE, String.valueOf(buildNumber));
     //    envVars.put(HARNESS_STAGE_ID_VARIABLE, stageID);
     //    envVars.put(HARNESS_EXECUTION_ID_VARIABLE, executionID);
-    //    envVars.put(HARNESS_LOG_PREFIX_VARIABLE, logPrefix); // ???
     return envVars.build();
   }
 
