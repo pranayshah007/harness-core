@@ -69,7 +69,8 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
   @Inject private SecretManager secretManager;
   @Inject private AuthenticationUtils authenticationUtils;
   @Inject private MarketPlaceService marketPlaceService;
-
+  private final String MANUALLY_PROVISIONED_MESSAGE =
+      "Instructions to get started should be provided. If not, please contact Harness at support@harness.io";
   private static final String INFO = "INFO";
   private static final String REDIRECT_ACTION_LOGIN = "LOGIN";
   private final String MESSAGESTATUS = "SUCCESS";
@@ -162,14 +163,19 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     String dimensionModule = getDimensionModule(dimension);
 
     if (isManuallyProvisioned(dimension)) {
-      final String manuallyProvisionedMessage =
-          "Instructions to get started should be provided. If not, please contact Harness at support@harness.io";
-
       log.info("Manually provision license for Dimension=[{}], EntitlementResult=[{}]", dimension, entitlements);
-      return generateMessageResponse(manuallyProvisionedMessage, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
+      return generateMessageResponse(MANUALLY_PROVISIONED_MESSAGE, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
     }
+
     if (awsMarketPlaceV2ProductCodes.contains(productCode)) {
       orderQuantity = getDimensionQuantity(dimension);
+
+      if (!isDimensionV2Provisionable(dimension, orderQuantity)) {
+        log.info(
+            "Dimensions provided does not include required all information. Dimension=[{}], EntitlementResult=[{}]",
+            dimension, entitlements);
+        return generateMessageResponse(MANUALLY_PROVISIONED_MESSAGE, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
+      }
     }
 
     Date expirationDate = entitlements.getEntitlements().get(0).getExpirationDate();
@@ -310,6 +316,16 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
       shouldManuallyProvision = true;
     }
     return shouldManuallyProvision;
+  }
+
+  private boolean isDimensionV2Provisionable(String dimension, Integer quantity) {
+    boolean isProvisionReady = false;
+    Edition plan = licenseService.getDimensionPlan(dimension);
+
+    if (StringUtils.isNotBlank(dimension) && dimension.split("_").length >= 3 && plan != null && quantity != null) {
+      isProvisionReady = true;
+    }
+    return isProvisionReady;
   }
 
   // Gets module from dimension string
