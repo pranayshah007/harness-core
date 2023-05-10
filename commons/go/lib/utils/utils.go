@@ -152,6 +152,7 @@ func ParsePythonNode(file types.File, testGlobs []string) (*Node, error) {
 		node.Type = NodeType_TEST
 	}
 	node.File = filename
+	node.Class = filename
 	return &node, nil
 }
 
