@@ -117,7 +117,8 @@ public class TriggerReferenceHelper {
       ArtifactTriggerConfig artifactTriggerConfig = (ArtifactTriggerConfig) ngTriggerConfigV2.getSource().getSpec();
       connectorRefs.add(artifactTriggerConfig.getSpec().fetchConnectorRef());
     } else if (ngTriggerConfigV2.getSource().getType() == MULTI_ARTIFACT) {
-      MultiArtifactTriggerConfig artifactTriggerConfig = (MultiArtifactTriggerConfig) ngTriggerConfigV2.getSource().getSpec();
+      MultiArtifactTriggerConfig artifactTriggerConfig =
+          (MultiArtifactTriggerConfig) ngTriggerConfigV2.getSource().getSpec();
       for (ArtifactTypeSpec artifactSpec : artifactTriggerConfig.getSources()) {
         connectorRefs.add(artifactSpec.fetchConnectorRef());
       }

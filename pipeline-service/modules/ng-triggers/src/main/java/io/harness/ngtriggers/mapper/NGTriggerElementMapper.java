@@ -359,13 +359,17 @@ public class NGTriggerElementMapper {
       case MULTI_ARTIFACT:
         MultiArtifactTriggerConfig multiArtifactTriggerConfig = (MultiArtifactTriggerConfig) triggerSource.getSpec();
         return NGTriggerMetadata.builder()
-                .multiBuildMetadata(multiArtifactTriggerConfig.getSources().stream().map(
-                        source -> BuildMetadata.builder()
-                                .type(ARTIFACT)
-                                .buildSourceType(source.getClass().getName())
-                                .pollingConfig(PollingConfig.builder().buildRef(EMPTY).signature(generateUuid()).build())
-                        .build()).collect(Collectors.toList()))
-                .build();
+            .multiBuildMetadata(
+                multiArtifactTriggerConfig.getSources()
+                    .stream()
+                    .map(source
+                        -> BuildMetadata.builder()
+                               .type(ARTIFACT)
+                               .buildSourceType(source.getClass().getName())
+                               .pollingConfig(PollingConfig.builder().buildRef(EMPTY).signature(generateUuid()).build())
+                               .build())
+                    .collect(Collectors.toList()))
+            .build();
       case MANIFEST:
         ManifestTypeSpec manifestTypeSpec = ((ManifestTriggerConfig) triggerSource.getSpec()).getSpec();
         String manifestSourceType = null;

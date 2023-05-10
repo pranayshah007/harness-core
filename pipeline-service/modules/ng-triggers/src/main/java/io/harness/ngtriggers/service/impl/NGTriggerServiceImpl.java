@@ -787,10 +787,11 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       case MULTI_ARTIFACT:
         if (!pmsFeatureFlagService.isEnabled(
                 triggerDetails.getNgTriggerEntity().getAccountId(), FeatureName.CDS_NG_TRIGGER_MULTI_ARTIFACTS)) {
-          throw new InvalidRequestException("Feature Flag CDS_NG_TRIGGER_MULTI_ARTIFACTS must be enabled for creation of multi-artifact triggers.");
+          throw new InvalidRequestException(
+              "Feature Flag CDS_NG_TRIGGER_MULTI_ARTIFACTS must be enabled for creation of multi-artifact triggers.");
         }
         validateMultiArtifactTriggerConfig(
-                (MultiArtifactTriggerConfig) spec, triggerDetails.getNgTriggerEntity().getWithServiceV2());
+            (MultiArtifactTriggerConfig) spec, triggerDetails.getNgTriggerEntity().getWithServiceV2());
         return;
       default:
         return; // not implemented

@@ -28,7 +28,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
   , @JsonSubTypes.Type(value = WebhookTriggerConfigV2.class, name = "Webhook"),
       @JsonSubTypes.Type(value = ArtifactTriggerConfig.class, name = "Artifact"),
       @JsonSubTypes.Type(value = ManifestTriggerConfig.class, name = "Manifest"),
-        @JsonSubTypes.Type(value = MultiArtifactTriggerConfig.class, name = "MultiArtifact")
+      @JsonSubTypes.Type(value = MultiArtifactTriggerConfig.class, name = "MultiArtifact")
 })
 @OwnedBy(PIPELINE)
 public interface NGTriggerSpecV2 {}

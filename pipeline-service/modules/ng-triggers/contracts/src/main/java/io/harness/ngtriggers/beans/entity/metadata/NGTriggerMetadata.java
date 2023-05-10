@@ -12,11 +12,10 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.annotation.TypeAlias;
-
-import java.util.List;
 
 @Data
 @Builder
