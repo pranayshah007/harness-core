@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.YUVRAJ;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -111,12 +112,13 @@ public class FreezeRBACHelperTest extends CategoryTest {
     when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     Principal principal =
         Principal.builder().principalIdentifier("principalId").principalType(PrincipalType.USER).build();
-    when(accessControlClient.hasAccess(any(), any(), any(), any())).thenReturn(true);
+    when(accessControlClient.hasAccess(any(), eq(ResourceScope.of("accountId", "orgId", "projectId")), any(), any()))
+        .thenReturn(true);
     assertThat(FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(
                    ngFeatureFlagHelperService, "accountId", "projectId", "orgId", accessControlClient, null))
         .isEqualTo(false);
     assertThat(FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(
-                   ngFeatureFlagHelperService, "accountId", "projectId", "orgId", accessControlClient, principal))
+                   ngFeatureFlagHelperService, "accountId", "orgId", "projectId", accessControlClient, principal))
         .isEqualTo(true);
   }
 
@@ -147,7 +149,8 @@ public class FreezeRBACHelperTest extends CategoryTest {
         new io.harness.security.dto.UserPrincipal("user", "user.gmail.com", "userName", "accountId");
     SecurityContextBuilder.setContext(userPrincipal);
     when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
-    when(accessControlClient.hasAccess(any(), any(), any(), any())).thenReturn(true);
+    when(accessControlClient.hasAccess(any(), eq(ResourceScope.of("accountId", "orgId", "projectId")), any(), any()))
+        .thenReturn(true);
     assertThat(FreezeRBACHelper.checkIfUserHasFreezeOverrideAccessWithoutPrincipal(
                    ngFeatureFlagHelperService, "accountId", "projectId", "orgId", accessControlClient))
         .isEqualTo(true);
@@ -158,9 +161,10 @@ public class FreezeRBACHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCheckIfUserHasFreezeOverrideAccessWithoutPrincipal() {
     when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
-    when(accessControlClient.hasAccess(any(), any(), any())).thenReturn(true);
+    when(accessControlClient.hasAccess(eq(ResourceScope.of("accountId", "orgId", "projectId")), any(), any()))
+        .thenReturn(true);
     assertThat(FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(
-                   ngFeatureFlagHelperService, "accountId", "projectId", "orgId", accessControlClient))
+                   ngFeatureFlagHelperService, "accountId", "orgId", "projectId", accessControlClient))
         .isEqualTo(true);
   }
 
