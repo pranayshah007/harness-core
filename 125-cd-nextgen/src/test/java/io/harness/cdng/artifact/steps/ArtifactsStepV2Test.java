@@ -63,6 +63,7 @@ import io.harness.cdng.artifact.steps.constants.ArtifactsStepV2Constants;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.common.beans.StepDelegateInfo;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinition;
@@ -433,6 +434,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     ArgumentCaptor<ArtifactsStepV2SweepingOutput> captor = ArgumentCaptor.forClass(ArtifactsStepV2SweepingOutput.class);
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
         ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    ArgumentCaptor<List<StepDelegateInfo>> stepDelegateInfosCaptor = ArgumentCaptor.forClass(List.class);
 
     List<EntityDetail> listEntityDetail = new ArrayList<>();
 
@@ -468,7 +470,8 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
         .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
 
     verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(ambiance, listEntityDetail, true);
-
+    verify(serviceStepsHelper)
+        .publishTaskIdsStepDetailsForServiceStep(eq(ambiance), stepDelegateInfosCaptor.capture(), eq("Artifact Step"));
     ArtifactsStepV2SweepingOutput output = captor.getValue();
 
     assertThat(output.getArtifactConfigMap()).hasSize(1);
@@ -480,6 +483,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
     DelegateTaskRequest taskRequest = delegateTaskRequestArgumentCaptor.getValue();
     verifyDockerArtifactRequest(taskRequest, "latest");
+    assertThat(stepDelegateInfosCaptor.getValue().size()).isEqualTo(1);
   }
 
   @Test

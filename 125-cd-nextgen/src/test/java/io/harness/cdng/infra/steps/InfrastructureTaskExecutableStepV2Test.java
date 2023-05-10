@@ -30,6 +30,7 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.common.beans.StepDetailsDelegateInfo;
 import io.harness.cdng.customdeployment.CustomDeploymentNGVariable;
 import io.harness.cdng.customdeployment.CustomDeploymentNGVariableType;
 import io.harness.cdng.customdeployment.CustomDeploymentNumberNGVariable;
@@ -445,12 +446,15 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     verify(resolver, times(1)).updateExpressions(any(Ambiance.class), any(Infrastructure.class));
 
     ArgumentCaptor<DelegateTaskRequest> captor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    ArgumentCaptor<StepDetailsDelegateInfo> stepDetailsDelegateInfoCaptor =
+        ArgumentCaptor.forClass(StepDetailsDelegateInfo.class);
     verify(delegateGrpcClientWrapper, times(1)).submitAsyncTaskV2(captor.capture(), eq(Duration.ZERO));
-
+    verify(sdkGraphVisualizationDataService)
+        .publishStepDetailInformation(eq(ambiance), stepDetailsDelegateInfoCaptor.capture(), eq("Infrastructure Step"));
     DelegateTaskRequest delegateTaskRequest = captor.getValue();
 
     assertThat(delegateTaskRequest.getTaskType()).isEqualTo("NG_AWS_TASK");
-
+    assertThat(stepDetailsDelegateInfoCaptor.getValue().getStepDelegateInfos().size()).isEqualTo(1);
     verifyTaskRequest(delegateTaskRequest);
   }
 
