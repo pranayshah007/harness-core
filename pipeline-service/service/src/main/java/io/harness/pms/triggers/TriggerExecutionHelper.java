@@ -273,6 +273,8 @@ public class TriggerExecutionHelper {
         executionMetaDataBuilder.setGitSyncBranchContext(gitSyncBranchContextByteString);
       }
 
+      executionHelper.updateSettingsInExecutionMetadataBuilder(pipelineEntity, executionMetaDataBuilder);
+
       PlanExecutionMetadata.Builder planExecutionMetadataBuilder =
           PlanExecutionMetadata.builder().planExecutionId(executionId).triggerJsonPayload(payload);
 
