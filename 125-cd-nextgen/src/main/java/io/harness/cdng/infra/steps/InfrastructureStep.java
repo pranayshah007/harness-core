@@ -118,6 +118,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -177,9 +178,9 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     infrastructureValidator.validate(infrastructure);
 
-    final InfrastructureOutcome infrastructureOutcome =
-        infrastructureOutcomeProvider.getOutcome(ambiance, infrastructure, environmentOutcome, serviceOutcome,
-            ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    final InfrastructureOutcome infrastructureOutcome = infrastructureOutcomeProvider.getOutcome(ambiance,
+        infrastructure, environmentOutcome, serviceOutcome, ngAccess.getAccountIdentifier(),
+        ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), new HashMap<>());
 
     if (environmentOutcome != null) {
       if (isNotEmpty(environmentOutcome.getName())) {
