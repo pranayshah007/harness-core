@@ -10,10 +10,22 @@ package io.harness.exception.runtime;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.runtime.utils.KubernetesCertificateType;
 
+import lombok.Data;
+
+@Data
 @OwnedBy(CDP)
 public class KubernetesApiClientRuntimeException extends RuntimeException {
+  private KubernetesCertificateType kubernetesCertificateType;
+
   public KubernetesApiClientRuntimeException(String message, Throwable cause) {
     super(message, cause);
+  }
+
+  public KubernetesApiClientRuntimeException(
+      String message, Throwable cause, KubernetesCertificateType kubernetesCertificateType) {
+    super(message, cause);
+    this.kubernetesCertificateType = kubernetesCertificateType;
   }
 }
