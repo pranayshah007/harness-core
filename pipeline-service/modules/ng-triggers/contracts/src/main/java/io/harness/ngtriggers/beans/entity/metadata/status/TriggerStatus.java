@@ -25,4 +25,6 @@ public class TriggerStatus {
   ValidationStatus validationStatus;
   WebhookAutoRegistrationStatus webhookAutoRegistrationStatus;
   WebhookInfo webhookInfo;
+  StatusResult status;
+  String detailedMessage;
 }

@@ -12,12 +12,16 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
+import io.harness.ngtriggers.beans.entity.metadata.WebhookRegistrationStatus;
+import io.harness.ngtriggers.beans.entity.metadata.status.*;
+import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
 import io.harness.ngtriggers.mapper.TriggerFilterHelper;
 import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -44,8 +48,113 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
   public Page<NGTriggerEntity> findAll(Criteria criteria, Pageable pageable) {
     Query query = new Query(criteria).with(pageable);
     List<NGTriggerEntity> triggers = mongoTemplate.find(query, NGTriggerEntity.class);
+
+    triggers = updateTriggerStatus(triggers);
+
     return PageableExecutionUtils.getPage(
         triggers, pageable, () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), NGTriggerEntity.class));
+  }
+
+  private List<NGTriggerEntity> updateTriggerStatus(List<NGTriggerEntity> triggers) {
+    for (NGTriggerEntity trigger : triggers) {
+      TriggerStatus triggerStatus = trigger.getTriggerStatus();
+
+      if (triggerStatus == null) {
+        TriggerStatus status = TriggerStatus.builder().status(StatusResult.FAILED).build();
+        trigger.setTriggerStatus(status);
+        continue;
+      }
+
+      PollingSubscriptionStatus pollingSubscriptionStatus = triggerStatus.getPollingSubscriptionStatus();
+      ValidationStatus validationStatus = triggerStatus.getValidationStatus();
+      WebhookAutoRegistrationStatus webhookAutoRegistrationStatus = triggerStatus.getWebhookAutoRegistrationStatus();
+
+      if (trigger.getType() == NGTriggerType.ARTIFACT || trigger.getType() == NGTriggerType.MANIFEST) {
+        // ARTIFACT & MANIFEST TRIGGERS
+
+        if (pollingSubscriptionStatus == null || validationStatus == null) {
+          triggerStatus.setStatus(StatusResult.FAILED);
+          trigger.setTriggerStatus(triggerStatus);
+          continue;
+        }
+
+        if (pollingSubscriptionStatus.getStatusResult().equals(StatusResult.SUCCESS)
+            && validationStatus.getStatusResult().equals(StatusResult.SUCCESS)) {
+          triggerStatus.setStatus(StatusResult.SUCCESS);
+        } else {
+          triggerStatus.setStatus(StatusResult.FAILED);
+
+          if (validationStatus.getStatusResult().equals(StatusResult.FAILED)) {
+            triggerStatus.setDetailedMessage(validationStatus.getDetailedMessage());
+          } else if (pollingSubscriptionStatus.getStatusResult().equals(StatusResult.FAILED)) {
+            triggerStatus.setDetailedMessage(pollingSubscriptionStatus.getDetailedMessage());
+          }
+        }
+      } else if (trigger.getType() == NGTriggerType.SCHEDULED) {
+        // SCHEDULED TRIGGERS
+
+        if (validationStatus == null) {
+          triggerStatus.setStatus(StatusResult.FAILED);
+          trigger.setTriggerStatus(triggerStatus);
+          continue;
+        }
+
+        if (validationStatus.getStatusResult().equals(StatusResult.SUCCESS)) {
+          triggerStatus.setStatus(StatusResult.SUCCESS);
+        } else {
+          triggerStatus.setStatus(StatusResult.FAILED);
+        }
+        triggerStatus.setDetailedMessage(validationStatus.getDetailedMessage());
+
+      } else if (trigger.getType() == NGTriggerType.WEBHOOK) {
+        // WEBHOOK TRIGGERS
+
+        if (trigger.getMetadata().getWebhook().getType().equals("CUSTOM")) {
+          if (validationStatus == null) {
+            triggerStatus.setStatus(StatusResult.FAILED);
+            trigger.setTriggerStatus(triggerStatus);
+            continue;
+          }
+
+          if (validationStatus.getStatusResult().equals(StatusResult.SUCCESS)) {
+            triggerStatus.setStatus(StatusResult.SUCCESS);
+          } else {
+            triggerStatus.setStatus(StatusResult.FAILED);
+          }
+
+          triggerStatus.setDetailedMessage(validationStatus.getDetailedMessage());
+
+        } else {
+          if (validationStatus == null || pollingSubscriptionStatus == null || webhookAutoRegistrationStatus == null) {
+            triggerStatus.setStatus(StatusResult.FAILED);
+            trigger.setTriggerStatus(triggerStatus);
+            continue;
+          }
+
+          if (pollingSubscriptionStatus.getStatusResult().equals(StatusResult.SUCCESS)
+              && validationStatus.getStatusResult().equals(StatusResult.SUCCESS)
+              && webhookAutoRegistrationStatus.getRegistrationResult().equals(WebhookRegistrationStatus.SUCCESS)) {
+            triggerStatus.setStatus(StatusResult.SUCCESS);
+          } else {
+            triggerStatus.setStatus(StatusResult.FAILED);
+
+            if (validationStatus.getStatusResult().equals(StatusResult.FAILED)) {
+              triggerStatus.setDetailedMessage(validationStatus.getDetailedMessage());
+            } else if (pollingSubscriptionStatus.getStatusResult().equals(StatusResult.FAILED)) {
+              triggerStatus.setDetailedMessage(pollingSubscriptionStatus.getDetailedMessage());
+            } else if (webhookAutoRegistrationStatus.getRegistrationResult().equals(WebhookRegistrationStatus.FAILED)
+                || webhookAutoRegistrationStatus.getRegistrationResult().equals(WebhookRegistrationStatus.ERROR)
+                || webhookAutoRegistrationStatus.getRegistrationResult().equals(WebhookRegistrationStatus.TIMEOUT)) {
+              triggerStatus.setDetailedMessage(webhookAutoRegistrationStatus.getDetailedMessage());
+            }
+          }
+        }
+      }
+
+      trigger.setTriggerStatus(triggerStatus);
+    }
+
+    return triggers;
   }
 
   @Override
