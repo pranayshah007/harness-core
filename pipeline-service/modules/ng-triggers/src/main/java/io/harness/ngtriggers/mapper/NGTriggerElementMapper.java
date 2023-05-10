@@ -78,12 +78,7 @@ import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.beans.source.WebhookTriggerType;
-import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
-import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
-import io.harness.ngtriggers.beans.source.artifact.BuildAware;
-import io.harness.ngtriggers.beans.source.artifact.HelmManifestSpec;
-import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
-import io.harness.ngtriggers.beans.source.artifact.ManifestTypeSpec;
+import io.harness.ngtriggers.beans.source.artifact.*;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
 import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
@@ -361,6 +356,16 @@ public class NGTriggerElementMapper {
                                .pollingConfig(PollingConfig.builder().buildRef(EMPTY).signature(generateUuid()).build())
                                .build())
             .build();
+      case MULTI_ARTIFACT:
+        MultiArtifactTriggerConfig multiArtifactTriggerConfig = (MultiArtifactTriggerConfig) triggerSource.getSpec();
+        return NGTriggerMetadata.builder()
+                .multiBuildMetadata(multiArtifactTriggerConfig.getSources().stream().map(
+                        source -> BuildMetadata.builder()
+                                .type(ARTIFACT)
+                                .buildSourceType(source.getClass().getName())
+                                .pollingConfig(PollingConfig.builder().buildRef(EMPTY).signature(generateUuid()).build())
+                        .build()).collect(Collectors.toList()))
+                .build();
       case MANIFEST:
         ManifestTypeSpec manifestTypeSpec = ((ManifestTriggerConfig) triggerSource.getSpec()).getSpec();
         String manifestSourceType = null;

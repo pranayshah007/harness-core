@@ -656,6 +656,7 @@ public enum FeatureName {
   PIE_DEPRECATE_PAUSE_INTERRUPT_NG("Deprecate Pause and Resume interrupts in NG", HarnessTeam.PIPELINE),
   CDS_NG_TRIGGER_SELECTIVE_STAGE_EXECUTION(
       "Allows triggers to execute selective stages for the underlying pipeline in NG", HarnessTeam.SPG),
+  CDS_NG_TRIGGER_MULTI_ARTIFACTS("Allows creation of multi-artifact triggers", HarnessTeam.CDC),
   PLG_ENABLE_CROSS_GENERATION_ACCESS("Enables cross generation access", GTM),
   CDS_SERVICE_OVERRIDES_2_0("Revamped experience service and environment overrides in NG", HarnessTeam.CDC),
   CDS_USE_OLD_SERVICE_V1("Feature flag to use service v1. NG_SVC_ENV_REDESIGN will be deprecated", HarnessTeam.CDC),

@@ -16,6 +16,8 @@ import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.annotation.TypeAlias;
 
+import java.util.List;
+
 @Data
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -23,6 +25,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(PIPELINE)
 public class NGTriggerMetadata {
   BuildMetadata buildMetadata;
+  List<BuildMetadata> multiBuildMetadata;
   WebhookMetadata webhook;
   CronMetadata cron;
 }
