@@ -64,7 +64,7 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
     // creating secrets on the namespace of backstage and storing in DB
     List<BackstageEnvVariable> backstageEnvVariableList = getListOfBackstageEnvSecretVariable(appConfig);
     List<BackstageEnvVariable> backstageEnvVariables =
-        backstageEnvVariableService.createMulti(backstageEnvVariableList, accountIdentifier);
+        backstageEnvVariableService.createOrUpdate(backstageEnvVariableList, accountIdentifier);
     List<BackstageEnvSecretVariable> returnList = new ArrayList<>();
     for (BackstageEnvVariable backstageEnvVariable : backstageEnvVariables) {
       returnList.add((BackstageEnvSecretVariable) backstageEnvVariable);

@@ -7,20 +7,22 @@
 
 package io.harness.aggregator.consumers;
 
-import io.harness.accesscontrol.acl.persistence.ACL;
+import io.harness.accesscontrol.resources.resourcegroups.ResourceSelector;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import java.util.List;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.PL)
-public interface ChangeConsumerService {
-  List<ACL> getAClsForRoleAssignment(RoleAssignmentDBO roleAssignmentDBO);
+public interface ACLGeneratorService {
+  long createACLsForRoleAssignment(RoleAssignmentDBO roleAssignmentDBO);
 
-  List<ACL> getAClsForRoleAssignment(RoleAssignmentDBO roleAssignment, Set<String> principals);
+  long createACLsForRoleAssignment(RoleAssignmentDBO roleAssignment, Set<String> principals);
 
-  List<ACL> getImplicitACLsForRoleAssignment(
+  long createImplicitACLsForRoleAssignment(
       RoleAssignmentDBO roleAssignment, Set<String> addedPrincipals, Set<String> addedPermissions);
+
+  long createACLs(RoleAssignmentDBO roleAssignmentDBO, Set<String> principals, Set<String> permissions,
+      Set<ResourceSelector> resourceSelectors);
 }

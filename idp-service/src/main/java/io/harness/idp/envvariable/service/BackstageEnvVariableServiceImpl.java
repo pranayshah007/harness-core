@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -91,9 +92,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     return responseEnvVariable;
   }
 
-  @Override
-  public List<BackstageEnvVariable> createMulti(
-      List<BackstageEnvVariable> requestEnvVariables, String accountIdentifier) {
+  List<BackstageEnvVariable> createMulti(List<BackstageEnvVariable> requestEnvVariables, String accountIdentifier) {
     requestEnvVariables = removeAccountFromIdentifierForBackstageEnvVarList(requestEnvVariables);
     sync(requestEnvVariables, accountIdentifier);
     List<BackstageEnvVariableEntity> entities = getEntitiesFromDtos(requestEnvVariables, accountIdentifier);
@@ -126,9 +125,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     return responseVariable;
   }
 
-  @Override
-  public List<BackstageEnvVariable> updateMulti(
-      List<BackstageEnvVariable> requestEnvVariables, String accountIdentifier) {
+  List<BackstageEnvVariable> updateMulti(List<BackstageEnvVariable> requestEnvVariables, String accountIdentifier) {
     requestEnvVariables = removeAccountFromIdentifierForBackstageEnvVarList(requestEnvVariables);
     sync(requestEnvVariables, accountIdentifier);
     List<BackstageEnvVariableEntity> entities = getEntitiesFromDtos(requestEnvVariables, accountIdentifier);
@@ -142,6 +139,30 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     setupUsageProducer.publishEnvVariableSetupUsage(responseVariables, accountIdentifier);
 
     return responseVariables;
+  }
+
+  @Override
+  public List<BackstageEnvVariable> createOrUpdate(List<BackstageEnvVariable> envVariables, String accountIdentifier) {
+    List<String> envNamesFromRequest =
+        envVariables.stream().map(BackstageEnvVariable::getEnvName).collect(Collectors.toList());
+    Set<String> envNamesFromDB =
+        backstageEnvVariableRepository
+            .findAllByAccountIdentifierAndMultipleEnvNames(accountIdentifier, envNamesFromRequest)
+            .stream()
+            .map(BackstageEnvVariableEntity::getEnvName)
+            .collect(Collectors.toSet());
+    List<BackstageEnvVariable> envVariablesToUpdate = new ArrayList<>();
+    List<BackstageEnvVariable> envVariablesToAdd = new ArrayList<>();
+    envVariables.forEach(envVariable -> {
+      if (envNamesFromDB.contains(envVariable.getEnvName())) {
+        envVariablesToUpdate.add(envVariable);
+      } else {
+        envVariablesToAdd.add(envVariable);
+      }
+    });
+    List<BackstageEnvVariable> response = createMulti(envVariablesToAdd, accountIdentifier);
+    response.addAll(updateMulti(envVariablesToUpdate, accountIdentifier));
+    return response;
   }
 
   @Override

@@ -11,6 +11,7 @@ import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_ENV_OUTCOM
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.INFO;
@@ -30,6 +31,7 @@ import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.encryption.Scope;
+import io.harness.eraro.Level;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.gitops.models.Cluster;
@@ -37,12 +39,16 @@ import io.harness.gitops.models.ClusterQuery;
 import io.harness.gitops.remote.GitopsResourceClient;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.expression.EngineExpressionService;
@@ -114,6 +120,8 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     final StepResponseBuilder stepResponseBuilder = StepResponse.builder();
     CommandExecutionStatus status = FAILURE;
+    FailureData failureData = null;
+    String failureMessage = null;
 
     final LogCallback logger = new NGLogCallback(logStreamingStepClientFactory, ambiance, null, true);
 
@@ -165,16 +173,30 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
       final Map<String, List<IndividualClusterInternal>> validatedClusters =
           validatedClusters(ambiance, stepParameters, logger, envVars);
 
+      if (isEmpty(validatedClusters)) {
+        failureMessage = "No clusters were retrieved from Harness GitOps";
+        failureData = FailureData.newBuilder()
+                          .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                          .setLevel(Level.ERROR.name())
+                          .setCode(GENERAL_ERROR.name())
+                          .setMessage(failureMessage)
+                          .build();
+        logger.saveExecutionLog(failureMessage, INFO, status);
+        return stepResponseBuilder.status(Status.FAILED)
+            .failureInfo(FailureInfo.newBuilder().addFailureData(failureData).build())
+            .build();
+      }
       final GitopsClustersOutcome outcome = toOutcome(validatedClusters, svcVariables, envSvcOverrideVars);
 
       executionSweepingOutputResolver.consume(ambiance, GITOPS_SWEEPING_OUTPUT, outcome, StepOutcomeGroup.STAGE.name());
 
       stepResponseBuilder.stepOutcome(StepOutcome.builder().name(GITOPS_SWEEPING_OUTPUT).outcome(outcome).build());
       status = SUCCESS;
-    } finally {
       logger.saveExecutionLog("Completed", INFO, status);
-    }
 
+    } finally {
+      closeLogStream(ambiance);
+    }
     return stepResponseBuilder.status(Status.SUCCEEDED).build();
   }
 
@@ -525,5 +547,10 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
 
   private static boolean clusterNameNull(IndividualClusterInternal c) {
     return c.getClusterName() == null;
+  }
+
+  private void closeLogStream(Ambiance ambiance) {
+    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+    logStreamingStepClient.closeStream("");
   }
 }

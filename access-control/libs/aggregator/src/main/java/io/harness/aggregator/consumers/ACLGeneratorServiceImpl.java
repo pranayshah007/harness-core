@@ -17,6 +17,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.persistence.ACL;
+import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
 import io.harness.accesscontrol.common.filter.ManagedFilter;
 import io.harness.accesscontrol.principals.usergroups.UserGroup;
 import io.harness.accesscontrol.principals.usergroups.UserGroupService;
@@ -35,6 +36,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -42,50 +44,46 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 
 @Singleton
 @OwnedBy(HarnessTeam.PL)
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
-public class ChangeConsumerServiceImpl implements ChangeConsumerService {
+public class ACLGeneratorServiceImpl implements ACLGeneratorService {
   private final RoleService roleService;
   private final UserGroupService userGroupService;
   private final ResourceGroupService resourceGroupService;
   private final ScopeService scopeService;
   private final Map<Pair<ScopeLevel, Boolean>, Set<String>> implicitPermissionsByScope;
+  private final ACLRepository aclRepository;
 
-  @Override
-  public List<ACL> getAClsForRoleAssignment(RoleAssignmentDBO roleAssignment) {
-    Set<String> principals = getPrincipalsFromRoleAssignment(roleAssignment);
-    return getAClsForRoleAssignment(roleAssignment, principals);
+  @Inject
+  public ACLGeneratorServiceImpl(RoleService roleService, UserGroupService userGroupService,
+      ResourceGroupService resourceGroupService, ScopeService scopeService,
+      Map<Pair<ScopeLevel, Boolean>, Set<String>> implicitPermissionsByScope,
+      @Named(ACL.PRIMARY_COLLECTION) ACLRepository aclRepository) {
+    this.roleService = roleService;
+    this.userGroupService = userGroupService;
+    this.resourceGroupService = resourceGroupService;
+    this.scopeService = scopeService;
+    this.implicitPermissionsByScope = implicitPermissionsByScope;
+    this.aclRepository = aclRepository;
   }
 
   @Override
-  public List<ACL> getAClsForRoleAssignment(RoleAssignmentDBO roleAssignment, Set<String> principals) {
-    Set<String> permissions = getPermissionsFromRole(roleAssignment);
-    Set<ResourceSelector> resourceSelectors = getResourceSelectorsFromRoleAssignment(roleAssignment);
-
-    List<ACL> acls = new ArrayList<>();
-    for (String permission : permissions) {
-      for (String principalIdentifier : principals) {
-        for (ResourceSelector resourceSelector : resourceSelectors) {
-          if (SERVICE_ACCOUNT.equals(roleAssignment.getPrincipalType())) {
-            acls.add(buildACL(permission, Principal.of(SERVICE_ACCOUNT, principalIdentifier), roleAssignment,
-                resourceSelector, false));
-          } else {
-            acls.add(
-                buildACL(permission, Principal.of(USER, principalIdentifier), roleAssignment, resourceSelector, false));
-          }
-        }
-      }
-    }
-
-    return acls;
+  public long createACLsForRoleAssignment(RoleAssignmentDBO roleAssignmentDBO) {
+    Set<String> principals = getPrincipalsFromRoleAssignment(roleAssignmentDBO);
+    return createACLsForRoleAssignment(roleAssignmentDBO, principals);
   }
 
   @Override
-  public List<ACL> getImplicitACLsForRoleAssignment(
+  public long createACLsForRoleAssignment(RoleAssignmentDBO roleAssignmentDBO, Set<String> principals) {
+    Set<String> permissions = getPermissionsFromRole(roleAssignmentDBO);
+    Set<ResourceSelector> resourceSelectors = getResourceSelectorsFromRoleAssignment(roleAssignmentDBO);
+    return createACLs(roleAssignmentDBO, principals, permissions, resourceSelectors);
+  }
+
+  @Override
+  public long createImplicitACLsForRoleAssignment(
       RoleAssignmentDBO roleAssignment, Set<String> addedUsers, Set<String> addedPermissions) {
     List<ACL> acls = getImplicitACLsForRoleAssignment(roleAssignment);
     if (isNotEmpty(addedPermissions)) {
@@ -99,7 +97,36 @@ public class ChangeConsumerServiceImpl implements ChangeConsumerService {
                      -> addedUsers.contains(acl.getPrincipalIdentifier()) && USER.name().equals(acl.getPrincipalType()))
                  .collect(Collectors.toList());
     }
-    return acls;
+    return aclRepository.insertAllIgnoringDuplicates(acls);
+  }
+
+  @Override
+  public long createACLs(RoleAssignmentDBO roleAssignmentDBO, Set<String> principals, Set<String> permissions,
+      Set<ResourceSelector> resourceSelectors) {
+    long numberOfACLsCreated = 0;
+    List<ACL> acls = new ArrayList<>();
+    for (String principalIdentifier : principals) {
+      for (String permission : permissions) {
+        for (ResourceSelector resourceSelector : resourceSelectors) {
+          if (SERVICE_ACCOUNT.equals(roleAssignmentDBO.getPrincipalType())) {
+            acls.add(buildACL(permission, Principal.of(SERVICE_ACCOUNT, principalIdentifier), roleAssignmentDBO,
+                resourceSelector, false));
+          } else {
+            acls.add(buildACL(
+                permission, Principal.of(USER, principalIdentifier), roleAssignmentDBO, resourceSelector, false));
+          }
+          if (acls.size() >= 50000) {
+            numberOfACLsCreated += aclRepository.insertAllIgnoringDuplicates(acls);
+            acls.clear();
+          }
+        }
+      }
+    }
+    if (acls.size() > 0) {
+      numberOfACLsCreated += aclRepository.insertAllIgnoringDuplicates(acls);
+      acls.clear();
+    }
+    return numberOfACLsCreated;
   }
 
   private List<ACL> getImplicitACLsForRoleAssignment(RoleAssignmentDBO roleAssignment) {

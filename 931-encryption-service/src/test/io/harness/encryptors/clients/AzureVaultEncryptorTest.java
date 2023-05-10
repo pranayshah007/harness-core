@@ -7,7 +7,9 @@
 
 package io.harness.encryptors.clients;
 
+import static io.harness.SecretConstants.EXPIRES_ON;
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
 import static io.harness.rule.OwnerRule.UTKARSH;
 
@@ -26,12 +28,14 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.azure.AzureEnvironmentType;
+import io.harness.beans.SecretText;
 import io.harness.category.element.UnitTests;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.helpers.ext.azure.KeyVaultAuthenticator;
 import io.harness.rule.Owner;
+import io.harness.security.encryption.AdditionalMetadata;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionType;
@@ -53,7 +57,10 @@ import com.azure.security.keyvault.secrets.models.KeyVaultSecret;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.aad.msal4j.MsalServiceException;
 import java.time.Duration;
+import java.time.Instant;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -93,6 +100,11 @@ public class AzureVaultEncryptorTest extends CategoryTest {
         .thenReturn(keyVaultClient);
   }
 
+  @After
+  public void cleanup() {
+    keyVaultAuthenticatorMockedStatic.close();
+  }
+
   @Test
   @Owner(developers = {UTKARSH, MLUKIC})
   @Category(UnitTests.class)
@@ -113,6 +125,35 @@ public class AzureVaultEncryptorTest extends CategoryTest {
     KeyVaultSecret keyVaultSecretCaptured = captor.getValue();
     assertThat(keyVaultSecretCaptured.getName()).isEqualTo(name);
     assertThat(keyVaultSecretCaptured.getValue()).isEqualTo(plainText);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testCreateSecretUsingSecretText() {
+    String plainText = UUIDGenerator.generateUuid();
+    String name = UUIDGenerator.generateUuid();
+    long expiresOn = RandomUtils.nextLong();
+    AdditionalMetadata additionalMetadata = AdditionalMetadata.builder().value(EXPIRES_ON, expiresOn).build();
+    SecretText secretText =
+        SecretText.builder().name(name).value(plainText).additionalMetadata(additionalMetadata).build();
+    ArgumentCaptor<KeyVaultSecret> captor = ArgumentCaptor.forClass(KeyVaultSecret.class);
+    KeyVaultSecret keyVaultSecret = mockKeyVaultSecret(name, plainText);
+    Response<KeyVaultSecret> response = new SimpleResponse(null, 200, null, keyVaultSecret);
+
+    when(keyVaultClient.setSecretWithResponse(any(KeyVaultSecret.class), any(Context.class))).thenReturn(response);
+    EncryptedRecord encryptedRecord =
+        azureVaultEncryptor.createSecret(azureVaultConfig.getAccountId(), secretText, azureVaultConfig);
+    assertThat(encryptedRecord).isNotNull();
+    assertThat(encryptedRecord.getEncryptedValue()).isEqualTo(keyVaultSecret.getId().toCharArray());
+    assertThat(encryptedRecord.getEncryptionKey()).isEqualTo(name);
+    assertThat(encryptedRecord.getAdditionalMetadata()).isEqualTo(secretText.getAdditionalMetadata());
+    verify(keyVaultClient, times(1)).setSecretWithResponse(captor.capture(), any(Context.class));
+    KeyVaultSecret keyVaultSecretCaptured = captor.getValue();
+    assertThat(keyVaultSecretCaptured.getName()).isEqualTo(name);
+    assertThat(keyVaultSecretCaptured.getValue()).isEqualTo(plainText);
+    assertThat(keyVaultSecretCaptured.getProperties().getExpiresOn().toEpochSecond())
+        .isEqualTo(Instant.ofEpochMilli(expiresOn).getEpochSecond());
   }
 
   @Test
@@ -209,6 +250,53 @@ public class AzureVaultEncryptorTest extends CategoryTest {
     assertThat(keyVaultSecretCaptured.getValue()).isEqualTo(plainText);
     verify(keyVaultClient, times(1)).beginDeleteSecret(oldRecord.getName());
     verify(keyVaultClient, times(1)).getSecret(oldRecord.getName());
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testUpdateSecretUsingSecretText() {
+    String plainText = UUIDGenerator.generateUuid();
+    String name = UUIDGenerator.generateUuid();
+    long expiresOn = RandomUtils.nextLong();
+    AdditionalMetadata additionalMetadata = AdditionalMetadata.builder().value(EXPIRES_ON, expiresOn).build();
+    SecretText secretText =
+        SecretText.builder().name(name).value(plainText).additionalMetadata(additionalMetadata).build();
+    ArgumentCaptor<KeyVaultSecret> captor = ArgumentCaptor.forClass(KeyVaultSecret.class);
+    KeyVaultSecret keyVaultSecret = mockKeyVaultSecret(name, plainText);
+    Response<KeyVaultSecret> response = new SimpleResponse(null, 200, null, keyVaultSecret);
+    when(keyVaultClient.setSecretWithResponse(any(KeyVaultSecret.class), any(Context.class))).thenReturn(response);
+
+    SyncPoller<DeletedSecret, Void> syncPoller = mock(SyncPoller.class);
+    when(syncPoller.setPollInterval(any())).thenReturn(syncPoller);
+
+    PollResponse<DeletedSecret> pollResponse = mock(PollResponse.class);
+    when(syncPoller.waitUntil(any(Duration.class), any(LongRunningOperationStatus.class))).thenReturn(pollResponse);
+    when(keyVaultClient.beginDeleteSecret(any())).thenReturn(syncPoller);
+
+    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+                                    .name(UUIDGenerator.generateUuid())
+                                    .encryptionKey(UUIDGenerator.generateUuid())
+                                    .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
+                                    .build();
+
+    when(keyVaultClient.getSecret(oldRecord.getName()))
+        .thenThrow(new ResourceNotFoundException("404 - resource not found", null));
+
+    EncryptedRecord encryptedRecord =
+        azureVaultEncryptor.updateSecret(azureVaultConfig.getAccountId(), secretText, oldRecord, azureVaultConfig);
+    assertThat(encryptedRecord).isNotNull();
+    assertThat(encryptedRecord.getEncryptedValue()).isEqualTo(keyVaultSecret.getId().toCharArray());
+    assertThat(encryptedRecord.getEncryptionKey()).isEqualTo(name);
+    assertThat(encryptedRecord.getAdditionalMetadata()).isEqualTo(secretText.getAdditionalMetadata());
+    verify(keyVaultClient, times(1)).setSecretWithResponse(captor.capture(), any());
+    KeyVaultSecret keyVaultSecretCaptured = captor.getValue();
+    assertThat(keyVaultSecretCaptured.getName()).isEqualTo(name);
+    assertThat(keyVaultSecretCaptured.getValue()).isEqualTo(plainText);
+    verify(keyVaultClient, times(1)).beginDeleteSecret(oldRecord.getName());
+    verify(keyVaultClient, times(1)).getSecret(oldRecord.getName());
+    assertThat(keyVaultSecretCaptured.getProperties().getExpiresOn().toEpochSecond())
+        .isEqualTo(Instant.ofEpochMilli(expiresOn).getEpochSecond());
   }
 
   @Test
@@ -326,8 +414,13 @@ public class AzureVaultEncryptorTest extends CategoryTest {
   public void testRenameSecret() {
     String existingSecretName = UUIDGenerator.generateUuid();
     String existingSecretEncryptedValue = UUIDGenerator.generateUuid();
-    EncryptedRecord existingSecretEncryptedRecord =
-        EncryptedRecordData.builder().name(existingSecretName).encryptionKey(existingSecretName).build();
+    long expiresOn = RandomUtils.nextLong();
+    AdditionalMetadata additionalMetadata = AdditionalMetadata.builder().value(EXPIRES_ON, expiresOn).build();
+    EncryptedRecord existingSecretEncryptedRecord = EncryptedRecordData.builder()
+                                                        .name(existingSecretName)
+                                                        .encryptionKey(existingSecretName)
+                                                        .additionalMetadata(additionalMetadata)
+                                                        .build();
     KeyVaultSecret existingSecretKeyVaultSecret =
         mockKeyVaultSecret(existingSecretName, existingSecretName, existingSecretEncryptedValue);
     Response<KeyVaultSecret> existingSecretResponse = new SimpleResponse(null, 200, null, existingSecretKeyVaultSecret);
@@ -355,11 +448,66 @@ public class AzureVaultEncryptorTest extends CategoryTest {
     assertThat(encryptedRecord).isNotNull();
     assertThat(encryptedRecord.getEncryptedValue()).isEqualTo(newSecretName.toCharArray());
     assertThat(encryptedRecord.getEncryptionKey()).isEqualTo(newSecretName);
+    assertThat(encryptedRecord.getAdditionalMetadata())
+        .isEqualTo(existingSecretEncryptedRecord.getAdditionalMetadata());
     verify(keyVaultClient, times(1)).getSecretWithResponse(eq(existingSecretName), any(), any(Context.class));
     verify(keyVaultClient, times(1)).setSecretWithResponse(captorForSet.capture(), any(Context.class));
     KeyVaultSecret keyVaultSecretCaptured = captorForSet.getValue();
     assertThat(keyVaultSecretCaptured.getName()).isEqualTo(newSecretName);
     assertThat(keyVaultSecretCaptured.getValue()).isEqualTo(existingSecretEncryptedValue);
+    assertThat(keyVaultSecretCaptured.getProperties().getExpiresOn().toEpochSecond())
+        .isEqualTo(Instant.ofEpochMilli(expiresOn).getEpochSecond());
+    verify(keyVaultClient, times(1)).beginDeleteSecret(eq(existingSecretName));
+    verify(keyVaultClient, times(1)).getSecret(eq(existingSecretName));
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testRenameSecretUsingSecretText() {
+    String existingSecretName = UUIDGenerator.generateUuid();
+    String existingSecretEncryptedValue = UUIDGenerator.generateUuid();
+    long expiresOn = RandomUtils.nextLong();
+    AdditionalMetadata additionalMetadata = AdditionalMetadata.builder().value(EXPIRES_ON, expiresOn).build();
+    EncryptedRecord existingSecretEncryptedRecord =
+        EncryptedRecordData.builder().name(existingSecretName).encryptionKey(existingSecretName).build();
+    KeyVaultSecret existingSecretKeyVaultSecret =
+        mockKeyVaultSecret(existingSecretName, existingSecretName, existingSecretEncryptedValue);
+    Response<KeyVaultSecret> existingSecretResponse = new SimpleResponse(null, 200, null, existingSecretKeyVaultSecret);
+    when(keyVaultClient.getSecretWithResponse(eq(existingSecretName), any(), any(Context.class)))
+        .thenReturn(existingSecretResponse);
+
+    String newSecretName = UUIDGenerator.generateUuid();
+    SecretText secretText = SecretText.builder().name(newSecretName).additionalMetadata(additionalMetadata).build();
+
+    ArgumentCaptor<KeyVaultSecret> captorForSet = ArgumentCaptor.forClass(KeyVaultSecret.class);
+    KeyVaultSecret newSecretKeyVaultSecret =
+        mockKeyVaultSecret(newSecretName, newSecretName, existingSecretEncryptedValue);
+    Response<KeyVaultSecret> newSecretResponse = new SimpleResponse(null, 200, null, newSecretKeyVaultSecret);
+    when(keyVaultClient.setSecretWithResponse(any(KeyVaultSecret.class), any(Context.class)))
+        .thenReturn(newSecretResponse);
+
+    SyncPoller<DeletedSecret, Void> syncPoller = mock(SyncPoller.class);
+    when(syncPoller.setPollInterval(any())).thenReturn(syncPoller);
+    PollResponse<DeletedSecret> pollResponse = mock(PollResponse.class);
+    when(syncPoller.waitUntil(any(Duration.class), any(LongRunningOperationStatus.class))).thenReturn(pollResponse);
+    when(keyVaultClient.beginDeleteSecret(eq(existingSecretName))).thenReturn(syncPoller);
+    when(keyVaultClient.getSecret(eq(existingSecretName)))
+        .thenThrow(new ResourceNotFoundException("404 - resource not found", null));
+
+    EncryptedRecord encryptedRecord = azureVaultEncryptor.renameSecret(
+        azureVaultConfig.getAccountId(), secretText, existingSecretEncryptedRecord, azureVaultConfig);
+    assertThat(encryptedRecord).isNotNull();
+    assertThat(encryptedRecord.getEncryptedValue()).isEqualTo(newSecretName.toCharArray());
+    assertThat(encryptedRecord.getEncryptionKey()).isEqualTo(newSecretName);
+    assertThat(encryptedRecord.getAdditionalMetadata()).isEqualTo(additionalMetadata);
+    verify(keyVaultClient, times(1)).getSecretWithResponse(eq(existingSecretName), any(), any(Context.class));
+    verify(keyVaultClient, times(1)).setSecretWithResponse(captorForSet.capture(), any(Context.class));
+    KeyVaultSecret keyVaultSecretCaptured = captorForSet.getValue();
+    assertThat(keyVaultSecretCaptured.getName()).isEqualTo(newSecretName);
+    assertThat(keyVaultSecretCaptured.getValue()).isEqualTo(existingSecretEncryptedValue);
+    assertThat(keyVaultSecretCaptured.getProperties().getExpiresOn().toEpochSecond())
+        .isEqualTo(Instant.ofEpochMilli(expiresOn).getEpochSecond());
     verify(keyVaultClient, times(1)).beginDeleteSecret(eq(existingSecretName));
     verify(keyVaultClient, times(1)).getSecret(eq(existingSecretName));
   }

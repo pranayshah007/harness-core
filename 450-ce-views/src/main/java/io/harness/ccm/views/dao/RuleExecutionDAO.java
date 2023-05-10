@@ -67,6 +67,12 @@ public class RuleExecutionDAO {
     CriteriaContainer criteria = query.or(query.criteria(RuleExecutionKeys.executionType).notEqual("INTERNAL"),
         query.criteria(RuleExecutionKeys.executionType).doesNotExist());
     query.and(criteria, query.criteria(RuleExecutionKeys.accountId).equal(ruleExecutionFilter.getAccountId()));
+    if (ruleExecutionFilter.getSavings() != null) {
+      CriteriaContainer criteriaSort =
+          query.or(query.criteria(RuleExecutionKeys.realizedSavings).greaterThanOrEq(ruleExecutionFilter.getSavings()),
+              query.criteria(RuleExecutionKeys.potentialSavings).greaterThanOrEq(ruleExecutionFilter.getSavings()));
+      query.and(criteriaSort);
+    }
     if (ruleExecutionFilter.getTargetAccount() != null) {
       query.field(RuleExecutionKeys.targetAccount).in(ruleExecutionFilter.getTargetAccount());
     }
@@ -106,10 +112,17 @@ public class RuleExecutionDAO {
       }
     }
     ruleExecutionList.setTotalItems(query.asList().size());
-    ruleExecutionList.setRuleExecution(query.limit(ruleExecutionFilter.getLimit())
-                                           .offset(ruleExecutionFilter.getOffset())
-                                           .order(Sort.descending(RuleExecutionKeys.lastUpdatedAt))
-                                           .asList());
+    if (ruleExecutionFilter.getSortByCost() != null && ruleExecutionFilter.getSortByCost()) {
+      ruleExecutionList.setRuleExecution(query.limit(ruleExecutionFilter.getLimit())
+                                             .offset(ruleExecutionFilter.getOffset())
+                                             .order(Sort.descending(RuleExecutionKeys.potentialSavings))
+                                             .asList());
+    } else {
+      ruleExecutionList.setRuleExecution(query.limit(ruleExecutionFilter.getLimit())
+                                             .offset(ruleExecutionFilter.getOffset())
+                                             .order(Sort.descending(RuleExecutionKeys.lastUpdatedAt))
+                                             .asList());
+    }
 
     return ruleExecutionList;
   }

@@ -308,7 +308,7 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
         .setMaxAttempts(MAX_RETRY_ATTEMPTS)
         .setTotalTimeout(Duration.ofSeconds(TOTAL_TIMEOUT_IN_SECONDS))
         .build();
-    if (BooleanUtils.isFalse(gcpSecretsManagerConfig.getAssumeCredentialsOnDelegate())) {
+    if (BooleanUtils.isNotTrue(gcpSecretsManagerConfig.getAssumeCredentialsOnDelegate())) {
       FixedCredentialsProvider credentialsProvider =
           FixedCredentialsProvider.create(getGoogleCredentials(gcpSecretsManagerConfig));
       settingsBuilder.setCredentialsProvider(credentialsProvider);

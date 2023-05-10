@@ -388,27 +388,4 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
         .order(Sort.ascending(CompositeSLORecordKeys.timestamp))
         .asList();
   }
-
-  public List<CompositeSLORecord> getSLORecordsForLookBackDuration(String sloId, long lookBackDuration) {
-    CompositeSLORecord latestCompositeSLORecord = getLatestCompositeSLORecord(sloId);
-    if (latestCompositeSLORecord == null) {
-      return new ArrayList<>();
-    }
-    Instant endTime = latestCompositeSLORecord.getTimestamp();
-    Instant startTime = endTime.minusMillis(lookBackDuration).plus(1, ChronoUnit.MINUTES);
-    List<Instant> minutes = new ArrayList<>();
-    minutes.add(startTime);
-    List<CompositeSLORecord> sloRecords = getSLORecordsOfMinutes(sloId, minutes);
-    sloRecords.add(latestCompositeSLORecord);
-    return sloRecords;
-  }
-
-  @Override
-  public double getErrorBudgetBurnRate(String sloId, long lookBackDuration, int totalErrorBudgetMinutes) {
-    List<CompositeSLORecord> sloRecords = getSLORecordsForLookBackDuration(sloId, lookBackDuration);
-    return sloRecords.size() >= 2
-        ? (((sloRecords.get(1).getRunningBadCount() - sloRecords.get(0).getRunningBadCount()) * 100)
-            / totalErrorBudgetMinutes)
-        : 0;
-  }
 }
