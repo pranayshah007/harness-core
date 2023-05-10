@@ -107,7 +107,9 @@ public class UpsertSecretTaskTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testRunRenameTask() {
     when(upsertSecretTaskParameters.getTaskType()).thenReturn(UpsertSecretTaskType.RENAME);
-    when(vaultEncryptor.renameSecret(accountId, name, encryptedRecord, encryptionConfig)).thenReturn(encryptedRecord);
+    when(vaultEncryptor.renameSecret(
+             accountId, SecretText.builder().name(name).build(), encryptedRecord, encryptionConfig))
+        .thenReturn(encryptedRecord);
     UpsertSecretTaskResponse upsertSecretTaskResponse =
         (UpsertSecretTaskResponse) upsertSecretTask.run(upsertSecretTaskParameters);
     assertThat(upsertSecretTaskResponse).isNotNull();
