@@ -8,6 +8,7 @@
 package io.harness.steps.http;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.CDS_ENCODE_HTTP_STEP_URL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -64,6 +65,11 @@ import software.wings.beans.TaskType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.net.IDN;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -76,6 +82,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDC)
 @Slf4j
 public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
+  private static final String URL_ENCODED_CHAR_REGEX = ".*%[0-9a-fA-F]{2}.*";
   public static final StepType STEP_TYPE = StepSpecTypeConstants.HTTP_STEP_TYPE;
 
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
@@ -108,11 +115,17 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     }
     HttpStepParameters httpStepParameters = (HttpStepParameters) stepParameters.getSpec();
 
-    HttpTaskParametersNgBuilder httpTaskParametersNgBuilder =
-        HttpTaskParametersNg.builder()
-            .url((String) httpStepParameters.getUrl().fetchFinalValue())
-            .method(httpStepParameters.getMethod().getValue())
-            .socketTimeoutMillis(socketTimeoutMillis);
+    String url = (String) httpStepParameters.getUrl().fetchFinalValue();
+    if (pmsFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_ENCODE_HTTP_STEP_URL)) {
+      NGLogCallback logCallback =
+          getNGLogCallback(logStreamingStepClientFactory, ambiance, HttpTaskNG.COMMAND_UNIT, false);
+      url = encodeURL(url, logCallback);
+    }
+
+    HttpTaskParametersNgBuilder httpTaskParametersNgBuilder = HttpTaskParametersNg.builder()
+                                                                  .url(url)
+                                                                  .method(httpStepParameters.getMethod().getValue())
+                                                                  .socketTimeoutMillis(socketTimeoutMillis);
 
     if (EmptyPredicate.isNotEmpty(httpStepParameters.getHeaders())) {
       List<HttpHeaderConfig> headers = new ArrayList<>();
@@ -280,6 +293,27 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
       });
     }
     return outputVariablesEvaluated;
+  }
+
+  @VisibleForTesting
+  protected String encodeURL(String rawUrl, NGLogCallback logCallback) {
+    if (!isURLAlreadyEncoded(rawUrl)) {
+      try {
+        URL url = new URL(rawUrl);
+        URI uri = new URI(url.getProtocol(), url.getUserInfo(), IDN.toASCII(url.getHost()), url.getPort(),
+            url.getPath(), url.getQuery(), url.getRef());
+        String encodedUrl = uri.toASCIIString();
+        logCallback.saveExecutionLog(String.format("Encoded URL: %s .", url));
+        return encodedUrl;
+      } catch (MalformedURLException | URISyntaxException e) {
+        logCallback.saveExecutionLog(String.format("Failed to encode URL: %s", e.getMessage()));
+      }
+    }
+    return rawUrl;
+  }
+
+  private static boolean isURLAlreadyEncoded(String url) {
+    return url.matches(URL_ENCODED_CHAR_REGEX);
   }
 
   private Map<String, String> buildContextMapFromResponse(HttpStepResponse httpStepResponse) {
