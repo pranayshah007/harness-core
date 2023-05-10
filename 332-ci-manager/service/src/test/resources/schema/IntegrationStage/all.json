@@ -1647,7 +1647,30 @@
             "config": {
               "type": "string",
               "enum": [
-                "default"
+                "default",
+                "never-stop-crawl-due-to-application-errors",
+                "never-stop-audit-due-to-application-errors",
+                "minimize-false-positives",
+                "minimize-false-negatives",
+                "crawl-strategy-most-complete",
+                "crawl-strategy-more-complete",
+                "crawl-strategy-fastest",
+                "crawl-strategy-faster",
+                "crawl-limit-60-minutes",
+                "crawl-limit-30-minutes",
+                "crawl-limit-10-minutes",
+                "crawl-and-audit-lightweight",
+                "crawl-and-audit-fast",
+                "crawl-and-audit-deep",
+                "crawl-and-audit-balanced",
+                "audit-coverage-thorough",
+                "audit-coverage-maximum",
+                "audit-checks-passive",
+                "audit-checks-medium-active",
+                "audit-checks-light-active",
+                "audit-checks-critical-issues-only",
+                "audit-checks-all-except-time-based-detection-methods",
+                "audit-checks-all-except-java-script-analysis"
               ]
             },
             "imagePullPolicy": {
@@ -1734,6 +1757,9 @@
             },
             "target": {
               "$ref": "#/definitions/STOYamlTarget"
+            },
+            "tool": {
+              "$ref": "#/definitions/STOYamlBurpToolData"
             }
           }
         }
@@ -8633,6 +8659,18 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "STOYamlBurpToolData": {
+      "type": "object",
+      "properties": {
+        "scan_id": {
+          "type": "string"
+        },
+        "site_id": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "STOYamlCheckmarxToolData": {
       "type": "object",
       "properties": {
@@ -8756,13 +8794,10 @@
     "STOYamlInstance": {
       "type": "object",
       "properties": {
-        "access_id": {
-          "type": "string"
-        },
-        "access_token": {
-          "type": "string"
-        },
         "domain": {
+          "type": "string"
+        },
+        "password": {
           "type": "string"
         },
         "path": {
@@ -8782,6 +8817,9 @@
           ]
         },
         "protocol": {
+          "type": "string"
+        },
+        "username": {
           "type": "string"
         }
       },
