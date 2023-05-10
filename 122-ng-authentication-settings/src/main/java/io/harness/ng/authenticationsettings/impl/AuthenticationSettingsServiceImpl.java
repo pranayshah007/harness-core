@@ -114,7 +114,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
                          .stream()
                          .filter(Objects::nonNull)
                          .filter(ssoSetting -> ssoSetting.getType() == SSOType.SAML)
-                         .noneMatch(setting -> ((SamlSettings) setting).isAuthenticationEnabled());
+                         .anyMatch(setting -> ((SamlSettings) setting).isAuthenticationEnabled());
       }
     }
     if (!updateAuth) {
