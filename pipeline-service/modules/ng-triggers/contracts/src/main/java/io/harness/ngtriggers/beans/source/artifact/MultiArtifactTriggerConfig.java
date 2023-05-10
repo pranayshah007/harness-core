@@ -7,16 +7,16 @@
 
 package io.harness.ngtriggers.beans.source.artifact;
 
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
+
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
-
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 @Data
 @NoArgsConstructor
