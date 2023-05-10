@@ -38,9 +38,9 @@ public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValid
   @Inject private OrgAndProjectValidationHelper orgAndProjectValidationHelper;
 
   @Override
-  public void validateRequest(@NonNull ServiceOverrideRequestDTOV2 requestDTOV2, @NonNull String accountId) {
-    validateServiceOverrideRequestBasicChecks(requestDTOV2, accountId);
-    validateEnvUsedInServiceOverrideRequest(accountId, requestDTOV2.getOrgIdentifier(),
+  public void validateRequestOrThrow(@NonNull ServiceOverrideRequestDTOV2 requestDTOV2, @NonNull String accountId) {
+    validateServiceOverrideRequestBasicChecksOrThrow(requestDTOV2, accountId);
+    validateEnvWithRBACOrThrow(accountId, requestDTOV2.getOrgIdentifier(),
         requestDTOV2.getProjectIdentifier(), requestDTOV2.getEnvironmentRef());
     ServiceOverrideTypeBasedRequestParamsHandler validator =
         overrideValidatorFactory.getTypeBasedValidator(requestDTOV2.getType());
@@ -48,14 +48,14 @@ public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValid
   }
 
   @Override
-  public void validateEnvUsedInServiceOverrideRequest(
+  public void validateEnvWithRBACOrThrow(
       @NotNull String accountId, String orgId, String projectId, @NonNull String environmentRef) {
     Environment environment = checkIfEnvExistAndReturn(accountId, orgId, projectId, environmentRef);
-    validateEnvironmentRBAC(environment);
+    validateEnvironmentRBACOrThrow(environment);
   }
 
   @Override
-  public void checkForImmutableProperties(
+  public void checkForImmutablePropertiesOrThrow(
       NGServiceOverridesEntity existingEntity, NGServiceOverridesEntity requestedEntity) {
     List<String> mismatchedProperties = new ArrayList<>();
     List<String> requestedFields = new ArrayList<>();
@@ -100,7 +100,7 @@ public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValid
   }
 
   @Override
-  public void validateServiceOverrideRequestBasicChecks(
+  public void validateServiceOverrideRequestBasicChecksOrThrow(
       @NotNull ServiceOverrideRequestDTOV2 serviceOverrideRequestDTOV2, @NotNull String accountId) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         serviceOverrideRequestDTOV2.getOrgIdentifier(), serviceOverrideRequestDTOV2.getProjectIdentifier(), accountId);
@@ -109,7 +109,7 @@ public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValid
   }
 
   @Override
-  public void validateEnvironmentRBAC(@NotNull Environment environment) {
+  public void validateEnvironmentRBACOrThrow(@NotNull Environment environment) {
     overrideV2AccessControlCheckHelper.checkForEnvAndAttributesAccessOrThrow(
         ResourceScope.of(
             environment.getAccountId(), environment.getOrgIdentifier(), environment.getProjectIdentifier()),

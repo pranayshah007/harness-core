@@ -117,7 +117,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
         requestedEntity.getOrgIdentifier(), requestedEntity.getProjectIdentifier(), requestedEntity.getIdentifier());
 
     if (existingEntityInDb.isPresent()) {
-      overrideValidatorService.checkForImmutableProperties(existingEntityInDb.get(), requestedEntity);
+      overrideValidatorService.checkForImmutablePropertiesOrThrow(existingEntityInDb.get(), requestedEntity);
 
       return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
         NGServiceOverridesEntity tempResult = serviceOverrideRepositoryV2.update(equalityCriteria, requestedEntity);

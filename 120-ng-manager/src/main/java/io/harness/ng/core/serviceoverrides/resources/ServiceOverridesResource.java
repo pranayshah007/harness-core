@@ -22,32 +22,24 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.serviceoverridesv2.services.ServiceOverrideCriteriaHelper;
 import io.harness.cdng.serviceoverridesv2.services.ServiceOverridesServiceV2;
 import io.harness.cdng.serviceoverridesv2.validators.ServiceOverrideValidatorService;
 import io.harness.cdng.validations.helper.OrgAndProjectValidationHelper;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.services.EnvironmentService;
-import io.harness.ng.core.service.dto.ServiceResponse;
-import io.harness.ng.core.service.entity.ServiceEntity;
-import io.harness.ng.core.service.mappers.ServiceElementMapper;
-import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
-import io.harness.ng.core.serviceoverride.mapper.ServiceOverridesMapper;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesResponseDTOV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.ng.core.serviceoverridev2.mappers.ServiceOverridesMapperV2;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.IdentifierRefHelper;
-import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -93,7 +85,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
-@Tag(name = "Environments", description = "This contains APIs related to Environments")
+@Tag(name = "ServiceOverrides", description = "This contains APIs related to Service Overrides V2")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = NGCommonEntityConstants.BAD_REQUEST_CODE,
     description = NGCommonEntityConstants.BAD_REQUEST_PARAM_MESSAGE,
     content =
@@ -126,9 +118,10 @@ public class ServiceOverridesResource {
   private static final int MAX_LIMIT = 1000;
 
   @GET
-  @Path("/{serviceOverridesIdentifier}")
-  @ApiOperation(value = "Gets Service Overrides", nickname = "getServiceOverrides")
-  @Operation(operationId = "getServiceOverrides", summary = "Gets Service Overrides",
+  @Hidden
+  @Path("/{identifier}")
+  @ApiOperation(value = "Gets Service Overrides by Identifier", nickname = "getServiceOverrides")
+  @Operation(operationId = "getServiceOverrides", summary = "Gets Service Overrides by Identifier",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -137,7 +130,7 @@ public class ServiceOverridesResource {
       })
   public ResponseDTO<ServiceOverridesResponseDTOV2>
   get(@Parameter(description = NGCommonEntityConstants.SERVICE_OVERRIDES_IDENTIFIER) @PathParam(
-          "serviceOverridesIdentifier") @ResourceIdentifier @NotNull String serviceOverridesIdentifier,
+          "identifier") @ResourceIdentifier @NotNull String identifier,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NonNull String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -145,11 +138,11 @@ public class ServiceOverridesResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier) {
     Optional<NGServiceOverridesEntity> serviceOverridesEntityOptional =
-        serviceOverridesServiceV2.get(accountId, orgIdentifier, projectIdentifier, serviceOverridesIdentifier);
+        serviceOverridesServiceV2.get(accountId, orgIdentifier, projectIdentifier, identifier);
     if (serviceOverridesEntityOptional.isEmpty()) {
       throw new NotFoundException(
-          String.format("ServiceOverrides entity with identifier [%s] in project [%s], org [%s] not found",
-              serviceOverridesIdentifier, projectIdentifier, orgIdentifier));
+          String.format("ServiceOverrides entity with identifier [%s] in project [%s], org [%s] not found", identifier,
+              projectIdentifier, orgIdentifier));
     }
     NGServiceOverridesEntity serviceOverridesEntity = serviceOverridesEntityOptional.get();
 
@@ -168,8 +161,9 @@ public class ServiceOverridesResource {
   }
 
   @POST
-  @ApiOperation(value = "Create an ServiceOverride", nickname = "createServiceOverride")
-  @Operation(operationId = "createServiceOverride", summary = "Create an ServiceOverride",
+  @Hidden
+  @ApiOperation(value = "Create an ServiceOverride Entity", nickname = "createServiceOverride")
+  @Operation(operationId = "createServiceOverride", summary = "Create an ServiceOverride Entity",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -179,18 +173,18 @@ public class ServiceOverridesResource {
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Parameter(description = "Details of the ServiceOverride to be created") @NonNull
-      @Valid ServiceOverrideRequestDTOV2 serviceOverrideRequestDTOV2) {
-    overrideValidatorService.validateRequest(serviceOverrideRequestDTOV2, accountId);
+      @Valid ServiceOverrideRequestDTOV2 requestDTOV2) {
+    overrideValidatorService.validateRequestOrThrow(requestDTOV2, accountId);
 
     NGServiceOverridesEntity serviceOverride =
-        ServiceOverridesMapperV2.toEntity(accountId, serviceOverrideRequestDTOV2);
+        ServiceOverridesMapperV2.toEntity(accountId, requestDTOV2);
     NGServiceOverridesEntity createdServiceOverride = serviceOverridesServiceV2.create(serviceOverride);
     return ResponseDTO.newResponse(ServiceOverridesMapperV2.toResponseDTO(createdServiceOverride));
   }
 
   @PUT
-  @ApiOperation(value = "Update an ServiceOverride", nickname = "updateServiceOverride")
-  @Operation(operationId = "updateServiceOverride", summary = "Update an ServiceOverride",
+  @ApiOperation(value = "Update an ServiceOverride Entity", nickname = "updateServiceOverride")
+  @Operation(operationId = "updateServiceOverride", summary = "Update an ServiceOverride Entity",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -200,17 +194,18 @@ public class ServiceOverridesResource {
   update(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Parameter(description = "Details of the ServiceOverride to be updated")
-      @Valid ServiceOverrideRequestDTOV2 serviceOverrideRequestDTOV2) {
-    overrideValidatorService.validateRequest(serviceOverrideRequestDTOV2, accountId);
+      @Valid ServiceOverrideRequestDTOV2 requestDTOV2) {
+    overrideValidatorService.validateRequestOrThrow(requestDTOV2, accountId);
 
     NGServiceOverridesEntity requestedServiceOverride =
-        ServiceOverridesMapperV2.toEntity(accountId, serviceOverrideRequestDTOV2);
+        ServiceOverridesMapperV2.toEntity(accountId, requestDTOV2);
     NGServiceOverridesEntity updatedServiceOverride = serviceOverridesServiceV2.update(requestedServiceOverride);
     return ResponseDTO.newResponse(ServiceOverridesMapperV2.toResponseDTO(updatedServiceOverride));
   }
 
   @DELETE
-  @Path("/{serviceOverridesIdentifier}")
+  @Hidden
+  @Path("/{identifier}")
   @ApiOperation(value = "Delete a Service Override entity", nickname = "deleteServiceOverride")
   @Operation(operationId = "deleteServiceOverride", summary = "Delete a ServiceOverride entity",
       responses =
@@ -220,7 +215,7 @@ public class ServiceOverridesResource {
       })
   public ResponseDTO<Boolean>
   delete(@Parameter(description = NGCommonEntityConstants.SERVICE_OVERRIDES_IDENTIFIER) @PathParam(
-             "serviceOverridesIdentifier") @ResourceIdentifier @NotNull String serviceOverridesIdentifier,
+             "identifier") @ResourceIdentifier @NotNull String identifier,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -229,14 +224,14 @@ public class ServiceOverridesResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(orgIdentifier, projectIdentifier, accountId);
     Optional<NGServiceOverridesEntity> ngServiceOverridesEntityOptional =
-        serviceOverridesServiceV2.get(accountId, orgIdentifier, projectIdentifier, serviceOverridesIdentifier);
+        serviceOverridesServiceV2.get(accountId, orgIdentifier, projectIdentifier, identifier);
     if (ngServiceOverridesEntityOptional.isEmpty()) {
       throw new InvalidRequestException(
           String.format("Service Override [%s], Project[%s], Organization [%s] does not exist",
-              serviceOverridesIdentifier, projectIdentifier, orgIdentifier));
+                  identifier, projectIdentifier, orgIdentifier));
     }
     NGServiceOverridesEntity ngServiceOverridesEntity = ngServiceOverridesEntityOptional.get();
-    overrideValidatorService.validateEnvUsedInServiceOverrideRequest(
+    overrideValidatorService.validateEnvWithRBACOrThrow(
         accountId, orgIdentifier, projectIdentifier, ngServiceOverridesEntity.getEnvironmentRef());
 
     return ResponseDTO.newResponse(serviceOverridesServiceV2.delete(accountId, orgIdentifier, projectIdentifier,

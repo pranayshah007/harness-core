@@ -24,7 +24,6 @@ import java.util.Optional;
 import javax.ws.rs.NotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDC)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -32,7 +31,7 @@ public class InfraGlobalOverrideRequestParamsHandler implements ServiceOverrideT
   @Inject private InfrastructureEntityService infrastructureEntityService;
 
   @Override
-  public void validateRequest(@NotNull ServiceOverrideRequestDTOV2 requestDTOV2, @NonNull String accountId) {
+  public void validateRequest(@NonNull ServiceOverrideRequestDTOV2 requestDTOV2, @NonNull String accountId) {
     validateRequiredField(requestDTOV2.getInfraIdentifier());
     checkIfInfraExist(requestDTOV2, accountId);
   }
@@ -57,7 +56,7 @@ public class InfraGlobalOverrideRequestParamsHandler implements ServiceOverrideT
 
   private void validateRequiredField(String infraIdentifier) {
     if (isEmpty(infraIdentifier)) {
-      throw new InvalidRequestException("Infra Identifier should not be empty for INFRA-GLOBAL override");
+      throw new InvalidRequestException("Infra Identifier should not be empty for Infrastructure override");
     }
   }
 }
