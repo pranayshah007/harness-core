@@ -52,9 +52,11 @@ import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
+@Slf4j
 @JsonTypeName("Run")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @TypeAlias("runStepInfo")
@@ -144,8 +146,12 @@ public class RunStepInfo implements CIStepInfo, WithConnectorRef {
   public Map<String, ParameterField<String>> extractConnectorRefs() {
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
     if (connectorRef.getValue() != null) {
+      log.info("connectorRef non null value=" + connectorRef.getValue());
       connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
+    } else {
+      log.info("connectorRef value=" + connectorRef.getValue());
     }
+
     return connectorRefMap;
   }
 
