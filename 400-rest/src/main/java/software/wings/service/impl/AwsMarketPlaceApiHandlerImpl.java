@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.configuration.DeployMode;
 import io.harness.exception.WingsException;
+import io.harness.licensing.Edition;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.MarketPlace;
@@ -159,8 +160,6 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     Integer orderQuantity = getOrderQuantity(dimension);
     log.info("Dimension=[{}]", dimension);
     log.info("Order Quantity=[{}]", orderQuantity);
-
-    String dimensionModule = getDimensionModule(dimension);
 
     if (isManuallyProvisioned(dimension)) {
       log.info("Manually provision license for Dimension=[{}], EntitlementResult=[{}]", dimension, entitlements);
@@ -326,16 +325,6 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
       isProvisionReady = true;
     }
     return isProvisionReady;
-  }
-
-  // Gets module from dimension string
-  private String getDimensionModule(String dimension) {
-    String module = "";
-    if (StringUtils.isNotBlank(dimension)) {
-      String[] result = dimension.split("_");
-      module = result[0];
-    }
-    return module;
   }
 
   // Gets quantity from dimension string
