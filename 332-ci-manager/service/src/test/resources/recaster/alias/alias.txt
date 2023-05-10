@@ -363,3 +363,4 @@ io.harness.ci.beans.entities.PluginMetadataConfig
 io.harness.beans.yaml.extended.TIPythonVersion
 io.harness.ci.config.CICacheIntelligenceS3Config
 io.harness.ci.config.CIDockerLayerCachingGCSConfig
+io.harness.yaml.sto.variables.STOYamlBurpConfig

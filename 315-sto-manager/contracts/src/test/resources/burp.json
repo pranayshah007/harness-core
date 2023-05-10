@@ -1,6 +1,6 @@
 {
-  "SECURITY_PRODUCT_NAME": "nmap",
-  "SECURITY_PRODUCT_CONFIG_NAME": "exploit",
+  "SECURITY_PRODUCT_NAME": "burp",
+  "SECURITY_PRODUCT_CONFIG_NAME": "default",
   "SECURITY_POLICY_TYPE": "orchestratedScan",
 
   "SECURITY_SCAN_TYPE": "instance",

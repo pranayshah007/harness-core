@@ -39,6 +39,7 @@ import io.harness.beans.steps.stepinfo.security.shared.STOYamlAdvancedSettings;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlArgs;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlAuth;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlBlackduckToolData;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlBurpToolData;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlCheckmarxToolData;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlFODToolData;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlFossaToolData;
@@ -86,9 +87,11 @@ public final class STOSettingsUtils {
   public static final String PRODUCT_TEAM_NAME = "product_team_name";
   public static final String PRODUCT_POLICY_NAME = "product_policy_name";
   public static final String PRODUCT_PRODUCT_TOKEN = "product_product_token";
-
   public static final String PRODUCT_EXCLUDE = "product_exclude";
   public static final String PRODUCT_INCLUDE = "product_include";
+  public static final String PRODUCT_SCAN_ID = "product_scan_id";
+  public static final String PRODUCT_SITE_ID = "product_site_id";
+
   public static final String TOOL_PROJECT_NAME = "tool.project_name";
   public static final String TOOL_PROJECT_KEY = "tool.project_key";
   public static final String TOOL_PROJECT_TOKEN = "tool.project_token";
@@ -98,6 +101,8 @@ public final class STOSettingsUtils {
   public static final String TOOL_POLICY_NAME = "tool.policy_name";
   public static final String TOOL_EXCLUDE = "tool.exclude";
   public static final String TOOL_INCLUDE = "tool.include";
+  public static final String TOOL_SCAN_ID = "tool.scan_id";
+  public static final String TOOL_SITE_ID = "tool.site_id";
 
   private STOSettingsUtils() {
     throw new IllegalStateException("Utility class");
@@ -230,10 +235,10 @@ public final class STOSettingsUtils {
           resolveStringParameter("instance.path", stepType, identifier, instanceData.getPath(), false));
       map.put(getSTOKey("instance_protocol"),
           resolveStringParameter("instance.protocol", stepType, identifier, instanceData.getProtocol(), false));
-      map.put(getSTOKey("instance_access_id"),
-          resolveStringParameter("instance.access_id", stepType, identifier, instanceData.getAccessId(), false));
-      map.put(getSTOKey("instance_access_token"),
-          resolveStringParameter("instance.access_token", stepType, identifier, instanceData.getAccessToken(), false));
+      map.put(getSTOKey("instance_username"),
+          resolveStringParameter("instance.username", stepType, identifier, instanceData.getUsername(), false));
+      map.put(getSTOKey("instance_password"),
+          resolveStringParameter("instance.password", stepType, identifier, instanceData.getPassword(), false));
 
       Integer port = resolveIntegerParameter(instanceData.getPort(), null);
       if (port != null) {
@@ -350,6 +355,15 @@ public final class STOSettingsUtils {
 
     map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
     map.putAll(processSTOInstanceFields(stepInfo.getInstance(), stepType, identifier));
+
+    STOYamlBurpToolData toolData = stepInfo.getTool();
+
+    if (toolData != null) {
+      map.put(getSTOKey(PRODUCT_SITE_ID),
+          resolveStringParameter(TOOL_SITE_ID, stepType, identifier, toolData.getSiteId(), false));
+      map.put(getSTOKey(PRODUCT_SCAN_ID),
+          resolveStringParameter(TOOL_SCAN_ID, stepType, identifier, toolData.getScanId(), false));
+    }
 
     return map;
   }
@@ -628,6 +642,8 @@ public final class STOSettingsUtils {
     switch (stepInfo.getSTOStepType()) {
       case CUSTOM_INGEST:
         return ((CustomIngestStepInfo) stepInfo).getConfig().getYamlName();
+      case BURP:
+        return ((BurpStepInfo) stepInfo).getConfig().getYamlName();
       case METASPLOIT:
         return ((MetasploitStepInfo) stepInfo).getConfig().getYamlName();
       case NMAP:

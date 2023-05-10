@@ -8,13 +8,10 @@
 package io.harness.beans.steps.stepinfo.security.shared;
 
 import static io.harness.annotations.dev.HarnessTeam.STO;
-import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -26,18 +23,8 @@ import lombok.Data;
 @Builder
 @OwnedBy(STO)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class STOYamlInstance {
-  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "username") protected ParameterField<String> username;
+public class STOYamlBurpToolData {
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "site_id") protected ParameterField<String> siteId;
 
-  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "password") protected ParameterField<String> password;
-
-  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> domain;
-
-  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> protocol;
-
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = INTEGER_CLASSPATH)
-  protected ParameterField<Integer> port;
-
-  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> path;
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "scan_id") protected ParameterField<String> scanId;
 }
