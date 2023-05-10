@@ -76,6 +76,7 @@ import io.harness.beans.SearchFilter;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.ccm.license.CeLicenseInfo;
 import io.harness.ccm.license.CeLicenseType;
+import io.harness.cd.CDLicenseType;
 import io.harness.data.encoding.EncodingUtils;
 import io.harness.eraro.ErrorCode;
 import io.harness.event.handler.impl.EventPublishHelper;
@@ -4305,7 +4306,8 @@ public class UserServiceImpl implements UserService {
       accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
       adminLicenseHttpClient.createAccountLicense(accountId,
           CDModuleLicenseDTO.builder()
-              .serviceInstances(orderQuantity)
+              .workloads(orderQuantity)
+              .cdLicenseType(CDLicenseType.SERVICES)
               .accountIdentifier(accountId)
               .moduleType(ModuleType.CD)
               .edition(plan)

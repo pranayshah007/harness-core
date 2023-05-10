@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.ccm.license.CeLicenseInfo;
 import io.harness.ccm.license.CeLicenseType;
+import io.harness.cd.CDLicenseType;
 import io.harness.configuration.DeployVariant;
 import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.exception.InvalidRequestException;
@@ -671,7 +672,8 @@ public class LicenseServiceImpl implements LicenseService {
     } else if (marketPlaceConfig.getAwsMarketPlaceCdProductCode().equals(productCode)) {
       adminLicenseHttpClient.createAccountLicense(accountId,
           CDModuleLicenseDTO.builder()
-              .serviceInstances(orderQuantity)
+              .workloads(orderQuantity)
+              .cdLicenseType(CDLicenseType.SERVICES)
               .accountIdentifier(accountId)
               .moduleType(ModuleType.CD)
               .edition(plan)
