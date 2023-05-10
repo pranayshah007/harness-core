@@ -37,6 +37,7 @@ import io.harness.delegate.beans.DelegateGroupListing;
 import io.harness.delegate.beans.DelegateGroupStatus;
 import io.harness.delegate.beans.DelegateGroupTags;
 import io.harness.delegate.beans.DelegateInstanceStatus;
+import io.harness.delegate.beans.DelegateListResponse;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfile.DelegateProfileKeys;
 import io.harness.delegate.beans.DelegateSetupDetails;
@@ -46,6 +47,7 @@ import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.delegate.events.DelegateUpsertEvent;
 import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
 import io.harness.delegate.filter.DelegateInstanceConnectivityStatus;
+import io.harness.delegate.filter.DelegateInstanceFilter;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filter.dto.FilterDTO;
@@ -518,24 +520,14 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
 
     List<String> delegateGroupIds = getDelegateGroupIds(accountId, orgId, projectId, filterProperties, searchTerm);
 
-    List<Delegate> delegateList = persistence.createQuery(Delegate.class)
-                                      .filter(DelegateKeys.accountId, accountId)
-                                      .field(DelegateKeys.delegateGroupId)
-                                      .in(delegateGroupIds)
-                                      .asList();
-
-    // filter delegates if filtering by delegateInstanceConnectivityStatus is enabled
-    if (filterProperties != null && filterProperties.getStatus() != null
-        && newFilterStatus(filterProperties.getStatus())) {
-      delegateList = filterByDelegateInstanceStatus(delegateList, filterProperties);
-    }
+    List<Delegate> delegateList =
+        getFilteredDelegateList(accountId, orgId, projectId, filterProperties, delegateGroupIds);
 
     final Map<String, List<Delegate>> delegatesByGroup =
         delegateList.stream().collect(groupingBy(Delegate::getDelegateGroupId));
 
     // Remove groupId which doesn't have single delegate after filter is applied.
-    if (filterProperties != null && filterProperties.getStatus() != null
-        && newFilterStatus(filterProperties.getStatus())) {
+    if (filterProperties != null && newFilterStatus(filterProperties)) {
       delegateGroupIds = delegateGroupIds.stream()
                              .filter(delegateGroup -> isNotEmpty(delegatesByGroup.get(delegateGroup)))
                              .collect(toList());
@@ -552,6 +544,115 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
             .collect(toList());
     sortDelegateGroups(delegateGroupDetails, pageRequest);
     return DelegateGroupListing.builder().delegateGroupDetails(delegateGroupDetails).build();
+  }
+
+  private List<Delegate> getFilteredDelegateList(String accountId, String orgId, String projectId,
+      DelegateFilterPropertiesDTO filterProperties, List<String> delegateGroupIds) {
+    List<Delegate> delegateList = persistence.createQuery(Delegate.class)
+                                      .filter(DelegateKeys.accountId, accountId)
+                                      .field(DelegateKeys.delegateGroupId)
+                                      .in(delegateGroupIds)
+                                      .asList();
+
+    // filter delegates if filtering by delegateInstanceConnectivityStatus is enabled
+    if (filterProperties != null) {
+      if (filterProperties.getStatus() != null) {
+        delegateList = filterByDelegateInstanceConnectionStatus(delegateList, filterProperties);
+      }
+      if (filterProperties.getDelegateInstanceFilter() != null) {
+        delegateList = filterByDelegateInstanceStatus(delegateList, filterProperties.getDelegateInstanceFilter());
+      }
+    }
+    return delegateList;
+  }
+
+  @Override
+  public List<DelegateListResponse> listDelegates(
+      String accountId, String orgId, String projectId, DelegateFilterPropertiesDTO filterProperties) {
+    List<String> delegateGroupIds = getDelegateGroupIds(accountId, orgId, projectId, filterProperties, null);
+
+    List<Delegate> delegateList =
+        getFilteredDelegateList(accountId, orgId, projectId, filterProperties, delegateGroupIds);
+
+    final Map<String, List<Delegate>> delegatesByGroup =
+        delegateList.stream().collect(groupingBy(Delegate::getDelegateGroupId));
+
+    // Remove groupId which doesn't have single delegate after filter is applied.
+    if (filterProperties != null && newFilterStatus(filterProperties)) {
+      delegateGroupIds = delegateGroupIds.stream()
+                             .filter(delegateGroup -> isNotEmpty(delegatesByGroup.get(delegateGroup)))
+                             .collect(toList());
+    }
+
+    return delegateGroupIds.stream()
+        .map(delegateGroupId -> {
+          DelegateGroup delegateGroup = getDelegateGroup(accountId, delegateGroupId);
+          return buildDelegateGroupResponse(delegateGroup, delegatesByGroup.get(delegateGroupId));
+        })
+        .sorted(Comparator.comparing(DelegateListResponse::isConnected, Comparator.reverseOrder()))
+        .collect(toList());
+  }
+
+  private DelegateListResponse buildDelegateGroupResponse(DelegateGroup delegateGroup, List<Delegate> groupDelegates) {
+    if (groupDelegates == null) {
+      log.debug("There are no delegates related to this delegate group.");
+      groupDelegates = emptyList();
+    }
+
+    String delegateType = delegateGroup != null ? delegateGroup.getDelegateType() : null;
+    Set<String> groupCustomSelectors = delegateGroup != null ? delegateGroup.getTags() : null;
+    long delegateCreationTime = groupDelegates.stream().mapToLong(Delegate::getCreatedAt).min().orElse(0);
+    boolean immutableDelegate = isNotEmpty(groupDelegates) && groupDelegates.get(0).isImmutable();
+
+    long lastHeartBeat = groupDelegates.stream().mapToLong(Delegate::getLastHeartBeat).max().orElse(0);
+
+    List<DelegateListResponse.DelegateReplica> delegateReplicas =
+        groupDelegates.stream()
+            .map(delegate -> {
+              boolean isDelegateConnected =
+                  delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis();
+              return DelegateListResponse.DelegateReplica.builder()
+                  .uuid(delegate.getUuid())
+                  .lastHeartbeat(delegate.getLastHeartBeat())
+                  .connected(isDelegateConnected)
+                  .hostName(delegate.getHostName())
+                  .expiringAt(delegate.getExpirationTime())
+                  .version(delegate.getVersion())
+                  .build();
+            })
+            .collect(Collectors.toList());
+
+    Set<String> delegateSelectors = retrieveDelegateGroupImplicitSelectors(delegateGroup).keySet();
+    if (groupCustomSelectors != null) {
+      delegateSelectors.addAll(groupCustomSelectors);
+    }
+
+    return DelegateListResponse.builder()
+        .type(delegateType)
+        .name(delegateGroup.getName())
+        .autoUpgrade(setAutoUpgrade(
+            delegateGroup.getUpgraderLastUpdated(), immutableDelegate, delegateCreationTime, null, delegateType))
+        .description(delegateGroup.getDescription())
+        .tags(delegateSelectors)
+        .lastHeartBeat(lastHeartBeat)
+        .delegateReplicas(delegateReplicas)
+        .connected(delegateReplicas.stream().anyMatch(DelegateListResponse.DelegateReplica::isConnected))
+        .legacy(!immutableDelegate)
+        .build();
+  }
+
+  private List<Delegate> filterByDelegateInstanceStatus(
+      List<Delegate> delegateList, DelegateInstanceFilter delegateInstanceStatus) {
+    if (DelegateInstanceFilter.EXPIRED.equals(delegateInstanceStatus)) {
+      return delegateList.stream()
+          .filter(delegate -> delegate.getExpirationTime() < System.currentTimeMillis())
+          .collect(toList());
+    } else if (DelegateInstanceFilter.AVAILABLE.equals(delegateInstanceStatus)) {
+      return delegateList.stream()
+          .filter(delegate -> delegate.getExpirationTime() >= System.currentTimeMillis())
+          .collect(toList());
+    }
+    return delegateList;
   }
 
   private List<DelegateGroupDetails> sortDelegateGroups(
@@ -591,23 +692,31 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
   }
 
   // Todo: Anupam to remove this condition once UI changes are deployed.
-  private boolean newFilterStatus(DelegateInstanceConnectivityStatus status) {
-    return DelegateInstanceConnectivityStatus.CONNECTED.equals(status)
-        || DelegateInstanceConnectivityStatus.DISCONNECTED.equals(status);
+  private boolean newFilterStatus(DelegateFilterPropertiesDTO filterProperties) {
+    if (filterProperties.getDelegateInstanceFilter() != null) {
+      return true;
+    }
+    if (filterProperties.getStatus() != null) {
+      return DelegateInstanceConnectivityStatus.CONNECTED.equals(filterProperties.getStatus())
+          || DelegateInstanceConnectivityStatus.DISCONNECTED.equals(filterProperties.getStatus());
+    }
+    return false;
   }
 
-  private List<Delegate> filterByDelegateInstanceStatus(
+  private List<Delegate> filterByDelegateInstanceConnectionStatus(
       List<Delegate> delegateList, DelegateFilterPropertiesDTO filterProperties) {
     if (filterProperties.getStatus().equals(DelegateInstanceConnectivityStatus.DISCONNECTED)) {
       return delegateList.stream()
           .filter(delegate
               -> delegate.getLastHeartBeat() <= System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis())
           .collect(toList());
+    } else if (filterProperties.getStatus().equals(DelegateInstanceConnectivityStatus.CONNECTED)) {
+      return delegateList.stream()
+          .filter(delegate
+              -> delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis())
+          .collect(toList());
     }
-    return delegateList.stream()
-        .filter(delegate
-            -> delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis())
-        .collect(toList());
+    return delegateList;
   }
 
   @Override
