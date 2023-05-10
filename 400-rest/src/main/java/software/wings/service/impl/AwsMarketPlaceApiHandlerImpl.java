@@ -197,8 +197,9 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
       wingsPersistence.save(marketPlace);
     }
 
-    if (existingCustomer && (!marketPlace.getOrderQuantity().equals(orderQuantity))
-        || (!marketPlace.getExpirationDate().equals(expirationDate))) {
+    if (existingCustomer
+        && (!marketPlace.getOrderQuantity().equals(orderQuantity)
+            || (!marketPlace.getExpirationDate().equals(expirationDate)))) {
       log.info(
           "This is an existing customer:[{}], updating orderQuantity from [{}] to [{}], updating expirationDate from [{}] to [{}]",
           customerIdentifierCode, marketPlace.getOrderQuantity(), orderQuantity, marketPlace.getExpirationDate(),
