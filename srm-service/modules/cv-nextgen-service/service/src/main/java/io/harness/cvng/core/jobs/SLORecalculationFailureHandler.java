@@ -38,7 +38,7 @@ public class SLORecalculationFailureHandler implements MongoPersistenceIterator.
                                       .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
                                       .build();
     SLODashboardWidget.SLOGraphData sloGraphData =
-        sloHealthIndicatorService.getGraphData(projectParams, serviceLevelObjective);
+        sloHealthIndicatorService.getGraphData(projectParams, serviceLevelObjective, null);
     if (serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.COMPOSITE)) {
       try (SLOMetricContext sloMetricContext =
                new SLOMetricContext((CompositeServiceLevelObjective) serviceLevelObjective)) {

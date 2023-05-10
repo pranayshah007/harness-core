@@ -1489,7 +1489,7 @@ public class UserServiceImpl implements UserService {
     Account account = accountService.get(accountId);
 
     User user = getUserByEmail(userInvite.getEmail());
-    if (user == null) {
+    if (user == null && featureFlagService.isEnabled(FeatureName.LDAP_SYNC_WITH_USERID, accountId)) {
       user = getUserByUserId(account.getUuid(), userInvite.getExternalUserId());
     }
 
@@ -2441,7 +2441,7 @@ public class UserServiceImpl implements UserService {
             .build();
     ssoSettingService.saveOauthSettings(oauthSettings);
     log.info("Setting authentication mechanism as oauth for account id: {}", accountId);
-    ssoService.setAuthenticationMechanism(accountId, AuthenticationMechanism.OAUTH);
+    ssoService.setAuthenticationMechanism(accountId, AuthenticationMechanism.OAUTH, false);
   }
 
   @Override

@@ -131,6 +131,8 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
   private static final String PIPELINE_2 = "pipeline2";
   private static final String PIPELINE_EXECUTION_1 = "pipelineExecution1";
   private static final String PIPELINE_EXECUTION_2 = "pipelineExecution2";
+  private static final String FAILURE_MESSAGE_1 = "fail1";
+  private static final String FAILURE_MESSAGE_2 = "fail2";
 
   InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution getSampleInstanceGroupedByPipelineExecution(
       String id, Long lastDeployedAt, int count, String name) {
@@ -1383,28 +1385,40 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
                                    .stream()
                                    .map(ExecutionStatus::name)
                                    .collect(Collectors.toList());
-    List<String> pipelineExecutionIdList = Arrays.asList(PIPELINE_EXECUTION_1, PIPELINE_EXECUTION_2);
+    Map<String, String> pipelineExecutionToFailureMessageMap = new HashMap<>();
+    pipelineExecutionToFailureMessageMap.put(PIPELINE_EXECUTION_1, FAILURE_MESSAGE_1);
+    pipelineExecutionToFailureMessageMap.put(PIPELINE_EXECUTION_2, FAILURE_MESSAGE_2);
+
+    List<ServicePipelineWithRevertInfo> servicePipelineRevertInfoList =
+        Arrays.asList(ServicePipelineWithRevertInfo.builder()
+                          .pipelineExecutionId(PIPELINE_EXECUTION_2)
+                          .lastExecutedAt(1l)
+                          .failureDetail(FAILURE_MESSAGE_2)
+                          .build(),
+            ServicePipelineWithRevertInfo.builder()
+                .pipelineExecutionId(PIPELINE_EXECUTION_1)
+                .lastExecutedAt(2l)
+                .failureDetail(FAILURE_MESSAGE_1)
+                .build());
     List<ServicePipelineInfo> servicePipelineInfoList = Arrays.asList(
         ServicePipelineInfo.builder().pipelineExecutionId(PIPELINE_EXECUTION_2).lastExecutedAt(1l).build(),
         ServicePipelineInfo.builder().pipelineExecutionId(PIPELINE_EXECUTION_1).lastExecutedAt(2l).build());
-    List<ServicePipelineInfo> servicePipelineInfoListSorted =
-        Arrays.asList(servicePipelineInfoList.get(1), servicePipelineInfoList.get(0));
+    List<ServicePipelineWithRevertInfo> servicePipelineInfoListSorted =
+        Arrays.asList(servicePipelineRevertInfoList.get(1), servicePipelineRevertInfoList.get(0));
     Map<String, ServicePipelineInfo> servicePipelineInfoMap = new HashMap<>();
     servicePipelineInfoMap.put(PIPELINE_EXECUTION_1, servicePipelineInfoList.get(0));
     servicePipelineInfoMap.put(PIPELINE_EXECUTION_2, servicePipelineInfoList.get(1));
-    doReturn(pipelineExecutionIdList)
+    doReturn(pipelineExecutionToFailureMessageMap)
         .when(cdOverviewDashboardService1)
-        .getPipelineExecutionIdFromServiceInfraInfo(query);
-    doReturn(servicePipelineInfoMap)
-        .when(cdOverviewDashboardService1)
-        .getPipelineExecutionDetails(pipelineExecutionIdList, STATUS_LIST);
+        .getPipelineExecutionIdAndFailureDetailsFromServiceInfraInfo(query);
+    doReturn(servicePipelineInfoMap).when(cdOverviewDashboardService1).getPipelineExecutionDetails(any(), any());
     OpenTaskDetails openTaskDetailsResult =
         cdOverviewDashboardService1.getOpenTasks(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, 1000l);
     OpenTaskDetails openTaskDetails =
         OpenTaskDetails.builder().pipelineDeploymentDetails(servicePipelineInfoListSorted).build();
     assertThat(openTaskDetails).isEqualTo(openTaskDetailsResult);
-    verify(cdOverviewDashboardService1).getPipelineExecutionIdFromServiceInfraInfo(query);
-    verify(cdOverviewDashboardService1).getPipelineExecutionDetails(pipelineExecutionIdList, STATUS_LIST);
+    verify(cdOverviewDashboardService1).getPipelineExecutionIdAndFailureDetailsFromServiceInfraInfo(query);
+    verify(cdOverviewDashboardService1).getPipelineExecutionDetails(any(), any());
   }
 
   @Test

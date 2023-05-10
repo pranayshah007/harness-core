@@ -19,7 +19,7 @@ import (
 
 const (
 	buffSize   = 100
-	strMaxSize = 2000 // Keep the last 2k characters in each field.
+	strMaxSize = 8000 // Keep the last 8k characters in each field.
 )
 
 // Junit represents a test report in junit format

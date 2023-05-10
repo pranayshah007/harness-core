@@ -98,10 +98,8 @@ public class VmPluginStepSerializer {
       ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance, List<CIRegistry> registries,
       ExecutionSource executionSource) {
     Map<String, String> envVars = new HashMap<>();
-    String image = "";
 
     if (iacmStepsUtils.isIACMStep(pluginStepInfo)) {
-      image = iacmStepsUtils.retrieveIACMPluginImage(ambiance, pluginStepInfo);
       envVars = iacmStepsUtils.getIACMEnvVariables(ambiance, pluginStepInfo);
     }
     Map<String, JsonNode> settings =
@@ -123,10 +121,9 @@ public class VmPluginStepSerializer {
     }
     envVars.putAll(resolveMapParameterV2("envVars", "pluginStep", identifier, pluginStepInfo.getEnvVariables(), false));
 
-    if (isEmpty(image)) {
-      image =
-          RunTimeInputHandler.resolveStringParameter("Image", stepName, identifier, pluginStepInfo.getImage(), false);
-    }
+    String image =
+        RunTimeInputHandler.resolveStringParameter("Image", stepName, identifier, pluginStepInfo.getImage(), false);
+
     String connectorIdentifier;
     if (isNotEmpty(registries)) {
       connectorIdentifier = ciStepInfoUtils.resolveConnectorFromRegistries(registries, image).orElse(null);

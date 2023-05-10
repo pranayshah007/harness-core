@@ -39,19 +39,34 @@ public interface SSOSettingService extends OwnedByAccount {
 
   SamlSettings getSamlSettingsByAccountId(@NotNull String accountId);
 
+  SamlSettings getSamlSettingsByAccountIdNotConfiguredFromNG(@NotNull String accountId);
+
   OauthSettings getOauthSettingsByAccountId(String accountId);
 
   @ValidationGroups(Create.class) SamlSettings saveSamlSettings(@Valid SamlSettings settings);
 
+  // this overloading is for multiple-saml case with FF handling
+  @ValidationGroups(Create.class)
+  SamlSettings saveSamlSettings(@Valid SamlSettings settings, boolean isUpdateCase, boolean isNGSso);
+
   // This function is meant to be called for ng sso settings, as the license check is already done in NG Service
   SamlSettings saveSamlSettingsWithoutCGLicenseCheck(
       @GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings);
+
+  // This overloaded function is meant to be called for ng sso settings, without CG license check & overloading is for
+  // multiple-saml case with FF handling
+  SamlSettings saveSamlSettingsWithoutCGLicenseCheck(
+      @GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings, boolean isUpdateCase, boolean isNGSso);
+
+  void updateAuthenticationEnabledForSAMLSetting(@NotNull String accountId, @NotNull String samlSSOId, boolean enable);
 
   OauthSettings saveOauthSettings(OauthSettings settings);
 
   boolean deleteSamlSettings(@NotNull String accountId);
 
   boolean deleteSamlSettings(SamlSettings samlSettings);
+
+  boolean deleteSamlSettingsWithAudits(SamlSettings samlSettings);
 
   SamlSettings getSamlSettingsByOrigin(@NotNull String origin);
 
@@ -74,6 +89,8 @@ public interface SSOSettingService extends OwnedByAccount {
   SSOSettings getSsoSettings(@NotBlank String uuid);
 
   List<SamlSettings> getSamlSettingsListByAccountId(@NotNull String accountId);
+
+  SamlSettings getSamlSettingsByAccountIdAndUuid(@NotNull String accountId, String uuid);
 
   /**
    * Raise group sync alert specifying the cause of the failure

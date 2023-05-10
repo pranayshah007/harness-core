@@ -37,7 +37,7 @@ public class DatadogLogSourceSpecTransformerTest extends CvNextGenTestBase {
   private static final int QUERY_COUNT = 5;
   private static final String MOCKED_GROUP_IDENTIFIER = "mockedGroupIdentifier";
 
-  private List<DatadogLogHealthSourceSpec.QueryDTO> queries;
+  private List<DatadogLogHealthSourceSpec.DatadogLogHealthSourceQueryDTO> queries;
 
   @Inject DatadogLogHealthSourceSpecTransformer classUnderTest;
 
@@ -46,7 +46,7 @@ public class DatadogLogSourceSpecTransformerTest extends CvNextGenTestBase {
     builderFactory = BuilderFactory.getDefault();
     queries = IntStream.range(1, QUERY_COUNT)
                   .mapToObj(index
-                      -> DatadogLogHealthSourceSpec.QueryDTO.builder()
+                      -> DatadogLogHealthSourceSpec.DatadogLogHealthSourceQueryDTO.builder()
                              .name(randomAlphabetic(10))
                              .query(randomAlphabetic(10))
                              .build())

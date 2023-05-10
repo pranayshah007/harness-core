@@ -25,6 +25,7 @@ public enum FeatureName {
   SPG_UI_ALLOW_ENCODING_FOR_JENKINS_ARTIFACT("Enables correct encoding for jenkins artifact", HarnessTeam.SPG),
   SPG_CG_STATS_INSTANCE_CONSUMER("Optimize stats collector for instance collection", HarnessTeam.SPG),
   SPG_HTTP_STEP_CERTIFICATE("Allow enforce SSL/TLS certificate in HTTP step", HarnessTeam.SPG),
+  SPG_ENABLE_GIT_SYNC_YAML_VALIDATE("Enable yaml validate in git sync", HarnessTeam.SPG),
   SPG_GRAPHQL_VERIFY_APPLICATION_FROM_USER_GROUP(
       "Verify if application references from a user group still exist", HarnessTeam.SPG),
   SPG_ALLOW_GET_BUILD_SYNC("Allow get builds sync from gcs", HarnessTeam.SPG),
@@ -635,6 +636,7 @@ public enum FeatureName {
       "Do not add quotes to strings when a user reconciles a template, pipeline", HarnessTeam.CDC, Scope.GLOBAL),
   SSCA_ENABLED("FF to enable SSCA on Harness", HarnessTeam.SSCA),
   PL_NEW_SCIM_STANDARDS("Changes required for being SCIM 2 compliant API calls", HarnessTeam.PL),
+  PL_ENABLE_MULTIPLE_IDP_SUPPORT("Enable support for multiple SSO IDP in an account", HarnessTeam.PL),
   PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG("FF to disable CG to NG user migration except Admins", HarnessTeam.PL),
   PIE_EXECUTION_JSON_SUPPORT("Support for storing execution json in mongo", HarnessTeam.PIPELINE),
   PIE_EXPRESSION_ENGINE_V2("Support for new model of expression engine", HarnessTeam.PIPELINE),
@@ -748,7 +750,9 @@ public enum FeatureName {
       "Will allow comma and multi-selection in runtime input allowed values", PIPELINE),
   PL_USE_CREDENTIALS_FROM_DELEGATE_FOR_GCP_SM(
       "Enables the use of credentials from Delegate in GCP Secret Manager", HarnessTeam.PL),
-  CI_ENABLE_DLC("Enable docker layer caching", HarnessTeam.CI);
+  CI_ENABLE_DLC("Enable docker layer caching", HarnessTeam.CI),
+  SRM_TELEMETRY("Will enable telemetry for verify step result", HarnessTeam.CV),
+  CI_USE_S3_FOR_DLC("Use S3 bucket for DLC cache", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {

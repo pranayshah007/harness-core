@@ -79,6 +79,7 @@ public class GitIntegrationServiceImplTest {
   private static final String PROXY_MAP2 = "{\"github.com\":false, \"gitlab.com\": false}";
   private static final String TEST_IDENTIFIER = "123";
   private static final String TEST_GITHUB_URL = "https://github.com/SarvJ1/catalogtest/blob/main/PREQA_NG.yaml";
+  private static final String GITHUB_HOST = "github.com";
   @InjectMocks GithubConnectorProcessor githubConnectorProcessor;
   @InjectMocks GitlabConnectorProcessor gitlabConnectorProcessor;
   @InjectMocks BitbucketConnectorProcessor bitbucketConnectorProcessor;
@@ -481,7 +482,7 @@ public class GitIntegrationServiceImplTest {
     when(backstageEnvVariableService.findByEnvNameAndAccountIdentifier(PROXY_ENV_NAME, ACCOUNT_IDENTIFIER))
         .thenReturn(Optional.of(variable));
     gitIntegrationServiceImpl.createOrUpdateConnectorConfigEnvVariable(
-        ACCOUNT_IDENTIFIER, ConnectorType.GITHUB, CatalogInfraConnectorType.DIRECT);
+        ACCOUNT_IDENTIFIER, GITHUB_HOST, CatalogInfraConnectorType.DIRECT);
     variable.setValue(PROXY_MAP2);
     verify(backstageEnvVariableService).update(variable, ACCOUNT_IDENTIFIER);
   }

@@ -39,7 +39,7 @@
       "$id": "#root/integrations",
       "title": "Integrations"
     },
-    "integrations": {
+    "lighthouse": {
       "$id": "#root/lighthouse",
       "title": "Lighthouse"
     }

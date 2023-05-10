@@ -29,3 +29,7 @@ fi
 if [[ -z "$STO_STEP_CONFIG_DEFAULT_TAG" ]]; then
    export STO_STEP_CONFIG_DEFAULT_TAG="latest"
 fi
+
+if [[ -z "$HSQS_TOPIC" ]]; then
+   export HSQS_TOPIC="sto"
+fi

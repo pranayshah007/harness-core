@@ -35,6 +35,7 @@ import software.wings.beans.AwsAmiInfrastructureMapping;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.InstanceUnitType;
 import software.wings.beans.SettingAttribute;
+import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
 import software.wings.service.impl.aws.model.AwsAmiAllPhaseRollbackData;
 import software.wings.service.impl.aws.model.AwsAmiPreDeploymentData;
 import software.wings.service.impl.aws.model.AwsAmiResizeData;
@@ -117,6 +118,7 @@ public class AwsAmiServiceRollback extends AwsAmiServiceDeployState {
 
     String region = infrastructureMapping.getRegion();
     AwsConfig awsConfig = (AwsConfig) cloudProviderSetting.getValue();
+    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
     List<EncryptedDataDetail> encryptionDetails =
         secretManager.getEncryptionDetails(awsConfig, context.getAppId(), context.getWorkflowExecutionId());
 

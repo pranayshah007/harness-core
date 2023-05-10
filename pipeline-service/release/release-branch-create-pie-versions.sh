@@ -8,7 +8,7 @@ set -ex
 export FIX_PIE_VERSION="PIE-""$VERSION"
 RELDATE=$(date +'%Y-%m-%d')
 IFS="-" read -ra PROJNUM <<< "$KEY"
-PROJ="PIE"
+PROJ="CDS"
 response=$(curl -X POST https://harness.atlassian.net/rest/api/2/version/ --write-out '%{http_code}' --output /dev/null --silent --user ${JIRA_USERNAME}:${JIRA_PASSWORD} -H "Content-Type: application/json" -d '{
   "project":"'$PROJ'",
   "name": "'"$FIX_PIE_VERSION"'",

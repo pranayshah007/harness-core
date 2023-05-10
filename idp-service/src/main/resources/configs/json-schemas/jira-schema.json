@@ -1,0 +1,110 @@
+{
+  "definitions": {
+
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1683614211.json",
+  "title": "Root",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proxy"
+  ],
+  "properties": {
+    "proxy": {
+      "$id": "#root/proxy",
+      "title": "Proxy",
+      "type": "object",
+      "required": [
+        "/jira/api"
+      ],
+      "properties": {
+        "/jira/api": {
+          "$id": "#root/proxy//jira/api",
+          "title": "/jira/api",
+          "type": "object",
+          "required": [
+            "target",
+            "pathRewrite",
+            "headers"
+          ],
+          "properties": {
+            "target": {
+              "$id": "#root/proxy//jira/api/target",
+              "title": "Target",
+              "type": "string",
+              "default": "",
+              "pattern": "^.*$"
+            },
+            "pathRewrite": {
+              "$id": "#root/proxy//jira/api/pathRewrite",
+              "title": "Pathrewrite",
+              "type": "object",
+              "required": [
+                "api/proxy/jira/?"
+              ],
+              "properties": {
+                "api/proxy/jira/?": {
+                  "$id": "#root/proxy//jira/api/pathRewrite/api/proxy/jira/?",
+                  "title": "Api/proxy/jira/?",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                }
+              }
+            },
+            "headers": {
+              "$id": "#root/proxy//jira/api/headers",
+              "title": "Headers",
+              "type": "object",
+              "required": [
+                "Authorization",
+                "Accept",
+                "Content-Type",
+                "X-Atlassian-Token",
+                "User-Agent"
+              ],
+              "properties": {
+                "Authorization": {
+                  "$id": "#root/proxy//jira/api/headers/Authorization",
+                  "title": "Authorization",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                },
+                "Accept": {
+                  "$id": "#root/proxy//jira/api/headers/Accept",
+                  "title": "Accept",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                },
+                "Content-Type": {
+                  "$id": "#root/proxy//jira/api/headers/Content-Type",
+                  "title": "Content-type",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                },
+                "X-Atlassian-Token": {
+                  "$id": "#root/proxy//jira/api/headers/X-Atlassian-Token",
+                  "title": "X-atlassian-token",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                },
+                "User-Agent": {
+                  "$id": "#root/proxy//jira/api/headers/User-Agent",
+                  "title": "User-agent",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

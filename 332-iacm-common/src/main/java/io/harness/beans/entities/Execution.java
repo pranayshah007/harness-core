@@ -24,9 +24,8 @@ public class Execution {
   String account;
   String org;
   String project;
-  String stack;
+  String workspace;
   String pipeline;
   String pipeline_execution_id;
   String pipeline_stage_id;
-  String action;
 }

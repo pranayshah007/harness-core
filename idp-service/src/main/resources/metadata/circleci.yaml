@@ -4,7 +4,7 @@ description: Automate your development process with CI hosted in the cloud or on
 createdBy: Spotify
 category: CI/CD
 source: https://github.com/backstage/backstage/tree/master/plugins/circleci
-iconUrl: https://backstage.io/img/circleci.png
+iconUrl: https://upload.wikimedia.org/wikipedia/commons/8/82/Circleci-icon-logo.svg
 imageUrl: ''
 config: |-
   proxy:

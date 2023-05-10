@@ -15,6 +15,7 @@ import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.ExecutionLimits;
 import io.harness.ci.config.ExecutionLimits.ExecutionLimitSpec;
 import io.harness.ci.execution.QueueExecutionUtils;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.repositories.ExecutionQueueLimitRepository;
 
@@ -55,6 +56,10 @@ public class CIBuildEnforcerImpl implements CIBuildEnforcer {
     }
 
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+    if (licensesWithSummaryDTO == null) {
+      throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+    }
+
     if (licensesWithSummaryDTO != null) {
       ExecutionLimitSpec executionLimitSpec = null;
       switch (licensesWithSummaryDTO.getEdition()) {

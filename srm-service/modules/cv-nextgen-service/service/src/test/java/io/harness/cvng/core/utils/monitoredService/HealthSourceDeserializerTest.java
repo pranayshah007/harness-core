@@ -74,7 +74,7 @@ public class HealthSourceDeserializerTest extends CvNextGenTestBase {
             .name("elk test")
             .version(null)
             .spec(ELKHealthSourceSpec.builder()
-                      .queries(List.of(ELKHealthSourceSpec.QueryDTO.builder()
+                      .queries(List.of(ELKHealthSourceSpec.ELKHealthSourceQueryDTO.builder()
                                            .query("*")
                                            .index("integration-test-1")
                                            .name("ElasticSearch Logs Query")

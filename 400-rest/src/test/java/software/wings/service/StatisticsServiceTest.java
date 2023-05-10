@@ -129,7 +129,7 @@ public class StatisticsServiceTest extends WingsBaseTest {
 
     when(appService.getAppIdsByAccountId(ACCOUNT_ID)).thenReturn(asList(APP_ID));
     when(appService.getAppsByAccountId(ACCOUNT_ID)).thenReturn(asList(anApplication().uuid(APP_ID).build()));
-    when(workflowExecutionService.obtainWorkflowExecutionIterator(anyList(), anyLong(), any()))
+    when(workflowExecutionService.obtainWorkflowExecutionIterator(anyString(), anyList(), anyLong(), any()))
         .thenReturn(executionIterator);
     when(workflowExecutionService.getInstancesDeployedFromExecution(any(WorkflowExecution.class))).thenCallRealMethod();
   }
@@ -267,7 +267,8 @@ public class StatisticsServiceTest extends WingsBaseTest {
   public void shouldGetDeploymentStatistics() {
     List<WorkflowExecution> executions = constructWorkflowServiceExecutions();
 
-    when(workflowExecutionService.obtainWorkflowExecutions(anyList(), anyLong(), any())).thenReturn(executions);
+    when(workflowExecutionService.obtainWorkflowExecutions(anyString(), anyList(), anyLong(), any()))
+        .thenReturn(executions);
 
     DeploymentStatistics deploymentStatistics =
         statisticsService.getDeploymentStatistics(ACCOUNT_ID, asList(APP_ID), 30);

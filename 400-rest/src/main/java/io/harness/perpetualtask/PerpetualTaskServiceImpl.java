@@ -190,7 +190,10 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
         log.info("Resetting the perpetual task {}, type: {}", taskId, perpetualTaskType);
         delegateMetricsService.recordPerpetualTaskMetrics(accountId, perpetualTaskType, PERPETUAL_TASK_RESET);
       }
-      return perpetualTaskRecordDao.resetDelegateIdForTask(accountId, taskId, taskExecutionBundle);
+      boolean useReferenceFalseKryoSerializer = taskExecutionBundle != null
+          && delegateTaskService.isTaskTypeSupportedByAllDelegates(accountId, PT_SERIALIZATION_SUPPORT.name());
+      return perpetualTaskRecordDao.resetDelegateIdForTask(
+          accountId, taskId, taskExecutionBundle, useReferenceFalseKryoSerializer);
     }
   }
 

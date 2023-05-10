@@ -18,8 +18,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.time.EpochUtils.PST_ZONE_ID;
 import static io.harness.validation.Validator.notNullCheck;
 
-import static software.wings.beans.WorkflowExecution.ACCOUNTID_PIPEXECUTIONID_CREATEDAT;
-
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.reverseOrder;
 import static java.util.stream.Collectors.groupingBy;
@@ -29,7 +27,6 @@ import io.harness.beans.EnvironmentType;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.ff.FeatureFlagService;
-import io.harness.mongo.index.BasicDBUtils;
 import io.harness.time.EpochUtils;
 
 import software.wings.beans.ElementExecutionSummary;
@@ -51,7 +48,6 @@ import software.wings.service.intfc.WorkflowExecutionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -108,7 +104,7 @@ public class StatisticsServiceImpl implements StatisticsService {
           workflowExecutionService.obtainWorkflowExecutions(accountId, fromDateEpochMilli, projectionKeys);
     } else {
       workflowExecutions =
-          workflowExecutionService.obtainWorkflowExecutions(appIds, fromDateEpochMilli, projectionKeys);
+          workflowExecutionService.obtainWorkflowExecutions(accountId, appIds, fromDateEpochMilli, projectionKeys);
     }
 
     if (isEmpty(workflowExecutions)) {
@@ -213,10 +209,7 @@ public class StatisticsServiceImpl implements StatisticsService {
       query.field(WorkflowExecutionKeys.serviceIds).hasAnyOf(allowedSvcIds);
     }
 
-    FindOptions findOptions = new FindOptions();
-    findOptions.hint(BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), ACCOUNTID_PIPEXECUTIONID_CREATEDAT));
-
-    List<WorkflowExecution> workflowExecutions = query.asList(findOptions);
+    List<WorkflowExecution> workflowExecutions = query.asList();
 
     if (isEmpty(workflowExecutions)) {
       return instanceStats;
@@ -267,7 +260,7 @@ public class StatisticsServiceImpl implements StatisticsService {
           workflowExecutionService.obtainWorkflowExecutions(accountId, fromDateEpochMilli, projectionKeys);
     } else {
       workflowExecutions =
-          workflowExecutionService.obtainWorkflowExecutions(appIds, fromDateEpochMilli, projectionKeys);
+          workflowExecutionService.obtainWorkflowExecutions(accountId, appIds, fromDateEpochMilli, projectionKeys);
     }
     if (isEmpty(workflowExecutions)) {
       return instanceStats;

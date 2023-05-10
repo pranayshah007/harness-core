@@ -448,4 +448,18 @@ public class AmbianceUtils {
     ExecutionMode executionMode = ambiance.getMetadata().getExecutionMode();
     return executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK || executionMode == ExecutionMode.PIPELINE_ROLLBACK;
   }
+
+  public String getStageExecutionIdForExecutionMode(Ambiance ambiance) {
+    if (isRollbackModeExecution(ambiance)) {
+      return ambiance.getOriginalStageExecutionIdForRollbackMode();
+    }
+    return ambiance.getStageExecutionId();
+  }
+
+  public String getPlanExecutionIdForExecutionMode(Ambiance ambiance) {
+    if (isRollbackModeExecution(ambiance)) {
+      return ambiance.getMetadata().getOriginalPlanExecutionIdForRollbackMode();
+    }
+    return ambiance.getPlanExecutionId();
+  }
 }

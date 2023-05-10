@@ -20,7 +20,7 @@ import com.google.inject.Inject;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
@@ -32,10 +32,12 @@ public class DeeplinkURLServiceImpl implements DeeplinkURLService {
   private static final String STEP_INPUT_IN_SECONDS = "60";
   private static final String DATE_FORMAT_STRING = "yyyy-MM-dd HH:mm";
   private static final String GRAPH_PATH = "graph";
+  private static final String GRAPH_TAB = "0";
   private static final String PARAM_STEP_INPUT = "g0.step_input";
   private static final String PARAM_EXPRESSION = "g0.expr";
   private static final String PARAM_RANGE_INPUT = "g0.range_input";
-  private static final String PARAM_END_INPUT = "g0.g0.end_input";
+  private static final String PARAM_END_INPUT = "g0.end_input";
+  private static final String PARAM_TAB = "g0.tab";
   @Inject private NextGenService nextGenService;
 
   public Optional<String> buildDeeplinkURLFromCVConfig(
@@ -56,7 +58,7 @@ public class DeeplinkURLServiceImpl implements DeeplinkURLService {
           PrometheusConnectorDTO connectorConfigDTO =
               (PrometheusConnectorDTO) connectorInfoDTO.get().getConnectorConfig();
           baseUrl = connectorConfigDTO.getUrl();
-          LocalDateTime endTime = endTimeInstant.atZone(ZoneId.systemDefault()).toLocalDateTime();
+          LocalDateTime endTime = endTimeInstant.atZone(ZoneOffset.UTC).toLocalDateTime();
           DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_FORMAT_STRING);
           long diffMinutes = startTimeInstant.until(endTimeInstant, ChronoUnit.MINUTES); // this is a diff in min
           String rangeInput = Math.max(diffMinutes, 1) + "m";
@@ -66,6 +68,7 @@ public class DeeplinkURLServiceImpl implements DeeplinkURLService {
           uriBuilder.addParameter(PARAM_EXPRESSION, metricInfo.get().getQuery());
           uriBuilder.addParameter(PARAM_RANGE_INPUT, rangeInput); // eg. 10s or 10m or 1h
           uriBuilder.addParameter(PARAM_END_INPUT, endTime.format(formatter)); // eg. YYYY-MM-DD HH:MM
+          uriBuilder.addParameter(PARAM_TAB, GRAPH_TAB);
           deeplinkURL = Optional.ofNullable(uriBuilder.build().toString());
         }
       } catch (URISyntaxException ignored) {

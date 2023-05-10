@@ -22,9 +22,9 @@ import io.harness.aggregator.AccessControlAdminService;
 import io.harness.aggregator.AggregatorConfiguration;
 import io.harness.aggregator.DebeziumConfig;
 import io.harness.aggregator.MongoOffsetBackingStore;
+import io.harness.aggregator.consumers.ACLGeneratorService;
 import io.harness.aggregator.consumers.AccessControlDebeziumChangeConsumer;
 import io.harness.aggregator.consumers.ChangeConsumer;
-import io.harness.aggregator.consumers.ChangeConsumerService;
 import io.harness.aggregator.consumers.ChangeEventFailureHandler;
 import io.harness.aggregator.consumers.ResourceGroupChangeConsumerImpl;
 import io.harness.aggregator.consumers.RoleAssignmentCRUDEventHandler;
@@ -114,19 +114,19 @@ public abstract class AggregatorBaseSyncController implements Runnable {
       RoleRepository roleRepository, ResourceGroupRepository resourceGroupRepository,
       UserGroupRepository userGroupRepository, AggregatorConfiguration aggregatorConfiguration,
       PersistentLocker persistentLocker, ChangeEventFailureHandler changeEventFailureHandler,
-      AggregatorJobType aggregatorJobType, ChangeConsumerService changeConsumerService,
+      AggregatorJobType aggregatorJobType, ACLGeneratorService aclGeneratorService,
       RoleAssignmentCRUDEventHandler roleAssignmentCRUDEventHandler,
       UserGroupCRUDEventHandler userGroupCRUDEventHandler, ScopeService scopeService,
       AccessControlAdminService accessControlAdminService) {
     ChangeConsumer<RoleAssignmentDBO> roleAssignmentChangeConsumer = new RoleAssignmentChangeConsumerImpl(
-        aclRepository, roleAssignmentRepository, changeConsumerService, roleAssignmentCRUDEventHandler);
+        aclRepository, roleAssignmentRepository, aclGeneratorService, roleAssignmentCRUDEventHandler);
     ChangeConsumer<RoleDBO> roleChangeConsumer = new RoleChangeConsumerImpl(
-        aclRepository, roleAssignmentRepository, roleRepository, aggregatorJobType.name(), changeConsumerService);
+        aclRepository, roleAssignmentRepository, roleRepository, aggregatorJobType.name(), aclGeneratorService);
     ChangeConsumer<ResourceGroupDBO> resourceGroupChangeConsumer = new ResourceGroupChangeConsumerImpl(aclRepository,
-        roleAssignmentRepository, resourceGroupRepository, aggregatorJobType.name(), changeConsumerService);
+        roleAssignmentRepository, resourceGroupRepository, aggregatorJobType.name(), aclGeneratorService);
     ChangeConsumer<UserGroupDBO> userGroupChangeConsumer =
         new UserGroupChangeConsumerImpl(aclRepository, roleAssignmentRepository, userGroupRepository,
-            aggregatorJobType.name(), changeConsumerService, scopeService, userGroupCRUDEventHandler);
+            aggregatorJobType.name(), aclGeneratorService, scopeService, userGroupCRUDEventHandler);
     collectionToConsumerMap = new HashMap<>();
     collectionToConsumerMap.put(ROLE_ASSIGNMENTS, roleAssignmentChangeConsumer);
     collectionToConsumerMap.put(ROLES, roleChangeConsumer);

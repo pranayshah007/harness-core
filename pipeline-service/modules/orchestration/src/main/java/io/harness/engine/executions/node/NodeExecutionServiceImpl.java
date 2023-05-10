@@ -336,7 +336,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       finalList.add(allExecutions.stream()
                         .filter(ne -> ne.getUuid().equals(parentId))
                         .findFirst()
-                        .orElseThrow(() -> new UnexpectedException("Expected parent to be in list")));
+                        .orElseThrow(() -> new UnexpectedException("Pipeline has already completed execution")));
     }
     return finalList;
   }

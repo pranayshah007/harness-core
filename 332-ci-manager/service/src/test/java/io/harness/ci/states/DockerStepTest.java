@@ -21,9 +21,12 @@ import io.harness.beans.execution.PublishedImageArtifact;
 import io.harness.beans.steps.outcome.CIStepArtifactOutcome;
 import io.harness.beans.steps.outcome.StepArtifacts;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
+import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.ci.integrationstage.K8InitializeStepUtilsHelper;
+import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepStatus;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
@@ -32,6 +35,7 @@ import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadataType;
 import io.harness.delegate.task.stepstatus.artifact.DockerArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.DockerArtifactMetadata;
 import io.harness.helper.SerializedResponseDataHelper;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -47,6 +51,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.tasks.ResponseData;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -197,6 +202,75 @@ public class DockerStepTest extends CIExecutionTestBase {
     stepResponse.getStepOutcomes().forEach(stepOutcome -> {
       if (stepOutcome.getOutcome() instanceof CIStepArtifactOutcome) {
         CIStepArtifactOutcome outcome = (CIStepArtifactOutcome) stepOutcome.getOutcome();
+        assertThat(outcome.getStepArtifacts().getPublishedImageArtifacts().size()).isEqualTo(1);
+        assertThat(outcome.getStepArtifacts().getPublishedImageArtifacts().get(0)).isEqualTo(expectedArtifact);
+        assertThat(stepOutcome.getName()).isEqualTo("artifact_identifierId");
+      }
+    });
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void shouldHandleSuccessVMAsyncResponseWithoutArtifacts() {
+    Map<String, ResponseData> responseDataMap = new HashMap<>();
+    ResponseData responseData =
+        VmTaskExecutionResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).artifact(null).build();
+
+    responseDataMap.put(STEP_RESPONSE, responseData);
+
+    when(serializedResponseDataHelper.deserialize(responseData)).thenReturn(responseData);
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
+        .thenReturn(
+            OptionalSweepingOutput.builder().found(true).output(DliteVmStageInfraDetails.builder().build()).build());
+    StepResponse stepResponse = dockerStep.handleAsyncResponse(ambiance, stepElementParameters, responseDataMap);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes().size()).isEqualTo(1);
+    stepResponse.getStepOutcomes().forEach(stepOutcome -> {
+      if (stepOutcome.getOutcome() instanceof CIStepArtifactOutcome) {
+        CIStepArtifactOutcome outcome = (CIStepArtifactOutcome) stepOutcome.getOutcome();
+        assertThat(outcome).isNotNull();
+        assertThat(outcome.getStepArtifacts()).isNotNull();
+        assertThat(outcome.getStepArtifacts().getPublishedImageArtifacts()).isEmpty();
+        assertThat(stepOutcome.getName()).isEqualTo("artifact_identifierId");
+      }
+    });
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void shouldHandleSuccessVMAsyncResponseWithArtifacts() {
+    Map<String, ResponseData> responseDataMap = new HashMap<>();
+    K8InitializeStepUtilsHelper k8InitializeStepUtilsHelper = new K8InitializeStepUtilsHelper();
+    String artifact = k8InitializeStepUtilsHelper.readFile("dockerhub-artifact.json");
+    ResponseData responseData = VmTaskExecutionResponse.builder()
+                                    .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                    .artifact(artifact.getBytes(StandardCharsets.UTF_8))
+                                    .build();
+
+    responseDataMap.put(STEP_RESPONSE, responseData);
+
+    PublishedImageArtifact expectedArtifact = PublishedImageArtifact.builder()
+                                                  .imageName("test/test-repo")
+                                                  .tag("1.0")
+                                                  .url("https://hub.docker.com/layers/test/1.0/images/sha256-digest/")
+                                                  .digest("sha256:digest")
+                                                  .build();
+
+    when(serializedResponseDataHelper.deserialize(responseData)).thenReturn(responseData);
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
+        .thenReturn(
+            OptionalSweepingOutput.builder().found(true).output(DliteVmStageInfraDetails.builder().build()).build());
+    StepResponse stepResponse = dockerStep.handleAsyncResponse(ambiance, stepElementParameters, responseDataMap);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes().size()).isEqualTo(1);
+    stepResponse.getStepOutcomes().forEach(stepOutcome -> {
+      if (stepOutcome.getOutcome() instanceof CIStepArtifactOutcome) {
+        CIStepArtifactOutcome outcome = (CIStepArtifactOutcome) stepOutcome.getOutcome();
+        assertThat(outcome).isNotNull();
         assertThat(outcome.getStepArtifacts().getPublishedImageArtifacts().size()).isEqualTo(1);
         assertThat(outcome.getStepArtifacts().getPublishedImageArtifacts().get(0)).isEqualTo(expectedArtifact);
         assertThat(stepOutcome.getName()).isEqualTo("artifact_identifierId");

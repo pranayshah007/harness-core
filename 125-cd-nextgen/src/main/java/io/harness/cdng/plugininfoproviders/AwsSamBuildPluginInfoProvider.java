@@ -42,10 +42,10 @@ import io.harness.yaml.utils.NGVariablesUtils;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
-import java.util.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.jooq.tools.StringUtils;
 
 @OwnedBy(HarnessTeam.CDP)

@@ -24,6 +24,8 @@ import io.harness.delegate.task.stepstatus.artifact.DockerArtifactMetadata;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.steps.StepType;
 
+import java.util.regex.Pattern;
+
 @OwnedBy(HarnessTeam.CI)
 public class ECRStep extends AbstractStepExecutable {
   public static final StepType STEP_TYPE = ECRStepInfo.STEP_TYPE;
@@ -52,6 +54,8 @@ public class ECRStep extends AbstractStepExecutable {
           String digest = desc.getDigest();
           String image = imageWithTag[0];
           String tag = imageWithTag[1];
+          image = image.replaceFirst("^" + Pattern.quote(dockerArtifactMetadata.getRegistryUrl()) + "/?", "");
+
           stepArtifactsBuilder.publishedImageArtifact(PublishedImageArtifact.builder()
                                                           .imageName(image)
                                                           .tag(tag)

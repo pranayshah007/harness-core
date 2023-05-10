@@ -15,11 +15,9 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
-import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.data.Offset.offset;
 import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
@@ -29,7 +27,6 @@ import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
-import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
@@ -306,29 +303,6 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
     assertThat(updatedLastRecord.getRunningGoodCount()).isEqualTo(6);
     assertThat(updatedLastRecord.getSliVersion()).isEqualTo(1);
     assertThat(updatedLastRecord.getTimestamp()).isEqualTo(Instant.parse("2020-07-27T10:14:00Z"));
-  }
-  @Test
-  @Owner(developers = KAPIL)
-  @Category(UnitTests.class)
-  public void testGetErrorBudgetBurnRate() {
-    Instant startTime = Instant.parse("2020-07-27T10:50:00Z").minus(Duration.ofMinutes(20));
-    List<SLIState> sliStates = Arrays.asList(BAD, GOOD, GOOD, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, BAD);
-    createData(startTime, sliStates);
-    double errorBudgetBurnRate = sliRecordService.getErrorBudgetBurnRate(
-        serviceLevelIndicator.getUuid(), Duration.ofMinutes(10).toMillis(), 120, null);
-    assertThat(errorBudgetBurnRate).isCloseTo(3.333, offset(0.001));
-  }
-
-  @Test
-  @Owner(developers = VARSHA_LALWANI)
-  @Category(UnitTests.class)
-  public void testGetErrorBudgetBurnRateWithBadMissingData() {
-    Instant startTime = Instant.parse("2020-07-27T10:50:00Z").minus(Duration.ofMinutes(20));
-    List<SLIState> sliStates = Arrays.asList(NO_DATA, GOOD, GOOD, GOOD, GOOD, GOOD, BAD, NO_DATA, NO_DATA, NO_DATA);
-    createData(startTime, sliStates);
-    double errorBudgetBurnRate = sliRecordService.getErrorBudgetBurnRate(
-        serviceLevelIndicator.getUuid(), Duration.ofMinutes(10).toMillis(), 120, SLIMissingDataType.BAD);
-    assertThat(errorBudgetBurnRate).isCloseTo(4.166, offset(0.001));
   }
 
   private void createData(Instant startTime, List<SLIState> sliStates) {

@@ -32,6 +32,7 @@ import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.scope.ScopeHelper;
 import io.harness.utils.IdentifierRefHelper;
@@ -363,10 +364,14 @@ public class EnvironmentFilterHelper {
     return update;
   }
 
+  // Should not be used for Overrides V2
+  @Deprecated
   public static Update getUpdateOperationsForServiceOverride(NGServiceOverridesEntity serviceOverridesEntity) {
     String qualifiedEnvironmentRef = IdentifierRefHelper.getRefFromIdentifierOrRef(
         serviceOverridesEntity.getAccountId(), serviceOverridesEntity.getOrgIdentifier(),
         serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getEnvironmentRef());
+    String identifier = generateServiceOverrideIdentifier(serviceOverridesEntity);
+    ServiceOverridesType type = ServiceOverridesType.ENV_SERVICE_OVERRIDE;
     Update update = new Update();
     update.set(NGServiceOverridesEntityKeys.accountId, serviceOverridesEntity.getAccountId());
     update.set(NGServiceOverridesEntityKeys.orgIdentifier, serviceOverridesEntity.getOrgIdentifier());
@@ -376,6 +381,14 @@ public class EnvironmentFilterHelper {
     update.set(NGServiceOverridesEntityKeys.yaml, serviceOverridesEntity.getYaml());
     update.setOnInsert(NGServiceOverridesEntityKeys.createdAt, System.currentTimeMillis());
     update.set(NGServiceOverridesEntityKeys.lastModifiedAt, System.currentTimeMillis());
+    // for service override v2
+    update.set(NGServiceOverridesEntityKeys.identifier, identifier);
+    update.set(NGServiceOverridesEntityKeys.type, type);
     return update;
+  }
+
+  private static String generateServiceOverrideIdentifier(NGServiceOverridesEntity serviceOverridesEntity) {
+    return String.join("_", serviceOverridesEntity.getEnvironmentRef(), serviceOverridesEntity.getServiceRef())
+        .replace(".", "_");
   }
 }

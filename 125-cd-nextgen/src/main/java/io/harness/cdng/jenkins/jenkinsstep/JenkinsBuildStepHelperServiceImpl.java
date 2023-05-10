@@ -196,7 +196,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
             .taskSetupAbstraction("ng", "true")
             .taskSetupAbstraction("owner", ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
             .taskSetupAbstraction("projectIdentifier", ngAccess.getProjectIdentifier())
-            .taskSelectors(delegateRequest.getJenkinsConnectorDTO().getDelegateSelectors())
+            .taskSelectors(delegateRequest.getDelegateSelectors())
             .logStreamingAbstractions(logAbstractionMap)
             .build();
     return delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);

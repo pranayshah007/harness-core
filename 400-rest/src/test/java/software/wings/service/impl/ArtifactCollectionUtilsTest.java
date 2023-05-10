@@ -43,6 +43,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -121,6 +122,7 @@ public class ArtifactCollectionUtilsTest extends WingsBaseTest {
   public void setUp() {
     when(artifactService.prepareArtifactWithMetadataQuery(any(ArtifactStream.class), anyBoolean()))
         .thenReturn(artifactQuery);
+    when(artifactQuery.limit(anyInt())).thenReturn(artifactQuery);
     when(artifactQuery.fetch()).thenReturn(artifactIterator);
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     when(artifactIterator.next()).thenReturn(anArtifact().build());

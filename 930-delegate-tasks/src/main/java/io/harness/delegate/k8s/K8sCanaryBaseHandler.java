@@ -36,12 +36,12 @@ import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.exception.KubernetesExceptionMessages;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.manifest.VersionUtils;
 import io.harness.k8s.model.HarnessAnnotations;
 import io.harness.k8s.model.HarnessLabelValues;
 import io.harness.k8s.model.HarnessLabels;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
-import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
@@ -68,7 +68,6 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 public class K8sCanaryBaseHandler {
-  private static final Set<String> SECRET_AND_CONFIG_MAP_KINDS = Set.of(Kind.ConfigMap.name(), Kind.Secret.name());
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
 
   public boolean prepareForCanary(K8sCanaryHandlerConfig canaryHandlerConfig,
@@ -257,12 +256,11 @@ public class K8sCanaryBaseHandler {
 
     StringBuilder canaryWorkloadNameBuilder = new StringBuilder(canaryWorkloadName);
 
-    String configmapAndSecretNames =
-        resources.stream()
-            .map(KubernetesResource::getResourceId)
-            .filter(resourceId -> SECRET_AND_CONFIG_MAP_KINDS.contains(resourceId.getKind()))
-            .map(KubernetesResourceId::namespaceKindNameRef)
-            .collect(Collectors.joining(","));
+    String configmapAndSecretNames = resources.stream()
+                                         .filter(VersionUtils::shouldVersion)
+                                         .map(KubernetesResource::getResourceId)
+                                         .map(KubernetesResourceId::namespaceKindNameRef)
+                                         .collect(Collectors.joining(","));
 
     if (isNotEmpty(configmapAndSecretNames)) {
       canaryWorkloadNameBuilder.append(',');

@@ -13,6 +13,7 @@ import static io.harness.NGDateUtils.getNumberOfDays;
 import static io.harness.NGDateUtils.getStartTimeOfPreviousInterval;
 import static io.harness.NGDateUtils.getStartTimeOfTheDayAsEpoch;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.event.timeseries.processor.utils.DateUtils.getCurrentTime;
 import static io.harness.ng.core.activityhistory.dto.TimeGroupType.DAY;
 import static io.harness.ng.core.activityhistory.dto.TimeGroupType.HOUR;
@@ -191,6 +192,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   private String CUSTOM_DEPLOYMENT = "CustomDeployment";
   private String tableNameServiceAndInfra = "service_infra_info";
   private static final String PIPELINE_EXECUTION_SUMMARY_CD_ID = "pipeline_execution_summary_cd_id";
+  private static final String EXECUTION_FAILURE_DETAILS = "execution_failure_details";
   public static List<String> activeStatusList = Arrays.asList(ExecutionStatus.RUNNING.name(),
       ExecutionStatus.ASYNCWAITING.name(), ExecutionStatus.TASKWAITING.name(), ExecutionStatus.TIMEDWAITING.name(),
       ExecutionStatus.PAUSED.name(), ExecutionStatus.PAUSING.name());
@@ -1555,6 +1557,31 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       }
     }
     return ids.stream().collect(Collectors.toList());
+  }
+
+  public Map<String, String> getPipelineExecutionIdAndFailureDetailsFromServiceInfraInfo(String query) {
+    Map<String, String> idToFailureInfoMap = new HashMap<>();
+    int totalTries = 0;
+    boolean successfulOperation = false;
+    ResultSet resultSet = null;
+    while (!successfulOperation && totalTries <= MAX_RETRY_COUNT) {
+      try (Connection connection = timeScaleDBService.getDBConnection();
+           PreparedStatement statement = connection.prepareStatement(query)) {
+        resultSet = statement.executeQuery();
+        while (resultSet != null && resultSet.next()) {
+          String id = resultSet.getString(PIPELINE_EXECUTION_SUMMARY_CD_ID);
+          String executionFailureDetails = resultSet.getString(EXECUTION_FAILURE_DETAILS);
+          idToFailureInfoMap.put(id, executionFailureDetails);
+        }
+        successfulOperation = true;
+      } catch (SQLException ex) {
+        log.error("{} after total tries = {}", ex, totalTries);
+        totalTries++;
+      } finally {
+        DBUtils.close(resultSet);
+      }
+    }
+    return idToFailureInfoMap;
   }
 
   public Map<String, Pair<String, AuthorInfo>> getPipelineExecutionIdToTriggerTypeAndAuthorInfoMapping(
@@ -3496,10 +3523,29 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
             .collect(Collectors.toList());
     String query = DashboardServiceHelper.buildOpenTaskQuery(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, startInterval);
-    List<String> pipelineExecutionIdList = getPipelineExecutionIdFromServiceInfraInfo(query);
+    Map<String, String> pipelineExecutionIdToFailureInfoMap =
+        getPipelineExecutionIdAndFailureDetailsFromServiceInfraInfo(query);
     Map<String, ServicePipelineInfo> servicePipelineInfoMap =
-        getPipelineExecutionDetails(pipelineExecutionIdList, STATUS_LIST);
-    List<ServicePipelineInfo> servicePipelineInfoList = new ArrayList<>(servicePipelineInfoMap.values());
+        getPipelineExecutionDetails(new ArrayList<>(pipelineExecutionIdToFailureInfoMap.keySet()), STATUS_LIST);
+    List<ServicePipelineWithRevertInfo> servicePipelineInfoList = new ArrayList<>();
+    if (isNotEmpty(servicePipelineInfoMap.values())) {
+      servicePipelineInfoList.addAll(servicePipelineInfoMap.values()
+                                         .stream()
+                                         .map(servicePipelineInfo
+                                             -> ServicePipelineWithRevertInfo.builder()
+                                                    .name(servicePipelineInfo.getName())
+                                                    .deployedById(servicePipelineInfo.getDeployedById())
+                                                    .deployedByName(servicePipelineInfo.getDeployedByName())
+                                                    .identifier(servicePipelineInfo.getIdentifier())
+                                                    .pipelineExecutionId(servicePipelineInfo.getPipelineExecutionId())
+                                                    .planExecutionId(servicePipelineInfo.getPlanExecutionId())
+                                                    .lastExecutedAt(servicePipelineInfo.getLastExecutedAt())
+                                                    .status(servicePipelineInfo.getStatus())
+                                                    .failureDetail(pipelineExecutionIdToFailureInfoMap.getOrDefault(
+                                                        servicePipelineInfo.getPipelineExecutionId(), ""))
+                                                    .build())
+                                         .collect(Collectors.toList()));
+    }
     DashboardServiceHelper.sortServicePipelineInfoList(servicePipelineInfoList);
     return OpenTaskDetails.builder().pipelineDeploymentDetails(servicePipelineInfoList).build();
   }

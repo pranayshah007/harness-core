@@ -36,10 +36,12 @@ public class EcsRollingDeployBaseStepInfo {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
+  @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @JsonProperty("sameAsAlreadyRunningInstances")
   ParameterField<Boolean> sameAsAlreadyRunningInstances;
 
+  @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @JsonProperty("forceNewDeployment")
   ParameterField<Boolean> forceNewDeployment;

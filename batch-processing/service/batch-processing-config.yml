@@ -212,3 +212,8 @@ governanceConfig:
   packsInEnforcement: 30
   policiesInEnforcement: 30
   policiesInPack: 30
+
+azureVmPricingConfig:
+  baseUrl: https://prices.azure.com/api/retail/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15

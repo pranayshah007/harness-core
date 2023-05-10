@@ -171,7 +171,7 @@ public class KubernetesSetupCommandUnitTest extends WingsBaseTest {
                                                                     .addNewPort()
                                                                     .withPort(80)
                                                                     .withNewTargetPort()
-                                                                    .withIntVal(8080)
+                                                                    .withValue(8080)
                                                                     .endTargetPort()
                                                                     .endPort()
                                                                     .addToSelector("app", "testApp")

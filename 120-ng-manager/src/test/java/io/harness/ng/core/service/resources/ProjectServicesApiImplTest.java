@@ -38,6 +38,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityManagementService;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.services.impl.ServiceEntityYamlSchemaHelper;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.rule.Owner;
 import io.harness.spec.server.ng.v1.model.Service;

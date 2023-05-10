@@ -12,6 +12,7 @@ import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
 import static io.harness.authorization.AuthorizationServiceHeader.CV_NEXT_GEN;
 import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.authorization.AuthorizationServiceHeader.IDENTITY_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.cvng.CVConstants.ENVIRONMENT;
 import static io.harness.cvng.cdng.services.impl.CVNGNotifyEventListener.CVNG_ORCHESTRATION;
 import static io.harness.cvng.migration.beans.CVNGSchema.CVNGMigrationStatus.RUNNING;
@@ -114,6 +115,7 @@ import io.harness.cvng.statemachine.beans.AnalysisOrchestratorStatus;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator.AnalysisOrchestratorKeys;
 import io.harness.cvng.statemachine.jobs.AnalysisOrchestrationJob;
+import io.harness.cvng.telemetry.SrmTelemetryRecordsJob;
 import io.harness.cvng.ticket.clients.TicketServiceRestClientModule;
 import io.harness.cvng.utils.SRMServiceAuthIfHasApiKey;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -201,6 +203,11 @@ import io.harness.serializer.CvNextGenRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.PipelineServiceUtilAdviserRegistrar;
 import io.harness.serializer.PrimaryVersionManagerRegistrars;
+import io.harness.telemetry.TelemetryReporter;
+import io.harness.telemetry.filter.APIAuthTelemetryFilter;
+import io.harness.telemetry.filter.APIAuthTelemetryResponseFilter;
+import io.harness.telemetry.filter.APIErrorsTelemetrySenderFilter;
+import io.harness.telemetry.filter.TerraformTelemetryFilter;
 import io.harness.token.TokenClientModule;
 import io.harness.token.remote.TokenClient;
 import io.harness.waiter.NotifyEvent;
@@ -516,7 +523,10 @@ public class VerificationApplication extends Application<VerificationConfigurati
     initializeEnforcementSdk(injector);
     initAutoscalingMetrics();
     registerOasResource(configuration, environment, injector);
+    initializeSrmMonitoring(configuration, injector);
+    registerAPIAuthTelemetryFilters(configuration, environment, injector);
     registerMigrations(injector);
+    registerAPIAuthTelemetryFilters(configuration, environment, injector);
 
     if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
       registerTraceFilter(environment, injector);
@@ -527,6 +537,36 @@ public class VerificationApplication extends Application<VerificationConfigurati
     registerUpdateProgressScheduler(injector);
     runMigrations(injector);
     log.info("Starting app done");
+  }
+
+  private void registerAPIAuthTelemetryFilters(
+      VerificationConfiguration configuration, Environment environment, Injector injector) {
+    if (configuration.getSegmentConfiguration() != null && configuration.getSegmentConfiguration().isEnabled()) {
+      registerAPIAuthTelemetryFilter(environment, injector);
+      registerTerraformTelemetryFilter(environment, injector);
+      registerAPIAuthTelemetryResponseFilter(environment, injector);
+      registerAPIErrorsTelemetrySenderFilter(environment, injector);
+    }
+  }
+
+  private void registerAPIErrorsTelemetrySenderFilter(Environment environment, Injector injector) {
+    TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
+    environment.jersey().register(new APIErrorsTelemetrySenderFilter(telemetryReporter, NG_MANAGER.getServiceId()));
+  }
+
+  private void registerAPIAuthTelemetryResponseFilter(Environment environment, Injector injector) {
+    TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
+    environment.jersey().register(new APIAuthTelemetryResponseFilter(telemetryReporter));
+  }
+
+  private void registerTerraformTelemetryFilter(Environment environment, Injector injector) {
+    TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
+    environment.jersey().register(new TerraformTelemetryFilter(telemetryReporter));
+  }
+
+  private void registerAPIAuthTelemetryFilter(Environment environment, Injector injector) {
+    TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
+    environment.jersey().register(new APIAuthTelemetryFilter(telemetryReporter));
   }
 
   private void scheduleSidekickProcessing(Injector injector) {
@@ -1361,5 +1401,10 @@ public class VerificationApplication extends Application<VerificationConfigurati
   private void registerGaugeMetric(String metricName, String[] labels) {
     harnessMetricRegistry.registerGaugeMetric(metricName, labels, "Metrics from CVNG for LE");
     harnessMetricRegistry.registerGaugeMetric(ENVIRONMENT + "_" + metricName, labels, "Metrics from CVNG for LE");
+  }
+
+  private void initializeSrmMonitoring(VerificationConfiguration configuration, Injector injector) {
+    log.info("Initializing Srm Monitoring");
+    injector.getInstance(SrmTelemetryRecordsJob.class).scheduleTasks();
   }
 }

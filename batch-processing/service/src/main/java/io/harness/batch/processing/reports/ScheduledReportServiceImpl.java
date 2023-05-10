@@ -79,10 +79,8 @@ public class ScheduledReportServiceImpl {
             sendMail(accountId, schedule.getRecipients(), viewId, schedule.getUuid());
             setNextExecution(accountId, schedule);
           } catch (Exception e) {
-            log.info("ERROR in generateAndSendScheduledReport for viewId {}, accountId {}, reportId {}", viewId,
-                accountId, schedule.getUuid());
-            log.error("ERROR", e);
-            continue;
+            log.error("Error in generateAndSendScheduledReport for viewId {}, accountId {}, reportId {}", viewId,
+                accountId, schedule.getUuid(), e);
           }
         }
       });

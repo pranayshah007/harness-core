@@ -1710,6 +1710,9 @@ public class BuilderFactory {
       return projectParams.getProjectIdentifier();
     }
 
+    public void setAccountId(String accountId) {
+      projectParams.setAccountIdentifier(accountId);
+    }
     public void setOrgIdentifier(String orgIdentifier) {
       projectParams.setOrgIdentifier(orgIdentifier);
     }
