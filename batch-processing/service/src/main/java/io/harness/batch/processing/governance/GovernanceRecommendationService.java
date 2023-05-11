@@ -76,13 +76,17 @@ public class GovernanceRecommendationService {
   @Autowired BatchMainConfig configuration;
   private static final String DEFAULT_TIMEZONE = "GMT";
 
-  public void generateRecommendation() throws InterruptedException {
+  public void generateRecommendation() {
     // get all ce enabled accounts
     List<String> getAccounts = accountShardService.getCeEnabledAccountIds();
     for (String account : getAccounts) {
       log.info("generateRecommendationForAccount: {}", account);
-      generateRecommendationForAccount(account);
-      TimeUnit.MINUTES.sleep(configuration.getGovernanceConfig().getSleepTime());
+      try {
+        generateRecommendationForAccount(account);
+        TimeUnit.SECONDS.sleep(configuration.getGovernanceConfig().getSleepTime());
+      } catch (InterruptedException e) {
+        log.error("error which generating recommendation for {}", account);
+      }
     }
   }
 
