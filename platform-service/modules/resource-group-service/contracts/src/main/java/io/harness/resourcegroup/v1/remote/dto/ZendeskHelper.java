@@ -65,6 +65,7 @@ public class ZendeskHelper {
       ticketData.put("priority", priority.toString().toLowerCase(Locale.ROOT));
 
       Map<String, Object> requester = new HashMap<>();
+      requester.put("name", emailId);
       requester.put("email", emailId);
       ticketData.put("requester", requester);
       ticketRoot.put("ticket", ticketData);
