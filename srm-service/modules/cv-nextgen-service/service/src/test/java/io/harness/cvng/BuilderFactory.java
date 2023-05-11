@@ -1054,7 +1054,7 @@ public class BuilderFactory {
         .deploymentTag("deploymentTag")
         .stageId("stageId")
         .pipelineId("pipelineId")
-        .planExecutionId(generateUuid())
+        .planExecutionId("executionId")
         .artifactType("artifactType")
         .artifactTag("artifactTag")
         .activityName(generateUuid())
@@ -1107,8 +1107,6 @@ public class BuilderFactory {
                     DeepLink.builder().action(DeepLink.Action.REDIRECT_URL).url("internalUrl").build())
                 .eventDescriptions(Arrays.asList("eventDesc1", "eventDesc2"))
                 .build())
-        .activityStartTime(clock.instant())
-        .activityEndTime(clock.instant())
         .eventEndTime(clock.instant().toEpochMilli());
   }
 
@@ -1146,13 +1144,9 @@ public class BuilderFactory {
         .workflowEndTime(clock.instant())
         .workflowStartTime(clock.instant())
         .workflowId("workflowId")
-        .workflowExecutionId(generateUuid())
+        .workflowExecutionId("workflowExecutionId")
         .activityName(generateUuid())
         .activityEndTime(clock.instant())
-        .appId(generateUuid())
-        .serviceId(generateUuid())
-        .environmentId(generateUuid())
-        .name(generateUuid())
         .activityStartTime(clock.instant());
   }
 
@@ -1186,9 +1180,6 @@ public class BuilderFactory {
         .pagerDutyUrl("https://myurl.com/pagerduty/token")
         .eventId("eventId")
         .activityName("New pager duty incident")
-        .status(generateUuid())
-        .htmlUrl(generateUuid())
-        .pagerDutyUrl(generateUuid())
         .activityStartTime(clock.instant());
   }
 
@@ -1203,8 +1194,6 @@ public class BuilderFactory {
         .type(ChangeSourceType.KUBERNETES.getActivityType())
         .activityStartTime(clock.instant())
         .activityName("K8 Activity")
-        .resourceType(KubernetesResourceType.ConfigMap)
-        .action(Action.Add)
         .resourceVersion("resource-version")
         .relatedAppServices(Arrays.asList(
             RelatedAppMonitoredService.builder().monitoredServiceIdentifier("dependent_service").build()));

@@ -15,7 +15,6 @@ java_library(
         "//960-api-services/src/main/java/io/harness/k8s/kubectl:module",
         "//970-api-services-beans:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
-        "@maven//:io_github_resilience4j_resilience4j_retry",
         "@maven//:io_kubernetes_client_java_api",
     ],
 )

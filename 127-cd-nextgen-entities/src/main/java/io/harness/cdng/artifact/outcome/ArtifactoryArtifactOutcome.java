@@ -73,10 +73,6 @@ public class ArtifactoryArtifactOutcome implements ArtifactOutcome {
    */
   String image;
   /**
-   * imagePath
-   */
-  String imagePath;
-  /**
    * imagePullSecret for artifactory credentials base encoded.
    */
   String imagePullSecret;

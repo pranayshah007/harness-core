@@ -206,10 +206,8 @@ public class ActivityServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testUpsert_updateEntity() {
     useMockedPersistentLocker();
-    Activity existingActivity =
-        builderFactory.getDeploymentActivityBuilder().planExecutionId("planExecutionId").build();
-    Activity updatingActivity =
-        builderFactory.getDeploymentActivityBuilder().planExecutionId("planExecutionId").build();
+    Activity existingActivity = builderFactory.getDeploymentActivityBuilder().build();
+    Activity updatingActivity = builderFactory.getDeploymentActivityBuilder().build();
     List<String> verificationJobInstanceIds = new ArrayList<>();
     verificationJobInstanceIds.addAll(existingActivity.getVerificationJobInstanceIds());
     verificationJobInstanceIds.addAll(updatingActivity.getVerificationJobInstanceIds());

@@ -130,19 +130,14 @@ public class StageExecutionHelper {
 
     Optional<ExecutionDetails> executionDetails = getExecutionDetailsByInfraKind(ambiance, infrastructureKind);
     if (executionDetails.isPresent()) {
-      saveStageExecutionDetails(ambiance, executionInfoKey, executionDetails.get());
+      if (ngFeatureFlagHelperService.isEnabled(
+              AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
+        saveStageExecutionInfoV2(ambiance, executionInfoKey, executionDetails.get());
+      } else {
+        saveStageExecutionInfo(ambiance, executionInfoKey, executionDetails.get());
+      }
       executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.EXECUTION_INFO_KEY_OUTPUT_NAME,
           ExecutionInfoKeyOutput.builder().executionInfoKey(executionInfoKey).build(), StepCategory.STAGE.name());
-    }
-  }
-
-  public void saveStageExecutionDetails(
-      Ambiance ambiance, ExecutionInfoKey executionInfoKey, ExecutionDetails executionDetails) {
-    if (ngFeatureFlagHelperService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
-      saveStageExecutionInfoV2(ambiance, executionInfoKey, executionDetails);
-    } else {
-      saveStageExecutionInfo(ambiance, executionInfoKey, executionDetails);
     }
   }
 
@@ -194,15 +189,10 @@ public class StageExecutionHelper {
     return cdStepHelper.resolveArtifactsOutcome(ambiance);
   }
 
-  public Optional<StageExecutionInfo> getLatestSuccessfulStageExecutionInfo(
-      @NotNull ExecutionInfoKey executionInfoKey, final String stageExecutionId) {
-    return stageExecutionInfoService.getLatestSuccessfulStageExecutionInfo(executionInfoKey, stageExecutionId);
-  }
-
   public Optional<ExecutionDetails> getLatestSuccessfulStageExecutionDetails(
       @NotNull ExecutionInfoKey executionInfoKey, final String stageExecutionId) {
     Optional<StageExecutionInfo> latestSuccessfulStageExecutionInfo =
-        getLatestSuccessfulStageExecutionInfo(executionInfoKey, stageExecutionId);
+        stageExecutionInfoService.getLatestSuccessfulStageExecutionInfo(executionInfoKey, stageExecutionId);
     return latestSuccessfulStageExecutionInfo.map(StageExecutionInfo::getExecutionDetails);
   }
 

@@ -13,7 +13,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 
-import io.github.resilience4j.retry.Retry;
 import io.kubernetes.client.openapi.ApiClient;
 import lombok.Builder;
 import lombok.Data;
@@ -23,7 +22,6 @@ import lombok.Data;
 @OwnedBy(CDP)
 public class K8sStatusWatchDTO {
   ApiClient apiClient;
-  Retry retry;
   Kubectl client;
   K8sDelegateTaskParams k8sDelegateTaskParams;
   boolean isErrorFrameworkEnabled;

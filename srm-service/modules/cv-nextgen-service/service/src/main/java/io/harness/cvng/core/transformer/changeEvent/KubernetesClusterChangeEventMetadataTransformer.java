@@ -12,7 +12,6 @@ import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.KubernetesChangeEventMetadata;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 
 public class KubernetesClusterChangeEventMetadataTransformer
@@ -62,9 +61,6 @@ public class KubernetesClusterChangeEventMetadataTransformer
 
   @Override
   public List<String> getMonitoredServiceIdentifiers(KubernetesClusterActivity activity) {
-    List<String> monitoredServiceIdentifiers = new ArrayList<>();
-    monitoredServiceIdentifiers.add(activity.getMonitoredServiceIdentifier());
-    monitoredServiceIdentifiers.addAll(activity.getRealatedAppMonitoredServiceIdentifiers());
-    return monitoredServiceIdentifiers;
+    return activity.getRealatedAppMonitoredServiceIdentifiers();
   }
 }
