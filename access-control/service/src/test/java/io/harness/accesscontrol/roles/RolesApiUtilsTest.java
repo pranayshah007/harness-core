@@ -7,6 +7,9 @@
 
 package io.harness.accesscontrol.roles;
 
+import static io.harness.accesscontrol.roles.api.RoleDTO.ScopeLevel.ACCOUNT;
+import static io.harness.accesscontrol.roles.api.RoleDTO.ScopeLevel.ORGANIZATION;
+import static io.harness.accesscontrol.roles.api.RoleDTO.ScopeLevel.PROJECT;
 import static io.harness.rule.OwnerRule.MANKRIT;
 
 import static junit.framework.TestCase.assertEquals;
@@ -60,9 +63,9 @@ public class RolesApiUtilsTest {
     assertEquals(identifier, roleDTO.getIdentifier());
     assertEquals(name, roleDTO.getName());
     assertTrue(roleDTO.getPermissions().contains("core_role_view"));
-    assertTrue(roleDTO.getAllowedScopeLevels().contains("account"));
-    assertFalse(roleDTO.getAllowedScopeLevels().contains("organization"));
-    assertFalse(roleDTO.getAllowedScopeLevels().contains("project"));
+    assertTrue(roleDTO.getAllowedScopeLevels().contains(ACCOUNT));
+    assertFalse(roleDTO.getAllowedScopeLevels().contains(ORGANIZATION));
+    assertFalse(roleDTO.getAllowedScopeLevels().contains(PROJECT));
   }
 
   @Test
@@ -78,9 +81,9 @@ public class RolesApiUtilsTest {
     assertEquals(identifier, roleDTO.getIdentifier());
     assertEquals(name, roleDTO.getName());
     assertTrue(roleDTO.getPermissions().contains("core_role_view"));
-    assertFalse(roleDTO.getAllowedScopeLevels().contains("account"));
-    assertTrue(roleDTO.getAllowedScopeLevels().contains("organization"));
-    assertFalse(roleDTO.getAllowedScopeLevels().contains("project"));
+    assertFalse(roleDTO.getAllowedScopeLevels().contains(ACCOUNT));
+    assertTrue(roleDTO.getAllowedScopeLevels().contains(ORGANIZATION));
+    assertFalse(roleDTO.getAllowedScopeLevels().contains(PROJECT));
   }
 
   @Test
@@ -96,9 +99,9 @@ public class RolesApiUtilsTest {
     assertEquals(identifier, roleDTO.getIdentifier());
     assertEquals(name, roleDTO.getName());
     assertTrue(roleDTO.getPermissions().contains("core_role_view"));
-    assertFalse(roleDTO.getAllowedScopeLevels().contains("account"));
-    assertFalse(roleDTO.getAllowedScopeLevels().contains("organization"));
-    assertTrue(roleDTO.getAllowedScopeLevels().contains("project"));
+    assertFalse(roleDTO.getAllowedScopeLevels().contains(ACCOUNT));
+    assertFalse(roleDTO.getAllowedScopeLevels().contains(ORGANIZATION));
+    assertTrue(roleDTO.getAllowedScopeLevels().contains(PROJECT));
   }
 
   @Test
@@ -110,7 +113,7 @@ public class RolesApiUtilsTest {
                                                 .identifier(identifier)
                                                 .name(name)
                                                 .permissions(Collections.singleton("core_role_view"))
-                                                .allowedScopeLevels(Collections.singleton("account"))
+                                                .allowedScopeLevels(Collections.singleton(ACCOUNT))
                                                 .build())
                                       .createdAt(123L)
                                       .build();
