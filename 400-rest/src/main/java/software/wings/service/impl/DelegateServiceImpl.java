@@ -2492,6 +2492,8 @@ public class DelegateServiceImpl implements DelegateService {
     final String hostName = ECS.equals(delegate.getDelegateType())
         ? getHostNameToBeUsedForECSDelegate(delegate.getHostName(), delegate.getSequenceNum())
         : delegate.getHostName();
+    log.info("Sequence num received {}, host name received {}", delegate.getSequenceNum(), delegate.getHostName());
+    log.info("Host name look for ECS DELEGATE {}", hostName);
 
     final Delegate existingDelegate = getExistingDelegate(
         delegate.getAccountId(), hostName, delegate.isNg(), delegate.getDelegateType(), delegate.getIp());
@@ -2556,6 +2558,9 @@ public class DelegateServiceImpl implements DelegateService {
     final String hostName = ECS.equals(delegateParams.getDelegateType())
         ? getHostNameToBeUsedForECSDelegate(delegateParams.getHostName(), delegateParams.getSequenceNum())
         : delegateParams.getHostName();
+    log.info("Sequence num received {}, host name received {}", delegateParams.getSequenceNum(), delegateParams.getHostName());
+    log.info("Host name look for ECS DELEGATE {}", hostName);
+
     final Delegate existingDelegate = getExistingDelegate(delegateParams.getAccountId(), hostName,
         delegateParams.isNg(), delegateParams.getDelegateType(), delegateParams.getIp());
 
@@ -2791,8 +2796,9 @@ public class DelegateServiceImpl implements DelegateService {
 
       delegateTelemetryPublisher.sendTelemetryTrackEvents(
           delegate.getAccountId(), delegate.getDelegateType(), delegate.isNg(), DELEGATE_REGISTERED_EVENT);
+      subject.fireInform(DelegateObserver::onReconnected, delegate);
     } else {
-      log.debug("Delegate exists, updating: {}", delegate.getUuid());
+      log.info("Delegate exists, updating: {}", delegate.getUuid());
       delegate.setUuid(existingDelegate.getUuid());
       delegate.setStatus(existingDelegate.getStatus());
       delegate.setDelegateProfileId(existingDelegate.getDelegateProfileId());
@@ -2821,7 +2827,8 @@ public class DelegateServiceImpl implements DelegateService {
     // for new delegate and delegate reconnecting long pause, trigger delegateObserver::onReconnected event
     if (registeredDelegate != null) {
       boolean isDelegateReconnectingAfterLongPause = now > (lastRecordedHeartBeat + HEARTBEAT_EXPIRY_TIME.toMillis());
-      if (existingDelegate == null || isDelegateReconnectingAfterLongPause) {
+      if (isDelegateReconnectingAfterLongPause) {
+        log.info("Delegate {} reconnecting after long pause.", registeredDelegate.getUuid());
         subject.fireInform(DelegateObserver::onReconnected, delegate);
       }
     }
