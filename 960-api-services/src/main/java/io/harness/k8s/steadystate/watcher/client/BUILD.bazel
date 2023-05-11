@@ -12,10 +12,12 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//960-api-services/src/main/java/io/harness/k8s/kubectl:module",
-        "//970-api-services-beans:module",
+        "//960-api-services/src/main/java/io/harness/exception/sanitizer:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
+        "//980-commons/src/main/java/io/harness/supplier:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:io_github_resilience4j_resilience4j_retry",
+        "@maven//:io_kubernetes_client_java",
         "@maven//:io_kubernetes_client_java_api",
     ],
 )
