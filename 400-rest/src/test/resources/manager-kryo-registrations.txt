@@ -2953,6 +2953,7 @@
 680029:io.harness.delegate.task.terraformcloud.request.TerraformCloudGetWorkspacesTaskParams
 680030:io.harness.delegate.task.terraformcloud.request.TerraformCloudRollbackTaskParams
 680031:io.harness.delegate.task.terraformcloud.request.TerraformCloudValidationTaskParams
+680032:io.harness.delegate.task.k8s.K8sBlueGreenStageScaleDownRequest
 873572:io.harness.delegate.beans.connector.bamboo.BambooTestConnectionTaskParams
 873573:io.harness.delegate.beans.connector.bamboo.BambooConnectionTaskResponse
 873574:io.harness.delegate.beans.connector.bamboo.BambooCapabilityHelper
