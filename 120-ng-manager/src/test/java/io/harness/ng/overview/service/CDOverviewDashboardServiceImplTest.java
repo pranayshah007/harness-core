@@ -64,8 +64,8 @@ import io.harness.ng.overview.dto.ServicePipelineWithRevertInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.service.instancedashboardservice.InstanceDashboardServiceImpl;
-import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 
 import java.io.IOException;
 import java.util.ArrayList;

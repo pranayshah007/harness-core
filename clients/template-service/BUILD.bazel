@@ -1,0 +1,27 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("//:tools/bazel/GenTestRules.bzl", "run_tests")
+load("//:tools/bazel/harness.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+java_library(
+    name = "module",
+    srcs = glob(["src/main/java/**/*.java"]),
+    resources = [],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//840-template-service/contracts:module",
+        "//960-persistence:module",
+        "//970-ng-commons:module",
+        "//980-commons:module",
+        "//999-annotations:module",
+        "@maven//:com_google_inject_guice",
+        "@maven//:com_squareup_retrofit2_retrofit",
+    ],
+)
+
+run_analysis()
