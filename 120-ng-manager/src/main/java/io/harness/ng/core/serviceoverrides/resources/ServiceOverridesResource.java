@@ -77,6 +77,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 @NextGenManagerAuth
 @Api("/serviceOverrides")
+@Hidden
 @Path("/serviceOverrides")
 @Produces({"application/json", "application/yaml"})
 @Consumes({"application/json", "application/yaml"})
@@ -118,7 +119,6 @@ public class ServiceOverridesResource {
   private static final int MAX_LIMIT = 1000;
 
   @GET
-  @Hidden
   @Path("/{identifier}")
   @ApiOperation(value = "Gets Service Overrides by Identifier", nickname = "getServiceOverrides")
   @Operation(operationId = "getServiceOverrides", summary = "Gets Service Overrides by Identifier",
@@ -161,7 +161,6 @@ public class ServiceOverridesResource {
   }
 
   @POST
-  @Hidden
   @ApiOperation(value = "Create an ServiceOverride Entity", nickname = "createServiceOverride")
   @Operation(operationId = "createServiceOverride", summary = "Create an ServiceOverride Entity",
       responses =
@@ -204,7 +203,6 @@ public class ServiceOverridesResource {
   }
 
   @DELETE
-  @Hidden
   @Path("/{identifier}")
   @ApiOperation(value = "Delete a Service Override entity", nickname = "deleteServiceOverride")
   @Operation(operationId = "deleteServiceOverride", summary = "Delete a ServiceOverride entity",
