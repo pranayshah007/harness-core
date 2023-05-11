@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.constants.Constants.X_HUB_SIGNATURE_256;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.ngtriggers.Constants.MANDATE_GITHUB_AUTHENTICATION_TRUE_VALUE;
 import static io.harness.ngtriggers.Constants.TRIGGERS_MANDATE_GITHUB_AUTHENTICATION;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.INVALID_RUNTIME_INPUT_YAML;
@@ -24,6 +25,7 @@ import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITLAB;
 import static io.harness.pms.contracts.triggers.Type.WEBHOOK;
 
+import io.harness.NgAutoLogContext;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.beans.DelegateTaskRequest;
@@ -91,6 +93,7 @@ import io.harness.utils.PmsFeatureFlagService;
 import software.wings.beans.TaskType;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.time.Duration;
@@ -302,7 +305,10 @@ public class TriggerEventExecutionHelper {
                                           .accountId(ngTriggerEntity.getAccountId())
                                           .createdAt(System.currentTimeMillis())
                                           .build();
-    try {
+    try (AutoLogContext ignore1 = new NgTriggerAutoLogContext("pollingDocumentId", pollingResponse.getPollingDocId(),
+             ngTriggerEntity.getIdentifier(), ngTriggerEntity.getTargetIdentifier(),
+             ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getAccountId(),
+             AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
       if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
           && isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
         runtimeInputYaml = triggerDetails.getNgTriggerConfigV2().getInputYaml();
@@ -318,6 +324,8 @@ public class TriggerEventExecutionHelper {
       Builder triggerPayloadBuilder = TriggerPayload.newBuilder().setType(buildType);
 
       String build = pollingResponse.getBuildInfo().getVersions(0);
+      log.info(
+          "Triggering pipeline execution for pollingDocumentId {}, build {}", pollingResponse.getPollingDocId(), build);
       if (buildType == Type.ARTIFACT) {
         Map<String, String> metadata = new HashMap<>();
         if (pollingResponse.getBuildInfo().getMetadataCount() != 0) {
@@ -339,14 +347,19 @@ public class TriggerEventExecutionHelper {
 
   private TriggerEventResponse generateEventHistoryForSuccess(TriggerDetails triggerDetails, String runtimeInputYaml,
       NGTriggerEntity ngTriggerEntity, TriggerWebhookEvent pseudoEvent, PlanExecution response) {
-    TargetExecutionSummary targetExecutionSummary =
-        TriggerEventResponseHelper.prepareTargetExecutionSummary(response, triggerDetails, runtimeInputYaml);
+    try (AutoLogContext ignore1 = new NgAutoLogContext(ngTriggerEntity.getProjectIdentifier(),
+             ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getAccountId(), OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new AutoLogContext(ImmutableMap.of("planExecutionId", response.getPlanId()),
+             AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
+      TargetExecutionSummary targetExecutionSummary =
+          TriggerEventResponseHelper.prepareTargetExecutionSummary(response, triggerDetails, runtimeInputYaml);
 
-    log.info(ngTriggerEntity.getTargetType() + " execution was requested successfully for Pipeline: "
-        + ngTriggerEntity.getTargetIdentifier() + ", using trigger: " + ngTriggerEntity.getIdentifier());
+      log.info(ngTriggerEntity.getTargetType() + " execution was requested successfully for Pipeline: "
+          + ngTriggerEntity.getTargetIdentifier() + ", using trigger: " + ngTriggerEntity.getIdentifier());
 
-    return TriggerEventResponseHelper.toResponse(TARGET_EXECUTION_REQUESTED, pseudoEvent, ngTriggerEntity,
-        "Pipeline execution was requested successfully", targetExecutionSummary);
+      return TriggerEventResponseHelper.toResponse(TARGET_EXECUTION_REQUESTED, pseudoEvent, ngTriggerEntity,
+          "Pipeline execution was requested successfully", targetExecutionSummary);
+    }
   }
 
   private void authenticateTriggers(

@@ -23,6 +23,8 @@ import lombok.Getter;
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
   SPG_UI_ALLOW_ENCODING_FOR_JENKINS_ARTIFACT("Enables correct encoding for jenkins artifact", HarnessTeam.SPG),
+  SPG_CG_LIST_RESUMED_PIPELINES(
+      "Allows resumed workflow/pipelines to be listed on the deployment history page", HarnessTeam.SPG),
   SPG_CG_STATS_INSTANCE_CONSUMER("Optimize stats collector for instance collection", HarnessTeam.SPG),
   SPG_HTTP_STEP_CERTIFICATE("Allow enforce SSL/TLS certificate in HTTP step", HarnessTeam.SPG),
   SPG_ENABLE_GIT_SYNC_YAML_VALIDATE("Enable yaml validate in git sync", HarnessTeam.SPG),
@@ -214,7 +216,6 @@ public enum FeatureName {
   ECS_BG_DOWNSIZE,
   LIMITED_ACCESS_FOR_HARNESS_USER_GROUP,
   REMOVE_STENCIL_MANUAL_INTERVENTION,
-  CI_OVERVIEW_PAGE("UI flag to show CI overview page", HarnessTeam.CI),
   SKIP_BASED_ON_STACK_STATUSES,
   WF_VAR_MULTI_SELECT_ALLOWED_VALUES,
   CF_CLI7,
@@ -662,7 +663,6 @@ public enum FeatureName {
   PLG_ENABLE_CROSS_GENERATION_ACCESS("Enables cross generation access", GTM),
   CDS_SERVICE_OVERRIDES_2_0("Revamped experience service and environment overrides in NG", HarnessTeam.CDC),
   CDS_USE_OLD_SERVICE_V1("Feature flag to use service v1. NG_SVC_ENV_REDESIGN will be deprecated", HarnessTeam.CDC),
-  CDS_PROPAGATE_STAGE_TEMPLATE("Allow user to propagate service in a templatized stage in pipeline", HarnessTeam.CDC),
   CDS_NG_TRIGGER_EXECUTION_REFACTOR(
       "Refactor trigger execution to use same logic used in manual execution", HarnessTeam.SPG),
   CDS_K8S_SOCKET_CAPABILITY_CHECK_NG(
@@ -752,7 +752,10 @@ public enum FeatureName {
       "Enables the use of credentials from Delegate in GCP Secret Manager", HarnessTeam.PL),
   CI_ENABLE_DLC("Enable docker layer caching", HarnessTeam.CI),
   SRM_TELEMETRY("Will enable telemetry for verify step result", HarnessTeam.CV),
-  CI_USE_S3_FOR_DLC("Use S3 bucket for DLC cache", HarnessTeam.CI);
+  CI_USE_S3_FOR_DLC("Use S3 bucket for DLC cache", HarnessTeam.CI),
+  PL_CG_SHOW_MEMBER_ID_COUNT(
+      "Shows memberId count instead of member names on CG UserGroupListing page", HarnessTeam.PL),
+  CDS_ENCODE_HTTP_STEP_URL("Enables the encoding of HTTP Step URL if it is not already encoded", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

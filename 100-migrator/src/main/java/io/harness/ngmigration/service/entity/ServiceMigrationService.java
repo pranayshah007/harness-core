@@ -40,6 +40,7 @@ import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.kinds.EcsTaskDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.ServiceDefinition;
@@ -70,6 +71,7 @@ import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.NgMigrationService;
+import io.harness.ngmigration.service.manifest.ValuesYamlFromHelmRepoManifestService;
 import io.harness.ngmigration.service.servicev2.ServiceV2Factory;
 import io.harness.ngmigration.service.servicev2.ServiceV2Mapper;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -105,6 +107,7 @@ import software.wings.utils.ArtifactType;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -372,6 +375,7 @@ public class ServiceMigrationService extends NgMigrationService {
     List<NGYamlFile> childYamlFiles = serviceMapper.getChildYamlFiles(migrationContext, service, lambdaSpecification);
     List<ManifestConfigWrapper> manifestConfigWrapperList = new ArrayList<>(manifestMigrationService.getManifests(
         migrationContext, manifests, service, inputDTO.getIdentifierCaseFormat()));
+    manifestConfigWrapperList = mergeHelmChartOverrideManifestsIfApplicable(manifestConfigWrapperList);
     if (isNotEmpty(childYamlFiles)) {
       files.addAll(childYamlFiles);
       List<ManifestConfigWrapper> lambdaManifests = getLambdaManifests(inputDTO, childYamlFiles);
@@ -428,6 +432,43 @@ public class ServiceMigrationService extends NgMigrationService {
     files.add(ngYamlFile);
     files.add(getFolder(name, identifier, projectIdentifier, orgIdentifier));
     return YamlGenerationDetails.builder().yamlFileList(files).build();
+  }
+
+  private List<ManifestConfigWrapper> mergeHelmChartOverrideManifestsIfApplicable(
+      List<ManifestConfigWrapper> manifestConfigWrapperList) {
+    if (isNotEmpty(manifestConfigWrapperList) && manifestConfigWrapperList.size() == 2) {
+      ManifestConfigWrapper manifestConfigWrapper1 = manifestConfigWrapperList.get(0);
+      ManifestConfigWrapper manifestConfigWrapper2 = manifestConfigWrapperList.get(1);
+
+      if (isHelmChartManifest(manifestConfigWrapper1) && isHelmChartManifest(manifestConfigWrapper2)) {
+        if (isValuesOverrideHelmRepoStoreManifest(manifestConfigWrapper1)
+            || isValuesOverrideHelmRepoStoreManifest(manifestConfigWrapper2)) {
+          ManifestConfigWrapper helmChartManifest;
+          ManifestConfigWrapper helmRepoOverrideManifest;
+          if (isValuesOverrideHelmRepoStoreManifest(manifestConfigWrapper1)) {
+            helmRepoOverrideManifest = manifestConfigWrapper1;
+            helmChartManifest = manifestConfigWrapper2;
+          } else {
+            helmRepoOverrideManifest = manifestConfigWrapper2;
+            helmChartManifest = manifestConfigWrapper1;
+          }
+          ((HelmChartManifest) helmChartManifest.getManifest().getSpec())
+              .setValuesPaths(((HelmChartManifest) helmRepoOverrideManifest.getManifest().getSpec()).getValuesPaths());
+          return Arrays.asList(helmChartManifest);
+        }
+      }
+    }
+    return manifestConfigWrapperList;
+  }
+
+  private boolean isValuesOverrideHelmRepoStoreManifest(ManifestConfigWrapper manifestConfigWrapper1) {
+    return manifestConfigWrapper1.getManifest().getIdentifier().endsWith(
+        ValuesYamlFromHelmRepoManifestService.HELM_REPO_STORE);
+  }
+
+  private boolean isHelmChartManifest(ManifestConfigWrapper manifestConfigWrapper1) {
+    return manifestConfigWrapper1 != null && manifestConfigWrapper1.getManifest() != null
+        && manifestConfigWrapper1.getManifest().getType() == ManifestConfigType.HELM_CHART;
   }
 
   private List<ManifestConfigWrapper> getLambdaManifests(MigrationInputDTO inputDTO, List<NGYamlFile> childYamlFiles) {

@@ -230,6 +230,8 @@ ciExecutionServiceConfig:
         image: harness/blackduckhub-job-runner
       - product: brakeman_default
         image: harness/brakeman-job-runner
+      - product: burp_.*
+        image: harness/burp-job-runner
       - product: custom_.*
         image: harness/sto-plugin
         entrypoint:

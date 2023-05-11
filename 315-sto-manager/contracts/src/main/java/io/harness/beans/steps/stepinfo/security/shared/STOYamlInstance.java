@@ -27,9 +27,9 @@ import lombok.Data;
 @OwnedBy(STO)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class STOYamlInstance {
-  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "access_id") protected ParameterField<String> accessId;
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "username") protected ParameterField<String> username;
 
-  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "access_token") protected ParameterField<String> accessToken;
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "password") protected ParameterField<String> password;
 
   @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> domain;
 

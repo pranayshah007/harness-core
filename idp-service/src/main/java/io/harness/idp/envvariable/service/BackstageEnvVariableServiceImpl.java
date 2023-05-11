@@ -7,6 +7,7 @@
 
 package io.harness.idp.envvariable.service;
 
+import static io.harness.idp.common.Constants.GITHUB_APP_PRIVATE_KEY_REF;
 import static io.harness.idp.k8s.constants.K8sConstants.BACKSTAGE_SECRET;
 
 import static java.lang.String.format;
@@ -17,7 +18,6 @@ import io.harness.beans.DecryptedSecretValue;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.CommonUtils;
-import io.harness.idp.envvariable.beans.entity.BackstageEnvSecretVariableEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity.BackstageEnvVariableMapper;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableType;
@@ -34,6 +34,7 @@ import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -254,6 +255,11 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
         String secretIdentifier = ((BackstageEnvSecretVariable) envVariable).getHarnessSecretIdentifier();
         DecryptedSecretValue decryptedValue =
             ngSecretService.getDecryptedSecretValue(accountIdentifier, null, null, secretIdentifier);
+
+        if (envName.equals(GITHUB_APP_PRIVATE_KEY_REF)) {
+          decryptedValue.setDecryptedValue(new String(Base64.getDecoder().decode(decryptedValue.getDecryptedValue())));
+        }
+
         secretData.put(envName, decryptedValue.getDecryptedValue().getBytes());
       } else {
         secretData.put(envName, ((BackstageEnvConfigVariable) envVariable).getValue().getBytes());

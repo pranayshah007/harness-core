@@ -33,6 +33,7 @@ import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
+import java.util.HashMap;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
@@ -66,8 +67,8 @@ public class InfrastructureTaskExecutableStep extends AbstractInfrastructureTask
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, Infrastructure infrastructureSpec, StepInputPackage inputPackage) {
     final NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true, "Execute");
-    return obtainTaskInternal(
-        ambiance, infrastructureSpec, logCallback, null, infrastructureStepHelper.getSkipInstances(infrastructureSpec))
+    return obtainTaskInternal(ambiance, infrastructureSpec, logCallback, null,
+        infrastructureStepHelper.getSkipInstances(infrastructureSpec), new HashMap<>())
         .getTaskRequest();
   }
 

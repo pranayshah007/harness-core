@@ -32,7 +32,9 @@ import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.pms.approval.notification.ApprovalNotificationHandlerImpl;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.helpers.PipelineExpressionHelper;
@@ -91,7 +93,7 @@ public class NotificationHelper {
     if (!ambiance.getMetadata().getIsNotificationConfigured()) {
       return;
     }
-    String identifier = nodeExecution != null ? AmbianceUtils.obtainStepIdentifier(nodeExecution.getAmbiance()) : "";
+    String identifier = getStageIdentifier(nodeExecution);
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
@@ -309,5 +311,21 @@ public class NotificationHelper {
     templateData.put("COLOR", themeColor);
     templateData.put("NODE_STATUS", nodeStatus);
     return templateData;
+  }
+
+  @VisibleForTesting
+  String getStageIdentifier(NodeExecution nodeExecution) {
+    String identifier = nodeExecution != null ? AmbianceUtils.obtainStepIdentifier(nodeExecution.getAmbiance()) : "";
+    // Returning identifier of strategy level in case of stages wrapped in looping strategy as their own identifiers
+    // (stageId_0, stageId_1, etc..) won't match with the actual stage identifier (stageId) mentioned in notification
+    // rules
+    if (nodeExecution != null && nodeExecution.getStepType() != null
+        && nodeExecution.getStepType().getStepCategory() == StepCategory.STAGE) {
+      Optional<Level> strategyLevelOptional = AmbianceUtils.getStrategyLevelFromAmbiance(nodeExecution.getAmbiance());
+      if (strategyLevelOptional.isPresent()) {
+        identifier = strategyLevelOptional.get().getIdentifier();
+      }
+    }
+    return identifier;
   }
 }

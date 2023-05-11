@@ -95,6 +95,8 @@ public class MigratorUtility {
       ParameterField.createValueField(NGMigrationConstants.RUNTIME_INPUT);
   public static final ParameterField<List<TaskSelectorYaml>> RUNTIME_DELEGATE_INPUT =
       ParameterField.createExpressionField(true, NGMigrationConstants.RUNTIME_INPUT, null, false);
+  public static final ParameterField<Boolean> RUNTIME_BOOLEAN_INPUT =
+      ParameterField.createExpressionField(true, NGMigrationConstants.RUNTIME_INPUT, null, false);
 
   public static final Pattern cgPattern = Pattern.compile("\\$\\{[\\w-.\"()]+}");
   public static final Pattern ngPattern = Pattern.compile("<\\+[\\w-.\"()]+>");

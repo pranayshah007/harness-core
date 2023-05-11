@@ -461,7 +461,7 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
 
   @PrePersist
   public void onSave() {
-    this.cdPageCandidate =
-        calculateCdPageCandidate(this.pipelineExecutionId, this.pipelineResumeId, this.latestPipelineResume);
+    this.cdPageCandidate = calculateCdPageCandidate(
+        this.pipelineExecutionId, this.pipelineResumeId, this.latestPipelineResume, this.accountId);
   }
 }
