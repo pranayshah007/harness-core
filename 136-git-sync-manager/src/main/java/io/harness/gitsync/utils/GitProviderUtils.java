@@ -67,7 +67,7 @@ public class GitProviderUtils {
     return isBitbucket(scmConnector) && !GitClientHelper.isBitBucketSAAS(scmConnector.getUrl());
   }
 
-  private boolean isBitbucketSaas(ScmConnector scmConnector) {
+  public static boolean isBitbucketSaas(ScmConnector scmConnector) {
     return isBitbucket(scmConnector) && GitClientHelper.isBitBucketSAAS(scmConnector.getUrl());
   }
 
