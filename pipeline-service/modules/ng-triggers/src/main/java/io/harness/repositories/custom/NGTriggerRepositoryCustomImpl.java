@@ -72,21 +72,17 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
       if (trigger.getType() == NGTriggerType.ARTIFACT || trigger.getType() == NGTriggerType.MANIFEST) {
         // ARTIFACT & MANIFEST TRIGGERS
 
-        if (pollingSubscriptionStatus == null || validationStatus == null) {
-          triggerStatus.setStatus(StatusResult.FAILED);
-          trigger.setTriggerStatus(triggerStatus);
-          continue;
-        }
-
-        if (pollingSubscriptionStatus.getStatusResult().equals(StatusResult.SUCCESS)
+        if (validationStatus != null && pollingSubscriptionStatus != null
+            && pollingSubscriptionStatus.getStatusResult().equals(StatusResult.SUCCESS)
             && validationStatus.getStatusResult().equals(StatusResult.SUCCESS)) {
           triggerStatus.setStatus(StatusResult.SUCCESS);
         } else {
           triggerStatus.setStatus(StatusResult.FAILED);
 
-          if (validationStatus.getStatusResult().equals(StatusResult.FAILED)) {
+          if (validationStatus != null && validationStatus.getStatusResult().equals(StatusResult.FAILED)) {
             triggerStatus.setDetailedMessage(validationStatus.getDetailedMessage());
-          } else if (pollingSubscriptionStatus.getStatusResult().equals(StatusResult.FAILED)) {
+          } else if (pollingSubscriptionStatus != null
+              && pollingSubscriptionStatus.getStatusResult().equals(StatusResult.FAILED)) {
             triggerStatus.setDetailedMessage(pollingSubscriptionStatus.getDetailedMessage());
           }
         }
@@ -104,6 +100,7 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
         } else {
           triggerStatus.setStatus(StatusResult.FAILED);
         }
+
         triggerStatus.setDetailedMessage(validationStatus.getDetailedMessage());
 
       } else if (trigger.getType() == NGTriggerType.WEBHOOK) {
@@ -125,24 +122,21 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
           triggerStatus.setDetailedMessage(validationStatus.getDetailedMessage());
 
         } else {
-          if (validationStatus == null || pollingSubscriptionStatus == null || webhookAutoRegistrationStatus == null) {
-            triggerStatus.setStatus(StatusResult.FAILED);
-            trigger.setTriggerStatus(triggerStatus);
-            continue;
-          }
-
-          if (pollingSubscriptionStatus.getStatusResult().equals(StatusResult.SUCCESS)
+          if (validationStatus != null && webhookAutoRegistrationStatus != null && pollingSubscriptionStatus != null
+              && pollingSubscriptionStatus.getStatusResult().equals(StatusResult.SUCCESS)
               && validationStatus.getStatusResult().equals(StatusResult.SUCCESS)
               && webhookAutoRegistrationStatus.getRegistrationResult().equals(WebhookRegistrationStatus.SUCCESS)) {
             triggerStatus.setStatus(StatusResult.SUCCESS);
           } else {
             triggerStatus.setStatus(StatusResult.FAILED);
 
-            if (validationStatus.getStatusResult().equals(StatusResult.FAILED)) {
+            if (validationStatus != null && validationStatus.getStatusResult().equals(StatusResult.FAILED)) {
               triggerStatus.setDetailedMessage(validationStatus.getDetailedMessage());
-            } else if (pollingSubscriptionStatus.getStatusResult().equals(StatusResult.FAILED)) {
+            } else if (pollingSubscriptionStatus != null
+                && pollingSubscriptionStatus.getStatusResult().equals(StatusResult.FAILED)) {
               triggerStatus.setDetailedMessage(pollingSubscriptionStatus.getDetailedMessage());
-            } else if (webhookAutoRegistrationStatus.getRegistrationResult().equals(WebhookRegistrationStatus.FAILED)
+            } else if (webhookAutoRegistrationStatus != null
+                    && webhookAutoRegistrationStatus.getRegistrationResult().equals(WebhookRegistrationStatus.FAILED)
                 || webhookAutoRegistrationStatus.getRegistrationResult().equals(WebhookRegistrationStatus.ERROR)
                 || webhookAutoRegistrationStatus.getRegistrationResult().equals(WebhookRegistrationStatus.TIMEOUT)) {
               triggerStatus.setDetailedMessage(webhookAutoRegistrationStatus.getDetailedMessage());
